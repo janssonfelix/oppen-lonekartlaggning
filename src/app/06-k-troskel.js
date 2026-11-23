@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { basEffekterForRedovisning, csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, regStegForRedovisning, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
+import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
@@ -88,13 +88,13 @@ export function _konUtelamnatNot() { return konUtelamnatNot(kTroskel()); }
 /** Regressionens råa mediangap som text (ktroskel.js: raGapText). */
 export function _raGapText(reg, fmt) { return raGapText(reg, fmt, kTroskel()); }
 
-/** Regressionens stegvisa uppdelning så som den får redovisas (ktroskel.js: regStegForRedovisning). */
-export function _regStegForRedovisning(reg) { return regStegForRedovisning(reg, kTroskel()); }
-
-/** Regressionens BAS-effekter så som de får redovisas (ktroskel.js: basEffekterForRedovisning); noten med appens termer. */
-export function _basEffekterForRedovisning(reg) {
-    const k = kTroskel();
-    return basEffekterForRedovisning(reg, k, utelamnade => _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen'));
+/**
+ * Noten om regressionens BAS-effekter som utelämnats under tröskeln k, med appens termer: basEffektNot till
+ * basEffekterForRedovisning i src/lib/ktroskel.js (genom vymodellerna för regressionskortet och rapportmodellen).
+ * @param {string[]} utelamnade @param {number} k
+ */
+export function _basEffektNot(utelamnade, k) {
+    return _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen');
 }
 
 /**

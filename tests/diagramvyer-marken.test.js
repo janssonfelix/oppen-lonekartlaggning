@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell, utanSmaGrupper } from '../src/lib/figur.js';
 import { arsbeloppMening } from '../src/lib/prioritering.js';
+import { trappaVisas } from '../src/lib/vymodell-regressionskort.js';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 import { vanliga, KALLA, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
@@ -51,15 +52,11 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(w.eval('_regTrappaFigur(window.__s, window.__y)').x.ordning).toHaveLength(4);
     });
     it('trappan visas bara när alla steg får visas — aldrig när det ojusterade steget är utelämnat', () => {
-        w.__u = { steg, utelamnat: false };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(true);
-        w.__u = { steg: steg.slice(1), utelamnat: true };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(false);
-        w.__u = { steg: steg.slice(0, 1), utelamnat: false };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(false);              // ett steg är ingen trappa
-        w.__u = { steg: [{ name: 'Endast kön', status: 'too_few' }, ...steg.slice(1)], utelamnat: false };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(false);
-        expect(w.eval('_regTrappaVisas(null)')).toBe(false);
+        expect(trappaVisas({ steg, utelamnat: false })).toBe(true);
+        expect(trappaVisas({ steg: steg.slice(1), utelamnat: true })).toBe(false);
+        expect(trappaVisas({ steg: steg.slice(0, 1), utelamnat: false })).toBe(false);              // ett steg är ingen trappa
+        expect(trappaVisas({ steg: [{ name: 'Endast kön', status: 'too_few' }, ...steg.slice(1)], utelamnat: false })).toBe(false);
+        expect(trappaVisas(null)).toBe(false);
     });
     it('i verktyget: tre män ger ingen trappa (men noten om det utelämnade steget); med båda könen över tröskeln ritas den', () => {
         const rad = (kon, i, bas) => ({ bas, kon, lon: 28000 + i * 137 + (kon === 'man' ? 2500 : 0), alder: 25 + (i % 35), yrke: '100 X', aid: '100', yrkeLabel: 'X' });

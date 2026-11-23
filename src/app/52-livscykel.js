@@ -4,6 +4,7 @@ import { talformat } from '../lib/figur.js';
 import { livscykelRegression, samspelSakerstallt } from '../lib/livscykel.js';
 import { personOrd } from '../lib/namn.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { livscykelKurvaUtelamnad, vymodellLivscykel } from '../lib/vymodell-livscykel.js';
 import { adjektiv, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { antalCaption, antalText } from './03-hjalpfunktioner.js';
@@ -29,16 +30,16 @@ import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
 export let _lifecycleFixBas = null;
 
 /**
- * Renderar livscykelanalys-fliken: klarspråklig rubrik,
- * översiktstabell över alla BAS, kurvor med 95 % KI-band, signifikanstest,
- * modelljämförelse + regelbaserad HR-coach.
+ * Ritar livscykelanalysen: nyckeltalen, slutsatsen, kurvorna med 95 % KI-band, översiktstabellen per BAS och
+ * modelljämförelsen. Det som räknas och bedöms står i vymodellen (vymodellLivscykel i src/lib/vymodell-livscykel.js,
+ * ADR-99); här skrivs orden och ritas.
  *
  * Anropas när fliken "Lön över karriären" (data-tab="kon") öppnas — livscykel-
  * panelen visas tillsammans med kön/ålder-kurvorna (sammanslagen flik).
  *
  * @param {any} [given] huvudregressionen från regressionskortet i samma varv (ADR-17)
  */
-export function renderLifecycleAnalysis(given) {
+export function ritaLivscykel(given) {
     // Flikens container är #livscykel-content (#lifecycle-content som reserv)
     const wrap = document.getElementById('livscykel-content') || document.getElementById('lifecycle-content');
     if (!wrap) return;
@@ -56,14 +57,12 @@ export function renderLifecycleAnalysis(given) {
 
     // Jämför med primäranalysen: given från regressionskortet i samma varv, annars räknad här (ADR-17)
     const primary = given || runOLSRegression();
-    const primaryAdjR2 = (primary && !primary.error) ? primary.adjR2 : null;
-    const primaryGap = (primary && !primary.error) ? primary.konPct : null;
-    const primaryP   = (primary && !primary.error) ? primary.pValue : null;
+    const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
+    const h = vm.huvud;
     // Modelljämförelsens rubrikrad: urvalet bakom modellerna. Bygger de på samma personer står det en gång.
-    const primaryN = primary && !primary.error ? [primary.nKvAnalysed, primary.nMaAnalysed] : null;
-    const modellCaption = !primaryN || (primaryN[0] === result.kvN && primaryN[1] === result.maN)
+    const modellCaption = !h || vm.sammaUrval
         ? antalCaption(result.kvN, result.maN)
-        : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(primaryN[0], primaryN[1])} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
+        : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
 
     // Modelljämförelsens tabell markerar säkerheten med stjärnor, som tabellens not förklarar; utan stjärna är
     // p ≥ 0,05. Nyckeltalet säger det med ord, med samma gräns som tolkningsregeln (samspelSakerstallt i src/lib/livscykel.js: p < 0,10).
@@ -93,69 +92,45 @@ export function renderLifecycleAnalysis(given) {
     // Nyckeltalen är kvinnors lön i % av mäns, som i resten av verktyget. Modellen är log-linjär och ger skillnaden
     // (exp(skillnaden på log-skalan) − 1) × 100, så kvoten är 100 + skillnaden; förändringen 25–65 år är densamma i
     // procentenheter vilket mått man än läser.
-    const kvot25 = 100 + gapStart, kvot65 = 100 + gapEnd;
+    const { kvot25, kvot65 } = vm;
     const kvotMening = `Modellen ger skillnaden i procent, kvinnor mot män: ${gapStart >= 0 ? '+' : ''}${svPct(gapStart, 1)} vid 25 år och ${gapEnd >= 0 ? '+' : ''}${svPct(gapEnd, 1)} vid 65 år. Det är samma sak som att kvinnors lön är ${svPct(kvot25, 1)} respektive ${svPct(kvot65, 1)} av mäns, talen ovan.`;
 
-    // ====== B4: Översiktstabell — modellens lönenivåer per BAS ======
-    // Modellen är en enda regression över alla BAS: kön×ålder-interaktionerna är gemensamma, så gapet i procent
-    // vid 25 och 65 år är detsamma i alla intervall. Det som skiljer per BAS är nivån, och den kommer ur modellens
-    // egna BAS-koefficienter (result.basFaktor = exp(β_BAS − β_visat)), inte ur uppmätta medianer.
-    const basRows = result.basList.map(b => {
-        const dB  = state.data.filter(r => r.bas === b && r.lon > 0);
-        const skala = result.basFaktor?.[b] ?? 1.0;
-        const kv25 = result.predKvinna[0].lon * skala;
-        const kv65 = result.predKvinna[result.predKvinna.length - 1].lon * skala;
-        const ma25 = result.predMan[0].lon * skala;
-        const ma65 = result.predMan[result.predMan.length - 1].lon * skala;
-        return {
-            bas: b, n: dB.length,
-            kv25, kv65, ma25, ma65,
-            gap25Pct: result.gapAt25, gap65Pct: result.gapAt65,
-            gap25Kr: kv25 - ma25, gap65Kr: kv65 - ma65   // kvinnor mot män: negativt när kvinnor ligger lägre
-        };
-    });
-
+    // ====== B4: Översiktstabell — modellens lönenivåer per BAS (vm.basRader) ======
     // k-anonymitet: ett BAS-intervall under tröskeln har en koefficient skattad på få personers löner, så
     // kronvärdena skulle peka ut dem. Raden utelämnas helt — en rad där varenda kronkolumn står som "< 10" ger
     // inget att analysera — och BAS:et räknas upp i noten under tabellen.
-    const basVisade = basRows.filter(r => !isKMasked(r.n));
-    const basUtelamnade = basRows.filter(r => isKMasked(r.n)).map(r => r.bas);
+    const basVisade = vm.visade;
+    const basUtelamnade = vm.utelamnade;
     // Kurvan är modellens lönenivå i det valda intervallet, ett lönemått (ADR-70). Ett valt intervall som tabellen
     // utelämnar får heller ingen kurva: ingen figur ritas, så varken bilden, diagramdatan eller kopian i Alla diagram
     // bär den, och en not säger vilket intervall som är valt och varför. Det valda intervallet byts inte, så att
     // exporten inte tyst visar något annat än skärmen. På skärmen syns allt (kTroskel() är 1, ADR-51).
-    const kurvaUtelamnad = _lifecycleKurvaUtelamnad(result, basRows);
+    const kurvaUtelamnad = vm.kurvaUtelamnad;
     const kurvNot = kurvaUtelamnad
         ? `BAS ${result.fixBas} är valt. Lönekurvan visas inte här: intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}, och dess lönenivå skulle kunna peka ut enskilda. Personerna ingår fortfarande i modellen. Välj ett intervall med minst ${kTroskel()} ${personOrd(kTroskel())} för att se kurvan.`
         : '';
 
     // ====== Modelljämförelse: vad livscykelmodellen tillför utöver huvudmodellen (justerat R²) ======
     // Står som en mening i tolkningen; talen finns i tabellen längst ned.
-    const adjR2Delta = (primaryAdjR2 != null) ? (result.adjR2 - primaryAdjR2) * 100 : null;
-    const modelMervarde = adjR2Delta != null
-        ? (adjR2Delta < 1 ? 'liten' : adjR2Delta < 3 ? 'måttlig' : 'stor')
-        : null;
+    const { adjR2Delta, mervarde: modelMervarde } = vm;
     const modellMening = adjR2Delta != null
         ? ` Jämfört med huvudmodellen i Lönestruktur förklarar livscykelmodellen ${adjR2Delta >= 0 ? '+' : '−'}${svTal(Math.abs(adjR2Delta), 1)} procentenheter mer av lönespridningen (${modelMervarde === 'stor' ? 'ett stort' : modelMervarde === 'måttlig' ? 'ett måttligt' : 'ett litet'} tillägg${modelMervarde === 'liten' ? '; den enklare modellen räcker' : ''}).`
         : '';
 
     // ====== B7: Regelbaserad HR-coach ======
-    const interaktionSig = samspelSakerstallt(result.kvAgePVal, result.kvAge2PVal);
-    let coachKategori, coachRubrik, coachText;
-    if (!interaktionSig) {
-        coachKategori = 'konstant';
+    const interaktionSig = vm.samspel;
+    const coachKategori = vm.monster;
+    let coachRubrik, coachText;
+    if (coachKategori === 'konstant') {
         coachRubrik = 'Samma skillnad över karriären';
         coachText = `Skillnaden ändras <strong>inte säkert</strong> med åldern (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)}). Skillnaden är ungefär densamma i alla åldrar. <strong>Att utforska:</strong> lägg kraften på de strukturella analyserna (${T.niva.fl}, likvärdigt arbete) snarare än på karriären.`;
-    } else if (result.gapDelta < -2) {
-        coachKategori = 'växande';
+    } else if (coachKategori === 'växande') {
         coachRubrik = 'Skillnaden växer med åldern';
         coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska löneöversynernas utfall per kön i organisationens egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringar per ${T.niva.en}, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
-    } else if (result.gapDelta > 2) {
-        coachKategori = 'krympande';
+    } else if (coachKategori === 'krympande') {
         coachRubrik = 'Skillnaden krymper med åldern';
         coachText = `Skillnaden är mindre i de högre åldrarna än i de lägre: kvinnors lön mot mäns stiger med ${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningen för nyanställda.`;
     } else {
-        coachKategori = 'praktiskt konstant';
         coachRubrik = 'Skillnaden är i praktiken densamma';
         coachText = `Löneskillnaden ändras med åldern (p under 0,10), men lite: ${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)} procentenheter. I praktiken är skillnaden densamma över karriären. <strong>Att utforska:</strong> behandla den som en strukturell skillnad och arbeta med huvudregressionen och ${T.niva.bfl}, inte med insatser för karriären.`;
     }
@@ -275,9 +250,9 @@ export function renderLifecycleAnalysis(given) {
                     </thead>
                     <tbody>
                         <tr><td><strong>Antal personer</strong></td><td>${primary ? primary.n : '—'}</td><td>${result.n}</td></tr>
-                        <tr><td><strong>Förklarad del av lönespridningen (justerat R²)</strong></td><td>${primaryAdjR2 != null ? svPct((primaryAdjR2*100), 1) : '—'}</td><td>${svPct((result.adjR2*100), 1)}</td></tr>
-                        <tr><td><strong>Löneskillnad kvinnor mot män</strong></td><td>${primaryGap != null ? (primaryGap >= 0 ? '+' : '') + svPct(primaryGap, 1) : '—'}</td><td>${(((Math.exp(result.kvCoef) - 1) * 100) >= 0 ? '+' : '')}${svPct(((Math.exp(result.kvCoef) - 1) * 100), 1)} (vid medelåldern ${Math.round(result.ageMean)} år)</td></tr>
-                        <tr><td><strong>Kön — p-värde</strong></td><td>${primaryP != null ? (primaryP < 0.001 ? '< 0,001' : svTal(primaryP, 3)) : '—'} ${primaryP != null ? sigBadge(primaryP) : ''}</td><td>${pText(result.kvPValue)} ${sigBadge(result.kvPValue)}</td></tr>
+                        <tr><td><strong>Förklarad del av lönespridningen (justerat R²)</strong></td><td>${h && h.adjR2 != null ? svPct((h.adjR2*100), 1) : '—'}</td><td>${svPct((result.adjR2*100), 1)}</td></tr>
+                        <tr><td><strong>Löneskillnad kvinnor mot män</strong></td><td>${h && h.gapPct != null ? (h.gapPct >= 0 ? '+' : '') + svPct(h.gapPct, 1) : '—'}</td><td>${vm.livscykelGapPct >= 0 ? '+' : ''}${svPct(vm.livscykelGapPct, 1)} (vid medelåldern ${Math.round(result.ageMean)} år)</td></tr>
+                        <tr><td><strong>Kön — p-värde</strong></td><td>${h && h.p != null ? (h.p < 0.001 ? '< 0,001' : svTal(h.p, 3)) : '—'} ${h && h.p != null ? sigBadge(h.p) : ''}</td><td>${pText(result.kvPValue)} ${sigBadge(result.kvPValue)}</td></tr>
                         <tr><td><strong>Kön×ålder — p-värde</strong></td><td><em class="f-dampad">ej i modellen</em></td><td>${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)} ${sigBadge(result.kvAgePVal)}</td></tr>
                         <tr><td><strong>Kön×ålder² — p-värde</strong></td><td><em class="f-dampad">ej i modellen</em></td><td>${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)} ${sigBadge(result.kvAge2PVal)}</td></tr>
                     </tbody>
@@ -319,7 +294,8 @@ export function renderLifecycleAnalysis(given) {
     });
 
     // Cache result + basRows på state för bevis-handlern
-    state._lifecycleCache = { result, basRows, primary };
+    // Huvudregressionen sparas inte (ADR-17).
+    state._lifecycleCache = { result, basRows: vm.basRader };
 
     // Rita diagrammet efter DOM-uppdatering
     // I exportläget (ADR-51) ritas figuren direkt: exportgrinden läser den i samma varv som fliken ritas om.
@@ -334,7 +310,7 @@ export function renderLifecycleAnalysis(given) {
     const sel = document.getElementById('lifecycle-bas-select');
     if (sel) sel.addEventListener('change', () => {
         _lifecycleFixBas = /** @type {HTMLInputElement} */ (sel).value;
-        renderLifecycleAnalysis();
+        ritaLivscykel();
     });
 
     // B8: Bevis-popup per BAS-rad
@@ -346,23 +322,14 @@ export function renderLifecycleAnalysis(given) {
             if (isKMasked(row.n)) return;   // k-anonymitet: knappen ritas inte för
                                             // maskerade BAS, men vägen stängs även här
             const c = state._lifecycleCache;
-            _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, _lifecycleKurvaUtelamnad(c.result, c.basRows)));
+            _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
         });
     });
 }
 
 /**
- * Visas ingen kurva för det valda intervallet? Ja när intervallet har färre än tröskeln (kTroskel(): i exportläget den
- * inställda, på skärmen 1), räknat som översiktstabellen räknar sina rader, så att tabellen och kurvan följs åt.
- */
-function _lifecycleKurvaUtelamnad(result, basRows) {
-    const fix = (basRows || []).find(r => r.bas === result.fixBas);
-    return !!fix && isKMasked(fix.n);
-}
-
-/**
  * Bygger bevis-payload för en BAS-rad i livscykelöversikten (B8). `utanKurva`: kurvan för det valda intervallet visas
- * inte (`_lifecycleKurvaUtelamnad`); då skrivs ingen nivåfaktor mot det, eftersom raden delad med faktorn är det
+ * inte (`livscykelKurvaUtelamnad`); då skrivs ingen nivåfaktor mot det, eftersom raden delad med faktorn är det
  * intervallets lönenivå.
  */
 function _evidenceForLifecycleBas(row, result, utanKurva = false) {
@@ -439,21 +406,5 @@ function _lifecycleFigur(r) {
 /** @param {string|null} [fixBas] BAS-intervall att fixera vid; null = det mest folkrika */
 export function runLifecycleRegression(fixBas) {
     // Modellen (designmatris, OLS, HC3, prediktioner) ligger i src/lib/livscykel.js (ADR-8).
-    const res = livscykelRegression(getData(), { fixBas, golv: statGolv() });
-    if (res.error) return res;
-
-    const { gapAt25, gapAt65, gapDelta, kvAgePVal, kvAge2PVal } = res;
-    // Tolkningstexten är presentation och hör därför till appen.
-    let interpretation;
-    if (!samspelSakerstallt(kvAgePVal, kvAge2PVal)) {
-        interpretation = 'Skillnaden är **densamma över karriären** (samspelet mellan kön och ålder är inte statistiskt signifikant).';
-    } else if (gapDelta < -1) {
-        interpretation = `Skillnaden **växer med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på ett glastak och behöver granskas.`;
-    } else if (gapDelta > 1) {
-        interpretation = `Skillnaden **krymper med åldern**, från ${svPct(gapAt25, 1)} vid 25 år till ${svPct(gapAt65, 1)} vid 65 år. Det kan tyda på att kvinnorna hämtar in under karriären.`;
-    } else {
-        interpretation = `Skillnaden är **i princip densamma** över åldersspannet (${svPct(gapAt25, 1)} till ${svPct(gapAt65, 1)}).`;
-    }
-
-    return { ...res, interpretation };
+    return livscykelRegression(getData(), { fixBas, golv: statGolv() });
 }

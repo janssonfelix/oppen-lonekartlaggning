@@ -253,7 +253,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     it('livscykelns nyckeltal är kvinnors lön i % av mäns, och modellens skillnad står bredvid', () => {
         const w = demo();
         w.__renderTabContent('kon');
-        w.eval('renderLifecycleAnalysis()');
+        w.eval('ritaLivscykel()');
         const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
         const pct = v => v.toFixed(1).replace('.', ',') + '\u00a0%';
         const rutor = [...d.querySelectorAll('#livscykel-content .stat-box')].map(b => [b.querySelector('.stat-etikett').textContent, b.querySelector('.fs-xl')?.textContent.trim()]);
@@ -276,7 +276,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         // Samma modell med andra p-värden för samspelet och en annan förändring: bara prövningen avgör färgen.
         const ruta = (kvAgePVal, kvAge2PVal, gapDelta) => {
             w.eval(`globalThis.__lcOrig = runLifecycleRegression; runLifecycleRegression = b => ({ ...__lcOrig(b), kvAgePVal: ${kvAgePVal}, kvAge2PVal: ${kvAge2PVal}, gapDelta: ${gapDelta} });`);
-            try { w.eval('renderLifecycleAnalysis()'); }
+            try { w.eval('ritaLivscykel()'); }
             finally { w.eval('runLifecycleRegression = __lcOrig; delete globalThis.__lcOrig;'); }
             const box = [...w.document.querySelectorAll('#livscykel-content .stat-box')]
                 .find(b => b.querySelector('.stat-etikett').textContent.startsWith('Förändring 25–65 år'));
@@ -293,12 +293,12 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         expect(inte.tal.className).not.toMatch(/varning|farg-ok|fg-ok/);
         expect(inte.tal.getAttribute('title')).toBe('inte säkerställd');
         expect(inte.sr).toBe('inte säkerställd');
-        w.eval('renderLifecycleAnalysis()');
+        w.eval('ritaLivscykel()');
     });
     it('livscykeln säger "inte säkerställd" i ord, stjärnorna förklaras, och modellformeln står i beräkningspanelen', () => {
         const w = demo();
         w.__renderTabContent('kon');
-        w.eval('renderLifecycleAnalysis()');
+        w.eval('ritaLivscykel()');
         const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
         const lop = d.getElementById('livscykel-content').textContent;
         expect(lop).not.toMatch(/(^|[\s(>])ns([\s).,<]|$)/);   // \b räcker inte: å, ä och ö räknas inte som bokstäver där

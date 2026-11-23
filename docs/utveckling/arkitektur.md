@@ -112,6 +112,8 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `vymodell-rapport` | `kon`, `ktroskel`, `rapportunderlag`, `status`, `struktur`, `tabellrecept`, `vymodell-basdossier`, `vymodell-lonestruktur` |
 |  | `vymodell-rapportunderlag` | `aid`, `figur`, `gapuppdelning`, `kon`, `ktroskel`, `osakerhet`, `prioritering`, `rapportunderlag`, `sektor`, `struktur`, `tabellrecept` |
 |  | `vymodell-var-uppstar-gapet` | `gapuppdelning`, `struktur` |
+|  | `vymodell-regressionskort` | `kon`, `ktroskel`, `regression`, `stat`, `status` |
+|  | `vymodell-livscykel` | `livscykel` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna
 för vad som får redovisas vid k (könen, § 3:10-paren, regressionens steg och BAS-effekter, punkterna per person,

@@ -800,7 +800,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         expect(p).toBeLessThan(0.05);
         expect(w.eval(`bhJustera([${p}])`)).toEqual([p]);
         // Kortet: q-cellen visar talet, inte —.
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         const rad = [...w.document.querySelectorAll('#perbas-table tbody tr')].find(tr => tr.cells[0].textContent.trim() === 'E');
         expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formatPValue(${p})`));
         // Protokollet: samma q, lika med p.

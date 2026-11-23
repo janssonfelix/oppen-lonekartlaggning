@@ -121,13 +121,15 @@ om den justerade löneskillnaden i Word-utkastet, PDF-rapporten och utskriften, 
 specifikation i exportläget) skrivs effekten inte ut för ett intervall med färre än `kTroskel()` personer i modellen
 (`basN`); intervallen namnges i en not utan värden (`_kMaskNoteText`). Har referensintervallet självt färre skrivs
 ingen effekt ut, eftersom varje effekt då beskriver dess nivå baklänges, och noten säger varför. Modellen och dess
-referens (ADR-44) ändras inte. Allt går genom `_basEffekterForRedovisning` (`06-k-troskel.js`, regeln i `src/lib/ktroskel.js`).
+referens (ADR-44) ändras inte. Allt går genom `basEffekterForRedovisning` i `src/lib/ktroskel.js`, anropad av
+vymodellerna för regressionskortet (`vymodellRegressionskort`) och rapportmodellen (`vymodellRapport`); noten skrivs
+med appens termer (`_basEffektNot` i `06-k-troskel.js`).
 
 **Livscykelns lönekurva.** Kurvan i Ålder & karriär är livscykelmodellens lönenivå per kön i det valda BAS-intervallet
 (rullistan; som standard det mest folkrika). Översiktstabellen per intervall utelämnar ett intervall med färre än
-`kTroskel()` personer, och för ett valt intervall under tröskeln ritas heller ingen figur (`_lifecycleKurvaUtelamnad`
-i `52-livscykel.js`, samma antal som tabellens rader): diagramdatan, bilden, ZIP-filen och kopian i Alla diagram
-saknar den. En not i stället för kurvan säger vilket intervall som är valt och varför, utan värden. Valet byts inte,
+`kTroskel()` personer, och för ett valt intervall under tröskeln ritas heller ingen figur (`livscykelKurvaUtelamnad`
+i `vymodellLivscykel`, `src/lib/vymodell-livscykel.js`, samma antal som tabellens rader): diagramdatan, bilden,
+ZIP-filen och kopian i Alla diagram saknar den. En not i stället för kurvan säger vilket intervall som är valt och varför, utan värden. Valet byts inte,
 så att exporten inte tyst visar ett annat intervall än skärmen. Beräkningsbeviset för ett annat intervall skriver då
 ingen nivåfaktor mot det valda, eftersom raden delad med faktorn är det valda intervallets nivå. Tröskeln är
 `kTroskel()` (avsnitt 1): kurvan är något som ritas, och skärmen visar den. Modellen skattas med alla intervall, och
@@ -463,13 +465,14 @@ filen innehåller lönedata och ska hanteras som personuppgifter.
 Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
 
 - **R1. Regressionens ojusterade steg döljs när ett kön är under tröskeln.** Första steget i den stegvisa uppdelningen
-  (*Endast kön*) är samma slags mått som det råa gapet. `_regStegForRedovisning(reg)` lämnar ut stegen utan det första,
-  och ingen förklarad andel, när `_konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed)` är falskt; regressionskortet
+  (*Endast kön*) är samma slags mått som det råa gapet. `regStegForRedovisning(reg, k)` i `src/lib/ktroskel.js` lämnar ut stegen utan det
+  första, och ingen förklarad andel, när `konFarRedovisas(reg.nKvAnalysed, reg.nMaAnalysed, k)` är falskt; regressionskortet
   visar då ingen förklaringsbudget, och en mening står i stället för det utelämnade, i kortet och i rapportens bilaga om
   den justerade löneskillnaden (Word-utkastet, PDF-rapporten och utskriften, i urvalen hela dokumentationen och facklig
   dialog). Staplarna för stegen som står kvar räknar sin bredd bara mot de visade stegen, så att det utelämnade steget
   inte går att läsa ut ur bredden, och kronexemplet i kortet, som utgår från männens medianlön, står bara när båda könen
-  når tröskeln (C6; `51-lika-arbete-regressionskort.js`). Beräkningen är densamma, och det
+  når tröskeln (C6). Regressionskortet får allt detta ur sin vymodell (`vymodellRegressionskort` i
+  `src/lib/vymodell-regressionskort.js`). Beräkningen är densamma, och det
   justerade gapet med konfidensintervall visas från regressionens fasta golv, 5 per kön. Det råa gapet som text:
   `_raGapText`.
 - **R2. Egna riktade rader i Löneöversyn på grupper under tröskeln är tillåtna** (användarens egen simulering):

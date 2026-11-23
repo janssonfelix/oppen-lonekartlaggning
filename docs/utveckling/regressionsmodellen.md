@@ -18,7 +18,9 @@ och upprepas inte här (avsnitt 9).
 | Modellerna: huvudregressionen (`huvudregression`) och dess golv, förklaringsmodellen, stegen, AID-etikett inom BAS, Blinder-Oaxaca, kvantilregressionen, gap per BAS | `src/lib/regression.js` |
 | OLS med HC3, t-fördelningen och normalfördelningen | `src/lib/stat.js` |
 | Adaptrarna som läser appens tillstånd (`getData()`, `statGolv()`, förklaringsmodellen, `harAlder()`) | `src/app/50-regressionsmodeller.js` |
-| Huvudregressionens adapter (`runOLSRegression`), modellpanelen, regressionskortet, kvantilregressionens intervall, BH-korrigeringen | `src/app/51-lika-arbete-regressionskort.js` |
+| Regressionskortets vymodell (ADR-99): stegen och budgeten efter tröskeln, kronexemplet, ansvarsraden, slutsatsen, BH-korrigeringen och signalen per BAS-intervall, BAS-effekterna efter tröskeln, varningarna om underlaget och tolkningen av gapet längs lönefördelningen | `src/lib/vymodell-regressionskort.js` (`vymodellRegressionskort`) |
+| Huvudregressionens adapter (`runOLSRegression`), modellpanelen, kvantilregressionens intervall och det som ritar regressionskortet (`ritaRegressionskort`) | `src/app/51-lika-arbete-regressionskort.js` |
+| Livscykelanalysens vymodell: nivåerna per BAS-intervall efter tröskeln, kurvan, mönstret och jämförelsen med huvudmodellen | `src/lib/vymodell-livscykel.js` (`vymodellLivscykel`); ritas av `ritaLivscykel` i `src/app/52-livscykel.js` |
 | Noteringen om en bortvald variabel | `src/lib/rapportunderlag.js` (`bortvaltNotering`) |
 | Var uppstår löneskillnaden? | `src/lib/gapuppdelning.js`, `src/app/68-var-uppstar-gapet.js` |
 | Vakterna | avsnitt 11 |
@@ -91,7 +93,7 @@ en varning, aldrig ett fel. I appen ger `forklaringsmodell()` valet normaliserat
 **Variablerna som kan väljas** är BAS-intervall, ålder och AID-etikett inom BAS, utöver kön. Fullmodellen, BAS och
 ålder utan AID-etikett inom BAS, är utgångsläget, och standardhuvudtalet är dess.
 
-**Panelen** (`renderForklaringsmodellPanel`, före huvudtalet) har kryssrutorna *Kön +* BAS-intervall, Ålder och
+**Panelen** (`ritaForklaringsmodellPanel`, före huvudtalet) har kryssrutorna *Kön +* BAS-intervall, Ålder och
 AID-etikett inom BAS. Att kryssa i AID-etikett inom BAS kryssar i BAS och låser den rutan; att kryssa ur BAS kryssar ur
 AID-etikett inom BAS. Utan ålder i lönefilen är rutan för ålder avstängd med tipset *Kräver ålder i lönefilen*; utan
 AID-kod och etikettnamn finns ingen ruta för AID-etikett inom BAS, bara meningen *AID-etikett inom BAS kan inte väljas:
@@ -173,7 +175,7 @@ reservsteget) och när AID-etikett inom BAS är vald, eftersom BAS då ingår i 
 är med. Kortet visar referensintervallet och en rad per indikator, och rapportens bilaga nivåerna mot referensen.
 `basN` är antalet personer per intervall i modellen. I det som lämnar verktyget redovisas bara effekterna för intervall
 som når tröskeln; de övriga namnges i en not, och är referensintervallet under tröskeln redovisas ingen effekt
-(`_basEffekterForRedovisning`, ADR-70; `k-troskeln.md` §2). Modellen skattas med alla intervall.
+(`basEffekterForRedovisning` i `src/lib/ktroskel.js`, genom vymodellerna för regressionskortet och rapportmodellen, ADR-70; `k-troskeln.md` §2). Modellen skattas med alla intervall.
 
 **Regressionerna per BAS-intervall** har BAS i urvalet, inte i modellen: en regression per intervall (avsnitt 7).
 
@@ -384,12 +386,12 @@ personer (`medKv`, `medMa`, `medelKv`, `medelMa`), som protokollet för gemensam
 **BH-korrigeringen.** Testerna per BAS-intervall korrigeras för att många prövas samtidigt (Benjamini–Hochberg).
 Räkningen står på ett ställe, `bhJustera` i `src/lib/stat.js` (i appen `_bhJustera`): q-värdena i samma ordning som
 p-värdena, q = min(1, p · m / rang) med p-värdena sorterade stigande, gjort monotont bakifrån; ett enda test ger q = p.
-m är antalet intervall som kunde skattas (status ok och ändligt p-värde). Regressionskortet (`renderRegressionCard`),
-Att göra och protokollet för gemensam lönebedömning anropar den över samma tester, så att samma intervall får samma q.
+m är antalet intervall som kunde skattas (status ok och ändligt p-värde). Regressionskortet och Att göra (`perBasRegression` i `src/lib/vymodell-regressionskort.js`)
+och protokollet för gemensam lönebedömning anropar den över samma tester, så att samma intervall får samma q.
 Med ett enda test är q = p, och kortet, beräkningsbeviset, Att göra och protokollet visar talet. En skillnad är
 säkerställd efter korrigering när p < 0,05 och q < 0,05, vilket är detsamma som q < 0,05 eftersom q aldrig är
 mindre än p. Signalen per intervall
-(`perBasSignal` i `src/lib/status.js`, ADR-59) är *Titta närmare* när den är säkerställd efter korrigering och minst
+(`perBasNiva` i `src/lib/vymodell-regressionskort.js`, genom `perBasSignal` i `src/lib/status.js`, ADR-59) är *Titta närmare* när den är säkerställd efter korrigering och minst
 3 %, *Dokumentera* när den är säkerställd efter korrigering men under 3 %, *Osäkert utslag* när bara det råa p-värdet
 är under 0,05 (varningstriangeln), annars *Inget utslag*. Texten om korrigeringen räknas ur antalet tester
 (`_bhTextFor`). Protokollet för gemensam lönebedömning tar med de BAS-intervall som har signalen *Titta närmare*, med
@@ -434,7 +436,7 @@ Golven och redovisningen står i `k-troskeln.md` och upprepas inte här. Regress
 - **`statGolv()`** gäller regressionerna per BAS-intervall, Blinder-Oaxaca, ansvarssteget och bootstrap-intervallen
   (`k-troskeln.md` §5).
 - **Det ojusterade steget** *Endast kön* och den förklarade andelen redovisas bara när varje kön når tröskeln
-  (`_regStegForRedovisning`); annars ritas ingen trappa och ingen förklaringsbudget, och en mening står i stället (regel
+  (`regStegForRedovisning` i `src/lib/ktroskel.js`, genom `vymodellRegressionskort`); annars ritas ingen trappa och ingen förklaringsbudget, och en mening står i stället (regel
   R1 i `k-troskeln.md` §8). Hur det könsuppdelade redovisas står i `k-troskeln.md` §2.
 - **Spärren för *Endast kön*** som huvudtal står i avsnitt 2 och i `k-troskeln.md` §1.
 

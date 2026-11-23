@@ -4,6 +4,7 @@
 // och metodbilagan följer modellen, regressionskortet och att regressionen körs en gång per varv.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { forklaringsbudget, regressionKronor } from '../src/lib/vymodell-regressionskort.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 
 let win;
@@ -55,7 +56,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
     });
     it('kortet visar steget med sin mening och budgeten en del för yrkesgrupp; huvudtalet är steget + Ålder', () => {
         const { w, r } = kör();
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         const kort = w.document.getElementById('regression-card');
         const t = kort.textContent.replace(/\s+/g, ' ');
         expect(t).toMatch(/löneskillnaden mellan kvinnor och män med samma AID-etikett, BAS-intervall och ålder/);
@@ -70,7 +71,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         const w = createAppWindow(); w.__state.data = underlag().map(x => ({ ...x, aid: undefined, yrke: undefined }));
         const r = w.eval('runOLSRegression()');
         expect(r.yrkesSteg.status).toBe('too_few');
-        expect(w.eval('renderRegressionCard(); document.getElementById("regression-card").textContent')).not.toMatch(/yrkesgrupp, BAS-intervall och ålder/);
+        expect(w.eval('ritaRegressionskort(); document.getElementById("regression-card").textContent')).not.toMatch(/yrkesgrupp, BAS-intervall och ålder/);
     });
 });
 
@@ -119,7 +120,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         const b = med(0.01).eval('_regKvantilBerakna({ direkt: true })');   // nytt fönster: samma data → samma intervall
         expect(b.results).toEqual(a.results);
         const w = med(0.01);
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         // På skärmen räknas intervallet i bakgrunden efter att kortet ritats: först står raden om det, sedan ritas kortet om.
         const tabellFore = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klibbigt golv'));
         expect(tabellFore.querySelectorAll('tbody tr')[0].children[2].textContent).toBe('räknas i bakgrunden…');
@@ -156,7 +157,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         }
         w.__state.data = rader;
         const r = w.eval('_regKvantilBerakna({ direkt: true })');
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         return { r, text: w.document.getElementById('regression-card').textContent };
     };
     it('kvantilregressionen: skillnaden P90 − P10 med KI, och "väger tyngre än" när KI:t utesluter noll', () => {
@@ -180,7 +181,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
     });
     it('regressionskortet visar referensintervallet och en rad per BAS-indikator', () => {
         const w = med();
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         const html = w.document.body.innerHTML;
         expect(html).toContain('<code>A</code>, är referens');
         expect(html).toMatch(/<td>D<\/td><td>\+16,2(?:\s|&nbsp;)%/);
@@ -366,9 +367,8 @@ describe('runOLSRegression på vald modell (ADR-56)', () => {
         expect(r.modell).toMatchObject({ bas: true, alder: true });
         expect(r.modellVarning).toMatch(/under tröskeln|färre än/);
     });
-    it('_explanationBudget bygger delarna ur stegen som de kommer', () => {
-        const w = createAppWindow();
-        const b = w.eval(`_explanationBudget([{ name: 'Endast kön', status: 'ok', gapPct: -6 }, { name: '+ Ålder', status: 'ok', gapPct: -4 }])`);
+    it('forklaringsbudget bygger delarna ur stegen som de kommer', () => {
+        const b = forklaringsbudget([{ name: 'Endast kön', status: 'ok', gapPct: -6 }, { name: '+ Ålder', status: 'ok', gapPct: -4 }]);
         expect(b.parts.map(p => p.key)).toEqual(['alder']);
         expect(b.parts[0].val).toBeCloseTo(2, 10);
         expect(b.remaining).toBe(4);
@@ -639,10 +639,10 @@ describe('regressionskortets tekniska specifikation', () => {
     });
 });
 
-describe('multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () => {
-    it('_regressionKronor översätter kön-effekten till kronor konsekvent', () => {
+describe('[B3.12] multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () => {
+    it('regressionKronor översätter kön-effekten till kronor konsekvent', () => {
         // Modellen är multiplikativ: kvinna = man × (1 + konPct/100).
-        const kr = win.__regressionKronor({ konPct: -5, medianMa: 40000, nKvAnalysed: 10 });
+        const kr = regressionKronor({ konPct: -5, medianMa: 40000, nKvAnalysed: 10 });
         expect(kr.refMan).toBe(40000);
         expect(kr.refKvinna).toBeCloseTo(38000, 6);      // 40000 × 0,95
         expect(kr.krMonth).toBeCloseTo(2000, 6);
@@ -650,14 +650,14 @@ describe('multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () =
         expect(kr.krTotalYear).toBeCloseTo(240000, 6);   // × 10 kvinnor
     });
 
-    it('_regressionKronor returnerar null utan användbart underlag', () => {
-        expect(win.__regressionKronor(null)).toBeNull();
-        expect(win.__regressionKronor({ konPct: -5, medianMa: 0 })).toBeNull();
-        expect(win.__regressionKronor({ konPct: NaN, medianMa: 40000 })).toBeNull();
+    it('regressionKronor returnerar null utan användbart underlag', () => {
+        expect(regressionKronor(null)).toBeNull();
+        expect(regressionKronor({ konPct: -5, medianMa: 0 })).toBeNull();
+        expect(regressionKronor({ konPct: NaN, medianMa: 40000 })).toBeNull();
     });
 
-    it('_explanationBudget delar upp gapet i förklarat + kvarstående', () => {
-        const b = win.__explanationBudget([
+    it('forklaringsbudget delar upp gapet i förklarat + kvarstående', () => {
+        const b = forklaringsbudget([
             { name: 'Endast kön', gapPct: -10, status: 'ok' },
             { name: '+ BAS-intervall', gapPct: -6, status: 'ok' },
             { name: '+ Ålder', gapPct: -4, status: 'ok' }
@@ -673,8 +673,8 @@ describe('multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () =
         expect(sum).toBeCloseTo(100, 6);
     });
 
-    it('_explanationBudget flaggar när en kontroll ÖKAR gapet', () => {
-        const b = win.__explanationBudget([
+    it('forklaringsbudget flaggar när en kontroll ÖKAR gapet', () => {
+        const b = forklaringsbudget([
             { name: 'Endast kön', gapPct: -4, status: 'ok' },
             { name: '+ BAS-intervall', gapPct: -7, status: 'ok' },
             { name: '+ Ålder', gapPct: -6, status: 'ok' }
@@ -686,7 +686,7 @@ describe('multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () =
 
     it('regressionskortet renderar kronor, signalkolumn och per-BAS-container', () => {
         win.__loadDemoData();
-        expect(() => win.__renderRegressionCard()).not.toThrow();
+        expect(() => win.__ritaRegressionskort()).not.toThrow();
         const card = win.document.getElementById('regression-card');
         const r = win.__runOLS();
         if (r.error) return;                       // demodata gav ingen modell — hoppa

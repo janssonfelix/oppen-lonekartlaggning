@@ -22,8 +22,8 @@ import { renderPersonerAttGranska } from './43-personer-att-granska.js';
 import { renderReferensOverblick } from './44-referensoverblick.js';
 import { renderAidBasLika, renderAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
-import { renderBlinderOaxacaCard, renderRegressionCard, runOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { renderLifecycleAnalysis } from './52-livscykel.js';
+import { renderBlinderOaxacaCard, ritaRegressionskort, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { ritaLivscykel } from './52-livscykel.js';
 import { renderPrioritering } from './55-prioritering.js';
 import { renderHandlingsplanSeed } from './56-handlingsplan.js';
 import { renderExportBesked } from './59-exportbesked.js';
@@ -395,7 +395,7 @@ function _renderTabContent(target) {
     _ritaIngetUnderlag(target, !d.length);
     if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
     if (target === "kon" && d.length) {
-        const s = document.getElementById("bas-select-kon"); if (s) ritaAlderOchLon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
+        const s = document.getElementById("bas-select-kon"); if (s) ritaAlderOchLon(/** @type {HTMLInputElement} */ (s).value); ritaLivscykel();
         const s2 = document.getElementById("bas-select-demo"); if (s2) ritaAldersstruktur(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
@@ -407,7 +407,7 @@ function _renderTabContent(target) {
     else if (target === "struktur"     && d.length) {
         renderStructure(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
-        _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(renderRegressionCard()));
+        _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(ritaRegressionskort()));
         ritaGapUppdelning(); renderLonestrukturNycklar();
     }
     else if (target === "loneoversyn"  && d.length) renderForecast();

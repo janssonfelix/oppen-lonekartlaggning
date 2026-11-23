@@ -8,24 +8,23 @@ import { kvantilBootstrap, osakerhetKonstanter } from '../lib/osakerhet.js';
 import { bortvaltNotering } from '../lib/rapportunderlag.js';
 import { forklaringsmodellArStandard, huvudregression, kvantilDesign, modellFras, normaliseraForklaringsmodell, stegEtikett, tillforGransPp } from '../lib/regression.js';
 import { froAvTal } from '../lib/rng.js';
-import { bhJustera } from '../lib/stat.js';
-import { perBasSignal } from '../lib/status.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
+import { kvantilVymodell, perBasNiva, sistaSteg, vymodellRegressionskort } from '../lib/vymodell-regressionskort.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { antalCaption, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _basEffekterForRedovisning, _konFarRedovisas, _raGapText, _regStegForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { _basEffektNot, _raGapText, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { _STS_STORLEK, PALETTE, URVAL } from './10-diagramtema.js';
+import { PALETTE, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { getData, state } from './12-tillstand.js';
 import { fmtCI } from './13-oversikt.js';
 import { iExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPerBasRow, _openEvidenceModal } from './27-berakningsbevis.js';
 import { _RG_STEG_BAS, _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, forklaringsmodell, harAlder, runBlinderOaxaca, runQuantileRegressionAtAllTau, sattForklaringsmodell } from './50-regressionsmodeller.js';
-import { renderLifecycleAnalysis } from './52-livscykel.js';
+import { ritaLivscykel } from './52-livscykel.js';
 
 /**
  * Huvudregression för "oförklarad löneskillnad" (EU 2023/970), verktygets huvudtal: en tunn adapter som läser
@@ -62,32 +61,7 @@ function _sigPlainText(p) {
 }
 
 // ---- Pedagogik-hjälpare för den multivariata analysen -----------------------
-// Rena funktioner (testbara) som översätter regressionens procenttal till något
-// en läsare utan statistikbakgrund kan förhålla sig till.
-
-/**
- * Översätter den oförklarade kön-effekten till kronor.
- *
- * Modellen är multiplikativ på log-skalan: kvinnas lön = mans lön × (1 + konPct/100).
- * Vi använder männens medianlön som referens och räknar ut vad modellen förutsäger
- * för en kvinna med SAMMA ålder och SAMMA BAS-placering. Skillnaden är den
- * oförklarade delen uttryckt i kronor.
- *
- * OBS: en storleksordning för att göra procenten begriplig — INTE en
- * åtgärdskostnad (den beräknas mot faktiska individlöner i Löneöversyn).
- * @returns {null|{refMan:number, refKvinna:number, krMonth:number, krYear:number, krTotalYear:number}}
- */
-function _regressionKronor(r) {
-    if (!r || typeof r.konPct !== 'number' || !isFinite(r.konPct) || !(r.medianMa > 0)) return null;
-    const refMan = r.medianMa;
-    const refKvinna = refMan * (1 + r.konPct / 100);
-    const krMonth = refMan - refKvinna;          // > 0 när kvinnor ligger under
-    return {
-        refMan, refKvinna, krMonth,
-        krYear: krMonth * 12,
-        krTotalYear: krMonth * 12 * (r.nKvAnalysed || 0)
-    };
-}
+// Kronorna (regressionKronor) och förklaringsbudgeten (forklaringsbudget) räknas i src/lib/vymodell-regressionskort.js.
 
 /**
  * Ansvarsradens mening under förklaringsbudgeten, med tecken: fore = oförklarad skillnad efter
@@ -142,39 +116,9 @@ function _budgetOrdningNot(budget) {
     return `<p class="rb-note">Stegen läggs till i ordningen ${esc(budget.parts.map(p => namn[p.key] || p.key).join(', '))}; vad som tillskrivs varje steg beror på ordningen. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra.</p>`;
 }
 
-/**
- * Bygger "förklaringsbudgeten": hur många procentenheter av det ursprungliga
- * gapet som varje kontrollvariabel åt upp, och hur mycket som blir kvar.
- *
- * En kontroll kan göra gapet STÖRRE (negativt bidrag) — det betyder att den
- * strukturella faktorn dolde en del av skillnaden. Det flaggas separat i stället
- * för att ritas som en stapel.
- * @param {Array} seqOk - sequential-stegen med status 'ok'.
- * @returns {null|{g0:number, remaining:number, parts:Array, denom:number, anyNegative:boolean, remainingShare:number}}
- */
-function _explanationBudget(seqOk) {
-    if (!Array.isArray(seqOk) || seqOk.length < 2) return null;
-    const ok = seqOk.filter(s => typeof s.gapPct === 'number');
-    if (ok.length < 2 || ok[0].name !== 'Endast kön') return null;
-    const g0 = Math.abs(ok[0].gapPct);
-    if (!(g0 > 0)) return null;
-    // En del per steg efter det första, i den ordning stegen kommer (ADR-56: ordningen följer den valda modellen).
-    const nyckel = { [_RG_STEG_BAS]: 'bas', '+ Ålder': 'alder', [_RG_STEG_YRKE]: 'yrke' };
-    const etikett = { bas: 'Förklaras av BAS-placering', alder: 'Förklaras av ålder', yrke: `Förklaras av ${T.enhet.en} inom BAS` };
-    const parts = [];
-    for (let i = 1; i < ok.length; i++) {
-        const key = nyckel[ok[i].name];
-        if (!key) continue;
-        parts.push({ key, label: etikett[key], val: Math.abs(ok[i - 1].gapPct) - Math.abs(ok[i].gapPct) });
-    }
-    if (!parts.length) return null;
-    const last = Math.abs(ok[ok.length - 1].gapPct);
-
-    const anyNegative = parts.some(p => p.val < -0.005);
-    const posSum = parts.reduce((s, p) => s + Math.max(0, p.val), 0);
-    const denom = Math.max(0.01, posSum + last);
-    parts.forEach(p => { p.share = (Math.max(0, p.val) / denom) * 100; });
-    return { g0, remaining: last, parts, denom, anyNegative, remainingShare: (last / denom) * 100 };
+/** Förklaringsbudgetens delar med sina etiketter (forklaringsbudget i src/lib/vymodell-regressionskort.js räknar). */
+function _budgetEtikett() {
+    return { bas: 'Förklaras av BAS-placering', alder: 'Förklaras av ålder', yrke: `Förklaras av ${T.enhet.en} inom BAS` };
 }
 
 /**
@@ -210,11 +154,7 @@ function _perBasDoman(sorted) {
     return [Math.floor((lag - luft) * 2) / 2, Math.ceil((hog + luft) * 2) / 2];
 }
 function _perBasFigur(sorted, bhQByBas) {
-    const status = p => {
-        const q = (bhQByBas || {})[p.bas];
-        const sig = p.pValue < 0.05 && (q == null || q < 0.05);
-        return _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[perBasSignal(p.gapPct, sig, p.pValue < 0.05).niva] ?? 2];
-    };
+    const status = p => _PERBAS_STATUS[{ titta: 0, dokumentera: 1 }[perBasNiva(p, (bhQByBas || {})[p.bas])] ?? 2];
     const pkt = p => ({ y: 'BAS ' + p.bas, x: +p.gapPct.toFixed(2), fel: { lag: Math.min(p.ciLow, p.gapPct), hog: Math.max(p.ciHigh, p.gapPct) },
                         n: p.n, kvN: p.kvN, maN: p.maN, bas: p.bas, markering: markeringFor(p.bas) });
     const tips = d => [[d.y], ['Oförklarad skillnad', `${talformat(d.x, 'tal2')} %`],
@@ -231,11 +171,7 @@ function _perBasFigur(sorted, bhQByBas) {
 }
 
 // ---- Trappan: hur lönegapet förklaras steg för steg ----
-// Visas bara när ALLA steg får visas. När det ojusterade steget utelämnas (ett kön under tröskeln, ADR-38 R1) ritas
-// ingen trappa alls — en trappa som börjar på steg två skulle låta det utelämnade räknas fram.
-function _regTrappaVisas(stegUt) {
-    return !!stegUt && !stegUt.utelamnat && stegUt.steg.filter(s => s.status === 'ok').length >= 2 && stegUt.steg[0].status === 'ok';
-}
+// Visas bara när ALLA steg får visas (trappaVisas i src/lib/vymodell-regressionskort.js, R1).
 const _REG_TRAPPSTEG = { [_RG_STEG_BAS]: stor(T.niva.en), '+ Ålder': 'Ålder', [_RG_STEG_YRKE]: `${stor(T.enhet.en)} inom BAS` };
 /** @param {any[]} seqOk @param {any} [yrkesSteg] yrkesgruppssteget efter huvudtalet (när det inte är valt in i modellen) @param {string} [fras] */
 function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en}`) {
@@ -334,7 +270,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
                 if (!(_regKvantilMinne && _regKvantilMinne.nyckel === nyckel)) rakna();
                 // Kortet ritas om bara om det fortfarande visar samma underlag, och inte mitt i en export (den ritar själv).
                 const kort = document.getElementById('regression-card');
-                if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === 'function' && iExportLage())) renderRegressionCard();
+                if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === 'function' && iExportLage())) ritaRegressionskort();
             } catch (e) { rapporteraFel('kvantilregressionens intervall', e); }
             finally { _regKvantilBakgrund = null; visningNy(); resolve(); }   // intervallet är klart: Lönestruktur ritas om nästa gång (ADR-81)
         }, 0));
@@ -370,7 +306,7 @@ function _regKvantilFigur(resultat) {
 
 // ---- Modellpanelen (ADR-56) ----
 // Vilka variabler som räknas bort, vad var och en tillför (alltid mot fullmodellen), verktygets förslag, skälet
-// utanför siffrorna och noteringen om det bortvalda. Ritas av renderRegressionCard med samma regressionsresultat.
+// utanför siffrorna och noteringen om det bortvalda. Ritas av ritaRegressionskort med samma regressionsresultat.
 const _FM_ETIKETT = { bas: stor(T.niva.en), alder: 'Ålder', yrkesgrupp: `${stor(T.enhet.en)} inom BAS` };
 // Samma variabler inne i en mening. Termerna gemenas inte: en term kan ha versaler (AID-etikett).
 const _FM_I_MENING = { bas: T.niva.en, alder: 'ålder', yrkesgrupp: `${T.enhet.en} inom BAS` };
@@ -386,14 +322,14 @@ function _fmTexter(m) {
     const motiv = lista([...(m.alder ? ['att kvinnor är yngre'] : []), ...(m.bas ? [`arbetar i andra ${T.niva.fl}`] : []), ...(m.yrkesgrupp ? [`har andra ${T.enhet.fl}`] : [])], ' eller ');
     const variabler = ['kön', ...(m.alder ? ['ålder'] : []), ...(m.bas ? [_FM_I_MENING.bas] : []), ...(m.yrkesgrupp ? [_FM_I_MENING.yrkesgrupp] : [])];
     const antalOrd = ['', 'en sak', 'två saker', 'tre saker', 'fyra saker'][variabler.length];
-    const sista = m.yrkesgrupp ? _RG_STEG_YRKE : m.alder ? '+ Ålder' : m.bas ? _RG_STEG_BAS : 'Endast kön';
+    const sista = sistaSteg(m);
     return { fras, nar: fras ? `när ${fras} räknats bort` : 'utan att något räknats bort', forklarasAv, samma, motiv, variabler, antalOrd, sista };
 }
 /** Noteringen om en bortvald variabel, som den står i panelen och i rapporten (ren text). */
 function _fmNoteringText(b) {
     return bortvaltNotering(b).replace('ingår inte i siffrorna.', 'ingår inte i siffrorna nedan.');
 }
-function renderForklaringsmodellPanel(r) {
+function ritaForklaringsmodellPanel(r) {
     const wrap = document.getElementById('forklaringsmodell-panel');
     if (!wrap) return;
     if (!r || r.error) { wrap.innerHTML = ''; return; }
@@ -472,7 +408,7 @@ function renderForklaringsmodellPanel(r) {
             }
             if (not) not.hidden = true;
             sattForklaringsmodell({ ...nu, skal: inp.value.trim() }, { rita: false });
-            renderForklaringsmodellPanel(runOLSRegression());   // noteringen bär skälet; inga tal ändras
+            ritaForklaringsmodellPanel(runOLSRegression());   // noteringen bär skälet; inga tal ändras
         }
     };
     wrap.onclick = e => {
@@ -487,11 +423,16 @@ function renderForklaringsmodellPanel(r) {
     };
 }
 
-export function renderRegressionCard() {
+/**
+ * Ritar regressionskortet. Det som räknas, maskeras och bedöms står i vymodellen (vymodellRegressionskort i
+ * src/lib/vymodell-regressionskort.js, ADR-99), som får regressionen från det här varvet och inte minns den (ADR-17);
+ * här skrivs orden och ritas. Ger regressionen vidare till den som ritar nästa kort i samma varv.
+ */
+export function ritaRegressionskort() {
     const wrap = document.getElementById('regression-card');
     if (!wrap) return;
     const r = runOLSRegression();
-    renderForklaringsmodellPanel(r);
+    ritaForklaringsmodellPanel(r);
     const fmT = _fmTexter(r.error ? normaliseraForklaringsmodell(null).modell : r.modell);
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
     if (fmRubrik) fmRubrik.textContent = fmT.fras ? `När ${fmT.fras} räknats bort, steg för steg` : 'Den råa skillnaden, utan att något räknats bort';
@@ -520,16 +461,18 @@ export function renderRegressionCard() {
     }
 
     // ----- Lyckad estimering -----
+    const vm = /** @type {NonNullable<ReturnType<typeof vymodellRegressionskort>>} */ (
+        vymodellRegressionskort(r, { k: kTroskel(), rader: getData(), medAlder: harAlder(), basEffektNot: u => _basEffektNot(u, kTroskel()) }));
     const sig    = _formatPValue(r.pValue);
-    const isSig  = r.pValue < 0.05;
+    const isSig  = vm.sakerstalld;
     const sign   = r.konPct >= 0 ? '+' : '';
 
     // Verdikt – plain language slutsats
     let verdict;
-    if (!isSig) {
+    if (vm.niva === 'ingen') {
         verdict = { cls:'ok',   icon: ikon('bock', 28), title:'Ingen kvarstående skillnad',
                     sub:`${fmT.nar.charAt(0).toUpperCase()}${fmT.nar.slice(1)} finns ingen skillnad som går att säkerställa. Det betyder inte att allt är perfekt — men underlaget ger inget stöd för en generell skillnad.` };
-    } else if (Math.abs(r.konPct) >= _STS_STORLEK) {
+    } else if (vm.niva === 'titta') {
         verdict = { cls:'crit', icon:ikon('nal', 28),  title:'Här bör du titta närmare',
                     sub:`Skillnaden är statistiskt säkerställd, minst 3 procent (verktygets storleksgräns) och ${fmT.fras ? `finns kvar även ${fmT.nar}` : 'står utan att något räknats bort'}. Gå igenom grupperna nedan, väg varje skillnad mot sakliga skäl och ta upp frågan med facket.` };
     } else {
@@ -547,11 +490,10 @@ export function renderRegressionCard() {
         : '';
 
     // Bidragsuppdelning (visuell waterfall) — visar hur gapet krymper när kontroller läggs till
-    // Första steget ("Endast kön") och det som räknas ur det följer tröskeln (ADR-12); se _regStegForRedovisning.
-    const stegUt = _regStegForRedovisning(r);
+    // Första steget ("Endast kön") och det som räknas ur det följer tröskeln (ADR-12, R1): vm.stegUt.
     // Trappan, budgetens "kvarstår" och ansvarsraden utgår från modellens steg (huvudtalet, ADR-56); yrkesgruppssteget
     // ingår när yrkesgrupp är vald och läggs annars till där det visas (ADR-46).
-    const seqOk = stegUt.steg.filter(s => s.status === 'ok' && (r.modell.yrkesgrupp || s.name !== _RG_STEG_YRKE));
+    const { stegUt, seqOk, yrkeVisas, stegIKortet } = vm;
     const stepDescription = {
         'Endast kön':       'Endast kön (utan strukturell kontroll)',
         [_RG_STEG_BAS]:     r.modell.alder ? `Efter kontroll för ${T.niva.en}` : `Efter kontroll för ${T.niva.en} (full modell)`,
@@ -565,12 +507,10 @@ export function renderRegressionCard() {
         [_RG_STEG_YRKE]:    `rensar ${forsta ? '' : 'dessutom '}bort löneskillnader mellan ${T.enhet.fl} inom samma ${T.niva.en}`
     })[name];
     let waterfallHtml = '';
-    // Staplarnas bredd räknas mot de steg som visas: annars kunde ett utelämnat steg räknas fram ur bredden.
+    // Staplarnas bredd räknas mot de steg som visas (vm.stegMax): annars kunde ett utelämnat steg räknas fram ur bredden.
     // Yrkesgruppssteget (ADR-46) ritas efter huvudtalet, som en rad till, när det inte är valt in i modellen.
-    const yrkeVisas = r.yrkesSteg?.status === 'ok' && !r.modell.yrkesgrupp && seqOk.some(s => s.name === fmT.sista);
-    const stegIKortet = yrkeVisas ? [...seqOk, r.yrkesSteg] : seqOk;
-    if (seqOk.length >= (stegUt.utelamnat ? 1 : 2)) {
-        const maxAbs = Math.max(...stegIKortet.map(s => Math.abs(s.gapPct)), 0.01);
+    if (vm.visaSteg) {
+        const maxAbs = vm.stegMax;
         stegIKortet.forEach((s, idx) => {
             const isLast = idx === seqOk.length - 1;
             const isYrke = s.name === _RG_STEG_YRKE;
@@ -597,8 +537,7 @@ export function renderRegressionCard() {
     }
     // Slutsatsen räknar till och med + Ålder (huvudtalet). Har budgeten ett yrkesgruppssteg sägs också vad som blir
     // kvar med det inräknat — annars står två olika "kvarstår" i samma block (30 % här, 15 % i budgeten).
-    const medYrkesSteg = budget => !r.modell.yrkesgrupp && budget.parts.some(p => p.key === 'yrke');
-    const yrkesStegKvar = budget => budget && medYrkesSteg(budget)
+    const yrkesStegKvar = budget => vm.budgetMedYrke
         ? ` Räknas också ${T.enhet.en} inom BAS bort blir ${svPct(budget.remainingShare, 0)} kvar (steget ${stegEtikett(_RG_STEG_YRKE)}, som inte ingår i huvudtalet).` : '';
     const explainedRowHtml = budget => stegUt.explainedShare !== null
         ? `<div class="bak-info-bg rund-4 fs-sm lh-1_55 marg-t-10 pad-10-14">
@@ -609,14 +548,11 @@ export function renderRegressionCard() {
     // ---- Pedagogik: kronor, konkret exempel, stående reservation, budget ----
     const krFmt = v => svKr(v);
     // Kronexemplet utgår från männens medianlön — ett könsuppdelat mått som följer tröskeln (ADR-12),
-    // även när regressionen själv får köras (fast golv, ADR-38).
-    const konOk = _konFarRedovisas(r.nKvAnalysed, r.nMaAnalysed);
-    const kr = konOk ? _regressionKronor(r) : null;
-    // Summan per år som andel av kvinnornas samlade årslön i underlaget: det tal en ekonom frågar efter.
-    const lonesummaKvAr = konOk ? getData().filter(d => d.lon > 0 && (!harAlder() || d.alder > 0) && arKvinna(d)).reduce((s, d) => s + d.lon, 0) * 12 : 0;
-    const andelAvLonesumma = kr && lonesummaKvAr > 0 ? Math.abs(kr.krTotalYear) / lonesummaKvAr * 100 : null;
+    // även när regressionen själv får köras (fast golv, ADR-38). Summan per år står också som andel av kvinnornas
+    // samlade årslön i underlaget: det tal en ekonom frågar efter.
+    const { konOk, kronor: kr, andelAvLonesumma } = vm;
     // Budgeten utgår från första steget och visar skillnaderna mellan stegen: utelämnas med det.
-    const budget = stegUt.utelamnat ? null : _explanationBudget(yrkeVisas ? stegIKortet : seqOk);
+    const budget = vm.budget;
 
     // Stående reservation. Den farligaste feltolkningen av "oförklarat" är att
     // läsa det som "osakligt"/diskriminering — därför står den intill siffran,
@@ -669,20 +605,20 @@ export function renderRegressionCard() {
     // Ansvaret (ansvarskod) redovisas på en egen rad under budgeten, inte i den: budgetens
     // "kvarstår" är huvudtalet, som inte räknar bort ansvaret (ADR-33).
     let ansvarHtml = '';
-    const sistaSteg = seqOk[seqOk.length - 1];
-    if (r.ansvarSteg?.status === 'ok' && sistaSteg?.name === fmT.sista) {
-        ansvarHtml = `<p class="reg-ansvar">${_ansvarRadText(sistaSteg.gapPct, r.ansvarSteg.gapPct)}
+    if (vm.ansvar) {
+        ansvarHtml = `<p class="reg-ansvar">${_ansvarRadText(vm.ansvar.fore, vm.ansvar.efter)}
             Ansvar är ett tänkbart sakligt skäl. Om det är det avgör du. Huvudtalet ovan räknar inte bort ansvaret.</p>`;
     }
 
     let budgetHtml = '';
     if (budget) {
+        const etikett = _budgetEtikett();
         const segs = budget.parts
             .filter(p => p.share > 0.05)
-            .map(p => `<div class="rb-seg rb-${p.key}" data-stil-bredd="${p.share.toFixed(1)}%" title="${esc(p.label)}: ${svTal(p.val, 2)} procentenheter"></div>`)
+            .map(p => `<div class="rb-seg rb-${p.key}" data-stil-bredd="${p.share.toFixed(1)}%" title="${esc(etikett[p.key])}: ${svTal(p.val, 2)} procentenheter"></div>`)
             .join('');
         const legend = budget.parts.map(p => `
-            <li><span class="rb-key rb-${p.key}"></span>${esc(p.label)}:
+            <li><span class="rb-key rb-${p.key}"></span>${esc(etikett[p.key])}:
                 <strong>${p.val < 0 ? '−' : ''}${svTal(Math.abs(p.val), 2)} procentenheter</strong>
                 <span class="f-dampad">(${svPct((Math.max(0, p.val) / budget.denom * 100), 0)} av skillnaden)</span></li>`).join('');
         budgetHtml = `
@@ -697,7 +633,7 @@ export function renderRegressionCard() {
                     <li><span class="rb-key rb-kvar"></span><strong>Kvarstår oförklarat: ${svTal(budget.remaining, 2)} procentenheter</strong>
                         <span class="f-dampad">(${svPct(budget.remainingShare, 0)} av skillnaden)</span></li>
                 </ul>
-                ${medYrkesSteg(budget) ? `<p class="rb-note">${_FM_ETIKETT.yrkesgrupp} räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma ${T.enhet.en}, ${T.niva.en} och ålder.</p>` : ''}
+                ${vm.budgetMedYrke ? `<p class="rb-note">${_FM_ETIKETT.yrkesgrupp} räknas in i budgeten, inte i huvudtalet ovan: det som kvarstår här är skillnaden mellan kvinnor och män med samma ${T.enhet.en}, ${T.niva.en} och ålder.</p>` : ''}
                 ${_budgetOrdningNot(budget)}
                 ${budget.anyNegative ? `<p class="rb-note">${ikon('statusVarning')} En kontrollvariabel <em>ökade</em> skillnaden i stället för att förklara den.
                     Det betyder att den strukturella faktorn <strong>dolde</strong> en del av skillnaden — utan den kontrollen
@@ -706,23 +642,15 @@ export function renderRegressionCard() {
     }
 
     // Per-BAS conditional gap-tabell
-    // Multipel jämförelse-korrigering (Benjamini-Hochberg FDR, src/lib/stat.js bhJustera)
-    // Vid 20+ per-BAS-tester förväntas ~1 falskt positivt per α=0.05-batch
-    // av ren slump. BH-FDR skyddar mot detta utan att vara så strikt som
-    // Bonferroni. Testerna är de OK-tester som har ändligt p-värde, samma som protokollet för gemensam
-    // lönebedömning och Att göra. Ett enda test ger q = p, och tabellen visar talet.
-    const okTests = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue));
-    const bhQByBas = {};
-    const qOk = bhJustera(okTests.map(t => t.pValue));
-    okTests.forEach((t, i) => { bhQByBas[t.bas] = qOk[i]; });
-
-    // Bevis-knapp per BAS-rad. Bevis-payload
-    // beräknas vid klick (inte i förväg) för att minska minne — pekar bara
-    // på bas-namnet och slår upp i r.perBas + bhQByBas vid behov.
-    const allM = (r.perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
+    // Multipel jämförelse-korrigering (Benjamini–Hochberg FDR) och signalen per rad: vm.perBas
+    // (perBasRegression i src/lib/vymodell-regressionskort.js). Vid 20+ per-BAS-tester förväntas ~1 falskt positivt
+    // per α=0.05-batch av ren slump; BH-FDR skyddar mot det utan att vara så strikt som Bonferroni. Ett enda test ger
+    // q = p, och tabellen visar talet. Bevis-payload beräknas vid klick ur r.perBas och q-värdet.
+    const bhQByBas = vm.perBas.qPerBas;
+    const allM = vm.perBas.antalTester;
     // BAS-effekterna så som de får redovisas (ADR-70): intervall under tröskeln namnges i en not.
-    const basEffUt = _basEffekterForRedovisning(r);
-    const perBasRows = (r.perBas || []).map(p => {
+    const basEffUt = vm.basEffekter;
+    const perBasRows = vm.perBas.rader.map(p => {
         if (p.status !== 'ok') {
             const note = p.status === 'too_few' ? `För få: ${p.kvN} kvinnor, ${p.maN} män (kräver minst ${statGolv()} av varje kön)` : 'Singulär';
             return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td>`
@@ -733,14 +661,13 @@ export function renderRegressionCard() {
                 + `<td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa varför denna BAS inte kunde analyseras" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon('sok')}</button></td></tr>`;
         }
         const sgn = p.gapPct >= 0 ? '+' : '';
-        const q = bhQByBas[p.bas];  // undefined bara för ett intervall utan ändligt p-värde
-        // Flagga: kräver att BÅDE rå p OCH justerat q < 0.05. Skyddar mot falska positiv. Storleken prövas mot
-        // statusens storleksgräns 3 % (ADR-59, src/lib/status.js); regressionens tal bär ingen direktivmarkering.
-        const sigAfterCorrection = p.pValue < 0.05 && (q == null || q < 0.05);
-        const sigNiva = perBasSignal(p.gapPct, sigAfterCorrection, p.pValue < 0.05).niva;
+        const q = p.q;  // undefined bara för ett intervall utan ändligt p-värde
+        // Flagga: kräver att BÅDE rå p OCH justerat q < 0.05 (p.niva). Storleken prövas mot statusens storleksgräns
+        // 3 % (ADR-59, src/lib/status.js); regressionens tal bär ingen direktivmarkering.
+        const sigNiva = p.niva;
         const flag = sigNiva === 'titta' ? ikon('nal')
                    : sigNiva === 'dokumentera' ? ikon('oga')
-                   : sigNiva === 'osakert' && q >= 0.05 ? ikon('statusVarning') + ' <span class="text-dampad-xs">(ej efter korr.)</span>'
+                   : p.ejEfterKorrigering ? ikon('statusVarning') + ' <span class="text-dampad-xs">(ej efter korr.)</span>'
                    : '';
         const cellKlass = sigNiva === 'titta' ? ' farg-granska fet' : '';
         const qCell = q != null ? _formatPValue(q) : '<span class="f-dampad">—</span>';
@@ -772,7 +699,7 @@ export function renderRegressionCard() {
     // (rawGapPct), verktygets tecken: negativt när kvinnor ligger lägre.
     const rawCIsuffix = state.bootstrapCI ? fmtCI(state.bootstrapCI.gapPct) : '';
     const tolkning = isSig
-        ? (Math.abs(r.konPct) >= _STS_STORLEK
+        ? (vm.niva === 'titta'
             ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : 'utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den.'} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.`
             : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under verktygets storleksgräns på 3 %. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.`)
         : `<strong>Den råa löneskillnaden (${_raGapText(r, v => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : 'är statistiskt obetydligt redan utan kontroller'}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
@@ -782,17 +709,17 @@ export function renderRegressionCard() {
     // Tröskelvärdena är verktygets egna gränser (inte lagstadgade): n<50 = litet
     // urval; <15 obs/parameter = överanpassningsrisk; KI-bredd >10 p.e. =
     // instabil punktskattning; <10 av ena könet = svag könskontrast.
-    const _obsPerParam = r.n / Math.max(1, r.k);
-    const _ciWidth = (r.konPctHigh != null && r.konPctLow != null) ? (r.konPctHigh - r.konPctLow) : null;
-    const _minKon = Math.min(r.nKvAnalysed, r.nMaAnalysed);
+    const tf = vm.tillforlitlighet;
+    const _obsPerParam = tf.obsPerParam;
+    const _ciWidth = tf.kiBredd;
     const _relFlags = [];
-    if (r.n < 50)
+    if (tf.litetUrval)
         _relFlags.push(`<strong>Litet urval (n=${r.n}).</strong> Skattningen har låg statistisk styrka — även en reell skillnad kan bli "ej signifikant", och punktvärdet svänger lätt med enstaka individer.`);
-    if (_obsPerParam < 15)
+    if (tf.faObsPerParam)
         _relFlags.push(`<strong>Få observationer per modellparameter (${svTal(_obsPerParam, 0)} st på ${r.k} parametrar).</strong> Med många ${T.niva.fl} relativt urvalet blir koefficienterna instabila (överanpassningsrisk). Överväg att slå ihop sällan förekommande BAS eller analysera en delmängd.`);
-    if (_ciWidth != null && _ciWidth > 10)
+    if (tf.brettKi)
         _relFlags.push(`<strong>Brett konfidensintervall (${svTal(r.konPctLow, 1)}–${svPct(r.konPctHigh, 1)}, bredd ${svTal(_ciWidth, 1)} p.e.).</strong> Den verkliga oförklarade skillnaden kan ligga var som helst i ett brett spann. Låt inte punktvärdet ensamt avgöra en åtgärd.`);
-    if (_minKon < 10)
+    if (tf.svagKontrast)
         _relFlags.push(`<strong>Svag könskontrast (${r.nKvAnalysed} kvinnor / ${r.nMaAnalysed} män i modellen).</strong> När det ena könet är fåtaligt blir kön-koefficienten känslig för enskilda löner.`);
     const reliabilityHtml = _relFlags.length ? `
         <div class="notis-varning fs-sm lh-1_55 marg-b-12 pad-10-14" role="note">
@@ -840,7 +767,7 @@ export function renderRegressionCard() {
                 <strong>Tolkning:</strong> ${tolkning}
             </div>
 
-            ${_regTrappaVisas(stegUt) ? '<div class="chart-container mt-14"><div id="chart-reg-trappa"></div></div>' : ''}
+            ${vm.trappa ? '<div class="chart-container mt-14"><div id="chart-reg-trappa"></div></div>' : ''}
             ${waterfallHtml ? `
             <details class="marg-t-18" open>
                 <summary class="pekare fw-600 pad-8-0 ej-markerbar">Hur räknas siffran fram? (steg för steg)
@@ -852,7 +779,7 @@ export function renderRegressionCard() {
                 ${stegUt.utelamnat ? `<p class="k-mask-note">${esc(stegUt.not)}</p>` : ''}
                 ${budgetHtml}
                 ${ansvarHtml}
-                <div class="reg-waterfall${_regTrappaVisas(stegUt) ? ' sr-only' : ''}"${_regTrappaVisas(stegUt) ? ' aria-label="Stegen som lista"' : ''}>${waterfallHtml}</div>
+                <div class="reg-waterfall${vm.trappa ? ' sr-only' : ''}"${vm.trappa ? ' aria-label="Stegen som lista"' : ''}>${waterfallHtml}</div>
                 ${explainedRowHtml(budget)}
             </details>
             ` : ''}
@@ -891,14 +818,11 @@ export function renderRegressionCard() {
 
             ${(() => {
                 const qr = _regKvantilBerakna();
+                const kv = kvantilVymodell(qr);
                 _regKvantilSenast = null;
-                if (!qr) return '';
-                const validResults = qr.results.filter(x => !x.error);
-                if (validResults.length < 2) return '';
-                _regKvantilSenast = validResults;   // diagrammet ritas när kortet står i sidan
-                const p10 = qr.results.find(x => x.tau === 0.1);
-                const p50 = qr.results.find(x => x.tau === 0.5);
-                const p90 = qr.results.find(x => x.tau === 0.9);
+                if (!qr || !kv.visas) return '';
+                _regKvantilSenast = kv.giltiga;   // diagrammet ritas när kortet står i sidan
+                const { p10, p50, p90 } = kv;
                 const pctTecken = v => `${v >= 0 ? '+' : '−'}${svPct(Math.abs(v), 1)}`;
                 const peTecken = v => `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)}`;
                 const kiCell = (ki, fmt) => (ki ? `${fmt(ki.lag)} till ${fmt(ki.hog)}` : qr.kiVantar ? '<span class="f-dampad">räknas i bakgrunden…</span>' : '<span class="f-dampad">–</span>');
@@ -907,23 +831,17 @@ export function renderRegressionCard() {
                     if (!x || x.error) return `<tr><td>${label}</td><td><em class="f-dampad">Kunde ej estimeras</em></td><td>–</td><td>${helper}</td></tr>`;
                     return `<tr><td>${label}</td><td class="halvfet tabelltal">${pctTecken(x.konPct)}</td><td class="tabelltal">${kiCell(x.ki, pctTecken)}</td><td class="text-dampad-sm">${helper}</td></tr>`;
                 };
-                const diff = qr.diff || { varde: null, ki: null };
-                const diffRad = typeof diff.varde === 'number' && isFinite(diff.varde)
+                const diff = kv.diff;
+                const diffRad = kv.harDiff
                     ? `<tr><td><strong>P90 − P10</strong></td><td class="halvfet tabelltal">${peTecken(diff.varde)} procentenheter</td><td class="tabelltal">${kiCell(diff.ki, v => `${peTecken(v)}`)}</td><td class="text-dampad-sm">Skillnaden mellan toppen och botten. Negativ: löneskillnaden till kvinnornas nackdel är större bland de högst betalda</td></tr>`
                     : '';
                 // Tolkningen (ADR-63) sägs bara när bootstrap-KI:t för skillnaden P90 − P10 utesluter noll.
-                let tolkning = '';
-                if (diffRad) {
-                    if (diff.ki && diff.ki.hog < 0) {
-                        tolkning = `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`;
-                    } else if (diff.ki && diff.ki.lag > 0) {
-                        tolkning = `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`;
-                    } else if (diff.ki) {
-                        tolkning = `Ingen säkerställd skillnad mellan delarna av lönefördelningen.`;
-                    } else if (qr.kiUtelamnad) {
-                        tolkning = `Utan konfidensintervall går det inte att säga om löneskillnaden skiljer sig mellan delarna av lönefördelningen.`;
-                    }
-                }
+                const tolkning = {
+                    glastak: `<strong>Glastaket väger tyngre än det klibbiga golvet</strong> — kvinnor i den högre delen av löneskalan halkar efter mer än kvinnor i botten. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`,
+                    golv: `<strong>Det klibbiga golvet väger tyngre än glastaket</strong> — kvinnor i den lägre delen av löneskalan halkar efter mer än kvinnor i toppen. Konfidensintervallet för skillnaden mellan P90 och P10 utesluter noll.`,
+                    ingen: `Ingen säkerställd skillnad mellan delarna av lönefördelningen.`,
+                    utanIntervall: `Utan konfidensintervall går det inte att säga om löneskillnaden skiljer sig mellan delarna av lönefördelningen.`
+                }[kv.tolkning] || '';
                 if (qr.kiVantar) wrap.dataset.kvantilNyckel = qr.nyckel; else delete wrap.dataset.kvantilNyckel;
                 return `
                 <details class="mt-14" open>
@@ -1024,7 +942,7 @@ export function renderRegressionCard() {
     `; tillampaDataStil(wrap);
 
     // #lifecycle: rendera sekundäranalys efter att placeholder finns i DOM
-    renderLifecycleAnalysis(r);
+    ritaLivscykel(r);
 
     // Per-BAS-diagram + växel för statistiska detaljer (pedagogik-omgången).
     // Diagrammet ritas efter innerHTML så containern finns; tabellen är kvar
@@ -1052,7 +970,7 @@ export function renderRegressionCard() {
             const basName = /** @type {HTMLElement} */ (btn).dataset.basEvidence;
             const p = (r.perBas || []).find(x => x.bas === basName);
             if (!p) return;
-            const q = bhQByBas[basName];
+            const q = bhQByBas[p.bas];
             _openEvidenceModal(_evidenceForPerBasRow(p, { q, allM }));
         });
     });
@@ -1060,7 +978,7 @@ export function renderRegressionCard() {
 }
 
 /**
- * Renderar Blinder-Oaxaca-kortet i EU-matris-fliken (efter renderRegressionCard).
+ * Renderar Blinder-Oaxaca-kortet i EU-matris-fliken (efter ritaRegressionskort).
  * @param {any} [reg] huvudregressionens resultat från den som just kört den (ADR-17); bär det bortvalda (ADR-56)
  */
 export function renderBlinderOaxacaCard(reg) {

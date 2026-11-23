@@ -8,7 +8,7 @@
  * Designmatrisen, OLS-skattningen med HC3-robusta standardfel, testen på kön-
  * relaterade koefficienter, prediktionerna 25–65 år med 95 % KI, gapet per ålder
  * och AIC. Modellen tar raderna och golvet som parametrar och läser inget globalt
- * tillstånd. Tolkningstexten och presentationen ligger kvar i appen.
+ * tillstånd. Det analysen visar räknas i vymodellen (src/lib/vymodell-livscykel.js); orden och ritningen ligger i appen.
  *
  * Appen får modellen genom lib-speglarna (ADR-8); runLifecycleRegression() i
  * src/app/52-livscykel.js är den tunna adaptern som läser getData() och statGolv().

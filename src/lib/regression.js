@@ -811,7 +811,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
         });
     }
     const basRef = skattad.bas ? basRef0 : null;
-    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (_basEffekterForRedovisning).
+    // Antal personer per BAS-intervall i modellen: redovisningen av effekterna följer tröskeln (basEffekterForRedovisning i ktroskel.js).
     /** @type {Record<string, number>} */
     const basN = {};
     for (const d of raw) basN[d.bas] = (basN[d.bas] || 0) + 1;

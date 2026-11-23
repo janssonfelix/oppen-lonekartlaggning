@@ -9,9 +9,10 @@
 //   State sparas på state._actionChecklist (i minnet — försvinner vid reload).
 import { borjaHar } from '../lib/attgora.js';
 import { jamforbaraBas } from '../lib/datakvalitet.js';
-import { bhJustera } from '../lib/stat.js';
-import { direktivMarkering, perBasSignal } from '../lib/status.js';
+import { direktivMarkering } from '../lib/status.js';
 import { svPct, svTal } from '../lib/talformat.js';
+import { livscykelMonster } from '../lib/vymodell-livscykel.js';
+import { perBasRegression } from '../lib/vymodell-regressionskort.js';
 import { artikel, genitiv, termFras } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { andelAvMan, idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
@@ -196,17 +197,11 @@ export function buildActionChecklist({ endastGrupper = false, reg: given } = {})
         // många tester (Benjamini–Hochberg) och minst 3 % (ADR-59). Justerat tal: ingen direktivmarkering. ===
         try {
             if (reg && !reg.error && reg.perBas) {
-                // BH-justering (src/lib/stat.js bhJustera), samma tester som regressionskortet och protokollet; ett
-                // enda test ger q = p
-                const okTests = reg.perBas.filter(p => p.status === 'ok' && isFinite(p.pValue));
-                const bhQ = {};
-                const qOk = bhJustera(okTests.map(t => t.pValue));
-                okTests.forEach((t, i) => { bhQ[t.bas] = qOk[i]; });
-                reg.perBas.forEach(p => {
+                // q-värdet och signalen som i regressionskortet (perBasRegression i src/lib/vymodell-regressionskort.js)
+                perBasRegression(reg.perBas).rader.forEach(p => {
                     if (p.status !== 'ok') return;
-                    const q = bhQ[p.bas];
-                    const sig = p.pValue < 0.05 && (q == null || q < 0.05);
-                    if (perBasSignal(p.gapPct, sig, p.pValue < 0.05).niva === 'titta') {
+                    const q = p.q;
+                    if (p.niva === 'titta') {
                         items.push({
                             id: `eu-bas-${p.bas}`,
                             kategori: 'Lika arbete, fördjupning',
@@ -239,7 +234,7 @@ export function buildActionChecklist({ endastGrupper = false, reg: given } = {})
         // === 6. Livscykelanalys — växande gap ===
         try {
             const life = (typeof runLifecycleRegression === 'function') ? runLifecycleRegression(_lifecycleFixBas) : null;
-            if (life && life.ok && life.gapDelta < -2 && (life.kvAgePVal < 0.10 || life.kvAge2PVal < 0.10)) {   // kvinnor mot män: negativ förändring = växande gap
+            if (life && life.ok && livscykelMonster(life) === 'växande') {   // samma regel som livscykelanalysen (src/lib/vymodell-livscykel.js)
                 items.push({
                     id: 'livscykel-vaxer',
                     kategori: 'Livscykel',

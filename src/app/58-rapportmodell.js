@@ -30,8 +30,8 @@ import { perBasUtelamnat, rapportAvsnittIUrval, rapportDossierGrupper, rapportUr
 import { esc } from './01-html-och-tillganglighet.js';
 import { andelAvMan, ANSVARSFORBEHALL, antalText } from './03-hjalpfunktioner.js';
 import { AID_METODTEXT } from './04-ordlista.js';
-import { _konUtelamnatNot, _kSanktNot, _raGapText, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
-import { _kMaskNoteText, kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
+import { _basEffektNot, _konUtelamnatNot, _kSanktNot, _raGapText, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
@@ -524,7 +524,7 @@ function _rmAvsnittenUtanUrval() {
     // Allt som räknas, maskeras och bedöms: src/lib/vymodell-rapport.js. Här skrivs orden och delarna.
     const vm = vymodellRapport(d, { k, golv: statGolv(), bas: getBasIntervals(), reg, lika: laLikaGrupper(d, k), lvPar: lvRes && lvRes.pairs,
         oversikt: _laOversiktRader(d, undefined, k), recept: state.rapportTabeller || [],
-        basEffektNot: utelamnade => _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen') });
+        basEffektNot: utelamnade => _basEffektNot(utelamnade, k) });
     const { nKv: kvN, nMa: maN, medKv, medMa, kvotPct, konOk } = vm.sammanfattning;
     const { par, utelamnade: parUtelamnade, not: parNot } = vm.likvardigt;   // som rapportunderlaget
     const { visade: repVisade, dolda: repDolda } = vm.representation;
@@ -691,7 +691,7 @@ function _rmAvsnittenUtanUrval() {
         fyllIn('Beslutsfattare, datum och underskrift. Ange när nästa lönekartläggning ska genomföras (årligen).')] };
     // ---- Bilaga: det justerade lönegapet i detalj ----
     // Regressionens gap anges som skillnad i procent, negativ när kvinnor ligger lägre. Första steget ("Endast kön")
-    // och den förklarade andelen följer tröskeln (_regStegForRedovisning, ADR-12).
+    // och den förklarade andelen följer tröskeln (regStegForRedovisning i src/lib/ktroskel.js, ADR-12).
     const nyckel = rader => ({ typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader });
     const utanTaggar = t => _utanTaggar(t);
     /** @type {{id: string, rubrik: string, utelamnat: string[], delar: any[], [k: string]: any}} */
