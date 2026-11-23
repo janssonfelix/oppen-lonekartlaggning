@@ -347,10 +347,19 @@ prövar bara det som gäller vid en release; vad, står i huvudet i `tools/relea
 commit prövar den inte, utan testsviten och artefaktgrinden (princip 4 i [`principer.md`](principer.md)).
 
 **Arbetsflödet** `.github/workflows/release.yml` körs på en tagg `v*`: det kör grinden igen, bygger om, tar fram
-programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), signerar med Sigstore
-cosign utan nyckel och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
+programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), bygger
+valideringsrapporten, signerar med Sigstore cosign utan nyckel och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
 dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga klonen, att signeringen är utan nyckel
 och att jobbet har minsta behörighet.
+
+**Valideringsrapporten** `npm run valideringsrapport` (`tools/valideringsrapport.mjs`, prövad i
+`tests/valideringsrapport.test.js`, ADR-100) kör hela sviten med Vitests JSON-rapport och skriver
+`dist/valideringsrapport.md` och `dist/valideringsrapport.json`: byggets version och SHA-256 (ur `dist/RELEASE.txt`,
+prövad mot filen), commit, datum, Node, Vitest och jsdom, och en rad per ID i [`sparbarhet.md`](sparbarhet.md) med
+testerna vars namn bär ID:t och utfallet. Den fäller när ett ID saknar godkänt test eller något test faller. Testsviten
+körs bara här i release-arbetsflödet, inte i CI:s vanliga körning, som redan kör den delad på fyra jobb. Med en färdig
+JSON-rapport som argument (`node tools/valideringsrapport.mjs <fil>`) körs inga tester. Filerna i `dist/` är
+ignorerade, som programvaruförteckningen.
 
 **Demosidan.** `npm run site` (`tools/site.mjs`, efter `npm run bundle`) bygger `site/dist/` (startsidan ur
 `site/index.html`, bygget, `RELEASE.txt` och bildspelet `site/genomgang.html`) för valfri statisk webbplats. Sidan har inga skript och länkar till

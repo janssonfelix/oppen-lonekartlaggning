@@ -10,6 +10,11 @@ som kan ändra dem.
 
 Koden är sanningen. Där matrisen och koden skiljer sig är det matrisen som ska rättas.
 
+**Varje release har en signerad valideringsrapport** (`valideringsrapport.md` och `.json` på releasen, ADR-100): en
+rad per ID med testerna som bär det och utfallet i release-arbetsflödets körning av hela sviten, för den släppta filens
+version och SHA-256. Arbetsflödet släpper ingenting om ett ID saknar godkänt test. Hur rapporten byggs står i
+[`bygge-och-test.md`](bygge-och-test.md) avsnitt 10, och hur signaturen verifieras i [`SECURITY.md`](../../SECURITY.md).
+
 **ID:n.** Beräkningarna heter `B<avsnitt>.<rad>` (B1.1, B1.2 …) efter avsnitt 1–9 nedan. Testerna för minsta
 gruppstorlek heter efter sina serier, I1–I11 (och I1b), C2–C6 och R1–R5 (avsnitt 11), och skydden S1–S5 (avsnitt 12).
 Ett ID är stabilt: det byts aldrig och återanvänds aldrig. En rad som stryks lämnar en lucka i numreringen, och en ny

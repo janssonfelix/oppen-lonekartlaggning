@@ -40,9 +40,10 @@ snart som möjligt, och den som rapporterat nämns i versionsnyheterna om den vi
 
 ## Kontrollera att filen är äkta
 
-Varje version publiceras som en GitHub Release med sex filer: verktyget
+Varje version publiceras som en GitHub Release med tio filer: verktyget
 (`oppen-lonekartlaggning.html`), `RELEASE.txt`, programvaruförteckningen `sbom.cdx.json` (CycloneDX: de
-fyra inbyggda biblioteken med version, licens och kontrollsumma, och artefaktens kontrollsumma) och ett
+fyra inbyggda biblioteken med version, licens och kontrollsumma, och artefaktens kontrollsumma),
+valideringsrapporten `valideringsrapport.md` och `valideringsrapport.json` (se nedan) och ett
 Sigstore-paket (`.sigstore.json`) för var och en av dem. Paketet innehåller signaturen och det certifikat som Sigstore utfärdade för
 release-arbetsflödet (`.github/workflows/release.yml`) när filen byggdes ur versionens tagg; ingen
 nyckel finns att stjäla, och signeringen står i den publika transparensloggen Rekor.
@@ -56,6 +57,20 @@ cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.h
 
 Samma kommando fungerar i PowerShell på Windows (`cosign.exe`). `Verified OK` betyder att filen är
 oförändrad sedan arbetsflödet signerade den. Gör samma kontroll av `RELEASE.txt` med dess paket.
+
+**Valideringsrapporten visar att kraven prövades mot just den filen.** Release-arbetsflödet kör hela testsviten
+innan det signerar, och rapporten har en rad per krav i spårbarhetsmatrisen
+([`docs/utveckling/sparbarhet.md`](docs/utveckling/sparbarhet.md)): påståendet, funktionen och filen som gör det,
+testerna som prövar det och utfallet. Överst står version, SHA-256, commit, datum och versionerna av Node, Vitest och
+jsdom. Arbetsflödet släpper ingenting om ett krav saknar godkänt test. Verifiera rapporten med samma kommando, med
+filnamnet utbytt:
+
+```bash
+cosign verify-blob valideringsrapport.md --bundle valideringsrapport.md.sigstore.json --certificate-identity-regexp "^https://github\.com/janssonfelix/oppen-lonekartlaggning/\.github/workflows/release\.yml@refs/tags/v" --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+och jämför sedan rapportens SHA-256 med verktygsfilens (kommandona nedan). `valideringsrapport.json` har samma innehåll
+med varje testnamn och verifieras på samma sätt. Rapporten innehåller testnamn, sökvägar och versioner, inga lönedata.
 
 **Kan ni inte köra cosign: kontrollsumman i RELEASE.txt skyddar mot en skadad eller förväxlad fil.** Jämför
 filens SHA-256 med värdet i `RELEASE.txt`:

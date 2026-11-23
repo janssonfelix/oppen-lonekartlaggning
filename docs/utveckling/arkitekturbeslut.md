@@ -106,6 +106,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-97 | Funktionerna i `src/lib/` har svenska namn | Gällande | 2026-11-23 |
 | ADR-98 | Appen byggs från ES-moduler med esbuild | Gällande | 2026-11-23 |
 | ADR-99 | En vymodell per flik i `src/lib/` | Gällande | 2026-11-23 |
+| ADR-100 | Varje release har en signerad valideringsrapport | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -687,3 +688,18 @@ regel som styr vad en flik visar utan DOM och tillstånd (ADR-95, ADR-98). *Avvi
 som vakterna för `src/lib/` inte läser och som skulle kräva att de skrivs om; att låta ritfunktionen läsa tillståndet
 själv, som döljer vad vyn bygger på; HTML i vymodellen, som binder den till webbläsaren. *Gäller i dag:*
 `arkitektur.md`, `src/app/README.md`.
+
+**ADR-100 — Varje release har en signerad valideringsrapport.** Beslutat av underhållaren 2026-11-23.
+Release-arbetsflödet kör hela testsviten med Vitests JSON-rapport, och `tools/valideringsrapport.mjs` bygger ur den och
+spårbarhetsmatrisen en rapport (`valideringsrapport.md` och `.json`) med byggets version och SHA-256, commit, datum,
+Node, Vitest och jsdom, och en rad per ID: påståendet, funktion och fil, testerna vars namn bär ID:t och utfallet
+(godkänd, underkänd, saknas). Steget fäller när ett ID saknar godkänt test eller något test faller, och rapporten
+signeras med cosign och läggs på releasen som de andra filerna. Matrisen läses av samma funktion i rapporten och i
+vakten `tests/sparbarhet.test.js`. *Skäl:* en extern granskare (dataskyddsombud, IT-säkerhet, revision) ska kunna se,
+för en viss fil och dess kontrollsumma, att varje krav prövades och gick igenom, som ett valideringspaket i GAMP 5- och
+IEC 62304-anda; vakten visar bara att matris och tester pekar på varandra, inte att testerna gick igenom för det som
+släpptes. *Avvisat:* att bygga rapporten i varje CI-körning, som kostar en extra testkörning eller en sammanslagning av
+CI:s fyra delar; att hämta CI:s körning av taggen till release-arbetsflödet, som kräver ett steg mellan arbetsflödena;
+en tredjepartsaction för testrapporter (repot tillåter bara GitHubs egna och cosign-installeraren); att checka in
+rapporten, som har ett datum och skulle ändras i varje körning. *Gäller i dag:* `bygge-och-test.md` §10, `SECURITY.md`,
+`sparbarhet.md`.
