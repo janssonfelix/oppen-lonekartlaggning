@@ -29,7 +29,7 @@ import { median, linjarRegression, percentilintervall } from './stat.js';
 import { slumpFor } from './rng.js';
 import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
-import { kvantilDesign, quantileRegression } from './regression.js';
+import { kvantilDesign, kvantilregression } from './regression.js';
 import { arKvinna, arMan } from './kon.js';
 import { aidAvRad, namnrader } from './aid.js';
 
@@ -472,7 +472,7 @@ export function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B
     const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
     // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
     const hel = kvantilDesign(raw, modell, { ageMean });
-    const helBeta = results.map(r => (r.error ? null : (quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
+    const helBeta = results.map(r => (r.error ? null : (kvantilregression(hel.X, hel.y, r.tau) || {}).beta || null));
     for (let b = 0; b < B; b++) {
         const urval = new Array(n);
         for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
@@ -481,7 +481,7 @@ export function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B
             if (r.error) return null;
             const b0 = helBeta[k];
             const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
-            const fit = quantileRegression(X, y, r.tau, undefined, undefined, start);
+            const fit = kvantilregression(X, y, r.tau, undefined, undefined, start);
             return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
         });
         konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });

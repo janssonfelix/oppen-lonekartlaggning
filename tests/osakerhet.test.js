@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { percentilintervall, median } from '../src/lib/stat.js';
 import { mulberry32, slumpFor } from '../src/lib/rng.js';
 import { slumpensGranser } from '../src/lib/status.js';
-import { quantileRegressionAtAllTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
+import { kvantilregressionAllaTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
 import {
     organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, konskvotPerGrupp, regressionslinjensBand, mdeProcent, styrkeanalys, sigmaInomGrupp,
     gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter,
@@ -275,7 +275,7 @@ describe('[B4.8] kvantilBootstrap', () => {
         return { kon: kv ? 'kvinna' : 'man', lon, bas, alder };
     });
     const modell = FORKLARINGSMODELL_STANDARD;
-    const qr = quantileRegressionAtAllTau(rader, { modell });
+    const qr = kvantilregressionAllaTau(rader, { modell });
     const raw = kvantilDesign(rader, modell).rader;
     const arKv = d => d.kon.includes('kvinna');
     const kor = val => kvantilBootstrap(raw, modell, qr.results.map(r => ({ ...r, ki: null })), arKv, val);

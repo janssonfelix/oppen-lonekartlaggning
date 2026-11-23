@@ -107,7 +107,7 @@ Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och moduler
 för vad som får redovisas vid k (könen, § 3:10-paren, regressionens steg och BAS-effekter, punkterna per person,
 stämpeln och noterna) står i `ktroskel`; adaptrarna i `06-k-troskel.js` behåller appens namn och skickar tröskeln.
 Övriga moduler:
-`prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `computePerBasGap` och `computeSequentialGap` (`golv`), `flaggaIndivider` (`minGrupp`), `avvikelsePerKonOchBas` (`k`, `minGrupp`), `konskvotPerGrupp` (`k`), `lonepolitikModell` och `maskeringsniva` (`k`) och `loneoversyn` (den gällande tröskeln). Lägena och
+`prioritera` (`kTroskel`), `motiveringsgrunder` (`kInstalld`, `kTroskel`), `huvudregression` (`kInstalld`, `golv`), `gapPerBas` och `stegvisGap` (`golv`), `flaggaIndivider` (`minGrupp`), `avvikelsePerKonOchBas` (`k`, `minGrupp`), `konskvotPerGrupp` (`k`), `lonepolitikModell` och `maskeringsniva` (`k`) och `loneoversyn` (den gällande tröskeln). Lägena och
 vad som räknas med vilken tröskel står i [`k-troskeln.md`](k-troskeln.md). Modulen `undertryckning` har de två
 reglerna för vad som döljs eller räknas samman utöver de små grupperna själva: kompletterande undertryckning (ADR-83) och
 sammanslagning av delar där ett kön är för litet (ADR-87).

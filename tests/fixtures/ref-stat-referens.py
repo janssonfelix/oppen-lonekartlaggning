@@ -68,7 +68,7 @@ for tau in (0.1, 0.5, 0.9):
     smq = sm.QuantReg(y, X).fit(q=tau, max_iter=5000, p_tol=1e-10)
     quant[str(tau)] = {'beta': beta, 'loss': loss, 'statsmodelsBeta': smq.params.tolist()}
 
-# Sekventiell dekomponering (samma steg som computeSequentialGap).
+# Sekventiell dekomponering (samma steg som stegvisGap).
 seq = {
     'endastKon': ols(X[:, :2], y)['beta'],
     'plusBas': ols(np.column_stack([X[:, :2], basC]), y)['beta'],

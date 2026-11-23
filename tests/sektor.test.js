@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot } from '../src/lib/sektor.js';
-import { computeSequentialGap } from '../src/lib/regression.js';
+import { stegvisGap } from '../src/lib/regression.js';
 import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -78,7 +78,7 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         expect(v.justeratSkal).toBe('ok');
         expect(v.justerat).not.toBeNull();
         expect(v.justeratMedAlder).toBe(false);
-        const steg = computeSequentialGap(vard(false), 0, ['A', 'C', 'D'], { golv: 10, modell: { bas: true, alder: false, yrkesgrupp: false, skal: '' } });
+        const steg = stegvisGap(vard(false), 0, ['A', 'C', 'D'], { golv: 10, modell: { bas: true, alder: false, yrkesgrupp: false, skal: '' } });
         expect(v.justerat.pct).toBeCloseTo(steg.find(s => s.name === '+ BAS-intervall').gapPct, 10);
     });
     it('med ålder: samma koefficient för kön som huvudregressionen (kön + ålder + BAS som indikatorer) på samma urval', () => {
@@ -86,7 +86,7 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         const v = sektorsTabell(rader, { k: 10 })[0];
         expect(v.justeratMedAlder).toBe(true);
         const ageMean = rader.reduce((s, r) => s + r.alder, 0) / rader.length;
-        const steg = computeSequentialGap(rader, ageMean, ['A', 'C', 'D'], { golv: 10 });
+        const steg = stegvisGap(rader, ageMean, ['A', 'C', 'D'], { golv: 10 });
         expect(v.justerat.pct).toBeCloseTo(steg.find(s => s.name === '+ Ålder').gapPct, 10);
     });
     it('intervallet: HC3 och t-kvantilen vid n − k frihetsgrader, som huvudtalet', () => {

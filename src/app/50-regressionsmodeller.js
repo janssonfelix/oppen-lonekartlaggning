@@ -17,7 +17,7 @@ const _RG_STEG_YRKE = _rgStegNamn('yrkesgrupp');
 
 // Per-BAS conditional regressions: gap inom varje BAS efter ålderskontroll
 function _computePerBasGap(rows, basList) {
-    return _rgComputePerBasGap(rows, basList, { golv: statGolv() });
+    return _rgGapPerBas(rows, basList, { golv: statGolv() });
 }
 
 // ---- Ålder i lönefilen (ADR-64) ----
@@ -75,5 +75,5 @@ function runBlinderOaxaca() {
 // Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (getData()), på huvudmodellens variabler enligt
 // förklaringsmodellen utan yrkesgrupp (ADR-63).
 function runQuantileRegressionAtAllTau() {
-    return _rgQuantileRegressionAtAllTau(getData(), { modell: forklaringsmodell() });
+    return _rgKvantilregressionAllaTau(getData(), { modell: forklaringsmodell() });
 }

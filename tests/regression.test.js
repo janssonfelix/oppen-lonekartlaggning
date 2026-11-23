@@ -10,9 +10,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { anpassaOLS as fitOLSRef } from '../src/lib/stat.js';
-import { computeSequentialGap, quantileRegression, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP,
+import { stegvisGap, kvantilregression, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP,
     normaliseraForklaringsmodell, forklaringsmodellArStandard, modellFras, modellBeskrivning, modellVariabler,
-    computeVariabelTillfor, computePerBasGap, blinderOaxaca, kvantilDesign, quantileRegressionAtAllTau, harAlderIRader } from '../src/lib/regression.js';
+    variabelTillfor, gapPerBas, blinderOaxaca, kvantilDesign, kvantilregressionAllaTau, harAlderIRader } from '../src/lib/regression.js';
 import { aldersjusteradSkillnad } from '../src/lib/likvardighet.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -24,10 +24,10 @@ const refKv = las('stat-referens-kvantil.json');
 const pct = b => (Math.exp(b) - 1) * 100;
 const y = fx.design.map(d => d.y);
 
-describe('[B3.2] computeSequentialGap: steget "Endast kön"', () => {
+describe('[B3.2] stegvisGap: steget "Endast kön"', () => {
     it('könsgapet i procent matchar statsmodels-referensen', () => {
         const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
-        const steg = computeSequentialGap(fx.rows.map(r => ({ ...r })), fx.ageMean, basList, { golv: 10 });
+        const steg = stegvisGap(fx.rows.map(r => ({ ...r })), fx.ageMean, basList, { golv: 10 });
         expect(steg[0].name).toBe('Endast kön');
         expect(steg[0].status).toBe('ok');
         expect(steg[0].gapPct).toBeCloseTo(pct(ref.sekventiell.endastKon[1]), 8);
@@ -91,17 +91,17 @@ describe('förklaringsmodellen som värde (ADR-56)', () => {
     });
 });
 
-describe('computeSequentialGap med vald modell (ADR-56)', () => {
+describe('stegvisGap med vald modell (ADR-56)', () => {
     const rader = () => fx.rows.map(r => ({ ...r }));
     const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
-    const kor = modell => computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10, modell: { yrkesgrupp: false, skal: '', ...modell } });
+    const kor = modell => stegvisGap(rader(), fx.ageMean, basList, { golv: 10, modell: { yrkesgrupp: false, skal: '', ...modell } });
     const namn = steg => steg.map(s => s.name);
     it('standardmodellen ger samma steg och tal som i dag (statsmodels-referensen)', () => {
         const steg = kor({ bas: true, alder: true });
         expect(namn(steg)).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp']);
         expect(steg[0].gapPct).toBeCloseTo(pct(ref.sekventiell.endastKon[1]), 8);
         // Referensens plusBas/plusAlder är den linjära BAS-rangen (före ADR-44); stegen jämförs med dagens anrop utan modell.
-        expect(computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10 }).map(s => s.gapPct)).toEqual(steg.map(s => s.gapPct));
+        expect(stegvisGap(rader(), fx.ageMean, basList, { golv: 10 }).map(s => s.gapPct)).toEqual(steg.map(s => s.gapPct));
     });
     it('bara BAS, bara ålder, endast kön: stegen följer valet', () => {
         expect(namn(kor({ bas: true, alder: false }))).toEqual(['Endast kön', '+ BAS-intervall', '+ Yrkesgrupp']);
@@ -125,13 +125,13 @@ describe('computeSequentialGap med vald modell (ADR-56)', () => {
     });
 });
 
-describe('[B3.6] computeVariabelTillfor (ADR-56)', () => {
+describe('[B3.6] variabelTillfor (ADR-56)', () => {
     const rader = () => fx.rows.map(r => ({ ...r }));
     const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
     it('utan yrke: raderna bas och alder, ΔR² ≥ 0, gapMed = fullmodellens gap, gapUtan = stegets gap utan variabeln', () => {
-        const t = computeVariabelTillfor(rader(), fx.ageMean, basList, { golv: 10, harYrke: false });
+        const t = variabelTillfor(rader(), fx.ageMean, basList, { golv: 10, harYrke: false });
         expect(t.rader.map(r => r.variabel)).toEqual(['bas', 'alder']);
-        const standard = computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10 });
+        const standard = stegvisGap(rader(), fx.ageMean, basList, { golv: 10 });
         expect(t.full.gapPct).toBeCloseTo(standard.find(s => s.name === '+ Ålder').gapPct, 10);
         for (const r of t.rader) {
             expect(r.status).toBe('ok');
@@ -139,13 +139,13 @@ describe('[B3.6] computeVariabelTillfor (ADR-56)', () => {
             expect(r.gapMed).toBeCloseTo(t.full.gapPct, 10);
             expect(r.tillforLite).toBe(r.deltaR2pp < TILLFOR_GRANS_PP);
         }
-        const utanAlder = computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10, modell: { bas: true, alder: false, yrkesgrupp: false, skal: '' } });
+        const utanAlder = stegvisGap(rader(), fx.ageMean, basList, { golv: 10, modell: { bas: true, alder: false, yrkesgrupp: false, skal: '' } });
         expect(t.rader[1].gapUtan).toBeCloseTo(utanAlder[1].gapPct, 10);
-        const utanBas = computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10, modell: { bas: false, alder: true, yrkesgrupp: false, skal: '' } });
+        const utanBas = stegvisGap(rader(), fx.ageMean, basList, { golv: 10, modell: { bas: false, alder: true, yrkesgrupp: false, skal: '' } });
         expect(t.rader[0].gapUtan).toBeCloseTo(utanBas[1].gapPct, 10);
     });
     it('med yrke: en tredje rad som mäts ovanpå fullmodellen', () => {
-        const t = computeVariabelTillfor(rader(), fx.ageMean, basList, { golv: 10, harYrke: true });
+        const t = variabelTillfor(rader(), fx.ageMean, basList, { golv: 10, harYrke: true });
         expect(t.rader.map(r => r.variabel)).toEqual(['bas', 'alder', 'yrkesgrupp']);
         expect(t.rader[2].gapUtan).toBeCloseTo(t.full.gapPct, 10);
         expect(t.rader[2].status).toBe('ok');
@@ -160,7 +160,7 @@ describe('[B3.6] computeVariabelTillfor (ADR-56)', () => {
                 lon: Math.round(25000 * (1 + 0.15 * basar.indexOf(bas)) * Math.exp((rnd() - 0.5) * 0.02)) };
         });
         const ageMean = rows.reduce((s, r) => s + r.alder, 0) / rows.length;
-        const t = computeVariabelTillfor(rows, ageMean, basar, { golv: 10, harYrke: false });
+        const t = variabelTillfor(rows, ageMean, basar, { golv: 10, harYrke: false });
         expect(t.forslag.tabort).toEqual(['alder']);
         expect(t.rader[0].tillforLite).toBe(false);
     });
@@ -203,7 +203,7 @@ describe('kvantilDesign: kvantilregressionen på huvudmodellens design (ADR-63)'
         const d = kvantilDesign(utan, m(true, false));
         expect(d.rader).toHaveLength(100);
         expect(d.X.flat().every(Number.isFinite)).toBe(true);
-        const q = quantileRegressionAtAllTau(utan, { modell: m(true, false) });
+        const q = kvantilregressionAllaTau(utan, { modell: m(true, false) });
         expect(q.results.every(r => !r.error && Number.isFinite(r.konPct))).toBe(true);
     });
     it('samma rader som huvudregressionen: en rad utan ålder i en fil med ålder ingår inte, också med ålder bortvald', () => {
@@ -212,10 +212,10 @@ describe('kvantilDesign: kvantilregressionen på huvudmodellens design (ADR-63)'
         const d = kvantilDesign(med, m(true, false));
         expect(d.rader).toHaveLength(100);
         expect(d.rader).not.toContain(utanAlderRad);
-        expect(quantileRegressionAtAllTau(med, { modell: m(true, false) }).n).toBe(100);
+        expect(kvantilregressionAllaTau(med, { modell: m(true, false) }).n).toBe(100);
         // Huvudregressionens steg räknar inte heller raden: samma tal med och utan den.
         const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
-        const steg = rr => computeSequentialGap(rr, fx.ageMean, basList, { golv: 10, modell: m(true, false) }).map(s => s.gapPct);
+        const steg = rr => stegvisGap(rr, fx.ageMean, basList, { golv: 10, modell: m(true, false) }).map(s => s.gapPct);
         expect(steg(med)).toEqual(steg(rader()));
     });
     it('basList och ageMean kan ges utifrån; referensen är det första intervallet i listan', () => {
@@ -225,22 +225,22 @@ describe('kvantilDesign: kvantilregressionen på huvudmodellens design (ADR-63)'
     });
 });
 
-describe('[B3.5] quantileRegressionAtAllTau på indikatormodellen (ADR-63)', () => {
+describe('[B3.5] kvantilregressionAllaTau på indikatormodellen (ADR-63)', () => {
     it('tar förklaringsmodellen, inte en rangfunktion, och ger könsprocenten per τ och skillnaden P90 − P10', () => {
-        const q = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })));
+        const q = kvantilregressionAllaTau(fx.rows.map(r => ({ ...r })));
         expect(q.n).toBe(100);
         expect(q.kolumner).toEqual(refKv.standard.kolumner);
         expect(q.results.map(r => r.tau)).toEqual([0.1, 0.5, 0.9]);
         for (const r of q.results) expect(Math.abs(r.konPct - pct(refKv.standard[String(r.tau)].beta[1]))).toBeLessThan(0.3);
         expect(q.diffP90P10).toBeCloseTo(q.results[2].konPct - q.results[0].konPct, 12);
         // En rang-parameter har ingen verkan längre.
-        const medRang = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })), { rang: () => () => 1 });
+        const medRang = kvantilregressionAllaTau(fx.rows.map(r => ({ ...r })), { rang: () => () => 1 });
         expect(medRang.results).toEqual(q.results);
     });
-    it('samma skattning som quantileRegression på kvantilDesign (appen och bootstrappen delar matrisen)', () => {
+    it('samma skattning som kvantilregression på kvantilDesign (appen och bootstrappen delar matrisen)', () => {
         const d = kvantilDesign(fx.rows.map(r => ({ ...r })), FORKLARINGSMODELL_STANDARD);
-        const q = quantileRegressionAtAllTau(fx.rows.map(r => ({ ...r })));
-        for (const r of q.results) expect(r.konPct).toBe(pct(quantileRegression(d.X, d.y, r.tau).beta[1]));
+        const q = kvantilregressionAllaTau(fx.rows.map(r => ({ ...r })));
+        for (const r of q.results) expect(r.konPct).toBe(pct(kvantilregression(d.X, d.y, r.tau).beta[1]));
     });
 });
 
@@ -274,20 +274,20 @@ describe('modellerna utan ålder i lönefilen (ADR-64)', () => {
         expect(normaliseraForklaringsmodell(null).modell).toEqual({ ...FORKLARINGSMODELL_STANDARD });
         expect(FORKLARINGSMODELL_STANDARD.alder).toBe(true);
     });
-    it('computeSequentialGap räknar kön och BAS utan åldersteg', () => {
-        const steg = computeSequentialGap(utanAlder(), 0, ['A', 'B', 'C'], { golv: 10 });
+    it('stegvisGap räknar kön och BAS utan åldersteg', () => {
+        const steg = stegvisGap(utanAlder(), 0, ['A', 'B', 'C'], { golv: 10 });
         expect(steg.map(s => s.name)).not.toContain('+ Ålder');
         expect(steg[0].status).toBe('ok');
         expect(steg.find(s => s.name === '+ BAS-intervall').status).toBe('ok');
     });
-    it('computeVariabelTillfor utan ålder: fullmodellen är kön + BAS och ålder har ingen rad', () => {
-        const t = computeVariabelTillfor(utanAlder(), 0, ['A', 'B', 'C'], { golv: 10 });
+    it('variabelTillfor utan ålder: fullmodellen är kön + BAS och ålder har ingen rad', () => {
+        const t = variabelTillfor(utanAlder(), 0, ['A', 'B', 'C'], { golv: 10 });
         expect(t.full.status).toBe('ok');
         expect(t.rader.map(x => x.variabel)).not.toContain('alder');
         expect(t.forslag.tabort).not.toContain('alder');
     });
-    it('[B3.3] computePerBasGap kör kön utan ålderskolumn', () => {
-        const ut = computePerBasGap(utanAlder(), ['A', 'B', 'C'], { golv: 10 });
+    it('[B3.3] gapPerBas kör kön utan ålderskolumn', () => {
+        const ut = gapPerBas(utanAlder(), ['A', 'B', 'C'], { golv: 10 });
         expect(ut).toHaveLength(3);
         for (const b of ut) {
             expect(b.status).toBe('ok');
@@ -304,8 +304,8 @@ describe('modellerna utan ålder i lönefilen (ADR-64)', () => {
         expect(bo.n).toBe(180);
         expect(bo._raw.q + bo._raw.u + bo._raw.i).toBeCloseTo(bo._raw.rawGapLog, 9);
     });
-    it('quantileRegressionAtAllTau skattar utan ålderskolumn', () => {
-        const q = quantileRegressionAtAllTau(utanAlder());
+    it('kvantilregressionAllaTau skattar utan ålderskolumn', () => {
+        const q = kvantilregressionAllaTau(utanAlder());
         expect(q).not.toBeNull();
         expect(q.n).toBe(180);
         for (const r of q.results) expect(Number.isFinite(r.konPct)).toBe(true);
@@ -323,20 +323,20 @@ describe('modellerna filtrerar själva bort rader de inte kan räkna', () => {
     const okand = () => ({ ...fx.rows[0], kon: 'okänt', lon: fx.rows[0].lon * 3 });
     const utanLon = () => ({ ...fx.rows[1], lon: 0 });
     const gap = steg => steg.map(s => [s.name, s.status, s.gapPct]);
-    it('computeSequentialGap: rad med okänt kön eller lön 0 räknas inte', () => {
-        const utan = computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10 });
-        const med = computeSequentialGap([...rader(), okand(), utanLon()], fx.ageMean, basList, { golv: 10 });
+    it('stegvisGap: rad med okänt kön eller lön 0 räknas inte', () => {
+        const utan = stegvisGap(rader(), fx.ageMean, basList, { golv: 10 });
+        const med = stegvisGap([...rader(), okand(), utanLon()], fx.ageMean, basList, { golv: 10 });
         expect(gap(med)).toEqual(gap(utan));
     });
-    it('computeVariabelTillfor: rad med okänt kön eller lön 0 räknas inte', () => {
-        const utan = computeVariabelTillfor(rader(), fx.ageMean, basList, { golv: 10, harYrke: true });
-        const med = computeVariabelTillfor([...rader(), okand(), utanLon()], fx.ageMean, basList, { golv: 10, harYrke: true });
+    it('variabelTillfor: rad med okänt kön eller lön 0 räknas inte', () => {
+        const utan = variabelTillfor(rader(), fx.ageMean, basList, { golv: 10, harYrke: true });
+        const med = variabelTillfor([...rader(), okand(), utanLon()], fx.ageMean, basList, { golv: 10, harYrke: true });
         expect(med.full).toEqual(utan.full);
         expect(med.rader).toEqual(utan.rader);
     });
     it('rad med ålder 0 räknas inte när lönefilen har ålder', () => {
-        const utan = computeSequentialGap(rader(), fx.ageMean, basList, { golv: 10 });
-        const med = computeSequentialGap([...rader(), { ...fx.rows[2], alder: 0 }], fx.ageMean, basList, { golv: 10 });
+        const utan = stegvisGap(rader(), fx.ageMean, basList, { golv: 10 });
+        const med = stegvisGap([...rader(), { ...fx.rows[2], alder: 0 }], fx.ageMean, basList, { golv: 10 });
         expect(gap(med)).toEqual(gap(utan));
     });
 });

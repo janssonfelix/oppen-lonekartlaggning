@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { forstaSkillnad } from './helpers/forsta-skillnad.js';
-import { kvantilDesign, quantileRegressionAtAllTau } from '../src/lib/regression.js';
+import { kvantilDesign, kvantilregressionAllaTau } from '../src/lib/regression.js';
 import {
     organisationensKvotKI, styrkeanalys, gruppMde, regressionslinjensBand, extremvarden, medianKvotKI, medianKvotKIGiltiga,
     trattUnderlag, kvantilBootstrap
@@ -84,7 +84,7 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
                     it('_regKvantilBootstrap', () => {
                         const modell = w.eval('forklaringsmodell()');
                         const raw = kvantilDesign(d, modell).rader;
-                        const results = quantileRegressionAtAllTau(d, { modell }).results;
+                        const results = kvantilregressionAllaTau(d, { modell }).results;
                         w.__arg = { raw, modell, results: results.map(r => ({ ...r, ki: null })) };
                         const app = w.eval(`_regKvantilBootstrap(window.__arg.raw, window.__arg.modell, window.__arg.results, d => d.kon.includes('kvinna'))`);
                         delete w.__arg;

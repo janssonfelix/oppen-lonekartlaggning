@@ -28,7 +28,7 @@ function _methodAppendixData() {
     const modellText = (medAlder && !modell.yrkesgrupp
         ? beskrivning.replace(`${T.niva.en} (indikatorer)`, `${T.niva.en} (indikatorvariabler, första BAS som referens)`)
         : beskrivning) + (modell.yrkesgrupp ? ', skattat med inomtransformation' : '');
-    // Steget + Yrkesgrupp räknas på modellens ålder och bara när BAS är med (computeSequentialGap).
+    // Steget + Yrkesgrupp räknas på modellens ålder och bara när BAS är med (stegvisGap).
     const stegAlder = medAlder ? (modell.alder ? ' utöver ålder' : ', utan ålder (bortvald i förklaringsmodellen)') : ', utan ålder (lönefilen saknar ålder)';
     const stegText = !modell.bas
         ? `Räknas inte: steget förutsätter ${T.niva.en}, som är ${termAdjektiv('bortvald', T.niva)} i förklaringsmodellen`

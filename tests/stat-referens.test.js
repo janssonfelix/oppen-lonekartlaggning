@@ -45,13 +45,13 @@
  *     vid df 5, 10, 26 och 99. Toleranserna i testerna av tFordelningCdf och pVardeTvasidigt (3e-3 vid df 5 ned till 1e-5
  *     vid df 99) sattes efter felen i Hills approximation, som funktionen byggde på före ADR-45. De är äldre och
  *     generösare än funktionen kräver, och de är inte skärpta.
- *   - quantileRegression (IRLS, src/lib/regression.js): könskoefficienten avviker 0,21 procentenheter från den exakta
+ *   - kvantilregression (IRLS, src/lib/regression.js): könskoefficienten avviker 0,21 procentenheter från den exakta
  *     lösningen vid τ = 0,5 men under 0,002 procentenheter vid τ = 0,1 och 0,9. Under den
  *     rapporteringsgräns på 0,5 procentenheter uppdraget satte; algoritmen är oförändrad.
  *   - Blinder-Oaxaca: komponenterna inom 1e-12.
  *   - bhJustera: q-värdena inom 1e-12 av statsmodels.
  *   - HC3 och klassisk kovarians med AID-etikett inom BAS: standardfelen inom relativt 3e-15 av statsmodels.
- *   - quantileRegressionAtAllTau på indikatormodellen: könskoefficienten inom 0,001 procentenheter av LP-lösningen
+ *   - kvantilregressionAllaTau på indikatormodellen: könskoefficienten inom 0,001 procentenheter av LP-lösningen
  *     (bara BAS: 0,012 vid τ = 0,1), förlusten inom relativt 4e-5. Vid τ = 0,5 är LP-optimum inte unikt (medianen i
  *     ett intervall med jämnt antal personer är ett spann), så IRLS landar på en annan punkt på samma optimala yta:
  *     intercept och BAS-koefficienter avviker upp till 0,012 men förlusten bara relativt 2e-7. Där jämförs därför
@@ -63,7 +63,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { anpassaOLS, tFordelningCdf, pVardeTvasidigt, bhJustera } from '../src/lib/stat.js';
 import { basRangordning } from '../src/lib/likvardighet.js';
-import { quantileRegression, kvantilDesign, computeSequentialGap } from '../src/lib/regression.js';
+import { kvantilregression, kvantilDesign, stegvisGap } from '../src/lib/regression.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -156,7 +156,7 @@ describe('[B3.5] kvantilregression (IRLS) mot exakt LP-lösning (≡ quantreg::r
     const tolBeta = 3e-3, tolKonPp = 0.3;
     for (const tau of ['0.1', '0.5', '0.9']) {
         it(`τ = ${tau}: alla β inom ${tolBeta}, könskoefficienten inom ${tolKonPp} procentenheter`, () => {
-            const fit = quantileRegression(X, y, +tau);
+            const fit = kvantilregression(X, y, +tau);
             expect(fit).not.toBeNull();
             const rb = ref.quantreg[tau].beta;
             rb.forEach((b, i) => expect(Math.abs(fit.beta[i] - b)).toBeLessThan(tolBeta));
@@ -194,7 +194,7 @@ describe('kvantilregressionen på indikatormodellen mot exakt LP-lösning (ADR-6
         for (const tau of ['0.1', '0.5', '0.9']) {
             it(`${namn}, τ = ${tau}: könskoefficienten inom ${tolKonPp} procentenheter, förlusten vid optimum${tau === '0.5' ? '' : `, alla β inom ${tolBeta}`}`, () => {
                 const Xd = design(medAlder);
-                const fit = quantileRegression(Xd, y0, +tau);
+                const fit = kvantilregression(Xd, y0, +tau);
                 const rb = refKv[namn][tau].beta;
                 expect(rb).toHaveLength(refKv[namn].kolumner.length);
                 if (tau !== '0.5') rb.forEach((b, i) => expect(Math.abs(fit.beta[i] - b)).toBeLessThan(tolBeta));
@@ -223,7 +223,7 @@ describe('[B3.2] sekventiell dekomponering (BAS som indikatorer, ADR-44)', () =>
     it('könsgapet i varje steg (kön; + BAS-indikatorer; + ålder; + yrkesgrupp)', () => {
         const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
         // golv 10 = statGolv() vid k-tröskelns standardvärde, det appen skickar i ett nytt fönster.
-        const steg = computeSequentialGap(fx.rows.map(r => ({ ...r })), fx.ageMean, basList, { golv: 10 });
+        const steg = stegvisGap(fx.rows.map(r => ({ ...r })), fx.ageMean, basList, { golv: 10 });
         // Fixturen har ett yrke per BAS, så steget + Yrkesgrupp (inomtransformation på AID×BAS,
         // ADR-46) ska ge exakt samma könskoefficient som + Ålder med BAS-indikatorer
         // (Frisch–Waugh–Lovell) — en kontroll av inomskattaren mot indikatormodellen.

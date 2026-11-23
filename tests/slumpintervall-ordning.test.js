@@ -12,7 +12,7 @@ import { mulberry32, slumpFor } from '../src/lib/rng.js';
 import { omkastningsGranser, slumpensGranser, bedomSkillnad } from '../src/lib/status.js';
 import { bootstrapMedianer, bootstrapMedianskillnadKr, bootstrapMedianMotKonstantKr } from '../src/lib/likvardighet.js';
 import { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, trattUnderlag, kvantilBootstrap } from '../src/lib/osakerhet.js';
-import { quantileRegressionAtAllTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
+import { kvantilregressionAllaTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
 
 // Påhittade löner i steg om 250 kr, så att många löner är lika, också mellan könen. Kvinnornas ligger lite lägre.
 const loner = (n, s, forskjutning = 0) => Array.from({ length: n }, (_, i) => 30000 + forskjutning + 250 * ((i * 7919 + s) % 23));
@@ -103,7 +103,7 @@ describe('kvantilregressionens intervall i två ordningar', () => {
     const modell = FORKLARINGSMODELL_STANDARD;
     const arKv = d => d.kon.includes('kvinna');
     const kor = rr => {
-        const qr = quantileRegressionAtAllTau(rr, { modell });
+        const qr = kvantilregressionAllaTau(rr, { modell });
         return kvantilBootstrap(kvantilDesign(rr, modell).rader, modell, qr.results.map(r => ({ ...r, ki: null })), arKv, { B: 40 });
     };
     it('ger samma intervall per τ och för P90 − P10', () => {

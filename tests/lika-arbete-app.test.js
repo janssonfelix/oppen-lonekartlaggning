@@ -359,7 +359,7 @@ describe('ansvarskod i Lika arbete', () => {
     });
     it('den sekventiella dekomponeringen får steget + Ansvar sist när raderna har ansvarsgrupp', () => {
         const w = oppna(true);
-        const steg = w.eval(`(() => { const d = getData(); return _rgComputeSequentialGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
+        const steg = w.eval(`(() => { const d = getData(); return _rgStegvisGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
         expect(steg).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp', '+ Ansvar']);
     });
     it('kortet visar ansvaret på en egen rad under budgeten, inte i den', () => {
