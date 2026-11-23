@@ -85,19 +85,19 @@ const _nText = c => `${c.n} (${c.nKv}/${c.nMa})`;
 /**
  * Tabellerna ur ett recept, i rapportmodellens form: { rubrik, kolumner: [{rubrik, typ}], rader: [[...]], utelamnade, not }.
  * Flera tabeller när receptet upprepas per BAS-intervall. Tröskeln k tillämpas här.
- * @param {any[]} rows
+ * @param {any[]} allaRader
  * @param {any} recept
  * @param {{k?: number}} [opt]
  * @returns {Array<{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], utelamnade: number, not: string}>}
  */
-export function receptTillTabeller(rows, recept, { k = 10 } = {}) {
+export function receptTillTabeller(allaRader, recept, { k = 10 } = {}) {
     const r = valideraRecept(recept);
     if (!r) return [];
     const bygg = (rader, rubrik) => _tabell(pivottabell(rader, r.spec, { k }), r.spec, k, rubrik);
     if (r.upprepa === 'bas') {
-        return /** @type {any[]} */ (_bas(rows).map(b => bygg(rows.filter(x => String(x.bas) === b), `${r.namn} — BAS ${b}`)).filter(t => t && t.rader.length));
+        return /** @type {any[]} */ (_bas(allaRader).map(b => bygg(allaRader.filter(x => String(x.bas) === b), `${r.namn} — BAS ${b}`)).filter(t => t && t.rader.length));
     }
-    const t = bygg(rows, r.namn);
+    const t = bygg(allaRader, r.namn);
     return t && t.rader.length ? [t] : [];   // en tabell där ingen grupp når tröskeln utelämnas (anroparen anger det)
 }
 
