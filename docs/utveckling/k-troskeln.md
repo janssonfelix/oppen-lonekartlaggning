@@ -7,7 +7,7 @@ ut, undantagen, golven, inställningen och vakterna. Koden är sanningen; där d
 dokumentet som ska rättas.
 
 Dokumentet är inte beslutsloggen. Varför det är så här, vad som övervägdes och när det beslutades står i besluten i
-[`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-12, 14, 23, 38, 47, 48, 51, 57, 69 och 70. Diagrammens del — figurens
+[`arkitekturbeslut.md`](arkitekturbeslut.md): ADR-12, 14, 23, 38, 47, 48, 51, 57, 69, 70 och 102. Diagrammens del — figurens
 `liten`-flagga, vyns skyldigheter och kraven på varje vy — står i [`diagramkarnan.md`](diagramkarnan.md) §1 och §7–8
 och upprepas inte här. Hur skyddet och undantagen beskrivs för dataskyddsombudet står i `docs/dataskydd/dataskydd.md`
 §3 och i riskanalysen (`docs/dataskydd/riskanalys.md` §6.5).
@@ -401,8 +401,9 @@ Tröskeln är redovisningens gräns. Skattningar och några tabeller har egna go
 
 ## 6. Inställningen
 
-**Värdet.** Minsta gruppstorlek är en inställning: standard `K_STANDARD = 10`, tillåtet intervall `K_MIN = 2` till
-`K_MAX = 1000`, bara hela tal. `sattKTroskel(v, { fraga, rita, stegvis })` är enda vägen att ändra det; `kTroskel()`
+**Värdet.** Minsta gruppstorlek är en inställning: standard `K_STANDARD = 10`, tillåtet intervall `K_MIN = 3` till
+`K_MAX = 1000`, bara hela tal. Lägst 3, eftersom två personer i en grupp med tröskeln 2 kan räkna fram varandras
+lön ur gruppens medelvärde eller summa (ADR-102). `sattKTroskel(v, { fraga, rita, stegvis })` är enda vägen att ändra det; `kTroskel()`
 och `kInstalld()` läser det (avsnitt 1). Fältet ligger i panelen Inställningar (ADR-41), med en återställningsknapp.
 Appens texter fylls i ur värdet (`data-k-troskel`, `data-k-tooltip` med `{k}` och `{golv}`, `_kText`); dokumenten anger
 standardvärdet.
@@ -422,7 +423,7 @@ ogiltigt värde ignoreras med en varning. Paketformuläret fylls i med gällande
 paketet ingen tröskel. Ett ogiltigt värde i formuläret stoppar sparandet med samma felmeddelande som fältet.
 
 **Låsningarna ur organisationspaketet (ADR-47).** Paketets `installningar` har tre valfria fält som låser det
-handläggaren annars ställer in själv: `kTroskelLagst` (heltal 2–1000), `inaktivitetMin` (0 eller 5–120) med
+handläggaren annars ställer in själv: `kTroskelLagst` (heltal 3–1000), `inaktivitetMin` (0 eller 5–120) med
 `inaktivitetLast` (boolean) och `smaGrupperIExport` (boolean, standard tillåtet). Alla tre normaliseras i
 `src/lib/organisationspaket.js` (`_lasningar`): ett ogiltigt värde utelämnas med en varning, läget av (0) kan inte
 låsas, och paketets egen `kTroskel` under golvet höjs till golvet. Låsningarna bor i `state.paketLas`

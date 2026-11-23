@@ -166,8 +166,9 @@ describe('årsbokslut: löneutveckling per BAS-intervall (basIntervall)', () => 
 });
 
 describe('årsbokslut: förra årets fil kan ha sparats med en lägre tröskel', () => {
-    it('k under 2 i filen höjs till 2, och jämförelsen tillämpar den högre av årens gränser på förra årets rader', () => {
-        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 1 }).k).toBe(2);
+    it('k under 3 i filen höjs till 3 (ADR-102), och jämförelsen tillämpar den högre av årens gränser på förra årets rader', () => {
+        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 1 }).k).toBe(3);
+        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 2 }).k).toBe(3);
         const forra = bokslut(2025, { k: 5,
             grupper: [{ yrke: 'Liten (BAS A)', nKv: 6, nMa: 7, medKv: 66661, medMa: 66663, gapPct: -3, flaggad: true }],
             basIntervall: [

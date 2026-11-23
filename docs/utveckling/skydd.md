@@ -69,7 +69,7 @@ utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som 
 
 *Varför:* att förhindra återidentifiering i det som sprids.
 *Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
-51, 57, 69, 70, 83, 87, 88, 91, 92.
+51, 57, 69, 70, 83, 87, 88, 91, 92, 102.
 *Vakt:* testerna i matrisens rad S4 och serierna i dess avsnitt 11. Invarianten I4 ritar flikarna i exportläget och
 bygger exporterna vid tröskeln 10 och 25. Invarianten har också differensprovet (ADR-88, `differensprov` i
 `tests/helpers/differens.js`), på samma utdata: varje tabell i den (HTML-tabellerna i exportläget och i rapporterna, Excel-bladen, tabellernas CSV och diagramdatan) vars

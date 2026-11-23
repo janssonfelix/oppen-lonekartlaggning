@@ -46,7 +46,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-35 | Jämförelsestatistik: alla percentiler i en tabell och två diagram | Ändrad av ADR-55 | – |
 | ADR-36 | Filrutorna syns alltid; namn på organisationen och jämförelsestatistiken | Gällande | – |
 | ADR-37 | Word-utkastet som riktig .docx | Gällande | – |
-| ADR-38 | K-tröskeln är en inställning | Ändrad av ADR-51 och ADR-69 | – |
+| ADR-38 | K-tröskeln är en inställning | Ändrad av ADR-51, ADR-69 och ADR-102 | – |
 | ADR-39 | Diagramkärna på D3 med eget figurformat | Gällande | – |
 | ADR-40 | Fyra exporter med var sin uppgift, ritade ur en rapportmodell | Gällande | – |
 | ADR-41 | Flikmallen: resultatet först | Ändrad av ADR-82 | – |
@@ -108,6 +108,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-99 | En vymodell per flik i `src/lib/` | Gällande | 2026-11-23 |
 | ADR-100 | Varje release har en signerad valideringsrapport | Gällande | 2026-11-23 |
 | ADR-101 | Releasen attesteras och bygget prövas reproducerbart | Gällande | 2026-11-23 |
+| ADR-102 | Minsta gruppstorlek är lägst 3 | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -719,3 +720,14 @@ attesteringen, som binder verifieringen till GitHub; `SOURCE_DATE_EPOCH` eller c
 eftersom bygget inte läser klockan; att normalisera radsluten i bundlern, som inte når källan esbuild läser;
 tredjepartsactions för att jämföra byggen (repot tillåter bara GitHubs egna och cosign-installeraren). *Gäller i dag:*
 `bygge-och-test.md` §2, §9 och §10, `SECURITY.md`.
+
+**ADR-102 — Minsta gruppstorlek är lägst 3.** Beslutat av underhållaren 2026-11-23. Ändrar ADR-38: det tillåtna
+intervallet för minsta gruppstorlek är 3–1000 i stället för 2–1000 (`K_MIN` i `src/lib/ktroskel.js`), också för
+organisationspaketets `kTroskel` och golvet `kTroskelLagst`, och ett årsbokslut sparat med en lägre tröskel läses med
+3. Ett värde 2 behandlas som andra ogiltiga värden: en konfigurationsfil med det avvisas, och i ett organisationspaket
+används det inte och ger en varning. *Skäl:* med tröskeln 2 kan två personer i en grupp räkna fram varandras lön ur
+gruppens medelvärde eller summa, vilket är det röjande som tröskeln finns för att stoppa. Rådet för den officiella
+statistiken, [*Handbok i statistisk röjandekontroll*](https://scb.se/contentassets/0cd92207266d40eb8829244d51d90b94/handbok-i-statistisk-rojandekontroll.pdf)
+(2015, uppdaterad 2018), avsnitt 5.1, s. 40: tröskelvärdet måste
+vara minst 3. Standardvärdet 10 och friheten att sänka det med bekräftelse (ADR-38) står kvar. *Gäller i dag:*
+`k-troskeln.md` §6.

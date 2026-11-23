@@ -7,6 +7,12 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 Från och med nästa version har varje version en rad per ändring som en användare märker. Detaljerna står i
 referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
+## Oförlöst
+
+- **Minsta gruppstorlek är lägst 3.** Med tröskeln 2 kan två personer i en grupp räkna fram varandras lön. En
+  konfigurationsfil med tröskeln 2 avvisas, och i ett organisationspaket används värdet inte (tröskeln eller golvet)
+  och ger en varning (ADR-102).
+
 ## 2026.11.22
 
 - **Protokollet för gemensam lönebedömning redovisar alla grupper i lika arbete** i det nya bladet *2a. Lika arbete,

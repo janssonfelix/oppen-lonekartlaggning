@@ -358,7 +358,7 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   under tröskeln får ingen rad och namnges i en not; är bara könsuppdelningen för liten står gruppens samlade median
   utan könsjämförelse. Könsuppdelade mått kräver tröskeln för varje kön.
 - **Tröskeln är en inställning (ADR-38).** Standardvärdet är 10. Användaren kan ändra värdet under **Inställningar**
-  (heltal 2–1 000), och inget lagras mellan sessioner. En sänkning kräver bekräftelse, också när värdet kommer ur en
+  (heltal 3–1 000, ADR-102), och inget lagras mellan sessioner. En sänkning kräver bekräftelse, också när värdet kommer ur en
   konfigurationsfil eller ett organisationspaket, och ger en varning som inte går att stänga. Värdet står i
   metodbilagan, i diagramdata och i tabell-CSV, och under 10 står meningen "Tröskeln är sänkt från standardvärdet 10."
   dessutom på det som kan spridas för sig (`docs/utveckling/k-troskeln.md` avsnitt 6–7).

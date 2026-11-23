@@ -46,7 +46,7 @@ personnummer eller e-postadresser.
    t.ex. *Lönepolitiskt ställningstagande 2026*, och en kort form som *ställningstagandet*. Fältet
    *Minsta gruppstorlek för redovisning* är ifyllt med det värde som gäller just nu. Lämna det tomt
    om paketet inte ska ange något. Ett ogiltigt
-   värde (inte ett heltal mellan 2 och 1000) stoppar sparandet.
+   värde (inte ett heltal mellan 3 och 1000) stoppar sparandet.
 5. Fyll i låsningarna om organisationen vill ha dem (avsnitt 5): *Lägsta tillåtna minsta
    gruppstorlek*, *Rensning vid inaktivitet* med rutan *Lås rensningstiden*, och rutan *Små
    grupper får tas med i exporten från Tabeller och egna vyer*. Tomma fält betyder att paketet inte anger något.
@@ -109,7 +109,7 @@ förvald; ett paket utan fälten låser ingenting.
 
 | Låsning | Fält i formuläret | Vad som gäller när paketet är inläst |
 |---|---|---|
-| Golv för minsta gruppstorlek | *Lägsta tillåtna minsta gruppstorlek* (heltal 2–1000) | Minsta gruppstorlek kan inte sättas under värdet — inte i *Inställningar*, inte ur en konfigurationsfil och inte av ett annat paket som läses in senare. Fältet i *Inställningar* visar gränsen ("lägst N enligt organisationspaketet") och avvisar lägre värden med samma felmeddelande som ett ogiltigt värde. Är gällande tröskel lägre när paketet läses in höjs den till golvet. Paketets egen *Minsta gruppstorlek* får inte ligga under golvet |
+| Golv för minsta gruppstorlek | *Lägsta tillåtna minsta gruppstorlek* (heltal 3–1000) | Minsta gruppstorlek kan inte sättas under värdet — inte i *Inställningar*, inte ur en konfigurationsfil och inte av ett annat paket som läses in senare. Fältet i *Inställningar* visar gränsen ("lägst N enligt organisationspaketet") och avvisar lägre värden med samma felmeddelande som ett ogiltigt värde. Är gällande tröskel lägre när paketet läses in höjs den till golvet. Paketets egen *Minsta gruppstorlek* får inte ligga under golvet |
 | Låst rensningstid | *Rensning vid inaktivitet* (0 = av, eller 5–120 minuter) och rutan *Lås rensningstiden* | Rullistan under *Vad lagras?* står på värdet och går inte att ändra; en rad säger att organisationspaketet har låst tiden. Utan rutan är värdet bara en förinställning som handläggaren kan ändra. Läget *Av* (0) kan inte låsas |
 | Små grupper i exporten från Tabeller och egna vyer | Rutan *Små grupper får tas med i exporten från Tabeller och egna vyer* (förvald) | Avkryssad: rutan "Ta med grupper under tröskeln i exporten" i Tabeller och egna vyer är dold, och exporten utelämnar alltid små grupper. En rad säger att organisationspaketet inte tillåter det |
 

@@ -116,8 +116,8 @@ describe('texterna om tröskeln', () => {
         expect(kText('{k} {golv}', 12)).toBe('12 12');
         expect(kText(null, 5)).toBe('');
     });
-    it('kTolka: bara rena heltal 2–1000', () => {
-        expect([1, 2, '10', ' 1000 ', 1001, '2.5', '-3', 'x', null, 7.5].map(kTolka)).toEqual([null, 2, 10, 1000, null, null, null, null, null, null]);
+    it('kTolka: bara rena heltal 3–1000 (ADR-102)', () => {
+        expect([1, 2, 3, '10', ' 1000 ', 1001, '2.5', '-3', 'x', null, 7.5].map(kTolka)).toEqual([null, null, 3, 10, 1000, null, null, null, null, null, null]);
     });
 });
 

@@ -446,7 +446,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(w.eval('kTroskelLagst()')).toBeNull();
         expect(w.eval('kInstalld()')).toBe(10);
         expect(w.document.getElementById('k-troskel-hjalp').textContent).toBe('Standard 10. Ändringen räknar om alla flikar.');
-        expect(w.document.getElementById('k-troskel').min).toBe('2');
+        expect(w.document.getElementById('k-troskel').min).toBe('3');
         expect(w.document.getElementById('btn-k-aterstall').textContent).toBe('Återställ till 10');
         expect(w.eval('sattKTroskel(5, { fraga: false })').ok).toBe(true);
     });
@@ -461,7 +461,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(w.document.getElementById('paket-status').textContent).toMatch(/sparades inte.*5 är lägre än lägsta tillåtna 8/);
         w.document.getElementById('paket-k-lagst').value = '1';
         w.document.getElementById('btn-paket-spara').click();
-        expect(w.document.getElementById('paket-status').textContent).toMatch(/sparades inte.*Lägsta tillåtna minsta gruppstorlek: Ange ett heltal mellan 2 och 1000/);
+        expect(w.document.getElementById('paket-status').textContent).toMatch(/sparades inte.*Lägsta tillåtna minsta gruppstorlek: Ange ett heltal mellan 3 och 1000/);
     });
 });
 

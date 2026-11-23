@@ -53,12 +53,12 @@ describe('[C2] Struktur per BAS visar inget könsgap när ett kön är under tr�
         }
         expect(el.textContent).toMatch(/ett av könen har färre än 10 personer/);
     });
-    it('i exportläget vid 2 visas gapet för Y2 och Y3 (2 och 3 män)', () => {
-        const w = iExport(fonsterKon(2));
+    it('i exportläget vid 3 (lägsta tillåtna, ADR-102) visas gapet för Y3 (3 män) men inte för Y1 och Y2', () => {
+        const w = iExport(fonsterKon(3));
         w.__renderTabContent('struktur');
         const t = w.document.getElementById('struktur-representation').innerHTML;
-        expect(radFor(t, 'Y2')).toContain((KON_KV[1] / KON_MA[1] * 100).toFixed(1).replace('.', ','));   // kvinnors median i % av mäns
-        expect(radFor(t, 'Y1')).toMatch(/–[\s|]*$/);   // en enda man: under tröskeln 2
+        expect(radFor(t, 'Y3')).toContain((KON_KV[2] / KON_MA[2] * 100).toFixed(1).replace('.', ','));   // kvinnors median i % av mäns
+        for (const bas of ['Y1', 'Y2']) expect(radFor(t, bas), bas).toMatch(/–[\s|]*$/);   // en och två män: under tröskeln 3
     });
 });
 

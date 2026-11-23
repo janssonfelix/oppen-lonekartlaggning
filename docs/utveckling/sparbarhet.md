@@ -199,8 +199,8 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 
 | Namn | Värde | Fil | Vad det styr | Vem ändrar |
 |---|---|---|---|---|
-| `K_STANDARD` | 10 | `src/lib/ktroskel.js` | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (2–1000) och Organisationspaket |
-| `K_MIN`, `K_MAX` | 2, 1000 | `src/lib/ktroskel.js` | tröskelns gränser | Fast |
+| `K_STANDARD` | 10 | `src/lib/ktroskel.js` | minsta gruppstorlek i det som lämnar verktyget, och golvet `statGolv()` | Inställning (3–1000) och Organisationspaket |
+| `K_MIN`, `K_MAX` | 3, 1000 | `src/lib/ktroskel.js` | tröskelns gränser | Fast |
 | `K_SKARM` | 1 | `src/lib/ktroskel.js` | tröskeln på skärmen | Fast |
 | `LITET_UNDERLAG` | 5 | `src/lib/ktroskel.js` | en stapel för färre personer ritas med mönster; golvet för en egen rad i könsfördelningen i Lika arbete | Fast |
 | `KI_NEDRE` | 0,025 | `src/lib/stat.js` | percentilintervallens nedre andel | Fast |
@@ -226,7 +226,7 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `KVANTIL_KI_B`, `KVANTIL_KI_MAX_N` | 200, 2000 | `src/lib/osakerhet.js` | kvantilregressionens intervall | Fast |
 | `KVINNO_TROSKEL_STANDARD`, `KV_DOM_STAT`, `KV_GRANS_STANDARD` | 60 % | `src/lib/likvardighet.js`, `src/lib/aidbas.js` | gränsen för kvinnodominerat, också i `prognosutfall` när ingen gräns skickas | Inställning (gränsen och definitionen) |
 | `ALDERS_GOLV_STANDARD`, `ALDERS_SPRIDNING_MIN` | 10, 5 år | `src/lib/likvardighet.js` | åldersjusteringen i paren | Fast |
-| `ARSBOKSLUT_K_MIN` | 2 | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
+| `ARSBOKSLUT_K_MIN` | 3 | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
 | `SKAL_GRANSER` | 200 000 kr, 200 tecken, 8 skäl | `src/lib/sakligaskal.js` | gränserna för de sakliga skälen | Fast |
 | `PRIO_CONFIG_DEFAULTS` | åtgärd −5 %, akut minst 10, bevaka −2 %, analysera 5 % | `src/lib/prioritering.js` | prioriteringens statusar | Inställning |
 | `PRIO_WEIGHTS_DEFAULTS` | avvikelse 50, volym 30, jämställdhet 20 | `src/lib/prioritering.js` | prioriteringens vikter | Inställning |

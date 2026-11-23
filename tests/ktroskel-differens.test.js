@@ -603,7 +603,7 @@ describe('Årsbokslutet: nyckeltal för hela organisationen mot raderna per grup
     // organisationen är inte summor av gruppernas, så raderna per grupp och intervall ger ingen differens mot nyckeltalen;
     // de enda talen som summerar är antalen, och antal omfattas inte av skyddet (ADR-70). De sakliga skälens belopp är
     // organisationens bedömning, inte löner, och en grupp under tröskeln bär inga belopp (_valideraBedomningar).
-    // Golvet ARSBOKSLUT_K_MIN = 2 gäller ett bokslut sparat med en lägre tröskel; bokslutMedGrans tillämpar årets
+    // Golvet ARSBOKSLUT_K_MIN = 3 gäller ett bokslut sparat med en lägre tröskel; bokslutMedGrans tillämpar årets
     // tröskel på det som jämförelsen visar.
     it('bokslutets fält och jämförelsens mått har inget medel och ingen summa av löner', () => {
         const b = byggArsbokslut({ ar: 2026, skapat: '2026-11-19', k: 2, verktyg: 'prov',

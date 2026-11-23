@@ -12,9 +12,9 @@ import { arKvinna, arMan } from './kon.js';
 import { aidAvYrke } from './aid.js';
 import { personOrd } from './namn.js';
 
-/** Tröskelns standardvärde och gränser (ADR-38); appen läser dem härifrån. */
+/** Tröskelns standardvärde och gränser (ADR-38, ADR-102); appen läser dem härifrån. */
 export const K_STANDARD = 10;
-export const K_MIN = 2;
+export const K_MIN = 3;
 export const K_MAX = 1000;
 /** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
 export const K_SKARM = 1;

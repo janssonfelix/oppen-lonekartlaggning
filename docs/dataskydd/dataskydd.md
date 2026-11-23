@@ -171,7 +171,7 @@ tabellerna per BAS-intervall inte ger en liten grupps medellön som differens.
 Testerna prövar inte undantagen nedan eller bilder av diagram.
 
 Standardvärdet är 10. Användaren kan ändra det under *Inställningar* i sidhuvudet (*Minsta gruppstorlek för redovisning*),
-till lägst 2. Ett högre värde skärper skyddet. Ett lägre värde gör att mindre grupper redovisas, och
+till lägst 3. Ett högre värde skärper skyddet. Ett lägre värde gör att mindre grupper redovisas, och
 då gäller tre saker:
 
 - Användaren måste bekräfta sänkningen, också när värdet kommer ur en konfigurationsfil eller ett

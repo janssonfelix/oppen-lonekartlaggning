@@ -144,8 +144,8 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         w.eval('uppdateraPaketKnapp()');
         d.getElementById('btn-paket-spara').click();
         expect(sparat).toBe(0);
-        expect(d.getElementById('paket-status').textContent).toMatch(/Paketet sparades inte. Minsta gruppstorlek: Ange ett heltal mellan 2 och 1000\./);
-        expect(d.getElementById('paket-sammanfattning').textContent).toMatch(/Minsta gruppstorlek: Ange ett heltal mellan 2 och 1000\./);
+        expect(d.getElementById('paket-status').textContent).toMatch(/Paketet sparades inte. Minsta gruppstorlek: Ange ett heltal mellan 3 och 1000\./);
+        expect(d.getElementById('paket-sammanfattning').textContent).toMatch(/Minsta gruppstorlek: Ange ett heltal mellan 3 och 1000\./);
         d.getElementById('paket-k').value = '12';
         w.eval('uppdateraPaketKnapp()');
         expect(d.getElementById('paket-sammanfattning').textContent).toMatch(/Minsta gruppstorlek för redovisning: 12\./);

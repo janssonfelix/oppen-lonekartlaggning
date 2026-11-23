@@ -84,7 +84,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `forhandskontroll` | `termer` |
 |  | `datakvalitet` | `falt`, `forhandskontroll`, `kon`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | – |
-|  | `organisationspaket` | `importprofiler`, `installningsgranser`, `perbas`, `tabellrecept`, `termer` |
+|  | `organisationspaket` | `importprofiler`, `installningsgranser`, `ktroskel`, `perbas`, `tabellrecept`, `termer` |
 |  | `installningsgranser` | – |
 |  | `konfiguration` | – |
 | Skydd för små grupper | `undertryckning` | – |

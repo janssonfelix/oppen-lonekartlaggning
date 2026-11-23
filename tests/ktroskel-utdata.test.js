@@ -375,14 +375,14 @@ describe('k-tröskeln i gränssnittet', () => {
         expect(w.document.getElementById('k-troskel-varning').hidden).toBe(true);
         expect(w.document.getElementById('btn-k-aterstall').hidden).toBe(false);
     });
-    it.each(['', '10,0', '1e2', '1', '1001', 'tio'])('ogiltigt värde %p: felet syns vid fältet och fältet återfår gällande värde', v => {
+    it.each(['', '10,0', '1e2', '1', '2', '1001', 'tio'])('ogiltigt värde %p: felet syns vid fältet och fältet återfår gällande värde', v => {
         const w = createAppWindow();
         const f = skriv(w, v);
         expect(w.eval('kInstalld()')).toBe(10);
         expect(f.value).toBe('10');
         const fel = w.document.getElementById('k-troskel-fel');
         expect(fel.hidden).toBe(false);
-        expect(fel.textContent).toMatch(/heltal mellan 2 och 1000/);
+        expect(fel.textContent).toMatch(/heltal mellan 3 och 1000/);
     });
     it('nekad bekräftelse: fältet återfår gällande värde, inget felmeddelande', () => {
         const w = createAppWindow();
@@ -591,7 +591,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         expect(b.eval('kInstalld()')).toBe(15);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');   // resten av filen läses in
     });
-    it.each([1, 2.5, '12', 1001, null])('ogiltigt värde %p avvisas och lämnar allt orört', v => {
+    it.each([1, 2, 2.5, '12', 1001, null])('ogiltigt värde %p avvisas och lämnar allt orört', v => {
         const a = createAppWindow();
         a.eval('sattKTroskel(15, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
@@ -601,7 +601,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         // null räknas som att fältet saknas: värdet står kvar och resten läses in.
         if (v === null) { a.eval('applyConfigSnapshot(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
         a.eval('sattKTroskel(15, { fraga: false })');
-        expect(() => a.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 2 och 1000/);
+        expect(() => a.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 3 och 1000/);
         expect(a.eval('kInstalld()')).toBe(15);
         expect(a.eval('orgNamn("")')).not.toBe('Ska inte läsas in');
     });

@@ -263,7 +263,7 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
     for (const k of [1, 5]) {
         it(`k = ${k} i filen: inga små intervall eller kön i panelen, i rapportmodellen eller i BAS-dossierns text`, () => {
             const w = lagK(k);
-            expect(w.__state.forraArsbokslut.k).toBe(Math.max(2, k));
+            expect(w.__state.forraArsbokslut.k).toBe(Math.max(3, k));   // K_MIN (ADR-102)
             w.__renderTabContent('arbetet');
             const panel = normalisera(w.document.getElementById('arsjamforelse').textContent);
             const modell = normalisera(JSON.stringify(w.eval('medExportLage(() => rapportModell())').avsnitt.find(a => a.id === 'arsjamforelse')));

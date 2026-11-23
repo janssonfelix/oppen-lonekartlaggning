@@ -19,7 +19,7 @@ import { arKvinna, arMan } from './kon.js';
 export const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;
 /** Den lägsta tröskel ett bokslut kan bära (samma som verktygets K_MIN): ett lägre k i filen höjs hit. */
-export const ARSBOKSLUT_K_MIN = 2;
+export const ARSBOKSLUT_K_MIN = 3;
 
 const _tal = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const _heltal = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);

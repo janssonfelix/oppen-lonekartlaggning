@@ -1642,7 +1642,7 @@ function personOrd(n) {
 
 // src/lib/ktroskel.js
 var K_STANDARD = 10;
-var K_MIN = 2;
+var K_MIN = 3;
 var K_MAX = 1e3;
 var K_SKARM = 1;
 var LITET_UNDERLAG = 5;
@@ -3441,7 +3441,7 @@ var _text2 = (v) => {
 var _tal2 = (v, min, max) => typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? v : void 0;
 var _talEllerNull = (v) => v == null ? null : typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : NaN;
 var _utanTomma = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== void 0));
-var _kTroskel = (v) => Number.isInteger(v) && v >= 2 && v <= 1e3 ? v : void 0;
+var _kTroskel = (v) => Number.isInteger(v) && v >= K_MIN && v <= K_MAX ? v : void 0;
 var PERIODER = [3, 6, 9, 12];
 var _period = (v) => PERIODER.includes(v) ? v : void 0;
 var INAKTIVITET_MIN = 5;
@@ -17127,7 +17127,7 @@ function skalUnderlag(rader, k) {
 // src/lib/arsbokslut.js
 var ARSBOKSLUT_VERSION = 2;
 var MAX_TEXT3 = 200;
-var ARSBOKSLUT_K_MIN = 2;
+var ARSBOKSLUT_K_MIN = 3;
 var _tal4 = (v) => typeof v === "number" && isFinite(v) ? v : null;
 var _heltal = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi ? v : null;
 var _text3 = (v) => typeof v === "string" ? v.trim().slice(0, MAX_TEXT3) : "";
