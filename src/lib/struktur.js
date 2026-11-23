@@ -9,7 +9,7 @@
  * spegel (`_st*` i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra
  * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
  *
- * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
  */
 
 import { median as _median, quantile as _quantile } from './stat.js';

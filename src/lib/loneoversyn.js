@@ -18,7 +18,7 @@
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
  *
- * Bygger på: verktygets egen modell, docs/utveckling/loneoversynsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: verktygets egen modell, docs/utveckling/loneoversynsmodellen.md. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
  */
 
 import { arKvinnodominerad } from './likvardighet.js';

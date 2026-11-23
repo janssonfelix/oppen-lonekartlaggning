@@ -11,7 +11,7 @@ organisationen ska göra.
 
 Varför Prioriteringen och Löneöversynen är två flikar står i ADR-50 och varför förslagen följer den inställda
 tröskeln i ADR-69 ([`arkitekturbeslut.md`](arkitekturbeslut.md)). Minsta gruppstorlek står i
-[`k-troskeln.md`](k-troskeln.md). Varje beräkning har sin rad i [`berakningsregister.md`](berakningsregister.md).
+[`k-troskeln.md`](k-troskeln.md). Varje beräkning har sin rad i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhet.md).
 
 | Del | Fil |
 |---|---|

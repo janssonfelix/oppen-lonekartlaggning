@@ -547,7 +547,7 @@ texten och bara varna; att ersätta texten med etikettlistans namn (avvisat i AD
 räkna koden över alla intervall, som ger en status för personer på olika nivåer; att para ett äldre boksluts rad för
 koden med årets största grupp, som jämför olika grupper; att höja bokslutets formatversion, som inte behövs när
 fältet är valfritt; att låta gruppens namn vara texten på dess första rad, som beror på radordningen. *Gäller i dag:* `prioriteringsmodellen.md` §1,
-`likvardighetsmodellen.md` §3, `k-troskeln.md` avsnitt 2, `berakningsregister.md` (grupperna och §8).
+`likvardighetsmodellen.md` §3, `k-troskeln.md` avsnitt 2, `sparbarhet.md` (grupperna och §8).
 
 **ADR-90 — Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning.** Beslutat av underhållaren
 2026-11-20. Ändrar ADR-57 för tabellen *Lika arbete AID x BAS*: den räknar ingenting eget, utan visar Lika arbetes
@@ -555,7 +555,7 @@ grupper med samma k-regel och samma status. Med en egen bedömning mot gränsern
 kunde samma grupp få olika svar i de två tabellerna och stå i den ena fast den andra utelämnade den under tröskeln.
 *Avvisat:* att ta bort tabellen, som är den form en skriven lönekartläggning brukar ha; att behålla bedömningen mot
 gränserna bredvid statusen, som ger två svar på samma fråga; att behålla golvet fem för tabellen. *Gäller i dag:*
-`k-troskeln.md` avsnitt 4 och 9, `docs/dataskydd/riskanalys.md`, `berakningsregister.md` och
+`k-troskeln.md` avsnitt 4 och 9, `docs/dataskydd/riskanalys.md`, `sparbarhet.md` och
 `docs/anvandare/korguide.md` §4.
 
 **ADR-91 — Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden.**

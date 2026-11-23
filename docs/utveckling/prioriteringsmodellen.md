@@ -11,7 +11,7 @@ inte vad som är rätt lön eller vad organisationen måste göra.
 
 Varför Prioriteringen och Löneöversynen är två flikar står i ADR-50, orden för lägena i ADR-62, och att
 könsskillnaden här inte prövas mot uppmärksamhetstrappan i ADR-71 ([`arkitekturbeslut.md`](arkitekturbeslut.md)). Minsta gruppstorlek står i [`k-troskeln.md`](k-troskeln.md).
-Varje beräkning har sin rad i [`berakningsregister.md`](berakningsregister.md).
+Varje beräkning har sin rad i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhet.md).
 
 | Del | Fil |
 |---|---|

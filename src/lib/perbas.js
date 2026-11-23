@@ -18,7 +18,7 @@
  *
  * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  *
- * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: ADR-52 och ADR-83, docs/utveckling/k-troskeln.md avsnitt 2. Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md.
  */
 import { median, quantile } from './stat.js';
 import { sektorsnamn, aidAvRad, namnrader } from './aid.js';
