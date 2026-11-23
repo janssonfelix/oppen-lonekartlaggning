@@ -7,7 +7,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { utanTaggar } from '../src/lib/htmltext.js';
-import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_KV, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -234,6 +234,18 @@ describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         expect(d.getElementById('p-value-insight').textContent).toMatch(/bara har en ålder/);
         expect(d.getElementById('view-kon').textContent).not.toMatch(/NaN/);
         expect(namn(w, 'chart-kon-scatter')).not.toContain('Man (trend)');
+    });
+    it('kvoten räknas om för det valda BAS-intervallet (konsMedianer) och maskeras där i exportläget', () => {
+        const w = fonsterKon(null);
+        w.__renderTabContent('kon');
+        const d = w.document, gap = () => d.getElementById('kon-kpi-gap').textContent.replace(/[\u00a0\u202f]/g, ' ');
+        const alla = gap();
+        w.eval("renderKon('Y1')");
+        expect(gap()).toBe(w.eval(`svPct(${KON_KV[0] / KON_MA[0] * 100}, 1)`).replace(/[\u00a0\u202f]/g, ' '));   // 30 kvinnor och en man
+        expect(gap()).not.toBe(alla);
+        iExport(w);
+        w.eval("renderKon('Y1')");
+        expect(gap().trim()).toBe('–');
     });
     it('färgläggning efter BAS: könens trendlinjer följer samma regel (exportläget)', () => {
         const w = iExport(fonsterMan(null, TRE_MAN));
