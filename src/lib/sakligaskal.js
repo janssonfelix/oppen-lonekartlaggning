@@ -169,5 +169,5 @@ export function skalUnderlag(rader, k) {
         const { skal, egen: _egen, ...rest } = r;   // egen styr bara regeln; posten bär radens övriga fält
         return { ...rest, ...skalForRad(skal, r, k) };
     });
-    return { grupper, perKategori: skalPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
+    return { grupper, perKategori: skalPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: /** @type {{kategori: string, belopp: number}[]} */ (g.sammanstallning.skal), skillnadKr: g.skillnadKr }))) };
 }
