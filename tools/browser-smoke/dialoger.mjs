@@ -17,7 +17,7 @@ export async function gruppdossier() {
         await page.evaluate(() => document.querySelector('[data-open-dossier]').click());
         await page.waitForTimeout(400);
         ok(await page.evaluate(() => document.getElementById('dossier-modal').style.display === 'flex'), 'modalen öppnas från tabellraden');
-        ok(await page.evaluate(() => (document.getElementById('dossier-body').textContent || '').length > 100), 'modalen fylls med innehåll');
+        // Innehållet prövas i jsdom (tests/gruppdossier-app.test.js); här Escape med tangentbordet.
         await page.keyboard.press('Escape');
         await page.waitForTimeout(200);
         ok(await page.evaluate(() => document.getElementById('dossier-modal').style.display === 'none'), 'Escape stänger modalen');
@@ -51,10 +51,9 @@ export async function kTroskel() {
     await page.click('#btn-k-aterstall');
     await page.waitForTimeout(500);
     ok(await page.evaluate(() => !!document.getElementById('prio-cfg-atgard').offsetParent && !!document.getElementById('prio-w-avvikelse').offsetParent), 'Prioriteringens trösklar och viktning står synliga i panelen');
-    await page.click('#inst-flikar [data-inst-flik="likvardighet"]');
-    await page.waitForTimeout(700);
-    ok(await page.evaluate(() => document.getElementById('installningar-modal').style.display === 'none' && document.getElementById('view-likvardighet').style.display === 'block' && document.getElementById('avsnitt-lv-installningar').open),
-        'Öppna i panelen går till Likvärdigt arbete och fäller ut avsnittet där inställningen står');
+    // Öppna i panelen (flik och avsnitt) prövas i jsdom (tests/start-och-meny-app.test.js); här stängs panelen.
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.getElementById('installningar-modal').style.display === 'none', null, { timeout: 5000 });
 }
 
 // Sök och hoppa, BAS-dossiern (modal).
@@ -93,12 +92,12 @@ export async function sokOchBasdossier() {
         const fore = await page.evaluate(k => document.querySelector(k)?.closest('tr').classList.contains('collapsed'), knapp);
         await page.click(knapp);
         await page.waitForTimeout(400);
+        // Dossierns innehåll prövas i jsdom (tests/basdossier.test.js); här det äkta klicket och att panelen ryms.
         const bd = await page.evaluate(k => ({ oppen: document.getElementById('basdossier-modal').style.display === 'flex',
-            text: (document.getElementById('basdossier-body').textContent || '').replace(/\s+/g, ' '),
             val: document.getElementById('basdossier-select').value, hopfalld: document.querySelector(k).closest('tr').classList.contains('collapsed'),
             synlig: (() => { const r = document.querySelector('#basdossier-modal .glossary-panel').getBoundingClientRect(); return r.width > 300 && r.height > 200 && r.left >= 0 && r.right <= innerWidth; })() }), knapp);
-        ok(bd.oppen && bd.synlig && bd.val === 'C' && /BAS-intervall C/.test(bd.text) && /AID-etiketterna i intervallet/.test(bd.text) && /Förra året/.test(bd.text) && bd.hopfalld === fore,
-            'knappen i Löneöversiktens BAS-rad öppnar BAS-dossiern för intervallet, utan att fälla raden');
+        ok(bd.oppen && bd.synlig && bd.val === 'C' && bd.hopfalld === fore,
+            'knappen i Löneöversiktens BAS-rad öppnar BAS-dossiern för intervallet, utan att fälla raden, och panelen ryms i fönstret');
         await page.keyboard.press('Escape');
         await page.waitForTimeout(300);
         ok(await page.evaluate(k => document.getElementById('basdossier-modal').style.display === 'none' && document.activeElement === document.querySelector(k), knapp),

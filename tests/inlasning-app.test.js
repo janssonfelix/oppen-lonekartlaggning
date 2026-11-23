@@ -451,6 +451,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         expect(pol.classList.contains('loaded')).toBe(true);
         expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/lonepolitik_2026\.csv/);
         expect(w.document.getElementById('referens-namn-rad').hidden).toBe(false);
+        expect(w.document.getElementById('referens-namn').value).toBe('lonepolitik_2026');   // namngiven efter filen
         w.document.getElementById('btn-referens-aterga').click();
         expect(pol.classList.contains('loaded')).toBe(false);
         expect(pol.querySelector('.upload-inlast').hidden).toBe(true);

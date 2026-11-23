@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// Webbläsar-röktestet, del: Sakliga skäl — på demodata öppnas dialogen från en rad i Handlingsplan, ett skäl läggs
-// till, sammanfattningen räknas om och radens knapp visar antalet, och tabellerna står i Rapporttext. Körs i en egen
+// Webbläsar-röktestet, del: Sakliga skäl — på demodata öppnas dialogen från en rad i Handlingsplan med äkta klick och
+// tangentbord, ett skäl läggs till, och kommentaren står i Rapporttext när fliken byts. Körs i en egen
 // sida, så att skälet inte följer med i de övriga kontrollerna. Körs av tools/browser-smoke.mjs.
 import { FIL, ok, browser, oppnaFlik } from './rigg.mjs';
 /* global state -- används i page.evaluate, där det finns i sidan */
@@ -25,7 +25,6 @@ export async function sakligaSkal() {
         return med.getAttribute('data-hp-skal');
     });
     const knapp = `#handlingsplan-tbody [data-hp-skal="${nyckel}"]`;
-    const forut = await sida.evaluate(n => (state.handlingsplan[n]?.skal || []).length, nyckel);
     await sida.click(knapp);
     await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'flex', null, { timeout: 5000 });
     ok(true, 'knappen Sakliga skäl öppnar dialogen');
@@ -36,22 +35,17 @@ export async function sakligaSkal() {
     await sida.selectOption(`${sista} select.skal-kategori`, 'marknad');
     await sida.fill(`${sista} input.skal-belopp`, '700');
     await sida.fill(`${sista} input.skal-kommentar`, 'Svårrekryterat i regionen');
-    const summa = ((await sida.textContent('#skal-summa')) || '').replace(/\s+/g, ' ').trim();
-    ok(/^Förklarat av skälen: /.test(summa), `sammanfattningen räknas om («${summa}»)`);
-    const sparat = await sida.evaluate(n => state.handlingsplan[n]?.skal || [], nyckel);
-    ok(sparat.length === forut + 1 && sparat.some(s => s.kategori === 'marknad' && s.belopp === 700 && s.kommentar === 'Svårrekryterat i regionen'), 'skälet sparas på raden, med kommentaren');
+    // Sammanfattningen, det sparade skälet och knappens text och namn prövas i jsdom (tests/handlingsplan-skal.test.js).
     await sida.keyboard.press('Escape');
     await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'none', null, { timeout: 5000 });
-    const text = ((await sida.textContent(`${knapp} .hp-skal-sammanfattning`)) || '').trim();
-    ok(text.startsWith(`Sakliga skäl (${forut + 1})`), `radens knapp visar antalet («${text}»)`);
-    ok(/^Sakliga skäl \(\d+\)/.test(await sida.getAttribute(knapp, 'aria-label') || ''), 'knappens tillgängliga namn har sammanfattningen');
     ok(await sida.evaluate(k => document.activeElement === document.querySelector(k), knapp), 'Escape stänger dialogen och fokus går tillbaka till knappen');
     await oppnaFlik(sida, '.nav-item[data-tab="rapporttext"]');
     // Demot har redan skäl på tre rader, så rubriken kan stå kvar från en tidigare ritning innan Rapporttext har ritats
     // om med det nya skälet: vänta på kommentaren, inte bara på rubriken (Firefox hann ibland läsa den gamla texten).
     await sida.waitForFunction(() => /Svårrekryterat i regionen/.test(document.getElementById('view-rapporttext')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});
     const rt = await sida.evaluate(() => document.getElementById('view-rapporttext').textContent || '');
-    ok(/Sakliga skäl per grupp/.test(rt) && /Sammanställning per kategori/.test(rt), 'Rapporttext har tabellerna Sakliga skäl per grupp och Sammanställning per kategori');
+    // Tabellerna i Rapporttext prövas i jsdom (tests/handlingsplan-skal-export.test.js); här att flikbytet ritar om
+    // med skälet som just skrevs i dialogen.
     const harKommentar = /Svårrekryterat i regionen/.test(rt);
     // Felsökning när kommentaren saknas: radens skäl i tillståndet och gruppen i exportlägets förifyllning.
     const diag = harKommentar ? '' : await sida.evaluate(n => {

@@ -26,28 +26,18 @@ export async function diagramkarnan() {
         const namn = nedladdning.suggestedFilename();
         ok(new RegExp(`^DEMO_Utforska_.+_\\d{4}-\\d{2}-\\d{2}\\.${ext}$`).test(namn), `${ext.toUpperCase()}-export gav filen ${namn}`);
     }
-    await page.evaluate(() => document.getElementById('explore-typ').value = 'hantel');
-    await page.evaluate(() => document.getElementById('explore-typ').dispatchEvent(new Event('change', { bubbles: true })));
-    await page.waitForTimeout(300);
-    ok(await page.evaluate(() => !!document.querySelector('#chart-explore svg')), 'Utforska ritar hanteldiagram');
 
-    console.log('\n── Punktsvärm, före och efter, övergångar ──');
+    console.log('\n── Övergångar ──');
+    // Vad varje diagram ritar (diagramtyperna i Utforska, flikarnas figurer) prövas i jsdom: tests/diagramvyer.test.js och
+    // tests/diagramvyer-marken.test.js. Här det som kräver webbläsaren: övergångarna, "minska rörelse", pekaren och
+    // trädkartans ytor i sidan. Vyerna ställs ändå in som förut: med --bilder sparas en bild av var och en.
     /* global _rfOvergangPa -- funktionerna nedan körs i sidan, där de finns */
     {
         await page.evaluate(() => { const t = document.getElementById('explore-typ'); t.value = 'svarm'; t.dispatchEvent(new Event('change', { bubbles: true })); });
         await page.waitForTimeout(500);
-        const svarm = await page.evaluate(() => {
-            const p = [...document.querySelectorAll('#chart-explore circle[data-marke="individ"]')].map(c => [Number(c.getAttribute('cx')) + c.closest('svg[data-del="panel"]').getBoundingClientRect().left, Number(c.getAttribute('cy')), Number(c.getAttribute('r'))]);
-            let krockar = 0;
-            for (let i = 0; i < p.length; i++) for (let j = i + 1; j < p.length; j++) if (Math.hypot(p[i][0] - p[j][0], p[i][1] - p[j][1]) < 2 * p[i][2] - 0.01) krockar++;
-            return { antal: p.length, krockar };
-        });
-        ok(svarm.antal > 20 && svarm.krockar < svarm.antal * 0.1, `Utforska ritar punktsvärm (${svarm.antal} punkter, ${svarm.krockar} som ligger ovanpå en annan)`);
         if (BILDER) await page.locator('#chart-explore').screenshot({ path: `${BILDER}/svarm-${NAMN}.png` });
         await page.evaluate(() => { const t = document.getElementById('explore-typ'); t.value = 'regnmoln'; t.dispatchEvent(new Event('change', { bubbles: true })); });
         await page.waitForTimeout(500);
-        const regn = await page.evaluate(() => ({ moln: document.querySelectorAll('#chart-explore path[data-form="regnmoln"]').length, punkter: document.querySelectorAll('#chart-explore circle[data-marke="individ"]').length }));
-        ok(regn.moln >= 2 && regn.punkter > 20, `Utforska ritar regnmoln (${regn.moln} kurvor, ${regn.punkter} punkter)`);
         if (BILDER) await page.locator('#chart-explore').screenshot({ path: `${BILDER}/regnmoln-${NAMN}.png` });
 
         // Övergången: en omritning med rörelse flyttar märkena och slutar på ritarens egna lägen.
@@ -81,8 +71,6 @@ export async function diagramkarnan() {
         await page.waitForTimeout(600);
         await page.evaluate(() => { const v = document.getElementById('forecast-generell-value'); v.value = '2'; v.dispatchEvent(new Event('input', { bubbles: true })); v.dispatchEvent(new Event('change', { bubbles: true })); });
         await page.waitForTimeout(600);
-        const lut = await page.evaluate(() => { const el = document.getElementById('chart-forecast-lutning'); return { linjer: el._figur ? el._figur.y.ordning.length : 0, streck: el.querySelectorAll('[data-marke="intervall"]').length, etiketter: el.querySelectorAll('text[data-marke="punktetikett"]').length, lika: el._figur ? el._figur.x.doman[1] > 100 : false, not: document.getElementById('forecast-lutning-not').textContent }; });
-        ok(lut.linjer > 0 && lut.streck === lut.linjer && lut.etiketter === lut.linjer && lut.lika && /minst \d+ kvinnor/.test(lut.not), `Löneöversyn ritar lönegapet före och efter på en axel som når 100 % (${lut.linjer} BAS-intervall)`);
         if (BILDER) await page.locator('#chart-forecast-lutning').screenshot({ path: `${BILDER}/lutning-${NAMN}.png` });
 
         // Andelsstaplar: staplade staplar i Utforska och efterlevnaden kring en mittlinje i Lönepolitik.
@@ -94,9 +82,6 @@ export async function diagramkarnan() {
             satt('explore-rad', 'bas'); satt('explore-kolumn', 'kon'); satt('explore-typ', 'staplade'); satt('explore-stapel-visa', 'andel');
         });
         await page.waitForTimeout(500);
-        const stapl = await page.evaluate(() => { const f = document.getElementById('chart-explore')._figur; const sum = new Map(); for (const l of f.lager) for (const d of l.data) sum.set(d.x, (sum.get(d.x) || 0) + d.y);
-            return { segment: document.querySelectorAll('#chart-explore rect[data-marke="stapel"]').length, summor: [...sum.values()].map(v => Math.round(v)) }; });
-        ok(stapl.segment > 2 && stapl.summor.every(v => v === 100), `Utforska ritar staplade staplar som andel (${stapl.segment} segment, varje rad 100 %)`);
         if (BILDER) await page.locator('#chart-explore').screenshot({ path: `${BILDER}/staplade-${NAMN}.png` });
         await page.evaluate(() => { for (const [id, v] of [['explore-typ', 'auto'], ['explore-kolumn', 'ingen']]) { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); } });
         await oppnaFlik(page, '.nav-item[data-tab="benchmark"]');
@@ -105,33 +90,24 @@ export async function diagramkarnan() {
         if (await page.evaluate(() => !!document.getElementById('lp-komplians-vy'))) {
             await page.selectOption('#lp-komplians-vy', 'mitt');
             await page.waitForTimeout(500);
-            const mitt = await page.evaluate(() => { const el = document.getElementById('chart-lp-compliance'); return { serier: el._figur ? el._figur.lager.map(l => l.serie).join('|') : '', axel: [...el.querySelectorAll('[data-axel="x"]')].map(t => t.textContent).join(' '), noll: !!el.querySelector('[data-marke="nollinje"]') }; });
-            ok(mitt.serier === 'Under P10|Över P90' && mitt.noll && !/[-−]/.test(mitt.axel), `Lönepolitik ställer efterlevnaden kring en mittlinje (axeln: ${mitt.axel})`);
             if (BILDER) await page.locator('#chart-lp-compliance').screenshot({ path: `${BILDER}/mitt-${NAMN}.png` });
             await page.selectOption('#lp-komplians-vy', 'staplad');
         } else console.log('  – Lönepolitik har ingen policy i demodatan: mittlinjen prövas inte här');
 
-        // Könsfördelning per BAS, avvikelse från förväntad lön per kön (Lika arbete) och ålderspyramiden (Ålder & karriär).
-        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
-        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-        await page.waitForTimeout(700);
-        const andel = await page.evaluate(() => { const el = document.getElementById('chart-skevhet-andel'), f = el._figur;
-            return { rader: f ? f.lager[0].data.length : 0, tabell: document.querySelectorAll('#skevhet-table tbody tr').length, linjer: el.querySelectorAll('[data-marke="referenslinje"]').length }; });
-        ok(andel.rader > 0 && andel.rader === andel.tabell && andel.linjer === 2, `Lika arbete ritar könsfördelningen per BAS-intervall (${andel.rader} intervall, linjer vid 40 och 60 %)`);
-        if (BILDER) await page.locator('#chart-skevhet-andel').screenshot({ path: `${BILDER}/konsandel-${NAMN}.png` });
-        const avv = await page.evaluate(() => { const t = document.getElementById('pag-avvikelse-tabell'); return { synlig: !document.getElementById('pag-diagram-ruta').hidden, rader: t.querySelectorAll('tbody tr').length,
-            grafik: t.querySelectorAll('tbody svg').length, sma: t.querySelectorAll('.pag-litet').length, not: document.getElementById('pag-diagram-not').textContent }; });
-        ok(avv.synlig && avv.rader >= 2 && avv.rader % 2 === 0 && avv.grafik === avv.rader, `Personer att granska visar avvikelsen från förväntad lön per kön som tabell med grafik i varje rad (${avv.rader / 2} BAS-intervall)`);
-        ok(avv.sma === 0 || /färre än 5 personer/.test(avv.not), `andelar med litet underlag är märkta och förklaras (${avv.sma} andelar)`);
-        if (BILDER) await page.locator('#pag-diagram-ruta').screenshot({ path: `${BILDER}/avvikelse-${NAMN}.png` });
+        // Könsfördelning per BAS och avvikelse från förväntad lön per kön (Lika arbete), bara som bilder.
+        if (BILDER) {
+            await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
+            await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
+            await page.waitForTimeout(700);
+            await page.locator('#chart-skevhet-andel').screenshot({ path: `${BILDER}/konsandel-${NAMN}.png` });
+            await page.locator('#pag-diagram-ruta').screenshot({ path: `${BILDER}/avvikelse-${NAMN}.png` });
+        }
         await oppnaFlik(page, '.nav-item[data-tab="kon"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(700);
-        const pyr = await page.evaluate(() => { const el = document.getElementById('chart-demo-pyramid'); return { staplar: el.querySelectorAll('rect[data-marke="stapel"]').length, axel: [...el.querySelectorAll('[data-axel="x"]')].map(t => t.textContent).join(' ') }; });
-        ok(pyr.staplar > 4 && !/[-−]/.test(pyr.axel), `Ålder & karriär ritar ålderspyramiden (${pyr.staplar} staplar, axeln: ${pyr.axel})`);
         if (BILDER) await page.locator('#chart-demo-pyramid').screenshot({ path: `${BILDER}/pyramid-${NAMN}.png` });
 
-        // Närmaste punkt, lönekvartilerna och krav mot lön.
+        // Närmaste punkt (Ålder & karriär) och trädkartan (Struktur).
         await page.locator('#chart-kon-scatter').scrollIntoViewIfNeeded();
         await page.waitForTimeout(400);
         // En punkt utan grannar inom 30 px, så att "närmaste" är entydigt; pekaren ställs några bildpunkter snett intill den.
@@ -157,33 +133,22 @@ export async function diagramkarnan() {
             await page.waitForTimeout(100);
             ok(await page.evaluate(() => !document.querySelector('#chart-kon-scatter [data-nara]')), 'ringen försvinner när pekaren lämnar diagrammet');
         } else ok(false, 'hittade ingen ensam punkt att pröva närmaste-punkt på');
-        // I samma flik: histogram, percentilband och små multiplar.
-        const e2 = await page.evaluate(() => ({ hist: document.querySelectorAll('#chart-kon-histogram rect[data-marke="stapel"]').length,
-            band: document.querySelectorAll('#chart-demo-spread [data-marke="band"]').length, paneler: document.querySelectorAll('#chart-kon-multiplar svg[data-del="panel"]').length,
-            minst: Math.min(...((document.getElementById('chart-demo-spread')._figur || { lager: [0, 0, { data: [{ r: { n: 0 } }] }] }).lager[2].data.map(d => d.r.n))) }));
-        ok(e2.hist >= 6, `Ålder & karriär ritar histogrammet med kön mot kön (${e2.hist} staplar)`);
-        ok(e2.band >= 2 && e2.minst >= 1, `Ålder & karriär ritar lönespridningen över ålder som percentilband (skärmen maskerar inget, ADR-51; minst ${e2.minst} personer i varje åldersgrupp)`);
-        ok(e2.paneler >= 2, `Ålder & karriär ritar lön mot ålder i små multiplar (${e2.paneler} paneler)`);
         if (BILDER) for (const id of ['chart-kon-histogram', 'chart-demo-spread', 'chart-kon-multiplar']) { await page.locator('#' + id).scrollIntoViewIfNeeded(); await page.locator('#' + id).screenshot({ path: `${BILDER}/${id}-${NAMN}.png` }); }
         await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(600);
-        const kvart = await page.evaluate(() => { const el = document.getElementById('chart-struktur-kvartiler'); return { staplar: el ? el.querySelectorAll('rect[data-marke="stapel"]').length : 0, linje: el ? el.querySelectorAll('[data-marke="referenslinje"]').length : 0 }; });
-        ok(kvart.staplar === 8 && kvart.linje === 1, `Struktur ritar lönekvartilerna (${kvart.staplar} segment, linje vid organisationens andel kvinnor)`);
         if (BILDER) await page.locator('#chart-struktur-kvartiler').screenshot({ path: `${BILDER}/kvartiler-${NAMN}.png` });
         const trad = await page.evaluate(() => { const el = document.getElementById('chart-struktur-tradkarta'); const r = [...el.querySelectorAll('rect[data-marke="yta"][data-l="1"]')].map(e => e.getBoundingClientRect());
             let overlapp = 0; for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) if (r[i].left < r[j].right - 1 && r[j].left < r[i].right - 1 && r[i].top < r[j].bottom - 1 && r[j].top < r[i].bottom - 1) overlapp++;
             return { ytor: r.length, overlapp, etiketter: el.querySelectorAll('text[data-marke="ytetikett"]').length, axel: el.querySelectorAll('[data-axel]').length }; });
         ok(trad.ytor >= 4 && trad.overlapp === 0 && trad.etiketter > 0 && trad.axel === 0, `Struktur ritar organisationen som trädkarta (${trad.ytor} ytor, inga överlapp)`);
         if (BILDER) { await page.locator('#chart-struktur-tradkarta').scrollIntoViewIfNeeded(); await page.locator('#chart-struktur-tradkarta').screenshot({ path: `${BILDER}/tradkarta-${NAMN}.png` }); }
-        await oppnaFlik(page, '.nav-item[data-tab="likvardighet"]');
-        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-        await page.waitForTimeout(900);
-        const krav = await page.evaluate(() => { const el = document.getElementById('chart-likvardighet-krav'); return { punkter: el ? el.querySelectorAll('[data-marke="punkt"]').length : 0, linje: el ? el.querySelectorAll('path[data-marke="linje"]').length : 0, not: (document.getElementById('lv-krav-not') || {}).textContent || '', k: window.kTroskel() }; });
-        // Noten nämner gruppstorleken bara när den är större än en person (steg A: aldrig "minst 1 personer").
-        const kravNot = krav.k > 1 ? new RegExp(`minst ${krav.k} personer`).test(krav.not) : !/minst \d+ person/.test(krav.not);
-        ok(krav.punkter >= 3 && krav.linje === 1 && kravNot && /Punktens storlek/.test(krav.not), `Likvärdigt arbete ritar krav mot lön (${krav.punkter} yrkesgrupper, minsta gruppstorlek ${krav.k})`);
-        if (BILDER) await page.locator('#chart-likvardighet-krav').screenshot({ path: `${BILDER}/krav-${NAMN}.png` });
+        if (BILDER) {
+            await oppnaFlik(page, '.nav-item[data-tab="likvardighet"]');
+            await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
+            await page.waitForTimeout(900);
+            await page.locator('#chart-likvardighet-krav').screenshot({ path: `${BILDER}/krav-${NAMN}.png` });
+        }
     }
 
     console.log('\n── Diagramkärnan: ritning och export (ADR-39) ──');
@@ -339,7 +304,7 @@ export async function diagramkarnan() {
             await page.keyboard.press('Escape');
         };
         await page.evaluate(() => ritaFigur('chart-roktest', { ...window.__rokFigur, lager: [window.__rokFigur.lager[2]] }));
-        ok(await page.evaluate(() => !!document.querySelector('#chart-roktest [data-rf="tom"]') && !document.querySelector('#chart-roktest svg')), 'bara små grupper: tomt läge, inget ritas');
+        // Att tomt läge inte ritar något prövas i jsdom (tests/diagramritare.test.js); här att menyn inte laddar ner.
         await ingenFil('tomt läge');
         await page.evaluate(() => rensaFigur('chart-roktest'));
         await ingenFil('rensad behållare');
@@ -383,69 +348,10 @@ export async function diagramkarnan() {
             `listan med 40 långa namn vid 375 punkter: ingen vågrät rullning (sidan ${matt.sida.join(' / ')}, raden ${matt.rad.join(' / ')}, listan ${matt.lista[0]} / ${matt.lista[1]})`);
         ok(matt.lista[2], 'listan rullar lodrätt');
         if (BILDER) await page.locator('#rok-lista-kort').screenshot({ path: `${BILDER}/urvalslista-375-${NAMN}.png` });
-        // Sökning med tangentbordet, Avmarkera träffarna, och en kryssruta med musen.
-        await rad.locator('input[data-urval-sok]').fill('Yrkesgrupp 1 med');
-        const traffar = await rad.locator('.diagram-urval-traffar').textContent();
-        ok(traffar === '1 av 40 träffar', `sökningen filtrerar listan (${traffar})`);
-        await rad.locator('input[data-urval-sok]').fill('');
-        await rad.locator('[data-urval-markera="inga"]').click();
-        await rad.locator('input[type="checkbox"]').nth(0).check();
-        await rad.locator('input[type="checkbox"]').nth(1).check();
-        await page.waitForTimeout(200);
-        const efter = await page.evaluate(() => ({ punkter: document.querySelectorAll('#chart-rok-lista svg circle[data-marke="punkt"]').length,
-            summering: document.querySelector('#rok-lista-kort .diagram-urval summary').textContent,
-            not: (document.querySelector('#rok-lista-kort [data-rf="urval"]') || {}).textContent || '' }));
-        ok(efter.punkter === 4 && efter.summering === 'AID-etikett: 2 av 40', `två valda AID-etiketter ritar fyra punkter (${efter.punkter}, ${efter.summering})`);
-        ok(/Trendlinjen för kvinnor gäller urvalet\. Trendlinjen för män gäller urvalet\./.test(efter.not), 'noten säger att trendlinjerna gäller urvalet');
-        await rad.locator('input[type="checkbox"]').nth(1).uncheck();
-        await page.waitForTimeout(200);
-        const ett = await page.evaluate(() => ({ trend: document.querySelectorAll('#chart-rok-lista svg [data-l="2"], #chart-rok-lista svg [data-l="3"]').length,
-            not: (document.querySelector('#rok-lista-kort [data-rf="urval"]') || {}).textContent || '' }));
-        ok(ett.trend === 0 && /Trendlinjen för kvinnor visas inte: färre än 2 synliga punkter\./.test(ett.not), 'under minN ritas trendlinjerna inte, och noten säger varför');
+        // Sökningen, kryssrutorna och de härledda trendlinjerna prövas i jsdom (tests/diagramurval.test.js).
         await page.evaluate(() => { rensaFigur('chart-rok-lista'); document.getElementById('rok-lista-kort').remove(); delete window.__rokLista; _rfUrvalGlom(); });
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.waitForTimeout(200);
     }
-
-    console.log('\n── Filter i riktiga diagram: lön mot ålder och yrkesgrupper i trattdiagrammet ──');
-    /* global renderTabContent */
-    {
-        await page.evaluate(() => _rfUrvalGlom());
-        await oppnaFlik(page, '.nav-item[data-tab="kon"]');
-        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-        await page.waitForTimeout(400);
-        const scatter = () => page.evaluate(() => {
-            const el = document.getElementById('chart-kon-scatter');
-            const linjer = [...el.querySelectorAll('svg path[data-marke="linje"]')].map(p => p.getAttribute('d'));
-            return { linjer, not: (el.parentElement.querySelector('[data-rf="urval"]') || {}).textContent || '' };
-        });
-        const fore = await scatter();
-        const bas = page.locator('#chart-kon-scatter').locator('xpath=..').locator('.diagram-urval[data-urval-falt="bas"] [data-urval]').first();
-        await bas.click();
-        await page.waitForTimeout(400);
-        const efter = await scatter();
-        ok(efter.linjer.length === fore.linjer.length && efter.linjer.some((d, i) => d !== fore.linjer[i]), 'lön mot ålder: ett BAS-intervall bort ritar andra trendlinjer');
-        ok(/Diagrammet visar ett urval: utan BAS .*Trendlinjen och konfidensbandet för kvinnor gäller urvalet\./.test(efter.not), `noten säger att trendlinjen gäller urvalet (${efter.not.slice(0, 120)}…)`);
-        await page.locator('#chart-kon-scatter').locator('xpath=..').locator('[data-urval-alla]').click();
-        await page.waitForTimeout(400);
-        ok((await scatter()).linjer.join('|') === fore.linjer.join('|'), 'Visa alla ger tillbaka samma trendlinjer');
-
-        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
-        await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
-        await page.waitForTimeout(400);
-        const rad = page.locator('#chart-la-tratt').locator('xpath=..').locator('.diagram-urval[data-urval-falt="yrke"]');
-        await rad.locator('summary').click();
-        await rad.locator('[data-urval-markera="inga"]').click();
-        await rad.locator('input[type="checkbox"]').first().check();
-        await page.waitForTimeout(400);
-        const tratt = await page.evaluate(() => {
-            const el = document.getElementById('chart-la-tratt'), forsta = el.parentElement.querySelector('.diagram-urval[data-urval-falt="yrke"] input[type="checkbox"]').getAttribute('data-urval');
-            const vantat = el._figur.lager.filter(l => l.marke === 'punkt').flatMap(l => l.data).filter(d => d.yrke === forsta).length;
-            return { ritade: el.querySelectorAll('svg circle[data-marke="punkt"], svg path[data-marke="punkt"]').length, vantat,
-                summering: el.parentElement.querySelector('.diagram-urval[data-urval-falt="yrke"] summary').textContent };
-        });
-        ok(tratt.ritade === tratt.vantat && /^AID-etikett: 1 av \d+$/.test(tratt.summering), `trattdiagrammet: en AID-etikett i listan ritar dess ${tratt.vantat} punkter (${tratt.ritade}, ${tratt.summering})`);
-        await page.evaluate(() => { _rfUrvalGlom(); renderTabContent('matrix'); });
-        await page.waitForTimeout(200);
-    }
+    // Filtren i de riktiga diagrammen (lön mot ålder, trattdiagrammet) prövas i jsdom: tests/diagramvyer.test.js, «röktest: …».
 }

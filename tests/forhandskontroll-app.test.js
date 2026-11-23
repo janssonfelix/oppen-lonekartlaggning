@@ -100,6 +100,23 @@ describe('förhandskontrollen efter inläsningen', () => {
         expect(nyckel(w)).toBe('2 varningar');
     });
 
+    it('BAS med skräp, en okänd kön-kod och födelseår: tio rader utfällda, två markerade celler och varningarna', async () => {
+        const w = createAppWindow();
+        const rader = ['BAS;AID;Månadslön;Ålder;Kön'];
+        for (let i = 0; i < 30; i++) rader.push(`${i === 0 ? 'C (chef)' : 'C'};207011 Handläggare;${30000 + i * 10};${1970 + (i % 20)};${i === 1 ? '9' : i % 2 ? 'M' : 'K'}`);
+        await lasIn(w, rader);
+        expect(w.__state.data).toHaveLength(29);
+        expect(avsnitt(w).hidden).toBe(false);
+        expect(avsnitt(w).open).toBe(true);
+        expect(avsnitt(w).querySelectorAll('#fk-tolkning tbody tr')).toHaveLength(10);
+        expect(avsnitt(w).querySelectorAll('#fk-tolkning td.fk-fel')).toHaveLength(2);
+        expect(avsnitt(w).querySelector('#fk-tolkning tbody tr:nth-child(3)').textContent).toMatch(/1972 tolkat som \d+ år/);
+        expect(nyckel(w)).toMatch(/^\d varningar$/);
+        const varningar = [...avsnitt(w).querySelectorAll('.fk-varningar li')].map(li => li.textContent);
+        expect(varningar.some(t => /inte en bokstav/.test(t))).toBe(true);
+        expect(varningar.some(t => /födelseår/.test(t))).toBe(true);
+    });
+
     it('rensa all data tömmer förhandskontrollen', async () => {
         const w = createAppWindow();
         await lasIn(w, fil({ lon: i => 420000 + i }));
