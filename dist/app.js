@@ -6914,15 +6914,15 @@ function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } = {}) {
 /**
  * 95-procentigt percentil-bootstrapintervall för kvinnors median i procent av mäns, för en grupp (BAS-intervall,
  * åldersgrupp). En dragning där männens median inte är positiv ger 100.
- * @param {number[]} kvLons
- * @param {number[]} maLons
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
  * @returns {null | {lo:number, hi:number}} null med färre än KVOT_MIN_N av något kön
  */
-function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
-    if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
+function medianKvotKI(kvLoner, maLoner, { B = B_PER_GRUPP, rng } = {}) {
+    if (kvLoner.length < KVOT_MIN_N || maLoner.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || slumpFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLoner, maLoner, B, rng || slumpFor(kvLoner, maLoner));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
@@ -6956,15 +6956,15 @@ function konskvotPerGrupp(grupper, { k, ki = false }) {
 /**
  * Som medianKvotKI, men dragningar där männens median inte är positiv räknas inte, och intervallet ges bara när minst
  * DOSSIER_MIN_GILTIGA dragningar återstår (gruppdossiern och rapportunderlaget).
- * @param {number[]} kvLons
- * @param {number[]} maLons
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
  * @returns {null | {lo:number, hi:number}}
  */
-function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {}) {
-    if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
+function medianKvotKIGiltiga(kvLoner, maLoner, { B = B_DOSSIER, rng } = {}) {
+    if (kvLoner.length < KVOT_MIN_N || maLoner.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || slumpFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLoner, maLoner, B, rng || slumpFor(kvLoner, maLoner));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
@@ -6984,11 +6984,11 @@ function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {}) {
  * @param {Array<[number, number]>} data  [x, y]-par
  * @param {number} minX
  * @param {number} maxX
- * @param {number} [steps]  antal punkter (BAND_STEG)
+ * @param {number} [steg]  antal punkter (BAND_STEG)
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>} null med färre än BAND_MIN_N punkter eller
  *   utan spridning i x
  */
-function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
+function regressionslinjensBand(data, minX, maxX, steg = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
     const reg = linjarRegression(data);
@@ -7003,8 +7003,8 @@ function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     if (ssX <= 0) return null;
     const sigma2 = rss / Math.max(1, n - 2);
     const out = [];
-    for (let i = 0; i < steps; i++) {
-        const x = minX + (maxX - minX) * (i / (steps - 1));
+    for (let i = 0; i < steg; i++) {
+        const x = minX + (maxX - minX) * (i / (steg - 1));
         const y = reg.m * x + reg.b;
         const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
         out.push({ x, y, lo: y - Z_95 * se, hi: y + Z_95 * se });
@@ -7244,18 +7244,18 @@ function _kvantilRadordning(a, b) {
  * och varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
  * Ett intervall ges när minst hälften av omsamplingarna gav en skattning. IRLS-skattningen är en approximation av
  * kvantillösningen; intervallet bootstrappar approximationen.
- * @param {any[]} raw0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
+ * @param {any[]} rader0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
  * @param {any} modell  förklaringsmodellen
  * @param {Array<{tau:number, error?:boolean, ki?:any}>} results  punktskattningarna; `ki` skrivs in i dem
  * @param {(d: any) => boolean} arKv
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna per kön
  * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
  */
-function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
-    const rnd = rng || slumpFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+function kvantilBootstrap(rader0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
+    const rnd = rng || slumpFor(rader0.filter(arKv).map(d => d.lon), rader0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
     // Raderna sorteras på en fast, fullständig nyckel innan dragningen, så att omsamplingarna inte beror på
     // radordningen (ADR-86). Två rader som är lika i nyckeln är utbytbara i designen.
-    const raw = [...raw0].sort(_kvantilRadordning);
+    const raw = [...rader0].sort(_kvantilRadordning);
     const n = raw.length;
     /** @type {number[][]} */
     const prov = results.map(() => []);
