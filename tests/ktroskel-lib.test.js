@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import {
     statGolvVid, kTolka, konFarRedovisas, konAntal, konFarRedovisasFor, konUtelamnatNot, raGapText, regStegForRedovisning,
     basEffekterForRedovisning, parNarK, parForRedovisning, kStampelVid, kStampelForVid, kSanktNot, kSidfot, csvMedStampel,
-    tsvMedStampel, kText, individLitenForVid
+    tsvMedStampel, kText, individLitenForVid, kUndantag, kUndantagNot, K_UNDANTAG
 } from '../src/lib/ktroskel.js';
 
 const STAMPEL_10 = 'Minsta gruppstorlek för redovisning: 10.';
@@ -118,5 +118,33 @@ describe('texterna om tröskeln', () => {
     });
     it('kTolka: bara rena heltal 2–1000', () => {
         expect([1, 2, '10', ' 1000 ', 1001, '2.5', '-3', 'x', null, 7.5].map(kTolka)).toEqual([null, 2, 10, 1000, null, null, null, null, null, null]);
+    });
+});
+
+// Att appen läser fliken, figuren och Utforskas ruta rätt och att varje export bär stämpeln prövas i
+// tests/ktroskel-exporter.test.js.
+describe('[I2] exporter som hör till ett undantag säger det', () => {
+    it('kUndantag: Likvärdigt arbete går före allt annat; ett diagram bara när exporten bär små grupper; Utforska när rutan är ikryssad', () => {
+        expect(kUndantag({ iLikvardighet: true })).toBe('Likvärdigt arbete');
+        expect(kUndantag({ iLikvardighet: true, arFigur: true, figurMedSma: false })).toBe('Likvärdigt arbete');
+        expect(kUndantag({ arFigur: true, figurMedSma: true })).toBe('valt i Tabeller och egna vyer');
+        expect(kUndantag({ arFigur: true, figurMedSma: false, utforskaMedSma: true })).toBe('');
+        expect(kUndantag({ utforskaMedSma: true })).toBe('valt i Tabeller och egna vyer');
+        expect(kUndantag({})).toBe('');
+        expect(Object.isFrozen(K_UNDANTAG)).toBe(true);
+    });
+    it('stämpeln med undantaget säger att filen kan innehålla grupper under tröskeln och utlovar ingen aggregering', () => {
+        const t = kStampelForVid(K_UNDANTAG.utforska, 10);
+        expect(t).toBe(`${STAMPEL_10} Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).`);
+        expect(kUndantagNot('')).toBe('');
+        expect(t).not.toMatch(/aggregera|anonym/i);
+    });
+});
+
+describe('[I3] tröskeln står i det som lämnar verktyget, och sänkningen sägs', () => {
+    it.each([[9, STAMPEL_9], [10, STAMPEL_10], [11, 'Minsta gruppstorlek för redovisning: 11.']])('k = %i: stämpeln', (k, text) => {
+        expect(kStampelVid(k)).toBe(text);
+        expect(kStampelForVid('', k)).toBe(text);
+        expect(kSanktNot(k)).toBe(k < 10 ? text : '');
     });
 });

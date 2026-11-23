@@ -162,6 +162,23 @@ export function kUndantagNot(undantag) {
     return undantag ? `Den här filen kan även innehålla grupper under tröskeln (undantag: ${undantag}).` : '';
 }
 
+/** De dokumenterade undantagen från tröskeln (k-troskeln.md §4), med namnen som stämpeln bär. */
+export const K_UNDANTAG = Object.freeze({ likvardighet: 'Likvärdigt arbete', utforska: 'valt i Tabeller och egna vyer' });
+
+/**
+ * Vilket undantag en tabell eller ett diagram hör till, om något. Allt i fliken Likvärdigt arbete hör dit, vad som än
+ * ritat det: fliken redovisar grupper under tröskeln utan att märka dem, och en stämpel som varnar i onödan är
+ * ofarlig. Ett diagram ritat med diagramkärnan hör annars till undantaget bara när dess export bär små grupper, och
+ * Utforskas tabell och diagram när användaren kryssat i att grupper under tröskeln ska med.
+ * @param {{iLikvardighet?: boolean, arFigur?: boolean, figurMedSma?: boolean, utforskaMedSma?: boolean}} el
+ * @returns {string} undantagets namn, eller tom sträng
+ */
+export function kUndantag({ iLikvardighet = false, arFigur = false, figurMedSma = false, utforskaMedSma = false }) {
+    if (iLikvardighet) return K_UNDANTAG.likvardighet;
+    if (arFigur) return figurMedSma ? K_UNDANTAG.utforska : '';
+    return utforskaMedSma ? K_UNDANTAG.utforska : '';
+}
+
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
 export function kStampelForVid(undantag, kInstalld) {
     return undantag ? `${kStampelVid(kInstalld)} ${kUndantagNot(undantag)}` : kStampelVid(kInstalld);

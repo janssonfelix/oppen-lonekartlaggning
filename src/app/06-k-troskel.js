@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
+import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
@@ -178,13 +178,8 @@ export function kIndividRad() {
 export function kStampelFor(undantag) { return kStampelForVid(undantag, kInstalld()); }
 
 /**
- * Vilket dokumenterat undantag en tabell eller ett diagram hör till, om något: allt i fliken
- * Likvärdigt arbete, och Utforskas tabell och diagram när rutan "Ta med grupper under k i
- * exporten" är ikryssad.
- *
- * Fliken Likvärdigt arbete går först och gäller ALLT i den, vilket bibliotek som än har ritat: fliken
- * redovisar grupper under tröskeln utan att märka dem, så stämpeln kan inte bero på vad figuren säger om
- * sig själv. En stämpel som varnar i onödan är ofarlig; en som inte varnar när den borde är det inte.
+ * Vilket dokumenterat undantag en tabell eller ett diagram hör till, om något. Regeln är `kUndantag` i
+ * src/lib/ktroskel.js; här läses det den behöver ur sidan: fliken, figuren och Utforskas ruta.
  * @param {Element|null} el
  * @param {boolean} [medSma]  bara för diagram ritade med diagramkärnan (ADR-39): bär exporten små grupper?
  *   Exportmenyn skickar det svar den själv exporterar efter, så att stämpel och innehåll följer samma svar.
@@ -195,15 +190,13 @@ export function _kUndantagFor(el, medSma) {
     if (!el || typeof el.closest !== 'function') return '';
     // En kopia i Alla diagram (74-alla-diagram.js) bär samma figur som källan, och stämpeln följer källans flik.
     const kalla = typeof diagramKopiaKalla === 'function' ? diagramKopiaKalla(el) : null;
-    if (el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))) return 'Likvärdigt arbete';
-    // Ett diagram ritat med diagramkärnan exporteras annars utan små grupper om inte vyn uttryckligen begär
-    // dem (exportMedSma): undantaget gäller bara när exporten faktiskt bär dem.
-    if (el._figur) {
-        const bar = typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma;
-        return bar ? 'valt i Tabeller och egna vyer' : '';
-    }
-    if ((el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && explorerSmaIExport()) return 'valt i Tabeller och egna vyer';
-    return '';
+    const arFigur = !!el._figur;
+    return kUndantag({
+        iLikvardighet: !!(el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))),
+        arFigur,
+        figurMedSma: arFigur && !!(typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma),
+        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && !!explorerSmaIExport(),
+    });
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
