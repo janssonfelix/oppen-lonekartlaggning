@@ -28,7 +28,7 @@ import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
 import { uppdateraAktivFlik } from './31-navigering.js';
 import { markeraFilrutaInlast, aterstallFilruta } from './32-filinlasning.js';
-import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
+import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _readCostSettings } from './55-prioritering.js';
 import { explorerSynkaSmaLas } from './70-utforska.js';
@@ -217,7 +217,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     _synkaKostnadsfalt();
     _fyllPaketFormular();
     tomStatistikcacher();
-    renderReferensKort();
+    ritaReferensKort();
     renderPaketInfo();
     ritaKonsistenskontroll();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).

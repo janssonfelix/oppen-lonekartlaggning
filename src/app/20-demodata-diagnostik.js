@@ -23,7 +23,7 @@ import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
 import { lasUppFlikar } from './31-navigering.js';
 import { _harledArbetsvarderingUrData, markeraFilrutaInlast } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
-import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
+import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
@@ -63,7 +63,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
     if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
     if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
     if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
-    if (typeof renderReferensKort === 'function') renderReferensKort();
+    if (typeof ritaReferensKort === 'function') ritaReferensKort();
     if (typeof markeraFilrutaInlast === 'function') markeraFilrutaInlast('upload-cell-policy', 'Demo');
 }
 // Det stora demots påhittade jämförelsestatistik (21-stort-demo.js). Det lilla demot har ingen: en kvarvarande från

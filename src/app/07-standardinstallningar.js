@@ -7,7 +7,7 @@ import { PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from '../lib/prioritering
 import { _fyllKTexter } from './06-k-troskel.js';
 import { T, termText } from './09-termer.js';
 import { ritaOmReferens, state } from './12-tillstand.js';
-import { renderReferensKort } from './38-referensfiler.js';
+import { ritaReferensKort } from './38-referensfiler.js';
 
 // ---- State ----
 // Standardvärdena för prioriteringen och kostnaden står i src/lib/prioritering.js och src/lib/kostnad.js.
@@ -126,7 +126,7 @@ export function _kopplaNamnFalt(id, satt) {
         const r = satt(/** @type {HTMLInputElement} */ (el).value);
         const fel = el.closest('.upload-cell, .ref-namn-rad, .namn-falt')?.querySelector('.upload-namn-fel');
         if (fel) { fel.textContent = r.ok ? '' : r.fel; /** @type {HTMLElement} */ (fel).hidden = r.ok; }
-        if (!r.ok) { synkaNamnFalt(); if (typeof renderReferensKort === 'function') renderReferensKort(); }
+        if (!r.ok) { synkaNamnFalt(); if (typeof ritaReferensKort === 'function') ritaReferensKort(); }
     });
 }
 

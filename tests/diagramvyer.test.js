@@ -721,7 +721,7 @@ describe('Ålder & karriär: chart-demo-agecurve, chart-demo-spread', () => {
     it('figurerna: monotona kurvor per kön utan zon; percentilband per femårsgrupp', () => {
         const kurva = { ages: [58, 59, 60, 61, 62], share: [1, 2, 3, 2, 1] };
         w.__k = kurva;
-        const a = w.eval('_demoAgecurveFigur(window.__k, window.__k)');
+        const a = w.eval('_demoAlderskurvaFigur(window.__k, window.__k)');
         expect(a.lager.map(l => [l.marke, l.serie, l.kurva, l.farg])).toEqual([['linje', 'Kvinna', 'monoton', '#833a8f'], ['linje', 'Man', 'monoton', '#5f7f16']]);
         expect(a.referens).toBeUndefined();
         expect(a.lager[0].tips({ x: 60, y: 3 })).toEqual([['60 år'], ['Kvinna', '3,0 % av kvinnorna']]);

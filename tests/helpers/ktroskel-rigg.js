@@ -342,7 +342,7 @@ export async function samlaUtdata(w) {
 
     for (const [namn, kor] of [
         ['Excel alla flikar', () => w.eval('exportAlltTillExcel()')], ['protokollet', () => w.eval('exportJPAProtokoll()')],
-        ['EU-lönerapporten', () => w.eval('exportEuReport()')], ['handlingsplanen', () => w.eval('exportHandlingsplan()')],
+        ['EU-lönerapporten', () => w.eval('exportEuRapport()')], ['handlingsplanen', () => w.eval('exportHandlingsplan()')],
         ['jämförelseexporten', () => w.eval('exportBenchmarkExcel()')], ['Löneöversyn', () => w.eval('exportPrognos()')],
         ['Löneöversikten', () => d.getElementById('btn-export-excel').click()],
         ['prioriteringslistan', () => d.getElementById('btn-export-prio-excel').click()],

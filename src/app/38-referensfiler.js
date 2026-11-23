@@ -31,14 +31,14 @@ function _lasInReferens(rader, filnamn) {
     const namn = namnFranFil(filnamn);
     state.policyNamn = namn;
     state.policyKortnamn = namn;
-    renderReferensKort();
+    ritaReferensKort();
     if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
     return policy.length;
 }
 
 // Referenskortet i Filer och kvalitet: vilken referens som används, namnfält för egen fil
 // och knappen som tar bort den.
-export function renderReferensKort() {
+export function ritaReferensKort() {
     const el = document.getElementById('referens-status');
     if (!el) return;
     const har = harReferens();
@@ -56,7 +56,7 @@ export function renderReferensKort() {
     if (input && document.activeElement !== input) /** @type {HTMLInputElement} */ (input).value = namnges ? referensNamn() : '';
     if (aterga) { aterga.hidden = !egen; aterga.textContent = 'Ta bort referensen'; }
 }
-const policyInput = /** @type {HTMLElement} */ (document.getElementById("file-input-policy"));
+const policyFilval = /** @type {HTMLElement} */ (document.getElementById("file-input-policy"));
 const policyStatus = /** @type {HTMLElement} */ (document.getElementById("policy-status"));
 
 // Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
@@ -74,7 +74,7 @@ export function _visaJamforelseFlik(synlig) {
 export function synkaJamforelseFlik() { _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0)); }
 
 // ---- File Upload: External Statistics (Excel) ----
-const statInput = /** @type {HTMLElement} */ (document.getElementById("file-input-stat"));
+const statFilval = /** @type {HTMLElement} */ (document.getElementById("file-input-stat"));
 const statStatus = /** @type {HTMLElement} */ (document.getElementById("stat-status"));
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
@@ -90,7 +90,7 @@ export function uppstartReferensfiler() {
         if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         ritaOmReferens();
     });
-    policyInput.addEventListener("change", e => {
+    policyFilval.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
         visaLaddning();
@@ -129,7 +129,7 @@ export function uppstartReferensfiler() {
             if (hamtaData().length > 0) ritaLoneoversikt();
         }, 'stallningstagande');
     });
-    statInput.addEventListener("change", e => {
+    statFilval.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
         visaLaddning();

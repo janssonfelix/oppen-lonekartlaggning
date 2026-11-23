@@ -135,7 +135,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         w.eval(`window.__lagen = [];
-            for (const namn of ['renderStrukturUtkast', 'renderRapportunderlag', 'renderArsjamforelse']) {
+            for (const namn of ['ritaStrukturUtkast', 'renderRapportunderlag', 'renderArsjamforelse']) {
                 const orig = window[namn];
                 window[namn] = (...a) => { window.__lagen.push(namn + ':' + iExportLage()); return orig(...a); };
             }`);
@@ -143,7 +143,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(d.getElementById('page-title').textContent).toBe('Rapporttext');
         expect(d.getElementById('struktur-narrative').value).toContain('LÖNEKARTLÄGGNING');
         d.getElementById('tab-arbetet').click();
-        expect(w.__lagen).toEqual(['renderStrukturUtkast:true', 'renderRapportunderlag:true', 'renderArsjamforelse:true']);
+        expect(w.__lagen).toEqual(['ritaStrukturUtkast:true', 'renderRapportunderlag:true', 'renderArsjamforelse:true']);
         expect(w.eval('iExportLage()')).toBe(false);
     });
     it('Återskapa i Rapporttext nollar redigeringen och bygger utkastet på nytt i exportläge', () => {
@@ -153,7 +153,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         nb.value = 'Egen text';
         nb.dispatchEvent(new w.Event('input', { bubbles: true }));
         expect(nb.dataset.dirty).toBe('1');
-        w.eval(`window.__lagen = []; { const o = renderStrukturUtkast; window.renderStrukturUtkast = (...a) => { window.__lagen.push(iExportLage()); return o(...a); }; }`);
+        w.eval(`window.__lagen = []; { const o = ritaStrukturUtkast; window.ritaStrukturUtkast = (...a) => { window.__lagen.push(iExportLage()); return o(...a); }; }`);
         d.getElementById('struktur-narrative-regen').click();
         expect(nb.dataset.dirty).toBeUndefined();
         expect(nb.value).toContain('LÖNEKARTLÄGGNING');
@@ -332,7 +332,7 @@ describe('Lönestrukturens mått räknas på ett ställe', () => {
         const kalla = readFileSync(join(__dirname, '..', 'src', 'app', '37-struktur.js'), 'utf8');
         expect(lib.match(/kv\.reduce\(\(s, x\) => s \+ x, 0\) \/ kv\.length/g)).toHaveLength(1);
         expect(kalla).not.toMatch(/\.reduce\(\(s, x\) => s \+ x, 0\)/);
-        for (const f of ['renderStructure', 'renderStrukturUtkast', '_exportEuReportExport']) {
+        for (const f of ['ritaStruktur', 'ritaStrukturUtkast', '_exportEuRapportExport']) {
             const kropp = kalla.slice(kalla.indexOf(`function ${f}(`)).split(/\n}\n/)[0];
             expect(kropp, f).toContain('strukturMatt(d, k)');
         }

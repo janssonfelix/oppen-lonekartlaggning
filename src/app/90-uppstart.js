@@ -13,7 +13,7 @@ import { ritaKartlaggningensSteg } from './13-oversikt.js';
 import { lasInDemodata } from './20-demodata-diagnostik.js';
 import { loadStortDemo } from './21-stort-demo.js';
 import { _paketStatus, lasInInbakatPaket } from './29-organisationspaket.js';
-import { renderReferensKort } from './38-referensfiler.js';
+import { ritaReferensKort } from './38-referensfiler.js';
 import { setupTabA11y } from './63-tangentbordsnavigering.js';
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
@@ -24,7 +24,7 @@ export function uppstartSist() {
     setupTabA11y();
     tillampaProfiletiketter();  // Tillämpa default-profil vid uppstart
     _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
-    renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
+    ritaReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
     // Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att
     // en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
     // inget annat värde läses — adressen kan aldrig föra in data eller inställningar.

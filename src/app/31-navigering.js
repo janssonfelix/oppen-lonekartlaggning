@@ -12,7 +12,7 @@ import { ritaForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
 import { ritaLikvardigtArbete } from './34-likvardigt-arbete.js';
 import { ritaLoneoversyn } from './36-loneoversyn.js';
-import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
+import { ritaStruktur, ritaStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAldersstruktur, ritaAlderOchLon } from './40-alder-karriar.js';
@@ -405,7 +405,7 @@ function _ritaFlik(target) {
     }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) {
-        renderStructure(); ritaLoneskillnadPerBas(lsBasVymodell());
+        ritaStruktur(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
         _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(ritaRegressionskort()));
         ritaGapUppdelning(); renderLonestrukturNycklar();
@@ -415,7 +415,7 @@ function _ritaFlik(target) {
     else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.
-    else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(renderRapportunderlag)); });
+    else if (target === "rapporttext") medExportLage(() => { ritaStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(renderRapportunderlag)); });
     else if (target === "dokumentera") medExportLage(() => {
         if (d.length) renderKvalitetssakring();
         _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => renderExportBesked()));

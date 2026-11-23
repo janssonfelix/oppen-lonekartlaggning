@@ -32,7 +32,7 @@ describe('Lönestruktur: antal i tabellerna', () => {
         await laddaXlsx(w);
         let bok = null;
         w.XLSX.writeFile = wb => { bok = wb; };
-        w.eval('exportEuReport()');
+        w.eval('exportEuRapport()');
         const rader = w.XLSX.utils.sheet_to_json(bok.Sheets['Skillnad i lönefördelningen'], { header: 1, raw: true });
         const kv = rader[0].indexOf('Antal kvinnor'), ma = rader[0].indexOf('Antal män');
         expect(kv).toBeGreaterThan(0);

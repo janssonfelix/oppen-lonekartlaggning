@@ -113,7 +113,7 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
     it('EU-lönerapporten', async () => {
         const w = fonster3(null);
         await laddaXlsx(w);
-        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuReport()')))[0];
+        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuRapport()')))[0];
         expect(harNagon(eu, [...MAN, ...gap])).toEqual([]);
         expect(eu).toMatch(NOT);
         expect(eu.split('[Kvartilfördelning]')[1].split('[')[0]).not.toMatch(/Q4 \|[^\n]*\| 3 \|/);

@@ -34,13 +34,13 @@ import { kTroskelLank } from './86-installningar.js';
 
 // ===================================================================
 // Struktur & EU-rapport — representation/segregation, kvartilfördelning
-// (EU 2023/970), distributionellt gap. Auto-rapportutkastet (renderStrukturUtkast) står i fliken Rapporttext.
+// (EU 2023/970), distributionellt gap. Auto-rapportutkastet (ritaStrukturUtkast) står i fliken Rapporttext.
 // De rena måtten står i src/lib/struktur.js.
 // ===================================================================
 
 // Lönestrukturens mått räknas av strukturMatt i src/lib/struktur.js, med tröskeln kTroskel() som argument.
 
-export function renderStructure() {
+export function ritaStruktur() {
     const wrap = document.getElementById('view-struktur');
     if (!wrap) return;
     const d = hamtaData();
@@ -123,8 +123,8 @@ export function renderStructure() {
     if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, { ..._strukturKvartilFigur(q, totAndel), underlag: underlag(_strukturKvartilFor) },
         { exportAnteckning: `Andel kvinnor: ${talformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${talformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
 
-    renderSektorer(d);
-    renderStrukturTradkarta(d);
+    ritaSektorer(d);
+    ritaStrukturTradkarta(d);
     _stRitaTopp(d, { konOk, totAndel, medGap, q, dist, basAntal: repVisade.length });
 }
 
@@ -132,7 +132,7 @@ export function renderStructure() {
  * Auto-rapportutkastet i fliken Rapporttext: fynden i klarspråk, ur samma mått som Lönestruktur räknar. Ett utkast
  * som användaren har redigerat skrivs inte över; "Återskapa" frågar först, tar bort markeringen och ritar om.
  */
-export function renderStrukturUtkast() {
+export function ritaStrukturUtkast() {
     const nb = document.getElementById('struktur-narrative');
     if (!nb) return;
     _stSynkaUtkastValjare();
@@ -142,7 +142,7 @@ export function renderStrukturUtkast() {
     const k = kTroskel();
     const { konOk, repVisade, totAndel, dist, q, medGap, meanGap } = strukturMatt(d, k);
     const perBas = state.utkastPerBas !== false ? _stUtkastPerBas(k) : null;
-    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
+    /** @type {HTMLInputElement} */ (nb).value = _byggSammanfattning(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
 }
 
 /** Väljaren ovanför utkastet visar valet i state (Hela organisationen, eller med ett stycke per BAS-intervall). */
@@ -284,7 +284,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
                   tips: d => [[d.namn], ['Antal', String(d.n)], ...(d.ovriga ? [['Könsfördelning', 'visas inte för små grupper']] : [['Andel kvinnor', talformat(d.andelKv, 'pct')]])],
                   harleddAv: { lager: [stor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).grupper } }] };
 }
-function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
+function ritaStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
     const el = document.getElementById(id);
     if (!el) return;
     // Lägena räknas med D3 här i vyn, utanför ritarens felhantering: ett fel (eller ett bygge utan D3) får inte
@@ -348,7 +348,7 @@ function _sektorEjBasTitel() {
         + `eller raderna är för få för så många ${T.niva.fl}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.`;
 }
 
-export function renderSektorer(d) {
+export function ritaSektorer(d) {
     const host = document.getElementById('struktur-sektorer');
     if (!host) return;
     let tabell, andel;
@@ -409,7 +409,7 @@ export function renderSektorer(d) {
 // på en avkortad axel, där stapelns längd säger något annat än värdet.
 // `visa` är de sektorer vars kvot redovisas i tabellen; inga andra når figuren, och axeln räknas bara ur dem.
 // Filtren: sektor (lista) och antal personer i sektorn, samma namn och antal som tabellens kolumner Sektor och Antal.
-// Rubriken och bisatsen är tabellens: renderSektorer skickar sektorJusteradText (sektor.js) för hela tabellen, och utan
+// Rubriken och bisatsen är tabellens: ritaSektorer skickar sektorJusteradText (sektor.js) för hela tabellen, och utan
 // den räknas samma regel ur de visade raderna.
 function _sektorFigur(visa, justText = sektorJusteradText(visa)) {
     const { medAlder, rubrik, justeradFor } = justText;
@@ -436,7 +436,7 @@ function _sektorFigur(visa, justText = sektorJusteradText(visa)) {
 }
 
 // (4) Bygg ett klarspråksutkast av fynden.
-function _buildNarrative(d, ctx) {
+function _byggSammanfattning(d, ctx) {
     const fmtPct = n => n == null ? '–' : (n >= 0 ? '+' : '') + svPct(n, 1);
     const lines = [];
     lines.push('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
@@ -488,8 +488,8 @@ function _buildNarrative(d, ctx) {
     return lines.join('\n');
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportEuReport(...a) { return medExportLage(() => _exportEuReportExport.apply(null, /** @type {any} */ (a))); }
-function _exportEuReportExport() {
+function exportEuRapport(...a) { return medExportLage(() => _exportEuRapportExport.apply(null, /** @type {any} */ (a))); }
+function _exportEuRapportExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = hamtaData();
     if (!d.length) { alert('Ingen data.'); return; }
@@ -558,13 +558,13 @@ function _kvartilSpann(x, kr) {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartStruktur() {
     (function wireStructure() {
-        document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
+        document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuRapport);
         document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
             const nb = document.getElementById('struktur-narrative');
             if (!nb) return;
             // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
             if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
-            delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
+            delete nb.dataset.dirty; medExportLage(ritaStrukturUtkast);
         });
         // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
         // över; Återskapa ritar om det med valet.
@@ -572,7 +572,7 @@ export function uppstartStruktur() {
             state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
             const nb = document.getElementById('struktur-narrative');
             if (nb && nb.dataset.dirty) { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
-            medExportLage(renderStrukturUtkast);
+            medExportLage(ritaStrukturUtkast);
         });
         document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
             const nb = document.getElementById('struktur-narrative');

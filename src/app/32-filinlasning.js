@@ -28,7 +28,7 @@ import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
 import { _paketFilnamn, _synkaOrgTyp, _tomStatistik, skapaPaketMedImportprofil } from './29-organisationspaket.js';
 import { _aktivFlik, _visaFilkortet, lasUppFlikar } from './31-navigering.js';
 import { _fcGlomKnappresultat, _fcRensaParMal } from './36-loneoversyn.js';
-import { renderReferensKort } from './38-referensfiler.js';
+import { ritaReferensKort } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
@@ -116,7 +116,7 @@ function _efterInlastData() {
         if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
         if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
         tillampaProfiletiketter();
-        if (typeof renderReferensKort === 'function') renderReferensKort();
+        if (typeof ritaReferensKort === 'function') ritaReferensKort();
     }
     state.isDemo = false;   // #9: verklig uppladdning lämnar demoläge
     state.demoStort = false;

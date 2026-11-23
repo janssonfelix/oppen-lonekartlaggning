@@ -238,7 +238,7 @@ prick står aldrig för färre än två personer, och diagramdatan är kvantiler
 Excel-export bara när båda grupperna når tröskeln, med antalet utelämnade angivet (`parForRedovisning` i
 `src/lib/ktroskel.js`; för rapporten och rapportunderlaget i `vymodellRapport` och `vymodellRapportunderlag`): Word-utkastet,
 PDF-rapporten, JPA-protokollet (bladet för likvärdigt arbete och försättsbladets antal), Rapporttextens utkast
-(`_buildNarrative`), BAS-dossiern, årsbokslutet, Att göra och dess CSV, handlingsplanens förifyllda rader,
+(`_byggSammanfattning`), BAS-dossiern, årsbokslutet, Att göra och dess CSV, handlingsplanens förifyllda rader,
 gruppdossiern, Löneöversyns
 förslag, mål-läge och känslighetskurva samt robusthetspanelen i Exportera (`robusthetLikvardighet` i
 `85-robusthet-fardigcheck.js`: par med en grupp under tröskeln namnges inte i någon körning, och panelen anger antalet

@@ -14196,7 +14196,7 @@ function ritaAlderOchLon(bas) {
   const scope2 = isAll ? "hela urvalet" : `${T.niva.en} ${bas}`;
   const { utan } = vm;
   const skal = `färre än ${k} ${personOrd(k)} av ${kvOk || maOk ? "könet" : "vartdera könet"} finns i urvalet`;
-  ritaFigur("chart-kon-scatter", _konScatterFigur({
+  ritaFigur("chart-kon-scatter", _konPunktmolnFigur({
     df,
     dataKv,
     dataMa,
@@ -14438,7 +14438,7 @@ var _punktTips = (d) => [
   ["Lön", talformat(d.y, "kr")]
 ];
 var _vagratLinje = (serie, farg, y, a0, a1, val = {}) => ({ marke: "linje", serie, farg, data: [{ x: a0, y }, { x: a1, y }], ...val });
-function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
+function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
   const punkt = (d, medKon) => ({
     x: d.alder,
     y: d.lon,
@@ -14504,7 +14504,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
       data: [{ x: minAlder, y: trendAlla.m * minAlder + trendAlla.b }, { x: maxAlder, y: trendAlla.m * maxAlder + trendAlla.b }]
     }),
     harleddAv: { lager: kallor(), minN: kTroskel(), namn: "trendlinjen för hela urvalet", berakna: (p) => {
-      const t = _konScatterTrend(p);
+      const t = _konPunktmolnTrend(p);
       return t ? { data: t.linje, serie: allaNamn(t.reg) } : [];
     } }
   });
@@ -14514,7 +14514,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
       minN: kTroskel(),
       namn: konNamn(kon),
       berakna: (p) => {
-        const t = _konScatterTrend(p, l.marke === "band");
+        const t = _konPunktmolnTrend(p, l.marke === "band");
         return t ? l.marke === "band" ? t.band : t.linje : [];
       }
     };
@@ -14533,7 +14533,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
     ] : []
   };
 }
-function _konScatterTrend(punkter, medBand = false) {
+function _konPunktmolnTrend(punkter, medBand = false) {
   const par = punkter.map((d) => [d.x, d.y]), aldrar = par.map((p) => p[0]);
   const [a0, a1] = omfang(aldrar);
   if (!(a1 > a0)) return null;
@@ -14570,20 +14570,20 @@ function _konLadFigur({ lonKv, lonMa, beskrivning }) {
     }]
   };
 }
-var konSel = document.getElementById("bas-select-kon");
-var demoSel = document.getElementById("bas-select-demo");
+var konValjare = document.getElementById("bas-select-kon");
+var demoValjare = document.getElementById("bas-select-demo");
 function _akValj(varde, kalla) {
-  for (const sel of [konSel, demoSel]) {
+  for (const sel of [konValjare, demoValjare]) {
     if (sel && sel !== kalla && [.../** @type {HTMLSelectElement} */
     sel.options].some((o) => o.value === varde)) sel.value = varde;
   }
-  if (konSel) ritaAlderOchLon(
+  if (konValjare) ritaAlderOchLon(
     /** @type {HTMLInputElement} */
-    konSel.value
+    konValjare.value
   );
-  if (demoSel) ritaAldersstruktur(
+  if (demoValjare) ritaAldersstruktur(
     /** @type {HTMLInputElement} */
-    demoSel.value
+    demoValjare.value
   );
 }
 function ritaAldersstruktur(bas) {
@@ -14636,7 +14636,7 @@ function ritaAldersstruktur(bas) {
   ritaFigur("chart-demo-hist", _demoHistFigur({ pctKv, pctMa, refPct: vm.refPct, isAll }), { hojd: 340 });
   if (document.getElementById("chart-demo-pyramid")) ritaFigur("chart-demo-pyramid", _demoPyramidFigur({ pctKv, pctMa, isAll }));
   const pol = isAll ? null : policyFor(null, bas);
-  ritaFigur("chart-demo-agecurve", _demoAgecurveFigur(vm.kurvaKv, vm.kurvaMa), { hojd: 300 });
+  ritaFigur("chart-demo-agecurve", _demoAlderskurvaFigur(vm.kurvaKv, vm.kurvaMa), { hojd: 300 });
   {
     const f = vm.band ? _demoBandFigur(vm.df, kTroskel(), pol, vm.aLo, vm.aHi, vm.band) : null;
     if (f) ritaFigur("chart-demo-spread", f, { hojd: 320 });
@@ -14699,7 +14699,7 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
     lager: [serie("Kvinna", PALETTE.kon.kvinna, pctKv, -1), serie("Man", PALETTE.kon.man, pctMa, 1)]
   };
 }
-function _demoAgecurveFigur(kv, ma) {
+function _demoAlderskurvaFigur(kv, ma) {
   const kurva = (serie, farg, c, vilka) => ({
     marke: "linje",
     serie,
@@ -14747,10 +14747,10 @@ function uppstartAlderKarriar() {
     );
     if (s) ritaAlderOchLon(s.value);
   });
-  if (konSel) konSel.addEventListener("change", (e) => _akValj(
+  if (konValjare) konValjare.addEventListener("change", (e) => _akValj(
     /** @type {HTMLInputElement} */
     e.target.value,
-    konSel
+    konValjare
   ));
   document.getElementById("kon-color-by")?.addEventListener("change", () => {
     const s = document.getElementById("bas-select-kon");
@@ -14759,10 +14759,10 @@ function uppstartAlderKarriar() {
       s.value
     );
   });
-  if (demoSel) demoSel.addEventListener("change", (e) => _akValj(
+  if (demoValjare) demoValjare.addEventListener("change", (e) => _akValj(
     /** @type {HTMLInputElement} */
     e.target.value,
-    demoSel
+    demoValjare
   ));
 }
 
@@ -22509,7 +22509,7 @@ function _efterInlastData() {
     if (typeof synkaNamnFalt === "function") synkaNamnFalt();
     if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
     tillampaProfiletiketter();
-    if (typeof renderReferensKort === "function") renderReferensKort();
+    if (typeof ritaReferensKort === "function") ritaReferensKort();
   }
   state.isDemo = false;
   state.demoStort = false;
@@ -24620,7 +24620,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   _synkaKostnadsfalt();
   _fyllPaketFormular();
   tomStatistikcacher();
-  renderReferensKort();
+  ritaReferensKort();
   renderPaketInfo();
   ritaKonsistenskontroll();
   if (kAndrad && state.data.length) {
@@ -25059,7 +25059,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
   if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
   if (typeof synkaNamnFalt === "function") synkaNamnFalt();
   if (typeof tillampaProfiletiketter === "function") tillampaProfiletiketter();
-  if (typeof renderReferensKort === "function") renderReferensKort();
+  if (typeof ritaReferensKort === "function") ritaReferensKort();
   if (typeof markeraFilrutaInlast === "function") markeraFilrutaInlast("upload-cell-policy", "Demo");
 }
 function _lasInDemoStatistik({ stort = false } = {}) {
@@ -25369,7 +25369,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   document.querySelectorAll('input[type="file"]').forEach((inp) => {
     inp.value = "";
   });
-  if (typeof renderReferensKort === "function") renderReferensKort();
+  if (typeof ritaReferensKort === "function") ritaReferensKort();
   ["data-status", "policy-status", "stat-status", "config-status"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -26752,7 +26752,7 @@ function nationellAidKlass(aid) {
 }
 
 // src/app/37-struktur.js
-function renderStructure() {
+function ritaStruktur() {
   const wrap = document.getElementById("view-struktur");
   if (!wrap) return;
   const d = hamtaData();
@@ -26828,11 +26828,11 @@ function renderStructure() {
     { ..._strukturKvartilFigur(q, totAndel), underlag: underlag2(_strukturKvartilFor) },
     { exportAnteckning: `Andel kvinnor: ${talformat(q[0].andelKv, "pct")} i lägsta kvartilen, ${talformat(q[q.length - 1].andelKv, "pct")} i högsta` }
   );
-  renderSektorer(d);
-  renderStrukturTradkarta(d);
+  ritaSektorer(d);
+  ritaStrukturTradkarta(d);
   _stRitaTopp(d, { konOk, totAndel, medGap, q, dist, basAntal: repVisade.length });
 }
-function renderStrukturUtkast() {
+function ritaStrukturUtkast() {
   const nb = document.getElementById("struktur-narrative");
   if (!nb) return;
   _stSynkaUtkastValjare();
@@ -26845,7 +26845,7 @@ function renderStrukturUtkast() {
   const k = kTroskel();
   const { konOk, repVisade, totAndel, dist, q, medGap, meanGap } = strukturMatt(d, k);
   const perBas = state.utkastPerBas !== false ? _stUtkastPerBas(k) : null;
-  nb.value = _buildNarrative(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
+  nb.value = _byggSammanfattning(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
 }
 function _stSynkaUtkastValjare() {
   const sel = (
@@ -26993,7 +26993,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     ]
   };
 }
-function renderStrukturTradkarta(d, id = "chart-struktur-tradkarta") {
+function ritaStrukturTradkarta(d, id = "chart-struktur-tradkarta") {
   const el = document.getElementById(id);
   if (!el) return;
   let figur = null;
@@ -27075,7 +27075,7 @@ function _strukturKvartilFigur(q, totAndel, omfang2) {
 function _sektorEjBasTitel() {
   return `Modellen med ${T.niva.en} går inte att skatta i ${T.huvudomrade.bf}: kön och ${T.niva.en} går inte att skilja åt, eller raderna är för få för så många ${T.niva.fl}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.`;
 }
-function renderSektorer(d) {
+function ritaSektorer(d) {
   const host = document.getElementById("struktur-sektorer");
   if (!host) return;
   let tabell, andel;
@@ -27164,7 +27164,7 @@ function _sektorFigur(visa, justText = sektorJusteradText(visa)) {
     ]
   };
 }
-function _buildNarrative(d, ctx) {
+function _byggSammanfattning(d, ctx) {
   const fmtPct = (n) => n == null ? "–" : (n >= 0 ? "+" : "") + svPct(n, 1);
   const lines = [];
   lines.push("LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)");
@@ -27223,14 +27223,14 @@ function _buildNarrative(d, ctx) {
   }
   return lines.join("\n");
 }
-function exportEuReport(...a) {
-  return medExportLage(() => _exportEuReportExport.apply(
+function exportEuRapport(...a) {
+  return medExportLage(() => _exportEuRapportExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportEuReportExport() {
+function _exportEuRapportExport() {
   if (typeof XLSX === "undefined") {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
@@ -27303,13 +27303,13 @@ function _kvartilSpann(x, kr2) {
 }
 function uppstartStruktur() {
   (function wireStructure() {
-    document.getElementById("struktur-eu-export")?.addEventListener("click", exportEuReport);
+    document.getElementById("struktur-eu-export")?.addEventListener("click", exportEuRapport);
     document.getElementById("struktur-narrative-regen")?.addEventListener("click", () => {
       const nb2 = document.getElementById("struktur-narrative");
       if (!nb2) return;
       if (nb2.dataset.dirty && !confirm("Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?")) return;
       delete nb2.dataset.dirty;
-      medExportLage(renderStrukturUtkast);
+      medExportLage(ritaStrukturUtkast);
     });
     document.getElementById("struktur-narrative-omfang")?.addEventListener("change", (e) => {
       state.utkastPerBas = /** @type {HTMLSelectElement} */
@@ -27319,7 +27319,7 @@ function uppstartStruktur() {
         if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.");
         return;
       }
-      medExportLage(renderStrukturUtkast);
+      medExportLage(ritaStrukturUtkast);
     });
     document.getElementById("struktur-narrative-copy")?.addEventListener("click", () => {
       const nb2 = document.getElementById("struktur-narrative");
@@ -27560,7 +27560,7 @@ function __excelAlltBokExport() {
   const diagramBlad = _excelDiagramBlad();
   for (const [namn, rader] of diagramBlad) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rader), namn);
   for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
-  ensure("#sektor-table tbody tr", () => renderSektorer(hamtaData()));
+  ensure("#sektor-table tbody tr", () => ritaSektorer(hamtaData()));
   const sektorSheet = tableToSheet("sektor-table");
   if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
   const bmSheet = state.statistik.length ? tableToSheet("benchmark-table") : null;
@@ -29135,14 +29135,14 @@ function _lasInReferens(rader, filnamn) {
   const namn = namnFranFil(filnamn);
   state.policyNamn = namn;
   state.policyKortnamn = namn;
-  renderReferensKort();
+  ritaReferensKort();
   if (typeof renderPaketInfo === "function") {
     renderPaketInfo();
     uppdateraPaketKnapp();
   }
   return policy.length;
 }
-function renderReferensKort() {
+function ritaReferensKort() {
   const el = document.getElementById("referens-status");
   if (!el) return;
   const har = harReferens();
@@ -29159,7 +29159,7 @@ function renderReferensKort() {
     aterga.textContent = "Ta bort referensen";
   }
 }
-var policyInput = (
+var policyFilval = (
   /** @type {HTMLElement} */
   document.getElementById("file-input-policy")
 );
@@ -29179,7 +29179,7 @@ function _visaJamforelseFlik(synlig) {
 function synkaJamforelseFlik() {
   _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0));
 }
-var statInput = (
+var statFilval = (
   /** @type {HTMLElement} */
   document.getElementById("file-input-stat")
 );
@@ -29202,7 +29202,7 @@ function uppstartReferensfiler() {
     if (typeof aterstallFilruta === "function") aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
     ritaOmReferens();
   });
-  policyInput.addEventListener("change", (e) => {
+  policyFilval.addEventListener("change", (e) => {
     const file = (
       /** @type {HTMLInputElement} */
       e.target.files?.[0]
@@ -29239,7 +29239,7 @@ function uppstartReferensfiler() {
       if (hamtaData().length > 0) ritaLoneoversikt();
     }, "stallningstagande");
   });
-  statInput.addEventListener("change", (e) => {
+  statFilval.addEventListener("change", (e) => {
     const file = (
       /** @type {HTMLInputElement} */
       e.target.files?.[0]
@@ -29453,7 +29453,7 @@ function _kopplaNamnFalt(id, satt) {
     }
     if (!r.ok) {
       synkaNamnFalt();
-      if (typeof renderReferensKort === "function") renderReferensKort();
+      if (typeof ritaReferensKort === "function") ritaReferensKort();
     }
   });
 }
@@ -32711,7 +32711,7 @@ function _ritaFlik(target) {
     renderLikaArbeteTopp({ reg });
   } else if (target === "prioritering" && d.length) renderPrioritering();
   else if (target === "struktur" && d.length) {
-    renderStructure();
+    ritaStruktur();
     ritaLoneskillnadPerBas(lsBasVymodell());
     _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(ritaRegressionskort()));
     ritaGapUppdelning();
@@ -32725,7 +32725,7 @@ function _ritaFlik(target) {
     renderExplorer();
     utAllaDiagramVidRitning();
   } else if (target === "rapporttext") medExportLage(() => {
-    renderStrukturUtkast();
+    ritaStrukturUtkast();
     _ritaTungtBlock(target, ["rapportunderlag-innehall"], () => medExportLage(renderRapportunderlag));
   });
   else if (target === "dokumentera") medExportLage(() => {
@@ -33482,7 +33482,7 @@ function sattReferensNamn(namn) {
 }
 function ritaOmReferens() {
   for (const fn of [
-    renderReferensKort,
+    ritaReferensKort,
     uppdateraAktivFlik,
     ritaKravstatus,
     ritaKonsistenskontroll,
@@ -36833,7 +36833,7 @@ function uppstartSist() {
   setupTabA11y();
   tillampaProfiletiketter();
   _synkaKTroskel();
-  renderReferensKort();
+  ritaReferensKort();
   try {
     const demoVal = new URLSearchParams(window.location.search).get("demo");
     const demo = demoVal === "1" || demoVal === "stor";

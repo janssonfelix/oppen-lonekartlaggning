@@ -334,11 +334,11 @@ listar vilka diagram som har urvalet och vilka som inte har det.
 AID-etikett och huvudområde efter BAS: prioriteringens två diagram, trattdiagrammet, statistikläget, spannen och
 skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde), bandkartan (AID-etikett) och krav mot lön
 (huvudområde). Huvudområdet är `sektorsnamn(aid)`, samma namn som i översikten per huvudområde. Övriga:
-- Lön mot ålder (`_konScatterFigur`): BAS (bara när hela urvalet visas), AID-etikett, ålder och lön. Punkterna bär `alder`
+- Lön mot ålder (`_konPunktmolnFigur`): BAS (bara när hela urvalet visas), AID-etikett, ålder och lön. Punkterna bär `alder`
   och `lon` (samma tal som tipset) i stället för att filtren läser `x` och `y`: trendlinjerna och statistikens median har
   också `x` och `y` men ska inte döljas av dem. Trendlinjerna per kön, deras konfidensband och trenden för hela urvalet
   är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linjarRegression`,
-  `linjarRegressionKI`, med bandet ur `src/lib/osakerhet.js`, `_konScatterTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
+  `linjarRegressionKI`, med bandet ur `src/lib/osakerhet.js`, `_konPunktmolnTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
   AID-etikett är källan alla punktlager och `villkor` väljer könet. Hela urvalets trend byter R² i namnet. Utan filter
   är bilden byte för byte densamma som förut. Lön mot ålder per BAS-intervall har samma filter, men trendlinjen i en
   panel räknas inte om (en mening per panel i noten); den gäller alla i intervallet och döljs med sitt BAS-intervall.

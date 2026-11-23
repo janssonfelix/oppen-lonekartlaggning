@@ -24,7 +24,7 @@ import { bedomningUnderlag, UK_ETIKETT } from './13-oversikt.js';
 import { _laggTillMetodblad, _tillampaTalformat, _excelBladnamn, _visaExportvarning, EU_LONEBEGREPP_RESERVATION, SV_TALFORMAT, tabellTillBlad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
-import { renderSektorer } from './37-struktur.js';
+import { ritaSektorer } from './37-struktur.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper, laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { generateBenchmark, jamforelseUrvalText } from './42-jamforelse.js';
@@ -245,7 +245,7 @@ function __excelAlltBokExport() {
     for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
 
     // Bladet per AID-huvudområde (ADR-33) — samma k-regler som vyn.
-    ensure('#sektor-table tbody tr', () => renderSektorer(hamtaData()));
+    ensure('#sektor-table tbody tr', () => ritaSektorer(hamtaData()));
     const sektorSheet = tableToSheet('sektor-table');
     if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
 

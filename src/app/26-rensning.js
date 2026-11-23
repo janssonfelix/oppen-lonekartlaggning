@@ -18,7 +18,7 @@ import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
 import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, renderPaketInfo } from './29-organisationspaket.js';
 import { ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
-import { _visaJamforelseFlik, renderReferensKort } from './38-referensfiler.js';
+import { _visaJamforelseFlik, ritaReferensKort } from './38-referensfiler.js';
 import { rapportGlomHopfallning } from './39-loneoversikt.js';
 import { laMinneSlapp } from './41-lika-arbete.js';
 import { jamforelseSattVal } from './42-jamforelse.js';
@@ -199,7 +199,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
         aterstallFilruta('upload-cell-history', 'upload-cell optional', 'Valfritt');
     }
     document.querySelectorAll('input[type="file"]').forEach(inp => { /** @type {HTMLInputElement} */ (inp).value = ''; });
-    if (typeof renderReferensKort === 'function') renderReferensKort();
+    if (typeof ritaReferensKort === 'function') ritaReferensKort();
     ['data-status','policy-status','stat-status','config-status'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.textContent = ''; el.className = 'status-msg'; el.innerHTML = ''; }

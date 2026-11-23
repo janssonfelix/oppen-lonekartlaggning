@@ -45,7 +45,7 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         const bok = Object.values(fangaBocker(w, () => w.eval('exportLikvardighet()')))[0];
         expect(bok.split('[Metod & parametrar]')[1]).toContain(`Undantag från minsta gruppstorlek | ${UNDANTAG_LV}`);
         // Övriga Excelfiler har inte raden
-        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuReport()')))[0];
+        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuRapport()')))[0];
         expect(eu).not.toContain('Undantag från minsta gruppstorlek');
     });
     it('Utforska: stämpeln säger det bara när rutan är ikryssad — tabell-CSV, urklipp och diagramdata', async () => {
