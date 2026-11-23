@@ -60,7 +60,7 @@ describe('AID: metodtext enligt handboken', () => {
     it('Om verktyget förklarar AID, sektorerna och etikettlistans version och källa, utan §', () => {
         const w = createAppWindow();
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('metodik')");
+        w.eval("ritaOmVerktyget('metodik')");
         const avsnitt = w.document.getElementById('om-aid');
         expect(avsnitt).not.toBeNull();
         const t = avsnitt.textContent.replace(/\s+/g, ' ');

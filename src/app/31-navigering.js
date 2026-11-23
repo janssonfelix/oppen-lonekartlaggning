@@ -28,11 +28,11 @@ import { ritaPrioritering } from './55-prioritering.js';
 import { ritaHandlingsplan } from './56-handlingsplan.js';
 import { ritaExportBesked } from './59-exportbesked.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
-import { renderInfoTab } from './65-om-verktyget.js';
+import { ritaOmVerktyget } from './65-om-verktyget.js';
 import { ritaRapportunderlag } from './67-rapportunderlag.js';
 import { ritaGapUppdelning } from './68-var-uppstar-gapet.js';
 import { renderExplorer } from './70-utforska.js';
-import { renderArsjamforelse } from './73-arsbokslut.js';
+import { ritaArsjamforelse } from './73-arsbokslut.js';
 import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
 import { ritaLonepolitik } from './75-lonepolitik.js';
 import { renderKvalitetssakring } from './85-robusthet-fardigcheck.js';
@@ -420,10 +420,10 @@ function _ritaFlik(target) {
         if (d.length) renderKvalitetssakring();
         _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => ritaExportBesked()));
     });
-    else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
+    else if (target === "arbetet")     medExportLage(() => { if (typeof ritaArsjamforelse === 'function') ritaArsjamforelse(); });
     else if (target === "dashboard" && d.length) ritaOversiktDelar();
     else if (target === "filer"     && d.length) ritaFilerDelar();
-    else if (target === "info")  renderInfoTab();
+    else if (target === "info")  ritaOmVerktyget();
     else if (target === "handlingsplan") ritaHandlingsplan();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
     // Förhandskontrollen står i Filer och kvalitet också medan en fil väntar på Läs in, innan något är inläst.

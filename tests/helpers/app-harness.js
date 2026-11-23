@@ -111,7 +111,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __docDraftHtml: _byggWordUtkastHtml,
         __byggKonfiguration: byggKonfiguration,
         __tillampaKonfiguration: tillampaKonfiguration,
-        __bes8Areas: _bes8Areas,
+        __bes8Omraden: _bes8Omraden,
         __ritaKartlaggningensSteg: ritaKartlaggningensSteg,
         __tabellTillMatris: tabellTillMatris,
         __tillCsv: tillCsv,

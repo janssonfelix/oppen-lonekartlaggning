@@ -39,7 +39,7 @@ import { _laSlutsats } from './41-lika-arbete.js';
 import { konsklassNu } from './45-aid-bas-tabeller.js';
 import { kTroskelLank } from './86-installningar.js';
 
-export function _lpTier(n) { return maskeringsniva(n, kTroskel()); }
+export function _lpNiva(n) { return maskeringsniva(n, kTroskel()); }
 
 /**
  * Vymodellen för avsnitten om ställningstagandet (vymodellLonepolitik i src/lib/vymodell-lonepolitik.js): här
@@ -94,12 +94,12 @@ export function ritaLonepolitik() {
             ${innehall}</details>`;
     };
     const lage = _lpRitaTopp(vm);
-    const [konsposition, efterlevnad] = _lpChartShellsHtml();
+    const [konsposition, efterlevnad] = _lpDiagramskalHtml();
     wrap.innerHTML = avsnitt('tabell', `${stor(T.enhet.fl)} mot sitt spann`, 'Var varje grupps median ligger i spannet, och hur många som ligger under',
-            `${lage.provade} ${ordForAntal(lage.provade, T.enhet)} i ${T.niva.en}`, _lpTableHtml(vm))
+            `${lage.provade} ${ordForAntal(lage.provade, T.enhet)} i ${T.niva.en}`, _lpTabellHtml(vm))
         + avsnitt('kon', 'Könsposition i bandet', 'Placeras kvinnor lägre i samma lönespann än män?', '', konsposition)
         + avsnitt('efterlevnad', 'Efterlevnad', `Andel under, inom eller över eget spann per ${T.niva.en}`, '', efterlevnad)
-        + avsnitt('tackning', 'Täckningsgrad', 'Hur mycket av personalen har en policyreferens?', svPct(vm.modell.coverage.personsPct, 0), _lpCoverageHtml(vm));
+        + avsnitt('tackning', 'Täckningsgrad', 'Hur mycket av personalen har en policyreferens?', svPct(vm.modell.coverage.personsPct, 0), _lpTackningHtml(vm));
 
     _lpRitaKonPosition(vm);
     _lpRitaKonLagen(vm);
@@ -108,7 +108,7 @@ export function ritaLonepolitik() {
     if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('lonepolitik-table', 'lonepolitik');
 }
 
-function _lpCoverageHtml(vm) {
+function _lpTackningHtml(vm) {
     const c = vm.modell.coverage;
     const pct = vm.tackning.pct;
     const farg = vm.tackning.status;
@@ -140,7 +140,7 @@ function _lpBandkartaKort(vm) {
     _lpRitaBandkarta(vm.bandkarta);
 }
 
-function _lpChartShellsHtml() {
+function _lpDiagramskalHtml() {
     return [`
     <div class="card mb-16">
         <p class="reg-caveat-inline">Ett lägre läge i bandet är ett <strong>fynd att förklara</strong> — inte ett konstaterat fel.
@@ -381,7 +381,7 @@ function _lpBenamning(g) {
     return rest === '' || /^\s/.test(rest) ? rest.trim() : yrke;
 }
 
-function _lpTableHtml(vm) {
+function _lpTabellHtml(vm) {
     const kr = v => svKr(v);
     const rows = [];
     // Maskeringstrappan per yrkesgrupp: tabellblock i vymodellen.

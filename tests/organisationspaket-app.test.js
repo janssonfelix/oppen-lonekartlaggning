@@ -161,7 +161,7 @@ describe('organisationspaket: läs in och skapa', () => {
         d.getElementById('btn-paket-ladda-ner').click();
         expect(fangad).not.toBeNull();
         // Om verktyget nämner organisationsfilen (avsnittet med versionen)
-        w.eval("renderInfoTab('releases')");
+        w.eval("ritaOmVerktyget('releases')");
         expect(d.getElementById('view-info').textContent).toMatch(/Den här filen är en organisationsfil/);
     });
     it('en inläst paketfil ersätter det inbakade för sessionen, och Rensa all data tar det inbakade tillbaka', () => {

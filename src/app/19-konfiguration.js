@@ -35,8 +35,8 @@ import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _lasKostnadsinstallningar } from './55-prioritering.js';
 import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, ritaHandlingsplan } from './56-handlingsplan.js';
 import { sattRapportUrval } from './58-rapportmodell.js';
-import { _bes8Areas, bes8Uppdatera } from './61-regler-och-praxis.js';
-import { byggArsbokslutNu, renderArsjamforelse } from './73-arsbokslut.js';
+import { _bes8Omraden, bes8Uppdatera } from './61-regler-och-praxis.js';
+import { byggArsbokslutNu, ritaArsjamforelse } from './73-arsbokslut.js';
 
 // ---- #17 Spara/ladda konfiguration som JSON ----
 /** Sessionens egna importprofiler för konfigurationsfilen; inget fält alls när de saknas. */
@@ -107,7 +107,7 @@ function byggKonfiguration() {
         // användarinitierade nedladdningen.
         // Innehåller INGA råa individrader; kan innehålla användarförfattad text
         // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
-        bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
+        bes8: (typeof _bes8Omraden === 'function' ? _bes8Omraden() : [])
             .map(a => ({ n: a.n, status: a.status, anteckning: a.note })),
         // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
         handlingsplan: (typeof _hpForKonfiguration === 'function' ? _hpForKonfiguration() : []),
@@ -433,7 +433,7 @@ function _tillampaKonfiguration(cfg) {
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
     // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.
     if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
-    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
+    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof ritaArsjamforelse === 'function') medExportLage(() => ritaArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
     if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);

@@ -15,8 +15,8 @@ vi.setConfig({ testTimeout: 30000 });
 describe('k-tröskeln under 5 i Lönepolitik', () => {
     it('mellannivån med bara antal finns inte när tröskeln är 3 (exportläget)', () => {
         const w = iExport(fonster(3));
-        expect(w.eval('_lpTier(4)')).toBe('full');
-        expect(w.eval('_lpTier(2)')).toBe('masked');
+        expect(w.eval('_lpNiva(4)')).toBe('full');
+        expect(w.eval('_lpNiva(2)')).toBe('masked');
         w.__ritaFlik('lonepolitik');
         expect(w.document.getElementById('view-benchmark').textContent).not.toMatch(/under 5 maskeras/);
     });

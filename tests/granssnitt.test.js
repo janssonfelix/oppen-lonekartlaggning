@@ -188,7 +188,7 @@ describe('Regler & praxis visar vad som är bedömt', () => {
         expect(marke.textContent.trim()).toBe('Åtgärd krävs');
         expect(marke.querySelector('svg.ikon')).toBeTruthy();
         expect(marke.classList.contains('ar-kritisk')).toBe(true);
-        expect(w.eval('_bes8Areas()')[1].title).toBe('2. Lönerevisionsprocessen (löneöversyn)');
+        expect(w.eval('_bes8Omraden()')[1].title).toBe('2. Lönerevisionsprocessen (löneöversyn)');
         satt(w, 2, '');
         expect(d.getElementById('nyckel-rp-2').textContent).toBe('Ej bedömt');
     });

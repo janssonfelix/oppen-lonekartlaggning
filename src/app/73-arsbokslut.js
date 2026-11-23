@@ -216,7 +216,7 @@ export function _abGruppAntal(g, nuAr) {
 }
 
 /** Panelen Jämförelse med förra året i Spara och jämför år. */
-export function renderArsjamforelse() {
+export function ritaArsjamforelse() {
     const host = document.getElementById('arsjamforelse');
     if (!host) return;
     const forra = state.forraArsbokslut;

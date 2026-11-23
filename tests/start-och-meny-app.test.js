@@ -290,7 +290,7 @@ describe('menystruktur', () => {
         expect(w.document.getElementById('lifecycle-chart')).not.toBeNull();
         expect(w.document.querySelector('#livscykel-content .livscykel-kohort-not').textContent).toMatch(/tvärsnitt.*inte hur en persons lön utvecklas/);
         expect(w.document.getElementById('kon-kohort-not').textContent).toMatch(/tvärsnitt/);
-        w.eval("renderInfoTab('metodik')");
+        w.eval("ritaOmVerktyget('metodik')");
         expect(w.document.getElementById('view-info').textContent).toMatch(/tvärsnitt.*kohorteffekter/);
         expect(w.eval('_metodbilaga()').find(r => r[0] === 'Ålder & karriär (tvärsnitt)')[1]).toMatch(/tvärsnitt.*kohorteffekter/);
     });
@@ -552,7 +552,7 @@ describe('Om verktyget: licens', () => {
     it('avsnittet Referenser anger MIT-licensen och upphovspersonen', () => {
         const w = createAppWindow();
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
+        w.eval("ritaOmVerktyget('references')");
         const t = w.document.getElementById('view-info').textContent;
         expect(t).toMatch(/MIT-licensen/);
         expect(t).toContain('Felix Jansson');
@@ -564,7 +564,7 @@ describe('Om verktyget: licens', () => {
         expect(sektioner.length).toBeGreaterThan(0);
         let text = '';
         for (const s of sektioner) {
-            w.eval(`renderInfoTab(${JSON.stringify(s)})`);
+            w.eval(`ritaOmVerktyget(${JSON.stringify(s)})`);
             text += w.document.getElementById('info-tab-content').textContent + '\n';
         }
         expect(text).not.toMatch(/Versionshistorik/);
@@ -1421,7 +1421,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — licens', ()
         t.innerHTML = '<pre>Permission is hereby granted — testtext</pre>';
         w.document.body.appendChild(t);
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
+        w.eval("ritaOmVerktyget('references')");
         expect(w.document.getElementById('om-licenstexter').textContent).toContain('Permission is hereby granted');
         expect(w.document.getElementById('view-info').textContent).toContain('riskanalys.md');
     });

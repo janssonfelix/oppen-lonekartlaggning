@@ -11843,7 +11843,7 @@ function uppstartBerakningsbevis() {
 }
 
 // src/app/63-tangentbordsnavigering.js
-function setupTabA11y() {
+function kopplaFlikarnasTillganglighet() {
   const tabs = (
     /** @type {HTMLElement[]} */
     [...document.querySelectorAll(".nav-item")]
@@ -11903,7 +11903,7 @@ function setupTabA11y() {
     }
   });
 }
-function _wireTablistKeys(buttons) {
+function _kopplaFlikradensTangenter(buttons) {
   if (!Array.isArray(buttons) || buttons.length < 2) return;
   const sync = (fallback) => {
     let aktiv = buttons.findIndex((b) => b.classList.contains("active"));
@@ -12348,7 +12348,7 @@ function uppstartAllaDiagram() {
       b.dataset.utUnderflik || "egna"
     ));
   });
-  _wireTablistKeys(
+  _kopplaFlikradensTangenter(
     /** @type {HTMLElement[]} */
     [...document.querySelectorAll("[data-ut-underflik]")]
   );
@@ -18476,7 +18476,7 @@ function vymodellLonepolitik(rader, { policyFor: policyFor2, nivaEtikett, k, har
 }
 
 // src/app/75-lonepolitik.js
-function _lpTier(n) {
+function _lpNiva(n) {
   return maskeringsniva(n, kTroskel());
 }
 function lonepolitikVymodell() {
@@ -18525,21 +18525,21 @@ function ritaLonepolitik() {
             ${innehall}</details>`;
   };
   const lage2 = _lpRitaTopp(vm);
-  const [konsposition, efterlevnad] = _lpChartShellsHtml();
+  const [konsposition, efterlevnad] = _lpDiagramskalHtml();
   wrap.innerHTML = avsnitt(
     "tabell",
     `${stor(T.enhet.fl)} mot sitt spann`,
     "Var varje grupps median ligger i spannet, och hur många som ligger under",
     `${lage2.provade} ${ordForAntal(lage2.provade, T.enhet)} i ${T.niva.en}`,
-    _lpTableHtml(vm)
-  ) + avsnitt("kon", "Könsposition i bandet", "Placeras kvinnor lägre i samma lönespann än män?", "", konsposition) + avsnitt("efterlevnad", "Efterlevnad", `Andel under, inom eller över eget spann per ${T.niva.en}`, "", efterlevnad) + avsnitt("tackning", "Täckningsgrad", "Hur mycket av personalen har en policyreferens?", svPct(vm.modell.coverage.personsPct, 0), _lpCoverageHtml(vm));
+    _lpTabellHtml(vm)
+  ) + avsnitt("kon", "Könsposition i bandet", "Placeras kvinnor lägre i samma lönespann än män?", "", konsposition) + avsnitt("efterlevnad", "Efterlevnad", `Andel under, inom eller över eget spann per ${T.niva.en}`, "", efterlevnad) + avsnitt("tackning", "Täckningsgrad", "Hur mycket av personalen har en policyreferens?", svPct(vm.modell.coverage.personsPct, 0), _lpTackningHtml(vm));
   _lpRitaKonPosition(vm);
   _lpRitaKonLagen(vm);
   _lpRitaEfterlevnad(vm);
   if (typeof aktiveraSortering === "function") aktiveraSortering("lonepolitik-table");
   if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("lonepolitik-table", "lonepolitik");
 }
-function _lpCoverageHtml(vm) {
+function _lpTackningHtml(vm) {
   const c = vm.modell.coverage;
   const pct = vm.tackning.pct;
   const farg = vm.tackning.status;
@@ -18575,7 +18575,7 @@ function _lpBandkartaKort(vm) {
   }
   _lpRitaBandkarta(vm.bandkarta);
 }
-function _lpChartShellsHtml() {
+function _lpDiagramskalHtml() {
   return [`
     <div class="card mb-16">
         <p class="reg-caveat-inline">Ett lägre läge i bandet är ett <strong>fynd att förklara</strong> — inte ett konstaterat fel.
@@ -18870,7 +18870,7 @@ function _lpBenamning(g) {
   const rest = yrke.slice(aid.length);
   return rest === "" || /^\s/.test(rest) ? rest.trim() : yrke;
 }
-function _lpTableHtml(vm) {
+function _lpTabellHtml(vm) {
   const kr2 = (v) => svKr(v);
   const rows = [];
   vm.tabell.forEach(({ b, rader, utelamnade }) => {
@@ -19985,7 +19985,7 @@ function _bes8Titel(det, n) {
   const t = det && (det.querySelector("summary .avsnitt-titel") || det.querySelector("summary"));
   return t ? t.textContent.trim() : "Område " + n;
 }
-function _setupBes8Assessment() {
+function _kopplaBes8Bedomning() {
   document.querySelectorAll(".bes8-assess").forEach((host, i) => {
     if (
       /** @type {HTMLElement} */
@@ -19998,7 +19998,7 @@ function _setupBes8Assessment() {
     host.dataset.ready = "1";
   });
 }
-function _bes8Areas() {
+function _bes8Omraden() {
   const out = [];
   document.querySelectorAll('[id^="bes8-status-"]').forEach((sel) => {
     const n = sel.id.replace("bes8-status-", "");
@@ -20015,7 +20015,7 @@ function _bes8Areas() {
 }
 var BES8_IKON = { "Ingen risk identifierad": "bock", "Möjlig risk – utreds vidare": "statusVarning", "Åtgärd krävs": "statusKritisk", "Ej tillämplig": "streck" };
 function bes8Uppdatera() {
-  const omraden = _bes8Areas();
+  const omraden = _bes8Omraden();
   const antal = (s) => omraden.filter((a) => a.status === s).length;
   const bedomda = omraden.filter((a) => a.status).length, atgard = antal("Åtgärd krävs"), risk = antal("Möjlig risk – utreds vidare");
   const topp = document.getElementById("rp-slutsatser");
@@ -20075,7 +20075,7 @@ function bes8Stod() {
   });
 }
 function uppstartReglerOchPraxis() {
-  _setupBes8Assessment();
+  _kopplaBes8Bedomning();
   document.addEventListener("change", (e) => {
     if (
       /** @type {HTMLElement} */
@@ -20878,7 +20878,7 @@ function _rmAvsnittenUtanUrval() {
     const { topp, botten } = vm.representation.iakttagelse;
     regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda ${T.niva.fl} (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}). Det kan tyda på att kvinnor och män är ojämnt fördelade mellan ${T.niva.bfl}, och det är värt att ta med i granskningen av regler och praxis.`));
   }
-  const bes8 = _bes8Areas();
+  const bes8 = _bes8Omraden();
   if (bes8.length) {
     regler.delar.push({
       typ: "tabell",
@@ -21272,7 +21272,7 @@ function byggKonfiguration() {
     // användarinitierade nedladdningen.
     // Innehåller INGA råa individrader; kan innehålla användarförfattad text
     // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
-    bes8: (typeof _bes8Areas === "function" ? _bes8Areas() : []).map((a) => ({ n: a.n, status: a.status, anteckning: a.note })),
+    bes8: (typeof _bes8Omraden === "function" ? _bes8Omraden() : []).map((a) => ({ n: a.n, status: a.status, anteckning: a.note })),
     // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
     handlingsplan: typeof _hpForKonfiguration === "function" ? _hpForKonfiguration() : [],
     attGoraKlara: Array.from(state._actionChecklistDone || []),
@@ -21557,7 +21557,7 @@ function _tillampaKonfiguration(cfg) {
   if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter((p) => p.kalla !== "konfiguration"), ...tmp.importprofiler];
   if (tmp.arsbokslut) {
     state.forraArsbokslut = tmp.arsbokslut;
-    if (typeof renderArsjamforelse === "function") medExportLage(() => renderArsjamforelse());
+    if (typeof ritaArsjamforelse === "function") medExportLage(() => ritaArsjamforelse());
   }
   if (tmp.orgName) sattOrgNamn(tmp.orgName);
   if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);
@@ -21971,7 +21971,7 @@ function _abGruppAntal(g, nuAr) {
   if (g.nKv == null || g.nMa == null) return null;
   return `${g.nKv} / ${g.nMa}${g.antalAr != null && g.antalAr !== nuAr ? ` (${g.antalAr})` : ""}`;
 }
-function renderArsjamforelse() {
+function ritaArsjamforelse() {
   const host = document.getElementById("arsjamforelse");
   if (!host) return;
   const forra = state.forraArsbokslut;
@@ -30510,7 +30510,7 @@ function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
   const rows = [];
   rows.push(hasData ? { n: 1, status: "klar", title: "1. Underlag inläst", tab: "dashboard", detail: `${hamtaData().length} rader inlästa — allt nedan bygger på detta.` } : { n: 1, status: "ej", title: "1. Underlag inläst", tab: "dashboard", detail: "Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata)." });
   rows.push(safe(() => {
-    const areas = typeof _bes8Areas === "function" ? _bes8Areas() : [];
+    const areas = typeof _bes8Omraden === "function" ? _bes8Omraden() : [];
     const total = areas.length || 6;
     const done = areas.filter((a) => a && a.status).length;
     return {
@@ -31313,7 +31313,7 @@ function uppstartExportbesked() {
 }
 
 // src/app/65-om-verktyget.js
-var INFO_SECTIONS = {
+var OM_AVSNITT = {
   overview: () => `
         <h3>Vad är detta verktyg?</h3>
         <p class="om-ansvar"><strong>Ansvar.</strong> ${ANSVARSFORBEHALL}</p>
@@ -31634,10 +31634,10 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         </ul>
     `
 };
-function renderInfoTab(section = "overview") {
+function ritaOmVerktyget(section = "overview") {
   const wrap = document.getElementById("info-tab-content");
   if (!wrap) return;
-  const renderer = INFO_SECTIONS[section] || INFO_SECTIONS.overview;
+  const renderer = OM_AVSNITT[section] || OM_AVSNITT.overview;
   wrap.innerHTML = renderer();
   document.querySelectorAll("#view-info .info-section-btn").forEach((btn) => {
     const isActive = (
@@ -31659,12 +31659,12 @@ function renderInfoTab(section = "overview") {
 }
 function uppstartOmVerktyget() {
   document.querySelectorAll("#view-info .info-section-btn").forEach((btn) => {
-    btn.addEventListener("click", () => renderInfoTab(
+    btn.addEventListener("click", () => ritaOmVerktyget(
       /** @type {HTMLElement} */
       btn.dataset.section
     ));
   });
-  _wireTablistKeys(
+  _kopplaFlikradensTangenter(
     /** @type {HTMLElement[]} */
     [...document.querySelectorAll("#view-info .info-section-btn")]
   );
@@ -31960,7 +31960,7 @@ function buildFardigcheck() {
     rapporteraFel("Färdigcheck: BAS utan referens eller maskerade grupper", e);
   }
   try {
-    const areas = typeof _bes8Areas === "function" ? _bes8Areas() : [];
+    const areas = typeof _bes8Omraden === "function" ? _bes8Omraden() : [];
     const tomma = areas.filter((a) => !a.status);
     if (tomma.length) {
       out.push({
@@ -32733,11 +32733,11 @@ function _ritaFlik(target) {
     _ritaTungtBlock(target, ["rapport-urval", "besked-word", "besked-pdf", "besked-excel", "besked-zip"], () => medExportLage(() => ritaExportBesked()));
   });
   else if (target === "arbetet") medExportLage(() => {
-    if (typeof renderArsjamforelse === "function") renderArsjamforelse();
+    if (typeof ritaArsjamforelse === "function") ritaArsjamforelse();
   });
   else if (target === "dashboard" && d.length) ritaOversiktDelar();
   else if (target === "filer" && d.length) ritaFilerDelar();
-  else if (target === "info") renderInfoTab();
+  else if (target === "info") ritaOmVerktyget();
   else if (target === "handlingsplan") ritaHandlingsplan();
   else if (target === "bestammelser") {
     if (typeof bes8Uppdatera === "function") bes8Uppdatera();
@@ -36830,7 +36830,7 @@ function uppstartSist() {
     } catch (_e) {
     }
   }
-  setupTabA11y();
+  kopplaFlikarnasTillganglighet();
   tillampaProfiletiketter();
   _synkaKTroskel();
   ritaReferensKort();

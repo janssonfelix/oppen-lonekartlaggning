@@ -159,7 +159,7 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
     });
     it('Om verktyget anger SKR:s personalstatistik som källa', () => {
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
+        w.eval("ritaOmVerktyget('references')");
         expect(w.document.getElementById('view-info').textContent).toMatch(/SKR, personalstatistik november 2025/);
     });
 });

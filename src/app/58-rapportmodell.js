@@ -49,7 +49,7 @@ import { konsklassOrd, lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, harAlder } from './50-regressionsmodeller.js';
 import { _formateraPVarde, _yrkesStegText, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _handlingsplanForifyllning, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
-import { _bes8Areas } from './61-regler-och-praxis.js';
+import { _bes8Omraden } from './61-regler-och-praxis.js';
 import { _abForandringText, _abGruppAntal, _abKr, _abSpridningText, AB_SPRIDNING_NOT, abGrupperEjJamforbara, arsjamforelse } from './73-arsbokslut.js';
 import { buildGruppdossier, gruppdossierAsText, gruppdossierDelat } from './80-gruppdossier.js';
 import { basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, BD_YRKESKOLUMNER, buildBasdossier } from './81-basdossier.js';
@@ -562,7 +562,7 @@ function _rmAvsnittenUtanUrval() {
         const { topp, botten } = vm.representation.iakttagelse;
         regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda ${T.niva.fl} (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}). Det kan tyda på att kvinnor och män är ojämnt fördelade mellan ${T.niva.bfl}, och det är värt att ta med i granskningen av regler och praxis.`));
     }
-    const bes8 = _bes8Areas();
+    const bes8 = _bes8Omraden();
     if (bes8.length) {
         regler.delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Granskningsområde', typ: 'text' }, { rubrik: 'Bedömning', typ: 'fyllIn' }, { rubrik: 'Iakttagelser / åtgärd', typ: 'fyllIn' }],
             rader: bes8.map(a => [a.title, a.status || { text: '[HR fyller i]', fyllIn: true }, a.note || { text: '[HR fyller i]', fyllIn: true }]) });

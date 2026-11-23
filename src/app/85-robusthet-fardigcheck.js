@@ -29,7 +29,7 @@ import { medExportLage, visningNy } from './23-exportgrind.js';
 import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laSlutsats } from './41-lika-arbete.js';
 import { _prioGrans, _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
-import { _bes8Areas } from './61-regler-och-praxis.js';
+import { _bes8Omraden } from './61-regler-och-praxis.js';
 
 // ---- Rang 3: Robusthetspanel ------------------------------------------------
 
@@ -254,7 +254,7 @@ function buildFardigcheck() {
 
     // 4. § 8-områden som lämnats tomma
     try {
-        const areas = (typeof _bes8Areas === 'function') ? _bes8Areas() : [];
+        const areas = (typeof _bes8Omraden === 'function') ? _bes8Omraden() : [];
         const tomma = areas.filter(a => !a.status);
         if (tomma.length) {
             out.push({

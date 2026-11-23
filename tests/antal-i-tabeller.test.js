@@ -216,7 +216,7 @@ describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
         w.__state.forraArsbokslut = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
         w.__state.forraArsbokslut.ar -= 1;
         const nuAr = new Date().getFullYear();
-        w.eval('renderArsjamforelse()');
+        w.eval('ritaArsjamforelse()');
         const panel = [...w.document.querySelectorAll('#arsjamforelse table')].filter(t => rubriker(t)[0] === 'AID-etikett');
         expect(panel.length).toBeGreaterThan(0);
         for (const t of panel) {
@@ -239,7 +239,7 @@ describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
         forra.ar -= 1;
         forra.grupper.push({ yrke: 'Nedlagt yrke', bas: 'A', nKv: 12, nMa: 11, medKv: 30000, medMa: 33000, gapPct: -9.1, flaggad: true });
         w.__state.forraArsbokslut = forra;
-        w.eval('renderArsjamforelse()');
+        w.eval('ritaArsjamforelse()');
         const rad = [...w.document.querySelectorAll('#arsjamforelse table tbody tr')].find(tr => ren(tr.cells[0].textContent) === 'Nedlagt yrke (BAS A)');
         expect(ren(rad.cells[1].textContent)).toBe(`12 / 11 (${forra.ar})`);
         const t = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'arsjamforelse').delar

@@ -175,7 +175,7 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
     });
     it('metodtexten i Om verktyget beskriver σ inom grupp och reserven', () => {
         const w = createAppWindow(); w.__state.data = rader();
-        w.eval("renderInfoTab('metodik')");
+        w.eval("ritaOmVerktyget('metodik')");
         const t = w.document.getElementById('view-info').textContent;
         expect(t).toMatch(/poolade standardavvikelsen av residualerna log\(lön\) − log\(gruppens median per kön\)/);
         expect(t).toMatch(/används bara som reserv/);

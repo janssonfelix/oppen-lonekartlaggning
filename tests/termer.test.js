@@ -233,7 +233,7 @@ describe('termerna i appen', () => {
     it('metodtexten är fylld i Om verktyget och i Word-utkastet', () => {
         const w = createAppWindow();
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('metodik')");
+        w.eval("ritaOmVerktyget('metodik')");
         expect(w.document.getElementById('om-aid').textContent.replace(/\s+/g, ' ')).toContain(fyllTermer(AID_METODTEXT));
         w.__lasInDemodata();
         const html = w.__docDraftHtml();

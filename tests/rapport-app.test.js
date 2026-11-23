@@ -362,7 +362,7 @@ describe('Word-utkastet som .docx', () => {
         const w = createAppWindow();
         await jszip(w);
         w.__lasInDemodata();
-        w.eval("_bes8Areas = () => [{ title: 'Löneregler', status: 'Möjlig risk', note: 'Rad 1\\u0007 <b> & rad 2' }]");
+        w.eval("_bes8Omraden = () => [{ title: 'Löneregler', status: 'Möjlig risk', note: 'Rad 1\\u0007 <b> & rad 2' }]");
         let fangad = null;
         w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
         await w.eval('exportWordUtkast()');
@@ -511,7 +511,7 @@ describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
         expect(ren(w.__docDraftHtml())).toContain(MENING);
         const block = w.eval('rapportunderlagBlock()');
         expect(ren(JSON.stringify(block.find(b => b.rubrik === 'Struktur och lönetransparens')))).toContain(MENING);
-        expect(ren(w.eval('INFO_SECTIONS.overview()'))).toContain(MENING);
+        expect(ren(w.eval('OM_AVSNITT.overview()'))).toContain(MENING);
     });
 });
 

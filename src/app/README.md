@@ -101,7 +101,7 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | `62-word-utkast.js` | Word-utkastet (dokumentationen) som `.docx`: HTML till block, Word-XML i `src/lib/docx.js`, packat med JSZip (ADR-37) |
 | `63-tangentbordsnavigering.js` | Tangentbordsnavigering i menyn och i flikgrupper |
 | `64-jamforelse-export.js` | Samlad Excel-export av jämförelsen (raderna ur `src/lib/jamforelse.js`) |
-| `65-om-verktyget.js` | Fliken Om verktyget (`INFO_SECTIONS`) |
+| `65-om-verktyget.js` | Fliken Om verktyget (`OM_AVSNITT`) |
 | `66-zip-export.js` | ZIP-exporten: Word-utkastet, Excel-filen med alla flikar och diagrammen från alla flikar som bilder |
 | `67-rapportunderlag.js` | Rapportunderlag i Rapporttext: kopierbara avsnitt, AID-etiketter, kandidatpar och diagram (blocken ur vymodellen i `src/lib/vymodell-rapportunderlag.js`, ADR-99, och `src/lib/rapportunderlag.js`) |
 | `68-var-uppstar-gapet.js` | Avsnittet "Var uppstår löneskillnaden?" i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (standard BAS-fördelning, AID inom BAS och inom AID och BAS), valet *Förklara med:* (`gapVariabler`, `sattGapVariabler`, ADR-65) och trappan som visar delarna (`ritaGapUppdelning`, ur vymodellen i `src/lib/vymodell-var-uppstar-gapet.js`, ADR-99; logiken i `src/lib/gapuppdelning.js`) |

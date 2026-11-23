@@ -135,7 +135,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         w.eval(`window.__lagen = [];
-            for (const namn of ['ritaStrukturUtkast', 'ritaRapportunderlag', 'renderArsjamforelse']) {
+            for (const namn of ['ritaStrukturUtkast', 'ritaRapportunderlag', 'ritaArsjamforelse']) {
                 const orig = window[namn];
                 window[namn] = (...a) => { window.__lagen.push(namn + ':' + iExportLage()); return orig(...a); };
             }`);
@@ -143,7 +143,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(d.getElementById('page-title').textContent).toBe('Rapporttext');
         expect(d.getElementById('struktur-narrative').value).toContain('LÖNEKARTLÄGGNING');
         d.getElementById('tab-arbetet').click();
-        expect(w.__lagen).toEqual(['ritaStrukturUtkast:true', 'ritaRapportunderlag:true', 'renderArsjamforelse:true']);
+        expect(w.__lagen).toEqual(['ritaStrukturUtkast:true', 'ritaRapportunderlag:true', 'ritaArsjamforelse:true']);
         expect(w.eval('iExportLage()')).toBe(false);
     });
     it('Återskapa i Rapporttext nollar redigeringen och bygger utkastet på nytt i exportläge', () => {

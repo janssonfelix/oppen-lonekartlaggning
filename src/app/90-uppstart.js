@@ -14,14 +14,14 @@ import { lasInDemodata } from './20-demodata-diagnostik.js';
 import { loadStortDemo } from './21-stort-demo.js';
 import { _paketStatus, lasInInbakatPaket } from './29-organisationspaket.js';
 import { ritaReferensKort } from './38-referensfiler.js';
-import { setupTabA11y } from './63-tangentbordsnavigering.js';
+import { kopplaFlikarnasTillganglighet } from './63-tangentbordsnavigering.js';
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartSist() {
     if (typeof ritaKartlaggningensSteg === 'function') {
         try { ritaKartlaggningensSteg(); } catch (_e) { /* icke-kritisk vid boot */ }
     }
-    setupTabA11y();
+    kopplaFlikarnasTillganglighet();
     tillampaProfiletiketter();  // Tillämpa default-profil vid uppstart
     _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
     ritaReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning

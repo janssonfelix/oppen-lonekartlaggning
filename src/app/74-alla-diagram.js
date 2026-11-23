@@ -27,7 +27,7 @@ import { diagramexportRubrik, exportTillaten } from './11-diagramexport.js';
 import { hamtaData } from './12-tillstand.js';
 import { _egFlikFor, _exportDjup, _ritadVid, exportSakra, flikInaktuell, iExportLage, iForhandsvisning } from './23-exportgrind.js';
 import { ritaFlik } from './31-navigering.js';
-import { _wireTablistKeys } from './63-tangentbordsnavigering.js';
+import { _kopplaFlikradensTangenter } from './63-tangentbordsnavigering.js';
 import { sidindexBygg } from './89-sidindex.js';
 
 const UT_KOPIA_PREFIX = 'ut-diagram-';
@@ -298,7 +298,7 @@ export function uppstartAllaDiagram() {
     document.querySelectorAll('[data-ut-underflik]').forEach(b => {
         b.addEventListener('click', () => utValjUnderflik(/** @type {HTMLElement} */ (b).dataset.utUnderflik || 'egna'));
     });
-    _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
+    _kopplaFlikradensTangenter(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
     // En grupp som öppnas ritar sina kopior. toggle bubblar inte: lyssnaren fångar den på vägen ned. En grupp som öppnas
     // medan samlingen inte visas ritas när den visas.
     document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {

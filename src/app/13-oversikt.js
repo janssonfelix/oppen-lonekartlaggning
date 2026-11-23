@@ -23,7 +23,7 @@ import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laOversiktRader } from './41-lika-arbete.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _handlingsplanForifyllning } from './56-handlingsplan.js';
-import { _bes8Areas } from './61-regler-och-praxis.js';
+import { _bes8Omraden } from './61-regler-och-praxis.js';
 import { kTroskelLank } from './86-installningar.js';
 import { sokUppdatera } from './87-sok.js';
 function sattKravkort(id, count, total, valueText, cardState) {
@@ -257,7 +257,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
 
     // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
-        const areas = (typeof _bes8Areas === 'function') ? _bes8Areas() : [];
+        const areas = (typeof _bes8Omraden === 'function') ? _bes8Omraden() : [];
         const total = areas.length || 6;
         const done = areas.filter(a => a && a.status).length;
         return {
