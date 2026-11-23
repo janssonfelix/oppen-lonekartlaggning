@@ -56,16 +56,16 @@ export function prioKonstanter() {
  * hundratal, som i diagrammens verktygstips) eller en median saknas. Anroparen skickar bara medianer som får
  * redovisas (båda könen når tröskeln).
  * @param {{medKv: number, medMa: number, nKv: number}} g
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  * @param {(v: number) => string} kr  beloppsformat
  * @returns {string|null}
  */
-export function arsbeloppMening(g, costSettings, kr) {
+export function arsbeloppMening(g, kostnadsval, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
     const diff = avrundaSymmetriskt((g.medMa - g.medKv) / 100) * 100;   // som kronorSkillnad i src/lib/figur.js
     if (diff < 100) return null;
-    const { months, poPct: po } = kostnadsfaktor(costSettings);
-    const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
+    const { months, poPct: po } = kostnadsfaktor(kostnadsval);
+    const belopp = Math.round(kostnadPerAr(diff, g.nKv, kostnadsval) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
@@ -81,21 +81,21 @@ export function arsbeloppMening(g, costSettings, kr) {
  * (inom ±naraGrans % av referensen, minst 10 personer).
  *
  * @param {{_rows?: Array<{kon:string, lon:number, alder?:number}>, kvN:number, maN:number, n:number, diffPct:number,
- *          isBrist?:boolean, isQuickWin?:boolean}} item
+ *          isBrist?:boolean, isQuickWin?:boolean}} post
  * @param {{kInstalld:number, kTroskel:number, mdePct?:number|null, naraGrans:number}} opt
  *        kInstalld: den inställda minsta gruppstorleken; kTroskel: den gällande tröskeln; mdePct: detektionströskeln
  *        i procent (saknas den prövas inte regeln); naraGrans: uppföljningsgränsen i procent (tecknet spelar ingen roll)
  * @returns {Array<{kod:string, type:'warn'|'info'|'ok'|'flag'} & Object>}
  */
-export function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGrans }) {
+export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGrans }) {
     const out = [];
-    const rows = item._rows || [];
+    const rows = post._rows || [];
     if (!rows.length) return out;
 
     // Varningen gäller skattningens säkerhet, inte läget (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kInstalld || item.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: item.kvN, maN: item.maN, k: kInstalld });
+    if (post.kvN < kInstalld || post.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: post.kvN, maN: post.maN, k: kInstalld });
 
-    if (mdePct != null && Math.abs(item.diffPct) < mdePct && item.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: item.diffPct, mdePct });
+    if (mdePct != null && Math.abs(post.diffPct) < mdePct && post.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: post.diffPct, mdePct });
 
     const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder || 0).filter(a => a > 0);
     const maAges = rows.filter(r => arMan(r)).map(r => r.alder || 0).filter(a => a > 0);
@@ -106,20 +106,20 @@ export function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGran
     }
 
     // Lönepositionsmått per kön: kräver tröskeln för båda könen (ADR-12)
-    if (item.kvN >= kTroskel && item.maN >= kTroskel) {
+    if (post.kvN >= kTroskel && post.maN >= kTroskel) {
         const q1 = kvantil(rows.map(r => r.lon), 0.2);
-        const andelKv = item.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / item.kvN : 0;
-        const andelMa = item.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / item.maN : 0;
+        const andelKv = post.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / post.kvN : 0;
+        const andelMa = post.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / post.maN : 0;
         if (andelKv >= 0.4 && andelKv - andelMa >= 0.2) out.push({ kod: 'kvintil', type: 'flag', andelKv, andelMa });
     }
 
-    if (item.isBrist) out.push({ kod: 'brist', type: 'info' });
-    if (item.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: item.n });
-    if (item.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: item.diffPct });
+    if (post.isBrist) out.push({ kod: 'brist', type: 'info' });
+    if (post.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: post.n });
+    if (post.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: post.diffPct });
 
     // Ett läge mot referensen, ingen bedömning (A5)
     const nara = Math.abs(naraGrans);
-    if (Math.abs(item.diffPct) < nara && item.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
+    if (Math.abs(post.diffPct) < nara && post.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
     return out;
 }
 
