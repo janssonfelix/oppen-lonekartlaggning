@@ -3953,7 +3953,7 @@ function orgIckeKvPerBas(orgIckeKv) {
   }
   return m;
 }
-function _parAntal(candidates) {
+function parAntal(candidates) {
   let overDirektiv = 0, sakra = 0;
   for (const p of candidates) {
     if (p.maMedian > 0 && direktivMarkering(p.kvMedian / p.maMedian * 100)) overDirektiv++;
@@ -3982,7 +3982,7 @@ function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
   const pairs = [];
   internPerBas = internPerBas || /* @__PURE__ */ new Map();
   externPerBas = externPerBas || /* @__PURE__ */ new Map();
-  if (!orgKvDom?.length || !internPerBas.size && !externPerBas.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
+  if (!orgKvDom?.length || !internPerBas.size && !externPerBas.size) return { pairs, jämförelse, antal: parAntal(pairs) };
   const orgBasSet = new Set(orgKvDom.map((f) => f.bas));
   const jämförBasSet = /* @__PURE__ */ new Set([...internPerBas.keys(), ...externPerBas.keys()]);
   jämförelse.gemensammaBas = [...orgBasSet].filter((b) => jämförBasSet.has(b)).length;
@@ -4051,7 +4051,7 @@ function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
     }
   }
   candidates.sort((a, b) => b.gapPct - a.gapPct);
-  return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
+  return { pairs: candidates.slice(0, topN), jämförelse, antal: parAntal(candidates) };
 }
 function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
   const minGap = val.minGap ?? 0;
@@ -4076,7 +4076,7 @@ function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
   orgKvDom = orgKvDom || [];
   internAlla = internAlla || [];
   poangPerNyckel = poangPerNyckel || /* @__PURE__ */ new Map();
-  if (!orgKvDom.length || !poangPerNyckel.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
+  if (!orgKvDom.length || !poangPerNyckel.size) return { pairs, jämförelse, antal: parAntal(pairs) };
   const poangFor = (g) => poangPerNyckel.get(g.aid + "|" + g.bas) ?? poangPerNyckel.get(String(g.aid)) ?? null;
   const candidates = [];
   for (const f of orgKvDom) {
@@ -4138,7 +4138,7 @@ function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
     }
   }
   candidates.sort((a, b) => b.gapPct - a.gapPct);
-  return { pairs: candidates.slice(0, topN), jämförelse, antal: _parAntal(candidates) };
+  return { pairs: candidates.slice(0, topN), jämförelse, antal: parAntal(candidates) };
 }
 function byggParLagreKrav(orgKvDom, orgIckeKv, val = {}) {
   const { rang } = val;
@@ -5903,14 +5903,18 @@ function kravstatus(rader, { bas, k, golv, oversikt, policyFor: policyFor2, stat
       if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { aid: aidAvYrke(r.yrke), bas: r.bas, lon: [] });
       perGrupp.get(nyckel).lon.push(r.lon);
     }
-    let under = 0, total = 0;
+    let under = 0, total = 0, utelamnade = 0;
     for (const g of perGrupp.values()) {
       const rad = statistikFor(statistik, g.aid, g.bas)?.rad;
       if (!rad) continue;
+      if (g.lon.length < k) {
+        utelamnade++;
+        continue;
+      }
       total++;
       if (median(g.lon) < rad.median) under++;
     }
-    stat = { antal: under, av: total, lage: kortLage(under, total, (a, t) => a / t > 0.5) };
+    stat = { antal: under, av: total, lage: kortLage(under, total, (a, t) => a / t > 0.5), utelamnade };
   }
   return {
     jamforbara: av,
@@ -7204,7 +7208,7 @@ function parBlock(p, { id, kravProxy, urval, demo, troskelNot } = {}) {
     fragor: [...FRAGOR_PAR]
   };
 }
-var _parAntal2 = (p) => `${p.kvN == null ? "–" : p.kvN} / ${p.maN == null ? "–" : p.maN}`;
+var _parAntal = (p) => `${p.kvN == null ? "–" : p.kvN} / ${p.maN == null ? "–" : p.maN}`;
 function _konsandel(p) {
   const v = p.maKvinnoPct ?? p.maKvAndel;
   if (typeof v !== "number" || !isFinite(v)) return "–";
@@ -7285,7 +7289,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     const kiText = (p) => p.gapCI && p.kvMedian > 0 ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : "–";
     return blk("Likvärdigt arbete", st, {
       rubriker: [stor(termFras(STANDARDTERMER.enhet, "en", { adjektiv: "kvinnodominerad" })), stor(STANDARDTERMER.jamforelse.en), "Antal (kvinnodom. / jämf.)", `Könsandel i ${STANDARDTERMER.jamforelse.bf}`, "Skillnad (kr)", "Skillnad (%)", "95 % KI"],
-      rader: par.map((p) => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal2(p), _konsandel(p), _kr(p.gapKr), _pct2(p.gapPct), kiText(p)])
+      rader: par.map((p) => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), _kr(p.gapKr), _pct2(p.gapPct), kiText(p)])
     });
   }
   if (typ === "lagreKrav") {
@@ -7299,7 +7303,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     const kiText = (p) => p.gapCI && p.kvMedian > 0 ? `${_ki(p.gapCI.lo / p.kvMedian * 100, p.gapCI.hi / p.kvMedian * 100)} %` : "–";
     const b = blk(R2, st, {
       rubriker: [stor(termFras(STANDARDTERMER.enhet, "en", { adjektiv: "kvinnodominerad" })), stor(STANDARDTERMER.jamforelse.en), "Antal (kvinnodom. / jämf.)", `Könsandel i ${STANDARDTERMER.jamforelse.bf}`, "BAS-steg", "Skillnad (kr)", "Skillnad (%)", "95 % KI"],
-      rader: par.map((p) => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal2(p), _konsandel(p), String(p.basSteg), _kr(p.gapKr), _pct2(p.gapPct), kiText(p)])
+      rader: par.map((p) => [`${p.kvLabel} (BAS ${p.kvBas})`, `${p.maLabel} (BAS ${p.maBas})`, _parAntal(p), _konsandel(p), String(p.basSteg), _kr(p.gapKr), _pct2(p.gapPct), kiText(p)])
     });
     return { ...b, fragor: [...FRAGOR_PAR] };
   }
@@ -9744,6 +9748,159 @@ function likalonslyftForMal(rader, { malPct = TROSKELMAL_STANDARD_PCT, signifika
   return { status: "hittat", utgangslage, lyftPct: hi, kostnadPerManad: kostnad, resultat: { konPct, pValue } };
 }
 
+// src/lib/vymodell-likvardigt-arbete.js
+var LV_STANDARD = Object.freeze({ kvinnoTrosholdPct: KVINNO_TROSKEL_STANDARD, kvDomDefinition: "do", jamforelse: "alla", minGapPct: 0, topN: 20 });
+function likvardighetFelresultat({ antalRader, antalStatistik, poang, opts }) {
+  return {
+    orgKvDom: [],
+    orgIckeKv: [],
+    statIckeKv: [],
+    pairs: [],
+    lagreKrav: [],
+    diagnostik: {
+      organisation: { totalRader: antalRader, antalAidxBas: 0, kvDomFunna: 0, kvDomMedNLessThanK: 0, ickeKvFunna: 0 },
+      statistik: { totalRader: antalStatistik, klass: { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 }, klassKalla: { lokal: 0, nationell: 0 } },
+      jämförelse: {
+        gemensammaBas: 0,
+        möjligaPar: 0,
+        statHögre: 0,
+        statLägreEllerLika: 0,
+        internaPar: 0,
+        externaPar: 0,
+        basMedExternFallback: 0,
+        kravProxy: poang ? "poäng" : "bas",
+        kvUtanPoang: 0
+      },
+      fel: []
+    },
+    opts: { ...opts }
+  };
+}
+function kompletteraDiagnostik(res, { harLokalKonsdata, fel }) {
+  const d = res.diagnostik;
+  d.organisation.exempelKvDom = res.orgKvDom.slice(0, 3).map((g) => `${g.aid} (${g.label}) BAS ${g.bas} n=${g.n}`);
+  d.statistik.harLokalKonsdata = !!harLokalKonsdata;
+  d.statistik.exempelIckeKv = res.statIckeKv.slice(0, 3).map((g) => `${g.aid} (${g.label}) BAS ${g.bas} ${svPct(g.kvAndel, 0)}kv`);
+  d.fel = fel;
+  return res;
+}
+function kvDomUnderK(orgKvDom, k) {
+  return (orgKvDom || []).filter((g) => g.n < k).length;
+}
+function lvPoang(result) {
+  return result?.diagnostik?.jämförelse?.kravProxy === "poäng";
+}
+function lvStatJamfor(result) {
+  return lvPoang(result) ? [] : result.statIckeKv;
+}
+function lvParAntal(result) {
+  if (result && result.parAntal) return result.parAntal;
+  return parAntal(result && result.pairs || []);
+}
+function parSakerhet(p) {
+  if (!p.gapCI || p.gapCI.lo == null) return null;
+  return p.gapCI.lo > 0 ? "saker" : "slumpfel";
+}
+function justeradSaknas(p) {
+  const j = p.aldersJusterad;
+  if (j && isFinite(j.gapPct)) return null;
+  return p.jamforKalla !== "intern" ? "extern" : "underlag";
+}
+function vymodellLikvardigtArbete(result, { harData, harStatistik, installningar, definition, jamforelse }) {
+  const d = result.diagnostik;
+  const poang = lvPoang(result), statJamfor = lvStatJamfor(result);
+  const orgOk = harData && d.organisation.kvDomFunna > 0;
+  const internOk = d.organisation.ickeKvFunna > 0;
+  const statOk = harStatistik && statJamfor.length > 0;
+  const jamforOk = orgOk && (internOk || statOk);
+  const antal = lvParAntal(result);
+  const storstPar = result.pairs.reduce((a, p) => !a || p.gapPct > a.gapPct ? p : a, null);
+  const s = LV_STANDARD, c = installningar;
+  return {
+    poang,
+    statJamfor,
+    orgOk,
+    internOk,
+    statOk,
+    jamforOk,
+    antal,
+    antalAttJamfora: result.orgIckeKv.length + statJamfor.length,
+    visaAlla: jamforOk && antal.totalt > result.pairs.length,
+    storst: storstPar ? { par: storstPar, kvotPct: storstPar.kvMedian / storstPar.maMedian * 100 } : null,
+    anpassat: c.kvinnoTrosholdPct !== s.kvinnoTrosholdPct || c.minGapPct !== s.minGapPct || c.topN !== s.topN || definition !== s.kvDomDefinition || jamforelse !== s.jamforelse
+  };
+}
+function vymodellKravMotLon(rader, { k, definition, grans, poangByKey }) {
+  const { medPoang, grupper, utanPlats } = kravGrupper(rader, { k, definition, grans, poangByKey });
+  if (grupper.length < 3) return { forFa: (
+    /** @type {const} */
+    true
+  ) };
+  const rang = basRangordning(grupper.map((g) => g.bas));
+  const basOrdning = [...new Set(grupper.map((g) => g.bas))].sort((a, b) => rang(a) - rang(b));
+  let niva, linje;
+  if (medPoang) {
+    const reg = linjarRegression(grupper.map((g) => [g.krav, g.median]));
+    const medel = grupper.reduce((s, g) => s + g.median, 0) / grupper.length;
+    niva = (g) => reg ? reg.m * g.krav + reg.b : medel;
+    const xs = grupper.map((g) => g.krav), a = Math.min(...xs), b = Math.max(...xs);
+    linje = reg ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
+  } else {
+    const perBas = /* @__PURE__ */ new Map();
+    for (const g of grupper) {
+      if (!perBas.has(g.bas)) perBas.set(g.bas, []);
+      perBas.get(g.bas).push(g.median);
+    }
+    niva = (g) => median(perBas.get(g.bas));
+    linje = basOrdning.map((bas) => ({ bas, y: median(perBas.get(bas)) }));
+  }
+  const sidled = /* @__PURE__ */ new Map();
+  if (!medPoang) {
+    const alla = grupper.map((g) => g.median), nara = Math.max(1, (Math.max(...alla) - Math.min(...alla)) / 20);
+    const filer = [0, 1, -1, 2, -2, 3, -3, 4, -4];
+    for (const bas of new Set(grupper.map((g) => g.bas))) {
+      const lagda = [];
+      for (const g of grupper.filter((q) => q.bas === bas).sort((p, q) => p.median - q.median || String(p.namn).localeCompare(String(q.namn), "sv"))) {
+        const fil = filer.find((f) => !lagda.some((o) => o.fil === f && Math.abs(o.median - g.median) < nara)) ?? 0;
+        lagda.push({ fil, median: g.median });
+        if (fil) sidled.set(g, fil * 0.085);
+      }
+    }
+  }
+  const under = grupper.filter((g) => g.dominans === "kvinnodominerad" && g.median < niva(g)).sort((p, q) => p.median - niva(p) - (q.median - niva(q))).slice(0, 10);
+  const punkter = grupper.map((g) => ({
+    ...g,
+    avstand: Math.round(g.median - niva(g)),
+    ...sidled.has(g) ? { forskjutning: sidled.get(g) } : {},
+    etikett: under.includes(g)
+  }));
+  return {
+    forFa: (
+      /** @type {const} */
+      false
+    ),
+    medPoang,
+    basOrdning,
+    linje,
+    punkter,
+    utanPlats,
+    antalUnder: punkter.filter((p) => p.dominans === "kvinnodominerad" && p.avstand < 0).length,
+    uppskattade: punkter.filter((p) => p.uppskattad).length
+  };
+}
+function kandidatparRader(pairs, nyckel, max = 14) {
+  const top = pairs.slice().sort((a, b) => (b.allvarsindex || 0) - (a.allvarsindex || 0)).slice(0, max);
+  const rader = [], sedda = /* @__PURE__ */ new Set();
+  for (const p of top) {
+    const y = nyckel(p);
+    if (!sedda.has(y) && isFinite(p.kvMedian) && isFinite(p.maMedian)) {
+      sedda.add(y);
+      rader.push({ p, y });
+    }
+  }
+  return rader;
+}
+
 // src/lib/prioritering.js
 var AVVIKELSE_TAK = 30;
 var VOLYM_TAK = 50;
@@ -12112,22 +12269,15 @@ function _lvSkrKort(aid) {
   const ref = skrKvinnoandel(aid, { del: _skrDel() });
   return ref ? ` (nationellt ${svPct(ref.pct, 0)})` : "";
 }
-var ALDERS_GOLV = 10, ALDERS_SPRIDNING = 5;
 function _lvAlderText(v) {
   return typeof v === "number" && isFinite(v) ? svTal(v, 0) : "–";
 }
 function _lvJusteradSaknasText(p) {
-  if (p.jamforKalla !== "intern") return termText("Ingen åldersjustering: {jamforelse.bf} kommer från jämförelsestatistiken och saknar individdata.");
-  return `Ingen åldersjustering: ${T.jamforelse.bf} har färre än ${ALDERS_GOLV} personer med ålder eller mindre än ${ALDERS_SPRIDNING} års åldersspridning, eller åldrar saknas i underlaget.`;
+  if (justeradSaknas(p) === "extern") return termText("Ingen åldersjustering: {jamforelse.bf} kommer från jämförelsestatistiken och saknar individdata.");
+  return `Ingen åldersjustering: ${T.jamforelse.bf} har färre än ${ALDERS_GOLV_STANDARD} personer med ålder eller mindre än ${ALDERS_SPRIDNING_MIN} års åldersspridning, eller åldrar saknas i underlaget.`;
 }
 function _lvExternFallbackText() {
   return termText("{Enhet.fl:kvinnodominerad} (i {niva.en}) jämförda med jämförelsestatistiken");
-}
-function _lvPoang(result) {
-  return result?.diagnostik?.jämförelse?.kravProxy === "poäng";
-}
-function _lvStatJamfor(result) {
-  return _lvPoang(result) ? [] : result.statIckeKv;
 }
 function likvardighetResultat() {
   let lv = state.likvardighet && state.likvardighet.result;
@@ -12136,10 +12286,7 @@ function likvardighetResultat() {
     if (state.likvardighet) state.likvardighet.result = lv;
   }
   const org = lv.diagnostik && lv.diagnostik.organisation;
-  if (org && Array.isArray(lv.orgKvDom)) {
-    const k = kInstalld();
-    org.kvDomMedNLessThanK = lv.orgKvDom.filter((g) => g.n < k).length;
-  }
+  if (org && Array.isArray(lv.orgKvDom)) org.kvDomMedNLessThanK = kvDomUnderK(lv.orgKvDom, kInstalld());
   return lv;
 }
 function likvardighetspar(over) {
@@ -12173,51 +12320,14 @@ function likvardighetspar(over) {
     });
   } catch (e) {
     fel = [`Likvärdighetsanalysen kunde inte köras: ${e.message}`];
-    res = {
-      orgKvDom: [],
-      orgIckeKv: [],
-      statIckeKv: [],
-      pairs: [],
-      lagreKrav: [],
-      diagnostik: {
-        organisation: {
-          totalRader: (state.data || []).length,
-          antalAidxBas: 0,
-          kvDomFunna: 0,
-          kvDomMedNLessThanK: 0,
-          ickeKvFunna: 0
-        },
-        statistik: {
-          totalRader: (state.statistik || []).length,
-          klass: { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 },
-          klassKalla: { lokal: 0, nationell: 0 }
-        },
-        jämförelse: {
-          gemensammaBas: 0,
-          möjligaPar: 0,
-          statHögre: 0,
-          statLägreEllerLika: 0,
-          internaPar: 0,
-          externaPar: 0,
-          basMedExternFallback: 0,
-          kravProxy: usePoang ? "poäng" : "bas",
-          kvUtanPoang: 0
-        },
-        fel: []
-      },
-      opts: { ...opts }
-    };
+    res = likvardighetFelresultat({ antalRader: (state.data || []).length, antalStatistik: (state.statistik || []).length, poang: usePoang, opts });
   }
-  const d = res.diagnostik;
-  d.organisation.exempelKvDom = res.orgKvDom.slice(0, 3).map((g) => `${g.aid} (${g.label}) BAS ${g.bas} n=${g.n}`);
-  d.statistik.harLokalKonsdata = !!state.statistikHasKon;
-  d.statistik.exempelIckeKv = res.statIckeKv.slice(0, 3).map((g) => `${g.aid} (${g.label}) BAS ${g.bas} ${svPct(g.kvAndel, 0)}kv`);
-  d.fel = fel;
+  kompletteraDiagnostik(res, { harLokalKonsdata: !!state.statistikHasKon, fel });
   if (usePoang) res.opts.poangBandPct = opts.poangBandPct;
   return res;
 }
 function _lagreKravHtml(result) {
-  const poang = result.diagnostik?.jämförelse?.kravProxy === "poäng";
+  const poang = lvPoang(result);
   const par = result.lagreKrav || [];
   const fmt = new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 });
   const pct = (v) => new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v);
@@ -12239,7 +12349,7 @@ function _lagreKravHtml(result) {
 var LV_DOLDA_KOLUMNER = ["median", "antal", "medianjamf", "gapkr", "justerad", "paverkan"];
 var LV_LAGRE_KRAV_DOLDA_KOLUMNER = ["bassteg"];
 var LV_KOL_KVDOM = "yrke", LV_KOL_JAMF = "jamfyrke";
-function renderLikvardighet() {
+function ritaLikvardigtArbete() {
   const wrap = document.getElementById("likvardighet-content");
   if (!wrap) return;
   const cfg = state.likvardighet;
@@ -12272,6 +12382,7 @@ function renderLikvardighet() {
   }
   const fmtKr = (v) => svKr(v);
   const d = result.diagnostik;
+  const vm = vymodellLikvardigtArbete(result, { harData: hasData, harStatistik: hasStat, installningar: cfg, definition: aidbasDefinition(), jamforelse: lvJamforelse() });
   let felHtml = "";
   if (d.fel.length) {
     felHtml = `
@@ -12282,10 +12393,7 @@ function renderLikvardighet() {
                 </ul>
             </div>`;
   }
-  const orgOK = hasData && d.organisation.kvDomFunna > 0;
-  const internOK = d.organisation.ickeKvFunna > 0;
-  const statOK = hasStat && _lvStatJamfor(result).length > 0;
-  const jämförOK = orgOK && (internOK || statOK);
+  const { orgOk, internOk, statOk, jamforOk } = vm;
   const introHtml = `
         <div class="insight-box info lv-hjalp marg-b-14">
             <strong>${ikon("info")} Så här fungerar likvärdighetsanalysen</strong>
@@ -12303,7 +12411,7 @@ function renderLikvardighet() {
                     ${T.enhet.fl} i varje ${T.niva.en} (${esc(aidbasDefinitionText())}).
                     K-anonymitet tillämpas <strong>inte</strong> i denna analys eftersom
                     resultatet är aggregerat per ${T.enhet.en}.</li>
-                ${_lvPoang(result) ? `<li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} med lika eller lägre poäng
+                ${vm.poang ? `<li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} med lika eller lägre poäng
                     (likvärdiga eller lägre krav), också i andra ${T.niva.fl}. Bara organisationens egna
                     ${T.enhet.fl} som inte är kvinnodominerade (${jamforelseGransText()}) jämförs; jämförelsestatistiken
                     har inga poäng och används inte.</li>` : `<li><strong>Steg 2</strong>: Välj ${T.jamforelse.fl} inom samma ${T.niva.en}
@@ -12318,27 +12426,27 @@ function renderLikvardighet() {
                     Den råa skillnaden är det lagen prövar — lönenivån som sådan; kolumnen
                     <em>Justerad för ålder</em> visar bredvid hur mycket av skillnaden som kan bero på
                     åldersstruktur (${termText("{jamforelse.bf.s}")} lön omräknad till ${termText("{enhet.bf.s:kvinnodominerad}")}
-                    åldersfördelning; bara för interna par med minst ${ALDERS_GOLV} personer och
-                    ${ALDERS_SPRIDNING} års åldersspridning i ${T.jamforelse.bf}).</li>
+                    åldersfördelning; bara för interna par med minst ${ALDERS_GOLV_STANDARD} personer och
+                    ${ALDERS_SPRIDNING_MIN} års åldersspridning i ${T.jamforelse.bf}).</li>
             </ul>
         </div>`;
   const diagnostikHtml = `
         <div class="card marg-b-14 pad-14">
             <h3 class="fs-lg marg-0-0-10">Diagnostik — vad verktyget ser</h3>
             <div class="rutnat fs-sm gap-14 kolumner-2-lika">
-                <div class="rund-6 pad-12 ${orgOK ? "ruta-ok" : "ruta-varning"}">
-                    <strong>Organisationens data</strong> ${statusMarke(orgOK ? "ok" : "varning")}
+                <div class="rund-6 pad-12 ${orgOk ? "ruta-ok" : "ruta-varning"}">
+                    <strong>Organisationens data</strong> ${statusMarke(orgOk ? "ok" : "varning")}
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.organisation.totalRader.toLocaleString("sv-SE")}</strong></li>
                         <li>Unika ${T.enhet.fl} i ${T.niva.fl}: <strong>${d.organisation.antalAidxBas}</strong></li>
                         <li>Kvinnodominerade (${kvDomGransText()}): <strong>${d.organisation.kvDomFunna}</strong></li>
-                        <li>Interna ${T.jamforelse.fl} (${jamforelseGransText()}): <strong class="farg-ok">${d.organisation.ickeKvFunna}</strong> <small class="f-dampad">(${_lvPoang(result) ? "den enda jämförelsekällan med poäng" : "primär jämförelsekälla"})</small></li>
-                        ${d.organisation.kvDomMedNLessThanK > 0 ? `<li><span class="f-dampad">•varav ${d.organisation.kvDomMedNLessThanK} grupp${d.organisation.kvDomMedNLessThanK === 1 ? "" : "er"} med n &lt; ${kTroskel()} (inkluderade ändå — ingen k-mask i denna analys)</span></li>` : ""}
+                        <li>Interna ${T.jamforelse.fl} (${jamforelseGransText()}): <strong class="farg-ok">${d.organisation.ickeKvFunna}</strong> <small class="f-dampad">(${vm.poang ? "den enda jämförelsekällan med poäng" : "primär jämförelsekälla"})</small></li>
+                        ${d.organisation.kvDomMedNLessThanK > 0 ? `<li><span class="f-dampad">•varav ${d.organisation.kvDomMedNLessThanK} grupp${d.organisation.kvDomMedNLessThanK === 1 ? "" : "er"} med n &lt; ${kInstalld()} (inkluderade ändå — ingen k-mask i denna analys)</span></li>` : ""}
                         ${d.organisation.exempelKvDom.length ? `<li class="marg-t-4"><small class="f-dampad">Topp 3: ${d.organisation.exempelKvDom.map(esc).join(" · ")}</small></li>` : ""}
                     </ul>
                 </div>
-                <div class="rund-6 pad-12 ${statOK ? "ruta-ok" : "ruta-varning"}">
-                    <strong>jämförelsestatistiken</strong> ${statusMarke(statOK ? "ok" : "varning")}
+                <div class="rund-6 pad-12 ${statOk ? "ruta-ok" : "ruta-varning"}">
+                    <strong>jämförelsestatistiken</strong> ${statusMarke(statOk ? "ok" : "varning")}
                     <ul class="lh-1_6 marg-6-0-0 pad-v-18">
                         <li>Totalt inlästa rader: <strong>${d.statistik.totalRader.toLocaleString("sv-SE")}</strong></li>
                         <li>Lokal könsdata: <strong>${d.statistik.harLokalKonsdata ? "ja" : `nej — nationell könsfördelning ur ${esc(skrKallaKort())} som reserv`}</strong></li>
@@ -12352,10 +12460,10 @@ function renderLikvardighet() {
                     </ul>
                 </div>
             </div>
-            ${jämförOK ? `
+            ${jamforOk ? `
                 <div class="bak-accent-yta rund-4 fs-sm marg-t-10 pad-10-12">
                     <strong>Jämförelse</strong>:
-                    ${_lvPoang(result) ? "" : `${d.jämförelse.gemensammaBas} gemensamma ${T.niva.fl},`}
+                    ${vm.poang ? "" : `${d.jämförelse.gemensammaBas} gemensamma ${T.niva.fl},`}
                     ${d.jämförelse.möjligaPar} möjliga par,
                     varav <strong>${d.jämförelse.statHögre} där ${termText("{jamforelse.bf.s}")} median är högre</strong> än ${termText("{enhet.bf.s:kvinnodominerad}")}
                     (${d.jämförelse.statLägreEllerLika} där ${T.jamforelse.bf} ≤ organisation — visas ej, inget problem med likvärdigt arbete).
@@ -12399,7 +12507,7 @@ function renderLikvardighet() {
   const internTblHtml = `
         <details class="mb-14" open>
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
-                Steg 2a — Organisationens interna ${T.jamforelse.fl} (${result.orgIckeKv.length} st) <small class="farg-dampad fw-400">— ${_lvPoang(result) ? "den enda jämförelsekällan med poäng" : "primär jämförelsekälla"}</small>
+                Steg 2a — Organisationens interna ${T.jamforelse.fl} (${result.orgIckeKv.length} st) <small class="farg-dampad fw-400">— ${vm.poang ? "den enda jämförelsekällan med poäng" : "primär jämförelsekälla"}</small>
             </summary>
             <div class="pad-10-0">
                 ${result.orgIckeKv.length ? `<div class="table-responsive"><table class="data-table st-088">
@@ -12437,14 +12545,15 @@ function renderLikvardighet() {
     return `<span class="bak-varning-bg rund-8 farg-varning fs-xs pad-1-6" title="jämförelsestatistiken; könsfördelningen ur den nationella statistiken (${esc(skrKallaKort())})">nationell</span>`;
   };
   const ciCell = (p) => {
-    if (!p.gapCI || p.gapCI.lo == null) return '<span class="f-dampad" title="För få observationer för bootstrap">—</span>';
-    const säker = p.gapCI.lo > 0;
+    const sakerhet = parSakerhet(p);
+    if (!sakerhet) return '<span class="f-dampad" title="För få observationer för bootstrap">—</span>';
+    const säker = sakerhet === "saker";
     const tal = (v) => Math.round(v).toLocaleString("sv-SE");
     return `<span class="lv-ki" title="95 % bootstrap-konfidensintervall på medianskillnaden" data-export-text="[${fmtKr(p.gapCI.lo)}, ${fmtKr(p.gapCI.hi)}]">${tal(p.gapCI.lo)}–${tal(p.gapCI.hi)} kr</span><br><span class="lv-ki-marke ${säker ? "bricka-ok" : "bricka-varning"}">${säker ? "säker skillnad" : "inom slumpfel"}</span>`;
   };
   const justCell = (p) => {
+    if (justeradSaknas(p)) return `<span class="f-dampad" title="${esc(_lvJusteradSaknasText(p))}">—</span>`;
     const j = p.aldersJusterad;
-    if (!j || !isFinite(j.gapPct)) return `<span class="f-dampad" title="${esc(_lvJusteradSaknasText(p))}">—</span>`;
     return `<span title="${termText("{Jamforelse.bf.s} median omräknad till {enhet.bf.s:kvinnodominerad} åldersfördelning")}: ${fmtKr(j.medianJusterad)} — skillnad ${fmtKr(j.gapKr)}. Medelålder ${_lvAlderText(p.kvMedelAlder)} mot ${_lvAlderText(p.maMedelAlder)} år.">${svPct(j.gapPct, 1)}</span>`;
   };
   const parRows = result.pairs.map((p, i) => `
@@ -12452,7 +12561,7 @@ function renderLikvardighet() {
             <td>${i + 1}</td>
             <td><strong>${esc(p.kvAid)}</strong>${p.kvLabel && p.kvLabel !== p.kvAid ? " " + esc(p.kvLabel) : ""}<br><small class="f-dampad lv-under"${_lvSkrKort(p.kvAid) ? ` title="Andel kvinnor med ${T.enhet.bf} nationellt (${esc(skrKallaKort())}):${esc(_lvSkrKort(p.kvAid).replace(/[()]|SKR/g, ""))}"` : ""}>BAS ${esc(p.kvBas)} · ${svPct(p.kvKvinnoPct, 0)} kv<span class="bara-export">${_lvSkrKort(p.kvAid)}</span> · n=${p.kvN}</small></td>
             <td class="t-hoger">${fmtKr(p.kvMedian)}</td>
-            <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? " " + esc(p.maLabel) : ""}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)}${_lvPoang(result) ? "" : ` · ${källBadge(p)}`}${p.maN != null ? ` · n=${p.maN}` : ""}</small></td>
+            <td><strong>${esc(p.maAid)}</strong>${p.maLabel && p.maLabel !== p.maAid ? " " + esc(p.maLabel) : ""}<br><small class="f-dampad lv-under">BAS ${esc(p.maBas)}${vm.poang ? "" : ` · ${källBadge(p)}`}${p.maN != null ? ` · n=${p.maN}` : ""}</small></td>
             <td class="t-hoger">${p.kvN} / ${p.maN != null ? p.maN : "–"}</td>
             <td class="lv-konsandel" data-sort-value="${p.maKvAndel ?? ""}">${svPct(p.maKvAndel, 0)}<br><small class="f-dampad">${konsklassOrd(p.maKlass)}</small></td>
             <td class="t-hoger">${fmtKr(p.maMedian)}</td>
@@ -12464,14 +12573,14 @@ function renderLikvardighet() {
             <td class="t-mitt"><button class="btn-evidence" data-lv-pair="${i}" type="button" title="Visa beräkningen" aria-label="Visa beräkningen för par ${i + 1}">${ikon("sok")}</button></td>
         </tr>`).join("");
   let parTblHtml;
-  if (!jämförOK) {
+  if (!jamforOk) {
     parTblHtml = `
             <div class="insight-box warn mb-14">
                 <strong>${ikon("statusVarning")} Jämförelsen kan inte genomföras</strong>
                 <p class="fs-md lh-1_55 marg-8-0">
                     Analysen kräver kvinnodominerade ${T.enhet.fl} <em>och</em> minst en jämförelsekälla:
-                    ${!orgOK ? "<br>• <strong>Organisationen saknar kvinnodominerade grupper.</strong> Se Steg 1 ovan." : ""}
-                    ${orgOK && !internOK && !statOK ? termText("<br>• <strong>Inga {jamforelse.fl} finns</strong> — varken interna {enhet.fl} som inte är kvinnodominerade (Steg 2a) eller jämförelsestatistiken (Steg 2b).") : ""}
+                    ${!orgOk ? "<br>• <strong>Organisationen saknar kvinnodominerade grupper.</strong> Se Steg 1 ovan." : ""}
+                    ${orgOk && !internOk && !statOk ? termText("<br>• <strong>Inga {jamforelse.fl} finns</strong> — varken interna {enhet.fl} som inte är kvinnodominerade (Steg 2a) eller jämförelsestatistiken (Steg 2b).") : ""}
                 </p>
             </div>`;
   } else if (!result.pairs.length) {
@@ -12480,8 +12589,8 @@ function renderLikvardighet() {
                 <strong>${ikon("info")} Inga kandidatpar hittades</strong>
                 <p class="fs-md marg-8-0">
                     Organisationen har ${result.orgKvDom.length} kvinnodominerade grupper och
-                    ${_lvPoang(result) ? `${result.orgIckeKv.length} ${T.jamforelse.fl}` : `${result.orgIckeKv.length} interna och ${_lvStatJamfor(result).length} externa ${T.jamforelse.fl}`}.
-                    ${_lvPoang(result) ? `Ingen av ${T.jamforelse.bfl} med lika eller lägre poäng har` : `Inom de ${d.jämförelse.gemensammaBas} gemensamma ${T.niva.bfl} har ingen av
+                    ${vm.poang ? `${result.orgIckeKv.length} ${T.jamforelse.fl}` : `${result.orgIckeKv.length} interna och ${vm.statJamfor.length} externa ${T.jamforelse.fl}`}.
+                    ${vm.poang ? `Ingen av ${T.jamforelse.bfl} med lika eller lägre poäng har` : `Inom de ${d.jämförelse.gemensammaBas} gemensamma ${T.niva.bfl} har ingen av
                     ${T.jamforelse.bfl}`} högre lön än organisationens kvinnodominerade ${T.enhet.fl}.
                     ${cfg.minGapPct > 0 ? `(Bara par med minst ${cfg.minGapPct} % skillnad visas, efter valet i Inställningar.)` : ""}
                 </p>
@@ -12495,7 +12604,7 @@ function renderLikvardighet() {
                             <th data-kol="nr">#</th>
                             <th data-kol="${LV_KOL_KVDOM}" title="${termText("{Enhet.en:kvinnodominerad} i organisationen (faktisk könsfördelning).")}">Kvinnodom. ${T.enhet.en} (${esc(orgNamn("org."))})</th>
                             <th data-kol="median" title="Median månadslön i organisationens grupp.">Median ${esc(orgNamn("org."))}</th>
-                            <th data-kol="${LV_KOL_JAMF}" title="${termText(_lvPoang(result) ? "{Jamforelse.en}: {enhet.art} {enhet.en} i organisationen som inte är {enhet.adj:kvinnodominerad} och har lika eller lägre poäng." : "{Jamforelse.en}: {enhet.art} {enhet.en} i organisationen som inte är {enhet.adj:kvinnodominerad} (intern), annars jämförelsestatistiken (extern).")}">${termText("{Jamforelse.en}")}</th>
+                            <th data-kol="${LV_KOL_JAMF}" title="${termText(vm.poang ? "{Jamforelse.en}: {enhet.art} {enhet.en} i organisationen som inte är {enhet.adj:kvinnodominerad} och har lika eller lägre poäng." : "{Jamforelse.en}: {enhet.art} {enhet.en} i organisationen som inte är {enhet.adj:kvinnodominerad} (intern), annars jämförelsestatistiken (extern).")}">${termText("{Jamforelse.en}")}</th>
                             <th data-kol="antal" title="${termText("Antal personer med {enhet.bf:kvinnodominerad} och med {jamforelse.bf} (– när jämförelsestatistiken inte anger antal).")}">Antal (kvinnodom. / jämf.)</th>
                             <th data-kol="konsandel" title="${termText("Könsandel i {jamforelse.bf} och dess klass: mansdominerad eller blandad.")}" data-export-label="Könsandel jämf. (% kvinnor)">Könsandel</th>
                             <th data-kol="medianjamf" title="${termText("Median månadslön i {jamforelse.bf}.")}">Median jämf.</th>
@@ -12573,7 +12682,7 @@ function renderLikvardighet() {
                 </div>
             </div>
         </div>`;
-  const exportHtml = jämförOK && result.pairs.length ? `
+  const exportHtml = jamforOk && result.pairs.length ? `
         <div class="tabell-export-rad">
             <div class="chart-export tabell-export">
                 <button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="lv-export-meny" aria-label="Exportera tabellen med kandidatparen">Exportera tabellen</button>
@@ -12596,13 +12705,11 @@ function renderLikvardighet() {
             <summary><span class="avsnitt-titel"><h2>${rubrik}</h2><span class="avsnitt-under">${under}</span></span><span class="avsnitt-nyckel" id="nyckel-lv-${namn}">${esc(nyckel)}</span></summary>
             ${innehall}</details>`;
   };
-  const std = { kvinnoTrosholdPct: 60, minGapPct: 0, topN: 20 };
-  const anpassat = cfg.kvinnoTrosholdPct !== std.kvinnoTrosholdPct || cfg.minGapPct !== std.minGapPct || cfg.topN !== std.topN || aidbasDefinition() !== "do" || lvJamforelse() !== "alla";
-  const antal = lvParAntal(result);
-  const visaAllaHtml = jämförOK && antal.totalt > result.pairs.length ? `
+  const antal = vm.antal;
+  const visaAllaHtml = vm.visaAlla ? `
         <p class="text-dampad-xs marg-8-0">Tabellen visar de ${svTal(result.pairs.length, 0)} största skillnaderna av ${svTal(antal.totalt, 0)} par.
             <button type="button" id="lv-visa-alla" class="btn btn-secondary btn-sm">Visa alla ${svTal(antal.totalt, 0)} par</button></p>` : "";
-  _lvRitaTopp(result);
+  _lvRitaTopp(result, vm);
   wrap.innerHTML = felHtml + `<div class="card marg-0-0-14">
             <h2 class="fs-md marg-0-0-4">Krav mot lön — alla ${T.enhet.fl}</h2>
             <p class="text-dampad-xs marg-0-0-8">En punkt per ${T.enhet.en}: arbetets krav vågrätt, medianlönen lodrätt. Kvinnodominerade grupper som ligger under linjen har lägre lön än kraven brukar ge i organisationen — de är värda att titta närmare på.</p>
@@ -12611,9 +12718,9 @@ function renderLikvardighet() {
         </div><p class="avsnitt-rubrikrad">Fördjupning</p>` + avsnitt(
     "par",
     "Par att titta närmare på",
-    termText(_lvPoang(result) ? "{Enhet.fl:kvinnodominerad} mot {jamforelse.fl} med lika eller lägre poäng och högre lön" : "{Enhet.fl:kvinnodominerad} mot {jamforelse.fl} med högre lön i samma {niva.en}"),
+    termText(vm.poang ? "{Enhet.fl:kvinnodominerad} mot {jamforelse.fl} med lika eller lägre poäng och högre lön" : "{Enhet.fl:kvinnodominerad} mot {jamforelse.fl} med högre lön i samma {niva.en}"),
     antal.totalt > result.pairs.length ? `${result.pairs.length} av ${antal.totalt} par` : `${result.pairs.length} par`,
-    exportHtml + (jämförOK && result.pairs.length ? `
+    exportHtml + (jamforOk && result.pairs.length ? `
         <div class="card mb-14">
             <div class="chart-header rad-bryt-mitt gap-12 mellan marg-b-8">
                 <h3 class="fs-md marg-0">Kandidatparen i kronor</h3>
@@ -12625,13 +12732,13 @@ function renderLikvardighet() {
     "underlag",
     termText("{Enhet.bfl} bakom jämförelsen"),
     termText("Steg för steg: {enhet.bfl:kvinnodominerad} och {jamforelse.bfl}"),
-    `${result.orgKvDom.length} kvinnodominerade, ${result.orgIckeKv.length + _lvStatJamfor(result).length} att jämföra med`,
+    `${result.orgKvDom.length} kvinnodominerade, ${vm.antalAttJamfora} att jämföra med`,
     orgTblHtml + internTblHtml + statTblHtml
   ) + avsnitt(
     "installningar",
     "Inställningar",
     termText("Kvinnotröskel, definition av kvinnodominerat, vilka {enhet.fl} som jämförs, minsta skillnad och antal par. Standardvärdena räcker för de flesta."),
-    anpassat ? "Anpassade värden" : "Standardvärden",
+    vm.anpassat ? "Anpassade värden" : "Standardvärden",
     controlsHtml
   ) + avsnitt("analys", "Så fungerar analysen", "Metoden, och vad verktyget ser i underlaget", "", introHtml + diagnostikHtml) + debugHtml;
   const onNumChange = (id, key, min, max) => {
@@ -12647,7 +12754,7 @@ function renderLikvardighet() {
       if (max != null && v > max) v = max;
       state.likvardighet[key] = v;
       state.likvardighet.result = null;
-      renderLikvardighet();
+      ritaLikvardigtArbete();
     });
   };
   onNumChange("lv-kvinno-thr", "kvinnoTrosholdPct", 50, 70);
@@ -12656,20 +12763,20 @@ function renderLikvardighet() {
   document.getElementById("lv-visa-alla")?.addEventListener("click", () => {
     state.likvardighet.topN = Math.max(10, antal.totalt);
     state.likvardighet.result = null;
-    renderLikvardighet();
+    ritaLikvardigtArbete();
   });
   document.getElementById("lv-kv-definition")?.addEventListener("change", (e) => {
     state.likvardighet.kvDomDefinition = /** @type {HTMLSelectElement} */
     e.target.value === "scb" ? "scb" : "do";
     state.likvardighet.result = null;
-    renderLikvardighet();
+    ritaLikvardigtArbete();
     renderAidBasLikvardigt();
   });
   document.getElementById("lv-bara-mansdominerade")?.addEventListener("change", (e) => {
     state.likvardighet.jamforelse = /** @type {HTMLInputElement} */
     e.target.checked ? "mansdominerade" : "alla";
     state.likvardighet.result = null;
-    renderLikvardighet();
+    ritaLikvardigtArbete();
     renderAidBasLikvardigt();
   });
   document.getElementById("btn-export-likvardighet")?.addEventListener("click", exportLikvardighet);
@@ -12694,19 +12801,10 @@ function renderLikvardighet() {
     if (typeof addTableExportTools === "function") addTableExportTools("likvardighet-lagre-krav-table", "likvardighet_lagre_krav");
     if (typeof flerKolumner === "function") flerKolumner("likvardighet-lagre-krav-table", LV_LAGRE_KRAV_DOLDA_KOLUMNER, "lvLagreKrav");
   }
-  if (jämförOK && result.pairs.length) renderLikvardighetHeatmap(result.pairs);
-  renderLikvardighetKrav();
+  if (jamforOk && result.pairs.length) ritaKandidatparen(result.pairs);
+  ritaKravMotLon();
 }
-function lvParAntal(result) {
-  if (result && result.parAntal) return result.parAntal;
-  const par = result && result.pairs || [];
-  return {
-    totalt: par.length,
-    overDirektiv: par.filter((p) => p.maMedian > 0 && direktivMarkering(p.kvMedian / p.maMedian * 100)).length,
-    sakra: par.filter((p) => p.gapCI && p.gapCI.lo != null && p.gapCI.lo > 0).length
-  };
-}
-function _lvRitaTopp(result) {
+function _lvRitaTopp(result, vm) {
   const urval = document.getElementById("lv-urval"), host = document.getElementById("lv-slutsatser");
   if (!urval || !host) return;
   if (!result) {
@@ -12715,9 +12813,8 @@ function _lvRitaTopp(result) {
     return;
   }
   urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(getData().length, 0)} personer</span>${kTroskelLank()}`;
-  const par = result.pairs, antal = lvParAntal(result);
-  const storst = par.reduce((a, p) => !a || p.gapPct > a.gapPct ? p : a, null);
-  const statJmf = _lvStatJamfor(result), poang = result.diagnostik?.jämförelse?.kravProxy === "poäng";
+  const { antal, storst } = vm;
+  const statJmf = vm.statJamfor, poang = vm.poang;
   const kallor = poang ? "bara organisationens egna (jämförelsestatistiken har inga poäng)" : "egna och ur jämförelsestatistiken";
   host.innerHTML = _laSlutsats(termText("{Enhet.fl:kvinnodominerad}"), svTal(result.orgKvDom.length, 0), kvDomGransText()) + _laSlutsats(
     termText("{Jamforelse.fl}"),
@@ -12733,10 +12830,10 @@ function _lvRitaTopp(result) {
     antal.totalt ? `${_STS_DIR_KOLUMN}: ${termText("{enhet.bf.s:kvinnodominerad} medianlön är minst 5 % under {jamforelse.bf.s}")}. ${_STS_DIR_TIPS}` : ""
   ) + (storst ? _laSlutsats(
     "Lägst lön i % av jämförelsen",
-    svPct(storst.kvMedian / storst.maMedian * 100, 1),
-    `${storst.kvLabel || storst.kvAid} i % av ${storst.maLabel || storst.maAid}`,
+    svPct(storst.kvotPct, 1),
+    `${storst.par.kvLabel || storst.par.kvAid} i % av ${storst.par.maLabel || storst.par.maAid}`,
     false,
-    `${termText("{Enhet.bf.s:kvinnodominerad} medianlön i % av {jamforelse.bf.s}. I tabellen över paren står samma skillnad som hur mycket högre {jamforelse.bf.s} medianlön är")}: ${svPct(storst.gapPct, 1)}.`
+    `${termText("{Enhet.bf.s:kvinnodominerad} medianlön i % av {jamforelse.bf.s}. I tabellen över paren står samma skillnad som hur mycket högre {jamforelse.bf.s} medianlön är")}: ${svPct(storst.par.gapPct, 1)}.`
   ) : "");
 }
 var _LV_KRAV_SERIER = [
@@ -12744,41 +12841,10 @@ var _LV_KRAV_SERIER = [
   { dominans: "mansdominerad", serie: "Mansdominerad", farg: () => PALETTE.kon.man, symbol: "triangelHoger" },
   { dominans: "blandad", serie: "Blandad", farg: () => PALETTE.semantic.neutral, symbol: "cirkel" }
 ];
-function _lvKravFigur({ medPoang, grupper }) {
+function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
   const kr2 = (v) => talformat(v, "kr");
-  const rang = basRangordning(grupper.map((g) => g.bas));
-  const basOrdning = [...new Set(grupper.map((g) => g.bas))].sort((a, b) => rang(a) - rang(b)).map((b) => "BAS " + b);
   const x = (g) => medPoang ? g.krav : "BAS " + g.bas;
-  let niva, linje;
-  if (medPoang) {
-    const reg = Stat.linjarRegression(grupper.map((g) => [g.krav, g.median]));
-    const medel = grupper.reduce((s, g) => s + g.median, 0) / grupper.length;
-    niva = (g) => reg ? reg.m * g.krav + reg.b : medel;
-    const xs = grupper.map((g) => g.krav), a = Math.min(...xs), b = Math.max(...xs);
-    linje = reg ? [{ x: a, y: reg.m * a + reg.b }, { x: b, y: reg.m * b + reg.b }] : [];
-  } else {
-    const perBas = /* @__PURE__ */ new Map();
-    for (const g of grupper) {
-      if (!perBas.has(g.bas)) perBas.set(g.bas, []);
-      perBas.get(g.bas).push(g.median);
-    }
-    niva = (g) => Stat.median(perBas.get(g.bas));
-    linje = basOrdning.map((b) => ({ x: b, y: Stat.median(perBas.get(b.slice(4))), bas: b.slice(4) }));
-  }
-  const sidled = /* @__PURE__ */ new Map();
-  if (!medPoang) {
-    const alla = grupper.map((g) => g.median), nara = Math.max(1, (Math.max(...alla) - Math.min(...alla)) / 20);
-    const filer = [0, 1, -1, 2, -2, 3, -3, 4, -4];
-    for (const bas of new Set(grupper.map((g) => g.bas))) {
-      const lagda = [];
-      for (const g of grupper.filter((q) => q.bas === bas).sort((p, q) => p.median - q.median || String(p.namn).localeCompare(String(q.namn), "sv"))) {
-        const fil = filer.find((f) => !lagda.some((o) => o.fil === f && Math.abs(o.median - g.median) < nara)) ?? 0;
-        lagda.push({ fil, median: g.median });
-        if (fil) sidled.set(g, fil * 0.085);
-      }
-    }
-  }
-  const under = grupper.filter((g) => g.dominans === "kvinnodominerad" && g.median < niva(g)).sort((p, q) => p.median - niva(p) - (q.median - niva(q))).slice(0, 10);
+  const linje = medPoang ? hornen : hornen.map((h) => ({ x: "BAS " + h.bas, y: h.y, bas: h.bas }));
   const storlek = (n) => Math.max(4, Math.min(12, 2 + Math.sqrt(n)));
   const lager = _LV_KRAV_SERIER.map((s) => ({
     marke: "punkt",
@@ -12787,21 +12853,21 @@ function _lvKravFigur({ medPoang, grupper }) {
     symbol: s.symbol,
     opacitet: 0.8,
     etikettLage: "undvik",
-    data: grupper.filter((g) => g.dominans === s.dominans).map((g) => ({
+    data: punkter.filter((g) => g.dominans === s.dominans).map((g) => ({
       x: x(g),
       y: Math.round(g.median),
-      ...sidled.has(g) ? { forskjutning: sidled.get(g) } : {},
+      ...g.forskjutning ? { forskjutning: g.forskjutning } : {},
       storlek: storlek(g.n),
       namn: g.namn,
       bas: g.bas,
       sektor: sektorsnamn(g.aid),
       n: g.n,
       andelKv: g.andelKv,
-      avstand: Math.round(g.median - niva(g)),
+      avstand: g.avstand,
       uppskattad: !!g.uppskattad,
       krav: g.krav,
       markering: markeringFor(g.bas, g.aid),
-      ...under.includes(g) ? { etikett: g.namn } : {}
+      ...g.etikett ? { etikett: g.namn } : {}
     })),
     tips: (d) => [
       [`${d.namn} · BAS ${d.bas}`],
@@ -12816,31 +12882,30 @@ function _lvKravFigur({ medPoang, grupper }) {
   return {
     beskrivning: `En punkt per ${T.enhet.en}: arbetets krav (${medPoang ? "arbetsvärderingspoäng" : T.niva.en}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replaceAll("%", "procent")}). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
     urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
-    x: medPoang ? { skala: "linjar", titel: "Arbetsvärderingspoäng" } : { skala: "band", titel: `${stor(T.niva.en)} (stigande krav)`, ordning: basOrdning },
+    x: medPoang ? { skala: "linjar", titel: "Arbetsvärderingspoäng" } : { skala: "band", titel: `${stor(T.niva.en)} (stigande krav)`, ordning: basOrdning.map((b) => "BAS " + b) },
     y: { skala: "linjar", titel: "Gruppens medianlön", format: "kr" },
     hojd: 420,
     lager
   };
 }
-function renderLikvardighetKrav() {
+function ritaKravMotLon() {
   const el = document.getElementById("chart-likvardighet-krav");
   if (!el) return;
   const av = state.arbetsvardering, k = kTroskel();
-  const u = kravGrupper(state.data || [], { k, definition: aidbasDefinition(), grans: aidbasGrans(), poangByKey: av && av.byKey && av.byKey.size ? av.byKey : null });
+  const vm = vymodellKravMotLon(state.data || [], { k, definition: aidbasDefinition(), grans: aidbasGrans(), poangByKey: av && av.byKey && av.byKey.size ? av.byKey : null });
   const not = document.getElementById("lv-krav-not");
-  if (u.grupper.length < 3) {
+  if (vm.forFa) {
     rensaFigur(el);
     el.innerHTML = `<p class="text-dampad-sm marg-8-0">För få ${T.enhet.fl}${k > 1 ? ` med minst ${k} personer` : ""} för att visa krav mot lön.</p>`;
     if (not) not.textContent = "";
     return;
   }
-  const figur = _lvKravFigur(u);
-  const under = figur.lager.filter((l) => l.serie === "Kvinnodominerad").flatMap((l) => l.data).filter((d) => d.avstand < 0).length;
-  ritaFigur(el, figur, { exportAnteckning: `${under} ${under === 1 ? "kvinnodominerad grupp ligger" : "kvinnodominerade grupper ligger"} under nivån` });
-  const uppskattade = u.grupper.filter((g) => g.uppskattad).length;
-  if (not) not.textContent = `${k > 1 ? `Bara ${T.enhet.fl} med minst ${k} personer. ` : ""}Punktens storlek följer antalet personer.` + (uppskattade ? ` ${uppskattade} ${uppskattade === 1 ? "grupp saknar" : "grupper saknar"} poäng i arbetsvärderingen och är placerade efter medianpoängen för de värderade grupperna i samma ${T.niva.en}.` : "") + (u.utanPlats.length ? ` Kan inte placeras (ingen värderad grupp i samma ${T.niva.en}): ${u.utanPlats.map((g) => g.namn).join(", ")}.` : "");
+  const under = vm.antalUnder;
+  ritaFigur(el, _lvKravFigur(vm), { exportAnteckning: `${under} ${under === 1 ? "kvinnodominerad grupp ligger" : "kvinnodominerade grupper ligger"} under nivån` });
+  const uppskattade = vm.uppskattade;
+  if (not) not.textContent = `${k > 1 ? `Bara ${T.enhet.fl} med minst ${k} personer. ` : ""}Punktens storlek följer antalet personer.` + (uppskattade ? ` ${uppskattade} ${uppskattade === 1 ? "grupp saknar" : "grupper saknar"} poäng i arbetsvärderingen och är placerade efter medianpoängen för de värderade grupperna i samma ${T.niva.en}.` : "") + (vm.utanPlats.length ? ` Kan inte placeras (ingen värderad grupp i samma ${T.niva.en}): ${vm.utanPlats.map((g) => g.namn).join(", ")}.` : "");
 }
-function renderLikvardighetHeatmap(pairs) {
+function ritaKandidatparen(pairs) {
   const el = document.getElementById("chart-likvardighet-heatmap");
   if (!el) return;
   if (!Array.isArray(pairs) || !pairs.length) {
@@ -12852,16 +12917,7 @@ function renderLikvardighetHeatmap(pairs) {
 }
 var LV_PAR_ANTAL = Object.freeze({ typ: "intervall", falt: "n", namn: termText("Antal med {enhet.bf:kvinnodominerad}"), format: "antal", etikett: termText("{v} med {enhet.bf:kvinnodominerad}") });
 function _lvParFigur(pairs, max = 14) {
-  const top = pairs.slice().sort((a, b) => (b.allvarsindex || 0) - (a.allvarsindex || 0)).slice(0, max);
-  const namn = (p) => `${_rfKorta(String(p.kvLabel), 22)} mot ${_rfKorta(String(p.maLabel), 22)}`;
-  const rader = [], sedda = /* @__PURE__ */ new Set();
-  for (const p of top) {
-    const y = namn(p);
-    if (!sedda.has(y) && isFinite(p.kvMedian) && isFinite(p.maMedian)) {
-      sedda.add(y);
-      rader.push({ p, y });
-    }
-  }
+  const rader = kandidatparRader(pairs, (p) => `${_rfKorta(String(p.kvLabel), 22)} mot ${_rfKorta(String(p.maLabel), 22)}`, max);
   const kr2 = (v) => talformat(v, "kr");
   const parFalt = (p) => ({ ...p.kvBas != null && p.kvBas !== "" ? { bas: String(p.kvBas) } : {}, ...isFinite(p.gapPct) ? { gap: +p.gapPct.toFixed(1) } : {}, ...p.kvN > 0 ? { n: p.kvN } : {} });
   const tips = ({ p }) => [[`${p.kvLabel} (BAS ${p.kvBas})`], ["Median", kr2(p.kvMedian)], [`${p.maLabel} (BAS ${p.maBas})`], ["Median", kr2(p.maMedian)], ["Skillnad", `${svPct(p.gapPct, 1)} (${kr2(p.gapKr)})`]];
@@ -12896,7 +12952,7 @@ function _lvParFigur(pairs, max = 14) {
     ]
   };
 }
-var LV_JUSTERAD_METOD = termText("{Jamforelse.bf.s} lön omräknad till {enhet.bf.s:kvinnodominerad} åldersfördelning: log(lön) = a + b·ålder skattas i {jamforelse.bf} (minst ") + ALDERS_GOLV + " personer, minst " + ALDERS_SPRIDNING + termText(" års åldersspridning), lönen prediceras vid varje person med {enhet.bf:kvinnodominerad} och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.");
+var LV_JUSTERAD_METOD = termText("{Jamforelse.bf.s} lön omräknad till {enhet.bf.s:kvinnodominerad} åldersfördelning: log(lön) = a + b·ålder skattas i {jamforelse.bf} (minst ") + ALDERS_GOLV_STANDARD + " personer, minst " + ALDERS_SPRIDNING_MIN + termText(" års åldersspridning), lönen prediceras vid varje person med {enhet.bf:kvinnodominerad} och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.");
 function _lvParRader(pairs, num) {
   const källNamn = (p) => p.jamforKalla === "intern" ? "Intern (organisation)" : p.maKlassKort === "lokal" ? "jämförelsestatistiken" : "SKR:s personalstatistik";
   const rows = [[
@@ -12946,7 +13002,7 @@ function _lvParRader(pairs, num) {
       p.aldersJusterad ? num(p.aldersJusterad.gapPct, 2) : "",
       ci ? num(p.gapCI.lo) : "",
       ci ? num(p.gapCI.hi) : "",
-      ci ? p.gapCI.lo > 0 ? "Säker skillnad" : "Inom slumpfel" : "Ej beräkningsbar",
+      { saker: "Säker skillnad", slumpfel: "Inom slumpfel" }[parSakerhet(p)] || "Ej beräkningsbar",
       num(p.allvarsindex),
       "",
       ""
@@ -12985,7 +13041,7 @@ function _exportLikvardighetCSVExport() {
   rows.push(["Minsta skillnad (%)", result.opts.minGapPct]);
   rows.push(["Antal par", result.pairs.length]);
   rows.push(["•varav interna (organisation mot organisation)", result.diagnostik?.jämförelse?.internaPar ?? 0]);
-  const poang = _lvPoang(result);
+  const poang = lvPoang(result);
   if (!poang) {
     rows.push(["•varav externa (mot jämförelsestatistiken)", result.diagnostik?.jämförelse?.externaPar ?? 0]);
     rows.push([_lvExternFallbackText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
@@ -13025,7 +13081,7 @@ function _exportLikvardighetExport() {
     const { pairs } = result;
     const diagnostik = result.diagnostik || {};
     const opts = result.opts || {};
-    const poang = _lvPoang(result);
+    const poang = lvPoang(result);
     const num = (v, decimals) => {
       if (v == null) return "";
       const n = Number(v);
@@ -13145,7 +13201,7 @@ function uppstartLikvardigtArbete() {
     if (state.likvardighet && isFinite(v) && v >= 0) state.likvardighet.poangBandPct = v;
     if (state.likvardighet) state.likvardighet.result = null;
     const active = document.querySelector(".nav-item.active");
-    if (active && active.getAttribute("data-tab") === "likvardighet") renderLikvardighet();
+    if (active && active.getAttribute("data-tab") === "likvardighet") ritaLikvardigtArbete();
   });
 }
 
@@ -30078,8 +30134,10 @@ function ritaKravstatus() {
   else setCompCard("comp-pol", ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
   const bm = vm.statistik;
   if (bm) {
-    if (bm.av === 0) setCompCard("comp-bm", 0, 0, "Ingen matchning hittad", "na");
-    else setCompCard("comp-bm", bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}`, bm.lage);
+    const k = kInstalld();
+    const utel = bm.utelamnade ? ` · ${bm.utelamnade} ${bm.utelamnade === 1 ? T.enhet.en : T.enhet.fl} visas inte här (färre än ${k} ${personOrd(k)})` : "";
+    if (bm.av === 0) setCompCard("comp-bm", 0, 0, `Ingen matchning hittad${utel}`, "na");
+    else setCompCard("comp-bm", bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
   }
   const bmLank = document.querySelector("#comp-bm .comp-lank");
   if (bmLank) bmLank.hidden = !state.statistik.length;
@@ -32402,7 +32460,7 @@ function _renderTabContent(target) {
     renderLonestrukturNycklar();
   } else if (target === "loneoversyn" && d.length) renderForecast();
   else if (target === "likvardighet" && (d.length || state.statistik.length)) {
-    renderLikvardighet();
+    ritaLikvardigtArbete();
     renderAidBasLikvardigt();
   } else if (target === "utforska" && d.length) {
     ritaLoneoversikt();
