@@ -5,7 +5,7 @@ import { talformat } from '../lib/figur.js';
 import { installningsGrans } from '../lib/installningsgranser.js';
 import { statistikFor } from '../lib/jamforelse.js';
 import { personOrd } from '../lib/namn.js';
-import { motiveringsgrunder, prioKonstanter, prioritera } from '../lib/prioritering.js';
+import { kostnadskurva, motiveringsgrunder, prioKonstanter, prioNyckeltal, prioritera } from '../lib/prioritering.js';
 import { avrundaSymmetriskt } from '../lib/stat.js';
 import { svKr, svPct, svPoPct, svTal } from '../lib/talformat.js';
 import { adjektiv, stor as termStor } from '../lib/termer.js';
@@ -219,11 +219,8 @@ export function renderPrioritering() {
     }
 
     // Sammanfattningsstatistik
-    const akutCount  = items.filter(i => i.status === 'akut').length;
     // Nyckeltalen räknar statusarna, som tabellens kolumn Status (samma gränser ur inställningen).
-    const underCount = items.filter(i => i.status === 'atgard').length;
-    const overCount  = items.filter(i => i.status === 'analysera').length;
-    const totalCost  = items.reduce((s, i) => s + i.annualGapTotal, 0);
+    const { akut: akutCount, atgard: underCount, analysera: overCount, totalKostnad: totalCost } = prioNyckeltal(items);
     const fmt = new Intl.NumberFormat('sv-SE');
     const fmtMkr = _fmtCost(totalCost);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-akut')).textContent  = String(akutCount);
@@ -252,21 +249,16 @@ export function renderPrioritering() {
     items.forEach((it, idx) => { it.rank = idx + 1; });
 
     // Pareto-kurva: kumulativ kostnadsfördelning
-    const itemsForPareto = items.filter(i => i.annualGapTotal > 0).sort((a, b) => b.annualGapTotal - a.annualGapTotal);
-    const totalParetoCost = itemsForPareto.reduce((s, i) => s + i.annualGapTotal, 0);
+    // Kumulativ procent, och antalet grupper som når 50 % och 80 % (kostnadskurva, src/lib/prioritering.js)
+    const kurva = kostnadskurva(items, { max: 40, visas: PRIO_KOSTNAD_MAX });
+    const { total: totalParetoCost, visade, kumPct: cumPct, n50, n80 } = kurva;
     const paretoEl = document.getElementById('chart-prio-pareto');
     const paretoSummary = document.getElementById('prio-pareto-summary');
-    if (paretoEl && itemsForPareto.length > 0 && totalParetoCost > 0) {
-        const visade = itemsForPareto.slice(0, Math.min(40, itemsForPareto.length));
-        // Kumulativ procent, och antalet grupper som når 50 % och 80 %
-        let acc = 0;
-        const cumPct = visade.map(i => { acc += i.annualGapTotal; return (acc / totalParetoCost) * 100; });
-        const n80 = cumPct.findIndex(p => p >= 80) + 1 || itemsForPareto.length;
-        const n50 = cumPct.findIndex(p => p >= 50) + 1 || itemsForPareto.length;
+    if (paretoEl && kurva.grupper.length > 0 && totalParetoCost > 0) {
         ritaFigur(paretoEl, _prioKostnadFigur(visade, cumPct));
         { let not = document.getElementById('prio-kostnad-not');
           if (!not) { not = document.createElement('p'); not.id = 'prio-kostnad-not'; not.className = 'diagramkort-not'; (paretoEl.closest('.chart-export-host') || paretoEl).insertAdjacentElement('afterend', not); }
-          not.textContent = _prioKostnadNot(itemsForPareto, totalParetoCost); }
+          not.textContent = _prioKostnadNot(kurva); }
         if (paretoSummary) {
             paretoSummary.innerHTML = `
                 <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
@@ -543,11 +535,10 @@ function _kostnadAndrad() {
 // tillsammans når 80 % av kostnaden är en egen serie.
 const PRIO_KOSTNAD_MAX = 15;
 /** Meningen under kostnadsdiagrammet: vad de grupper som inte ritas står för. Tom när alla ritas. */
-function _prioKostnadNot(alla, totalt) {
-    const rest = alla.slice(PRIO_KOSTNAD_MAX);
-    if (!rest.length || !(totalt > 0)) return '';
-    const summa = rest.reduce((s, i) => s + i.annualGapTotal, 0);
-    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${rest.length} grupper står tillsammans för ${talformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
+/** @param {ReturnType<typeof kostnadskurva>} kurva */
+function _prioKostnadNot({ ovriga, ovrigaSumma: summa, total: totalt }) {
+    if (!ovriga || !(totalt > 0)) return '';
+    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${ovriga} grupper står tillsammans för ${talformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
 }
 function _prioKostnadFigur(allaVisade, allCumPct) {
     // Högst PRIO_KOSTNAD_MAX grupper ritas; resten redovisas som en mening under diagrammet (_prioKostnadNot) — en

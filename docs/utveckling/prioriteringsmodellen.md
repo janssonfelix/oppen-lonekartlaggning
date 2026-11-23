@@ -115,6 +115,11 @@ beloppet perioden, inte ett år.
 
 Antalet har bara en nedre gräns (`SNABB_VINST_MIN_N`); en stor grupp kan vara en snabb vinst.
 
+**Kostnadskurvan** (`kostnadskurva`) tar grupperna med en kostnad över 0, störst först, och räknar den kumulativa
+andelen av den sammanlagda kostnaden för de 40 första. Fliken säger hur många grupper som tillsammans når 50 % och
+80 %; når de 40 första inte dit är svaret alla grupper. Diagrammet ritar de 15 första, och en mening under det säger
+vad resten står för. Nyckeltalen överst (`prioNyckeltal`) räknar grupperna per läge och den sammanlagda kostnaden.
+
 ## 6. Räkneexemplet per år
 
 `arsbeloppMening` skriver en mening för en grupp där kvinnornas median ligger lägre än männens. Skillnaden avrundas

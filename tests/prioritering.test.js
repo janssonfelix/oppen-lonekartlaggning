@@ -5,7 +5,7 @@
  * Att adaptern i 55-prioritering.js delegerar hit vaktas i drift.test.js.
  */
 import { describe, it, expect } from 'vitest';
-import { prioritera, prioIndex, prioKonstanter, motiveringsgrunder } from '../src/lib/prioritering.js';
+import { prioritera, prioIndex, prioKonstanter, motiveringsgrunder, prioNyckeltal, kostnadskurva } from '../src/lib/prioritering.js';
 import { jamforelseRader } from '../src/lib/jamforelse.js';
 
 const VIKTER = { avvikelse: 50, volym: 30, jamstalldhet: 20 };
@@ -430,5 +430,29 @@ describe('[B7.12] motiveringsgrunder: reglerna bakom motiveringsförslagen', () 
         const p = { ...kvintil(4, 2, 9), isBrist: true, isQuickWin: true, diffPct: 1.5 };
         p._rows.forEach(r => { r.alder = r.kon === 'man' ? 50 : 40; });
         expect(koder(p, { kTroskel: 9, mdePct: 2 })).toEqual(['underlag', 'styrka', 'alder', 'kvintil', 'brist', 'snabbVinst', 'nara']);
+    });
+});
+
+describe('[B7.14] prioriteringens nyckeltal och kostnadskurvan', () => {
+    const g = (status, kostnad) => ({ status, annualGapTotal: kostnad });
+    it('prioNyckeltal: antalet per status och den sammanlagda kostnaden', () => {
+        expect(prioNyckeltal([g('akut', 100), g('atgard', 50), g('atgard', 0), g('analysera', 0), g('ok', 25)]))
+            .toEqual({ akut: 1, atgard: 2, analysera: 1, totalKostnad: 175 });
+        expect(prioNyckeltal([])).toEqual({ akut: 0, atgard: 0, analysera: 0, totalKostnad: 0 });
+    });
+    it('kostnadskurva: störst först, kumulativ andel och antalet grupper till 50 % och 80 %', () => {
+        // 40 + 30 + 20 + 10 = 100: 50 % nås av två grupper, 80 % av tre.
+        const k = kostnadskurva([g('a', 10), g('a', 0), g('a', 40), g('a', 30), g('a', 20)], { max: 40, visas: 2 });
+        expect(k.grupper.map(i => i.annualGapTotal)).toEqual([40, 30, 20, 10]);
+        expect(k.total).toBe(100);
+        expect(k.kumPct).toEqual([40, 70, 90, 100]);
+        expect([k.n50, k.n80]).toEqual([2, 3]);
+        expect([k.ovriga, k.ovrigaSumma]).toEqual([2, 30]);
+    });
+    it('kostnadskurva: når de max första inte gränsen är svaret alla grupper', () => {
+        const k = kostnadskurva(Array.from({ length: 10 }, () => g('a', 10)), { max: 3, visas: 3 });
+        expect(k.visade).toHaveLength(3);
+        expect([k.n50, k.n80]).toEqual([10, 10]);
+        expect(kostnadskurva([g('a', 0)], { max: 40, visas: 15 })).toMatchObject({ grupper: [], total: 0, kumPct: [], n50: 0, n80: 0, ovriga: 0 });
     });
 });

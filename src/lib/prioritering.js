@@ -266,3 +266,33 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
     items.sort((a, b) => b.priorityIndex - a.priorityIndex);
     return items;
 }
+
+/**
+ * Nyckeltalen över prioriteringens grupper: antalet i statusarna Börja här (akut), Under referens (atgard) och Över
+ * referens (analysera), och den sammanlagda årskostnaden att lyfta grupperna till referensen.
+ * @param {{status: string, annualGapTotal: number}[]} items
+ */
+export function prioNyckeltal(items) {
+    const antal = s => items.filter(i => i.status === s).length;
+    return { akut: antal('akut'), atgard: antal('atgard'), analysera: antal('analysera'), totalKostnad: items.reduce((s, i) => s + i.annualGapTotal, 0) };
+}
+
+/**
+ * Kostnadskurvan: grupperna med en kostnad över 0, störst först, deras summa, den kumulativa andelen i procent för de
+ * `max` första och hur många grupper som tillsammans når 50 % och 80 % (räknat bland de `max` första; når de inte
+ * dit är svaret alla grupper). `ovriga` och `ovrigaSumma` är grupperna efter de `visas` första, som diagrammet inte
+ * ritar.
+ * @template {{annualGapTotal: number}} G
+ * @param {G[]} items
+ * @param {{max: number, visas: number}} gransen
+ */
+export function kostnadskurva(items, { max, visas }) {
+    const grupper = items.filter(i => i.annualGapTotal > 0).sort((a, b) => b.annualGapTotal - a.annualGapTotal);
+    const total = grupper.reduce((s, i) => s + i.annualGapTotal, 0);
+    const visade = grupper.slice(0, Math.min(max, grupper.length));
+    let acc = 0;
+    const kumPct = visade.map(i => { acc += i.annualGapTotal; return (acc / total) * 100; });
+    const nar = p => kumPct.findIndex(x => x >= p) + 1 || grupper.length;
+    const ovriga = grupper.slice(visas);
+    return { grupper, total, visade, kumPct, n50: nar(50), n80: nar(80), ovriga: ovriga.length, ovrigaSumma: ovriga.reduce((s, i) => s + i.annualGapTotal, 0) };
+}
