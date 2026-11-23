@@ -9,12 +9,14 @@
 // importerar till en platt fil utan import och export (format esm, ingen tree shaking, ingen minifiering), som körs
 // som ett klassiskt skript: appens toppnivånamn blir globala, som testerna, röktestet och sidan läser dem. Bygget
 // fäller om utfilen har import eller export kvar, eller om esbuild har döpt om ett toppnivånamn (en krock mellan två
-// moduler ger `namn2`). Bygget är deterministiskt; artefaktgrinden (tools/kontroll.mjs och .github/workflows/ci.yml)
+// moduler ger `namn2`), eller om ett toppnivånamn heter som en egenskap på window (då skulle appen skriva över
+// webbläsarens egen, eller tvärtom). Bygget är deterministiskt; artefaktgrinden (tools/kontroll.mjs och .github/workflows/ci.yml)
 // bygger om och kräver samma fil.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { buildSync } from 'esbuild';
+import { JSDOM } from 'jsdom';
 import * as espree from 'espree';
 import * as eslintScope from 'eslint-scope';
 import { writeVersionModule } from './gen-version.mjs';
@@ -41,6 +43,29 @@ function toppnivanamn(text, sourceType) {
         deklarerade: topp.variables.filter(v => v.defs.some(d => d.type !== 'ImportBinding')).map(v => v.name),
         importerade: importerade.map(v => v.name)
     };
+}
+
+// Egenskaper på window i Chromium som jsdom saknar (kontrollerade mot jsdom 31). jsdom ger resten vid byggtiden.
+const WINDOW_UTOVER_JSDOM = ['chrome', 'scheduler', 'navigation', 'origin', 'crossOriginIsolated', 'trustedTypes', 'cookieStore',
+    'caches', 'isSecureContext', 'fetch', 'indexedDB', 'visualViewport', 'structuredClone', 'createImageBitmap', 'find',
+    'showOpenFilePicker', 'showSaveFilePicker'];
+/** @type {Set<string>|null} */
+let _windowNamn = null;
+/**
+ * Toppnivånamnen i ett klassiskt skript som heter som en egenskap på window eller dess prototyper. Ett sådant namn
+ * krockar: en funktion eller `var` på toppnivån blir en egenskap på window och skriver över webbläsarens.
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function krockarMedWindow(text) {
+    if (!_windowNamn) {
+        const w = new JSDOM('').window, namn = new Set(WINDOW_UTOVER_JSDOM);
+        for (let o = w; o; o = Object.getPrototypeOf(o)) for (const n of Object.getOwnPropertyNames(o)) namn.add(n);
+        w.close();
+        _windowNamn = namn;
+    }
+    const namn = _windowNamn;
+    return toppnivanamn(text, 'script').deklarerade.filter(n => namn.has(n)).sort();
 }
 
 /**
@@ -80,6 +105,8 @@ export function byggApp() {
             + fel.map(n => `  ${n}: ${moduler.filter(m => m.deklarerade.includes(n)).map(m => m.f).join(', ') || 'ingen modul'}`
                 + (ut.has(n) ? '' : ' (saknas i utfilen)')).join('\n'));
     }
+    const krockar = krockarMedWindow(text);
+    if (krockar.length) throw new Error(`build-app: toppnivånamn som heter som en egenskap på window (byt namn): ${krockar.join(', ')}`);
     return text;
 }
 

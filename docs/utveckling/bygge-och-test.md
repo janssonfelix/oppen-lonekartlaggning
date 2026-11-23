@@ -54,8 +54,11 @@ som ingång (ADR-98): `src/app/NN-*.js` och de `src/lib/`-moduler de importerar 
 `export` (format `esm`, ingen tree shaking, ingen minifiering), som körs som ett klassiskt skript. Appens
 toppnivånamn blir globala, som sidan, testerna och röktestet läser dem. Bygget fäller om utfilen har `import` eller
 `export` kvar, om ett av appens namn (deklarerat i en del eller importerat ur lib under lib-namnet) deklareras i mer än
-en modul eller inte står oförändrat i utfilen (esbuild döper om vid en krock), och om en del har kod utanför en
-deklaration: det som körs vid laddning står i delens uppstartsfunktion, som `index.js` anropar i sifferordning.
+en modul eller inte står oförändrat i utfilen (esbuild döper om vid en krock), om en del har kod utanför en
+deklaration (det som körs vid laddning står i delens uppstartsfunktion, som `index.js` anropar i sifferordning), och
+om ett toppnivånamn i utfilen heter som en egenskap på `window` eller dess prototyper: listan tas ur jsdom vid
+byggtiden, med en kort fast lista över det Chromium har men jsdom saknar (`chrome`, `scheduler`, `navigation` med
+flera; `krockarMedWindow`, prövad i `tests/build-app.test.js`).
 Lib-modulernas privata namn får döpas om. Bygget är deterministiskt, och artefaktgrinden (§8 och §9) vaktar att de
 genererade filerna motsvarar källan.
 

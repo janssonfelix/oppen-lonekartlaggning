@@ -16,7 +16,8 @@ npm run build:app        # eller: node tools/build-app.mjs
 `tools/build-app.mjs` bygger med esbuild från `index.js` till en platt fil utan `import` och
 `export`, som körs som ett klassiskt skript: appens toppnivånamn är globala, som sidan, testerna
 och röktestet läser dem. Bygget fäller om ett av appens namn skulle döpas om (två moduler med samma
-toppnivånamn) eller om utfilen inte är ett klassiskt skript. Artefaktgrinden (`tools/kontroll.mjs`
+toppnivånamn), om ett toppnivånamn heter som en egenskap på `window` eller om utfilen inte är ett
+klassiskt skript. Artefaktgrinden (`tools/kontroll.mjs`
 och `.github/workflows/ci.yml`) bygger om och kräver samma fil. `npm run bundle` bygger
 `dist/app.js` före varje bygge.
 
