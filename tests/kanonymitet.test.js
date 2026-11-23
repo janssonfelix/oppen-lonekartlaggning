@@ -254,7 +254,7 @@ describe('k-anonymitet: Utforskas export', () => {
     const harSentinel = rows => rows.flat().some(c => SENTINEL.some(s => normalisera(String(c)).includes(String(s))));
     const kryss = pa => {
         w3.document.getElementById('explore-inkludera-sma').checked = pa;
-        w3.__renderExplorer();
+        w3.__ritaUtforska();
     };
     const exportRader = () => w3.__diagramexportRader(w3.document.getElementById('chart-explore'));
 
@@ -270,9 +270,9 @@ describe('k-anonymitet: Utforskas export', () => {
         kryss(false);
         expect(w3.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(0);
         expect(w3.document.querySelectorAll('#explore-table tbody tr').length).toBeGreaterThan(12);
-        w3.__state.kLage = 'export'; w3.__renderExplorer();
+        w3.__state.kLage = 'export'; w3.__ritaUtforska();
         expect(w3.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(12);
-        w3.__state.kLage = 'skarm'; w3.__renderExplorer();
+        w3.__state.kLage = 'skarm'; w3.__ritaUtforska();
     });
     it('tabellens export utelämnar dem när rutan är av', () => {
         kryss(false);
@@ -289,7 +289,7 @@ describe('k-anonymitet: Utforskas export', () => {
     });
 
     it('ett lönevillkor som skapar en liten grupp: exporten utelämnar den med rutan av', () => {
-        w3.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mellan', varde: [SENTINEL[0], SENTINEL[0]], inte: false }] });
+        w3.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mellan', varde: [SENTINEL[0], SENTINEL[0]], inte: false }] });
         kryss(false);
         expect(harSentinel(w3.__tabellTillMatris('explore-table').filter(r => !String(r[0]).startsWith('Urval:')))).toBe(false);
         // Rad 2 ("Urval: … mellan 31 417 och 31 417 kr") är användarens egen villkorsgräns,
@@ -297,14 +297,14 @@ describe('k-anonymitet: Utforskas export', () => {
         expect(harSentinel(exportRader().filter(r => !String(r[0]).startsWith('Urval:')))).toBe(false);
         kryss(true);
         expect(harSentinel(w3.__tabellTillMatris('explore-table'))).toBe(true);
-        w3.__explorerSetUrval({ lage: 'alla', villkor: [] });
+        w3.__utforskaSattUrval({ lage: 'alla', villkor: [] });
     });
 
     it('gruppvillkor i korstabell: små grupper syns inte i exporten, inte ens som etikett', () => {
         const d = w3.document;
         const sma = new Set(SMA_BAS);
         // Släpper igenom de små grupperna G–L (sentinel > SENTINEL[5]) och döljer A–F.
-        w3.__explorerSetUrval({ lage: 'alla', villkor: [] }, [{ matt: 'median', op: 'storre', varde: SENTINEL[5] }]);
+        w3.__utforskaSattUrval({ lage: 'alla', villkor: [] }, [{ matt: 'median', op: 'storre', varde: SENTINEL[5] }]);
         d.getElementById('explore-kolumn').value = 'kon';
         try {
             kryss(false);
@@ -314,7 +314,7 @@ describe('k-anonymitet: Utforskas export', () => {
             expect(w3.__tabellTillMatris('explore-table').map(r => r[0]).filter(x => sma.has(x))).toHaveLength(6);
         } finally {
             d.getElementById('explore-kolumn').value = 'ingen';
-            w3.__explorerSetUrval({ lage: 'alla', villkor: [] }, []);
+            w3.__utforskaSattUrval({ lage: 'alla', villkor: [] }, []);
             kryss(false);
         }
     });
@@ -363,7 +363,7 @@ describe('k-anonymitet: kön under tröskeln inuti en större grupp (Per kön)',
             d.getElementById('explore-kolumn').value = kolumn;
             d.getElementById('explore-typ').value = typ;
             d.getElementById('explore-visa').value = 'kon';
-            const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w4.__renderExplorer(); };
+            const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w4.__ritaUtforska(); };
             const exporter = () => [w4.__tabellTillMatris('explore-table'), w4.__diagramexportRader(d.getElementById('chart-explore'))];
             kryss(false);
             for (const e of exporter()) expect(harMarkor(e)).toBe(false);
@@ -471,7 +471,7 @@ describe('k-anonymitet: små grupper i Utforska markeras även utan färg', () =
             d.getElementById('explore-kolumn').value = kolumn;
             d.getElementById('explore-typ').value = typ;
             d.getElementById('explore-visa').value = visa;
-            w.__renderExplorer();
+            w.__ritaUtforska();
             // Diagramkärnan (ADR-39) ritar små grupper markerade: varje märke som hör till en liten datapunkt har
             // streckad kant (och ytor därtill ränder) — aldrig bara en annan färg (WCAG 1.4.1).
             const el = d.getElementById('chart-explore'), lager = el._figur.lager;
@@ -651,7 +651,7 @@ describe('k-anonymitet: organisationspaketet kan stänga av små grupper i Utfor
     });
     it('vyn visar de små grupperna (tonade i exportläget), men exporten utelämnar dem även om rutan kryssas i programmatiskt', () => {
         w.document.getElementById('explore-inkludera-sma').checked = true;
-        w.__state.kLage = 'export'; w.__renderExplorer(); w.__state.kLage = 'skarm';
+        w.__state.kLage = 'export'; w.__ritaUtforska(); w.__state.kLage = 'skarm';
         expect(w.document.querySelectorAll('#explore-table tr.explore-liten')).toHaveLength(12);
         expect(w.document.getElementById('explore-inkludera-sma').checked).toBe(false);
         expect(harSentinel(w.__tabellTillMatris('explore-table'))).toBe(false);

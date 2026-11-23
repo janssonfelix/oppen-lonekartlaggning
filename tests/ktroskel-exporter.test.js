@@ -56,7 +56,7 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         const rader = fangaCsv(w);
         let kopierat = null;
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: t => { kopierat = t; return Promise.resolve(); } } });
-        const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w.__renderExplorer(); };
+        const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w.__ritaUtforska(); };
         const csvKnapp = d.querySelector('[data-csv-table="explore-table"]'), kopieraKnapp = d.querySelector('[data-copy-table="explore-table"]');
         expect(csvKnapp).not.toBeNull();
         kryss(false);

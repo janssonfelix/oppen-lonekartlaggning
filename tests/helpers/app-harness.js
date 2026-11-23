@@ -117,24 +117,24 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __tillCsv: tillCsv,
         __rensaAllData: rensaAllData,
         __rensaVidInaktivitet: _rensaVidInaktivitet,
-        __explorerMinne: () => ({
-            rows: _explorerState ? _explorerState.rows.length : 0,
-            urval: _urvalDataRef ? _urvalDataRef.length : 0,
+        __utforskaMinne: () => ({
+            rows: _utforskaTillstand ? _utforskaTillstand.rows.length : 0,
+            urval: _urvalData ? _urvalData.length : 0,
             exportFigur: typeof document.getElementById('chart-explore')?._exportFigure
         }),
         __csvFilnamn: namn => _csvFilnamn(namn),
         __tillTsv: tillTsv,
         __utGruppnyckel: gruppnyckel,
-        __explorerFigure: explorerFigure,
-        __explorerTypSkal: explorerTypSkal,
-        __explorerDossierTarget: explorerDossierTarget,
-        __explorerHandleClick: explorerHandleClick,
+        __utforskaFigur: utforskaFigur,
+        __utforskaTypSkal: utforskaTypSkal,
+        __utforskaDossiermal: utforskaDossiermal,
+        __utforskaVidKlick: utforskaVidKlick,
         // Kortform för testerna: dimension → värden, uttryckt som urval.
-        __explorerSetFilter: f => explorerSattUrval({ lage: 'alla', villkor: Object.entries(f).map(([d, v]) =>
+        __utforskaSattFilter: f => utforskaSattUrval({ lage: 'alla', villkor: Object.entries(f).map(([d, v]) =>
             ({ falt: d === 'alder' ? 'aldersgrupp' : d, op: 'enAv', varde: [...v], inte: false })) }, []),
-        __explorerSetUrval: (u, g) => explorerSattUrval(u, g || []),
-        __explorerUrval: () => explorerUrval(),
-        __renderExplorer: renderExplorer,
+        __utforskaSattUrval: (u, g) => utforskaSattUrval(u, g || []),
+        __utforskaUrval: () => utforskaUrval(),
+        __ritaUtforska: ritaUtforska,
         __policyFor: policyFor,
         __bedomningUnderlag: bedomningUnderlag, __ruLikaArbeteGrupper: likaArbeteGrupper,
         __rapportunderlagBlock: () => rapportunderlagBlock(), __ritaRapportunderlag: ritaRapportunderlag,
@@ -193,7 +193,7 @@ export function utgangslage(w) {
 const _CACHAR = new Set(['bootstrapCI', 'powerAnalysis', 'result']);
 const _somLista = (k, v) => (_CACHAR.has(k) || /cache/i.test(k) ? undefined : v?.constructor?.name === 'Set' || v?.constructor?.name === 'Map' ? [...v] : v);
 export function tillstandsavtryck(w) {
-    const ut = { urval: JSON.stringify(w.__explorerUrval()), markering: JSON.stringify(w.eval('diagramMarkering()')), dialoger: utgangslage(w).dialoger };
+    const ut = { urval: JSON.stringify(w.__utforskaUrval()), markering: JSON.stringify(w.eval('diagramMarkering()')), dialoger: utgangslage(w).dialoger };
     for (const k of Object.keys(w.__state)) if (!/cache/i.test(k)) ut[k] = JSON.stringify(w.__state[k], _somLista);
     return ut;
 }

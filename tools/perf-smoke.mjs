@@ -129,7 +129,7 @@ const tUtforska2d = await page.evaluate(() => {
     document.getElementById('explore-rad').value = 'aidbas';
     document.getElementById('explore-kolumn').value = 'lonespann';
     const t0 = performance.now();
-    renderExplorer();
+    ritaUtforska();
     return Math.round(performance.now() - t0);
 });
 console.log(kolumn('Utforska, yrke inom BAS × lönespann', tUtforska2d));

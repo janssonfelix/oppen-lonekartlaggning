@@ -25,7 +25,7 @@ import { jamforelseSattVal } from './42-jamforelse.js';
 import { _hpDemoNycklar, ritaHandlingsplan } from './56-handlingsplan.js';
 import { _rmMinneSlapp } from './58-rapportmodell.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
-import { explorerSlappMinne, explorerSynkaSmaLas } from './70-utforska.js';
+import { utforskaSlappMinne, utforskaSynkaSmaLas } from './70-utforska.js';
 
 // ---- Rensa all data: lagringsminimering (art. 5.1 e, 25.2) ----
 /**
@@ -66,7 +66,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
     //    urvalets värdelistor, diagrammets exportfunktion) — släpp dem också,
     //    annars finns hela underlaget kvar i minnet efter rensningen.
-    if (typeof explorerSlappMinne === 'function') explorerSlappMinne();
+    if (typeof utforskaSlappMinne === 'function') utforskaSlappMinne();
     if (typeof rapportGlomHopfallning === 'function') rapportGlomHopfallning();
 
     // 1. Nolla state-objektet
@@ -77,7 +77,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
     state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
     if (inaktivitetVarLast && typeof sattInaktivitetstid === 'function') sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
-    if (typeof explorerSynkaSmaLas === 'function') explorerSynkaSmaLas();
+    if (typeof utforskaSynkaSmaLas === 'function') utforskaSynkaSmaLas();
     if (typeof _kVisaFel === 'function') _kVisaFel('');   // ett felmeddelande vid fältet hör till det rensade läget
     if (typeof _synkaKTroskel === 'function') _synkaKTroskel();
     aterstallReferens();   // ADR-28: ingen referens (ingen inbyggd)

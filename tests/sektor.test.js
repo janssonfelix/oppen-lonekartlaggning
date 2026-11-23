@@ -298,7 +298,7 @@ describe('sektorsöversikten', () => {
         w.__lasInDemodata();
         w.__ritaFlik('struktur');
         w.document.querySelector('#sektor-table [data-sektor="Teknikarbete"]').click();
-        const u = w.eval('explorerUrval()').urval;
+        const u = w.eval('utforskaUrval()').urval;
         expect(u.villkor).toEqual([expect.objectContaining({ falt: 'sektor', op: 'enAv', varde: ['Teknikarbete'] })]);
         expect(w.document.getElementById('explore-rad').value).toBe('aid');
     });

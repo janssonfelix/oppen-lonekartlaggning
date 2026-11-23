@@ -980,7 +980,7 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         return w2;
     };
     const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
-    const valj = (w2, val) => { for (const [id, v] of Object.entries(val)) w2.document.getElementById(id).value = v; w2.__renderExplorer(); return w2.document.getElementById('chart-explore'); };
+    const valj = (w2, val) => { for (const [id, v] of Object.entries(val)) w2.document.getElementById(id).value = v; w2.__ritaUtforska(); return w2.document.getElementById('chart-explore'); };
     const export_ = w2 => {
         const u = w2.eval('_rfExportFigur(document.getElementById("chart-explore"))');
         const svg = u.tom ? '' : w2.figurTillSvg(u.figur, 1600, 900, { visaSma: u.visaSma, dolda: u.dolda });
@@ -1024,10 +1024,10 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
     });
     it('tomt urval: vyns text, ingen figur och inget att exportera', () => {
         const w2 = skapa();
-        w2.__explorerSetFilter({ bas: ['FINNS-INTE-ALLS'] });
+        w2.__utforskaSattFilter({ bas: ['FINNS-INTE-ALLS'] });
         const el = valj(w2, { 'explore-rad': 'bas', 'explore-kolumn': 'ingen', 'explore-typ': 'auto' });
         expect(el._figur).toBeDefined();   // ett okänt filtervärde tas bort tyst: allt visas
-        w2.eval('explorerSlappMinne()');
+        w2.eval('utforskaSlappMinne()');
         expect(el._figur).toBeUndefined();
         expect(w2.eval('diagramRitat(document.getElementById("chart-explore"))')).toBe(false);
     });
@@ -1447,14 +1447,14 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
         const w2 = oppna(), d = w2.document;
         const innan = { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: ['B'], inte: false }] };
         w2.__innan = innan;
-        w2.eval('explorerSattUrval(window.__innan, [])');
+        w2.eval('utforskaSattUrval(window.__innan, [])');
         d.getElementById('explore-rad').value = 'bas';
         d.getElementById('explore-kolumn').value = 'kon';
         const not = d.getElementById('explore-nedborrning');
         expect(not.hidden).toBe(true);
         w2.eval("sattDiagramMarkering('bas:A')");
         knapp(w2).click();
-        expect(w2.eval('explorerUrval()')).toEqual({ urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: ['A'], inte: false }] }, gruppVillkor: [] });
+        expect(w2.eval('utforskaUrval()')).toEqual({ urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: ['A'], inte: false }] }, gruppVillkor: [] });
         expect(d.getElementById('explore-rad').value).toBe('aidbas');
         expect(d.getElementById('explore-kolumn').value).toBe('ingen');
         expect(not.hidden).toBe(false);
@@ -1468,7 +1468,7 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
         knapp(w2).click();
         expect(not.textContent).toMatch(/BAS B/);
         not.querySelector('button').click();
-        expect(w2.eval('explorerUrval()')).toEqual({ urval: innan, gruppVillkor: [] });
+        expect(w2.eval('utforskaUrval()')).toEqual({ urval: innan, gruppVillkor: [] });
         expect(d.getElementById('explore-rad').value).toBe('bas');
         expect(d.getElementById('explore-kolumn').value).toBe('kon');
         expect(not.hidden).toBe(true);
@@ -1478,11 +1478,11 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
         const w2 = oppna();
         w2.eval("sattDiagramMarkering('bas:A')");
         knapp(w2).click();
-        w2.eval('explorerSlappMinne()');
+        w2.eval('utforskaSlappMinne()');
         expect(w2.document.getElementById('explore-nedborrning').hidden).toBe(true);
-        const efter = w2.eval('explorerUrval()');
+        const efter = w2.eval('utforskaUrval()');
         w2.eval('nedborrningTillbaka()');                                  // inget sparat: gör ingenting
-        expect(w2.eval('explorerUrval()')).toEqual(efter);
+        expect(w2.eval('utforskaUrval()')).toEqual(efter);
     });
 });
 
@@ -1709,7 +1709,7 @@ describe('radpaneler i vyerna', () => {
         w2.__ritaFlik('utforska');
         const d = w2.document;
         for (const [id, v] of Object.entries({ 'explore-rad': 'aidbas', 'explore-kolumn': 'ingen', 'explore-typ': 'hantel' })) d.getElementById(id).value = v;
-        w2.__renderExplorer();
+        w2.__ritaUtforska();
         const el = d.getElementById('chart-explore');
         expect(el._figur.paneler).toBe('auto');
         const n = el._figur.y.ordning.length;

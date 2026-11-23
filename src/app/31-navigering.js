@@ -31,7 +31,7 @@ import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { ritaOmVerktyget } from './65-om-verktyget.js';
 import { ritaRapportunderlag } from './67-rapportunderlag.js';
 import { ritaGapUppdelning } from './68-var-uppstar-gapet.js';
-import { renderExplorer } from './70-utforska.js';
+import { ritaUtforska } from './70-utforska.js';
 import { ritaArsjamforelse } from './73-arsbokslut.js';
 import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
 import { ritaLonepolitik } from './75-lonepolitik.js';
@@ -412,7 +412,7 @@ function _ritaFlik(target) {
     }
     else if (target === "loneoversyn"  && d.length) ritaLoneoversyn();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { ritaLikvardigtArbete(); ritaAidBasLikvardigt(); }
-    else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
+    else if (target === "utforska"     && d.length) { ritaLoneoversikt(); ritaUtforska(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.
     else if (target === "rapporttext") medExportLage(() => { ritaStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(ritaRapportunderlag)); });

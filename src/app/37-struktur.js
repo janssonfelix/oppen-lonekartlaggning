@@ -28,7 +28,7 @@ import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { explorerSattUrval } from './72-utforska-urval.js';
+import { utforskaSattUrval } from './72-utforska-urval.js';
 import { basdossierKandidater, basdossierUtelamnade, basintervallUtkastText, buildBasdossier } from './81-basdossier.js';
 import { kTroskelLank } from './86-installningar.js';
 
@@ -394,7 +394,7 @@ export function ritaSektorer(d) {
         <th>${stor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
     host.querySelectorAll('[data-sektor]').forEach(b => b.addEventListener('click', () => {
-        explorerSattUrval({ lage: 'alla', villkor: [{ falt: 'sektor', op: 'enAv', varde: [/** @type {HTMLElement} */ (b).dataset.sektor] }] }, []);
+        utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'sektor', op: 'enAv', varde: [/** @type {HTMLElement} */ (b).dataset.sektor] }] }, []);
         const rad = document.getElementById('explore-rad');
         if (rad) /** @type {HTMLInputElement} */ (rad).value = 'aid';
         /** @type {HTMLElement} */ (document.querySelector('.nav-item[data-tab="utforska"]'))?.click();

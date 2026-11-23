@@ -269,7 +269,7 @@ export async function samlaUtdata(w) {
     ut.diagram = ritade;
     w.eval('_fcAtgard(); _fcKanslighet();');
     d.getElementById('explore-inkludera-sma').checked = false;
-    w.__renderExplorer();
+    w.__ritaUtforska();
     // Robusthetspanelen (Dokumentera & exportera) räknas bara på knapptryck; här körs den direkt.
     w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
     lagg('robusthetspanelen', d.getElementById('robusthet-body').textContent);

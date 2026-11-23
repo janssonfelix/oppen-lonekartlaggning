@@ -19,7 +19,7 @@ import { ritaFlik } from './31-navigering.js';
 import { _fcRensaParMal } from './36-loneoversyn.js';
 import { forklaringsmodell } from './50-regressionsmodeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { explorerSmaIExport } from './70-utforska.js';
+import { utforskaSmaIExport } from './70-utforska.js';
 import { diagramKopiaKalla } from './74-alla-diagram.js';
 import { ritaGruppdossier } from './80-gruppdossier.js';
 import { oppnaInstallningar } from './86-installningar.js';
@@ -197,7 +197,7 @@ export function _kUndantagFor(el, medSma) {
         iLikvardighet: !!(el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))),
         arFigur,
         figurMedSma: arFigur && !!(typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma),
-        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && !!explorerSmaIExport(),
+        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && typeof utforskaSmaIExport === 'function' && !!utforskaSmaIExport(),
     });
 }
 

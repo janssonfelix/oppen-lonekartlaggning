@@ -16,16 +16,16 @@ import { beskrivUrval, faltInfo, gruppMattInfo, gruppVillkorAktivt, villkorAktiv
 import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { state } from './12-tillstand.js';
-import { _utNycklar, renderExplorer } from './70-utforska.js';
+import { _utNycklar, ritaUtforska } from './70-utforska.js';
 
 /** @type {{lage: string, villkor: any[]}} */
-let _urvalState = { lage: 'alla', villkor: [] };
+let _urvalTillstand = { lage: 'alla', villkor: [] };
 /** @type {any[]} */
-let _gruppState = [];
+let _gruppTillstand = [];
 /** @type {string|null} */
 let _urvalSignatur = null;
 /** @type {any[]|null} */
-let _urvalDataRef = null;   // state.data som värdelistorna byggdes för
+let _urvalData = null;   // state.data som värdelistorna byggdes för
 
 // Jämförelser i listan. "Inte" ligger i listan så att raden läses som en mening.
 const _URVAL_OP_KATEGORI = [['enAv', 'är en av'], ['inteEnAv', 'är inte en av']];
@@ -45,20 +45,20 @@ function _urvalFranOpVarde(val) {
 }
 const _kopia = x => JSON.parse(JSON.stringify(x));
 
-export function explorerUrval() {
-    return { urval: _kopia(_urvalState), gruppVillkor: _kopia(_gruppState) };
+export function utforskaUrval() {
+    return { urval: _kopia(_urvalTillstand), gruppVillkor: _kopia(_gruppTillstand) };
 }
-export function explorerSattUrval(urval, gruppVillkor) {
-    _urvalState = { lage: urval && urval.lage === 'nagot' ? 'nagot' : 'alla',
+export function utforskaSattUrval(urval, gruppVillkor) {
+    _urvalTillstand = { lage: urval && urval.lage === 'nagot' ? 'nagot' : 'alla',
                     villkor: _kopia((urval && urval.villkor) || []).map(v => ({ inte: false, ...v })) };
-    _gruppState = _kopia(gruppVillkor || []);
+    _gruppTillstand = _kopia(gruppVillkor || []);
     _urvalSignatur = null;
 }
-export function explorerNollstallUrval() { explorerSattUrval({ lage: 'alla', villkor: [] }, []); }
+export function utforskaNollstallUrval() { utforskaSattUrval({ lage: 'alla', villkor: [] }, []); }
 
 /** Släpper referensen till datan som värdelistorna byggdes för ("Rensa all data"). */
-export function explorerUrvalSlappMinne() {
-    _urvalDataRef = null;
+export function utforskaUrvalSlappMinne() {
+    _urvalData = null;
     _urvalSignatur = null;
 }
 
@@ -75,10 +75,10 @@ function _urvalVarden(rows, dim) {
 }
 
 /** Tar bort kategorivärden som inte finns i datan (efter en ny inläsning). */
-export function explorerRensaUrval(rows) {
+export function utforskaRensaUrval(rows) {
     const falt = faltInfo();
     const cache = {};
-    for (const v of _urvalState.villkor) {
+    for (const v of _urvalTillstand.villkor) {
         const f = falt[v.falt];
         if (!f || f.typ !== 'kategori' || !Array.isArray(v.varde)) continue;
         cache[f.dim] = cache[f.dim] || new Set(_urvalVarden(rows, f.dim));
@@ -88,8 +88,8 @@ export function explorerRensaUrval(rows) {
 
 function _urvalSignaturFor() {
     return JSON.stringify([state.data && state.data.length,
-        _urvalState.villkor.map(v => [v.falt, _urvalOpVarde(v)]),
-        _gruppState.map(g => [g.matt, g.op])]);
+        _urvalTillstand.villkor.map(v => [v.falt, _urvalOpVarde(v)]),
+        _gruppTillstand.map(g => [g.matt, g.op])]);
 }
 
 function _urvalTalHtml(attr, i, varde, enhet, etikett) {
@@ -165,37 +165,37 @@ function _urvalFokusNyckel() {
 function _urvalUppdateraMarkorer() {
     document.querySelectorAll('#explore-urval-villkor .explore-urval-rad').forEach((rad, i) => {
         const m = rad.querySelector('.explore-urval-ofullst');
-        if (m) /** @type {HTMLElement} */ (m).hidden = villkorAktivt(_urvalState.villkor[i]);
+        if (m) /** @type {HTMLElement} */ (m).hidden = villkorAktivt(_urvalTillstand.villkor[i]);
         const antal = rad.querySelector('[data-urval-antal]');
-        if (antal) antal.textContent = `Välj värden (${(_urvalState.villkor[i].varde || []).length})`;
+        if (antal) antal.textContent = `Välj värden (${(_urvalTillstand.villkor[i].varde || []).length})`;
     });
     document.querySelectorAll('#explore-urval-grupp .explore-urval-rad').forEach((rad, i) => {
         const m = rad.querySelector('.explore-urval-ofullst');
-        if (m) /** @type {HTMLElement} */ (m).hidden = gruppVillkorAktivt(_gruppState[i]);
+        if (m) /** @type {HTMLElement} */ (m).hidden = gruppVillkorAktivt(_gruppTillstand[i]);
     });
 }
 
-export function renderExplorerUrvalUi(rows) {
+export function ritaUtforskaUrval(rows) {
     const lista = document.getElementById('explore-urval-villkor');
     const grupp = document.getElementById('explore-urval-grupp');
     const lage = document.getElementById('explore-urval-lage');
     const chips = document.getElementById('explore-filter-chips');
     if (!lista || !grupp) return;
-    if (lage) /** @type {HTMLInputElement} */ (lage).value = _urvalState.lage;
+    if (lage) /** @type {HTMLInputElement} */ (lage).value = _urvalTillstand.lage;
     const sig = _urvalSignaturFor();
     // Samma antal rader betyder inte samma data — en ny fil med lika många
     // anställda måste också ge nya värdelistor.
-    if (sig !== _urvalSignatur || _urvalDataRef !== state.data) {
+    if (sig !== _urvalSignatur || _urvalData !== state.data) {
         _urvalSignatur = sig;
-        _urvalDataRef = state.data;
+        _urvalData = state.data;
         const fokus = _urvalFokusNyckel();
-        lista.innerHTML = _urvalState.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join('');
-        grupp.innerHTML = _gruppState.map((g, i) => _gruppRadHtml(g, i)).join('');
+        lista.innerHTML = _urvalTillstand.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join('');
+        grupp.innerHTML = _gruppTillstand.map((g, i) => _gruppRadHtml(g, i)).join('');
         if (fokus) /** @type {HTMLInputElement} */ (document.querySelector(`#explore-urval ${fokus}`))?.focus();
     }
     _urvalUppdateraMarkorer();
     if (chips) {
-        const text = beskrivUrval(_urvalState, _gruppState);
+        const text = beskrivUrval(_urvalTillstand, _gruppTillstand);
         chips.innerHTML = text
             ? `<span class="explore-urval-text">${esc(text)}</span><button type="button" class="btn-table-tool" data-explore-clear>Rensa allt</button>`
             : '';
@@ -222,9 +222,9 @@ export function uppstartUtforskaUrval() {
         const falt = faltInfo();
         let i;
         if (/** @type {HTMLElement} */ (t).id === 'explore-urval-lage') {
-            _urvalState.lage = /** @type {HTMLInputElement} */ (t).value === 'nagot' ? 'nagot' : 'alla';
+            _urvalTillstand.lage = /** @type {HTMLInputElement} */ (t).value === 'nagot' ? 'nagot' : 'alla';
         } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-falt')) != null) {
-            const v = _urvalState.villkor[i];
+            const v = _urvalTillstand.villkor[i];
             const fore = falt[v.falt] && falt[v.falt].typ;
             v.falt = /** @type {HTMLInputElement} */ (t).value;
             if (falt[v.falt].typ !== fore) {
@@ -236,30 +236,30 @@ export function uppstartUtforskaUrval() {
                 v.varde = falt[v.falt].typ === 'kategori' ? [] : (v.op === 'mellan' ? [null, null] : null);
             }
         } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-op')) != null) {
-            const v = _urvalState.villkor[i];
+            const v = _urvalTillstand.villkor[i];
             const var_mellan = v.op === 'mellan';
             Object.assign(v, _urvalFranOpVarde(/** @type {HTMLInputElement} */ (t).value));
             if ((v.op === 'mellan') !== var_mellan) v.varde = v.op === 'mellan' ? [null, null] : null;
         } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-varde')) != null) {
-            const v = _urvalState.villkor[i];
+            const v = _urvalTillstand.villkor[i];
             const s = new Set(v.varde || []);
             if (/** @type {HTMLInputElement} */ (t).checked) s.add(/** @type {HTMLInputElement} */ (t).value); else s.delete(/** @type {HTMLInputElement} */ (t).value);
             v.varde = [...s];
         } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-urval-tal')) != null) {
-            _urvalSattTal(_urvalState.villkor[i], t);
+            _urvalSattTal(_urvalTillstand.villkor[i], t);
         } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-matt')) != null) {
-            _gruppState[i].matt = /** @type {HTMLInputElement} */ (t).value;
+            _gruppTillstand[i].matt = /** @type {HTMLInputElement} */ (t).value;
         } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-op')) != null) {
-            const g = _gruppState[i];
+            const g = _gruppTillstand[i];
             const var_mellan = g.op === 'mellan';
             g.op = /** @type {HTMLInputElement} */ (t).value;
             if ((g.op === 'mellan') !== var_mellan) g.varde = g.op === 'mellan' ? [null, null] : null;
         } else if ((i = /** @type {HTMLElement} */ (t).getAttribute('data-gv-tal')) != null) {
-            _urvalSattTal(_gruppState[i], t);
+            _urvalSattTal(_gruppTillstand[i], t);
         } else {
             return;
         }
-        renderExplorer();
+        ritaUtforska();
     });
     _urvalPanel?.addEventListener('input', e => {
         const t = /** @type {HTMLInputElement} */ (e.target);
@@ -273,16 +273,16 @@ export function uppstartUtforskaUrval() {
     _urvalPanel?.addEventListener('click', e => {
         const lagg = /** @type {HTMLElement} */ (e.target).closest('[data-urval-lagg-till]');
         if (lagg) {
-            if (lagg.getAttribute('data-urval-lagg-till') === 'grupp') _gruppState.push({ matt: 'gap', op: 'mindre', varde: null });
-            else _urvalState.villkor.push({ falt: 'bas', op: 'enAv', varde: [], inte: false });
-            renderExplorer();
+            if (lagg.getAttribute('data-urval-lagg-till') === 'grupp') _gruppTillstand.push({ matt: 'gap', op: 'mindre', varde: null });
+            else _urvalTillstand.villkor.push({ falt: 'bas', op: 'enAv', varde: [], inte: false });
+            ritaUtforska();
             return;
         }
         const bort = /** @type {HTMLElement} */ (e.target).closest('[data-urval-bort]');
         if (bort) {
             const [typ, i] = (bort.getAttribute('data-urval-bort') || '').split(':');
-            if (typ === 'grupp') _gruppState.splice(Number(i), 1); else _urvalState.villkor.splice(Number(i), 1);
-            renderExplorer();
+            if (typ === 'grupp') _gruppTillstand.splice(Number(i), 1); else _urvalTillstand.villkor.splice(Number(i), 1);
+            ritaUtforska();
         }
     });
     _urvalPanel?.addEventListener('keydown', e => {

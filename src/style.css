@@ -2803,7 +2803,7 @@ summary:focus-visible {
 .diagram-urval-poster input[type="checkbox"] { flex: none; margin-top: 2px; }
 @media print { .diagram-filter, .diagram-urval { display: none !important; } }
 
-/* Utforska 2.0 (70/71-explorer) */
+/* Utforska 2.0 (70-utforska, 71-utforska-figur) */
 .explore-controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
 .explore-ctl { display: flex; flex-direction: column; gap: 4px; }
 .explore-ctl-check { display: inline-flex; align-items: center; gap: 8px; }

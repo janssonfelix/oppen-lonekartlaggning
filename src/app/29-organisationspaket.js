@@ -31,7 +31,7 @@ import { markeraFilrutaInlast, aterstallFilruta } from './32-filinlasning.js';
 import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _lasKostnadsinstallningar } from './55-prioritering.js';
-import { explorerSynkaSmaLas } from './70-utforska.js';
+import { utforskaSynkaSmaLas } from './70-utforska.js';
 
 const PAKET_MAX_FILSTORLEK = installningsGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 // Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
@@ -161,7 +161,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     state.paketLas = { kTroskelLagst: nyttGolv, inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
                        smaGrupperIExport: installningar.smaGrupperIExport !== false };
     if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
-    if (typeof explorerSynkaSmaLas === 'function') explorerSynkaSmaLas();
+    if (typeof utforskaSynkaSmaLas === 'function') utforskaSynkaSmaLas();
     // ADR-38: frågar vid sänkning under standard; nekad bekräftelse behåller värdet.
     // Omritningen görs en gång, sist (se nedan), eftersom paketet ändrar mer än tröskeln.
     let kAndrad = false;

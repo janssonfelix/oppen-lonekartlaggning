@@ -236,7 +236,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         expect(kvar()).toContain('figur-utan-chart-id');
         rensa(w);
         expect(kvar()).toEqual([]);
-        expect(w.__explorerMinne().rows).toBe(0);
+        expect(w.__utforskaMinne().rows).toBe(0);
         // Inget av diagramkärnans minne finns kvar: ingen figur på någon behållare (inte heller den bortkopplade),
         // inga lyssnare eller storleksbevakning, tomt register, tom portal, ingen ägare.
         for (const [vad, el] of Object.entries(karnan)) {

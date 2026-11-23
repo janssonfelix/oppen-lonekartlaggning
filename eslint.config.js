@@ -110,7 +110,7 @@ export default [
         files: ['tools/browser-smoke.mjs', 'tools/browser-smoke/**/*.mjs', 'tools/perf-smoke.mjs'],
         languageOptions: {
             // Appens egna globaler som skripten anropar inne i sidan.
-            globals: { ...globals.browser, XLSX: 'readonly', ritaFlik: 'readonly', renderExplorer: 'readonly', sattRapportUrval: 'readonly', ritaExportBesked: 'readonly',
+            globals: { ...globals.browser, XLSX: 'readonly', ritaFlik: 'readonly', ritaUtforska: 'readonly', sattRapportUrval: 'readonly', ritaExportBesked: 'readonly',
                 byggUtskriftsrapport: 'readonly', rapportModell: 'readonly', excelAlltBlad: 'readonly', sattLage: 'readonly' }
         }
     },

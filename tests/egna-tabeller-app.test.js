@@ -25,7 +25,7 @@ describe('egna tabeller: från Utforska till rapporten', () => {
     it('Lägg till i rapporten sparar ett recept, inte tal, och säger att tabellen är tillagd', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         expect(laggTill(w, 'Median per yrke')).toMatch(/Tillagd: Median per yrke \(1 egen tabell\)/);
         expect(d.getElementById('explore-rapport-namn').value).toBe('');
         const [r] = w.__state.rapportTabeller;
@@ -33,14 +33,14 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(JSON.stringify({ ...r, id: undefined })).not.toMatch(/\d{5}/);   // id:t är slumpat och kan råka innehålla siffror
         // Utan namn får tabellen sin beskrivning som namn; per BAS kräver att raderna inte redan är BAS.
         expect(laggTill(w, '', true)).toMatch(/Tillagd: Median månadslön per AID-etikett, en tabell per BAS-intervall/);
-        d.getElementById('explore-rad').value = 'bas'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'bas'; w.__ritaUtforska();
         expect(laggTill(w, 'Fel', true)).toMatch(/går inte när raderna/);
         expect(w.__state.rapportTabeller).toHaveLength(2);
     });
     it('rapportmodellen får avsnittet Egna tabeller efter avsnittet per BAS, med tröskeln tillämpad; ett tomt recept utelämnas och anges', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         laggTill(w, 'Median per yrke');
         laggTill(w, 'Yrken per BAS', true);
         const m = w.eval('rapportModell()');
@@ -71,7 +71,7 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         const { readFileSync } = await import('node:fs');
         const w = fonster();
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
-        w.document.getElementById('explore-rad').value = 'bas'; w.document.getElementById('explore-visa').value = 'kon'; w.__renderExplorer();
+        w.document.getElementById('explore-rad').value = 'bas'; w.document.getElementById('explore-visa').value = 'kon'; w.__ritaUtforska();
         laggTill(w, 'Per kön');
         expect(w.eval('excelAlltBlad()')).toContain('Egna tabeller');
         let wb = null;
@@ -206,7 +206,7 @@ describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
     it('varje egen tabell blir ett block med formaterade tal, under en egen rubrik, och går att kopiera', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         laggTill(w, 'Median per yrke');
         const block = w.eval('rapportunderlagBlock()').filter(b => b.id.startsWith('egen:'));
         expect(block).toHaveLength(1);
@@ -233,7 +233,7 @@ describe('egna tabeller i organisationspaketet (ADR-52)', () => {
     it('ett paket med recept ersätter de egna tabellerna och receptet per BAS; ett paket utan rör dem inte', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         laggTill(w, 'Min egen');
         const recept = w.eval("nyttRecept({ rad: 'bas', matt: 'p90' }, { namn: 'Paketets tabell' })");
         const r = w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket({ tabeller: [recept], perBasRecept: { dim: 'sektor' } })))}, 'x.lonepaket.json')`);

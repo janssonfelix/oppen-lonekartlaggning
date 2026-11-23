@@ -23346,24 +23346,24 @@ function uppstartFilinlasning() {
 }
 
 // src/app/71-utforska-figur.js
-function _exploreAxisTitle(matt) {
+function _utforskaAxelrubrik(matt) {
   if (matt === "gap") return "Kvinnors median (% av männens)";
   if (matt === "andelKv") return "Andel kvinnor (%)";
   if (matt === "n") return "Antal";
   if (matt === "spridning") return "P90 / P10";
   return "Kronor/månad";
 }
-function _exploreFormat(matt) {
+function _utforskaTalformat(matt) {
   if (matt === "n") return "antal";
   if (matt === "spridning") return "tal2";
   if (matt === "gap" || matt === "andelKv") return void 0;
   return "kr";
 }
-var _exploreAxel = (matt, extra) => {
-  const f = _exploreFormat(matt);
-  return { skala: "linjar", titel: _exploreAxisTitle(matt), ...f ? { format: f } : {}, ...extra };
+var _utforskaAxel = (matt, extra) => {
+  const f = _utforskaTalformat(matt);
+  return { skala: "linjar", titel: _utforskaAxelrubrik(matt), ...f ? { format: f } : {}, ...extra };
 };
-function _explorerKonVyer(model) {
+function _utforskaKonVyer(model) {
   const { matt, delaKon } = model.spec, k = kTroskel();
   const konLiten = (n) => matt !== "n" && n < k;
   return delaKon ? [
@@ -23371,18 +23371,18 @@ function _explorerKonVyer(model) {
     { namn: "Män", kort: "Man", farg: PALETTE.kon.man, v: (c) => c.valueMa, n: (c) => c.nMa, liten: (c) => !!(c.liten || konLiten(c.nMa)) }
   ] : [{ namn: null, kort: null, farg: PALETTE.serie[0], v: (c) => c.value, n: (c) => c.n, liten: (c) => !!(c.liten || matt === "gap" && c.konLiten) }];
 }
-var _exploreHar = (v) => v != null && isFinite(v);
-function _exploreMarkering(model, rad) {
+var _utforskaHar = (v) => v != null && isFinite(v);
+function _utforskaMarkering(model, rad) {
   const dim = model.spec.rad;
   if (dim === "bas") return { markering: markeringFor(rad) };
   if (dim === "aidbas") {
-    const u = _explorerAidBas(rad);
+    const u = _utforskaAidBas(rad);
     return u ? { markering: markeringFor(u.bas, u.aid) } : {};
   }
   return {};
 }
-var _exploreBeskrivning = (model, form) => `${form}: ${EXPLORE_MATT_LABEL[model.spec.matt] || "valt mått"} per vald grupp. Samma värden finns i tabellen nedan.`;
-function explorerFigure(model, typ, rows) {
+var _utforskaBeskrivning = (model, form) => `${form}: ${UTFORSKA_MATT_ETIKETT[model.spec.matt] || "valt mått"} per vald grupp. Samma värden finns i tabellen nedan.`;
+function utforskaFigur(model, typ, rows) {
   switch (typ) {
     case "liggande":
       return _figStaplar(model, true);
@@ -23401,7 +23401,7 @@ function explorerFigure(model, typ, rows) {
     case "kvantilpunkter":
       return _figFordelning(model, rows, "kvantiler");
     case "heatmap":
-      return _figHeatmap(model);
+      return _figVarmekarta(model);
     case "grupperade":
       return _figGrupperade(model);
     case "staplade":
@@ -23414,93 +23414,93 @@ function explorerFigure(model, typ, rows) {
       return _figStaplar(model, false);
   }
 }
-var _EXPLORE_GAPSTATUS = GAP_STATUS;
+var _UTFORSKA_GAPSTATUS = GAP_STATUS;
 function _figStaplar(model, liggande) {
   const { matt, delaKon } = model.spec, celler = model.celler;
-  const vyer = _explorerKonVyer(model);
+  const vyer = _utforskaKonVyer(model);
   const medEtikett = celler.length * vyer.length <= 12;
   const punkt = (vy, c) => ({
     ...liggande ? { y: c.rad, x: vy.v(c) } : { x: c.rad, y: vy.v(c) },
     rad: c.rad,
     kol: null,
     n: vy.n(c),
-    ..._exploreMarkering(model, c.rad),
-    ...medEtikett ? { etikett: _exploreFmt(vy.v(c), matt) } : {},
+    ..._utforskaMarkering(model, c.rad),
+    ...medEtikett ? { etikett: _utforskaFormatera(vy.v(c), matt) } : {},
     ...vy.liten(c) ? { liten: true } : {}
   });
-  const tips = (serie) => (d) => [[d.rad], [serie, _exploreFmt(liggande ? d.x : d.y, matt)], ["Antal", String(d.n)]];
+  const tips = (serie) => (d) => [[d.rad], [serie, _utforskaFormatera(liggande ? d.x : d.y, matt)], ["Antal", String(d.n)]];
   const riktning2 = liggande ? { riktning: "liggande" } : {};
   let lager;
   if (!delaKon && matt === "gap") {
     const vy = vyer[0], status = (c) => gapStatus(Math.abs(100 - vy.v(c)), false);
-    lager = _EXPLORE_GAPSTATUS.map((s) => ({
+    lager = _UTFORSKA_GAPSTATUS.map((s) => ({
       marke: "punkt",
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
       farg: PALETTE.semantic[s.farg],
       ...riktning2,
-      data: celler.filter((c) => _exploreHar(vy.v(c)) && status(c) === s).map((c) => punkt(vy, c)),
-      tips: tips(EXPLORE_MATT_LABEL[matt])
+      data: celler.filter((c) => _utforskaHar(vy.v(c)) && status(c) === s).map((c) => punkt(vy, c)),
+      tips: tips(UTFORSKA_MATT_ETIKETT[matt])
     }));
   } else {
     lager = vyer.map((vy) => {
-      const serie = vy.kort || EXPLORE_MATT_LABEL[matt];
-      return { marke: "stapel", serie, farg: vy.farg, ...riktning2, data: celler.filter((c) => _exploreHar(vy.v(c))).map((c) => punkt(vy, c)), tips: tips(serie) };
+      const serie = vy.kort || UTFORSKA_MATT_ETIKETT[matt];
+      return { marke: "stapel", serie, farg: vy.farg, ...riktning2, data: celler.filter((c) => _utforskaHar(vy.v(c))).map((c) => punkt(vy, c)), tips: tips(serie) };
     });
   }
   lager = lager.filter((l) => l.data.length);
   const kategori = { skala: "band", ordning: celler.map((c) => c.rad), ...liggande ? { etikettMax: 48 } : {} };
   return {
-    beskrivning: _exploreBeskrivning(model, liggande ? "Liggande staplar" : "Staplar"),
+    beskrivning: _utforskaBeskrivning(model, liggande ? "Liggande staplar" : "Staplar"),
     legend: delaKon || matt === "gap" ? void 0 : false,
-    x: liggande ? _exploreAxel(matt) : kategori,
-    y: liggande ? kategori : _exploreAxel(matt),
+    x: liggande ? _utforskaAxel(matt) : kategori,
+    y: liggande ? kategori : _utforskaAxel(matt),
     hojd: liggande ? Math.max(260, 110 + 24 * celler.length) : 420,
     referens: matt === "gap" ? [{ ...liggande ? { x: 100 } : { y: 100 }, streck: "prickad", farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: "Lika lön" }] : [],
     lager
   };
 }
-function _figHeatmap(model) {
+function _figVarmekarta(model) {
   const { matt, delaKon } = model.spec, celler = model.celler;
-  const vyer = _explorerKonVyer(model);
+  const vyer = _utforskaKonVyer(model);
   const kols = model.kolumnEtiketter, rader = model.radEtiketter;
-  const varden = (bara) => celler.flatMap((c) => vyer.filter((vy) => !bara || !vy.liten(c)).map((vy) => vy.v(c))).filter(_exploreHar);
+  const varden = (bara) => celler.flatMap((c) => vyer.filter((vy) => !bara || !vy.liten(c)).map((vy) => vy.v(c))).filter(_utforskaHar);
   const alla = varden(true).length ? varden(true) : varden(false);
   const zmin = alla.length ? Math.min(...alla) : 0, zmax = alla.length ? Math.max(...alla) : 1;
   const diverg = matt === "gap" || matt === "andelKv", mitt = matt === "gap" ? 100 : 50;
   const spann = diverg ? Math.max(Math.abs(zmax - mitt), Math.abs(mitt - zmin), 1) : 0;
-  const format = _exploreFormat(matt);
+  const format = _utforskaTalformat(matt);
   const visaText = kols.length * vyer.length <= 12 && rader.length <= 30;
   return {
-    beskrivning: _exploreBeskrivning(model, "Värmekarta"),
+    beskrivning: _utforskaBeskrivning(model, "Värmekarta"),
     legend: false,
     x: { skala: "band", ordning: kols },
     y: { skala: "band", ordning: rader, etikettMax: 44 },
     hojd: Math.max(260, 120 + 26 * rader.length),
     ...delaKon ? { paneler: vyer.map((vy) => vy.namn) } : {},
-    fargskala: diverg ? { typ: "divergerande", doman: [mitt - spann, mitt + spann], mitt, titel: _exploreAxisTitle(matt) } : { typ: "sekventiell", farger: PALETTE.sekventiellNeutral, doman: [zmin, zmax], titel: _exploreAxisTitle(matt), ...format ? { format } : {} },
+    fargskala: diverg ? { typ: "divergerande", doman: [mitt - spann, mitt + spann], mitt, titel: _utforskaAxelrubrik(matt) } : { typ: "sekventiell", farger: PALETTE.sekventiellNeutral, doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...format ? { format } : {} },
     lager: vyer.map((vy) => {
-      const serie = vy.namn ? `${EXPLORE_MATT_LABEL[matt]} · ${vy.namn}` : EXPLORE_MATT_LABEL[matt];
+      const serie = vy.namn ? `${UTFORSKA_MATT_ETIKETT[matt]} · ${vy.namn}` : UTFORSKA_MATT_ETIKETT[matt];
       return {
         marke: "ruta",
         serie,
         visaText,
         ...vy.namn ? { panel: vy.namn } : {},
-        data: celler.filter((c) => _exploreHar(vy.v(c))).map((c) => {
+        data: celler.filter((c) => _utforskaHar(vy.v(c))).map((c) => {
           const liten = vy.liten(c);
           return {
             x: c.kol,
             y: c.rad,
             varde: vy.v(c),
-            text: _exploreFmt(vy.v(c), matt) + (liten ? ` (n = ${vy.n(c)})` : ""),
+            text: _utforskaFormatera(vy.v(c), matt) + (liten ? ` (n = ${vy.n(c)})` : ""),
             rad: c.rad,
             kol: c.kol,
             n: vy.n(c),
             ...liten ? { liten: true } : {}
           };
         }),
-        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _exploreFmt(d.varde, matt)], ["Antal", String(d.n)]]
+        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _utforskaFormatera(d.varde, matt)], ["Antal", String(d.n)]]
       };
     }).filter((l) => l.data.length)
   };
@@ -23508,26 +23508,26 @@ function _figHeatmap(model) {
 function _figGrupperade(model) {
   const { matt, delaKon } = model.spec, celler = model.celler;
   const byKey = new Map(celler.map((c) => [c.rad + "\0" + c.kol, c]));
-  const vyer = _explorerKonVyer(model);
+  const vyer = _utforskaKonVyer(model);
   const rader = model.radEtiketter.filter((r) => model.kolumnEtiketter.some((kl) => byKey.has(r + "\0" + kl)));
   if (model.kolumnEtiketter.length * vyer.length > 8 && rader.length >= 2 && rader.length <= 8) {
     const lagerM = rader.flatMap((r) => vyer.map((vy) => {
-      const serie = vy.kort || EXPLORE_MATT_LABEL[matt];
+      const serie = vy.kort || UTFORSKA_MATT_ETIKETT[matt];
       return {
         marke: "stapel",
         serie,
         farg: vy.farg,
         panel: r,
-        data: model.kolumnEtiketter.map((kl) => byKey.get(r + "\0" + kl)).filter((c) => c && _exploreHar(vy.v(c))).map((c) => ({ x: c.kol, y: vy.v(c), rad: c.rad, kol: c.kol, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
-        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _exploreFmt(d.y, matt)], ["Antal", String(d.n)]]
+        data: model.kolumnEtiketter.map((kl) => byKey.get(r + "\0" + kl)).filter((c) => c && _utforskaHar(vy.v(c))).map((c) => ({ x: c.kol, y: vy.v(c), rad: c.rad, kol: c.kol, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
+        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _utforskaFormatera(d.y, matt)], ["Antal", String(d.n)]]
       };
     })).filter((l) => l.data.length);
     return {
-      beskrivning: _exploreBeskrivning(model, "Staplar i en panel per grupp"),
+      beskrivning: _utforskaBeskrivning(model, "Staplar i en panel per grupp"),
       legend: delaKon ? void 0 : false,
       paneler: rader.filter((r) => lagerM.some((l) => l.panel === r)),
       x: { skala: "band", ordning: model.kolumnEtiketter },
-      y: _exploreAxel(matt),
+      y: _utforskaAxel(matt),
       hojd: 440,
       lager: lagerM
     };
@@ -23539,14 +23539,14 @@ function _figGrupperade(model) {
       serie,
       farg: PALETTE.serie[i % PALETTE.serie.length],
       ...vy.kort === "Man" ? { opacitet: 0.55, legend: false } : {},
-      data: model.radEtiketter.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && _exploreHar(vy.v(c))).map((c) => ({ x: c.rad, y: vy.v(c), rad: c.rad, kol: kl, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
-      tips: (d) => [[`${d.rad} · ${serie}`], [EXPLORE_MATT_LABEL[matt], _exploreFmt(d.y, matt)], ["Antal", String(d.n)]]
+      data: model.radEtiketter.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && _utforskaHar(vy.v(c))).map((c) => ({ x: c.rad, y: vy.v(c), rad: c.rad, kol: kl, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
+      tips: (d) => [[`${d.rad} · ${serie}`], [UTFORSKA_MATT_ETIKETT[matt], _utforskaFormatera(d.y, matt)], ["Antal", String(d.n)]]
     };
   })).filter((l) => l.data.length);
   return {
-    beskrivning: _exploreBeskrivning(model, "Grupperade staplar") + (delaKon ? " Mörk stapel = kvinnor, ljus = män." : ""),
+    beskrivning: _utforskaBeskrivning(model, "Grupperade staplar") + (delaKon ? " Mörk stapel = kvinnor, ljus = män." : ""),
     x: { skala: "band", ordning: model.radEtiketter, ...delaKon ? { titel: "Mörk stapel = kvinnor, ljus = män" } : {} },
-    y: _exploreAxel(matt),
+    y: _utforskaAxel(matt),
     hojd: 440,
     lager
   };
@@ -23564,7 +23564,7 @@ function _figStaplade(model, somAndel) {
     farg: konFarg[kl] || PALETTE.serie[i % PALETTE.serie.length],
     data: rader.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && c.n > 0).map((c) => {
       const andel = +(100 * c.n / summa.get(c.rad)).toFixed(1);
-      return { x: c.rad, y: somAndel ? andel : c.n, rad: c.rad, kol: kl, n: c.n, andel, ...c.liten ? { liten: true } : {}, ..._exploreMarkering(model, c.rad) };
+      return { x: c.rad, y: somAndel ? andel : c.n, rad: c.rad, kol: kl, n: c.n, andel, ...c.liten ? { liten: true } : {}, ..._utforskaMarkering(model, c.rad) };
     }),
     tips: (d) => [[`${d.rad} · ${kl}`], ["Antal", String(d.n)], ["Andel av raden", talformat(d.andel, "pct")]]
   })).filter((l) => l.data.length);
@@ -23578,14 +23578,14 @@ function _figStaplade(model, somAndel) {
 }
 function _figHantel(model) {
   const { matt } = model.spec, celler = model.celler;
-  const [kv, ma] = _explorerKonVyer({ spec: { ...model.spec, delaKon: true } });
+  const [kv, ma] = _utforskaKonVyer({ spec: { ...model.spec, delaKon: true } });
   const punkt = (vy) => ({
     marke: "punkt",
     serie: vy.kort,
     farg: vy.farg,
     storlek: 6,
-    data: celler.filter((c) => _exploreHar(vy.v(c))).map((c) => ({ y: c.rad, x: vy.v(c), rad: c.rad, kol: null, n: vy.n(c), ..._exploreMarkering(model, c.rad), ...vy.liten(c) ? { liten: true } : {} })),
-    tips: (d) => [[d.rad], [vy.kort, _exploreFmt(d.x, matt)], ["Antal", String(d.n)]]
+    data: celler.filter((c) => _utforskaHar(vy.v(c))).map((c) => ({ y: c.rad, x: vy.v(c), rad: c.rad, kol: null, n: vy.n(c), ..._utforskaMarkering(model, c.rad), ...vy.liten(c) ? { liten: true } : {} })),
+    tips: (d) => [[d.rad], [vy.kort, _utforskaFormatera(d.x, matt)], ["Antal", String(d.n)]]
   });
   const streck = {
     marke: "intervall",
@@ -23594,7 +23594,7 @@ function _figHantel(model) {
     farg: PALETTE.semantic.neutral,
     tjocklek: 2,
     legend: false,
-    data: celler.filter((c) => _exploreHar(c.valueKv) && _exploreHar(c.valueMa)).map((c) => ({
+    data: celler.filter((c) => _utforskaHar(c.valueKv) && _utforskaHar(c.valueMa)).map((c) => ({
       y: c.rad,
       lag: Math.min(c.valueKv, c.valueMa),
       hog: Math.max(c.valueKv, c.valueMa),
@@ -23604,16 +23604,16 @@ function _figHantel(model) {
     }))
   };
   return {
-    beskrivning: _exploreBeskrivning(model, "Hanteldiagram, kvinnor och män"),
+    beskrivning: _utforskaBeskrivning(model, "Hanteldiagram, kvinnor och män"),
     paneler: "auto",
-    x: _exploreAxel(matt),
+    x: _utforskaAxel(matt),
     y: { skala: "band", ordning: celler.map((c) => c.rad), etikettMax: 48 },
     hojd: Math.max(260, 110 + 24 * celler.length),
     lager: [streck, punkt(kv), punkt(ma)].filter((l) => l.data.length)
   };
 }
 function _figBubbla(model) {
-  const pts = model.celler.filter((c) => c.nKv + c.nMa > 0 && _exploreHar(c.value));
+  const pts = model.celler.filter((c) => c.nKv + c.nMa > 0 && _utforskaHar(c.value));
   const maxN = Math.max(1, ...pts.map((c) => c.n));
   const kr2 = (v) => talformat(v, "kr");
   return {
@@ -23637,7 +23637,7 @@ function _figBubbla(model) {
         rad: c.rad,
         kol: null,
         n: c.n,
-        ..._exploreMarkering(model, c.rad),
+        ..._utforskaMarkering(model, c.rad),
         ...c.liten ? { liten: true } : {}
       })),
       tips: (d) => [[d.rad], ["Andel kvinnor", talformat(d.x, "pct")], ["Median", kr2(d.y)], ["Antal", String(d.n)]]
@@ -23687,10 +23687,10 @@ function _figFordelning(model, rows, allaPunkter) {
 }
 
 // src/app/72-utforska-urval.js
-var _urvalState = { lage: "alla", villkor: [] };
-var _gruppState = [];
+var _urvalTillstand = { lage: "alla", villkor: [] };
+var _gruppTillstand = [];
 var _urvalSignatur = null;
-var _urvalDataRef = null;
+var _urvalData = null;
 var _URVAL_OP_KATEGORI = [["enAv", "är en av"], ["inteEnAv", "är inte en av"]];
 var _URVAL_OP_TAL = [
   ["storre", "större än"],
@@ -23712,22 +23712,22 @@ function _urvalFranOpVarde(val) {
   return { op: val, inte: false };
 }
 var _kopia = (x) => JSON.parse(JSON.stringify(x));
-function explorerUrval() {
-  return { urval: _kopia(_urvalState), gruppVillkor: _kopia(_gruppState) };
+function utforskaUrval() {
+  return { urval: _kopia(_urvalTillstand), gruppVillkor: _kopia(_gruppTillstand) };
 }
-function explorerSattUrval(urval, gruppVillkor) {
-  _urvalState = {
+function utforskaSattUrval(urval, gruppVillkor) {
+  _urvalTillstand = {
     lage: urval && urval.lage === "nagot" ? "nagot" : "alla",
     villkor: _kopia(urval && urval.villkor || []).map((v) => ({ inte: false, ...v }))
   };
-  _gruppState = _kopia(gruppVillkor || []);
+  _gruppTillstand = _kopia(gruppVillkor || []);
   _urvalSignatur = null;
 }
-function explorerNollstallUrval() {
-  explorerSattUrval({ lage: "alla", villkor: [] }, []);
+function utforskaNollstallUrval() {
+  utforskaSattUrval({ lage: "alla", villkor: [] }, []);
 }
-function explorerUrvalSlappMinne() {
-  _urvalDataRef = null;
+function utforskaUrvalSlappMinne() {
+  _urvalData = null;
   _urvalSignatur = null;
 }
 function _urvalVarden(rows, dim) {
@@ -23740,10 +23740,10 @@ function _urvalVarden(rows, dim) {
   const vals = [...set];
   return dim === "alder" ? vals.sort(jamforAldersgrupp) : vals.sort((a, b) => a.localeCompare(b, "sv"));
 }
-function explorerRensaUrval(rows) {
+function utforskaRensaUrval(rows) {
   const falt = faltInfo();
   const cache = {};
-  for (const v of _urvalState.villkor) {
+  for (const v of _urvalTillstand.villkor) {
     const f = falt[v.falt];
     if (!f || f.typ !== "kategori" || !Array.isArray(v.varde)) continue;
     cache[f.dim] = cache[f.dim] || new Set(_urvalVarden(rows, f.dim));
@@ -23753,8 +23753,8 @@ function explorerRensaUrval(rows) {
 function _urvalSignaturFor() {
   return JSON.stringify([
     state.data && state.data.length,
-    _urvalState.villkor.map((v) => [v.falt, _urvalOpVarde(v)]),
-    _gruppState.map((g) => [g.matt, g.op])
+    _urvalTillstand.villkor.map((v) => [v.falt, _urvalOpVarde(v)]),
+    _gruppTillstand.map((g) => [g.matt, g.op])
   ]);
 }
 function _urvalTalHtml(attr, i, varde, enhet, etikett2) {
@@ -23803,34 +23803,34 @@ function _urvalFokusNyckel() {
 function _urvalUppdateraMarkorer() {
   document.querySelectorAll("#explore-urval-villkor .explore-urval-rad").forEach((rad, i) => {
     const m = rad.querySelector(".explore-urval-ofullst");
-    if (m) m.hidden = villkorAktivt(_urvalState.villkor[i]);
+    if (m) m.hidden = villkorAktivt(_urvalTillstand.villkor[i]);
     const antal = rad.querySelector("[data-urval-antal]");
-    if (antal) antal.textContent = `Välj värden (${(_urvalState.villkor[i].varde || []).length})`;
+    if (antal) antal.textContent = `Välj värden (${(_urvalTillstand.villkor[i].varde || []).length})`;
   });
   document.querySelectorAll("#explore-urval-grupp .explore-urval-rad").forEach((rad, i) => {
     const m = rad.querySelector(".explore-urval-ofullst");
-    if (m) m.hidden = gruppVillkorAktivt(_gruppState[i]);
+    if (m) m.hidden = gruppVillkorAktivt(_gruppTillstand[i]);
   });
 }
-function renderExplorerUrvalUi(rows) {
+function ritaUtforskaUrval(rows) {
   const lista = document.getElementById("explore-urval-villkor");
   const grupp = document.getElementById("explore-urval-grupp");
   const lage2 = document.getElementById("explore-urval-lage");
   const chips = document.getElementById("explore-filter-chips");
   if (!lista || !grupp) return;
-  if (lage2) lage2.value = _urvalState.lage;
+  if (lage2) lage2.value = _urvalTillstand.lage;
   const sig = _urvalSignaturFor();
-  if (sig !== _urvalSignatur || _urvalDataRef !== state.data) {
+  if (sig !== _urvalSignatur || _urvalData !== state.data) {
     _urvalSignatur = sig;
-    _urvalDataRef = state.data;
+    _urvalData = state.data;
     const fokus = _urvalFokusNyckel();
-    lista.innerHTML = _urvalState.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join("");
-    grupp.innerHTML = _gruppState.map((g, i) => _gruppRadHtml(g, i)).join("");
+    lista.innerHTML = _urvalTillstand.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join("");
+    grupp.innerHTML = _gruppTillstand.map((g, i) => _gruppRadHtml(g, i)).join("");
     if (fokus) document.querySelector(`#explore-urval ${fokus}`)?.focus();
   }
   _urvalUppdateraMarkorer();
   if (chips) {
-    const text = beskrivUrval(_urvalState, _gruppState);
+    const text = beskrivUrval(_urvalTillstand, _gruppTillstand);
     chips.innerHTML = text ? `<span class="explore-urval-text">${esc(text)}</span><button type="button" class="btn-table-tool" data-explore-clear>Rensa allt</button>` : "";
   }
 }
@@ -23856,11 +23856,11 @@ function uppstartUtforskaUrval() {
       /** @type {HTMLElement} */
       t.id === "explore-urval-lage"
     ) {
-      _urvalState.lage = /** @type {HTMLInputElement} */
+      _urvalTillstand.lage = /** @type {HTMLInputElement} */
       t.value === "nagot" ? "nagot" : "alla";
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-falt")) != null) {
-      const v = _urvalState.villkor[i];
+      const v = _urvalTillstand.villkor[i];
       const fore = falt[v.falt] && falt[v.falt].typ;
       v.falt = /** @type {HTMLInputElement} */
       t.value;
@@ -23871,7 +23871,7 @@ function uppstartUtforskaUrval() {
       }
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-op")) != null) {
-      const v = _urvalState.villkor[i];
+      const v = _urvalTillstand.villkor[i];
       const var_mellan = v.op === "mellan";
       Object.assign(v, _urvalFranOpVarde(
         /** @type {HTMLInputElement} */
@@ -23880,7 +23880,7 @@ function uppstartUtforskaUrval() {
       if (v.op === "mellan" !== var_mellan) v.varde = v.op === "mellan" ? [null, null] : null;
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-varde")) != null) {
-      const v = _urvalState.villkor[i];
+      const v = _urvalTillstand.villkor[i];
       const s = new Set(v.varde || []);
       if (
         /** @type {HTMLInputElement} */
@@ -23896,25 +23896,25 @@ function uppstartUtforskaUrval() {
       v.varde = [...s];
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-tal")) != null) {
-      _urvalSattTal(_urvalState.villkor[i], t);
+      _urvalSattTal(_urvalTillstand.villkor[i], t);
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-gv-matt")) != null) {
-      _gruppState[i].matt = /** @type {HTMLInputElement} */
+      _gruppTillstand[i].matt = /** @type {HTMLInputElement} */
       t.value;
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-gv-op")) != null) {
-      const g = _gruppState[i];
+      const g = _gruppTillstand[i];
       const var_mellan = g.op === "mellan";
       g.op = /** @type {HTMLInputElement} */
       t.value;
       if (g.op === "mellan" !== var_mellan) g.varde = g.op === "mellan" ? [null, null] : null;
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-gv-tal")) != null) {
-      _urvalSattTal(_gruppState[i], t);
+      _urvalSattTal(_gruppTillstand[i], t);
     } else {
       return;
     }
-    renderExplorer();
+    ritaUtforska();
   });
   _urvalPanel?.addEventListener("input", (e) => {
     const t = (
@@ -23940,9 +23940,9 @@ function uppstartUtforskaUrval() {
       e.target.closest("[data-urval-lagg-till]")
     );
     if (lagg) {
-      if (lagg.getAttribute("data-urval-lagg-till") === "grupp") _gruppState.push({ matt: "gap", op: "mindre", varde: null });
-      else _urvalState.villkor.push({ falt: "bas", op: "enAv", varde: [], inte: false });
-      renderExplorer();
+      if (lagg.getAttribute("data-urval-lagg-till") === "grupp") _gruppTillstand.push({ matt: "gap", op: "mindre", varde: null });
+      else _urvalTillstand.villkor.push({ falt: "bas", op: "enAv", varde: [], inte: false });
+      ritaUtforska();
       return;
     }
     const bort = (
@@ -23951,9 +23951,9 @@ function uppstartUtforskaUrval() {
     );
     if (bort) {
       const [typ, i] = (bort.getAttribute("data-urval-bort") || "").split(":");
-      if (typ === "grupp") _gruppState.splice(Number(i), 1);
-      else _urvalState.villkor.splice(Number(i), 1);
-      renderExplorer();
+      if (typ === "grupp") _gruppTillstand.splice(Number(i), 1);
+      else _urvalTillstand.villkor.splice(Number(i), 1);
+      ritaUtforska();
     }
   });
   _urvalPanel?.addEventListener("keydown", (e) => {
@@ -23971,7 +23971,7 @@ function uppstartUtforskaUrval() {
 }
 
 // src/app/70-utforska.js
-var EXPLORE_DIM_LABEL = {
+var UTFORSKA_DIM_ETIKETT = {
   bas: stor(T.niva.en),
   aid: stor(T.enhet.en),
   alder: "Åldersgrupp",
@@ -23982,7 +23982,7 @@ var EXPLORE_DIM_LABEL = {
   sektor: stor(T.huvudomrade.en),
   aidniva: "AID-mellannivå"
 };
-var EXPLORE_MATT_LABEL = {
+var UTFORSKA_MATT_ETIKETT = {
   median: "Median månadslön",
   medel: "Medellön",
   n: "Antal (n)",
@@ -23994,7 +23994,7 @@ var EXPLORE_MATT_LABEL = {
   andelKv: "Andel kvinnor (%)",
   gap: "Kvinnors median i % av mäns"
 };
-var EXPLORE_TYPER = {
+var UTFORSKA_TYPER = {
   staplar: { label: "Staplar", dim: 1 },
   liggande: { label: "Liggande staplar", dim: 1 },
   hantel: { label: "Hanteldiagram", dim: 1 },
@@ -24008,11 +24008,11 @@ var EXPLORE_TYPER = {
   grupperade: { label: "Grupperade staplar", dim: 2 },
   staplade: { label: "Staplade staplar", dim: 2 }
 };
-var EXPLORE_STAPLADE_MAX = 12;
-var EXPLORE_LASTA_MATT = /* @__PURE__ */ new Set(["bubbla", "lada", "punkter", "svarm", "regnmoln", "kvantilpunkter"]);
-var EXPLORE_KON_MATT = /* @__PURE__ */ new Set(["andelKv", "gap"]);
-var _explorerState = null;
-function _exploreFmt(v, matt) {
+var UTFORSKA_STAPLADE_MAX = 12;
+var UTFORSKA_LASTA_MATT = /* @__PURE__ */ new Set(["bubbla", "lada", "punkter", "svarm", "regnmoln", "kvantilpunkter"]);
+var UTFORSKA_KON_MATT = /* @__PURE__ */ new Set(["andelKv", "gap"]);
+var _utforskaTillstand = null;
+function _utforskaFormatera(v, matt) {
   if (v == null || !isFinite(v)) return "–";
   if (matt === "n") return Math.round(v).toLocaleString("sv-SE");
   if (matt === "gap" || matt === "andelKv") {
@@ -24021,36 +24021,36 @@ function _exploreFmt(v, matt) {
   if (matt === "spridning") return v.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return svKr(v);
 }
-function explorerTypSkal(typ, spec, urval) {
-  const def = EXPLORE_TYPER[typ];
+function utforskaTypSkal(typ, spec, urval) {
+  const def = UTFORSKA_TYPER[typ];
   if (!def) return "Okänd diagramtyp.";
   if (def.dim === 2 && !spec.kolumn) return "Kräver att Kolumner är vald.";
   if (def.dim === 1 && spec.kolumn) return "Fungerar bara med en dimension. Välj Kolumner: Ingen.";
   if (typ === "hantel") {
-    if (EXPLORE_KON_MATT.has(spec.matt)) return "Hanteldiagrammet jämför kvinnor och män och kräver ett lönemått.";
+    if (UTFORSKA_KON_MATT.has(spec.matt)) return "Hanteldiagrammet jämför kvinnor och män och kräver ett lönemått.";
     if (spec.rad === "kon") return "Raderna är redan kön. Välj en annan dimension.";
     if (urval && (!urval.nKv || !urval.nMa)) return "Urvalet innehåller bara ett kön.";
   }
   if (typ === "bubbla" && spec.rad === "kon") return "Andel kvinnor per kön säger ingenting. Välj en annan dimension.";
   return null;
 }
-function explorerAutoTyp(spec, urval) {
+function utforskaAutoTyp(spec, urval) {
   if (spec.kolumn) return "heatmap";
-  if (spec.delaKon && !EXPLORE_KON_MATT.has(spec.matt) && spec.matt !== "n" && spec.matt !== "spridning" && !explorerTypSkal("hantel", spec, urval)) return "hantel";
+  if (spec.delaKon && !UTFORSKA_KON_MATT.has(spec.matt) && spec.matt !== "n" && spec.matt !== "spridning" && !utforskaTypSkal("hantel", spec, urval)) return "hantel";
   return "staplar";
 }
-function explorerVisaSkal(spec, typ, urval) {
+function utforskaVisaSkal(spec, typ, urval) {
   if (typ === "hantel") return { tvingad: "kon", skal: "Hanteldiagrammet visar alltid kvinnor och män." };
   if (typ === "bubbla") return { tvingad: "helhet", skal: "Bubbeldiagrammet visar andel kvinnor och är alltid en helhet." };
   if (typ === "staplade") return { tvingad: "helhet", skal: "Staplade staplar visar sammansättningen som en helhet. Välj Kön som kolumn för att dela upp på kön." };
   if (spec.rad === "kon" || spec.kolumn === "kon") return { tvingad: "helhet", skal: "Kön är redan en av dimensionerna." };
-  if (EXPLORE_KON_MATT.has(spec.matt) && !EXPLORE_LASTA_MATT.has(typ)) {
+  if (UTFORSKA_KON_MATT.has(spec.matt) && !UTFORSKA_LASTA_MATT.has(typ)) {
     return { tvingad: "helhet", skal: "Måttet jämför redan könen." };
   }
   if (urval && (!urval.nKv || !urval.nMa)) return { tvingad: "helhet", skal: "Urvalet innehåller bara ett kön." };
   return { tvingad: null, skal: null };
 }
-function _explorerVisaOnskad() {
+function _utforskaVisaOnskad() {
   const sel = document.getElementById("explore-visa");
   if (!sel) return "helhet";
   if (sel.dataset.tvingad && /** @type {HTMLInputElement} */
@@ -24069,7 +24069,7 @@ function _utNycklar(rows) {
   }
   return m.f;
 }
-function _explorerUrvalAntal(rows, urval) {
+function _utforskaUrvalAntal(rows, urval) {
   const person = iUrvalet(urval, _utNycklar(rows));
   const ut = { n: 0, nKv: 0, nMa: 0 };
   for (const r of rows) {
@@ -24081,7 +24081,7 @@ function _explorerUrvalAntal(rows, urval) {
   }
   return ut;
 }
-function _explorerSpec() {
+function _utforskaSpec() {
   const val = (id) => (
     /** @type {HTMLInputElement} */
     document.getElementById(id)?.value
@@ -24091,14 +24091,14 @@ function _explorerSpec() {
     rad: val("explore-rad") || "bas",
     kolumn: kol && kol !== "ingen" ? kol : null,
     matt: val("explore-measure") || "median",
-    delaKon: _explorerVisaOnskad() === "kon",
+    delaKon: _utforskaVisaOnskad() === "kon",
     // Hopslagning av små AID-grupper — bara i Utforska, bara när raderna är AID (ADR-33).
     slaIhop: !!/** @type {HTMLInputElement} */
     document.getElementById("explore-sla-ihop")?.checked,
-    ...explorerUrval()
+    ...utforskaUrval()
   };
 }
-function _explorerSyncControls(spec, typ, valdTyp, urval) {
+function _utforskaSynkaKontroller(spec, typ, valdTyp, urval) {
   const typSel = document.getElementById("explore-typ");
   if (typSel) {
     for (
@@ -24107,24 +24107,24 @@ function _explorerSyncControls(spec, typ, valdTyp, urval) {
       typSel.options
     ) {
       if (opt.value === "auto") continue;
-      const skal = explorerTypSkal(opt.value, spec, urval);
+      const skal = utforskaTypSkal(opt.value, spec, urval);
       opt.disabled = !!skal;
       opt.title = skal || "";
     }
-    if (valdTyp !== "auto" && explorerTypSkal(valdTyp, spec, urval)) typSel.value = "auto";
+    if (valdTyp !== "auto" && utforskaTypSkal(valdTyp, spec, urval)) typSel.value = "auto";
   }
   const matt = document.getElementById("explore-measure");
   if (matt) {
-    const last = EXPLORE_LASTA_MATT.has(typ) || typ === "staplade";
+    const last = UTFORSKA_LASTA_MATT.has(typ) || typ === "staplade";
     matt.disabled = last;
-    matt.title = last ? `${EXPLORE_TYPER[typ].label} visar alltid ${typ === "bubbla" ? "median mot andel kvinnor" : typ === "staplade" ? "antal personer" : "lönerna själva"}. Måttvalet gäller inte.` : "";
+    matt.title = last ? `${UTFORSKA_TYPER[typ].label} visar alltid ${typ === "bubbla" ? "median mot andel kvinnor" : typ === "staplade" ? "antal personer" : "lönerna själva"}. Måttvalet gäller inte.` : "";
   }
   const stapelVisa = document.getElementById("explore-stapel-visa");
   if (stapelVisa && stapelVisa.parentElement) stapelVisa.parentElement.hidden = typ !== "staplade";
   const visa = document.getElementById("explore-visa");
   if (visa) {
-    const { tvingad, skal } = explorerVisaSkal(spec, typ, urval);
-    const onskad = _explorerVisaOnskad();
+    const { tvingad, skal } = utforskaVisaSkal(spec, typ, urval);
+    const onskad = _utforskaVisaOnskad();
     if (tvingad) {
       visa.dataset.tvingad = tvingad;
       visa.dataset.onskad = onskad;
@@ -24155,9 +24155,9 @@ function _explorerSyncControls(spec, typ, valdTyp, urval) {
   const slaIhop = document.getElementById("explore-sla-ihop-rad");
   if (slaIhop) slaIhop.hidden = spec.rad !== "aid";
 }
-function _explorerTitle(spec, typ) {
+function _utforskaRubrik(spec, typ) {
   const dim = (d) => {
-    const s = EXPLORE_DIM_LABEL[d];
+    const s = UTFORSKA_DIM_ETIKETT[d];
     return /^[A-ZÅÄÖ]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1);
   };
   let fras;
@@ -24168,13 +24168,13 @@ function _explorerTitle(spec, typ) {
   if (typ === "staplade") return `${/** @type {HTMLInputElement} */
   document.getElementById("explore-stapel-visa")?.value === "andel" ? "Andel" : "Antal"} ${fras}`;
   if (typ === "punkter" || typ === "svarm" || typ === "regnmoln") return `Löner ${fras}`;
-  return `${EXPLORE_MATT_LABEL[spec.matt]} ${fras}`;
+  return `${UTFORSKA_MATT_ETIKETT[spec.matt]} ${fras}`;
 }
-function explorerSmaIExport() {
+function utforskaSmaIExport() {
   return state.paketLas.smaGrupperIExport !== false && !!/** @type {HTMLInputElement} */
   document.getElementById("explore-inkludera-sma")?.checked;
 }
-function explorerSynkaSmaLas() {
+function utforskaSynkaSmaLas() {
   const tillatet = state.paketLas.smaGrupperIExport !== false;
   const rad = document.getElementById("explore-inkludera-sma-rad");
   if (rad) rad.hidden = !tillatet;
@@ -24183,12 +24183,12 @@ function explorerSynkaSmaLas() {
   const not = document.getElementById("explore-sma-last");
   if (not) not.hidden = tillatet;
 }
-function renderExplorer() {
+function ritaUtforska() {
   if (!document.getElementById("explore-rad")) return;
-  explorerSynkaSmaLas();
+  utforskaSynkaSmaLas();
   const rows = hamtaData();
-  explorerRensaUrval(rows);
-  const spec = _explorerSpec();
+  utforskaRensaUrval(rows);
+  const spec = _utforskaSpec();
   if (spec.kolumn === spec.rad) {
     document.getElementById("explore-kolumn").value = "ingen";
     spec.kolumn = null;
@@ -24197,62 +24197,62 @@ function renderExplorer() {
     /** @type {HTMLInputElement} */
     document.getElementById("explore-typ")?.value || "auto"
   );
-  const probe = { urval: _explorerUrvalAntal(rows, spec.urval) };
-  let typ = valdTyp === "auto" ? explorerAutoTyp(spec, probe.urval) : valdTyp;
-  if (explorerTypSkal(typ, spec, probe.urval)) typ = explorerAutoTyp(spec, probe.urval);
+  const probe = { urval: _utforskaUrvalAntal(rows, spec.urval) };
+  let typ = valdTyp === "auto" ? utforskaAutoTyp(spec, probe.urval) : valdTyp;
+  if (utforskaTypSkal(typ, spec, probe.urval)) typ = utforskaAutoTyp(spec, probe.urval);
   const lasTyp = valdTyp === "auto" && typ === "hantel" ? "staplar" : typ;
   const modelSpec = { ...spec };
-  if (EXPLORE_LASTA_MATT.has(typ)) modelSpec.matt = "median";
+  if (UTFORSKA_LASTA_MATT.has(typ)) modelSpec.matt = "median";
   if (typ === "staplade") modelSpec.matt = "n";
-  const { tvingad } = explorerVisaSkal(spec, lasTyp, probe.urval);
+  const { tvingad } = utforskaVisaSkal(spec, lasTyp, probe.urval);
   modelSpec.delaKon = tvingad ? tvingad === "kon" : spec.delaKon;
   const model = pivottabell(rows, modelSpec, { k: kTroskel() });
-  _explorerSyncControls(spec, lasTyp, valdTyp, model.urval);
-  renderExplorerUrvalUi(rows);
-  _explorerState = { model, typ, rows };
+  _utforskaSynkaKontroller(spec, lasTyp, valdTyp, model.urval);
+  ritaUtforskaUrval(rows);
+  _utforskaTillstand = { model, typ, rows };
   const titleEl = document.getElementById("explore-chart-title");
-  if (titleEl) titleEl.textContent = _explorerTitle(model.spec, typ);
-  const inkl = explorerSmaIExport();
-  _renderExplorerChart(model, typ, rows);
-  _renderExplorerTable(model, typ, inkl);
-  _renderExplorerNote(model);
+  if (titleEl) titleEl.textContent = _utforskaRubrik(model.spec, typ);
+  const inkl = utforskaSmaIExport();
+  _ritaUtforskaDiagram(model, typ, rows);
+  _ritaUtforskaTabell(model, typ, inkl);
+  _ritaUtforskaNot(model);
 }
-function _renderExplorerChart(model, typ, rows) {
+function _ritaUtforskaDiagram(model, typ, rows) {
   const el = document.getElementById("chart-explore");
   if (!el) return;
   const exportMeny = el.parentElement && el.parentElement.querySelector(":scope > .chart-export");
   const utanVarden = model.celler.every((c) => c.value == null && c.valueKv == null && c.valueMa == null);
-  if (!model.urval.n || !model.celler.length || utanVarden && !EXPLORE_LASTA_MATT.has(typ)) {
+  if (!model.urval.n || !model.celler.length || utanVarden && !UTFORSKA_LASTA_MATT.has(typ)) {
     if (exportMeny) exportMeny.hidden = true;
     rensaFigur(el);
     el.innerHTML = !model.urval.n ? '<p class="explore-tom">Inga personer matchar urvalet. <button type="button" class="btn-table-tool" data-explore-clear>Rensa urvalet</button></p>' : '<p class="explore-tom">Inga grupper att visa för valt urval.</p>';
     return;
   }
-  if (typ === "staplade" && model.kolumnEtiketter.length > EXPLORE_STAPLADE_MAX) {
+  if (typ === "staplade" && model.kolumnEtiketter.length > UTFORSKA_STAPLADE_MAX) {
     if (exportMeny) exportMeny.hidden = true;
     rensaFigur(el);
-    el.innerHTML = `<p class="explore-tom">Kolumnerna har ${model.kolumnEtiketter.length} värden — för många för staplade staplar (högst ${EXPLORE_STAPLADE_MAX}). Välj en annan kolumn eller diagramtypen Värmekarta.</p>`;
+    el.innerHTML = `<p class="explore-tom">Kolumnerna har ${model.kolumnEtiketter.length} värden — för många för staplade staplar (högst ${UTFORSKA_STAPLADE_MAX}). Välj en annan kolumn eller diagramtypen Värmekarta.</p>`;
     return;
   }
   if (exportMeny) exportMeny.hidden = false;
-  ritaFigur(el, explorerFigure(model, typ, rows), {
+  ritaFigur(el, utforskaFigur(model, typ, rows), {
     visaSma: true,
-    exportMedSma: () => explorerSmaIExport(),
+    exportMedSma: () => utforskaSmaIExport(),
     exportBeskrivning: beskrivUrval(model.spec.urval, model.spec.gruppVillkor),
-    vidKlick: (d) => explorerHandleClick(d),
+    vidKlick: (d) => utforskaVidKlick(d),
     tomtext: "Inga grupper att visa för valt urval."
   });
-  el.parentElement.classList.toggle("explore-klickbar", explorerKanFordjupa(model.spec));
+  el.parentElement.classList.toggle("explore-klickbar", utforskaKanFordjupa(model.spec));
 }
-function _renderExplorerTable(model, typ, inkl) {
+function _ritaUtforskaTabell(model, typ, inkl) {
   const table = document.getElementById("explore-table");
   if (!table) return;
   const { spec } = model;
   const k = kTroskel();
-  const num = (v, m, attr = "") => `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? "" : v}"${attr}>${_exploreFmt(v, m)}</td>`;
+  const num = (v, m, attr = "") => `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? "" : v}"${attr}>${_utforskaFormatera(v, m)}</td>`;
   const nTd = (c) => `<td class="t-hoger" data-sort-value="${c.n}">${c.n.toLocaleString("sv-SE")} (${c.nKv}/${c.nMa})</td>`;
   const trAttr = (c) => (c.liten ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : "") + (c.liten && !inkl ? " data-export-utelamna" : "");
-  const dimLbl = esc(EXPLORE_DIM_LABEL[spec.rad]);
+  const dimLbl = esc(UTFORSKA_DIM_ETIKETT[spec.rad]);
   let head, body;
   if (spec.kolumn) {
     const byKey = new Map(model.celler.map((c) => [c.rad + "\0" + c.kol, c]));
@@ -24266,21 +24266,21 @@ function _renderExplorerTable(model, typ, inkl) {
     const radUte = new Set(inkl ? [] : model.radEtiketter.filter((r) => !kolumner.some((d) => synlig(cellAv(r, d), d))));
     const kolUte = new Set(inkl ? [] : kolumner.filter((d) => !model.radEtiketter.some((r) => synlig(cellAv(r, d), d))));
     const ute = (d) => kolUte.has(d) ? " data-export-utelamna" : "";
-    head = `<tr><th>${dimLbl} \\ ${esc(EXPLORE_DIM_LABEL[spec.kolumn])}</th>` + kolumner.map((d) => `<th class="t-hoger"${ute(d)}>${esc(d.rubrik)}</th>`).join("") + "</tr>";
+    head = `<tr><th>${dimLbl} \\ ${esc(UTFORSKA_DIM_ETIKETT[spec.kolumn])}</th>` + kolumner.map((d) => `<th class="t-hoger"${ute(d)}>${esc(d.rubrik)}</th>`).join("") + "</tr>";
     body = model.radEtiketter.map((r) => `<tr${radUte.has(r) ? " data-export-utelamna" : ""}><td>${esc(r)}</td>` + kolumner.map((d) => {
       const c = cellAv(r, d);
       if (!c) return `<td class="t-hoger" data-sort-value=""${inkl ? "" : " data-export-tom"}${ute(d)}>–</td>`;
       const v = d.v(c), sm = liten(c, d);
       const bara_kon_liten = !c.liten && spec.matt === "n";
       const attr = (sm ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : "") + (!inkl && (sm && !bara_kon_liten || spec.matt === "gap" && c.konLiten) ? " data-export-tom" : "") + ute(d);
-      const cell = _exploreFmt(v, spec.matt) + (sm ? ` (n = ${d.n(c)})` : "");
+      const cell = _utforskaFormatera(v, spec.matt) + (sm ? ` (n = ${d.n(c)})` : "");
       return `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? "" : v}"${attr}>${esc(cell)}</td>`;
     }).join("") + "</tr>").join("");
   } else if (spec.delaKon) {
     const tom2 = (n) => n < k && !inkl && spec.matt !== "n" ? " data-export-tom" : "";
     head = `<tr><th>${dimLbl}</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">n (K/M)</th></tr>`;
     body = model.celler.map((c) => `<tr${trAttr(c)}><td>${esc(c.rad)}</td>${num(c.valueKv, spec.matt, tom2(c.nKv))}${num(c.valueMa, spec.matt, tom2(c.nMa))}${nTd(c)}</tr>`).join("");
-  } else if (EXPLORE_LASTA_MATT.has(typ)) {
+  } else if (UTFORSKA_LASTA_MATT.has(typ)) {
     head = `<tr><th>${dimLbl}</th><th class="t-hoger">Median månadslön</th><th class="t-hoger">Andel kvinnor</th><th class="t-hoger">n (K/M)</th></tr>`;
     body = model.celler.map((c) => {
       const andel = c.nKv + c.nMa ? c.nKv / (c.nKv + c.nMa) * 100 : null;
@@ -24288,7 +24288,7 @@ function _renderExplorerTable(model, typ, inkl) {
     }).join("");
   } else {
     const gapTom = (c) => spec.matt === "gap" && c.konLiten && !inkl ? " data-export-tom" : "";
-    head = `<tr><th>${dimLbl}</th><th class="t-hoger">${esc(EXPLORE_MATT_LABEL[spec.matt])}</th><th class="t-hoger">n (K/M)</th></tr>`;
+    head = `<tr><th>${dimLbl}</th><th class="t-hoger">${esc(UTFORSKA_MATT_ETIKETT[spec.matt])}</th><th class="t-hoger">n (K/M)</th></tr>`;
     body = model.celler.map((c) => `<tr${trAttr(c)}><td>${esc(c.rad)}</td>${num(c.value, spec.matt, gapTom(c))}${nTd(c)}</tr>`).join("");
   }
   const tom = !model.celler.length;
@@ -24305,7 +24305,7 @@ function _renderExplorerTable(model, typ, inkl) {
   const verktyg = container && container.previousElementSibling;
   if (verktyg && verktyg.classList.contains("table-tools")) verktyg.hidden = tom;
 }
-function _renderExplorerNote(model, extra) {
+function _ritaUtforskaNot(model, extra) {
   const el = document.getElementById("explore-note");
   if (!el) return;
   const antal = model.celler.filter((c) => c.liten).length;
@@ -24316,7 +24316,7 @@ function _renderExplorerNote(model, extra) {
   const dolda = model.dolda ? `${model.dolda} ${model.dolda === 1 ? "grupp döljs" : "grupper döljs"} av gruppvillkoren.` : "";
   el.textContent = [sma, kon, dolda, extra || ""].filter(Boolean).join(" ");
 }
-function _explorerUrvalEttVarde(spec, dim) {
+function _utforskaUrvalEttVarde(spec, dim) {
   const u = spec.urval;
   if (!u || u.lage === "nagot") return null;
   const falt = dim === "alder" ? "aldersgrupp" : dim;
@@ -24325,60 +24325,60 @@ function _explorerUrvalEttVarde(spec, dim) {
   const v = pa[0];
   return v.op === "enAv" && !v.inte && v.varde.length === 1 ? v.varde[0] : null;
 }
-function _explorerAidBas(etikett2) {
+function _utforskaAidBas(etikett2) {
   const m = String(etikett2 ?? "").match(/^(.*) · BAS (.*)$/);
   return m ? { aid: m[1], bas: m[2] } : null;
 }
-function _explorerMalVarde(spec, dim, radEtikett, kolEtikett) {
+function _utforskaMalVarde(spec, dim, radEtikett, kolEtikett) {
   if (spec.rad === dim) return radEtikett;
   if (spec.kolumn === dim) return kolEtikett;
-  const ur = spec.rad === "aidbas" && _explorerAidBas(radEtikett) || spec.kolumn === "aidbas" && _explorerAidBas(kolEtikett);
+  const ur = spec.rad === "aidbas" && _utforskaAidBas(radEtikett) || spec.kolumn === "aidbas" && _utforskaAidBas(kolEtikett);
   if (ur) return ur[dim];
-  return _explorerUrvalEttVarde(spec, dim);
+  return _utforskaUrvalEttVarde(spec, dim);
 }
-function explorerKanFordjupa(spec) {
-  return spec.rad === "aidbas" || spec.kolumn === "aidbas" || ["bas", "aid"].some((d) => spec.rad === d || spec.kolumn === d || _explorerUrvalEttVarde(spec, d) != null);
+function utforskaKanFordjupa(spec) {
+  return spec.rad === "aidbas" || spec.kolumn === "aidbas" || ["bas", "aid"].some((d) => spec.rad === d || spec.kolumn === d || _utforskaUrvalEttVarde(spec, d) != null);
 }
-function explorerDossierTarget(spec, radEtikett, kolEtikett) {
-  const bas = _explorerMalVarde(spec, "bas", radEtikett, kolEtikett);
-  const aidEtikett = _explorerMalVarde(spec, "aid", radEtikett, kolEtikett);
+function utforskaDossiermal(spec, radEtikett, kolEtikett) {
+  const bas = _utforskaMalVarde(spec, "bas", radEtikett, kolEtikett);
+  const aidEtikett = _utforskaMalVarde(spec, "aid", radEtikett, kolEtikett);
   if (bas == null && aidEtikett == null) return null;
   if (aidEtikett != null && String(aidEtikett).startsWith("Övriga i ")) return { hopslagen: true };
   const aid = aidEtikett == null ? null : aidAvYrke(aidEtikett);
   const traff = gruppdossierCandidates().find((c) => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
   return traff ? { key: traff.key } : { saknas: true };
 }
-function explorerHandleClick(d) {
-  if (!d || !_explorerState) return;
+function utforskaVidKlick(d) {
+  if (!d || !_utforskaTillstand) return;
   const radEtikett = d.rad != null ? d.rad : d.nyckel != null ? d.nyckel : d.x;
   if (radEtikett == null) return;
-  const mal = explorerDossierTarget(_explorerState.model.spec, radEtikett, d.kol ?? null);
+  const mal = utforskaDossiermal(_utforskaTillstand.model.spec, radEtikett, d.kol ?? null);
   if (!mal) return;
   if (mal.hopslagen) {
-    _renderExplorerNote(
-      _explorerState.model,
+    _ritaUtforskaNot(
+      _utforskaTillstand.model,
       `Gruppen har slagits ihop av flera små ${T.enhet.fl} och har därför ingen gruppdossier. Stäng av "Slå ihop små ${T.enhet.fl} till nästa AID-nivå" för att se dem var för sig.`
     );
     return;
   }
   if (mal.saknas) {
-    _renderExplorerNote(
-      _explorerState.model,
+    _ritaUtforskaNot(
+      _utforskaTillstand.model,
       `Gruppen har ingen gruppdossier, eftersom dossiern bara finns för grupper med minst ${kTroskel()} ${personOrd(kTroskel())}.`
     );
     return;
   }
   openGruppdossier(mal.key);
 }
-function explorerSlappMinne() {
-  _explorerState = null;
+function utforskaSlappMinne() {
+  _utforskaTillstand = null;
   const gd = document.getElementById("chart-explore");
   if (gd) rensaFigur(gd);
-  if (typeof explorerUrvalSlappMinne === "function") explorerUrvalSlappMinne();
+  if (typeof utforskaUrvalSlappMinne === "function") utforskaUrvalSlappMinne();
   if (typeof nedborrningGlom === "function") nedborrningGlom();
 }
-var _exploreVy = document.getElementById("view-utforska");
-function explorerTillRapport() {
+var _utforskaVy = document.getElementById("view-utforska");
+function utforskaTillRapport() {
   const namnEl = (
     /** @type {HTMLInputElement} */
     document.getElementById("explore-rapport-namn")
@@ -24396,7 +24396,7 @@ function explorerTillRapport() {
     satt("Läs in en lönefil först.", false);
     return null;
   }
-  const spec = _explorerSpec();
+  const spec = _utforskaSpec();
   const recept = nyttRecept(spec, { namn: namnEl ? namnEl.value : "", upprepa: perBas ? "bas" : null });
   if (!recept) {
     satt("Vyn går inte att spara som tabell.", false);
@@ -24413,7 +24413,7 @@ function explorerTillRapport() {
   return recept;
 }
 function uppstartUtforska() {
-  _exploreVy?.addEventListener("change", (e) => {
+  _utforskaVy?.addEventListener("change", (e) => {
     const t = (
       /** @type {HTMLElement} */
       e.target
@@ -24430,22 +24430,22 @@ function uppstartUtforska() {
     ].includes(
       /** @type {HTMLElement} */
       t.id
-    )) renderExplorer();
+    )) ritaUtforska();
   });
-  _exploreVy?.addEventListener("click", (e) => {
+  _utforskaVy?.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.closest("[data-explore-clear]")
     ) {
-      explorerNollstallUrval();
-      renderExplorer();
+      utforskaNollstallUrval();
+      ritaUtforska();
     }
   });
-  document.getElementById("btn-explore-till-rapport")?.addEventListener("click", explorerTillRapport);
+  document.getElementById("btn-explore-till-rapport")?.addEventListener("click", utforskaTillRapport);
   document.getElementById("explore-rapport-namn")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      explorerTillRapport();
+      utforskaTillRapport();
     }
   });
 }
@@ -24568,7 +24568,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     smaGrupperIExport: installningar.smaGrupperIExport !== false
   };
   if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
-  if (typeof explorerSynkaSmaLas === "function") explorerSynkaSmaLas();
+  if (typeof utforskaSynkaSmaLas === "function") utforskaSynkaSmaLas();
   let kAndrad = false;
   if (installningar.kTroskel != null) {
     const kr2 = sattKTroskel(installningar.kTroskel, { rita: false });
@@ -25226,7 +25226,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   visningNy();
   if (typeof laMinneSlapp === "function") laMinneSlapp();
   _rmMinneSlapp();
-  if (typeof explorerSlappMinne === "function") explorerSlappMinne();
+  if (typeof utforskaSlappMinne === "function") utforskaSlappMinne();
   if (typeof rapportGlomHopfallning === "function") rapportGlomHopfallning();
   state.data = [];
   state.kTroskel = K_STANDARD;
@@ -25234,7 +25234,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
   state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
   if (inaktivitetVarLast && typeof sattInaktivitetstid === "function") sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
-  if (typeof explorerSynkaSmaLas === "function") explorerSynkaSmaLas();
+  if (typeof utforskaSynkaSmaLas === "function") utforskaSynkaSmaLas();
   if (typeof _kVisaFel === "function") _kVisaFel("");
   if (typeof _synkaKTroskel === "function") _synkaKTroskel();
   aterstallReferens();
@@ -25716,7 +25716,7 @@ function _mkDossierNyckel() {
 }
 var _mkTillbaka = null;
 function _mkBorrBas() {
-  return _markering.length === 1 && _markering[0].startsWith("bas:") && typeof explorerSattUrval === "function" ? _markering[0].slice(4) : null;
+  return _markering.length === 1 && _markering[0].startsWith("bas:") && typeof utforskaSattUrval === "function" ? _markering[0].slice(4) : null;
 }
 function nedborrningTillUtforska() {
   const bas = _mkBorrBas();
@@ -25724,7 +25724,7 @@ function nedborrningTillUtforska() {
   const rad = document.getElementById("explore-rad"), kolumn = document.getElementById("explore-kolumn");
   if (!rad || !kolumn) return;
   const aktiv = document.querySelector(".nav-item.active");
-  const innan = _mkTillbaka || { ...explorerUrval(), rad: (
+  const innan = _mkTillbaka || { ...utforskaUrval(), rad: (
     /** @type {HTMLInputElement} */
     rad.value
   ), kolumn: (
@@ -25732,26 +25732,26 @@ function nedborrningTillUtforska() {
     kolumn.value
   ), flik: aktiv ? aktiv.getAttribute("data-tab") : null };
   _mkTillbaka = { ...innan, bas };
-  explorerSattUrval({ lage: "alla", villkor: [{ falt: "bas", op: "enAv", varde: [bas] }] }, []);
+  utforskaSattUrval({ lage: "alla", villkor: [{ falt: "bas", op: "enAv", varde: [bas] }] }, []);
   rad.value = "aidbas";
   kolumn.value = "ingen";
   _mkBorrRad();
   const nav = document.querySelector('.nav-item[data-tab="utforska"]');
   if (nav && nav !== aktiv) nav.click();
-  else if (typeof renderExplorer === "function") renderExplorer();
+  else if (typeof ritaUtforska === "function") ritaUtforska();
 }
 function nedborrningTillbaka() {
   const t = _mkTillbaka;
   if (!t) return;
   _mkTillbaka = null;
-  explorerSattUrval(t.urval, t.gruppVillkor);
+  utforskaSattUrval(t.urval, t.gruppVillkor);
   const rad = document.getElementById("explore-rad"), kolumn = document.getElementById("explore-kolumn");
   if (rad) rad.value = t.rad;
   if (kolumn) kolumn.value = t.kolumn;
   _mkBorrRad();
   const nav = t.flik && t.flik !== "utforska" ? document.querySelector(`.nav-item[data-tab="${t.flik}"]`) : null;
   if (nav) nav.click();
-  else if (typeof renderExplorer === "function") renderExplorer();
+  else if (typeof ritaUtforska === "function") ritaUtforska();
 }
 function nedborrningGlom() {
   _mkTillbaka = null;
@@ -27109,7 +27109,7 @@ function ritaSektorer(d) {
         <th>${stor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? "<th>Ledningsansvar kv / män</th>" : ""}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
   host.querySelectorAll("[data-sektor]").forEach((b) => b.addEventListener("click", () => {
-    explorerSattUrval({ lage: "alla", villkor: [{ falt: "sektor", op: "enAv", varde: [
+    utforskaSattUrval({ lage: "alla", villkor: [{ falt: "sektor", op: "enAv", varde: [
       /** @type {HTMLElement} */
       b.dataset.sektor
     ] }] }, []);
@@ -30807,7 +30807,7 @@ function _kUndantagFor(el, medSma) {
     iLikvardighet: !!(el.closest("#view-likvardighet") || kalla && kalla.closest("#view-likvardighet")),
     arFigur,
     figurMedSma: arFigur && !!(typeof medSma === "boolean" ? medSma : _rfExportFigur(el)?.visaSma),
-    utforskaMedSma: !arFigur && (el.id === "explore-table" || el.id === "chart-explore") && typeof explorerSmaIExport === "function" && !!explorerSmaIExport()
+    utforskaMedSma: !arFigur && (el.id === "explore-table" || el.id === "chart-explore") && typeof utforskaSmaIExport === "function" && !!utforskaSmaIExport()
   });
 }
 function _kSanktNot() {
@@ -32722,7 +32722,7 @@ function _ritaFlik(target) {
     ritaAidBasLikvardigt();
   } else if (target === "utforska" && d.length) {
     ritaLoneoversikt();
-    renderExplorer();
+    ritaUtforska();
     utAllaDiagramVidRitning();
   } else if (target === "rapporttext") medExportLage(() => {
     ritaStrukturUtkast();

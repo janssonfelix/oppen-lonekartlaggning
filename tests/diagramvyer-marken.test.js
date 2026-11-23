@@ -137,7 +137,7 @@ describe('punktsvärm: individerna packas intill varandra', () => {
     });
     it('Utforska har punktsvärm som diagramtyp', () => {
         expect(w.document.querySelector('#explore-typ option[value="svarm"]').textContent).toBe('Punktsvärm');
-        expect(w.eval("explorerTypSkal('svarm', { rad: 'bas', kolumn: null, matt: 'median' }, null)")).toBeNull();
+        expect(w.eval("utforskaTypSkal('svarm', { rad: 'bas', kolumn: null, matt: 'median' }, null)")).toBeNull();
     });
 });
 
@@ -420,7 +420,7 @@ describe('Utforska: staplade staplar, i antal eller som andel av raden', () => {
         return w2;
     };
     const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
-    const valj = (w2, val) => { for (const [id, v] of Object.entries(val)) w2.document.getElementById(id).value = v; w2.__renderExplorer(); return w2.document.getElementById('chart-explore'); };
+    const valj = (w2, val) => { for (const [id, v] of Object.entries(val)) w2.document.getElementById(id).value = v; w2.__ritaUtforska(); return w2.document.getElementById('chart-explore'); };
     it('typen kräver en kolumn, låser måttet till antal och visningen till helhet, och valet antal/andel syns bara för den', () => {
         const w2 = oppna(), d = w2.document;
         valj(w2, { 'explore-rad': 'bas', 'explore-kolumn': 'ingen', 'explore-typ': 'staplar' });
