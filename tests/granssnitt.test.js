@@ -270,6 +270,15 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         });
         expect(d.querySelector('#livscykel-content .livscykel-kvot-not').textContent).toContain('Modellen ger skillnaden i procent');
     });
+    it('modelljämförelsen när huvudregressionen inte kunde skattas: streck i huvudmodellens kolumn, aldrig "undefined"', () => {
+        const w = demo();
+        w.__renderTabContent('kon');
+        w.eval('ritaLivscykel({ error: "x" })');
+        const rader = [...w.document.querySelectorAll('#livscykel-modelljamforelse tbody tr')].map(tr => [...tr.cells].map(c => c.textContent.trim()));
+        expect(rader[0][0]).toBe('Antal personer');
+        expect(rader.slice(0, 4).map(r => r[1])).toEqual(['—', '—', '—', '—']);
+        expect(w.document.getElementById('livscykel-content').textContent).not.toContain('undefined');
+    });
     it('förändringen 25–65 år färgas på prövningen av samspelet mellan kön och ålder, inte på storleken', () => {
         const w = demo();
         w.__renderTabContent('kon');

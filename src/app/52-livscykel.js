@@ -249,7 +249,7 @@ export function ritaLivscykel(given) {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td><strong>Antal personer</strong></td><td>${primary ? primary.n : '—'}</td><td>${result.n}</td></tr>
+                        <tr><td><strong>Antal personer</strong></td><td>${h ? h.n : '—'}</td><td>${result.n}</td></tr>
                         <tr><td><strong>Förklarad del av lönespridningen (justerat R²)</strong></td><td>${h && h.adjR2 != null ? svPct((h.adjR2*100), 1) : '—'}</td><td>${svPct((result.adjR2*100), 1)}</td></tr>
                         <tr><td><strong>Löneskillnad kvinnor mot män</strong></td><td>${h && h.gapPct != null ? (h.gapPct >= 0 ? '+' : '') + svPct(h.gapPct, 1) : '—'}</td><td>${vm.livscykelGapPct >= 0 ? '+' : ''}${svPct(vm.livscykelGapPct, 1)} (vid medelåldern ${Math.round(result.ageMean)} år)</td></tr>
                         <tr><td><strong>Kön — p-värde</strong></td><td>${h && h.p != null ? (h.p < 0.001 ? '< 0,001' : svTal(h.p, 3)) : '—'} ${h && h.p != null ? sigBadge(h.p) : ''}</td><td>${pText(result.kvPValue)} ${sigBadge(result.kvPValue)}</td></tr>
