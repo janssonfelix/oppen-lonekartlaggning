@@ -213,6 +213,11 @@ varje diagram har ritats av diagramkärnan, och ritar därtill ett eget diagram 
 prövar också adressen `?demo=1`, räknar CSP-överträdelser och interna fel (ADR-31), och prövar att inget sparas och
 att ingen trafik lämnar sidan.
 
+**Röktestet prövar det som bara syns i en riktig webbläsare.** Det är den byggda filen under CSP:n från `file://`,
+lagring och nät, geometri och utskrift, PNG och SVG, nedladdningar och urklipp, äkta klick och tangentbord (ADR-80,
+ADR-81), och att varje flöde går utan konsolfel och interna fel. Vad en flik eller export innehåller prövas i jsdom.
+Ett flöde får läsa ett värde för att veta att det kom fram, men upprepar inte jsdom-testets fall.
+
 - **Kontrollerna** ligger per område i `tools/browser-smoke/` med en gemensam rigg (`tools/browser-smoke/rigg.mjs`:
   webbläsaren, sidan, `ok()` och hjälparna); `tools/browser-smoke.mjs` kör dem i en fast ordning och skriver
   sammanfattningen. Med `--bilder=<katalog>` sparas diagramkärnans exporterade PNG och SVG för granskning med ögat.
