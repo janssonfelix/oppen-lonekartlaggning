@@ -16,9 +16,9 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
     it('demots huvudtal i regressionen är detsamma med och utan ansvaret', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
-        const med = w.eval('runOLSRegression()');
+        const med = w.eval('korOLSRegression()');
         w.__state.data.forEach(r => { r.ansvarsgrupp = null; r.ansvarskoder = null; });
-        const utan = w.eval('runOLSRegression()');
+        const utan = w.eval('korOLSRegression()');
         expect(med.konPct).toBeCloseTo(utan.konPct, 10);
         expect(med.ansvarSteg).toMatchObject({ status: 'ok' });
         expect(utan.ansvarSteg).toBeNull();

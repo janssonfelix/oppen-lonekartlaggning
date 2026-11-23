@@ -19,7 +19,7 @@ import { hamtaData, state } from './12-tillstand.js';
 import { iExportLage } from './23-exportgrind.js';
 import { _oppnaBevisruta } from './27-berakningsbevis.js';
 import { KOHORT_FORBEHALL } from './40-alder-karriar.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 
 // ---- Livscykelanalys (sekundär regression) ----
 /**
@@ -56,7 +56,7 @@ export function ritaLivscykel(given) {
     _lifecycleFixBas = result.fixBas;
 
     // Jämför med primäranalysen: given från regressionskortet i samma varv, annars räknad här (ADR-17)
-    const primary = given || runOLSRegression();
+    const primary = given || korOLSRegression();
     const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
     const h = vm.huvud;
     // Modelljämförelsens rubrikrad: urvalet bakom modellerna. Bygger de på samma personer står det en gång.

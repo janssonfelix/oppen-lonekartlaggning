@@ -770,6 +770,7 @@ några av appens gamla namn; tabellen visar vad de heter nu och fylls på grupp 
 |---|---|---|
 | `13-oversikt.js` | `bootstrapCIGallande` | `bootstrapKIGallande` |
 | `31-navigering.js` | `renderTabContent` | `ritaFlik` |
+| `51-lika-arbete-regressionskort.js` | `runOLSRegression` | `korOLSRegression` |
 
 Namnen i S4 och exporten (`06-k-troskel.js`, `06-maskeringsnoter.js`, `11-diagramexport.js`, `19-konfiguration.js`,
 `22-exporthjalpare.js`, `23-exportgrind.js`, `24-excelexport.js`) nämns inte där, och inte heller de övriga i

@@ -105,7 +105,7 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
         const w = createAppWindow();
         w.__lasInDemodata();
         w.raknaBootstrapKI();
-        const r = w.runOLSRegression();
+        const r = w.korOLSRegression();
         const text = w.formateraKI(w.__state.bootstrapCI.gapPct).replace(/<[^>]*>/g, '').replace(/ /g, ' ');
         expect(text).toBe(' [95 % KI: −17,8 % till −11,9 %]');
         const { lo, hi } = w.__state.bootstrapCI.gapPct;
@@ -127,7 +127,7 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
         w.eval('fyllValjare(); lasUppFlikar();');
         w.raknaBootstrapKI();
         w.__ritaFlik('struktur');
-        expect(w.runOLSRegression().pValue).toBeGreaterThanOrEqual(0.05);
+        expect(w.korOLSRegression().pValue).toBeGreaterThanOrEqual(0.05);
         const text = w.document.getElementById('regression-card').textContent.replace(/ /g, ' ');
         const m = text.match(/Den råa löneskillnaden \((−?\d+,\d) % \[95 % KI: (−?\d+,\d) % till (−?\d+,\d) %\]\)/);
         expect(m).not.toBeNull();

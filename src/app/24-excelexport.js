@@ -30,7 +30,7 @@ import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper, l
 import { byggJamforelse, jamforelseUrvalText } from './42-jamforelse.js';
 import { _rrExcelBlad } from './44-referensoverblick.js';
 import { _aidbasExcelBlad, _aidbasLikaBlad, _aidbasMetodRader, AIDBAS_BLADNAMN, konsklassOrd } from './45-aid-bas-tabeller.js';
-import { _computePerBasGap, harAlder } from './50-regressionsmodeller.js';
+import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
 import { renderPrioritering } from './55-prioritering.js';
 import { _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
 import { rmPerBasUnderlag, rmPerBasUndertryckNoter } from './58-rapportmodell.js';
@@ -318,7 +318,7 @@ function __excelAlltBokExport() {
 /**
  * Etiketterna för de två "exkluderade p.g.a. minsta gruppstorlek"-raderna. Yrkesgrupperna
  * prövas mot redovisningströskeln (kTroskel()); BAS-regressionen avgörs av
- * statGolv() (se _computePerBasGap), så dess rad nämner golvet.
+ * statGolv() (se _raknaPerBasGap), så dess rad nämner golvet.
  */
 function _jpaExkluderadeTexter() {
     return {
@@ -404,7 +404,7 @@ function _exportJPAProtokollExport() {
     // ---- B) Identifiera JPA-grupper (likvärdigt arbete = BAS-intervall) ----
     // OLS-regression per BAS, kräver minst statGolv() av varje kön
     const basList = [...new Set(d.map(r => r.bas))].sort();
-    const perBas = _computePerBasGap(d, basList);
+    const perBas = _raknaPerBasGap(d, basList);
     // Korrigering för många samtidiga tester (Benjamini–Hochberg) över samma tester som regressionskortet och Att
     // göra: intervallen med status ok och ändligt p-värde. Ett enda test ger q = p.
     const okTests = perBas.filter(b => b.status === 'ok' && isFinite(b.pValue));

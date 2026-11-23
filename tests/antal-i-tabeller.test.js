@@ -79,7 +79,7 @@ describe('Metodtabellerna bär n i rubrikraden', () => {
         const w = demo();
         w.__ritaFlik('struktur');
         const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
-        const reg = w.eval('runOLSRegression()');
+        const reg = w.eval('korOLSRegression()');
         expect(reg.basEffekter).toBeTruthy();
         const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => { const h = [...(t.rows[0]?.cells || [])].map(c => ren(c.textContent)); return h[0] === 'BAS' && /^Nivå mot/.test(h[1] || ''); });
         expect(tabell).toBeTruthy();

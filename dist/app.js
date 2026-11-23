@@ -10798,7 +10798,7 @@ function kandidatparRader(pairs, nyckel, max = 14) {
 // src/app/50-regressionsmodeller.js
 var _RG_STEG_BAS = stegNamn("bas");
 var _RG_STEG_YRKE = stegNamn("yrkesgrupp");
-function _computePerBasGap(rows, basList) {
+function _raknaPerBasGap(rows, basList) {
   return gapPerBas(rows, basList, { golv: statGolv() });
 }
 var _harAlderFor = (
@@ -10828,10 +10828,10 @@ function sattForklaringsmodell(v, { rita = true } = {}) {
   }
   return { ok: true, modell, varningar, andrad };
 }
-function runBlinderOaxaca() {
+function korBlinderOaxaca() {
   return blinderOaxaca(hamtaData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
-function runQuantileRegressionAtAllTau() {
+function korKvantilregressionAllaTau() {
   return kvantilregressionAllaTau(hamtaData(), { modell: forklaringsmodell() });
 }
 
@@ -14781,7 +14781,7 @@ function ritaLivscykel(given) {
     return;
   }
   _lifecycleFixBas = result.fixBas;
-  const primary = given || runOLSRegression();
+  const primary = given || korOLSRegression();
   const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
   const h = vm.huvud;
   const modellCaption = !h || vm.sammaUrval ? antalRubrik(result.kvN, result.maN) : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
@@ -15061,7 +15061,7 @@ function runLifecycleRegression(fixBas) {
 }
 
 // src/app/51-lika-arbete-regressionskort.js
-function runOLSRegression() {
+function korOLSRegression() {
   return huvudregression(hamtaData(), regressionsval());
 }
 function regressionsval() {
@@ -15076,13 +15076,13 @@ function regressionsval() {
     // regressionerna per BAS-intervall och ansvarssteget
   };
 }
-function _formatPValue(p) {
+function _formateraPVarde(p) {
   if (p < 1e-3) return "p < 0,001";
   if (p < 0.01) return "p < 0,01";
   if (p < 0.05) return "p < 0,05";
   return "p = " + svTal(p, 3);
 }
-function _sigPlainText(p) {
+function _sigKlartext(p) {
   if (p < 1e-3) return "Extremt signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 1 000 fall. Mycket starkt stöd för en verklig löneskillnad.";
   if (p < 0.01) return "Mycket signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 100 fall. Starkt stöd för en verklig skillnad.";
   if (p < 0.05) return 'Signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 5 av 100 fall. Den vanliga tröskeln för en "statistiskt säkerställd" skillnad.';
@@ -15117,7 +15117,7 @@ function _budgetOrdningNot(budget) {
 function _budgetEtikett() {
   return { bas: "Förklaras av BAS-placering", alder: "Förklaras av ålder", yrke: `Förklaras av ${T.enhet.en} inom BAS` };
 }
-function _renderPerBasGapChart(perBas, bhQByBas) {
+function _ritaPerBasGapDiagram(perBas, bhQByBas) {
   const el = document.getElementById("chart-perbas-gap");
   if (!el) return;
   const ok = (perBas || []).filter((p) => p.status === "ok" && isFinite(p.gapPct));
@@ -15248,7 +15248,7 @@ function _regKvantilKlar() {
   return _regKvantilBakgrund || Promise.resolve();
 }
 function _regKvantilBerakna({ direkt = false } = {}) {
-  const qr = runQuantileRegressionAtAllTau();
+  const qr = korKvantilregressionAllaTau();
   if (!qr) return null;
   const results = qr.results.map((r) => ({ ...r, ki: null }));
   const diff = { varde: qr.diffP90P10, ki: null };
@@ -15418,7 +15418,7 @@ function ritaForklaringsmodellPanel(r) {
       }
       if (not) not.hidden = true;
       sattForklaringsmodell({ ...nu, skal: inp.value.trim() }, { rita: false });
-      ritaForklaringsmodellPanel(runOLSRegression());
+      ritaForklaringsmodellPanel(korOLSRegression());
     }
   };
   wrap.onclick = (e) => {
@@ -15443,7 +15443,7 @@ function ritaForklaringsmodellPanel(r) {
 function ritaRegressionskort() {
   const wrap = document.getElementById("regression-card");
   if (!wrap) return;
-  const r = runOLSRegression();
+  const r = korOLSRegression();
   ritaForklaringsmodellPanel(r);
   const fmT = _fmTexter(r.error ? normaliseraForklaringsmodell(null).modell : r.modell);
   const fmRubrik = document.querySelector("[data-fm-rubrik]"), fmInledning = document.querySelector("[data-fm-inledning]");
@@ -15471,7 +15471,7 @@ function ritaRegressionskort() {
     /** @type {NonNullable<ReturnType<typeof vymodellRegressionskort>>} */
     vymodellRegressionskort(r, { k: kTroskel(), rader: hamtaData(), medAlder: harAlder(), basEffektNot: (u) => _basEffektNot(u, kTroskel()) })
   );
-  const sig = _formatPValue(r.pValue);
+  const sig = _formateraPVarde(r.pValue);
   const isSig = vm.sakerstalld;
   const sign = r.konPct >= 0 ? "+" : "";
   let verdict;
@@ -15633,9 +15633,9 @@ function ritaRegressionskort() {
     const sigNiva = p.niva;
     const flag = sigNiva === "titta" ? ikon("nal") : sigNiva === "dokumentera" ? ikon("oga") : p.ejEfterKorrigering ? ikon("statusVarning") + ' <span class="text-dampad-xs">(ej efter korr.)</span>' : "";
     const cellKlass = sigNiva === "titta" ? " farg-granska fet" : "";
-    const qCell = q != null ? _formatPValue(q) : '<span class="f-dampad">—</span>';
+    const qCell = q != null ? _formateraPVarde(q) : '<span class="f-dampad">—</span>';
     const signal = sigNiva === "titta" ? { txt: ikon("statusKritisk") + " Titta närmare", title: "Statistiskt säkerställd även efter korrigering och minst 3 % (verktygets storleksgräns). Pröva om skillnaden har sakliga skäl." } : sigNiva === "dokumentera" ? { txt: ikon("statusVarning") + " Dokumentera", title: "Statistiskt säkerställd efter korrigering, men under 3 % (verktygets storleksgräns). Dokumentera sakliga skäl och följ upp." } : sigNiva === "osakert" ? { txt: ikon("statusOsaker") + " Osäkert utslag", title: "Ser signifikant ut i råa p-värdet men håller inte efter korrigering för multipel jämförelse. Presentera inte som säkerställt." } : { txt: ikon("statusIngen") + " Inget utslag", title: `Ingen statistiskt säkerställd oförklarad skillnad i ${T.niva.bf}.` };
-    return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td><td class="t-tal${cellKlass}" data-sort-value="${p.gapPct}">${sgn}${svPct(p.gapPct, 1)}</td><td class="ta-mitt ingen-radbrytning" title="${esc(signal.title)}">${signal.txt}</td><td class="col-stat tabelltal ta-mitt">${_formatPValue(p.pValue)}</td><td class="col-stat tabelltal ta-mitt">${qCell} ${flag}</td><td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon("sok")}</button></td></tr>`;
+    return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td><td class="t-tal${cellKlass}" data-sort-value="${p.gapPct}">${sgn}${svPct(p.gapPct, 1)}</td><td class="ta-mitt ingen-radbrytning" title="${esc(signal.title)}">${signal.txt}</td><td class="col-stat tabelltal ta-mitt">${_formateraPVarde(p.pValue)}</td><td class="col-stat tabelltal ta-mitt">${qCell} ${flag}</td><td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon("sok")}</button></td></tr>`;
   }).join("");
   const triedRow = r.triedSteps.map((s) => {
     const sym = s.status === "ok" ? `<span class="farg-ok">${ikon("bock", 14)}</span>` : `<span class="f-dampad">${ikon("kryss", 14)}</span>`;
@@ -15680,7 +15680,7 @@ function ritaRegressionskort() {
                         <strong>Troligt spann (95 % konfidensintervall):</strong> ${svPct(r.konPctLow, 1)} till ${svPct(r.konPctHigh, 1)}
                         <span class="info-tip" data-tooltip="95 % konfidensintervall (robusta standardfel, HC3). Intervallet visar hur säker skattningen är: upprepade man undersökningen många gånger skulle 95 % av intervallen innehålla det sanna värdet. Smalt intervall = säker skattning, brett = osäker. Klassiskt intervall för jämförelse: ${svPct(r.konPctLowClassical, 1)} till ${svPct(r.konPctHighClassical, 1)}.">${ikon("info", 14)}</span><br>
                         <strong>Statistiskt säkerställd:</strong>
-                        <span title="${esc(_sigPlainText(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? "Ja" : "Nej"} (${sig})</span><br>
+                        <span title="${esc(_sigKlartext(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? "Ja" : "Nej"} (${sig})</span><br>
                         <span class="reg-hero-kvot">Samma sak som att kvinnors lön är ${svPct(r.konKvot, 1)} av mäns ${esc(fmT.nar)} — talet i nyckeltalsraden överst i fliken.</span>
                     </div>
                 </div>
@@ -15858,14 +15858,14 @@ function ritaRegressionskort() {
                     ${r.ageEffect != null ? `<h3>Ålderseffekt</h3>
                     <table class="reg-tech-table">
                         <tr><th>Procentuell löneförändring per levnadsår</th><td>${r.ageEffect >= 0 ? "+" : ""}${svPct(r.ageEffect, 3)}</td></tr>
-                        <tr><th>p-värde</th><td>${_formatPValue(r.ageP)}</td></tr>
+                        <tr><th>p-värde</th><td>${_formateraPVarde(r.ageP)}</td></tr>
                     </table>` : ""}
                     ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje ${T.niva.en} har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
                     ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalRubrik(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
-                        ${basEffUt.effekter.map((e) => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? "+" : ""}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join("")}
+                        ${basEffUt.effekter.map((e) => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? "+" : ""}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formateraPVarde(e.p)}</td></tr>`).join("")}
                     </table>` : ""}
                     ${basEffUt.not ? `<p class="k-mask-note">${esc(basEffUt.not)}</p>` : ""}
                     ` : ""}
@@ -15877,7 +15877,7 @@ function ritaRegressionskort() {
     `;
   tillampaDataStil(wrap);
   ritaLivscykel(r);
-  _renderPerBasGapChart(r.perBas, bhQByBas);
+  _ritaPerBasGapDiagram(r.perBas, bhQByBas);
   const trappa = document.getElementById("chart-reg-trappa");
   if (trappa) ritaFigur(trappa, _regTrappaFigur(seqOk, yrkeVisas ? r.yrkesSteg : null, fmT.fras));
   const kvantil2 = document.getElementById("chart-reg-kvantil");
@@ -15904,7 +15904,7 @@ function ritaRegressionskort() {
   });
   return r;
 }
-function renderBlinderOaxacaCard(reg) {
+function ritaBlinderOaxacaKort(reg) {
   const wrap = document.getElementById("blinder-oaxaca-card");
   if (!wrap) return;
   const modell = forklaringsmodell();
@@ -15912,7 +15912,7 @@ function renderBlinderOaxacaCard(reg) {
     wrap.innerHTML = "";
     return;
   }
-  const r = runBlinderOaxaca();
+  const r = korBlinderOaxaca();
   if (!r) {
     wrap.innerHTML = `<div class="card">
             <h3 class="marg-0-0-8">Förklarad och oförklarad löneskillnad</h3>
@@ -20105,7 +20105,7 @@ function buildGruppdossier(key, delat = null) {
   if (!g) return null;
   let justerat = null;
   if (harAlder()) try {
-    const rakna = () => _computePerBasGap(hamtaData(), [g.bas]);
+    const rakna = () => _raknaPerBasGap(hamtaData(), [g.bas]);
     let perBas;
     if (!delat) perBas = rakna();
     else {
@@ -20833,7 +20833,7 @@ function _rmAvsnittenUtanUrval() {
   const year = (/* @__PURE__ */ new Date()).getFullYear(), today = (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE");
   const k = kTroskel();
   const urval = "Hela organisationen";
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   const lvRes = likvardighetResultat();
   const vm = vymodellRapport(d, {
     k,
@@ -20897,7 +20897,7 @@ function _rmAvsnittenUtanUrval() {
     lika.delar.push({ typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: [
       // Det råa gapet är ett beskrivande könsuppdelat mått och följer tröskeln (_raGapText).
       ["Kvinnors medianlön i procent av mäns", _raGapText(reg, (v) => rmAndelAvMan(v, 1))],
-      [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : "Löneskillnad, inget räknat bort", { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formatPValue(reg.pValue)})`, fet: true }],
+      [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : "Löneskillnad, inget räknat bort", { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formateraPVarde(reg.pValue)})`, fet: true }],
       ["Modell", `log(lön) ~ ${reg.modelDesc} · ${reg.n} obs · R² ${svPct(reg.R2 * 100, 1)}`]
     ] });
     lika.delar.push(dampad(`Löneskillnaden ${reg.fras ? `efter ${reg.fras}` : "utan kontroller"} anges som en skillnad i procent: negativ när kvinnor ligger lägre.`));
@@ -21065,12 +21065,12 @@ function _rmAvsnittenUtanUrval() {
       nyckel([
         ["Antal observationer", `${reg.n} (kvinnor: ${reg.nKvAnalysed}, män: ${reg.nMaAnalysed})`],
         ["Kvinnors medianlön i procent av mäns", _raGapText(reg, (v) => rmAndelAvMan(v, 1))],
-        [`Oförklarad skillnad${kritisk ? " (statistiskt säkerställd och minst 3 %)" : ""}`, { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formatPValue(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
+        [`Oförklarad skillnad${kritisk ? " (statistiskt säkerställd och minst 3 %)" : ""}`, { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formateraPVarde(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
         ...reg.ageEffect != null ? [["Ålderseffekt", `${rmCell(reg.ageEffect, "tecken2")} per år`]] : [],
         ["R² / justerad R²", `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
         ...reg.basRef != null && !reg.modell.yrkesgrupp ? [[`${stor(T.niva.fl)} i modellen`, `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : [],
         ...reg.modell.yrkesgrupp && reg.yrkesSteg ? [[`${stor(T.enhet.fl)} i modellen`, `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : [],
-        ...basEffUt.effekter?.length ? [["BAS-effekter", `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map((e) => `${e.bas} ${rmCell(e.pct, "tecken2")} (${_formatPValue(e.p)})`).join("; ")}`]] : []
+        ...basEffUt.effekter?.length ? [["BAS-effekter", `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map((e) => `${e.bas} ${rmCell(e.pct, "tecken2")} (${_formateraPVarde(e.p)})`).join("; ")}`]] : []
       ])
     );
     if (basEffUt.not) {
@@ -21099,7 +21099,7 @@ function _rmAvsnittenUtanUrval() {
       {
         typ: "tabell",
         kolumner: [{ rubrik: "BAS", typ: "text" }, { rubrik: "N", typ: "antal" }, { rubrik: "Kvinnor / män", typ: "text" }, { rubrik: "Oförklarad skillnad", typ: "tecken2" }, { rubrik: "Signifikans", typ: "text" }, { rubrik: "Säkerställd, minst 3 %", typ: "text" }],
-        rader: perBas.map((pb) => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formatPValue(pb.pValue), pb.sakerstalld ? "ja" : ""])
+        rader: perBas.map((pb) => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formateraPVarde(pb.pValue), pb.sakerstalld ? "ja" : ""])
       }
     );
   } else if (reg && reg.error) {
@@ -21626,7 +21626,7 @@ function _byggOgonblicksbildExport() {
   const d = hamtaData();
   if (!d.length) return null;
   const m = ogonblicksbildMatt(d, kTroskel());
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   const dq = bedomningUnderlag();
   return {
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -22528,7 +22528,7 @@ function _efterInlastData() {
   dataStatus.className = "status-msg success";
   markeraFilrutaInlast("upload-cell-data", "Inläst");
   ritaKravstatus();
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   ritaUnderlagetsKvalitet({ reg });
   ritaKartlaggningensSteg({ reg });
   updateGdprBanner();
@@ -25035,11 +25035,11 @@ function uppstartOrganisationspaket() {
 
 // src/app/20-demodata-diagnostik.js
 function korDiagnostik() {
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   return demodiagnostik(
     { rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },
     // regressionen skickas vidare (ADR-17)
-    { nivaFl: T.niva.fl, underlagEtikett: (s) => UK_ETIKETT[s], pText: _formatPValue }
+    { nivaFl: T.niva.fl, underlagEtikett: (s) => UK_ETIKETT[s], pText: _formateraPVarde }
   );
 }
 var DEMO_ORGANISATION = "Exempelkommunen";
@@ -25101,7 +25101,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   ritaLoneskillnadPerBas(lsBasVymodell());
   ritaAlderOchLon("__ALLA__");
   ritaKravstatus();
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   ritaUnderlagetsKvalitet({ reg });
   updateGdprBanner();
   ritaKonsistenskontroll();
@@ -26076,7 +26076,7 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
   const baseM = byggGrundurval();
   const skippedTooFewKvOrMa = vm.ejJamforbara.length;
   const maskedYrken = vm.utelamnade.length;
-  const reg = given || runOLSRegression();
+  const reg = given || korOLSRegression();
   const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct(reg.R2 * 100, 1)}`;
   sattMetodik("matrix", {
     title: "Lika arbete — multivariat regression",
@@ -26325,7 +26325,7 @@ function ritaLikaArbeteTopp({ reg: given } = {}) {
   const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
   let reg = null;
   try {
-    reg = given || runOLSRegression();
+    reg = given || korOLSRegression();
   } catch (e) {
     rapporteraFel("Lika arbete: toppen", e);
   }
@@ -26382,7 +26382,7 @@ function ritaLonestrukturNycklar() {
   }).length;
   let reg = null;
   try {
-    reg = runOLSRegression();
+    reg = korOLSRegression();
   } catch (e) {
     rapporteraFel("Lönestruktur: nyckeltalen", e);
   }
@@ -27176,7 +27176,7 @@ function _byggSammanfattning(d, ctx) {
   else lines.push(`  • ${_konUtelamnatNot()}`);
   let reg = null;
   try {
-    reg = runOLSRegression();
+    reg = korOLSRegression();
   } catch (_e) {
     reg = null;
   }
@@ -27677,7 +27677,7 @@ function _exportJPAProtokollExport() {
   const yrkenExkluderadeOjamn = jamforda.filter((g) => g.niva === "folj" || g.niva === "balanserat").length;
   jpaYrken.sort((a, b) => a.gapPct - b.gapPct);
   const basList = [...new Set(d.map((r) => r.bas))].sort();
-  const perBas = _computePerBasGap(d, basList);
+  const perBas = _raknaPerBasGap(d, basList);
   const okTests = perBas.filter((b) => b.status === "ok" && isFinite(b.pValue));
   const qVarden = bhJustera(okTests.map((b) => b.pValue));
   const bhQ = new Map(okTests.map((b, i) => [b, qVarden[i]]));
@@ -28763,7 +28763,7 @@ var _agRiktning = (v) => v < 0 ? "lägre" : "högre";
 function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
   const items = [];
   if (!state.data.length) return items;
-  const reg = endastGrupper ? null : given || (typeof runOLSRegression === "function" ? runOLSRegression() : null);
+  const reg = endastGrupper ? null : given || (typeof korOLSRegression === "function" ? korOLSRegression() : null);
   if (!endastGrupper) {
     try {
       const uk = typeof bedomningUnderlag === "function" ? bedomningUnderlag({ reg }) : null;
@@ -30372,7 +30372,7 @@ function ritaKravstatus() {
 function bedomningUnderlag({ reg: given } = {}) {
   const d = hamtaData();
   if (!d.length) return null;
-  const reg = given || runOLSRegression();
+  const reg = given || korOLSRegression();
   const modell = reg.error ? "fel" : reg.fellBackFromFull ? "minimal" : "full";
   const mde = reg.error ? null : mdeFranSe(reg.seKonR);
   const modellFras2 = !reg.error && reg.modell && !forklaringsmodellArStandard({ ...reg.modell, skal: "" }) ? reg.fras : void 0;
@@ -30523,7 +30523,7 @@ function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
   }, { n: 2, tab: "bestammelser", title: "2. Regler & praxis", status: "ej", detail: "Gå igenom de sex granskningsområdena — kan göras direkt." }));
   rows.push(safe(() => {
     if (!hasData) return { n: 3, tab: "matrix", title: `3. Lika arbete — samma ${T.enhet.en}`, status: "ej", detail: "Kräver inläst underlag." };
-    const reg = givenReg || (typeof runOLSRegression === "function" ? runOLSRegression() : null);
+    const reg = givenReg || (typeof korOLSRegression === "function" ? korOLSRegression() : null);
     const ok = !!(reg && !reg.error);
     const { t, d } = hanterade2(["Lika arbete", "Lika arbete, fördjupning"]);
     return { n: 3, tab: "matrix", title: `3. Lika arbete — samma ${T.enhet.en}`, ...stegLikaArbete({ regressionOk: ok, t, d }) };
@@ -30665,7 +30665,7 @@ function ritaOversiktDelar() {
     ["nyckeltal", () => ritaNyckeltal()],
     ["kompliansöversikt", () => ritaKravstatus()],
     ["Att göra", () => {
-      reg = runOLSRegression();
+      reg = korOLSRegression();
       punkter = ritaAtgardslista({ reg });
     }],
     ["processöversikten", () => ritaKartlaggningensSteg({ punkter, reg })]
@@ -30988,7 +30988,7 @@ function _omritningssteg() {
   steg.push(["underlagets kvalitet", () => {
     if (typeof ritaUnderlagetsKvalitet !== "function") return;
     regFangst = indata();
-    reg = typeof runOLSRegression === "function" ? runOLSRegression() : void 0;
+    reg = typeof korOLSRegression === "function" ? korOLSRegression() : void 0;
     ritaUnderlagetsKvalitet({ reg });
   }]);
   let punkter;
@@ -32071,7 +32071,7 @@ function _rapportunderlagBlockExport() {
   const d = hamtaData();
   if (!d.length) return [];
   const k = kTroskel();
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   let lv = null;
   try {
     lv = likvardighetResultat();
@@ -32704,7 +32704,7 @@ function _ritaFlik(target) {
     ritaStatistikLage();
     byggJamforelse();
   } else if (target === "matrix" && d.length) {
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     ritaLikaArbete(laVymodell(), { reg });
     ritaPersonerAttGranska();
     ritaAidBasLika();
@@ -32713,7 +32713,7 @@ function _ritaFlik(target) {
   else if (target === "struktur" && d.length) {
     ritaStruktur();
     ritaLoneskillnadPerBas(lsBasVymodell());
-    _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(ritaRegressionskort()));
+    _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => ritaBlinderOaxacaKort(ritaRegressionskort()));
     ritaGapUppdelning();
     ritaLonestrukturNycklar();
   } else if (target === "loneoversyn" && d.length) ritaLoneoversyn();

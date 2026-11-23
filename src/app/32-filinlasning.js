@@ -32,7 +32,7 @@ import { ritaReferensKort } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _hpRensaDemoSkal } from './56-handlingsplan.js';
 
 // ---- File Upload: Struktur CSV ----
@@ -140,7 +140,7 @@ function _efterInlastData() {
     ritaKravstatus();
     // Regressionen körs en gång i det här varvet och skickas vidare till underlagets kvalitet, processöversikten och
     // Att göra, som annars kör den var för sig på samma underlag (ADR-17: ett värde, ingen cache).
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     ritaUnderlagetsKvalitet({ reg });
     ritaKartlaggningensSteg({ reg });
     updateGdprBanner();

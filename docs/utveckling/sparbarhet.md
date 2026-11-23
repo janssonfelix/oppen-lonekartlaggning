@@ -80,7 +80,7 @@ avsnitt 11.
 
 | ID | Vad som räknas | Funktion och fil | Indata | Bygger på | Tester | Referensfall |
 |---|---|---|---|---|---|---|
-| B3.1 | Huvudtalet: oförklarad löneskillnad med förklaringsmodellen, golven 30 och 5 | `huvudregression`, `regression.js`; adaptern `runOLSRegression` i `src/app/51-lika-arbete-regressionskort.js` | lön, kön, ålder, BAS, AID | `regressionsmodellen.md` §1–§3, §8–§9; ADR-44, 53, 56, 63, 64 | `tests/huvudregression.test.js`, `tests/huvudregression-adapter.test.js`, `tests/berakningar-las.test.js` | `stat-referens-varden.json` (endast kön) |
+| B3.1 | Huvudtalet: oförklarad löneskillnad med förklaringsmodellen, golven 30 och 5 | `huvudregression`, `regression.js`; adaptern `korOLSRegression` i `src/app/51-lika-arbete-regressionskort.js` | lön, kön, ålder, BAS, AID | `regressionsmodellen.md` §1–§3, §8–§9; ADR-44, 53, 56, 63, 64 | `tests/huvudregression.test.js`, `tests/huvudregression-adapter.test.js`, `tests/berakningar-las.test.js` | `stat-referens-varden.json` (endast kön) |
 | B3.2 | Den stegvisa uppdelningen och steget *+ AID-etikett inom BAS* | `stegvisGap`, `inomYrkesgrupp`, `regression.js` | som ovan | `regressionsmodellen.md` §4; ADR-46, 77 | `tests/regression.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
 | B3.3 | Gapet per BAS-intervall | `gapPerBas`, `regression.js` | som ovan | `regressionsmodellen.md` §9 | `tests/regression.test.js` | saknas |
 | B3.4 | Blinder-Oaxaca | `blinderOaxaca`, `regression.js` | som ovan | `regressionsmodellen.md` §5; ADR-53 | `tests/stat-referens.test.js` | `stat-referens-varden.json` |

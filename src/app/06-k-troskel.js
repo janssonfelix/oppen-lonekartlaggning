@@ -18,7 +18,7 @@ import { tomStatistikcacher } from './30-statistikcacher.js';
 import { ritaFlik } from './31-navigering.js';
 import { _fcRensaParMal } from './36-loneoversyn.js';
 import { forklaringsmodell } from './50-regressionsmodeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { explorerSmaIExport } from './70-utforska.js';
 import { diagramKopiaKalla } from './74-alla-diagram.js';
 import { ritaGruppdossier } from './80-gruppdossier.js';
@@ -390,7 +390,7 @@ export function _omritningssteg() {
     steg.push(['underlagets kvalitet', () => {
         if (typeof ritaUnderlagetsKvalitet !== 'function') return;
         regFangst = indata();
-        reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
+        reg = typeof korOLSRegression === 'function' ? korOLSRegression() : undefined;
         ritaUnderlagetsKvalitet({ reg });
     }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).

@@ -194,7 +194,7 @@ describe('stort demo: ingångarna', () => {
 // Nyckeltalen lästa ur demot efter ombyggnaden till 5 000 personer. Talen ändras med avsikt när demot ändras: läs av
 // de nya värdena och skriv in dem här.
 const SD_RATT_GAP = -0.99;      // median kvinnor / median män − 1, i %
-const SD_KONPCT = -2.35;        // runOLSRegression().konPct, i %
+const SD_KONPCT = -2.35;        // korOLSRegression().konPct, i %
 const SD_SMA_GRUPPER = 101;     // grupper (AID-kod i BAS-intervallet, ADR-89) med n < 10 eller ett kön < 10
 
 describe('stort demo: nyckeltalen', () => {
@@ -208,7 +208,7 @@ describe('stort demo: nyckeltalen', () => {
     });
 
     it('könskoefficienten i regressionen', () => {
-        expect(Math.abs(w.eval('runOLSRegression()').konPct - SD_KONPCT)).toBeLessThanOrEqual(0.3);
+        expect(Math.abs(w.eval('korOLSRegression()').konPct - SD_KONPCT)).toBeLessThanOrEqual(0.3);
     });
 
     it('antalet små grupper', () => {

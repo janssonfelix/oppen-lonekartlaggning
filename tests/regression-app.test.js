@@ -26,7 +26,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         lägg('301', 'F', 50000, 'man', 8);   // enkönad grupp: bidrar inte
         return rader;
     };
-    const kör = () => { const w = createAppWindow(); w.__state.data = underlag(); return { w, r: w.eval('runOLSRegression()') }; };
+    const kör = () => { const w = createAppWindow(); w.__state.data = underlag(); return { w, r: w.eval('korOLSRegression()') }; };
     it('kortet visar steget med sin mening och budgeten en del för yrkesgrupp; huvudtalet är steget + Ålder', () => {
         const { w, r } = kör();
         w.eval('ritaRegressionskort()');
@@ -42,7 +42,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
     });
     it('utan AID och yrke faller steget bort som för få', () => {
         const w = createAppWindow(); w.__state.data = underlag().map(x => ({ ...x, aid: undefined, yrke: undefined }));
-        const r = w.eval('runOLSRegression()');
+        const r = w.eval('korOLSRegression()');
         expect(r.yrkesSteg.status).toBe('too_few');
         expect(w.eval('ritaRegressionskort(); document.getElementById("regression-card").textContent')).not.toMatch(/yrkesgrupp, BAS-intervall och ålder/);
     });
@@ -430,7 +430,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
     };
     it('ålder bortvald: modellen saknar ålder, och steget + Yrkesgrupp räknas utan ålder', async () => {
         const { w, modellRad, stegRad } = await metodrader({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
-        expect(w.eval('runOLSRegression().modell')).toMatchObject({ bas: true, alder: false, yrkesgrupp: false });
+        expect(w.eval('korOLSRegression().modell')).toMatchObject({ bas: true, alder: false, yrkesgrupp: false });
         expect(modellRad).toMatch(/~ kön \+ BAS-intervall/);
         expect(modellRad).not.toMatch(/ålder/);
         expect(stegRad).not.toMatch(/utöver ålder/);
@@ -439,7 +439,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
     });
     it('BAS bortvalt: modellen saknar BAS, och steget + Yrkesgrupp räknas inte', async () => {
         const { w, modellRad, stegRad } = await metodrader({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
-        expect(w.eval('runOLSRegression().yrkesSteg')).toBeNull();
+        expect(w.eval('korOLSRegression().yrkesSteg')).toBeNull();
         expect(modellRad).toMatch(/~ kön \+ ålder;/);
         expect(modellRad).not.toMatch(/BAS/);
         expect(stegRad).not.toMatch(/visas som sista steg/);
@@ -447,7 +447,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
     });
     it('yrkesgrupp vald: modellen har yrkesgrupp inom BAS och inomtransformation, och steget är huvudtalet', async () => {
         const { w, modellRad, stegRad } = await metodrader({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
-        expect(w.eval('runOLSRegression().modell.yrkesgrupp')).toBe(true);
+        expect(w.eval('korOLSRegression().modell.yrkesgrupp')).toBe(true);
         expect(modellRad).toMatch(/AID-etikett inom BAS/);
         expect(modellRad).toMatch(/inomtransformation/);
         expect(stegRad).not.toMatch(/ingår inte i huvudtalet/);
@@ -502,7 +502,7 @@ describe('regressionskortets tekniska specifikation', () => {
     it('visar antalet observationer med hävstång > 0,99, som anpassaOLS räknar', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
-        const r = w.eval('runOLSRegression()');
+        const r = w.eval('korOLSRegression()');
         expect(Number.isInteger(r.hHoga)).toBe(true);
         w.__ritaFlik('struktur');
         const t = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
@@ -531,8 +531,8 @@ describe('[B3.12] multivariat analys: pedagogik (kronor, budget, per-BAS-diagram
 // Regressionen cachas aldrig (ADR-17), men inom ett varv körs den en gång och skickas vidare som argument: underlagets
 // kvalitet, Att göra och processöversikten läser samma underlag och samma val. På 55 000 rader är en körning ~0,4 s.
 describe('regressionen körs en gång per varv vid inläsning och tröskelbyte', () => {
-    const raknaRegressioner = w => w.eval('window.__regKorningar = 0; const __regOrig = runOLSRegression; '
-        + 'runOLSRegression = function () { window.__regKorningar++; return __regOrig(); };');
+    const raknaRegressioner = w => w.eval('window.__regKorningar = 0; const __regOrig = korOLSRegression; '
+        + 'korOLSRegression = function () { window.__regKorningar++; return __regOrig(); };');
     const html = (w, id) => w.document.getElementById(id).innerHTML;
     const DELAR = ['underlagets-kvalitet', 'process-tracker'];
     it('inläsningen (lönefil och demo) kör regressionen en gång och ritar samma sak som en egen körning per del', () => {

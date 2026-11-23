@@ -157,7 +157,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __buildFardigcheck: buildFardigcheck,
         __renderKvalitetssakring: renderKvalitetssakring,
         __ritaKravstatus: ritaKravstatus,
-        __runOLS: runOLSRegression,
+        __runOLS: korOLSRegression,
         __ritaRegressionskort: ritaRegressionskort,
         __diagramexportFilnamn: diagramexportFilnamn,
         __diagramexportRader: diagramexportRader,

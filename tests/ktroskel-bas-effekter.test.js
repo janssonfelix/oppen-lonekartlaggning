@@ -43,7 +43,7 @@ const LITEN_REF = [['A', 17300, 4], ['B', 30000, 30], ['C', 34700, 30], ['D', 38
 
 // En effekt som den skrivs: en och två decimaler, med komma och punkt, utan tecken.
 const former = v => [...new Set([1, 2].flatMap(d => { const t = Math.abs(v).toFixed(d); return [t, t.replace('.', ',')]; }))];
-const effekter = w => w.eval('runOLSRegression()').basEffekter;
+const effekter = w => w.eval('korOLSRegression()').basEffekter;
 const lackorI = (utdata, dolda) => {
     const ut = [];
     for (const [namn, text] of utdata.filter(([n]) => n !== 'skärm: alla flikar')) {
@@ -86,7 +86,7 @@ describe('[S4] BAS-effekterna i regressionen: ett intervall under tröskeln har 
     it('referensintervallet under tröskeln: ingen effekt står i det som lämnar verktyget, och noten säger varför', async () => {
         const w = fonsterMed(LITEN_REF);
         const e = effekter(w);
-        expect(w.eval('runOLSRegression()').basRef).toBe('A');
+        expect(w.eval('korOLSRegression()').basRef).toBe('A');
         const dolda = e.flatMap(x => [...former(x.pct), ...former(x.low), ...former(x.high)]);
         const utdata = await samlaUtdata(w);
         expect(lackorI(utdata, dolda)).toEqual([]);

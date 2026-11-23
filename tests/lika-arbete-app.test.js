@@ -348,8 +348,8 @@ describe('ansvarskod i Lika arbete', () => {
         expect(w.document.querySelectorAll('#matrix-table .la-underrad').length).toBe(0);
     });
     it('regressionen: ansvarssteget redovisas separat och huvudtalet är oförändrat', () => {
-        const med = oppna(true).eval('runOLSRegression()');
-        const utan = oppna(false).eval('runOLSRegression()');
+        const med = oppna(true).eval('korOLSRegression()');
+        const utan = oppna(false).eval('korOLSRegression()');
         expect(med.konPct).toBeCloseTo(utan.konPct, 10);
         expect(med.explainedShare).toBeCloseTo(utan.explainedShare, 10);
         expect(med.sequential.map(s => s.name)).toEqual(utan.sequential.map(s => s.name));

@@ -1261,7 +1261,7 @@ describe('Lika arbete — urval, slutsatser och avsnittens nyckeltal', () => {
         const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
         expect(kort[1][1]).toBe(storst.kvot.toFixed(1).replace('.', ',') + ' %');
         // Regressionens skillnad omräknad till kvinnors lön i % av mäns (100 + konPct), samma mått som raden i övrigt.
-        const reg = w2.eval('runOLSRegression()');
+        const reg = w2.eval('korOLSRegression()');
         expect(kort[2][1]).toBe((100 + reg.konPct).toFixed(1).replace('.', ',') + ' %');
         expect(reg.konKvot).toBeCloseTo(100 + reg.konPct, 10);
         expect(kort[3][1]).toBe(String(d.querySelectorAll('#pag-tabell tbody tr').length));

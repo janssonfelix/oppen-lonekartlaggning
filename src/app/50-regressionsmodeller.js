@@ -8,7 +8,7 @@
 // läser appens tillstånd (hamtaData(), statGolv()) och skickar det som parametrar.
 //
 // OLS-kärnan (anpassaOLS m.fl.) står i src/lib/stat.js.
-// Huvudregressionens adapter, runOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
+// Huvudregressionens adapter, korOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
 import { blinderOaxaca, forklaringsmodellArStandard, gapPerBas, harAlderIRader, kvantilregressionAllaTau, normaliseraForklaringsmodell, stegNamn } from '../lib/regression.js';
 import { _ritaOmAllaFlikar, statGolv } from './06-k-troskel.js';
 import { hamtaData, state } from './12-tillstand.js';
@@ -20,7 +20,7 @@ export const _RG_STEG_BAS = stegNamn('bas');
 export const _RG_STEG_YRKE = stegNamn('yrkesgrupp');
 
 // Per-BAS conditional regressions: gap inom varje BAS efter ålderskontroll
-export function _computePerBasGap(rows, basList) {
+export function _raknaPerBasGap(rows, basList) {
     return gapPerBas(rows, basList, { golv: statGolv() });
 }
 
@@ -71,13 +71,13 @@ export function sattForklaringsmodell(v, { rita = true } = {}) {
 }
 
 // Blinder-Oaxaca-dekomposition på appens data (hamtaData()).
-export function runBlinderOaxaca() {
+export function korBlinderOaxaca() {
     // Samma variabler som huvudmodellen (ADR-53): förklaringsmodellen ur tillståndet (ADR-56).
     return blinderOaxaca(hamtaData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
 
 // Kvantilregression vid τ ∈ {.10, .50, .90} på appens data (hamtaData()), på huvudmodellens variabler enligt
 // förklaringsmodellen utan yrkesgrupp (ADR-63).
-export function runQuantileRegressionAtAllTau() {
+export function korKvantilregressionAllaTau() {
     return kvantilregressionAllaTau(hamtaData(), { modell: forklaringsmodell() });
 }

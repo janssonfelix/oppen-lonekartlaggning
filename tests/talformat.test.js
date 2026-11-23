@@ -53,9 +53,9 @@ describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)',
         expect(w.__tillCsv(rader.slice(1))).toBe('012345 Påhittat yrke;36 262 kr;-3,25 %');
     });
     it('p-värdet hålls ihop: «p < 0,001» bryts inte mellan tecknet och talet', () => {
-        expect(w.eval('_formatPValue(0.0004)')).toBe(`p${NBSP}<${NBSP}0,001`);
-        expect(w.eval('_formatPValue(0.03)')).toBe(`p${NBSP}<${NBSP}0,05`);
-        expect(w.eval('_formatPValue(0.1234)')).toBe(`p${NBSP}=${NBSP}0,123`);
+        expect(w.eval('_formateraPVarde(0.0004)')).toBe(`p${NBSP}<${NBSP}0,001`);
+        expect(w.eval('_formateraPVarde(0.03)')).toBe(`p${NBSP}<${NBSP}0,05`);
+        expect(w.eval('_formateraPVarde(0.1234)')).toBe(`p${NBSP}=${NBSP}0,123`);
     });
     it('talinläsningen läser tillbaka samma värde', () => {
         expect(w.eval(`tolkaTalStrikt(svKr(-31417)).value`)).toBe(-31417);

@@ -29,7 +29,7 @@ import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
 import { _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
 import { konsklassOrd } from './45-aid-bas-tabeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _lifecycleFixBas, runLifecycleRegression } from './52-livscykel.js';
 import { _selectedPrioReference, computePrioritization } from './55-prioritering.js';
 import { _handlingsplanSeedRows, _hpArEgen } from './56-handlingsplan.js';
@@ -52,7 +52,7 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
     const items = [];
     if (!state.data.length) return items;
     // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
-    const reg = endastGrupper ? null : (given || (typeof runOLSRegression === 'function' ? runOLSRegression() : null));
+    const reg = endastGrupper ? null : (given || (typeof korOLSRegression === 'function' ? korOLSRegression() : null));
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.

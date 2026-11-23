@@ -31,7 +31,7 @@ import { _konTathetFigur } from './40-alder-karriar.js';
 import { _pagGrans } from './43-personer-att-granska.js';
 import { aidbasDefinition, aidbasDefinitionText, aidbasGrans } from './45-aid-bas-tabeller.js';
 import { ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, harAlder } from './50-regressionsmodeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { basdossierKnapp } from './81-basdossier.js';
 import { kTroskelLank } from './86-installningar.js';
 
@@ -390,7 +390,7 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
     const baseM = byggGrundurval();
     const skippedTooFewKvOrMa = vm.ejJamforbara.length;
     const maskedYrken = vm.utelamnade.length;
-    const reg = given || runOLSRegression();
+    const reg = given || korOLSRegression();
     const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct((reg.R2*100), 1)}`;
     sattMetodik('matrix', {
         title: 'Lika arbete — multivariat regression',
@@ -653,7 +653,7 @@ export function ritaLikaArbeteTopp({ reg: given } = {}) {
     const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
     // Regressionen och personerna.
     /** @type {any} */ let reg = null;
-    try { reg = given || runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
+    try { reg = given || korOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
     const regOk = reg && !reg.error && typeof reg.konPct === 'number';
     /** @type {number|null} */ let personer = null;
     try { const r = flaggaIndivider(d, { minGrupp: statGolv(), grans: _pagGrans() }); personer = r.provade.kv + r.provade.ma ? r.flaggade.length : null; }
@@ -696,7 +696,7 @@ export function ritaLonestrukturNycklar() {
     // Kolumnen Underrep. Kön är radens sista.
     const ojamna = konRader.filter(tr => { const c = /** @type {HTMLTableRowElement} */ (tr).cells; return c.length && c[c.length - 1].textContent.trim() !== '-'; }).length;
     /** @type {any} */ let reg = null;
-    try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lönestruktur: nyckeltalen', e); }
+    try { reg = korOLSRegression(); } catch (e) { rapporteraFel('Lönestruktur: nyckeltalen', e); }
     const regOk = reg && !reg.error && typeof reg.konPct === 'number';
     _laNyckel('nyckel-ls-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} att granska` : '', basOver.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-ls-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');

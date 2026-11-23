@@ -61,7 +61,7 @@ describe('k-tröskeln styr varje flik', () => {
     });
     it('vid 5 körs ingen regression per BAS med färre än 10 av något kön', () => {
         const w = fonster(5);
-        const r = w.eval(`_computePerBasGap(hamtaData(), ['E', 'S1'])`);
+        const r = w.eval(`_raknaPerBasGap(hamtaData(), ['E', 'S1'])`);
         expect(r.find(x => x.bas === 'E').status).toBe('too_few');
         expect(r.find(x => x.bas === 'S1').status).not.toBe('too_few');
     });
@@ -122,9 +122,9 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
     it('vid 25 prövas grupperna om 20 (10 av varje kön) på skärmen men inte i exporten', () => {
         const w = fonster(25);
         const status = uttryck => w.eval(uttryck).find(p => p.bas === 'A').status;
-        expect(status(`_computePerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
-        expect(status(`medExportLage(() => _computePerBasGap(hamtaData(), ['A']))`)).toBe('too_few');
-        expect(status(`_computePerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
+        expect(status(`_raknaPerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
+        expect(status(`medExportLage(() => _raknaPerBasGap(hamtaData(), ['A']))`)).toBe('too_few');
+        expect(status(`_raknaPerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
         // Personer att granska (bara på skärmen): grupperna om 20 prövas; de två om 6 inte, och noten säger vad man kan göra.
         w.eval('ritaPersonerAttGranska()');
         expect(normalisera(w.document.getElementById('pag-innehall').textContent))

@@ -22,7 +22,7 @@ import { ritaPersonerAttGranska } from './43-personer-att-granska.js';
 import { ritaReferensOverblick } from './44-referensoverblick.js';
 import { ritaAidBasLika, ritaAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
-import { renderBlinderOaxacaCard, ritaRegressionskort, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { ritaBlinderOaxacaKort, ritaRegressionskort, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { ritaLivscykel } from './52-livscykel.js';
 import { renderPrioritering } from './55-prioritering.js';
 import { renderHandlingsplanSeed } from './56-handlingsplan.js';
@@ -400,14 +400,14 @@ function _ritaFlik(target) {
     }
     else if (target === "benchmark"    && d.length) { ritaReferensOverblick(); ritaLonepolitik(); ritaStatistikLage(); byggJamforelse(); }
     else if (target === "matrix"       && d.length) {
-        const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
+        const reg = korOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
         ritaLikaArbete(laVymodell(), { reg }); ritaPersonerAttGranska(); ritaAidBasLika(); ritaLikaArbeteTopp({ reg });
     }
     else if (target === "prioritering" && d.length) renderPrioritering();
     else if (target === "struktur"     && d.length) {
         ritaStruktur(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
-        _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(ritaRegressionskort()));
+        _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => ritaBlinderOaxacaKort(ritaRegressionskort()));
         ritaGapUppdelning(); ritaLonestrukturNycklar();
     }
     else if (target === "loneoversyn"  && d.length) ritaLoneoversyn();

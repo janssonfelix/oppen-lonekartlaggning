@@ -21,7 +21,7 @@ import { byggAtgardslista, ritaAtgardslista } from './18-atgardslista.js';
 import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laOversiktRader } from './41-lika-arbete.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _handlingsplanSeedRows } from './56-handlingsplan.js';
 import { _bes8Areas } from './61-regler-och-praxis.js';
 import { kTroskelLank } from './86-installningar.js';
@@ -88,7 +88,7 @@ export function ritaKravstatus() {
 export function bedomningUnderlag({ reg: given } = {}) {
     const d = hamtaData();
     if (!d.length) return null;
-    const reg = given || runOLSRegression();
+    const reg = given || korOLSRegression();
     const modell = reg.error ? 'fel' : (reg.fellBackFromFull ? 'minimal' : 'full');   // 'full' = den valda modellen gick att skatta (ADR-56)
     const mde = reg.error ? null : mdeFranSe(reg.seKonR);
     // Frasen följer med bara när modellen inte är standard, så att standardtexten (och golden-facit) står still (ADR-56).
@@ -270,7 +270,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
     // 3. § 9 Lika arbete (oförklarat gap + antal grupper att förklara/åtgärda)
     rows.push(safe(() => {
         if (!hasData) return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' };
-        const reg = givenReg || ((typeof runOLSRegression === 'function') ? runOLSRegression() : null);
+        const reg = givenReg || ((typeof korOLSRegression === 'function') ? korOLSRegression() : null);
         const ok = !!(reg && !reg.error);
         const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
         return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ...stegLikaArbete({ regressionOk: ok, t, d }) };
@@ -452,7 +452,7 @@ export function ritaOversiktDelar() {
     /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => ritaNyckeltal()], ['kompliansöversikt', () => ritaKravstatus()],
-        ['Att göra', () => { reg = runOLSRegression(); punkter = ritaAtgardslista({ reg }); }],
+        ['Att göra', () => { reg = korOLSRegression(); punkter = ritaAtgardslista({ reg }); }],
         ['processöversikten', () => ritaKartlaggningensSteg({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (ritaFlik('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');

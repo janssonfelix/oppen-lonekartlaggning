@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 /**
  * Huvudregressionen (verktygets huvudtal) direkt mot src/lib/regression.js, utan jsdom och utan appen: så kan
- * huvudtalet räknas i Node av den som vill granska det. Att appens adapter (runOLSRegression) skickar rätt argument
+ * huvudtalet räknas i Node av den som vill granska det. Att appens adapter (korOLSRegression) skickar rätt argument
  * och ger exakt samma returvärde vaktas av tests/huvudregression-adapter.test.js; att talen på demodatan inte ändras
  * vaktas av ögonblicksbilden i tests/berakningar-las.test.js.
  *

@@ -20,11 +20,11 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         await ritaAlla(w);   // det som räknades klart i bakgrunden första varvet är med
         const fore = Object.fromEntries(flikar(w).map(f => [f, runda(w, f)]));
         let regressioner = 0;
-        const orig = w.runOLSRegression;
-        w.runOLSRegression = function (...a) { regressioner++; return orig.apply(this, a); };
+        const orig = w.korOLSRegression;
+        w.korOLSRegression = function (...a) { regressioner++; return orig.apply(this, a); };
         // Varje flik öppnas efter alla de andra, också dokumentationsflikarna som ritas i exportläget.
         for (const flik of flikar(w)) await byt(w, flik);
-        w.runOLSRegression = orig;
+        w.korOLSRegression = orig;
         expect(Object.fromEntries(flikar(w).map(f => [f, runda(w, f)]))).toEqual(fore);
         expect(regressioner).toBe(0);
         expect(flikar(w).length).toBeGreaterThan(12);

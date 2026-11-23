@@ -12,7 +12,7 @@
  * globalt tillstånd.
  *
  * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
- * och runOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
+ * och korOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
  * som läser hamtaData(), statGolv() och resten av tillståndet. OLS-kärnan
  * (anpassaOLS, invertera, matrisprodukt, pVardeTvasidigt, tKvantil) ligger i stat.js. Ingen modell här
  * räknar BAS som ett tal; BAS-rangen (basRangordning) finns kvar i likvardighet.js för Lägre krav.
@@ -669,7 +669,7 @@ export const HUVUDREGRESSION_MIN_PER_KON = 5;
  * vilket intervall som blir referens.
  *
  * Allt kommer in som argument; funktionen läser inget tillstånd och sparar ingenting (ADR-17). Appens adapter är
- * runOLSRegression i 51-lika-arbete-regressionskort.js.
+ * korOLSRegression i 51-lika-arbete-regressionskort.js.
  * @param {any[]} rader lönefilens rader ({lon, kon, alder, bas, aid?, yrke?, ansvarsgrupp?}); filtreras här
  * @param {{modell?: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}|null, medAlder?: boolean,
  *   kInstalld: number, golv: number}} opts

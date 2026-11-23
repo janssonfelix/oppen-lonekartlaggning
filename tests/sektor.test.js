@@ -119,7 +119,7 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
 });
 
 describe('sektor: översikten och huvudregressionen ger samma tal på samma urval (två kopior av modellen)', () => {
-    // justeradSkillnad (regression.js) och runOLSRegression (regressionskortet) räknar samma modell var för sig. På ett
+    // justeradSkillnad (regression.js) och korOLSRegression (regressionskortet) räknar samma modell var för sig. På ett
     // urval med ett enda huvudområde ska översikten ge huvudtalet: koefficienten, gränserna, n och k.
     const LON = { A: 28000, C: 29000, D: 36000 };
     const BAS_KV = ['A', 'A', 'C', 'C', 'C', 'D'], BAS_MA = ['A', 'C', 'D', 'D'];
@@ -132,7 +132,7 @@ describe('sektor: översikten och huvudregressionen ger samma tal på samma urva
             const rader = urval(medAlder);
             const w = createAppWindow();
             w.__state.data = rader.map(r => ({ ...r }));
-            const huvud = w.eval('runOLSRegression()');
+            const huvud = w.eval('korOLSRegression()');
             expect(huvud.error).toBeUndefined();
             expect(huvud.fellBackFromFull).toBeFalsy();
             const v = sektorsTabell(rader, { k: 10 })[0];

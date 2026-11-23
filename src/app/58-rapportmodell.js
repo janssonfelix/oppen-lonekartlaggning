@@ -47,7 +47,7 @@ import { _laOversiktRader, _laTrattGlesNot, laLikaGrupper } from './41-lika-arbe
 import { referensOverblick } from './44-referensoverblick.js';
 import { konsklassOrd, lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, harAlder } from './50-regressionsmodeller.js';
-import { _formatPValue, _yrkesStegText, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _formateraPVarde, _yrkesStegText, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _handlingsplanSeedRows, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
 import { _bes8Areas } from './61-regler-och-praxis.js';
 import { _abForandringText, _abGruppAntal, _abKr, _abSpridningText, AB_SPRIDNING_NOT, abGrupperEjJamforbara, arsjamforelse } from './73-arsbokslut.js';
@@ -519,7 +519,7 @@ function _rmAvsnittenUtanUrval() {
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
     const urval = 'Hela organisationen';
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     const lvRes = likvardighetResultat();
     // Allt som räknas, maskeras och bedöms: src/lib/vymodell-rapport.js. Här skrivs orden och delarna.
     const vm = vymodellRapport(d, { k, golv: statGolv(), bas: hamtaBasIntervall(), reg, lika: laLikaGrupper(d, k), lvPar: lvRes && lvRes.pairs,
@@ -581,7 +581,7 @@ function _rmAvsnittenUtanUrval() {
         lika.delar.push({ typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: [
             // Det råa gapet är ett beskrivande könsuppdelat mått och följer tröskeln (_raGapText).
             ['Kvinnors medianlön i procent av mäns', _raGapText(reg, v => rmAndelAvMan(v, 1))],
-            [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : 'Löneskillnad, inget räknat bort', { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formatPValue(reg.pValue)})`, fet: true }],
+            [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : 'Löneskillnad, inget räknat bort', { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formateraPVarde(reg.pValue)})`, fet: true }],
             ['Modell', `log(lön) ~ ${reg.modelDesc} · ${reg.n} obs · R² ${svPct(reg.R2 * 100, 1)}`],
         ] });
         lika.delar.push(dampad(`Löneskillnaden ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'} anges som en skillnad i procent: negativ när kvinnor ligger lägre.`));
@@ -705,12 +705,12 @@ function _rmAvsnittenUtanUrval() {
             nyckel([
                 ['Antal observationer', `${reg.n} (kvinnor: ${reg.nKvAnalysed}, män: ${reg.nMaAnalysed})`],
                 ['Kvinnors medianlön i procent av mäns', _raGapText(reg, v => rmAndelAvMan(v, 1))],
-                [`Oförklarad skillnad${kritisk ? ' (statistiskt säkerställd och minst 3 %)' : ''}`, { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formatPValue(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
+                [`Oförklarad skillnad${kritisk ? ' (statistiskt säkerställd och minst 3 %)' : ''}`, { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formateraPVarde(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
                 ...(reg.ageEffect != null ? [['Ålderseffekt', `${rmCell(reg.ageEffect, 'tecken2')} per år`]] : []),
                 ['R² / justerad R²', `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
                 ...(reg.basRef != null && !reg.modell.yrkesgrupp ? [[`${stor(T.niva.fl)} i modellen`, `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : []),
                 ...(reg.modell.yrkesgrupp && reg.yrkesSteg ? [[`${stor(T.enhet.fl)} i modellen`, `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : []),
-                ...(basEffUt.effekter?.length ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
+                ...(basEffUt.effekter?.length ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formateraPVarde(e.p)})`).join('; ')}`]] : []),
             ]));
         if (basEffUt.not) { regression.delar.push(stycke(basEffUt.not, 'not')); regression.utelamnat.push(basEffUt.referensUtelamnad ? 'BAS-effekterna (referensintervallet under tröskeln)' : 'BAS-effekter för intervall under tröskeln'); }
         // Det bortvalda (ADR-56): en mening per variabel, med skälet.
@@ -725,7 +725,7 @@ function _rmAvsnittenUtanUrval() {
         const perBas = vm.regression.perBas;
         if (perBas.length) regression.delar.push({ typ: 'rubrik', niva: 3, text: `Per ${T.niva.en} (separata regressioner)` },
             { typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'N', typ: 'antal' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: 'Oförklarad skillnad', typ: 'tecken2' }, { rubrik: 'Signifikans', typ: 'text' }, { rubrik: 'Säkerställd, minst 3 %', typ: 'text' }],
-              rader: perBas.map(pb => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formatPValue(pb.pValue), pb.sakerstalld ? 'ja' : '']) });
+              rader: perBas.map(pb => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formateraPVarde(pb.pValue), pb.sakerstalld ? 'ja' : '']) });
     } else if (reg && reg.error) {
         regression.delar.push(stycke(reg.error));
         const forsok = (reg.triedSteps || []).map(st => `${st.desc || st.name}${st.status === 'ok' ? '' : st.status === 'singular' ? ' (multikollinearitet)' : st.status === 'too_few' ? ' (för få obs)' : ''}`);

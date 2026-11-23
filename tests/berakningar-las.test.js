@@ -40,8 +40,8 @@ describe('beräkningar på demodatan (låsta tal)', () => {
     const w = createAppWindow();
     beforeAll(() => { w.__lasInDemodata(); });
 
-    it('[B3.1] regressionen (runOLSRegression) ger samma tal', () => {
-        expect(stabil(w.__runOLS())).toMatchSnapshot('runOLSRegression');
+    it('[B3.1] regressionen (korOLSRegression) ger samma tal', () => {
+        expect(stabil(w.__runOLS())).toMatchSnapshot('korOLSRegression');
     });
 
     it('översiktens bootstrap-KI (state.bootstrapCI utan elapsed) ger samma tal', () => {

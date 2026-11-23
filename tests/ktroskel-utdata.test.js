@@ -731,7 +731,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         return w;
     };
     const perBas = w => {
-        const pb = w.eval(`_computePerBasGap(hamtaData(), ${JSON.stringify(BAS)})`);
+        const pb = w.eval(`_raknaPerBasGap(hamtaData(), ${JSON.stringify(BAS)})`);
         const q = w.eval(`bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
         return Object.fromEntries(pb.map((b, i) => [b.bas, { ...b, q: q[i] }]));
     };
@@ -793,7 +793,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         }
         w.__state.data = rader;
         w.eval('fyllValjare(); lasUppFlikar();');
-        const pb = w.eval(`_computePerBasGap(hamtaData(), ['E'])`);
+        const pb = w.eval(`_raknaPerBasGap(hamtaData(), ['E'])`);
         expect(pb).toHaveLength(1);
         expect(pb[0].status).toBe('ok');
         const p = pb[0].pValue;
@@ -802,7 +802,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         // Kortet: q-cellen visar talet, inte —.
         w.eval('ritaRegressionskort()');
         const rad = [...w.document.querySelectorAll('#perbas-table tbody tr')].find(tr => tr.cells[0].textContent.trim() === 'E');
-        expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formatPValue(${p})`));
+        expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formateraPVarde(${p})`));
         // Protokollet: samma q, lika med p.
         const { bas } = await protokollet(w);
         const prot = bas.slice(1).filter(r => r[1] === 'E');

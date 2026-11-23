@@ -31,7 +31,7 @@ import { hamtaData, policyFor, policyNivaEtikett, referensKortnamn, state } from
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline } from './41-lika-arbete.js';
-import { _computePerBasGap, harAlder } from './50-regressionsmodeller.js';
+import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
 import { _selectedPrioReference, computePrioritization, generateMotivationSuggestions } from './55-prioritering.js';
 import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlingsplan.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
@@ -76,7 +76,7 @@ export function buildGruppdossier(key, delat = null) {
     // Justerat (åldersrensat) gap för gruppens BAS. Utan ålder i lönefilen (ADR-64) visar dossiern inget sådant.
     let justerat = null;
     if (harAlder()) try {
-        const rakna = () => _computePerBasGap(hamtaData(), [g.bas]);
+        const rakna = () => _raknaPerBasGap(hamtaData(), [g.bas]);
         let perBas;
         if (!delat) perBas = rakna();
         else { if (!delat.perBas.has(g.bas)) delat.perBas.set(g.bas, rakna()); perBas = delat.perBas.get(g.bas); }

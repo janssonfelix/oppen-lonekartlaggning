@@ -16,7 +16,7 @@ vi.setConfig({ testTimeout: 30000 });
 describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln för varje kön', () => {
     const NOT = /ojusterade steget[^.]*visas inte[^.]*färre än 10 personer/;
     const tal = w => {
-        const r = w.eval('runOLSRegression()');
+        const r = w.eval('korOLSRegression()');
         const steg = Object.fromEntries(r.sequential.map(s => [s.name, s.gapPct]));
         return { r, forsta: steg['Endast kön'], bas: steg['+ BAS-intervall'], justerat: r.konPct };
     };
@@ -77,7 +77,7 @@ describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln f
         }
     }, 120000);
     it('Blinder-Oaxaca (som delar upp det råa medelgapet) körs aldrig med ett kön under tröskeln: golvet är max(tröskeln, 10)', () => {
-        for (const k of [null, 5, 7]) expect(fonsterMan(k, SJU_MAN).eval('runBlinderOaxaca()'), String(k)).toBeNull();
+        for (const k of [null, 5, 7]) expect(fonsterMan(k, SJU_MAN).eval('korBlinderOaxaca()'), String(k)).toBeNull();
         const w = fonsterMan(null, SJU_MAN);
         w.__ritaFlik('struktur');
         expect(w.document.getElementById('blinder-oaxaca-card').textContent).toMatch(/För få observationer/);
@@ -472,7 +472,7 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
         return p ? normalisera(p.textContent).replace(/\s+/g, ' ').trim() : null;
     };
     const meningar = t => t.replace(/^Multipel jämförelse-korrigering:\s*/, '').split(/(?<=[.;])\s+(?=[A-ZÅÄÖ])/).filter(Boolean);
-    const antalTester = w => (w.eval('runOLSRegression()').perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
+    const antalTester = w => (w.eval('korOLSRegression()').perBas || []).filter(p => p.status === 'ok' && isFinite(p.pValue)).length;
     it('demodatan: texten säger hur många tester som körs, inte "20+"', () => {
         const w = createAppWindow();
         w.__lasInDemodata();

@@ -89,7 +89,7 @@ describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
 describe('regressionen körs en gång per funktion, inte en gång per läsare (ADR-17 utan cache)', () => {
     it('Att göra kör regressionen en gång och skickar den vidare till underlagsbedömningen', () => {
         const w = fonster(null);
-        w.eval('window.__ols = 0; const __r = runOLSRegression; runOLSRegression = function () { window.__ols++; return __r(); };');
+        w.eval('window.__ols = 0; const __r = korOLSRegression; korOLSRegression = function () { window.__ols++; return __r(); };');
         w.eval('byggAtgardslista()');
         expect(w.__ols).toBe(1);
         w.eval('window.__ols = 0; byggAtgardslista({ endastGrupper: true })');

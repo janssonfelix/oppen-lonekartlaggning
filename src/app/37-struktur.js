@@ -27,7 +27,7 @@ import { _laggTillMetodblad, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalp
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivInline, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { explorerSattUrval } from './72-utforska-urval.js';
 import { basdossierKandidater, basdossierUtelamnade, basintervallUtkastText, buildBasdossier } from './81-basdossier.js';
 import { kTroskelLank } from './86-installningar.js';
@@ -446,7 +446,7 @@ function _byggSammanfattning(d, ctx) {
     lines.push('Löneskillnad (kvinnors lön i procent av mäns):');
     if (ctx.konOk) lines.push(`  • Kvinnors genomsnittslön är ${andelAvMan(ctx.meanGap)} av mäns, och medianlönen ${andelAvMan(ctx.medGap)} av mäns.`);
     else lines.push(`  • ${_konUtelamnatNot()}`);
-    /** @type {any} */ let reg = null; try { reg = runOLSRegression(); } catch (_e) { reg = null; }
+    /** @type {any} */ let reg = null; try { reg = korOLSRegression(); } catch (_e) { reg = null; }
     if (reg && !reg.error) {
         lines.push(`  • ${reg.fras ? `Efter kontroll för ${reg.fras} kvarstår en oförklarad skillnad` : 'Utan att något räknats bort är skillnaden'} på ${fmtPct(reg.konPct)} (negativ när kvinnor ligger lägre; ${reg.pValue < 0.05 ? 'statistiskt säkerställt' : 'ej statistiskt säkerställt'}).`);
     }

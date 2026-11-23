@@ -27,7 +27,7 @@ import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { _formatPValue, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _formateraPVarde, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _hpDemoSkal } from './56-handlingsplan.js';
 
 // ---- #16 Testdata + självdiagnostik ----
@@ -35,9 +35,9 @@ import { _hpDemoSkal } from './56-handlingsplan.js';
 
 // Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
 function korDiagnostik() {
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },   // regressionen skickas vidare (ADR-17)
-        { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formatPValue });
+        { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formateraPVarde });
 }
 
 // Demolägets påhittade organisation och ställningstagande (ADR-28). Bara i demoläget;
@@ -111,7 +111,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     ritaLoneskillnadPerBas(lsBasVymodell());
     ritaAlderOchLon('__ALLA__');
     ritaKravstatus();
-    const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
+    const reg = korOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
     ritaUnderlagetsKvalitet({ reg });
     updateGdprBanner();
     ritaKonsistenskontroll();

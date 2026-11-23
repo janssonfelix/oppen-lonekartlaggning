@@ -16,7 +16,7 @@
  * centrerar) och de centrerade designkolumnerna (så att referensskriptet i
  * Python kan räkna på exakt samma X och y utan att känna verktygets logik).
  * Centreringen följer verktyget: ålder centreras på radmedel, BAS-rang på
- * medelvärdet av de UNIKA rangerna (se runQuantileRegressionAtAllTau).
+ * medelvärdet av de UNIKA rangerna (se korKvantilregressionAllaTau).
  */
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

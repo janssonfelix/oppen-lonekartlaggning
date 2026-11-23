@@ -23,7 +23,7 @@ import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { laLikaGrupper } from './41-lika-arbete.js';
 import { referensOverblick } from './44-referensoverblick.js';
 import { aidbasDefinition, aidbasGrans, lvJamforelse } from './45-aid-bas-tabeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _handlingsplanSeedRows, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 import { arsjamforelse } from './73-arsbokslut.js';
@@ -60,7 +60,7 @@ function _rapportunderlagBlockExport() {
     const d = hamtaData();
     if (!d.length) return [];
     const k = kTroskel();
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     /** @type {any} */ let lv = null;
     try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
     const hpSeed = _handlingsplanSeedRows();

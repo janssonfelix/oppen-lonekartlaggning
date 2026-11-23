@@ -23,7 +23,7 @@ import { hamtaData, state } from './12-tillstand.js';
 import { bootstrapKIGallande, formateraKI } from './13-oversikt.js';
 import { iExportLage, visningNy } from './23-exportgrind.js';
 import { _bevisForPerBasRad, _oppnaBevisruta } from './27-berakningsbevis.js';
-import { _RG_STEG_BAS, _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, forklaringsmodell, harAlder, runBlinderOaxaca, runQuantileRegressionAtAllTau, sattForklaringsmodell } from './50-regressionsmodeller.js';
+import { _RG_STEG_BAS, _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, forklaringsmodell, harAlder, korBlinderOaxaca, korKvantilregressionAllaTau, sattForklaringsmodell } from './50-regressionsmodeller.js';
 import { ritaLivscykel } from './52-livscykel.js';
 
 /**
@@ -33,7 +33,7 @@ import { ritaLivscykel } from './52-livscykel.js';
  * @returns {{error?: string, errorCode?: string, [k: string]: any}} vid fel { error, errorCode } (ev. triedSteps, diagnostics);
  *   annars konPct, konPctLow, konPctHigh, sequential, perBas m.fl. — se huvudregression.
  */
-export function runOLSRegression() {
+export function korOLSRegression() {
     return huvudregression(hamtaData(), regressionsval());
 }
 
@@ -48,7 +48,7 @@ export function regressionsval() {
 }
 
 // Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.
-export function _formatPValue(p) {
+export function _formateraPVarde(p) {
     if (p < 0.001) return 'p\u00a0<\u00a00,001';
     if (p < 0.01)  return 'p\u00a0<\u00a00,01';
     if (p < 0.05)  return 'p\u00a0<\u00a00,05';
@@ -56,7 +56,7 @@ export function _formatPValue(p) {
 }
 
 // Plain-text tolkning av p-värdet, används som tooltip
-function _sigPlainText(p) {
+function _sigKlartext(p) {
     // p = sannolikheten att få en minst så stor skillnad OM det inte fanns någon
     // verklig skillnad — inte sannolikheten att resultatet "beror på slump".
     if (p < 0.001) return 'Extremt signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 1 000 fall. Mycket starkt stöd för en verklig löneskillnad.';
@@ -130,7 +130,7 @@ function _budgetEtikett() {
  * Per-BAS-diagram: det justerade (åldersrensade) gapet per BAS-intervall som
  * punkter med 95 % KI mot nollinjen. Tabellen finns kvar som a11y-alternativ.
  */
-function _renderPerBasGapChart(perBas, bhQByBas) {
+function _ritaPerBasGapDiagram(perBas, bhQByBas) {
     const el = document.getElementById('chart-perbas-gap');
     if (!el) return;
     const ok = (perBas || []).filter(p => p.status === 'ok' && isFinite(p.gapPct));
@@ -243,7 +243,7 @@ let _regKvantilBakgrund = null;
 /** Löftet för den pågående bakgrundsberäkningen, eller ett uppfyllt när ingen pågår (tester väntar in det). */
 export function _regKvantilKlar() { return _regKvantilBakgrund || Promise.resolve(); }
 /**
- * Kvantilregressionens tre skattningar (runQuantileRegressionAtAllTau) med ett percentil-bootstrap-KI per τ och för
+ * Kvantilregressionens tre skattningar (korKvantilregressionAllaTau) med ett percentil-bootstrap-KI per τ och för
  * skillnaden P90 − P10 (ADR-63). Designen är _rgKvantilDesign — samma byggare och samma radurval som punktskattningen
  * (huvudmodellens variabler enligt förklaringsmodellen, utan yrkesgrupp). Varje omsampling drar rader med
  * återläggning och bygger designen på nytt ur dem, så att referensintervallet är det första som finns i
@@ -255,7 +255,7 @@ export function _regKvantilKlar() { return _regKvantilBakgrund || Promise.resolv
  *   kiUtelamnad:string, kiVantar?: boolean, nyckel?: string}}
  */
 function _regKvantilBerakna({ direkt = false } = {}) {
-    const qr = runQuantileRegressionAtAllTau();
+    const qr = korKvantilregressionAllaTau();
     if (!qr) return null;
     const results = qr.results.map(r => ({ ...r, ki: null }));
     const diff = { varde: qr.diffP90P10, ki: null };
@@ -413,7 +413,7 @@ function ritaForklaringsmodellPanel(r) {
             }
             if (not) not.hidden = true;
             sattForklaringsmodell({ ...nu, skal: inp.value.trim() }, { rita: false });
-            ritaForklaringsmodellPanel(runOLSRegression());   // noteringen bär skälet; inga tal ändras
+            ritaForklaringsmodellPanel(korOLSRegression());   // noteringen bär skälet; inga tal ändras
         }
     };
     wrap.onclick = e => {
@@ -436,7 +436,7 @@ function ritaForklaringsmodellPanel(r) {
 export function ritaRegressionskort() {
     const wrap = document.getElementById('regression-card');
     if (!wrap) return;
-    const r = runOLSRegression();
+    const r = korOLSRegression();
     ritaForklaringsmodellPanel(r);
     const fmT = _fmTexter(r.error ? normaliseraForklaringsmodell(null).modell : r.modell);
     const fmRubrik = document.querySelector('[data-fm-rubrik]'), fmInledning = document.querySelector('[data-fm-inledning]');
@@ -468,7 +468,7 @@ export function ritaRegressionskort() {
     // ----- Lyckad estimering -----
     const vm = /** @type {NonNullable<ReturnType<typeof vymodellRegressionskort>>} */ (
         vymodellRegressionskort(r, { k: kTroskel(), rader: hamtaData(), medAlder: harAlder(), basEffektNot: u => _basEffektNot(u, kTroskel()) }));
-    const sig    = _formatPValue(r.pValue);
+    const sig    = _formateraPVarde(r.pValue);
     const isSig  = vm.sakerstalld;
     const sign   = r.konPct >= 0 ? '+' : '';
 
@@ -675,7 +675,7 @@ export function ritaRegressionskort() {
                    : p.ejEfterKorrigering ? ikon('statusVarning') + ' <span class="text-dampad-xs">(ej efter korr.)</span>'
                    : '';
         const cellKlass = sigNiva === 'titta' ? ' farg-granska fet' : '';
-        const qCell = q != null ? _formatPValue(q) : '<span class="f-dampad">—</span>';
+        const qCell = q != null ? _formateraPVarde(q) : '<span class="f-dampad">—</span>';
         // Klarspråkssignal — samma logik som flaggorna, men i ord i stället för p/q.
         const signal = sigNiva === 'titta'
                 ? { txt: ikon('statusKritisk') + ' Titta närmare', title: 'Statistiskt säkerställd även efter korrigering och minst 3 % (verktygets storleksgräns). Pröva om skillnaden har sakliga skäl.' }
@@ -687,7 +687,7 @@ export function ritaRegressionskort() {
         return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td>`
             + `<td class="t-tal${cellKlass}" data-sort-value="${p.gapPct}">${sgn}${svPct(p.gapPct, 1)}</td>`
             + `<td class="ta-mitt ingen-radbrytning" title="${esc(signal.title)}">${signal.txt}</td>`
-            + `<td class="col-stat tabelltal ta-mitt">${_formatPValue(p.pValue)}</td>`
+            + `<td class="col-stat tabelltal ta-mitt">${_formateraPVarde(p.pValue)}</td>`
             + `<td class="col-stat tabelltal ta-mitt">${qCell} ${flag}</td>`
             + `<td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon('sok')}</button></td></tr>`;
     }).join('');
@@ -751,7 +751,7 @@ export function ritaRegressionskort() {
                         <strong>Troligt spann (95 % konfidensintervall):</strong> ${svPct(r.konPctLow, 1)} till ${svPct(r.konPctHigh, 1)}
                         <span class="info-tip" data-tooltip="95 % konfidensintervall (robusta standardfel, HC3). Intervallet visar hur säker skattningen är: upprepade man undersökningen många gånger skulle 95 % av intervallen innehålla det sanna värdet. Smalt intervall = säker skattning, brett = osäker. Klassiskt intervall för jämförelse: ${svPct(r.konPctLowClassical, 1)} till ${svPct(r.konPctHighClassical, 1)}.">${ikon('info', 14)}</span><br>
                         <strong>Statistiskt säkerställd:</strong>
-                        <span title="${esc(_sigPlainText(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? 'Ja' : 'Nej'} (${sig})</span><br>
+                        <span title="${esc(_sigKlartext(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? 'Ja' : 'Nej'} (${sig})</span><br>
                         <span class="reg-hero-kvot">Samma sak som att kvinnors lön är ${svPct(r.konKvot, 1)} av mäns ${esc(fmT.nar)} — talet i nyckeltalsraden överst i fliken.</span>
                     </div>
                 </div>
@@ -929,14 +929,14 @@ export function ritaRegressionskort() {
                     ${r.ageEffect != null ? `<h3>Ålderseffekt</h3>
                     <table class="reg-tech-table">
                         <tr><th>Procentuell löneförändring per levnadsår</th><td>${r.ageEffect >= 0 ? '+' : ''}${svPct(r.ageEffect, 3)}</td></tr>
-                        <tr><th>p-värde</th><td>${_formatPValue(r.ageP)}</td></tr>
+                        <tr><th>p-värde</th><td>${_formateraPVarde(r.ageP)}</td></tr>
                     </table>` : ''}
                     ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje ${T.niva.en} har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
                     ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalRubrik(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
-                        ${basEffUt.effekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join('')}
+                        ${basEffUt.effekter.map(e => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? '+' : ''}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formateraPVarde(e.p)}</td></tr>`).join('')}
                     </table>` : ''}
                     ${basEffUt.not ? `<p class="k-mask-note">${esc(basEffUt.not)}</p>` : ''}
                     ` : ''}
@@ -953,7 +953,7 @@ export function ritaRegressionskort() {
     // Per-BAS-diagram + växel för statistiska detaljer (pedagogik-omgången).
     // Diagrammet ritas efter innerHTML så containern finns; tabellen är kvar
     // som tillgänglighetsalternativ och p/q ligger bakom växeln.
-    _renderPerBasGapChart(r.perBas, bhQByBas);
+    _ritaPerBasGapDiagram(r.perBas, bhQByBas);
     // Trappan och kvantilkurvan: bilder av tal som kortet redan visar i tabell.
     const trappa = document.getElementById('chart-reg-trappa');
     if (trappa) ritaFigur(trappa, _regTrappaFigur(seqOk, yrkeVisas ? r.yrkesSteg : null, fmT.fras));
@@ -987,12 +987,12 @@ export function ritaRegressionskort() {
  * Renderar Blinder-Oaxaca-kortet i EU-matris-fliken (efter ritaRegressionskort).
  * @param {any} [reg] huvudregressionens resultat från den som just kört den (ADR-17); bär det bortvalda (ADR-56)
  */
-export function renderBlinderOaxacaCard(reg) {
+export function ritaBlinderOaxacaKort(reg) {
     const wrap = document.getElementById('blinder-oaxaca-card');
     if (!wrap) return;
     const modell = forklaringsmodell();
     if (!modell.bas && !modell.alder) { wrap.innerHTML = ''; return; }   // endast kön: inget att dela upp (ADR-56)
-    const r = runBlinderOaxaca();
+    const r = korBlinderOaxaca();
     if (!r) {
         wrap.innerHTML = `<div class="card">
             <h3 class="marg-0-0-8">Förklarad och oförklarad löneskillnad</h3>

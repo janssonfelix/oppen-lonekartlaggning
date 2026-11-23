@@ -31,7 +31,7 @@ import { uppdateraAktivFlik } from './31-navigering.js';
 import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversyn.js';
 import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
 import { sattLonemanad } from './45-aid-bas-tabeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _readCostSettings } from './55-prioritering.js';
 import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, renderHandlingsplanSeed } from './56-handlingsplan.js';
 import { sattRapportUrval } from './58-rapportmodell.js';
@@ -495,7 +495,7 @@ function _byggOgonblicksbildExport() {
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
     const m = ogonblicksbildMatt(d, kTroskel());
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     const dq = bedomningUnderlag();
     return {
         timestamp: new Date().toISOString(),

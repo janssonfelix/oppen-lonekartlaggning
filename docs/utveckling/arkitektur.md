@@ -30,7 +30,7 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
 3. `tolkaLonerad` i `src/lib/inlasning.js` tolkar talen, könet och BAS-intervallet.
 4. Raderna läggs i `state.data` (`src/app/12-tillstand.js`). Vyerna läser dem med `hamtaData()`.
 5. Vyerna räknar genom tunna adaptrar till lib. Två exempel:
-   - `runOLSRegression` (`src/app/51-lika-arbete-regressionskort.js`) skickar tillståndet till `huvudregression` i
+   - `korOLSRegression` (`src/app/51-lika-arbete-regressionskort.js`) skickar tillståndet till `huvudregression` i
      `src/lib/regression.js`.
    - `computePrioritization` (`src/app/55-prioritering.js`) skickar tillståndet till `prioritera` i
      `src/lib/prioritering.js`.

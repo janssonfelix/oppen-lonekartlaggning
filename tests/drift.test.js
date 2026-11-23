@@ -173,7 +173,7 @@ describe('likvärdigt arbete: lib ger reproducerbara konfidensintervall', () => 
 // ska delegera till lib.
 describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
     const regSrc = readFileSync(join(root, 'src', 'app', '50-regressionsmodeller.js'), 'utf8');
-    const adaptrar = ['_computePerBasGap', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];
+    const adaptrar = ['_raknaPerBasGap', 'korBlinderOaxaca', 'korKvantilregressionAllaTau'];
     const libNamn = /import \{([^}]*)\} from '\.\.\/lib\/regression\.js'/.exec(regSrc)[1].split(',').map(s => s.trim().split(/\s+as\s+/).pop());
 
     it('innehåller inga egna beräkningar (ingen log eller OLS-anrop)', () => {
