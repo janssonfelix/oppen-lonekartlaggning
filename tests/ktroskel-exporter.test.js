@@ -205,6 +205,17 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         expect(antal(null)).toBe(1);
         expect(antal(25)).toBe(2);
     });
+    it('Likvärdigt arbete: diagnostiken på skärmen nämner tröskeln som de små grupperna räknades med', () => {
+        const w = createAppWindow();
+        const rader = [];
+        const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
+        lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        w.__renderTabContent('likvardighet');
+        const text = w.document.getElementById('likvardighet-content').textContent.replace(/\s+/g, ' ');
+        expect(text).toContain('varav 1 grupp med n < 10');
+    });
     it('Likvärdigt arbete: ett tröskelbyte efter inläsningen räknar inte om paren, och antalet små grupper följer tröskeln', () => {
         const w = createAppWindow();
         const rader = [];

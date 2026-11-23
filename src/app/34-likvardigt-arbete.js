@@ -299,7 +299,7 @@ export function ritaLikvardigtArbete() {
                         <li>Kvinnodominerade (${kvDomGransText()}): <strong>${d.organisation.kvDomFunna}</strong></li>
                         <li>Interna ${T.jamforelse.fl} (${jamforelseGransText()}): <strong class="farg-ok">${d.organisation.ickeKvFunna}</strong> <small class="f-dampad">(${vm.poang ? 'den enda jämförelsekällan med poäng' : 'primär jämförelsekälla'})</small></li>
                         ${d.organisation.kvDomMedNLessThanK > 0
-                            ? `<li><span class="f-dampad">•varav ${d.organisation.kvDomMedNLessThanK} grupp${d.organisation.kvDomMedNLessThanK === 1 ? '' : 'er'} med n &lt; ${kTroskel()} (inkluderade ändå — ingen k-mask i denna analys)</span></li>`
+                            ? `<li><span class="f-dampad">•varav ${d.organisation.kvDomMedNLessThanK} grupp${d.organisation.kvDomMedNLessThanK === 1 ? '' : 'er'} med n &lt; ${kInstalld()} (inkluderade ändå — ingen k-mask i denna analys)</span></li>`
                             : ''}
                         ${d.organisation.exempelKvDom.length
                             ? `<li class="marg-t-4"><small class="f-dampad">Topp 3: ${d.organisation.exempelKvDom.map(esc).join(' · ')}</small></li>`
