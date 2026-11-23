@@ -17,15 +17,30 @@ import { arKvinna, arMan } from './kon.js';
 
 
 /**
+ * Kvinnors och mäns medianlön och kvoten mellan dem: det enda stället där verktygets centrala mått räknas. Bara rader
+ * med lön över 0 räknas. `konOk` är att båda könen har minst max(1, k) personer (k-anonymitet: annars pekar måtten ut
+ * de få i det mindre könet); medianerna, kvoten (kvinnors median i procent av mäns) och gapet (kvoten minus 100) är
+ * null när konOk är falskt. Antalen står alltid kvar. Anroparen i appen skickar gällande tröskel; standardvärdet 1
+ * finns för enhetstesterna.
+ * @returns {{nKv:number, nMa:number, medKv:number, medMa:number, kvotPct:number, gapPct:number, konOk:true}
+ *         | {nKv:number, nMa:number, medKv:null, medMa:null, kvotPct:null, gapPct:null, konOk:false}}
+ */
+export function konsMedianer(rader, { k = 1 } = {}) {
+    const kv = [], ma = [];
+    (rader || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
+    const konOk = kv.length >= Math.max(1, k) && ma.length >= Math.max(1, k);
+    if (!konOk) return { nKv: kv.length, nMa: ma.length, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk };
+    // Bara löner över 0 räknas, så mäns median är alltid över 0 här.
+    const medKv = _median(kv), medMa = _median(ma);
+    return { nKv: kv.length, nMa: ma.length, medKv, medMa, kvotPct: medKv / medMa * 100, gapPct: (medKv / medMa - 1) * 100, konOk };
+}
+
+/**
  * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
- * (k-anonymitet: gapet pekar annars ut de få i det mindre könet). Anroparen i appen skickar
- * alltid gällande tröskel; standardvärdet 1 finns för enhetstesterna.
+ * (k-anonymitet: gapet pekar annars ut de få i det mindre könet). Se konsMedianer.
  */
 export function medianGapPct(rows, { k = 1 } = {}) {
-    const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
-    if (kv.length < Math.max(1, k) || ma.length < Math.max(1, k)) return null;
-    return (_median(kv) / _median(ma) - 1) * 100;
+    return konsMedianer(rows, { k }).gapPct;
 }
 
 /**

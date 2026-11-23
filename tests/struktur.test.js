@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     histogramKlasser, omfang,
-    medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken
+    konsMedianer, medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken
 } from '../src/lib/struktur.js';
 
 const rows = () => [
@@ -25,6 +25,33 @@ describe('structure: mediangap', () => {
     });
     it('null när ett kön saknas', () => {
         expect(medianGapPct([{ bas: 'A', kon: 'man', lon: 30000 }])).toBeNull();
+    });
+});
+
+describe('structure: konsMedianer', () => {
+    const tom = { nKv: 0, nMa: 0, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk: false };
+    it('tom lista och saknad lista: inga tal', () => {
+        expect(konsMedianer([])).toEqual(tom);
+        expect(konsMedianer(undefined)).toEqual(tom);
+    });
+    it('ett kön saknas: antalen står kvar, inga medianer', () => {
+        expect(konsMedianer([{ kon: 'man', lon: 30000 }])).toEqual({ ...tom, nMa: 1 });
+    });
+    it('under k: konOk falskt och inga medianer; precis vid k räknas de', () => {
+        const r = [{ kon: 'kvinna', lon: 30000 }, { kon: 'kvinna', lon: 32000 }, { kon: 'man', lon: 40000 }, { kon: 'man', lon: 42000 }, { kon: 'man', lon: 44000 }];
+        expect(konsMedianer(r, { k: 3 })).toEqual({ ...tom, nKv: 2, nMa: 3 });
+        expect(konsMedianer(r, { k: 2 })).toMatchObject({ konOk: true, medKv: 31000, medMa: 42000 });
+    });
+    it('lön 0 eller lägre och rader utan kön räknas inte', () => {
+        const r = [{ kon: 'kvinna', lon: 0 }, { kon: 'kvinna', lon: -5 }, { kon: 'kvinna', lon: 30000 }, { kon: 'man', lon: 40000 }, { kon: 'annat', lon: 1 }];
+        expect(konsMedianer(r)).toMatchObject({ nKv: 1, nMa: 1, medKv: 30000, medMa: 40000 });
+    });
+    it('jämnt antal: medianen är medelvärdet av de två mittersta; kvot och gap', () => {
+        const m = konsMedianer(rows());
+        expect(m).toMatchObject({ nKv: 4, nMa: 4, medKv: 34000, medMa: 41000, konOk: true });
+        expect(m.kvotPct).toBeCloseTo(34000 / 41000 * 100, 9);
+        expect(m.gapPct).toBeCloseTo(m.kvotPct - 100, 9);
+        expect(medianGapPct(rows())).toBe(m.gapPct);
     });
 });
 
