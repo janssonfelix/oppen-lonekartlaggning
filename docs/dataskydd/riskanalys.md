@@ -364,6 +364,9 @@ Här står regeln, undantagen och vad skyddet inte gäller. Den gällande lydels
   dessutom på det som kan spridas för sig (`docs/utveckling/k-troskeln.md` avsnitt 6–7).
 - **Skyddet gäller lönemått (ADR-70).** Antal och andelar, också per kön, omfattas inte utöver de beslutade golven
   nedan. Den som gör kartläggningen ansvarar för vad som lämnas ut (§8, punkt 4).
+- **En median kan vara en enskild persons lön.** I en grupp med udda antal personer är medianen lönen för den som
+  ligger i mitten. Skyddet vilar på att mottagaren inte vet vem i gruppen det är: gruppen har minst lika många personer
+  som tröskeln, och det som lämnar verktyget säger inte vem som har vilken lön.
 - **Skyddet gäller en fil i taget (ADR-92).** Ett lönemått får inte gå att räkna fram genom att dra ifrån inom samma
   fil. Det som går att räkna fram genom att kombinera flera filer ur samma underlag skyddas inte, och ZIP-exporten
   räknas som sina delar. Det är ett beslut, inte en lucka: att stänga det skulle dölja lönemått för stora grupper för
