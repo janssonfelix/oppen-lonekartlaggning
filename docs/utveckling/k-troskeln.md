@@ -50,13 +50,14 @@ Exempel ur koden i dag:
 - **Handlingsplanens belopp.** En förifylld rad där den minsta gruppen bakom skillnaden är under den inställda
   tröskeln står i exporterna och bokslutet bara med kategorierna (`_hpUtanBelopp` i `56-handlingsplan.js`).
 - **Löneöversyns förslag (ADR-69).** *Föreslå riktade potter*, mål-läget och känslighetskurvan tar bara kandidatpar
-  där båda grupperna når den inställda tröskeln, också på skärmen (`_fcKandidater` anropar
-  `_parForRedovisning(pairs, kInstalld())` i `36-loneoversyn.js`), och meningen om utelämnade par vid förslagen
+  där båda grupperna når den inställda tröskeln, också på skärmen (`_fcKandidater` i `36-loneoversyn.js` anropar
+  `forslagskandidater(pairs, kInstalld())` i `src/lib/vymodell-loneoversyn.js`), och meningen om utelämnade par vid förslagen
   nämner den inställda tröskeln. Bland dem tar förslagen ett par per AID-etikett, det med störst skillnad (`ettParPerYrke`).
   Ett förslag bär ett belopp räknat ur jämförelseetikettens median, och raden står i summorna på skärmen, i
   Excel-exporten och i konfigurationsfilen; talet ska vara detsamma överallt. En föreslagen rad som inte säkert når
-  tröskeln tas bort (`_fcRensaParMal`, regel R2 i avsnitt 8).
-- **Varningar och noter om tröskeln.** Noten under en egen riktad rad i Löneöversyn (`36-loneoversyn.js`), varningen
+  tröskeln tas bort (`_fcRensaParMal` med `rensaForeslagnaRader`, regel R2 i avsnitt 8).
+- **Varningar och noter om tröskeln.** Noten under en egen riktad rad i Löneöversyn (`riktadRadInfo` i
+  `src/lib/vymodell-loneoversyn.js`, med `kInstalld()`), varningen
   *Underlaget är litet* i Prioriteringens motiveringsförslag (`55-prioritering.js`, som står när något kön i
   gruppen har färre än tröskeln och gäller skattningens säkerhet, inte läget) och antalet små grupper i
   likvärdighetsanalysens diagnostik (`kvDomUnderK` i `src/lib/vymodell-likvardigt-arbete.js`, `34-likvardigt-arbete.js`) läser
@@ -145,17 +146,20 @@ gruppens rad står kvar med antal och andel kvinnor, men kostnaden och medianern
 skillnaden mellan medianerna ligger nära gruppens kostnad. Når inte ens alla grupper tillsammans tröskeln står ingen
 kostnad per grupp, bara summorna. De maskerade raderna står efter de visade, i BAS- och AID-ordning, så att platsen
 inte säger något om kostnaden; spillover-listan tar inte med en invikt grupp. Noten under raderna säger vilka grupper
-det gäller och varför (`_fcUtfallsrader`, `_fcUtfallsNot` i `36-loneoversyn.js`). *Varav till kvinnodominerade
+det gäller och varför (`utfallsrader` i `src/lib/vymodell-loneoversyn.js`, noten `_fcUtfallsNot` i `36-loneoversyn.js`). *Varav till kvinnodominerade
 grupper* står bara när de maskerade kvinnodominerade grupperna och de övriga maskerade grupperna var för sig är tomma
-eller omfattar minst `kTroskel()` personer, eller när en av dem är tom; annars ett streck (`_fcVaravKvDom`). En egen
+eller omfattar minst `kTroskel()` personer, eller när en av dem är tom; annars ett streck (`varavKvDom`). Fliken och exporten
+får raderna, andelen och spillover-listan ur samma funktion (`utfallsvy`, i fliken genom `vymodellPrognos`). En egen
 riktad rad (regel R2) har sitt belopp i *Sammanfattning* som förut. Scenariojämförelsen A/B följer samma regel: ett
-sparat scenario bär sina grupper med påslag, och dess *Till kv-dom* prövas med `_fcVaravKvDom` mot den tröskel som
-gäller när jämförelsen visas, annars ett streck (`_renderScenarioCompare`). Scenarierna lämnar inte verktyget; de
+sparat scenario bär sina grupper med påslag (`scenarioUr`), och dess *Till kv-dom* prövas med `varavKvDom` mot den
+tröskel som gäller när jämförelsen visas, annars ett streck (`scenariojamforelse`; ritas av `_ritaScenariojamforelse`).
+Scenarierna lämnar inte verktyget; de
 finns bara i minnet och i fliken. Ett scenario sparar det råa gapet bara när varje kön når tröskeln och bär antalet
 kvinnor och män, så att gapet prövas mot den tröskel som gäller när jämförelsen visas; ett scenario sparat vid en lägre
 tröskel visar ett streck och en not när tröskeln har höjts.
 
-**Kostnaden på individnivå** i Löneöversyn (`_forecastRemediation`, `individlyft` i `src/lib/loneoversyn.js`)
+**Kostnaden på individnivå** i Löneöversyn (`vymodellIndividlyft` i `src/lib/vymodell-loneoversyn.js`, med
+`individlyft` i `src/lib/loneoversyn.js`; ritas av `_forecastRemediation`)
 jämför varje kvinna med männens median i hennes grupp när minst `kTroskel()` män finns där, annars med männens median i
 BAS-intervallet (också minst `kTroskel()` män); mot en enda mans lön vore kostnaden hans lön minus hennes. En grupp får
 egen rad, och kan bli en riktad rad, först när minst `kTroskel()` kvinnor i den berörs, och den samlade kostnaden står
@@ -347,7 +351,8 @@ läses (`likvardighetsmodellen.md` §1).
 
 **Efter en export** ritas bara det tillbaka som exporten ritade (`_ritaOmEfterExport`). Lika arbetes minne har ett rum
 per tröskel, så att ett lägesbyte inte räknar om något. Det som räknas på knapptryck i Löneöversyn räknas om när fliken
-ritas om, om det visas (`_fcRitaOmKnappresultat`), också när fliken öppnas efter att ha tömts; en ruta utan resultat
+ritas om, om det visas (`_fcRitaOmKnappresultat`), också när fliken öppnas efter att ha tömts; vymodellerna för
+knappresultaten (`vymodellIndividlyft`, `vymodellKanslighet`, `vymodellTroskelmal`) räknar med den tröskel de får; en ruta utan resultat
 förblir tom, och *Rensa all data*, en ny lönefil och *Nollställ* glömmer resultaten (`_fcGlomKnappresultat`). Att göras lista byggs en gång för Att göra och
 processöversikten
 (`renderProcessTracker({ punkter })`), och regressionen körs en gång i omritningen för underlagets kvalitet, Att göra
@@ -389,7 +394,7 @@ Tröskeln är redovisningens gräns. Skattningar och några tabeller har egna go
 | Motiveringsregeln om medelålder per kön (`55-prioritering.js`) | 3 av varje kön | Fast golv (beslut, ADR-38). |
 | Löneöversiktens rader per AID-etikett (`LONEOVERSIKT_MINSTA_YRKE` i `src/lib/vymodell-loneoversikt.js`) | 5 | Fast golv (beslut, ADR-38). |
 | `LITET_UNDERLAG` (`litetUnderlag()`) | 5 | Ingen maskeringsgräns. I ett diagram ritas en stapel eller ett segment som gäller färre än fem personer med mönster, som en varning (ADR-39, `diagramkarnan.md`). I tabellerna per AID-kod och BAS-intervall är det gränsen för en egen rad i exportläget, och i könsfördelningen per BAS-intervall gränsen för en egen rad i båda lägena (avsnitt 4). |
-| Lönepolitikens mellannivå (`ANTAL_MIN` och `maskeringsniva` i `src/lib/lonepolitik.js`) | Från 5 upp till tröskeln | Grupper mellan 5 och k redovisas med antal (bandplacering i antal), inga lönemått; under 5 maskeras raden, namnges i en not och räknas in i BAS-totalen. Mellannivån försvinner när tröskeln är 5 eller lägre. |
+| Lönepolitikens mellannivå (`ANTAL_MIN` och `maskeringsniva` i `src/lib/lonepolitik.js`; tabellens rader i `tabellblock`, `src/lib/vymodell-lonepolitik.js`) | Från 5 upp till tröskeln | Grupper mellan 5 och k redovisas med antal (bandplacering i antal), inga lönemått; under 5 maskeras raden, namnges i en not och räknas in i BAS-totalen. Mellannivån försvinner när tröskeln är 5 eller lägre. Bandkartans punkter, könspositionen, tredjedelarna och efterlevnaden följer k i samma vymodell (`vymodellLonepolitik`), också i bladet Lönepolitik. |
 
 ## 6. Inställningen
 
@@ -480,9 +485,10 @@ Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
   under tröskeln. Beskrivet i `dataskydd.md` §3, riskanalysen §6.5 och körguiden. Rader som verktyget självt föreslår
   ur kandidatpar i likvärdigt arbete omfattas inte (ADR-69): verktyget föreslår ingen rad ur ett par där den
   kvinnodominerade AID-etiketten eller jämförelseetiketten har färre personer än den inställda tröskeln, i något läge
-  (`_fcKandidater`, avsnitt 1), och tar ett par per kvinnodominerad AID-etikett, det med störst skillnad bland dem som når
+  (`forslagskandidater`, avsnitt 1), och tar ett par per kvinnodominerad AID-etikett, det med störst skillnad bland dem som når
   tröskeln (`ettParPerYrke` i `src/lib/loneoversyn.js`, som `foreslaRiktning` och `stangningsriktning`, och därmed
-  känslighetskurvan, går genom). En föreslagen rad bär `kalla: 'par'` men inte paret. `_fcRensaParMal` prövar den när
+  känslighetskurvan, går genom). En föreslagen rad bär `kalla: 'par'` men inte paret. `_fcRensaParMal` prövar den
+  (`rensaForeslagnaRader` i `src/lib/vymodell-loneoversyn.js`) när
   den inställda tröskeln ändras (`sattKTroskel`), när en konfigurationsfil läses in och när lönefilen läses in, också på
   skärmen. En rad som föreslogs i sessionen avgörs säkert: storleken på grupperna i paret den räknades ur finns i
   minnet (`_fcParUrsprung`, en `WeakMap` per rad som inte sparas), och raden står kvar när båda når tröskeln. En rad
@@ -505,10 +511,12 @@ Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
 - **R4. Lönerevisionssimulatorn är borttagen** (2026-10, ADR-50). Det den kunde — begränsa till ett kön och en
   lönegräns, "höj till" — gör en riktad rad i Löneöversyn, som följer R2: en rad som berör färre personer än tröskeln är
   användarens egen simulering, beloppet visas på raden med noten om enskildas löner. Lönegapet före och efter kräver
-  tröskeln för varje kön (`_konFarRedovisasFor`). Vaktas av R4, C3 och röktest.
-- **R5. Löneöversyns tröskelmål följer tröskeln** (`_forecastThreshold`; beslut 2026-10-16): lyftet i procent till
-  kvinnor och dess kostnad (kvinnornas lönesumma gånger procentsatsen) visas bara när varje kön i urvalet når tröskeln
-  (`_konFarRedovisasFor`), annars ett streck med `_konUtelamnatNot()`. Vaktas av R5 i `tests/troskelbeslut.test.js`.
+  tröskeln för varje kön (`vymodellPrognos`; ett sparat scenario bär gapet bara då och prövas igen när jämförelsen
+  visas, `scenarioUr` och `scenariojamforelse` i `src/lib/vymodell-loneoversyn.js`). Vaktas av R4, C3 och röktest.
+- **R5. Löneöversyns tröskelmål följer tröskeln** (`vymodellTroskelmal` i `src/lib/vymodell-loneoversyn.js`, ritad av
+  `_forecastThreshold`; beslut 2026-10-16): lyftet i procent till kvinnor och dess kostnad (kvinnornas lönesumma gånger
+  procentsatsen) räknas och visas bara när varje kön i urvalet når tröskeln (`konFarRedovisasFor`), annars ett streck
+  med `_konUtelamnatNot()`. Vaktas av R5 i `tests/vymodeller.test.js` och `tests/troskelbeslut.test.js`.
 
 ## 9. Utdata och vakter
 

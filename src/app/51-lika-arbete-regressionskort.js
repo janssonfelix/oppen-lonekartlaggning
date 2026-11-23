@@ -34,12 +34,17 @@ import { ritaLivscykel } from './52-livscykel.js';
  *   annars konPct, konPctLow, konPctHigh, sequential, perBas m.fl. — se huvudregression.
  */
 export function runOLSRegression() {
-    return huvudregression(getData(), {
+    return huvudregression(getData(), regressionsval());
+}
+
+/** Huvudregressionens val ur tillståndet, för den som kör den på andra rader (Löneöversyns före och efter, ADR-17). */
+export function regressionsval() {
+    return {
         modell: forklaringsmodell(),   // normaliserad mot datat (ADR-56)
         medAlder: harAlder(),          // ADR-64
         kInstalld: kInstalld(),        // spärren för "Endast kön" följer den inställda tröskeln
         golv: statGolv()               // regressionerna per BAS-intervall och ansvarssteget
-    });
+    };
 }
 
 // Hårda mellanslag (U+00A0): «p < 0,001» bryts inte mellan tecknet och talet i en smal kolumn.

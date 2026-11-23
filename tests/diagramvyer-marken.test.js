@@ -249,7 +249,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         expect(el.textContent).toMatch(/I ingen AID-etikett med minst 10 kvinnor och 10 män ändras kvinnors median i procent av mäns/);
         // Med löner som ändras olika för könen: grupperna visas, den lilla aldrig.
         w2.__sim = w2.__state.data.map(r => ({ ...r, lon: r.kon === 'kvinna' ? r.lon * 1.05 : r.lon }));
-        const rader = w2.eval('_forecastLutningRader(getData(), window.__sim, "grupp")');
+        const rader = w2.eval('_lutningRader(getData(), window.__sim, "grupp")');
         expect(rader.map(r => r.namn).sort()).toEqual(['Yrke6000 · A', 'Yrke6100 · A']);
         expect(rader[0].markering).toEqual(['bas:A', 'grupp:6000|A']);
         expect(rader.every(r => r.efter > r.fore)).toBe(true);
@@ -389,7 +389,7 @@ describe('Lönepolitik: efterlevnaden kring en mittlinje', () => {
                       ...Array.from({ length: 6 }, (_, i) => person('B', i % 2 ? 'kvinna' : 'man', 61111 + i))];
         medData(data, [{ bas: 'A', p10: 28000, med: 34000, p90: 40000 }, { bas: 'B', p10: 25000, med: 30000, p90: 40000 }], () => {
             w.__state.kLage = 'export';
-            w.__renderLonepolitik();
+            w.__ritaLonepolitik();
             const d = w.document, val = () => d.getElementById('lp-komplians-vy'), el = () => d.getElementById('chart-lp-compliance');
             expect(val().value).toBe('staplad');
             expect(el()._figur.lager).toHaveLength(3);

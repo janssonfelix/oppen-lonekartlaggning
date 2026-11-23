@@ -99,7 +99,7 @@ describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
                       ...Array.from({ length: 6 }, (_, i) => person('B', i % 2 ? 'kvinna' : 'man', 61111 + i))];
         medData(data, [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }, { bas: 'B', p10: 25000, med: 30000, p90: 40000 }], () => {
             w.__state.kLage = 'export';
-            w.__renderLonepolitik();
+            w.__ritaLonepolitik();
             const el = w.document.getElementById('chart-lp-compliance');
             expect(el.querySelector(':scope > svg[role="group"]').getAttribute('aria-label')).toMatch(/Andel anställda/);
             expect(el.data).toBeUndefined();                                        // figuren ligger i _figur
@@ -109,18 +109,18 @@ describe('Lönepolitik: chart-lp-gender och chart-lp-compliance', () => {
             expect(not.getAttribute('data-lp-not')).toBe('komplians');
             expect(not.textContent).toContain('BAS B');
             expect(el.querySelector('[data-lp-not]')).toBeNull();
-            w.__renderLonepolitik();                                                // omritning: en not, inte två
+            w.__ritaLonepolitik();                                                // omritning: en not, inte två
             expect(w.document.querySelectorAll('[data-lp-not="komplians"]')).toHaveLength(1);
         });
     });
     it('alla BAS under tröskeln, och tröskeln höjd med fliken ritad: vyns text, ingen figur kvar, inget att exportera', () => {
         const data = Array.from({ length: 14 }, (_, i) => person('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
         medData(data, [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }], () => {
-            w.__renderLonepolitik();
+            w.__ritaLonepolitik();
             const el = w.document.getElementById('chart-lp-compliance'), kon = w.document.getElementById('chart-lp-gender');
             expect(el._figur).toBeDefined();
             w.eval('sattKTroskel(20, { fraga: false })');
-            w.__renderLonepolitik();
+            w.__ritaLonepolitik();
             const el2 = w.document.getElementById('chart-lp-compliance');
             expect(el2._figur).toBeUndefined();
             expect(el2.textContent).toMatch(/färre än 20 personer/);
@@ -2092,7 +2092,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const d = [...Array.from({ length: 12 }, (_, i) => ({ bas: 'A', aid: '1', yrke: '1 Usk', yrkeLabel: 'Usk', kon: 'kvinna', lon: 30000 + i * 10 })),
                    ...Array.from({ length: 12 }, (_, i) => ({ bas: 'A', aid: '1', yrke: '1 Usk', yrkeLabel: 'Usk', kon: 'man', lon: 31000 + i * 10 }))];
         w2.__d = d; w2.__sim = d.map(r => ({ lon: r.lon + (r.kon === 'kvinna' ? 500 : 0) }));
-        const bas = w2.eval("_forecastLutningRader(window.__d, window.__sim, 'bas')"), grupp = w2.eval("_forecastLutningRader(window.__d, window.__sim, 'grupp')");
+        const bas = w2.eval("_lutningRader(window.__d, window.__sim, 'bas')"), grupp = w2.eval("_lutningRader(window.__d, window.__sim, 'grupp')");
         expect(bas[0]).toMatchObject({ namn: 'BAS A', bas: 'A', n: 24, nKv: 12, nMa: 12 });
         expect(bas[0].yrke).toBeUndefined();
         expect(grupp[0]).toMatchObject({ namn: 'Usk · A', yrke: 'Usk', n: 24 });

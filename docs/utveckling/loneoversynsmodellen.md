@@ -17,8 +17,9 @@ tröskeln i ADR-69 ([`arkitekturbeslut.md`](arkitekturbeslut.md)). Minsta grupps
 |---|---|
 | Modellen: potten, fördelningen, utfallet, förslagen, planen, tröskelmålet | `src/lib/loneoversyn.js` |
 | Kostnadsformeln | `src/lib/kostnad.js` (`periodkostnad`) |
-| Adaptern: kontrollerna, utfallet med k-regeln, huvudregressionen före och efter, kandidatparen, exporten | `src/app/36-loneoversyn.js` |
-| Kandidatparen | `src/lib/likvardighet.js` (`byggPar`); appens urval i `_parForRedovisning` |
+| Vymodellen (ADR-99): kontrollerna, utfallet med k-regeln, huvudregressionen före och efter, grupperna före och efter, kandidatparen och prövningen av föreslagna rader, scenarierna, tröskelmålets k-spärr, känsligheten och kostnaden på individnivå | `src/lib/vymodell-loneoversyn.js` |
+| Det som ritar: fälten, orden, tabellerna, diagrammet, minnet av förslagens par och scenarierna, exporten | `src/app/36-loneoversyn.js` |
+| Kandidatparen | `src/lib/likvardighet.js` (`byggPar`); urvalet i `forslagskandidater` (vymodellen) |
 
 ## 1. Flödet
 
@@ -128,14 +129,19 @@ Det generella och det riktade påslaget redovisas före avrundning (`generellCos
 *Pott* och ett streck på raden *Kvar att fördela*, och ett sparat scenario heter *ingen pott angiven* i stället för
 *0 kr*. Utan pott och utan påslag visas inget utfall (fliken säger att en pott behövs).
 
-**Den oförklarade skillnaden före och efter** räknas i appen (`_forecastOlsGap`): huvudregressionen körs en gång på
-lönerna före och en gång på de nya lönerna, med samma förklaringsmodell ([`regressionsmodellen.md`](regressionsmodellen.md)).
+**Den oförklarade skillnaden före och efter** räknas i vymodellen (`oforklaratForeEfter`): huvudregressionen körs en
+gång på lönerna före och en gång på de nya lönerna, med samma förklaringsmodell och samma val som i appen
+(`regressionsval` i `src/app/51-lika-arbete-regressionskort.js`; [`regressionsmodellen.md`](regressionsmodellen.md)).
+Den räknas varje gång utfallet ritas och ett scenario sparas, och inget minns (ADR-17).
 
 **Lönespannet per BAS-intervall** (`lonespannPerBas`) ger P25, median och P75. Gruppens läge är den nya medianen delad med
-BAS-intervallets median; över 1,10 märks *över* och under 0,90 *under*.
+BAS-intervallets median; över 1,10 (`LAGE_OVER`) märks *över* och under 0,90 (`LAGE_UNDER`) *under* (`lageMotBas`).
+
+**Riktningen** före och efter (*minskar*, *ökar*, *oförändrat*, och färgen i diagrammet) avgörs på talen som de visas,
+med en decimal (`riktning`): lika visade tal är oförändrat.
 
 **Kontrollerna** varnar för en negativ budget eller ett negativt generellt påslag, en budget över 50 % av lönesumman,
-ett generellt påslag över 25 %, en riktad rad utan belopp och en riktad rad som inte träffar någon.
+ett generellt påslag över 25 %, en riktad rad utan belopp och en riktad rad som inte träffar någon (`kontrollvarningar`).
 
 ## 7. Förslagen
 
@@ -149,10 +155,10 @@ personer i gruppen* (standard 10) tas med.
 
 | Förslag | Funktion | Belopp per grupp |
 |---|---|---|
-| Förslag ur potten | `foreslaRiktning` | potten efter det generella påslaget, fördelad i proportion till gapKr × n, men aldrig mer än gapKr × n; avrundat till hela kronor |
+| Förslag ur potten | `foreslaRiktning` (`forslagUrPotten` i vymodellen) | potten efter det generella påslaget, fördelad i proportion till gapKr × n, men aldrig mer än gapKr × n; avrundat till hela kronor |
 | Minska skillnaderna med en andel | `stangningsriktning` | andelen × gapKr × n, avrundat |
 | Lyft mot marknaden | `marknadsriktning` | (marknadens median × faktorn − gruppens median) × n, för grupper under; faktorn är standard 95 % |
-| Grupper som uppfyller ett villkor | i appen (`_forecastAddByCriteria`) | samma belopp och fördelning för alla grupper som är kvinnodominerade, under BAS-medianen, under BAS-intervallets P25 eller alla |
+| Grupper som uppfyller ett villkor | `villkorsgrupper` (vymodellen) | samma belopp och fördelning för alla grupper som är kvinnodominerade, under BAS-medianen, under BAS-intervallets P25 eller alla |
 
 Förslagen ur paren, ur potten och mot marknaden fördelas *lägst först* inom gruppen; villkorsraderna får den
 fördelning användaren väljer.
@@ -182,7 +188,8 @@ Sökningen är en halvering i intervallet 0–40 % i 22 varv; svaret är interva
 Fältet för målet läses i `_forecastThreshold` (`_forecastLasMal`): 0 är ett mål, ett tomt fält eller något som inte är
 ett tal ger standardmålet, och ett tal utanför fältets gränser (0–20 %) avvisas med *Ange ett mål mellan 0 och 20 %*.
 I läget *inte signifikant* spelar fältet ingen roll. Kostnaden per månad
-är kvinnornas lönesumma gånger lyftet, utan PO. Lyftet visas bara när båda könen når tröskeln.
+är kvinnornas lönesumma gånger lyftet, utan PO. Lyftet visas bara när båda könen når tröskeln: `vymodellTroskelmal`
+prövar det först, sedan målet och sist sökningen, med huvudregressionen som skattning (`oforklaradSkattning`).
 
 | Konstant | Värde |
 |---|---|
@@ -220,7 +227,7 @@ Fasta: tröskelmålets konstanter (avsnitt 9), varningsgränserna 50 % och 25 % 
 
 Hur k gäller utfallet, förslagen och exporten står i [`k-troskeln.md`](k-troskeln.md). I korthet: en grupp under k har
 sin rad, men medianerna och kostnaden står inte per grupp; deras kostnad står samlad på en rad, och räcker den inte till
-k personer viks de minsta visade grupperna in tills den gör det (`_fcUtfallsrader`). Regeln gäller filen för sig: att
+k personer viks de minsta visade grupperna in tills den gör det (`utfallsrader` i `src/lib/vymodell-loneoversyn.js`). Regeln gäller filen för sig: att
 kostnaden per grupp med ett påslag i procent, tillsammans med intervallets medellön i rapporten, ger mer än filen visar
 skyddas inte (ADR-92). Lönespannet för ett BAS-intervall
 under k utelämnas. Den individuella rättelsen kräver k män bakom jämförelsevärdet och visar en grupp först när k
@@ -246,6 +253,7 @@ kvinnor berörs. Tröskelmålet och den råa skillnaden i känsligheten visas ba
 | `tests/loneoversyn-forslag-troskel.test.js` | Att förslagen följer den inställda tröskeln (ADR-69) |
 | `tests/ktroskel-loneoversyn-summor.test.js`, `tests/ktroskel-loneoversyn-scenarier.test.js` | k-regeln i utfallet: maskerade grupper, den samlade raden, invikningen och att summorna inte röjer en liten grupp |
 | `tests/kostnad.test.js` | Kostnadsformeln, också 0 månader och 0 % PO |
+| `tests/vymodeller.test.js` | Vymodellen i Node: utfallet och kontrollerna, maskeringen och invikningen, andelen till kvinnodominerade grupper, läget mot BAS-medianen, riktningen, planen, grupperna före och efter, den oförklarade skillnaden före och efter (B7.5), och k-reglerna I1, I1b, R2, R4 och R5 |
 | `tests/referensfall.test.js` | Referensfallen nedan |
 
 Referensfallen i `tests/fixtures/referensfall/`, med härledning steg för steg:

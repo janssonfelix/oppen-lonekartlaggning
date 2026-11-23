@@ -28,7 +28,7 @@ import { medExportLage, visningNy } from './23-exportgrind.js';
 import { sattOrgTyp } from './29-organisationspaket.js';
 import { invalidateStatCaches } from './30-statistikcacher.js';
 import { refreshCurrentTab } from './31-navigering.js';
-import { _fcRensaParMal, foreEfterFigur, renderForecast } from './36-loneoversyn.js';
+import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversyn.js';
 import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
 import { sattLonemanad } from './45-aid-bas-tabeller.js';
 import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
@@ -412,8 +412,8 @@ function _applyConfigSnapshot(cfg) {
         // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den inställda tröskeln, också på skärmen — filen
         // kan vara sparad vid en lägre — som när tröskeln höjs i gränssnittet (ADR-69). Utan lönefil prövas de när den läses in.
         if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
-        if (typeof renderForecast === 'function' && document.getElementById('view-loneoversyn')) {
-            try { renderForecast(); } catch (_e) { /* renderas vid nästa flikbyte */ }
+        if (typeof ritaLoneoversyn === 'function' && document.getElementById('view-loneoversyn')) {
+            try { ritaLoneoversyn(); } catch (_e) { /* renderas vid nästa flikbyte */ }
         }
     }
 

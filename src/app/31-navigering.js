@@ -11,7 +11,7 @@ import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlage
 import { renderForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
 import { ritaLikvardigtArbete } from './34-likvardigt-arbete.js';
-import { renderForecast } from './36-loneoversyn.js';
+import { ritaLoneoversyn } from './36-loneoversyn.js';
 import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
@@ -34,7 +34,7 @@ import { ritaGapUppdelning } from './68-var-uppstar-gapet.js';
 import { renderExplorer } from './70-utforska.js';
 import { renderArsjamforelse } from './73-arsbokslut.js';
 import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
-import { renderLonepolitik } from './75-lonepolitik.js';
+import { ritaLonepolitik } from './75-lonepolitik.js';
 import { renderKvalitetssakring } from './85-robusthet-fardigcheck.js';
 import { sidindexBygg } from './89-sidindex.js';
 
@@ -398,7 +398,7 @@ function _renderTabContent(target) {
         const s = document.getElementById("bas-select-kon"); if (s) ritaAlderOchLon(/** @type {HTMLInputElement} */ (s).value); ritaLivscykel();
         const s2 = document.getElementById("bas-select-demo"); if (s2) ritaAldersstruktur(/** @type {HTMLInputElement} */ (s2).value);
     }
-    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
+    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); ritaLonepolitik(); renderStatistikLage(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) {
         const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
         ritaLikaArbete(laVymodell(), { reg }); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp({ reg });
@@ -410,7 +410,7 @@ function _renderTabContent(target) {
         _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(ritaRegressionskort()));
         ritaGapUppdelning(); renderLonestrukturNycklar();
     }
-    else if (target === "loneoversyn"  && d.length) renderForecast();
+    else if (target === "loneoversyn"  && d.length) ritaLoneoversyn();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { ritaLikvardigtArbete(); renderAidBasLikvardigt(); }
     else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).

@@ -3,9 +3,9 @@
 // Löneöversyn i appen: potten och förslaget, de riktade potterna, utfallets riktning, formulären, läget utan pott och
 // tröskelmålet.
 import { describe, it, expect } from 'vitest';
-import { createAppWindow, delatFonster } from './helpers/app-harness.js';
+import { createAppWindow } from './helpers/app-harness.js';
+import { riktning } from '../src/lib/vymodell-loneoversyn.js';
 
-const demo = delatFonster(w => w.__loadDemoData());
 // Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
 const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
 
@@ -109,7 +109,7 @@ describe('Löneöversyn utan påslag', () => {
     });
 });
 
-// Ordet och f\u00E4rgen p\u00E5 utfallets rader f\u00F6ljer talen som de visas med en decimal (_fcRiktning i 36-loneoversyn.js), inte
+// Ordet och f\u00E4rgen p\u00E5 utfallets rader f\u00F6ljer talen som de visas med en decimal (riktning i src/lib/vymodell-loneoversyn.js), inte
 // de oavrundade talen: efter ett generellt p\u00E5slag stod "\u22124,3 % till \u22124,3 % \u00F6kar" i r\u00F6tt.
 describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => {
     const utfall = w => {
@@ -154,14 +154,13 @@ describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => 
         const ord = [...el.querySelector('.card').querySelectorAll('span')].find(s => s.textContent === 'minskar');
         expect(ord.className).toBe('farg-ok');
     });
-    it('_fcRiktning avg\u00F6r p\u00E5 en decimal: lika visade tal \u00E4r 0, och avst\u00E5ndet m\u00E4ts fr\u00E5n m\u00E5let', () => {
-        const w = demo();
-        expect(w.eval('_fcRiktning(-4.26, -4.34, 0)')).toBe(0);          // b\u00E5da visas som \u22124,3 %
-        expect(w.eval('_fcRiktning(-4.3, -4.0, 0)')).toBe(-1);
-        expect(w.eval('_fcRiktning(-4.0, -4.3, 0)')).toBe(1);
-        expect(w.eval('_fcRiktning(95.66, 95.74, 100)')).toBe(0);       // b\u00E5da visas som 95,7 %
-        expect(w.eval('_fcRiktning(95.7, 96.1, 100)')).toBe(-1);
-        expect(w.eval('_fcRiktning(null, 1, 0)')).toBeNull();
+    it('riktning avg\u00F6r p\u00E5 en decimal: lika visade tal \u00E4r 0, och avst\u00E5ndet m\u00E4ts fr\u00E5n m\u00E5let', () => {
+        expect(riktning(-4.26, -4.34, 0)).toBe(0);          // b\u00E5da visas som \u22124,3 %
+        expect(riktning(-4.3, -4.0, 0)).toBe(-1);
+        expect(riktning(-4.0, -4.3, 0)).toBe(1);
+        expect(riktning(95.66, 95.74, 100)).toBe(0);       // b\u00E5da visas som 95,7 %
+        expect(riktning(95.7, 96.1, 100)).toBe(-1);
+        expect(riktning(null, 1, 0)).toBeNull();
     });
 });
 

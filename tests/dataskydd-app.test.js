@@ -274,7 +274,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — k-anonymitet', (
             win.__state.data = Array.from({ length: 6 }, (_, i) => rad('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
             win.__state.policy = [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }];
             win.__state.kLage = 'export';   // så som diagrammet lämnar verktyget (ADR-51)
-            win.__renderLonepolitik();
+            win.__ritaLonepolitik();
             const el = win.document.getElementById('chart-lp-compliance');
             expect(el).not.toBeNull();
             // Inget aggregat får ritas — i stället en förklaring om tröskeln
@@ -289,7 +289,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — k-anonymitet', (
         try {
             win.__state.data = Array.from({ length: 14 }, (_, i) => rad('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
             win.__state.policy = [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }];
-            win.__renderLonepolitik();
+            win.__ritaLonepolitik();
             const el = win.document.getElementById('chart-lp-compliance');
             expect(el.textContent).not.toMatch(/färre än 10 personer/);
         } finally {

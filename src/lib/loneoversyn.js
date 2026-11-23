@@ -8,10 +8,10 @@
  * budgetutnyttjande, råa lönegapet före/efter) beräknas.
  *
  * Separat från app.js för att kunna testas via Vitest utan DOM/state.
- * Det oförklarade gapet (OLS) beräknas INTE
- * här — det körs i app.js mot simulerad data via data-swap, eftersom det kräver
- * regressionsmotorn. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
- * sökning (likalonslyftForMal) får appens skattning som argument.
+ * Det oförklarade gapet (huvudregressionen) beräknas INTE
+ * här, utan i vymodellen (oforklaratForeEfter i vymodell-loneoversyn.js) på de simulerade
+ * raderna. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
+ * sökning (likalonslyftForMal) får skattningen som argument.
  *
  * All matematik sker på ursprungslönerna: generellt och riktat summeras additivt
  * per individ, så fördelningen är ordningsoberoende och transparent.
@@ -324,7 +324,7 @@ export function pottArAngiven(budget) {
 
 /**
  * Hela prognosutfallet: pott, budgetutnyttjande, total kostnad (inkl. PO + period)
- * och råa lönegapet före/efter. Det OFÖRKLARADE gapet (OLS) beräknas i app.js.
+ * och råa lönegapet före/efter. Det OFÖRKLARADE gapet räknas i vymodellen (oforklaratForeEfter i vymodell-loneoversyn.js).
  * Utan angiven pott (pottAngiven false) är pott 0, kvar null och overBudget falskt: det finns ingen pott att
  * överskrida. En angiven pott på 0 kr flaggas som vanligt när något fördelas.
  * @param {Array} rader
@@ -512,7 +512,8 @@ export function troskelmalKonstanter() {
  * lägre) eller inte signifikant (p över TROSKELMAL_SIGNIFIKANS_P). Söks med bisektion i 0–TROSKELMAL_MAX_LYFT_PCT %
  * i TROSKELMAL_VARV varv; svaret är intervallets övre gräns, där målet är nått.
  *
- * Regressionen körs inte här: `skatta(rader)` är appens skattning (huvudregressionen på de givna raderna) och
+ * Regressionen körs inte här: `skatta(rader)` är skattningen (huvudregressionen på de givna raderna,
+ * oforklaradSkattning i vymodell-loneoversyn.js) och
  * returnerar `{ konPct, pValue }`, med `konPct` null när den inte går att skatta. Kostnaden per månad är summan av
  * kvinnornas lön gånger lyftet, utan påslag; kostnaden över perioden räknar appen.
  * @param {any[]} rader lönefilens rader ({lon, kon, …})

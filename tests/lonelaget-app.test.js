@@ -415,9 +415,9 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
 
     it('tom policy → modellen flaggar hasPolicy=false och fliken visar tomstatus', () => {
         setPolicy([]);
-        const m = win.__buildLonepolitikModel();
+        const m = win.__lonepolitikVymodell().modell;
         expect(m.hasPolicy).toBe(false);
-        expect(() => win.__renderLonepolitik()).not.toThrow();
+        expect(() => win.__ritaLonepolitik()).not.toThrow();
         expect(win.document.getElementById('lonepolitik-empty').style.display).toBe('block');
     });
 
@@ -425,7 +425,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
         win.__loadDemoData();
         const bas = [...new Set(win.__getData().map(r => r.bas))];
         setPolicy(bas.map(b => ({ bas: b, p10: 25000, med: 32000, p90: 45000 })));
-        const m = win.__buildLonepolitikModel();
+        const m = win.__lonepolitikVymodell().modell;
         expect(m.hasPolicy).toBe(true);
         expect(m.byBas.length).toBeGreaterThan(0);
         expect(m.coverage.personsPct).toBeGreaterThan(0);
@@ -437,7 +437,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
             if (g.tier === 'full') expect(g.n).toBeGreaterThanOrEqual(10);
             if (g.tier === 'masked') expect(g.n).toBeLessThan(5);
         }));
-        expect(() => win.__renderLonepolitik()).not.toThrow();
+        expect(() => win.__ritaLonepolitik()).not.toThrow();
         expect(win.document.getElementById('lonepolitik-table')).not.toBeNull();
         setPolicy([]);   // städa så senare test inte påverkas
     });

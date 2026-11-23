@@ -53,7 +53,7 @@ const parTal = kvN => [JMF_LON, GAP, GAP * kvN].map(String);
 // öppen från början, så ett utfall finns, och exporten ska skriva det som svarar mot raderna som de står.
 async function excel(w) {
     await laddaXlsx(w);
-    if (!w.__state.forecast.result) w.eval('updateForecast()');   // en prognos finns också när inget föreslogs
+    if (!w.__state.forecast.result) w.eval('ritaPrognos()');   // en prognos finns också när inget föreslogs
     const bocker = Object.values(fangaBocker(w, () => w.eval('exportForecast()')));
     expect(bocker.length).toBe(1);
     return bocker[0];
@@ -190,7 +190,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
     it('en egen rad på en grupp under tröskeln står kvar med sin not och följer med i exporten (regel R2)', async () => {
         const w = fonsterPar({ kvN: 6, jmfN: 24 });
         w.__state.forecast.targets = [{ bas: 'C', aid: '5300', mode: 'kr', value: 777, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' }];
-        w.eval('renderForecastTargets(); updateForecast();');
+        w.eval('ritaRiktadeRader(); ritaPrognos();');
         expect(text(w, 'forecast-targets')).toMatch(/Raden berör 6 personer, färre än 10 personer/);
         w.eval('sattKTroskel(12, { fraga: false })');
         expect(aids(w)).toEqual(['5300']);
@@ -301,7 +301,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         lasIn(w, { ...cfg, loneoversyn: { ...cfg.loneoversyn, mal: [parRad(GAP * 12), parRad(GAP2 * 12)] } });
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 12, GAP2 * 12]);
         w.__state.forecast.targets.splice(0, 1);   // som knappen Ta bort på raden
-        w.eval('renderForecastTargets(); updateForecast();');
+        w.eval('ritaRiktadeRader(); ritaPrognos();');
         oppnaFlik(w, 'kon');
         w.eval('sattKTroskel(10, { fraga: false })');
         expect(parRader(w)).toEqual([]);
@@ -360,7 +360,7 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         w.eval('_forecastOptimize()');
         w.eval("_forecastSaveScenario('A')");
         w.__state.forecast.targets = [];
-        w.eval('renderForecastTargets(); updateForecast();');
+        w.eval('ritaRiktadeRader(); ritaPrognos();');
         w.eval("_forecastSaveScenario('B')");   // utan förslaget: står kvar
         expect(normalisera(text(w, 'forecast-scenarios'))).toContain(String(GAP2 * 12));
         w.__state.forecast.targets = [];

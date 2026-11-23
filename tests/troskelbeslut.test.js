@@ -238,7 +238,7 @@ describe('autocomplete="off" på alla fält, också de som skapas efter start', 
         const w = fonster();
         for (const f of FLIKAR) { try { w.eval(`renderTabContent('${f}')`); } catch (_e) { /* fliken finns inte */ } }
         w.__state.forecast.targets.push({ bas: 'A', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
-        w.eval('renderForecastTargets()');
+        w.eval('ritaRiktadeRader()');
         // Fält som en knapp skapar (de riktade raderna) får attributet av observatören, strax efter.
         expect(w.document.querySelectorAll('#forecast-targets select, #forecast-targets input').length).toBeGreaterThan(3);
         await new Promise(r => setTimeout(r, 0));

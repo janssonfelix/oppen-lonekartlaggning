@@ -3,7 +3,7 @@
  *
  * Ett sparat scenario bär sin kostnad till kvinnodominerade grupper (Till kv-dom). I exportläget (förhandsvisningen
  * Som i exporten) står Varav till kvinnodominerade grupper i utfallet bara när talet inte ger en del av den samlade
- * kostnaden för grupperna under tröskeln (_fcVaravKvDom). Scenariotabellen följer samma regel med samma funktion:
+ * kostnaden för grupperna under tröskeln (varavKvDom i src/lib/vymodell-loneoversyn.js). Scenariotabellen följer samma regel med samma funktion:
  * annars ett streck. Underlaget är det i ktroskel-loneoversyn-summor.test.js där Varav visas som streck: en grupp med
  * 30 personer, en med 12 och en ensam kvinna i en egen grupp; den ensamma kvinnans grupp är den enda kvinnodominerade,
  * så kostnaden till kvinnodominerade grupper är hennes påslag, 2 procent av hennes lön. Skärmen visar talet som förut.
