@@ -309,10 +309,10 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
 });
 
 describe('Lönestrukturens mått räknas på ett ställe', () => {
-    it('_stMatt ger fliken, rapportutkastet och EU-exporten samma mått som lib-funktionerna', () => {
+    it('strukturMatt ger fliken, rapportutkastet och EU-exporten samma mått som lib-funktionerna', () => {
         const w = createAppWindow(); w.__loadDemoData();
         const d = w.eval('getData()'), k = w.eval('kTroskel()');
-        const m = w.eval('_stMatt')(d, k);
+        const m = w.eval('strukturMatt')(d, k);
         const arKv = r => r.kon && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
         const kv = d.filter(arKv).map(r => r.lon), ma = d.filter(arMa).map(r => r.lon);
         const medel = a => a.reduce((s, x) => s + x, 0) / a.length;
@@ -325,14 +325,16 @@ describe('Lönestrukturens mått räknas på ett ställe', () => {
         expect(m.rep).toEqual(w.eval('representationPerBas')(d, { k }));
         expect(m.dist).toEqual(w.eval('fordelningsgap')(d, undefined, { k }));
         expect(m.q).toEqual(w.eval('kvartilfordelning')(d, { k }));
-        expect(w.eval('_stMatt')([], k)).toMatchObject({ totKv: 0, totAndel: 0, meanGap: null });
+        expect(w.eval('strukturMatt')([], k)).toMatchObject({ totKv: 0, totAndel: 0, meanGap: null });
     });
-    it('medellönegapet står en gång i 37-struktur.js, inte i tre kopior', () => {
+    it('medellönegapet står en gång, i src/lib/struktur.js, och 37-struktur.js räknar det inte själv', () => {
+        const lib = readFileSync(join(__dirname, '..', 'src', 'lib', 'struktur.js'), 'utf8');
         const kalla = readFileSync(join(__dirname, '..', 'src', 'app', '37-struktur.js'), 'utf8');
-        expect(kalla.match(/kv\.reduce\(\(s, x\) => s \+ x, 0\) \/ kv\.length/g)).toHaveLength(1);
+        expect(lib.match(/kv\.reduce\(\(s, x\) => s \+ x, 0\) \/ kv\.length/g)).toHaveLength(1);
+        expect(kalla).not.toMatch(/\.reduce\(\(s, x\) => s \+ x, 0\)/);
         for (const f of ['renderStructure', 'renderStrukturUtkast', '_exportEuReportExport']) {
             const kropp = kalla.slice(kalla.indexOf(`function ${f}(`)).split(/\n}\n/)[0];
-            expect(kropp, f).toContain('_stMatt(d, k)');
+            expect(kropp, f).toContain('strukturMatt(d, k)');
         }
     });
 });

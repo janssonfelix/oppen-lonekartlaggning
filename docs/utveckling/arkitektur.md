@@ -60,7 +60,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `aidbas` | `aid`, `kon`, `likvardighet`, `stat` |
 |  | `perbas` | `aid`, `jamforelse`, `kon`, `stat`, `termer`, `undertryckning` |
 |  | `individflaggor` | `aid`, `falt` |
-| Struktur och rapportmått | `struktur` | `kon`, `stat` |
+| Struktur och rapportmått | `struktur` | `kon`, `ktroskel`, `stat` |
 |  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `struktur`, `termer`, `undertryckning` |
 | Referenser och jämförelse | `referens` | – |
 |  | `referenser` | `lonepolitik` |

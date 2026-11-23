@@ -14,6 +14,7 @@
 
 import { median as _median, kvantil as _kvantil } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
+import { konFarRedovisasFor } from './ktroskel.js';
 
 
 /**
@@ -217,4 +218,32 @@ export function histogramKlasser(kv, ma, k) {
         if (klasser.length >= 3 && klasser.every(c => n(c) >= k)) return klasser;
     }
     return null;
+}
+
+/**
+ * Lönestrukturens mått på ett ställe, för fliken Lönestruktur, rapportutkastet och EU-exporten: andelen kvinnor,
+ * representationen per BAS (med de BAS-intervall som får redovisas, n ≥ k, de som utelämnas och de där ett kön är
+ * för litet), percentilerna, kvartilerna och gapet i median- och medellön. Könsuppdelade mått kräver k för varje kön
+ * (ADR-12); `meanGap` är kvinnors medellön i procent av mäns minus 100, null när ett kön är under k eller saknas.
+ * @param {any[]} rader
+ * @param {number} k
+ */
+export function strukturMatt(rader, k) {
+    const d = rader || [];
+    const konOk = konFarRedovisasFor(d, k);
+    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
+    const ma = d.filter(r => arMan(r)).map(r => r.lon);
+    const totKv = kv.length;
+    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
+    const rep = representationPerBas(d, { k });
+    const repVisade = rep.filter(g => g.n >= k);
+    return {
+        konOk, kv, ma, totKv, totAndel: d.length ? 100 * totKv / d.length : 0, meanGap,
+        rep, repVisade,
+        repUtelamnade: rep.filter(g => g.n < k).map(g => g.bas),
+        repKonLitet: repVisade.filter(g => g.konLitet).map(g => g.bas),
+        dist: fordelningsgap(d, undefined, { k }),
+        q: kvartilfordelning(d, { k }),
+        medGap: medianGapPct(d, { k }),
+    };
 }

@@ -2,18 +2,18 @@
 // Copyright 2026 Felix Jansson
 import { namnrader, sektorsnamn } from '../lib/aid.js';
 import { kronorSkillnad, kronorTipsRad, talformat } from '../lib/figur.js';
-import { arKvinna, arMan } from '../lib/kon.js';
+import { arKvinna } from '../lib/kon.js';
 import { personOrd } from '../lib/namn.js';
 import { sektorAndelNot, sektorernasAndel, sektorJusteradText, sektorsTabell } from '../lib/sektor.js';
 import { skrDelText } from '../lib/skrreferens.js';
-import { fordelningsgap, kvartilfordelning, medianGapPct, representationPerBas, tillDirektivtecken } from '../lib/struktur.js';
+import { fordelningsgap, kvartilfordelning, strukturMatt, tillDirektivtecken } from '../lib/struktur.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, andelAvMan, antalCaption, direktivGap, idagDatum, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _konFarRedovisasFor, _konUtelamnatNot, _kSanktNot, _parForRedovisning, isKMasked, kTroskel } from './06-k-troskel.js';
+import { _konUtelamnatNot, _kSanktNot, _parForRedovisning, kTroskel } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
 import { APP_VERSION } from './08-version.js';
@@ -38,25 +38,7 @@ import { kTroskelLank } from './86-installningar.js';
 // De rena måtten står i src/lib/struktur.js.
 // ===================================================================
 
-/**
- * Lönestrukturens mått, räknade på ett ställe för fliken, rapportutkastet i Rapporttext och EU-exporten: andelen
- * kvinnor, representationen per BAS, percentilerna, kvartilerna och gapet i median- och medellön. Könsuppdelade
- * mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid tröskeln `k`.
- */
-function _stMatt(d, k) {
-    const konOk = _konFarRedovisasFor(d);
-    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
-    const ma = d.filter(r => arMan(r)).map(r => r.lon);
-    const totKv = kv.length;
-    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
-    return {
-        konOk, kv, ma, totKv, totAndel: d.length ? 100 * totKv / d.length : 0, meanGap,
-        rep: representationPerBas(d, { k }),
-        dist: fordelningsgap(d, undefined, { k }),
-        q: kvartilfordelning(d, { k }),
-        medGap: medianGapPct(d, { k }),
-    };
-}
+// Lönestrukturens mått räknas av strukturMatt i src/lib/struktur.js, med tröskeln kTroskel() som argument.
 
 export function renderStructure() {
     const wrap = document.getElementById('view-struktur');
@@ -75,14 +57,12 @@ export function renderStructure() {
     // (1) Representations-pyramid
     // Könsuppdelade mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid värdet.
     const k = kTroskel();
-    const { konOk, rep, totKv, totAndel, dist, q, medGap, ma, meanGap } = _stMatt(d, k);
+    const { konOk, totKv, totAndel, dist, q, medGap, ma, meanGap, repVisade, repUtelamnade } = strukturMatt(d, k);
     const konNot = konOk ? '' : `<p class="k-mask-note">${esc(_konUtelamnatNot())}</p>`;
     // k-anonymitet: lönemåtten (median, gap inom BAS) får inte redovisas för
     // BAS-intervall under tröskeln. Raden utelämnas helt i stället för att
     // fyllas med "< 10"-celler — andelen kvinnor ensam bär inte tabellen, och
     // de utelämnade BAS:en räknas upp i noten under.
-    const repVisade = rep.filter(g => !isKMasked(g.n));
-    const repUtelamnade = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
     if (repEl) repEl.innerHTML = `
         <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per ${T.niva.en}, i ordning A–Ö. Sjunker andelen kvinnor mot högre ${T.niva.fl} (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
         ${repVisade.length ? `<table class="data-table st-088"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">Median</th><th class="t-hoger">Andel kvinnor</th><th class="bredd-34p">Andel kvinnor (mot ${svPct(totAndel, 0)} totalt)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead><tbody>
@@ -160,9 +140,9 @@ export function renderStrukturUtkast() {
     if (!d.length) { /** @type {HTMLInputElement} */ (nb).value = ''; return; }
     if (nb.dataset.dirty) return;
     const k = kTroskel();
-    const { konOk, rep, totAndel, dist, q, medGap, meanGap } = _stMatt(d, k);
+    const { konOk, repVisade, totAndel, dist, q, medGap, meanGap } = strukturMatt(d, k);
     const perBas = state.utkastPerBas !== false ? _stUtkastPerBas(k) : null;
-    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk, perBas });
+    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
 }
 
 /** Väljaren ovanför utkastet visar valet i state (Hela organisationen, eller med ett stycke per BAS-intervall). */
@@ -479,8 +459,8 @@ function _buildNarrative(d, ctx) {
     }
     // Segregation
     // Bara BAS som tabellen visar namnges (k-anonymitet).
-    // ctx.rep är sorterad BAS A–Ö (representationPerBas): första är lägst värderat, sista högst.
-    const sorted = ctx.rep.filter(g => !isKMasked(g.n));
+    // ctx.repVisade är sorterad BAS A–Ö (representationPerBas): första är lägst värderat, sista högst.
+    const sorted = ctx.repVisade;
     if (sorted.length >= 2) {
         const lagsta = sorted[0], hogsta = sorted[sorted.length - 1];
         if (lagsta.andelKv - hogsta.andelKv > 15) lines.push(`Vertikal könssegregering: andelen kvinnor är högre i lägre betalda BAS (${lagsta.bas}: ${svPct(lagsta.andelKv, 0)}) än i högre betalda (${hogsta.bas}: ${svPct(hogsta.andelKv, 0)}). Det är en strukturell orsak till löneskillnaden.`);
@@ -515,7 +495,7 @@ function _exportEuReportExport() {
     if (!d.length) { alert('Ingen data.'); return; }
     const kr = n => n == null ? '' : Math.round(n);
     const k = kTroskel();
-    const { konOk, q, rep, dist, kv, ma, meanGap, medGap } = _stMatt(d, k);
+    const { konOk, q, repVisade, repUtelamnade: repUtelamnadeX, repKonLitet, dist, kv, ma, meanGap, medGap } = strukturMatt(d, k);
     // Måtten står med direktivets tecken (art. 9): (män − kvinnor) / män i procent, positivt när kvinnor ligger
     // lägre. Verktyget räknar (kvinnor − män) / män; _stTillDirektivtecken vänder tecknet, bara i den här exporten
     // och rapportens avsnitt om lönetransparens — övriga blad och flikar visar kvinnors lön i procent av mäns.
@@ -542,14 +522,12 @@ function _exportEuReportExport() {
     const repArr = [['BAS', 'n', 'Median', 'Andel kvinnor (%)', DIREKTIV_RUBRIK]]
         // k-anonymitet: BAS under tröskeln utelämnas och summeras i en slutrad,
         // samma princip som i vyn — en rad med enbart "< 10" bär ingen analys.
-        .concat(rep.filter(g => !isKMasked(g.n))
+        .concat(repVisade
             .map(g => [g.bas, g.n, kr(g.median), +g.andelKv.toFixed(0), g.gapPct == null ? '' : direktivRound(g.gapPct)]));
-    const repUtelamnadeX = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
     if (repUtelamnadeX.length) {
         repArr.push([]);
         repArr.push([`Utelämnat enligt k-anonymitet (n < ${kTroskel()}): ${repUtelamnadeX.join(', ')}`]);
     }
-    const repKonLitet = rep.filter(g => !isKMasked(g.n) && g.konLitet).map(g => g.bas);
     if (repKonLitet.length) {
         repArr.push([]);
         repArr.push([`Löneskillnaden utelämnad (ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}): ${repKonLitet.join(', ')}`]);

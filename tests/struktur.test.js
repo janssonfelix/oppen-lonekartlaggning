@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    histogramKlasser, omfang,
+    histogramKlasser, omfang, strukturMatt,
     konsMedianer, konsMedianerUrLoner, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken
 } from '../src/lib/struktur.js';
 
@@ -190,5 +190,28 @@ describe('histogramKlasser: lönefördelningens klasser (k-tröskeln)', () => {
     });
     it('omfang klarar fler värden än Math.min tar som argument', () => {
         expect(omfang(loner(1, 1, 300000))).toEqual([1, 300000]);
+    });
+});
+
+describe('[B2.14] strukturMatt: Lönestrukturs mått, med gapet i medellön och BAS-intervallen som får redovisas', () => {
+    const rad = (bas, kon, lon) => ({ bas, kon, lon });
+    const grupp = (bas, nKv, nMa, lonKv, lonMa) => [...Array.from({ length: nKv }, () => rad(bas, 'kvinna', lonKv)), ...Array.from({ length: nMa }, () => rad(bas, 'man', lonMa))];
+    it('medellönegapet är kvinnors medellön i procent av mäns minus 100, bara när båda könen når k', () => {
+        const d = [...grupp('A', 5, 5, 30000, 40000), ...grupp('B', 5, 5, 34000, 40000)];
+        const m = strukturMatt(d, 10);
+        expect(m.konOk).toBe(true);
+        expect(m.meanGap).toBeCloseTo((32000 / 40000 - 1) * 100, 10);
+        expect(m.totAndel).toBe(50);
+        expect(strukturMatt(d, 11).meanGap).toBeNull();
+        expect(strukturMatt(d, 11).konOk).toBe(false);
+    });
+    it('BAS-intervall med färre än k personer utelämnas och räknas upp; ett kön under k ger konLitet (k − 1, k)', () => {
+        const d = [...grupp('A', 6, 4, 30000, 31000), ...grupp('B', 4, 5, 30000, 31000), ...grupp('C', 20, 20, 30000, 31000)];
+        const m = strukturMatt(d, 10);
+        expect(m.repVisade.map(g => g.bas)).toEqual(['A', 'C']);
+        expect(m.repUtelamnade).toEqual(['B']);
+        expect(m.repKonLitet).toEqual(['A']);
+        expect(m.rep).toEqual(representationPerBas(d, { k: 10 }));
+        expect(m.medGap).toBe(medianGapPct(d, { k: 10 }));
     });
 });
