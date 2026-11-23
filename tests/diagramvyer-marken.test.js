@@ -534,7 +534,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
     it('ålderspyramiden: kvinnor åt vänster, män åt höger, äldst överst, samma andelar som histogrammet', () => {
         const w2 = skapa();
         w2.__renderTabContent('kon');
-        w2.eval("renderDemografi('__ALLA__')");
+        w2.eval("ritaAldersstruktur('__ALLA__')");
         const pyr = w2.document.getElementById('chart-demo-pyramid')._figur, hist = w2.document.getElementById('chart-demo-hist')._figur;
         expect(pyr.lager.map(l => [l.serie, !!l.absolut, l.riktning])).toEqual([['Kvinna', true, 'liggande'], ['Man', false, 'liggande']]);
         expect(pyr.lager[0].data.every(d => d.x <= 0)).toBe(true);
@@ -907,7 +907,7 @@ describe('Ålder & karriär: lönefördelningen per kön i fliken', () => {
         const d = w2.document;
         expect(d.getElementById('chart-kon-histogram')._figur.lager.map(l => l.serie)).toEqual(['Kvinnor', 'Män']);
         w2.eval('sattKTroskel(31, { fraga: false })');
-        w2.eval("renderKon('__ALLA__')");
+        w2.eval("ritaAlderOchLon('__ALLA__')");
         expect(d.getElementById('chart-kon-histogram')._figur).toBeUndefined();
         expect(d.getElementById('chart-kon-histogram').textContent).toMatch(/färre än 31 personer/);
     });

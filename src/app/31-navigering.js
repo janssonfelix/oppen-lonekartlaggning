@@ -15,7 +15,7 @@ import { renderForecast } from './36-loneoversyn.js';
 import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
 import { generateRapport } from './39-loneoversikt.js';
-import { renderDemografi, renderKon } from './40-alder-karriar.js';
+import { ritaAldersstruktur, ritaAlderOchLon } from './40-alder-karriar.js';
 import { laVymodell, lsBasVymodell, renderLikaArbeteTopp, renderLonestrukturNycklar, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { generateBenchmark, renderStatistikLage } from './42-jamforelse.js';
 import { renderPersonerAttGranska } from './43-personer-att-granska.js';
@@ -30,7 +30,7 @@ import { renderExportBesked } from './59-exportbesked.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { renderInfoTab } from './65-om-verktyget.js';
 import { renderRapportunderlag } from './67-rapportunderlag.js';
-import { renderGapUppdelning } from './68-var-uppstar-gapet.js';
+import { ritaGapUppdelning } from './68-var-uppstar-gapet.js';
 import { renderExplorer } from './70-utforska.js';
 import { renderArsjamforelse } from './73-arsbokslut.js';
 import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
@@ -395,8 +395,8 @@ function _renderTabContent(target) {
     _ritaIngetUnderlag(target, !d.length);
     if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
     if (target === "kon" && d.length) {
-        const s = document.getElementById("bas-select-kon"); if (s) renderKon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
-        const s2 = document.getElementById("bas-select-demo"); if (s2) renderDemografi(/** @type {HTMLInputElement} */ (s2).value);
+        const s = document.getElementById("bas-select-kon"); if (s) ritaAlderOchLon(/** @type {HTMLInputElement} */ (s).value); renderLifecycleAnalysis();
+        const s2 = document.getElementById("bas-select-demo"); if (s2) ritaAldersstruktur(/** @type {HTMLInputElement} */ (s2).value);
     }
     else if (target === "benchmark"    && d.length) { renderReferensOverblick(); renderLonepolitik(); renderStatistikLage(); generateBenchmark(); }
     else if (target === "matrix"       && d.length) {
@@ -408,7 +408,7 @@ function _renderTabContent(target) {
         renderStructure(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
         _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(renderRegressionCard()));
-        renderGapUppdelning(); renderLonestrukturNycklar();
+        ritaGapUppdelning(); renderLonestrukturNycklar();
     }
     else if (target === "loneoversyn"  && d.length) renderForecast();
     else if (target === "likvardighet" && (d.length || state.statistik.length)) { renderLikvardighet(); renderAidBasLikvardigt(); }

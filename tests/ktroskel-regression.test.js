@@ -212,7 +212,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
     it('ett valt BAS med 30 kvinnor och en man: samma regel som för hela urvalet (exportläget)', () => {
         const w = iExport(fonsterKon(null));
         w.__renderTabContent('kon');
-        w.eval("renderKon('Y1')");
+        w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
         expect(d.getElementById('kon-kpi-gap').textContent.trim()).toBe('–');
         expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
@@ -220,14 +220,14 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
         expect(namn(w, 'chart-kon-scatter')).not.toContain('Man (trend)');
         expect(harNagon(normalisera(d.getElementById('view-kon').textContent), [KON_MA[0], ...KON_GAP.slice(0, 4)])).toEqual([]);
         // Tillbaka till hela urvalet, där båda könen är många: noterna försvinner.
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         expect(d.getElementById('chart-kon-boxplot-k-not')).toBeNull();
         expect(namn(w, 'chart-kon-boxplot')).toEqual(['Kvinna', 'Man']);
     });
     it('på skärmen, ett valt BAS med en man: ingen lutning, ingen åldersjustering och ingen insikt för män', () => {
         const w = fonsterKon(null);
         w.__renderTabContent('kon');
-        w.eval("renderKon('Y1')");
+        w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
         expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
         expect(d.getElementById('kon-kpi-agegap').textContent.trim()).toBe('–');
@@ -240,18 +240,18 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
         w.__renderTabContent('kon');
         const d = w.document, gap = () => d.getElementById('kon-kpi-gap').textContent.replace(/[\u00a0\u202f]/g, ' ');
         const alla = gap();
-        w.eval("renderKon('Y1')");
+        w.eval("ritaAlderOchLon('Y1')");
         expect(gap()).toBe(w.eval(`svPct(${KON_KV[0] / KON_MA[0] * 100}, 1)`).replace(/[\u00a0\u202f]/g, ' '));   // 30 kvinnor och en man
         expect(gap()).not.toBe(alla);
         iExport(w);
-        w.eval("renderKon('Y1')");
+        w.eval("ritaAlderOchLon('Y1')");
         expect(gap().trim()).toBe('–');
     });
     it('färgläggning efter BAS: könens trendlinjer följer samma regel (exportläget)', () => {
         const w = iExport(fonsterMan(null, TRE_MAN));
         w.__renderTabContent('kon');
         w.document.getElementById('kon-color-by').value = 'bas';
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         const spridning = namn(w, 'chart-kon-scatter');
         expect(spridning).toContain('Kvinna (trend)');
         expect(spridning).not.toContain('Man (trend)');

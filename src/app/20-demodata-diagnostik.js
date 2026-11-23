@@ -27,7 +27,7 @@ import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasn
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
 import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { generateRapport } from './39-loneoversikt.js';
-import { renderKon } from './40-alder-karriar.js';
+import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { _formatPValue, runOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _hpDemoSkal } from './56-handlingsplan.js';
@@ -176,7 +176,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     populateSelects();
     generateRapport();
     ritaLoneskillnadPerBas(lsBasVymodell());
-    renderKon('__ALLA__');
+    ritaAlderOchLon('__ALLA__');
     updateCompliance();
     const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
     renderUnderlagetsKvalitet({ reg });

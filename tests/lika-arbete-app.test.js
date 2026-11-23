@@ -76,7 +76,7 @@ describe('Var uppstår löneskillnaden?', () => {
         w.__loadDemoData();
         w.__state.data = w.__state.data.filter((r, i) => r.kon.includes('kvinna') || i % 50 === 0).slice(0, 200);
         w.__state.kLage = 'export';
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         const t = w.document.getElementById('gap-uppdelning-innehall').textContent;
         expect(t).toContain('För få personer för att dela upp skillnaden');
         expect(w.document.querySelectorAll('#gap-uppdelning [data-gu-del]').length).toBe(0);
@@ -86,19 +86,19 @@ describe('Var uppstår löneskillnaden?', () => {
         w.__loadDemoData();
         const not = () => w.document.getElementById('gap-uppdelning-innehall').textContent.replace(/\s+/g, ' ');
         w.__state.kLage = 'skarm';
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         expect(w.eval('kTroskel()')).toBe(1);
         expect(not()).not.toMatch(/färre än 1 person/);
         expect(not()).not.toMatch(/namnges inte/);
         w.__state.kLage = 'export';
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         expect(not()).toMatch(new RegExp(`Grupper där ett kön har färre än ${w.eval('kTroskel()')} personer räknas samman med andra grupper och namnges inte\\.`));
     });
     it('AID-namn kodas', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.data = w.__state.data.map(r => ({ ...r, aid: '<b>&"x' }));
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         expect(w.document.querySelector('#gap-uppdelning b')).toBeNull();
     });
 });
@@ -243,7 +243,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         w.__loadDemoData();
         w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
         w.__state.gapUppdelning = { variabler: ['bas', 'alder', 'aid'] };
-        w.eval('invalidateStatCaches(); renderGapUppdelning()');
+        w.eval('invalidateStatCaches(); ritaGapUppdelning()');
         expect(rutor(w).map(r => r.getAttribute('data-gu-var'))).not.toContain('alder');
         expect(valda(w)).toEqual(['bas', 'aid']);
         expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);

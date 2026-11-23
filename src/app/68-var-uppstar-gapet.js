@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Var uppstår löneskillnaden? (ADR-22) ----
-import { gapAllaVariabler, gapDelar, gapDelarIText, gapOvrigaText, gapStandardVariabler, gapUppdelning, gapVariabelEtikett, gapVariablerArStandard, gapVariablerIText, normaliseraGapVariabler } from '../lib/gapuppdelning.js';
+import { gapAllaVariabler, gapDelar, gapDelarIText, gapOvrigaText, gapStandardVariabler, gapVariabelEtikett, gapVariablerArStandard, gapVariablerIText, normaliseraGapVariabler } from '../lib/gapuppdelning.js';
 import { personOrd } from '../lib/namn.js';
-import { konsMedianer } from '../lib/struktur.js';
+import { andelAvSkillnaden, gapTrappa, vymodellVarUppstarGapet } from '../lib/vymodell-var-uppstar-gapet.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { kTroskel } from './06-k-troskel.js';
@@ -15,7 +15,7 @@ import { harAlder } from './50-regressionsmodeller.js';
 /**
  * Kort i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (ADR-65; standard BAS och AID ger
  * BAS-fördelning (A), AID inom BAS (B) och lön inom samma AID och BAS (C)), med de grupper som bidrar mest.
- * Beräkningen och delarnas namn bor i src/lib/gapuppdelning.js (_guGapUppdelning, _guDelar). Anropas av Lönestruktur.
+ * Beräkningen bor i src/lib/gapuppdelning.js och vymodellen i src/lib/vymodell-var-uppstar-gapet.js. Anropas av Lönestruktur.
  */
 // Åtgärd och länk per variabel som delen förklarar; den sista delen ("inom") har nyckeln null.
 const _GU_ATGARD = {
@@ -27,10 +27,6 @@ const _GU_ATGARD = {
     inom: { atgard: 'Pröva lika arbete och se över lönerna individuellt.', flik: 'matrix', flikNamn: 'Lika arbete',
         ankare: 'personer-att-granska', ankareNamn: 'Personer att granska' },
 };
-/** Delarna för ett val, med åtgärd och länk. @param {string[]} variabler */
-function _guDelarMedAtgard(variabler) {
-    return gapDelar(variabler).map(d => ({ ...d, ..._GU_ATGARD[d.variabel || 'inom'] }));
-}
 
 // ---- Valet av förklaringsvariabler (ADR-65) ----
 /** De gällande variablerna, normaliserade mot datat: åldersgrupp bara när lönefilen har ålder (ADR-64). */
@@ -46,7 +42,7 @@ export function gapVariabler() {
 function sattGapVariabler(v, { rita = true } = {}) {
     const { variabler, varningar } = normaliseraGapVariabler(v);
     state.gapUppdelning = gapVariablerArStandard(variabler) ? null : { variabler };
-    if (rita) renderGapUppdelning();
+    if (rita) ritaGapUppdelning();
     return { variabler: gapVariabler(), varningar };
 }
 // Variablerna som kan väljas i det här underlaget: åldersgrupp kräver ålder, sektor och mellannivå AID-koder.
@@ -97,37 +93,34 @@ function _guPct(v, dec = 1) {
     return `${new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)}\u00a0%`;
 }
 
-export function renderGapUppdelning() {
+/** Kortet (ADR-99): vymodellVarUppstarGapet i src/lib/vymodell-var-uppstar-gapet.js räknar; här ritas texten och trappan. */
+export function ritaGapUppdelning() {
     const host = document.getElementById('gap-uppdelning');
     const body = document.getElementById('gap-uppdelning-innehall');
     if (!host || !body) return;
-    const d = getData();
-    if (!d.length) { host.hidden = true; body.innerHTML = ''; return; }
+    /** @type {any} */
+    const vm = vymodellVarUppstarGapet(getData(), { k: kTroskel(), variabler: gapVariabler() });
+    if (!vm) { host.hidden = true; body.innerHTML = ''; return; }
     host.hidden = false;
     const demo = state.isDemo ? '<p class="gu-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
-    const variabler = gapVariabler();
-    /** @type {any} */
-    const u = gapUppdelning(d, { k: kTroskel(), variabler });
-    if (!u) {
+    if (vm.forFa) {
         body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>`;
         return;
     }
+    const u = vm.uppdelning;
     const inledning = u.gap <= 0
         ? `Kvinnors medellön är <strong>${_guKr(-u.gap, false)}</strong> lägre än mäns, det är ${_guPct(-u.gapPct)} av mäns medellön.`
         : `Kvinnors medellön är <strong>${_guKr(u.gap, false)}</strong> högre än mäns, det är ${_guPct(u.gapPct)} av mäns medellön.`;
-    const kvot = konsMedianer(d, { k: kTroskel() }).kvotPct;
-    const medianText = kvot != null ? ` Kvinnors medianlön är ${_guPct(kvot)} av mäns.` : '';
-    const delar = _guDelarMedAtgard(u.variabler || variabler);
-    const max = Math.max(1, ...delar.map(x => Math.abs(u.delar[x.id])));
-    const rader = delar.map(del => {
-        const v = u.delar[del.id];
-        const bredd = Math.abs(v) / max * 50;
+    const medianText = vm.medianKvot != null ? ` Kvinnors medianlön är ${_guPct(vm.medianKvot)} av mäns.` : '';
+    const rader = vm.delar.map(d => {
+        const del = { ...d, ..._GU_ATGARD[d.variabel || 'inom'] }, v = del.belopp;
+        const bredd = Math.abs(v) / vm.storst * 50;
         // Samma färg som delens stapel i trappan: struktur eller lönesättningen (PALETTE.uppdelning).
         const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
-        const andel = u.litetGap ? '' : `<span class="gu-andel">${_guPct(v / u.gap * 100, 0)} av skillnaden</span>`;
-        const topp = u.topp[del.id].map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
+        const andel = del.andel === null ? '' : `<span class="gu-andel">${_guPct(del.andel, 0)} av skillnaden</span>`;
+        const topp = del.topp.map(p => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join('')
             // Grupper som räknats samman (ADR-87) redovisas bara med antal — deras belopp kunde röja en liten grupp.
-            + (u.ovrigaAntal[del.id] ? `<li class="gu-ovriga">${esc(gapOvrigaText(u.ovrigaAntal[del.id], kTroskel()))}</li>` : '');
+            + (del.ovrigaAntal ? `<li class="gu-ovriga">${esc(gapOvrigaText(del.ovrigaAntal, kTroskel()))}</li>` : '');
         return `<div class="gu-rad" data-gu-del="${del.id}">
             <div class="gu-rubrik"><svg class="gu-ruta" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="2" fill="${farg}"/></svg><strong>${del.id}. ${esc(del.namn)}</strong><span class="gu-belopp">${_guKr(v)}</span>${andel}</div>
             <div class="gu-stapel" aria-hidden="true"><svg width="100%" height="10" focusable="false"><rect x="${(v < 0 ? 50 - bredd : 50).toFixed(1)}%" width="${bredd.toFixed(1)}%" height="10" rx="2" fill="${farg}"/></svg></div>
@@ -152,31 +145,22 @@ export function renderGapUppdelning() {
 // under, och aldrig en enskild grupps bidrag (i exportläget räknas grupper där ett kön är under tröskeln samman först,
 // ADR-87). Färgen säger vad delen betyder (PALETTE.uppdelning), inte åt vilket håll den går.
 const _GU_SERIE = { helhet: 'Hela skillnaden', struktur: 'Hur kvinnor och män är fördelade', inom: 'Oförklarat (lön inom samma grupp)' };
-/** Delens andel av hela skillnaden i procent, eller null när den inte säger något: en liten skillnad (`litetGap`), en
- * del som går åt andra hållet än helheten eller en del som är större än helheten. @param {any} u @param {number} v */
-function _guAndel(u, v) {
-    if (u.litetGap || !u.gap) return null;
-    const a = v / u.gap * 100;
-    return a >= 0 && a <= 100 ? a : null;
-}
+// Stegen och andelarna är gapTrappa och andelAvSkillnaden i src/lib/vymodell-var-uppstar-gapet.js.
 function _guTrappaFigur(u) {
     const variabler = u.variabler || gapStandardVariabler();
     const delar = gapDelar(variabler);
     const kategorier = [_GU_SERIE.helhet, ...delar.map(d => `${d.id}. ${d.namn}`)];
     const gap = Math.round(u.gap);
-    // Från hela skillnaden dras delarna av en i taget: nivån efter den sista är noll.
-    let niva = u.gap;
-    const steg = delar.map((d, i) => { const v = u.delar[d.id], fore = niva; niva -= v;
-        return { x: kategorier[i + 1], lag: Math.round(Math.min(fore, niva)), hog: Math.round(Math.max(fore, niva)), del: v, fore, efter: niva,
-                 skillnadKr: Math.round(v), inom: d.variabel === null }; });
-    const etikett = s => { const a = _guAndel(u, s.del); return a === null ? _guKr(s.del) : `${_guKr(s.del)} · ${_guPct(a, 0)}`; };
+    const steg = gapTrappa(u).map((t, i) => ({ x: kategorier[i + 1], lag: t.lag, hog: t.hog, del: t.belopp, fore: t.fore, efter: t.efter,
+        skillnadKr: Math.round(t.belopp), inom: t.inom }));
+    const etikett = s => { const a = andelAvSkillnaden(u, s.del); return a === null ? _guKr(s.del) : `${_guKr(s.del)} · ${_guPct(a, 0)}`; };
     // Värdet står utanför stapeln, vid den ände som ligger längst från noll: under stapeln när den änden är den undre,
     // annars över. Där korsar det aldrig nollinjen (som ritas över märkena), också när ett steg landar nära noll.
     // Strecket står kvar där steget landar.
     const ande = s => (Math.abs(s.fore) >= Math.abs(s.efter) ? s.fore : s.efter);
     const lage = (y, lag) => (y <= lag ? 'under' : 'over');
     const tips = d => {
-        const a = _guAndel(u, d.del);
+        const a = andelAvSkillnaden(u, d.del);
         const andel = a !== null ? [['Andel av skillnaden', _guPct(a, 0)]]
             : u.litetGap ? []
             : [['Andel av skillnaden', Math.sign(d.del) !== Math.sign(u.gap) ? 'anges inte: delen går åt andra hållet än hela skillnaden'

@@ -11,6 +11,7 @@ import { direktivMarkering, perBasSignal } from '../lib/status.js';
 import { receptBeskrivning, receptTillTabeller } from '../lib/tabellrecept.js';
 import { adjektiv, artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { kompletterandeUndertryckningPerNyckel } from '../lib/undertryckning.js';
+import { alderGapRader } from '../lib/vymodell-alder-karriar.js';
 import { announceToScreenReader } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { auditPoster } from './05-tabeller-och-lankar.js';
@@ -25,7 +26,6 @@ import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { renderSektorer } from './37-struktur.js';
 import { generateRapport } from './39-loneoversikt.js';
-import { _konAlderGapRader } from './40-alder-karriar.js';
 import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper, laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { generateBenchmark, jamforelseUrvalText } from './42-jamforelse.js';
 import { _rrExcelBlad } from './44-referensoverblick.js';
@@ -159,7 +159,7 @@ function _excelDiagramBlad() {
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna']),
         [], ['Bladet visar gränserna, inte statusen: statusen per grupp står i bladen EU-lönekartläggning och Lika arbete AID x BAS och väger samman gränserna med storleken, minst 3 %.']]]);
     const arKv = arKvinna, arMa = arMan;
-    const alder = _konAlderGapRader(d.filter(arKv), d.filter(arMa), k);
+    const alder = alderGapRader(d.filter(arKv), d.filter(arMa), k);
     if (alder.visade.length) ut.push(['Löneskillnad per ålder', [
         ['Löneskillnad per åldersgrupp (Ålder & karriär)'],
         ...(alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${alder.dolda.join(', ')}.`]] : []), [],

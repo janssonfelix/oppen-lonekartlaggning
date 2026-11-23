@@ -443,7 +443,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         const kv = [...Array.from({ length: 12 }, (_, i) => p('kvinna', 32 + (i % 6), 30000 + i * 100)), ...Array.from({ length: 12 }, (_, i) => p('kvinna', 44, 33000 + i * 100)), ...Array.from({ length: 3 }, (_, i) => p('kvinna', 62, 71111 + i))];
         const ma = [...Array.from({ length: 12 }, (_, i) => p('man', 33 + (i % 6), 32000 + i * 100)), ...Array.from({ length: 12 }, (_, i) => p('man', 45, 33000 + i * 100)), ...Array.from({ length: 12 }, (_, i) => p('man', 63, 40000 + i * 100))];
         w.__kv = kv; w.__ma = ma;
-        const u = w.eval('_konAlderGapRader(window.__kv, window.__ma, 10)');
+        const u = w.eval('alderGapRader(window.__kv, window.__ma, 10)');
         expect(u.visade.map(r => [r.namn, r.nKv, r.nMa])).toEqual([['30–39 år', 12, 12], ['40–49 år', 12, 12]]);
         expect(u.dolda).toEqual(['60 år och äldre']);                              // tre kvinnor: visas inte
         expect(u.visade[0].gap).toBeCloseTo(30550 / 32550 * 100, 6);
@@ -652,7 +652,7 @@ describe('Ålder & karriär: chart-demo-hist', () => {
 // ---- Linjer, band och lådor ----
 describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
     const rader = (n, kon, bas = 'A') => Array.from({ length: n }, (_, i) => person(bas, kon, 30000 + i * 300, { alder: 25 + (i % 35), yrke: `53${i % 3} Yrke` }));
-    const rita = (data, fn) => medData(data, [], () => { w.eval("populateSelects(); renderKon('__ALLA__')"); return fn(w.document); });
+    const rita = (data, fn) => medData(data, [], () => { w.eval("populateSelects(); ritaAlderOchLon('__ALLA__')"); return fn(w.document); });
     const serier = id => w.document.getElementById(id)._figur.lager.map(l => [l.marke, l.serie]);
     it('båda könen över tröskeln: band och trend per kön, punkter per kön, låda per kön', () => {
         rita([...rader(30, 'kvinna'), ...rader(30, 'man')], d => {
@@ -707,7 +707,7 @@ describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
     it('färg efter BAS: en punktserie per BAS med kön i tipset, trendlinjerna streckade', () => {
         rita([...rader(30, 'kvinna', 'A'), ...rader(30, 'man', 'B')], d => {
             d.getElementById('kon-color-by').value = 'bas';
-            w.eval("renderKon('__ALLA__')");
+            w.eval("ritaAlderOchLon('__ALLA__')");
             const f = d.getElementById('chart-kon-scatter')._figur;
             expect(f.lager.filter(l => l.marke === 'punkt').map(l => l.serie).sort()).toEqual(['BAS-A', 'BAS-B']);
             expect(f.lager.find(l => l.serie === 'BAS-A').data[0].kon).toBe('Kvinna');
@@ -1130,7 +1130,7 @@ describe('spridningsdiagrammen: en person i en grupp under tröskeln visas inte 
         ...Array.from({ length: 14 }, (_, i) => rad('403010 Bsk', 'A', i < 3 ? 'man' : 'kvinna', i < 3 ? MARKOR + 10 + i : 28000 + i * 40, 25 + i))];   // 11 kv, 3 män
     const utdata2 = el => utdata(el).replace(/\s(?:c?[xy][12]?|r|d|width|height|transform)="[^"]*"/g, '').replace(/(\d)[\s  ](?=\d)/g, '$1');
     // Regeln själv (individLitenFor) prövas i Node i tests/ktroskel-lib.test.js; här prövas vyerna som använder den.
-    it.each([['chart-kon-scatter', "renderKon('__ALLA__')"]])(
+    it.each([['chart-kon-scatter', "ritaAlderOchLon('__ALLA__')"]])(
         '%s: punkterna ritas inte, syns inte i exportbilden eller diagramdatan, och noten säger hur många', (id, rita) => {
         medData(data(), [], () => {
             w.eval(`populateSelects(); ${rita}`);
@@ -1622,7 +1622,7 @@ describe('skillnaden i kronor per månad', () => {
     it('lönegap per åldersgrupp: skillnaden för åldersgrupper där båda könen når tröskeln, ingen för den dolda', () => {
         w.__kv = [...Array.from({ length: 12 }, (_, i) => p('kvinna', 34, 30000 + i * 100)), ...Array.from({ length: 3 }, (_, i) => p('kvinna', 62, 71111 + i))];
         w.__ma = [...Array.from({ length: 12 }, (_, i) => p('man', 35, 32000 + i * 100)), ...Array.from({ length: 12 }, (_, i) => p('man', 63, 40000 + i * 100))];
-        w.__r = w.eval('_konAlderGapRader(window.__kv, window.__ma, 10)').visade;
+        w.__r = w.eval('alderGapRader(window.__kv, window.__ma, 10)').visade;
         const f = w.eval('_konAlderGapFigur(window.__r, "hela urvalet")');
         const data = f.lager.flatMap(l => l.data);
         expect(data.map(d => [d.y, d.skillnadKr])).toEqual([['30–39 år', -2000]]);

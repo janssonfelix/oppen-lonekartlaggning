@@ -24,7 +24,7 @@ function fonster(k = null, rader = byggDataset()) {
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
 
 describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräver att urvalet når tröskeln', () => {
-    const rita = (w, bas) => { iExport(w); w.document.getElementById('kon-trend-alla').checked = true; w.eval(`renderKon('${bas}')`); return w.document; };
+    const rita = (w, bas) => { iExport(w); w.document.getElementById('kon-trend-alla').checked = true; w.eval(`ritaAlderOchLon('${bas}')`); return w.document; };
     const harTrend = fig => fig.lager.some(l => l.marke === 'linje' && /^Hela urvalet \(trend/.test(l.serie));
     it('ett valt BAS med 6 personer: ingen trendlinje för hela urvalet och en not under diagrammet (vid 10)', () => {
         const d = rita(fonster(), 'E');
@@ -48,7 +48,7 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
         expect(harTrend(rita(w, 'A').getElementById('chart-kon-scatter')._figur)).toBe(false);
         expect(text(w.document.getElementById('chart-kon-scatter-k-not'))).toMatch(/urvalet har 20 personer, färre än 25/);
         w.document.getElementById('kon-trend-alla').checked = false;
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         expect(harTrend(w.document.getElementById('chart-kon-scatter')._figur)).toBe(false);
         expect(text(w.document.getElementById('chart-kon-scatter-k-not'))).not.toMatch(/hela urvalet/);
     });
@@ -207,7 +207,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
         const w = fonster();
         w.eval("renderTabContent('kon')");
         w.document.getElementById('kon-color-by').value = 'aid';
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         const serier = new Set(rader(w, 'chart-kon-scatter').slice(2).map(r => r[0]));
         expect(serier.has('6000 Säkeryrke 0')).toBe(true);
     });

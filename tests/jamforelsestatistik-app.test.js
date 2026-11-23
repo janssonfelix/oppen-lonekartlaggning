@@ -324,7 +324,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('rättelse, Ålder & karriär i hela urvalet: ett uppslag per AID×BAS och medianen av de matchade', () => {
         const w = medMatchning();
         w.__state.statistik = [{ aid: '402010', bas: 'Z', median: 99999 }, { aid: '207024', bas: '', median: 40000 }, { aid: '502010', bas: 'C', median: 50000 }];
-        w.eval("populateSelects(); renderKon('__ALLA__')");
+        w.eval("populateSelects(); ritaAlderOchLon('__ALLA__')");
         const linje = w.document.getElementById('chart-kon-scatter')._figur.lager.find(l => /^Median i /.test(l.serie));
         expect(linje.data.map(p => p.y)).toEqual([45000, 45000]);   // inte 50000 (med BAS Z:s 99999)
     });

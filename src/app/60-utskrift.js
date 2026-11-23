@@ -15,7 +15,7 @@ import { getData, state } from './12-tillstand.js';
 import { _exportUtanSkarmkolumner, _exportVisaAllaRader } from './22-exporthjalpare.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
 import { generateRapport } from './39-loneoversikt.js';
-import { renderKon } from './40-alder-karriar.js';
+import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { _jmfKallaNamn, generateBenchmark, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
 import { _utskriftReferenserHtml } from './44-referensoverblick.js';
@@ -96,7 +96,7 @@ async function _buildPrintReportExport() {
             ritaLikaArbete(laVymodell());
             if (state.statistik.length) generateBenchmark();
             const imgs = {};
-            renderKon('__ALLA__');
+            ritaAlderOchLon('__ALLA__');
             await new Promise(r => setTimeout(r, 250));
             for (const [nyckel, id, hojd] of [['kon', 'chart-kon-scatter', 600], ['box', 'chart-kon-boxplot', 500], ['lador', 'chart-skevhet-lador', 560]]) {
                 const elD = document.getElementById(String(id));

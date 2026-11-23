@@ -489,11 +489,11 @@ Fem regler för könsuppdelade mått utöver avsnitt 2 (ADR-38).
   tas bort, med en mening om det. Konfigurationsfilen bär fältet `kalla` (valfritt, version oförändrad); egna rader
   står kvar med noten.
 - **R3. Ålder & karriär följer regeln.** Ojusterat och åldersjusterat gap kräver tröskeln för båda könen; lutning,
-  trendlinje med konfidensband och låda kräver den för det könet (`40-alder-karriar.js`, `_setDiagramKNot` för noten
-  under diagrammet). Demografidelens trendlinje och lutning för hela urvalet (alla BAS eller det valda) kräver att
+  trendlinje med konfidensband och låda kräver den för det könet (`vymodellAlderOchLon` i `src/lib/vymodell-alder-karriar.js`,
+  `_setDiagramKNot` för noten under diagrammet). Demografidelens trendlinje och lutning för hela urvalet (alla BAS eller det valda) kräver att
   urvalet når tröskeln (beslut 2026-10-16); annars utelämnas de och noten under diagrammet säger det. Punkterna per
   person följer sin egen regel (avsnitt 2). Åldersfördelningen per kön är antal, inte lönemått, och lönespridningen över
-  ålder ritar bara de femårsgrupper som når tröskeln (`_demoBandFigur`).
+  ålder ritar bara de femårsgrupper som når tröskeln (`alderBandRader` i `src/lib/vymodell-alder-karriar.js`).
 - **R4. Lönerevisionssimulatorn är borttagen** (2026-10, ADR-50). Det den kunde — begränsa till ett kön och en
   lönegräns, "höj till" — gör en riktad rad i Löneöversyn, som följer R2: en rad som berör färre personer än tröskeln är
   användarens egen simulering, beloppet visas på raden med noten om enskildas löner. Lönegapet före och efter kräver

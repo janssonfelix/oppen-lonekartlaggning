@@ -405,7 +405,7 @@ describe('k-anonymitet: utskriften ur rapportmodellen mot referensen', () => {
 
 describe('k-anonymitet: var uppstår löneskillnaden', () => {
     it('inget sentinelvärde i kortet', () => {
-        win.eval('renderGapUppdelning()');
+        win.eval('ritaGapUppdelning()');
         const t = normalisera(win.document.getElementById('gap-uppdelning').innerHTML);
         expect(SENTINEL.filter(s => t.includes(String(s)))).toEqual([]);
     });
