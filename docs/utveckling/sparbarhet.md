@@ -96,7 +96,7 @@ avsnitt 11.
 |---|---|---|---|---|---|---|
 | B5.1 | Grupperna: AID-koden (de inledande siffrorna i fältet, annars hela texten) i BAS-intervallet, med namnet från texten på flest av gruppens rader (vid lika många den första i lönefilen); också Lika arbetes tabell, med en rad per kod och intervall | `aidAvRad` och `namnrader`, `aid.js`; `gruppnycklar`, `falt.js`; `likaArbeteGrupper`, `rapportunderlag.js` | AID, BAS | ADR-89 | `tests/grupp-aid-kod.test.js`, `tests/grupp-aid-kod-app.test.js` | saknas |
 | B5.2 | Kvinnodominerat: *Mer än* (`'do'`) eller *Minst* (`'scb'`) gränsen, standard 60 % | `arKvinnodominerad`, `konsklass`, `likvardighet.js` | andel kvinnor | `likvardighetsmodellen.md` §2; ADR-60, 72 | `tests/likvardighet.test.js` | saknas |
-| B5.3 | Paren i likvärdigt arbete och lägre krav, högre lön | `byggPar`, `byggParLagreKrav`, `computeLikvardighetPairs`, `likvardighet.js` | lön, kön, AID, BAS | `likvardighetsmodellen.md` §3–§6; ADR-25, 61 | `tests/likvardighet.test.js` | saknas |
+| B5.3 | Paren i likvärdigt arbete och lägre krav, högre lön | `byggPar`, `byggParLagreKrav`, `likvardighetspar`, `likvardighet.js` | lön, kön, AID, BAS | `likvardighetsmodellen.md` §3–§6; ADR-25, 61 | `tests/likvardighet.test.js` | saknas |
 | B5.4 | Åldersjusterad skillnad i ett par | `aldersjusteradSkillnad`, `likvardighet.js` | lön, ålder | `likvardighetsmodellen.md` §5 | `tests/likvardighet.test.js` | saknas |
 | B5.5 | Tabellerna per AID-kod och BAS-intervall, hierarkiska par; Lika arbete AID x BAS är Lika arbetes grupper och status (`likaArbeteGrupper`) i BAS-ordning, utan egen bedömning, och samma blad (`_aidbasLikaBlad`) är blad 2a i JPA-protokollet; gränserna i tabellen är de statusen prövades mot (`bedomSkillnad`, `status.js`) | `likaArbeteTabell`, `likvardigtTabell`, `hierarkiskaPar`, `individnivaTabell`, `aidbas.js` | lön, kön, AID, BAS | ADR-57, 90, 93 | `tests/aidbas.test.js`, `tests/aidbas-app.test.js`, `tests/ktroskel-utdata.test.js` | saknas |
 | B5.6 | Personer att granska: förväntad lön ur kollegorna (log-lön mot ålder när spridningen är minst 5 år, annars medianen), flagga vid minst `grans` % under | `flaggaIndivider`, `individflaggor.js` | lön, ålder, AID, BAS | ADR-23, 89 | `tests/individflaggor.test.js`, `tests/grupp-aid-kod.test.js` | `14-granska-median.json`, `15-granska-alder.json` |
@@ -196,8 +196,8 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `MAD_TILL_SIGMA`, `MEDIAN_SE_FAKTOR` | 1,4826, 1,2533 | `src/lib/osakerhet.js` | MAD till σ vid normalfördelning; medianens standardfel √(π/2)·σ/√n | Fast |
 | `SMA_GRUPPER_RATTNING` | 0,6 | `src/lib/osakerhet.js` | trattens breddning för små grupper | Fast |
 | `KVANTIL_KI_B`, `KVANTIL_KI_MAX_N` | 200, 2000 | `src/lib/osakerhet.js` | kvantilregressionens intervall | Fast |
-| `KVINNO_TROSKEL_DEFAULT`, `KV_DOM_STAT`, `KV_GRANS_STANDARD` | 60 % | `src/lib/likvardighet.js`, `src/lib/aidbas.js` | gränsen för kvinnodominerat, också i `prognosutfall` när ingen gräns skickas | Inställning (gränsen och definitionen) |
-| `ALDERS_GOLV_DEFAULT`, `ALDERS_SPRIDNING_MIN` | 10, 5 år | `src/lib/likvardighet.js` | åldersjusteringen i paren | Fast |
+| `KVINNO_TROSKEL_STANDARD`, `KV_DOM_STAT`, `KV_GRANS_STANDARD` | 60 % | `src/lib/likvardighet.js`, `src/lib/aidbas.js` | gränsen för kvinnodominerat, också i `prognosutfall` när ingen gräns skickas | Inställning (gränsen och definitionen) |
+| `ALDERS_GOLV_STANDARD`, `ALDERS_SPRIDNING_MIN` | 10, 5 år | `src/lib/likvardighet.js` | åldersjusteringen i paren | Fast |
 | `ARSBOKSLUT_K_MIN` | 2 | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
 | `SKAL_GRANSER` | 200 000 kr, 200 tecken, 8 skäl | `src/lib/sakligaskal.js` | gränserna för de sakliga skälen | Fast |
 | `PRIO_CONFIG_DEFAULTS` | åtgärd −5 %, akut minst 10, bevaka −2 %, analysera 5 % | `src/app/07-standardinstallningar.js` | prioriteringens statusar | Inställning |

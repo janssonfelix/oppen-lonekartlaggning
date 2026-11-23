@@ -7,22 +7,22 @@
  * icke-kvinnodominerade yrken (extern fallback). Den nationella reserven för
  * kvinnoandel (nationellKlass) injiceras som stub. Varje par får ett bootstrap-CI på medianskillnaden.
  *
- * Speglar app.js `computeLikvardighetPairs()` — håll dessa i synk.
+ * Speglar app.js `likvardighetspar()` — håll dessa i synk.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
-    KVINNO_TROSKEL_DEFAULT,
-    bootstrapMedianDiffKr,
-    bootstrapMedianVsConstantKr,
+    KVINNO_TROSKEL_STANDARD,
+    bootstrapMedianskillnadKr,
+    bootstrapMedianMotKonstantKr,
     aggregeraOrgKvDom,
     klassificeraStatistik,
-    orgIckeKvByBas,
+    orgIckeKvPerBas,
     byggPar,
-    byggParPoäng,
+    byggParPoang,
     byggParLagreKrav,
     aldersjusteradSkillnad,
-    computeLikvardighetPairs,
+    likvardighetspar,
     arKvinnodominerad,
     konsklass
 } from '../src/lib/likvardighet.js';
@@ -64,7 +64,7 @@ describe('aggregeraOrgKvDom — Steg 1 klassificering', () => {
         const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
             kvLons: [28000, 29000, 30000, 31000, 32000, 33000, 34000],   // 7 kv
             maLons: [30000, 31000, 32000] });                            // 3 ma → 70% kv
-        const { orgKvDom } = aggregeraOrgKvDom(data, KVINNO_TROSKEL_DEFAULT);
+        const { orgKvDom } = aggregeraOrgKvDom(data, KVINNO_TROSKEL_STANDARD);
         expect(orgKvDom).toHaveLength(1);
         expect(orgKvDom[0].aid).toBe('5301');
         expect(orgKvDom[0].kvinnoPct).toBeCloseTo(70, 5);
@@ -216,7 +216,7 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
     });
 
     it('prioriterar internt jämförelseyrke framför statistiken i samma BAS', () => {
-        const intern = orgIckeKvByBas([
+        const intern = orgIckeKvPerBas([
             { aid: '7001', bas: 'B', label: 'Tekniker', n: 12, nKv: 2, kvinnoPct: 16.7, median: 35000, lons: Array(12).fill(35000) }
         ]);
         const ext = statMap([{ aid: '2051', bas: 'B', median: 38000, kvAndel: 25, källa: 'lokal' }]);
@@ -235,7 +235,7 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
             { aid: '5301', bas: 'B', label: 'Usk', n: 20, nKv: 16, kvinnoPct: 80, median: 30000, lons: Array(20).fill(30000) },
             { aid: '5302', bas: 'C', label: 'Vårdbiträde', n: 10, nKv: 9, kvinnoPct: 90, median: 28000, lons: Array(10).fill(28000) }
         ];
-        const intern = orgIckeKvByBas([
+        const intern = orgIckeKvPerBas([
             { aid: '7001', bas: 'B', label: 'Tekniker', n: 12, nKv: 2, kvinnoPct: 16.7, median: 35000, lons: Array(12).fill(35000) }
         ]); // bara BAS B
         const ext = statMap([{ aid: '2051', bas: 'C', median: 40000, kvAndel: 25, källa: 'lokal' }]); // bara BAS C
@@ -303,7 +303,7 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
     });
 
     it('beräknar gapCI på varje par (intern → diff-bootstrap, extern → konstant-bootstrap)', () => {
-        const intern = orgIckeKvByBas([
+        const intern = orgIckeKvPerBas([
             { aid: '7001', bas: 'B', label: 'Tekniker', n: 12, nKv: 2, kvinnoPct: 16.7, median: 35000, lons: Array(12).fill(35000) }
         ]);
         const { pairs } = byggPar(orgKvDom, intern, new Map(), { minGap: 0, topN: 100, rng: makeRng() });
@@ -314,7 +314,7 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
 });
 
 // ===================================================================
-describe('[B5.3] computeLikvardighetPairs — full pipeline (v4)', () => {
+describe('[B5.3] likvardighetspar — full pipeline (v4)', () => {
     it('end-to-end: internt jämförelseyrke är primärt över jämförelsestatistiken', () => {
         const rng = makeRng();
         const data = [
@@ -326,7 +326,7 @@ describe('[B5.3] computeLikvardighetPairs — full pipeline (v4)', () => {
         const statistik = [
             statRow({ aid: '2051', bas: 'B', median: 99000, andelKv: 25, aidFull: '2051 Ingenjör' })
         ];
-        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng } });
         expect(res.orgKvDom).toHaveLength(1);
         expect(res.orgIckeKv).toHaveLength(1);
@@ -345,7 +345,7 @@ describe('[B5.3] computeLikvardighetPairs — full pipeline (v4)', () => {
             statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: 25, aidFull: '2051 Ingenjör' }),
             statRow({ aid: '7000', bas: 'B', median: 41000, andelKv: 75, aidFull: '7000 Chef' })  // kv-dom → skippas
         ];
-        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng } });
         expect(res.orgIckeKv).toHaveLength(0);
         expect(res.statIckeKv).toHaveLength(1);
@@ -360,7 +360,7 @@ describe('[B5.3] computeLikvardighetPairs — full pipeline (v4)', () => {
         const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
             kvLons: Array(16).fill(30000), maLons: Array(4).fill(30000) });
         const statistik = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: null, aidFull: '2051 Ingenjör' })];
-        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 5, topN: 100, rng: makeRng() } });
         expect(res.pairs).toHaveLength(1);
         expect(res.pairs[0].maKlassKort).toBe('nationell');
@@ -372,22 +372,22 @@ describe('[B5.3] computeLikvardighetPairs — full pipeline (v4)', () => {
     it('ger tomt resultat utan jämförbara BAS-intervall', () => {
         const data = orgRows({ aid: '5301', bas: 'A', kvLons: Array(12).fill(28000), maLons: [] });
         const statistik = [statRow({ aid: '2051', bas: 'C', median: 40000, andelKv: 20 })];
-        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub });
+        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub });
         expect(res.pairs).toHaveLength(0);
         expect(res.diagnostik.jämförelse.gemensammaBas).toBe(0);
     });
 });
 
 // ===================================================================
-describe('bootstrapMedianDiffKr', () => {
+describe('bootstrapMedianskillnadKr', () => {
     it('returnerar null vid för få observationer', () => {
-        expect(bootstrapMedianDiffKr([1, 2], [1, 2, 3], 100)).toBeNull();
+        expect(bootstrapMedianskillnadKr([1, 2], [1, 2, 3], 100)).toBeNull();
     });
 
     it('ger ett intervall som omsluter den sanna medianskillnaden', () => {
         const kv = Array.from({ length: 50 }, (_, i) => 28000 + i * 50);
         const ma = Array.from({ length: 50 }, (_, i) => 33000 + i * 50);
-        const ci = bootstrapMedianDiffKr(kv, ma, 500);
+        const ci = bootstrapMedianskillnadKr(kv, ma, 500);
         expect(ci).not.toBeNull();
         expect(ci.lo).toBeLessThanOrEqual(ci.hi);
         expect(ci.hi).toBeGreaterThan(0);   // ma tjänar mer
@@ -395,21 +395,21 @@ describe('bootstrapMedianDiffKr', () => {
 
     it('är deterministisk med injicerad RNG', () => {
         const kv = [10, 20, 30, 40, 50], ma = [60, 70, 80, 90, 100];
-        const a = bootstrapMedianDiffKr(kv, ma, 200, makeRng());
-        const b = bootstrapMedianDiffKr(kv, ma, 200, makeRng());
+        const a = bootstrapMedianskillnadKr(kv, ma, 200, makeRng());
+        const b = bootstrapMedianskillnadKr(kv, ma, 200, makeRng());
         expect(a).toEqual(b);
     });
 });
 
-describe('bootstrapMedianVsConstantKr', () => {
+describe('bootstrapMedianMotKonstantKr', () => {
     it('returnerar null vid för få observationer eller ogiltig konstant', () => {
-        expect(bootstrapMedianVsConstantKr([1, 2], 30000, 100)).toBeNull();
-        expect(bootstrapMedianVsConstantKr([1, 2, 3], 0, 100)).toBeNull();
+        expect(bootstrapMedianMotKonstantKr([1, 2], 30000, 100)).toBeNull();
+        expect(bootstrapMedianMotKonstantKr([1, 2, 3], 0, 100)).toBeNull();
     });
 
     it('positiv differens när konstanten ligger över urvalets median', () => {
         const org = Array.from({ length: 30 }, () => 30000);
-        const ci = bootstrapMedianVsConstantKr(org, 38000, 300, makeRng());
+        const ci = bootstrapMedianMotKonstantKr(org, 38000, 300, makeRng());
         expect(ci).not.toBeNull();
         expect(ci.lo).toBe(8000);   // konstant 38000 − median 30000
         expect(ci.hi).toBe(8000);
@@ -464,21 +464,21 @@ describe('bootstrapmedianen ur rangräkning ger samma intervall som sortering', 
         ['stora grupper', loner(860, 5), loner(401, 6)]
     ];
     for (const [namn, kv, ma] of fall) {
-        it(`bootstrapMedianDiffKr: ${namn}`, () => {
-            expect(bootstrapMedianDiffKr(kv, ma, 1000, slumpFor(kv, ma))).toEqual(refDiffKr(kv, ma, 1000, slumpFor(kv, ma)));
-            expect(bootstrapMedianDiffKr(kv, ma, 200, makeRng())).toEqual(refDiffKr(kv, ma, 200, makeRng()));
+        it(`bootstrapMedianskillnadKr: ${namn}`, () => {
+            expect(bootstrapMedianskillnadKr(kv, ma, 1000, slumpFor(kv, ma))).toEqual(refDiffKr(kv, ma, 1000, slumpFor(kv, ma)));
+            expect(bootstrapMedianskillnadKr(kv, ma, 200, makeRng())).toEqual(refDiffKr(kv, ma, 200, makeRng()));
         });
-        it(`bootstrapMedianVsConstantKr: ${namn}`, () => {
-            expect(bootstrapMedianVsConstantKr(kv, 38000, 1000, slumpFor(kv, [38000]))).toEqual(refVsConstantKr(kv, 38000, 1000, slumpFor(kv, [38000])));
-            expect(bootstrapMedianVsConstantKr(ma, 31000, 200, makeRng())).toEqual(refVsConstantKr(ma, 31000, 200, makeRng()));
+        it(`bootstrapMedianMotKonstantKr: ${namn}`, () => {
+            expect(bootstrapMedianMotKonstantKr(kv, 38000, 1000, slumpFor(kv, [38000]))).toEqual(refVsConstantKr(kv, 38000, 1000, slumpFor(kv, [38000])));
+            expect(bootstrapMedianMotKonstantKr(ma, 31000, 200, makeRng())).toEqual(refVsConstantKr(ma, 31000, 200, makeRng()));
         });
     }
 
     it('lönerna som skickas in ändras inte', () => {
         const kv = loner(11, 1), ma = loner(8, 2);
         const kvKopia = kv.slice(), maKopia = ma.slice();
-        bootstrapMedianDiffKr(kv, ma, 100, makeRng());
-        bootstrapMedianVsConstantKr(kv, 38000, 100, makeRng());
+        bootstrapMedianskillnadKr(kv, ma, 100, makeRng());
+        bootstrapMedianMotKonstantKr(kv, 38000, 100, makeRng());
         expect(kv).toEqual(kvKopia);
         expect(ma).toEqual(maKopia);
     });
@@ -489,9 +489,9 @@ describe('bootstrapmedianen ur rangräkning ger samma intervall som sortering', 
     // fortfarande en återgång till sortering.
     it('2 000 + 1 000 löner med B = 1 000 tar under 200 ms', () => {
         const kv = loner(2000, 7), ma = loner(1000, 8);
-        bootstrapMedianDiffKr(kv.slice(0, 50), ma.slice(0, 50), 50, makeRng());   // uppvärmning av JIT
+        bootstrapMedianskillnadKr(kv.slice(0, 50), ma.slice(0, 50), 50, makeRng());   // uppvärmning av JIT
         const t0 = performance.now();
-        const ci = bootstrapMedianDiffKr(kv, ma, 1000, slumpFor(kv, ma));
+        const ci = bootstrapMedianskillnadKr(kv, ma, 1000, slumpFor(kv, ma));
         const ms = performance.now() - t0;
         expect(ci).not.toBeNull();
         expect(ms).toBeLessThan(200);
@@ -500,12 +500,12 @@ describe('bootstrapmedianen ur rangräkning ger samma intervall som sortering', 
 
 describe('konstanter', () => {
     it('exponerar trösklar', () => {
-        expect(KVINNO_TROSKEL_DEFAULT).toBe(60);
+        expect(KVINNO_TROSKEL_STANDARD).toBe(60);
     });
 });
 
 // ===================================================================
-describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
+describe('byggParPoang — #5: arbetsvärdering som krav-proxy', () => {
     // Kvinnodominerat yrke med LÄGRE lön, jämförelseyrke i ANNAN BAS men
     // likvärdiga krav enligt poäng → ska paras (BAS-läge skulle missa det).
     const kv = [{ aid: '5301', bas: 'B', label: 'Undersköterska', n: 10, nKv: 8,
@@ -515,7 +515,7 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
 
     it('parar kvinnodominerat mot likvärdigt (poäng inom band) i annan BAS', () => {
         const poang = new Map([['5301|B', 100], ['4100|D', 100]]);   // lika poäng
-        const { pairs, jämförelse } = byggParPoäng(kv, internIckeKv, poang,
+        const { pairs, jämförelse } = byggParPoang(kv, internIckeKv, poang,
             { rng: makeRng(), bandPct: 5 });
         expect(pairs).toHaveLength(1);
         expect(pairs[0].maAid).toBe('4100');
@@ -528,24 +528,24 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
 
     it('exkluderar jämförelseyrke med HÖGRE krav (poäng över bandet)', () => {
         const poang = new Map([['5301|B', 100], ['4100|D', 130]]);  // 130 > 100*1.05
-        const { pairs } = byggParPoäng(kv, internIckeKv, poang, { rng: makeRng(), bandPct: 5 });
+        const { pairs } = byggParPoang(kv, internIckeKv, poang, { rng: makeRng(), bandPct: 5 });
         expect(pairs).toHaveLength(0);
     });
 
     it('inkluderar jämförelseyrke med LÄGRE krav (lägre poäng) och högre lön', () => {
         const poang = new Map([['5301|B', 100], ['4100|D', 70]]);   // lägre krav, högre lön
-        const { pairs } = byggParPoäng(kv, internIckeKv, poang, { rng: makeRng(), bandPct: 5 });
+        const { pairs } = byggParPoang(kv, internIckeKv, poang, { rng: makeRng(), bandPct: 5 });
         expect(pairs).toHaveLength(1);
     });
 
     it('räknar kv-dom yrken utan poäng som kvUtanPoang', () => {
         const poang = new Map([['4100|D', 100]]);   // saknar 5301
-        const { pairs, jämförelse } = byggParPoäng(kv, internIckeKv, poang, { rng: makeRng() });
+        const { pairs, jämförelse } = byggParPoang(kv, internIckeKv, poang, { rng: makeRng() });
         expect(pairs).toHaveLength(0);
         expect(jämförelse.kvUtanPoang).toBe(1);
     });
 
-    it('computeLikvardighetPairs väljer poäng-läge när poangByKey finns', () => {
+    it('likvardighetspar väljer poäng-läge när poangByKey finns', () => {
         const data = [
             ...orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
                 kvLons: [29000, 30000, 31000, 30000, 30000, 30000, 30000, 30000], maLons: [30000, 30000] }),
@@ -553,7 +553,7 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
                 kvLons: [34000], maLons: [33000, 34000, 35000, 34000, 34000, 34000, 34000, 34000, 34000] })
         ];
         const poangByKey = new Map([['5301|B', 100], ['4100|D', 100]]);
-        const res = computeLikvardighetPairs({ data, statistik: [], nationellKlass: nationellStub,
+        const res = likvardighetspar({ data, statistik: [], nationellKlass: nationellStub,
             opts: { poangByKey, poangBandPct: 5, rng: makeRng() } });
         expect(res.diagnostik.jämförelse.kravProxy).toBe('poäng');
         expect(res.pairs.length).toBe(1);
@@ -571,7 +571,7 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
             statRow({ aid: '2001', bas: 'B', median: 40000, andelKv: 20 })    // ingen poäng i tabellen
         ];
         const poangByKey = new Map([['5301|B', 100]]);
-        const res = computeLikvardighetPairs({ data, statistik, nationellKlass: nationellStub,
+        const res = likvardighetspar({ data, statistik, nationellKlass: nationellStub,
             opts: { poangByKey, poangBandPct: 5, rng: makeRng() } });
         expect(res.statIckeKv).toHaveLength(2);
         expect(res.pairs).toHaveLength(0);
@@ -582,7 +582,7 @@ describe('byggParPoäng — #5: arbetsvärdering som krav-proxy', () => {
     it('faller tillbaka på BAS-läge utan poangByKey (oförändrat)', () => {
         const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
             kvLons: [29000, 30000, 31000], maLons: [30000] });
-        const res = computeLikvardighetPairs({ data, statistik: [], nationellKlass: nationellStub,
+        const res = likvardighetspar({ data, statistik: [], nationellKlass: nationellStub,
             opts: { rng: makeRng() } });
         expect(res.diagnostik.jämförelse.kravProxy).toBe('bas');
     });
@@ -594,7 +594,7 @@ describe('lägre krav, högre lön', () => {
         ...Array.from({ length: ma }, (_, i) => ({ aid, bas, lon: lon + i, kon: 'man', yrkeLabel: `Yrke ${aid}` })),
     ];
     const rng = () => 0.5;
-    const kor = (data, opts = {}) => computeLikvardighetPairs({ data, opts: { rng, B: 50, ...opts } });
+    const kor = (data, opts = {}) => likvardighetspar({ data, opts: { rng, B: 50, ...opts } });
 
     it('par mot icke-kvinnodominerat yrke i lägre BAS med högre median', () => {
         const r = kor([...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)]);
@@ -654,17 +654,17 @@ describe('lägre krav: konfidensintervall bara för de par som behålls', () => 
     });
 });
 
-describe('basRangFn: BAS-steg i bokstäver (se §6 i likvardighetsmodellen.md)', () => {
+describe('basRangordning: BAS-steg i bokstäver (se §6 i likvardighetsmodellen.md)', () => {
     it('A=1 och B → D är två steg även när C saknas', async () => {
-        const { basRangFn } = await import('../src/lib/likvardighet.js');
-        const rang = basRangFn(['A', 'B', 'D', 'E']);
+        const { basRangordning } = await import('../src/lib/likvardighet.js');
+        const rang = basRangordning(['A', 'B', 'D', 'E']);
         expect(rang('A')).toBe(1);
         expect(rang('D') - rang('B')).toBe(2);
         expect(rang('j')).toBe(10);
     });
     it('hela alfabetet A–Z har fast rang, också efter J', async () => {
-        const { basRangFn } = await import('../src/lib/likvardighet.js');
-        const rang = basRangFn(['K', 'Z', 'Ö']);
+        const { basRangordning } = await import('../src/lib/likvardighet.js');
+        const rang = basRangordning(['K', 'Z', 'Ö']);
         expect(rang('K')).toBe(11);
         expect(rang('Z')).toBe(26);
         expect(rang('Ö')).toBeGreaterThan(100);   // inte en bokstav i A–Z: läggs efter bokstäverna
@@ -717,7 +717,7 @@ describe('[B5.4] aldersjusteradSkillnad — jämförelseyrkets lön omräknad ti
         const { orgKvDom, orgIckeKv } = aggregeraOrgKvDom(rows, 60);
         expect(orgKvDom[0].aldrar).toHaveLength(12);
         const extern = statMap([statRow({ aid: '2051', bas: 'C', median: 60000, andelKv: 20 })]);
-        const { pairs } = byggPar(orgKvDom, orgIckeKvByBas(orgIckeKv), extern, { B: 20, rng: makeRng() });
+        const { pairs } = byggPar(orgKvDom, orgIckeKvPerBas(orgIckeKv), extern, { B: 20, rng: makeRng() });
         const intern = pairs.find(p => p.jamforKalla === 'intern');
         const ext = pairs.find(p => p.jamforKalla === 'extern');
         expect(intern.gapPct).toBeGreaterThan(30);
@@ -729,13 +729,13 @@ describe('[B5.4] aldersjusteradSkillnad — jämförelseyrkets lön omräknad ti
         expect(ext.kvMedelAlder).toBeCloseTo(29.5, 5);
     });
 
-    it('byggParPoäng fyller fältet på samma sätt', () => {
+    it('byggParPoang fyller fältet på samma sätt', () => {
         const rows = [];
         unga.forEach(alder => rows.push({ aid: '5301', bas: 'B', lon: kurva(alder), alder, kon: 'kvinna', yrkeLabel: 'Undersköterska' }));
         aldre.forEach(alder => rows.push({ aid: '4100', bas: 'C', lon: kurva(alder), alder, kon: 'man', yrkeLabel: 'Tekniker' }));
         const { orgKvDom, orgIckeKv } = aggregeraOrgKvDom(rows, 60);
         const poang = new Map([['5301', 300], ['4100', 300]]);
-        const { pairs } = byggParPoäng(orgKvDom, orgIckeKv, poang, { B: 20, rng: makeRng() });
+        const { pairs } = byggParPoang(orgKvDom, orgIckeKv, poang, { B: 20, rng: makeRng() });
         expect(pairs).toHaveLength(1);
         expect(Math.abs(pairs[0].aldersJusterad.gapPct)).toBeLessThan(0.01);
         expect(pairs[0].kvMedelAlder).toBeCloseTo(29.5, 5);
@@ -745,7 +745,7 @@ describe('[B5.4] aldersjusteradSkillnad — jämförelseyrkets lön omräknad ti
         const rows = [];
         unga.forEach(alder => rows.push({ aid: '5301', bas: 'B', lon: kurva(alder), kon: 'kvinna' }));
         aldre.forEach(alder => rows.push({ aid: '4100', bas: 'B', lon: kurva(alder), kon: 'man' }));
-        const { pairs } = computeLikvardighetPairs({ data: rows, opts: { B: 20, rng: makeRng() } });
+        const { pairs } = likvardighetspar({ data: rows, opts: { B: 20, rng: makeRng() } });
         expect(pairs).toHaveLength(1);
         expect(pairs[0].aldersJusterad).toBeNull();
         expect(pairs[0].kvMedelAlder).toBeNull();
@@ -803,7 +803,7 @@ describe('jämförelseyrken: alla som inte är kvinnodominerade (ADR-60)', () =>
         ...orgRows({ aid: '503012', bas: 'C', label: 'Drifttekniker', kvLons: Array(3).fill(38000), maLons: Array(17).fill(38000) })   // 15 %
     ];
     it('blandad grupp blir jämförelseyrke och paret bär klass och könsandel', () => {
-        const res = computeLikvardighetPairs({ data, opts: { minGapPct: 0, B: 20, rng: makeRng() } });
+        const res = likvardighetspar({ data, opts: { minGapPct: 0, B: 20, rng: makeRng() } });
         expect(res.orgIckeKv.map(g => g.aid).sort()).toEqual(['502010', '503012']);
         const par = res.pairs.find(p => p.maAid === '502010');
         expect(par).toBeDefined();
@@ -814,7 +814,7 @@ describe('jämförelseyrken: alla som inte är kvinnodominerade (ADR-60)', () =>
     });
 
     it("filtret 'mansdominerade' tar bort den blandade gruppen", () => {
-        const res = computeLikvardighetPairs({ data, opts: { minGapPct: 0, B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
+        const res = likvardighetspar({ data, opts: { minGapPct: 0, B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
         expect(res.orgIckeKv.map(g => g.aid)).toEqual(['503012']);
         expect(res.pairs.map(p => p.maAid)).toEqual(['503012']);
         expect(res.opts.jamforelse).toBe('mansdominerade');
@@ -825,21 +825,21 @@ describe('jämförelseyrken: alla som inte är kvinnodominerade (ADR-60)', () =>
             ...orgRows({ aid: '100', bas: 'E', kvLons: Array(18).fill(30000), maLons: Array(2).fill(30000) }),
             ...orgRows({ aid: '200', bas: 'C', kvLons: Array(10).fill(34000), maLons: Array(10).fill(34000) })   // 50 %, lägre BAS
         ];
-        const alla = computeLikvardighetPairs({ data: d2, opts: { B: 20, rng: makeRng() } });
+        const alla = likvardighetspar({ data: d2, opts: { B: 20, rng: makeRng() } });
         expect(alla.lagreKrav.map(p => [p.kvAid, p.maAid, p.maKlass])).toEqual([['100', '200', 'blandad']]);
-        const ma = computeLikvardighetPairs({ data: d2, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
+        const ma = likvardighetspar({ data: d2, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
         expect(ma.lagreKrav).toEqual([]);
     });
 
     it('externa par bär klassen från statistiken', () => {
         const d3 = orgRows({ aid: '5301', bas: 'B', kvLons: Array(16).fill(30000), maLons: Array(4).fill(30000) });
         const statistik = [statRow({ aid: '2051', bas: 'B', median: 38000, andelKv: 45 })];
-        const res = computeLikvardighetPairs({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng() } });
+        const res = likvardighetspar({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng() } });
         expect(res.pairs).toHaveLength(1);
         expect(res.pairs[0].jamforKalla).toBe('extern');
         expect(res.pairs[0].maKlass).toBe('blandad');
         expect(res.pairs[0].maKvinnoPct).toBe(45);
-        const ma = computeLikvardighetPairs({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
+        const ma = likvardighetspar({ data: d3, statistik, nationellKlass: nationellStub, opts: { B: 20, rng: makeRng(), jamforelse: 'mansdominerade' } });
         expect(ma.pairs).toHaveLength(0);
     });
 });

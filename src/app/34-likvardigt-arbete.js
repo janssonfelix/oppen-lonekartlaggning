@@ -30,7 +30,7 @@ function _lvSkrKort(aid) {
     return ref ? ` (nationellt ${svPct(ref.pct, 0)})` : '';
 }
 
-// Åldersjusteringens krav (speglar ALDERS_GOLV_DEFAULT och ALDERS_SPRIDNING_MIN i src/lib/likvardighet.js).
+// Åldersjusteringens krav (speglar ALDERS_GOLV_STANDARD och ALDERS_SPRIDNING_MIN i src/lib/likvardighet.js).
 const ALDERS_GOLV = 10, ALDERS_SPRIDNING = 5;
 function _lvAlderText(v) { return typeof v === 'number' && isFinite(v) ? svTal(v, 0) : '–'; }
 /** Varför ett par saknar åldersjusterad skillnad — verktygstipset bakom strecket. */
@@ -57,7 +57,7 @@ function _lvStatJamfor(result) {
 function likvardighetResultat() {
     let lv = state.likvardighet && state.likvardighet.result;
     if (!lv) {
-        lv = computeLikvardighetPairs();
+        lv = likvardighetspar();
         if (state.likvardighet) state.likvardighet.result = lv;
     }
     // Det enda i resultatet som beror på k-tröskeln är antalet små kvinnodominerade grupper i diagnostiken. Det räknas
@@ -73,7 +73,7 @@ function likvardighetResultat() {
  *
  * Algoritmen finns bara i lib, som speglas som alla andra kärnmoduler (ADR-8);
  * den här funktionen gör bara tre saker:
- * läser `state`, anropar `_lvComputePairs`, och fyller på med den UI-diagnostik
+ * läser `state`, anropar `_lvLikvardighetspar`, och fyller på med den UI-diagnostik
  * som lib inte känner till (exempelrader, lokal könsdata, felsträngar).
  *
  * KÄRNPRINCIP: transparens. Funktionen returnerar ALLTID ett strukturerat
@@ -88,7 +88,7 @@ function likvardighetResultat() {
  * @param {{kvinnoTrosholdPct?: number}} [over] - kvinnotröskel som går före inställningen (robusthetspanelen)
  * @returns {any} alltid ett objekt — aldrig null
  */
-function computeLikvardighetPairs(over) {
+function likvardighetspar(over) {
     const cfg = state.likvardighet || {};
     const kvinnoThr = over?.kvinnoTrosholdPct ?? cfg.kvinnoTrosholdPct ?? 60;
     const av = state.arbetsvardering;
@@ -109,7 +109,7 @@ function computeLikvardighetPairs(over) {
 
     let res, fel = [];
     try {
-        res = _lvComputePairs({
+        res = _lvLikvardighetspar({
             data: state.data || [],
             statistik: state.statistik || [],
             nationellKlass: nationellAidKlass,
@@ -745,7 +745,7 @@ const _LV_KRAV_SERIER = [
 ];
 function _lvKravFigur({ medPoang, grupper }) {
     const kr = v => _figTalformat(v, 'kr');
-    const rang = _lvBasRangFn(grupper.map(g => g.bas));
+    const rang = _lvBasRangordning(grupper.map(g => g.bas));
     const basOrdning = [...new Set(grupper.map(g => g.bas))].sort((a, b) => rang(a) - rang(b)).map(b => 'BAS ' + b);
     const x = g => (medPoang ? g.krav : 'BAS ' + g.bas);
     // Nivån kraven brukar ge: med poäng en rät linje (minsta kvadrat över grupperna), annars medianen av
@@ -987,7 +987,7 @@ function _exportLikvardighetExport() {
 
         stegnamn = 'bygg metadatablad';
         // Säker getter — diagnostik-objektet kan ha varit ofullständigt om
-        // computeLikvardighetPairs avbröts mitt i ett steg.
+        // likvardighetspar avbröts mitt i ett steg.
         /** @param {() => any} path @param {any} [fallback] */
         const safe = (path, fallback = '') => {
             try {

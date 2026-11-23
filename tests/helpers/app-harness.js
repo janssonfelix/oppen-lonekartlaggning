@@ -102,7 +102,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __state: (typeof state !== 'undefined' ? state : null),
         __renderTabContent: renderTabContent,
         __loadDemoData: loadDemoData,
-        __computeLikvardighetPairs: computeLikvardighetPairs,
+        __likvardighetspar: likvardighetspar,
         __methodAppendixData: _methodAppendixData,
         __stRepresentationPerBas: _stRepresentationPerBas,
         __getData: getData,

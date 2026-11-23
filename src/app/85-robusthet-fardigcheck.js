@@ -19,7 +19,7 @@
 
 /**
  * Kör om § 3:10-kandidatlistan för flera kvinnotrösklar och mäter hur stabil
- * varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till computeLikvardighetPairs.
+ * varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till likvardighetspar.
  *
  * Panelen ligger utanför fliken Likvärdigt arbete och följer därför tröskeln som allt annat
  * (`_parForRedovisning`, ADR-38): ett par där någon grupp är under tröskeln namnges inte, och
@@ -27,14 +27,14 @@
  * @returns {null|{trösklar:number[], rows:Array<{key:string, label:string, hits:number, of:number}>, utelamnade:number, not:string}}
  */
 function robusthetLikvardighet(trösklar = [55, 60, 65]) {
-    if (typeof computeLikvardighetPairs !== 'function') return null;
+    if (typeof likvardighetspar !== 'function') return null;
     const original = (state.likvardighet || {}).kvinnoTrosholdPct;
     const seen = new Map();
     const utelamnadePar = new Set();
     trösklar.forEach(t => {
         // Vid den inställda kvinnotröskeln är paren flikens (samma val); de andra trösklarna räknas för sig och sparas inte.
         let alla = [];
-        try { alla = ((t === original ? likvardighetResultat() : computeLikvardighetPairs({ kvinnoTrosholdPct: t })) || {}).pairs || []; } catch (_e) { alla = []; }
+        try { alla = ((t === original ? likvardighetResultat() : likvardighetspar({ kvinnoTrosholdPct: t })) || {}).pairs || []; } catch (_e) { alla = []; }
         const { par: pairs } = _parForRedovisning(alla);
         alla.forEach(p => { if (!_parOverTroskel(p)) utelamnadePar.add(`${p.kvAid}|${p.kvBas}|${p.maAid}|${p.maBas}`); });
         const inThisRun = new Set();

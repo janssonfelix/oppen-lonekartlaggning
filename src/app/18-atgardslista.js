@@ -147,7 +147,7 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
     // Paren kommer i första hand ur organisationens egna yrken; jämförelsestatistiken är
     // bara en reserv. Därför krävs ingen inläst statistik för att paren ska komma med.
     try {
-        if (typeof computeLikvardighetPairs === 'function') {
+        if (typeof likvardighetspar === 'function') {
             const lv = likvardighetResultat();
             // k-anonymitet: par med en grupp under tröskeln tas bort FÖRE begränsningen till 20
             // (undantaget gäller bara fliken Likvärdigt arbete); meningen om dem: _attGoraParNot().
@@ -246,7 +246,7 @@ function _attGoraLank(it, text, klass = '') {
 /** Meningen om § 3:10-par som utelämnats ur listan (grupp under tröskeln), annars tom sträng. */
 function _attGoraParNot() {
     try {
-        if (!state.data.length || typeof computeLikvardighetPairs !== 'function') return '';
+        if (!state.data.length || typeof likvardighetspar !== 'function') return '';
         return _parForRedovisning(likvardighetResultat()?.pairs).not;
     } catch (_e) { return ''; }
 }

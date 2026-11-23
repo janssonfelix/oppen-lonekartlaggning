@@ -410,7 +410,7 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
 
     it('determinism: två utkast i rad är identiska (bortsett från exporttidsstämpel)', () => {
         // Reset per anrop: draften konsumerar Math.random via bootstrap-CI:t i
-        // computeLikvardighetPairs, och cachar INTE resultatet tillbaka.
+        // likvardighetspar, och cachar INTE resultatet tillbaka.
         // Jämför NORMALISERAT: metodbilagans "Exporttidpunkt" är väggklockstid (sekund-
         // upplöst) och får skilja om anropen råkar korsa en sekundgräns — det är inte en
         // determinismbrist. Allt annat (inkl. slumpberoende CI) måste vara identiskt.

@@ -22,7 +22,7 @@ import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { mulberry32 } from '../../src/lib/rng.js';
-import { basRangFn } from '../../src/lib/likvardighet.js';
+import { basRangordning } from '../../src/lib/likvardighet.js';
 
 const rnd = mulberry32(20261016);
 // Box–Muller ur två uniforma drag.
@@ -42,7 +42,7 @@ for (let i = 0; i < 100; i++) {
     rows.push({ bas, kon: kv ? 'kvinna' : 'man', alder, lon: Math.round(Math.exp(lnLon)), yrke: '000 Testyrke' });
 }
 
-const rang = basRangFn(rows.map(r => r.bas));
+const rang = basRangordning(rows.map(r => r.bas));
 const unika = [...new Set(rows.map(r => r.bas))].sort().map(rang);
 const basMean = unika.reduce((s, v) => s + v, 0) / unika.length;
 const ageMean = rows.reduce((s, r) => s + r.alder, 0) / rows.length;

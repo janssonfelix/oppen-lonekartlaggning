@@ -11,7 +11,7 @@
  * Själva lib-logiken testas direkt i stat/loneoversyn/struktur.test.js m.fl., och
  * exports.golden.test.js vaktar att exporterna är oförändrade (facit byte för byte).
  *
- * Likvärdigt arbete (computeLikvardighetPairs) speglas också; app.js har en tunn state-adapter
+ * Likvärdigt arbete (likvardighetspar) speglas också; app.js har en tunn state-adapter
  * runt spegeln. Att adaptern verkligen DELEGERAR — och inte smyger tillbaka en egen implementation — vaktas
  * längst ned.
  */
@@ -165,22 +165,22 @@ describe('lib-speglar: 09-lib-speglar.js genereras ur src/lib/', () => {
 // ===================================================================
 // Likvärdigt arbete: app.js ska DELEGERA till spegeln, inte reimplementera den.
 //
-// App-funktionen är en adapter: läs state, anropa `_lvComputePairs`, fyll på med
+// App-funktionen är en adapter: läs state, anropa `_lvLikvardighetspar`, fyll på med
 // UI-diagnostik. Testet nedan kör adaptern med en SPION i stället för spegeln
 // och kontrollerar att state översätts rätt — och att adaptern inte bär någon
 // egen implementation.
 // OBS: app.js innehåller TVÅ funktioner med det här namnet — lib-spegelns
-// (`function computeLikvardighetPairs({ data = [], … })`) och app:ens adapter.
+// (`function likvardighetspar({ data = [], … })`) och app:ens adapter.
 // extractFn() skulle fastna på spegelns destrukturerade parameterlista, så vi
 // söker adapterns exakta signatur.
 const appLVSrc = (() => {
-    const sig = 'function computeLikvardighetPairs(over) {';
+    const sig = 'function likvardighetspar(over) {';
     const i = appSrc.indexOf(sig);
-    if (i < 0) throw new Error('hittade ej app-adaptern computeLikvardighetPairs()');
-    return extractFn(appSrc.slice(i), 'computeLikvardighetPairs');
+    if (i < 0) throw new Error('hittade ej app-adaptern likvardighetspar()');
+    return extractFn(appSrc.slice(i), 'likvardighetspar');
 })();
 // kTroskel() läses ur state, som i appen (adaptern skickar värdet vidare till lib).
-const makeAppLV = new Function('state', 'nationellAidKlass', '_lvComputePairs', `
+const makeAppLV = new Function('state', 'nationellAidKlass', '_lvLikvardighetspar', `
     const kTroskel = () => state.kTroskel ?? 10;
     const kInstalld = kTroskel;
     // Definitionen och jämförelsemängden ur 45-aid-bas-tabeller.js (ADR-60), lästa ur state som i appen.
@@ -190,7 +190,7 @@ const makeAppLV = new Function('state', 'nationellAidKlass', '_lvComputePairs', 
     const svTal = (v, dec = 0) => Number(v).toFixed(dec).replace('.', ',');
     const svPct = (v, dec = 1) => svTal(v, dec) + ' %';
     ${appLVSrc}
-    return computeLikvardighetPairs;
+    return likvardighetspar;
 `);
 
 const tomtResultat = () => ({
@@ -204,10 +204,10 @@ const tomtResultat = () => ({
 
 describe('likvärdigt arbete: app.js delegerar till lib-spegeln', () => {
     it('adaptern innehåller ingen egen implementation', () => {
-        expect(appLVSrc).toContain('_lvComputePairs(');
+        expect(appLVSrc).toContain('_lvLikvardighetspar(');
         // Namn som bara en egen implementation av algoritmen har. Dyker något av dem upp
         // har någon börjat implementera i app.js i stället för i src/lib/.
-        for (const spår of ['orgMap', 'statByBas', 'bootstrapMedianDiffKr', '_bootstrapMedianDiffKr']) {
+        for (const spår of ['orgMap', 'statByBas', 'bootstrapMedianskillnadKr', '_bootstrapMedianDiffKr']) {
             expect(appLVSrc, `"${spår}" hör hemma i src/lib/likvardighet.js, inte i adaptern`).not.toContain(spår);
         }
     });
@@ -285,7 +285,7 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
     ];
 
     it('två körningar ger identiska gapCI', () => {
-        const kör = () => M._lvComputePairs({ data, statistik: [], nationellKlass: () => null,
+        const kör = () => M._lvLikvardighetspar({ data, statistik: [], nationellKlass: () => null,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 0, topN: 100 } });
         const a = kör(), b = kör();
         expect(a.pairs.length).toBeGreaterThan(0);
@@ -295,7 +295,7 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
 
     it('en injicerad rng används när testet ber om det', () => {
         const konst = () => 0.5;
-        const res = M._lvComputePairs({ data, statistik: [], nationellKlass: () => null,
+        const res = M._lvLikvardighetspar({ data, statistik: [], nationellKlass: () => null,
             opts: { kvinnoTrosholdPct: 60, minGapPct: 0, topN: 100, rng: konst } });
         // Alla resamplingar blir identiska → noll bredd på intervallet.
         expect(res.pairs[0].gapCI.lo).toBe(res.pairs[0].gapCI.hi);
@@ -305,7 +305,7 @@ describe('likvärdigt arbete: spegeln ger reproducerbara konfidensintervall', ()
 // ===================================================================
 // Regressionsmodellerna (src/lib/regression.js): app-filen är en tunn adapter.
 // Modellerna ska inte finnas i 50-regressionsmodeller.js igen, och varje app-funktion
-// ska delegera till spegeln med getData()/statGolv()/_lvBasRangFn.
+// ska delegera till spegeln med getData()/statGolv()/_lvBasRangordning.
 describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
     const regSrc = readFileSync(join(root, 'src', 'app', '50-regressionsmodeller.js'), 'utf8');
     const adaptrar = ['_computePerBasGap', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];

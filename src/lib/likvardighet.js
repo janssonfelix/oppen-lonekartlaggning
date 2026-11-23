@@ -4,7 +4,7 @@
  * Öppen lönekartläggning — Likvärdighetsanalys (DiskrL 3:10 §)
  *
  * Ren, testbar kärna för § 3:10-analysen. Appen får den genom lib-speglarna
- * (ADR-8); computeLikvardighetPairs() i 34-likvardigt-arbete.js är adaptern
+ * (ADR-8); likvardighetspar() i 34-likvardigt-arbete.js är adaptern
  * runt den. Vitest verifierar *algoritmen* deterministiskt.
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
@@ -34,7 +34,7 @@
  *            lagen prövar lönenivån som sådan — den justerade visar hur
  *            mycket av skillnaden som kan bero på åldersstruktur.
  *
- * @see 34-likvardigt-arbete.js computeLikvardighetPairs
+ * @see 34-likvardigt-arbete.js likvardighetspar
  */
 
 import { median as _median, percentilintervall } from './stat.js';
@@ -43,8 +43,8 @@ import { direktivMarkering } from './status.js';
 import { arKvinna } from './kon.js';
 import { namnrader } from './aid.js';
 
-export const KVINNO_TROSKEL_DEFAULT = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
-export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_DEFAULT
+export const KVINNO_TROSKEL_STANDARD = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
+export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_STANDARD
 
 /**
  * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
@@ -55,7 +55,7 @@ export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatis
  * @param {number} [grans=60]
  * @returns {boolean}
  */
-export function arKvinnodominerad(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
+export function arKvinnodominerad(pct, definition = 'do', grans = KVINNO_TROSKEL_STANDARD) {
     if (typeof pct !== 'number' || !isFinite(pct)) return false;
     return definition === 'scb' ? pct >= grans : pct > grans;
 }
@@ -67,7 +67,7 @@ export function arKvinnodominerad(pct, definition = 'do', grans = KVINNO_TROSKEL
  * @param {number} [grans=60]
  * @returns {'kvinnodominerad'|'mansdominerad'|'blandad'|''} '' när andelen är okänd
  */
-export function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT) {
+export function konsklass(pct, definition = 'do', grans = KVINNO_TROSKEL_STANDARD) {
     if (typeof pct !== 'number' || !isFinite(pct)) return '';
     if (arKvinnodominerad(pct, definition, grans)) return 'kvinnodominerad';
     if (arKvinnodominerad(100 - pct, definition, grans)) return 'mansdominerad';
@@ -128,14 +128,14 @@ function _dragningsmedian(u, rng) {
  * (`_dragningsmedian`) och är desamma som om varje dragning sorterades. Den gemensamma kärnan för
  * bootstrapintervallen på medianskillnaden (här) och på mediankvoten (Lika arbete, Ålder & karriär, gruppdossiern).
  * Lönerna ska vara ändliga tal; de ändras inte.
- * @param {number[]} kvLons
- * @param {number[]} maLons
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
  * @param {number} B
  * @param {() => number} rng
  * @returns {{kv: Float64Array, ma: Float64Array}} medianen per dragning för vardera gruppen
  */
-export function bootstrapMedianer(kvLons, maLons, B, rng) {
-    const kv = _sorteratUnderlag(kvLons), ma = _sorteratUnderlag(maLons);
+export function bootstrapMedianer(kvLoner, maLoner, B, rng) {
+    const kv = _sorteratUnderlag(kvLoner), ma = _sorteratUnderlag(maLoner);
     const mKv = new Float64Array(B), mMa = new Float64Array(B);
     for (let b = 0; b < B; b++) {
         mKv[b] = _dragningsmedian(kv, rng);
@@ -147,16 +147,16 @@ export function bootstrapMedianer(kvLons, maLons, B, rng) {
 /**
  * Bootstrap-CI för MEDIAN-SKILLNAD i kronor (m_ma − m_kv), 95 % (percentilintervall i stat.js).
  * Används för INTERNA par (bägge sidor har individdata). Dragningarna och medianerna ur `bootstrapMedianer`.
- * @param {number[]} kvLons
- * @param {number[]} maLons
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
  * @param {number} [B=1000]
  * @param {() => number} [rng=Math.random] - injicerbar RNG för deterministiska tester
  * @returns {{lo:number, hi:number}|null}
  */
-export function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.random) {
-    if (!Array.isArray(kvLons) || !Array.isArray(maLons)) return null;
-    if (kvLons.length < 3 || maLons.length < 3) return null;
-    const m = bootstrapMedianer(kvLons, maLons, B, rng);
+export function bootstrapMedianskillnadKr(kvLoner, maLoner, B = 1000, rng = Math.random) {
+    if (!Array.isArray(kvLoner) || !Array.isArray(maLoner)) return null;
+    if (kvLoner.length < 3 || maLoner.length < 3) return null;
+    const m = bootstrapMedianer(kvLoner, maLoner, B, rng);
     const diffs = new Array(B);
     for (let b = 0; b < B; b++) diffs[b] = m.ma[b] - m.kv[b];
     diffs.sort((a, b) => a - b);
@@ -167,24 +167,24 @@ export function bootstrapMedianDiffKr(kvLons, maLons, B = 1000, rng = Math.rando
 /**
  * Bootstrap-CI mot ett KONSTANT referensvärde (constMedian − m_sample).
  * Används för EXTERNA par (jämförelsestatistikens median är ett aggregat utan individdata).
- * @param {number[]} orgLons
- * @param {number} constMedian
+ * @param {number[]} orgLoner
+ * @param {number} konstMedian
  * @param {number} [B=1000]
  * @param {() => number} [rng=Math.random]
  * @returns {{lo:number, hi:number}|null}
  */
-export function bootstrapMedianVsConstantKr(orgLons, constMedian, B = 1000, rng = Math.random) {
-    if (!Array.isArray(orgLons) || orgLons.length < 3) return null;
-    if (!(constMedian > 0)) return null;
-    const org = _sorteratUnderlag(orgLons);
+export function bootstrapMedianMotKonstantKr(orgLoner, konstMedian, B = 1000, rng = Math.random) {
+    if (!Array.isArray(orgLoner) || orgLoner.length < 3) return null;
+    if (!(konstMedian > 0)) return null;
+    const org = _sorteratUnderlag(orgLoner);
     const diffs = new Array(B);
-    for (let b = 0; b < B; b++) diffs[b] = constMedian - _dragningsmedian(org, rng);
+    for (let b = 0; b < B; b++) diffs[b] = konstMedian - _dragningsmedian(org, rng);
     diffs.sort((a, b) => a - b);
     const { lag, hog } = percentilintervall(diffs);
     return { lo: lag, hi: hog };
 }
 
-export const ALDERS_GOLV_DEFAULT = 10;      // minsta antal personer i jämförelseyrket för åldersjustering
+export const ALDERS_GOLV_STANDARD = 10;      // minsta antal personer i jämförelseyrket för åldersjustering
 export const ALDERS_SPRIDNING_MIN = 5;      // minsta åldersspridning (år) i jämförelseyrket
 
 function _medel(arr) {
@@ -208,7 +208,7 @@ function _medel(arr) {
  * @param {{golv?:number}} [opts]
  * @returns {{medianJusterad:number, gapKr:number, gapPct:number, metod:'alder'}|null}
  */
-export function aldersjusteradSkillnad(kvRader, jmfRader, { golv = ALDERS_GOLV_DEFAULT } = {}) {
+export function aldersjusteradSkillnad(kvRader, jmfRader, { golv = ALDERS_GOLV_STANDARD } = {}) {
     /** @returns {r is {lon:number, alder:number}} */
     const ok = r => !!r && r.lon > 0 && typeof r.alder === 'number' && isFinite(r.alder);
     const jmf = (jmfRader || []).filter(ok);
@@ -260,12 +260,12 @@ function _aldersFalt(f, g, ärIntern, golv) {
  * (interna jämförelsekandidater, med klassen mansdominerad eller blandad).
  *
  * @param {Array<{aid:string, bas:string, lon:number, kon:string, yrkeLabel?:string, yrke?:string, alder?:number}>} data
- * @param {number} kvinnoThr - kvinnotröskel i procent
+ * @param {number} kvinnoGrans - kvinnotröskel i procent
  * @param {number} [K=10]
  * @param {'do'|'scb'} [definition='do'] - 'do': mer än tröskeln; 'scb': tröskeln eller mer
  * @returns {{orgKvDom:Array, orgIckeKv:Array, antalAidxBas:number, kvDomMedNLessThanK:number}}
  */
-export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 10, definition = 'do') {
+export function aggregeraOrgKvDom(data, kvinnoGrans = KVINNO_TROSKEL_STANDARD, K = 10, definition = 'do') {
     const map = new Map();   // nyckel: aid|bas
     // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
     const iGrupp = r => !!(String(r?.aid || '').trim() && r.lon > 0 && r.bas);
@@ -290,7 +290,7 @@ export function aggregeraOrgKvDom(data, kvinnoThr = KVINNO_TROSKEL_DEFAULT, K = 
     let kvDomMedNLessThanK = 0;
     for (const g of map.values()) {
         const kvinnoPct = (g.nKv / g.n) * 100;
-        const klass = konsklass(kvinnoPct, definition, kvinnoThr);
+        const klass = konsklass(kvinnoPct, definition, kvinnoGrans);
         const obj = {
             aid: g.aid, bas: g.bas, label: g.label,
             n: g.n, nKv: g.nKv, kvinnoPct, klass,
@@ -366,7 +366,7 @@ export function klassificeraStatistik(statistik, nationellKlass, { definition = 
  * @param {Array} orgIckeKv
  * @returns {Map<string, Array>}
  */
-export function orgIckeKvByBas(orgIckeKv) {
+export function orgIckeKvPerBas(orgIckeKv) {
     const m = new Map();
     for (const g of (orgIckeKv || [])) {
         if (!m.has(g.bas)) m.set(g.bas, []);
@@ -397,21 +397,21 @@ function _parAntal(candidates) {
  * (extern fallback). Flagga par där jämförelseyrkets median > org-median.
  *
  * @param {Array} orgKvDom
- * @param {Map} internByBas - från orgIckeKvByBas()
- * @param {Map} externByBas - statByBas från klassificeraStatistik()
- * @param {Object} [opts] - { minGap, topN, B, rng, golv }
+ * @param {Map} internPerBas - från orgIckeKvPerBas()
+ * @param {Map} externPerBas - statByBas från klassificeraStatistik()
+ * @param {Object} [val] - { minGap, topN, B, rng, golv }
  * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
-export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
-    const minGap = opts.minGap ?? 0;
-    const topN = opts.topN ?? 100;
-    const B = opts.B ?? 1000;
-    const golv = opts.golv ?? ALDERS_GOLV_DEFAULT;
+export function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
+    const minGap = val.minGap ?? 0;
+    const topN = val.topN ?? 100;
+    const B = val.B ?? 1000;
+    const golv = val.golv ?? ALDERS_GOLV_STANDARD;
     // Utan explicit rng seedas bootstrappen PER PAR ur parets egna löner
     // (slumpFor). Då blir konfidensintervallen reproducerbara mellan körningar —
     // ett Math.random-default gav nya KI varje gång och gjorde ett exporterat
     // underlag omöjligt att återskapa. Tester injicerar sin egen rng.
-    const rngOpt = opts.rng ?? null;
+    const rngOpt = val.rng ?? null;
     const prngFor = (a, b) => rngOpt || slumpFor(a, b);
     const jämförelse = {
         gemensammaBas: 0, möjligaPar: 0, statHögre: 0, statLägreEllerLika: 0,
@@ -419,18 +419,18 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
         kravProxy: 'bas', kvUtanPoang: 0
     };
     const pairs = [];
-    internByBas = internByBas || new Map();
-    externByBas = externByBas || new Map();
-    if (!orgKvDom?.length || (!internByBas.size && !externByBas.size)) return { pairs, jämförelse, antal: _parAntal(pairs) };
+    internPerBas = internPerBas || new Map();
+    externPerBas = externPerBas || new Map();
+    if (!orgKvDom?.length || (!internPerBas.size && !externPerBas.size)) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
     const orgBasSet = new Set(orgKvDom.map(f => f.bas));
-    const jämförBasSet = new Set([...internByBas.keys(), ...externByBas.keys()]);
+    const jämförBasSet = new Set([...internPerBas.keys(), ...externPerBas.keys()]);
     jämförelse.gemensammaBas = [...orgBasSet].filter(b => jämförBasSet.has(b)).length;
 
     const candidates = [];
     for (const f of orgKvDom) {
-        const internaRows = internByBas.get(f.bas) || [];
-        const externaRows = externByBas.get(f.bas) || [];
+        const internaRows = internPerBas.get(f.bas) || [];
+        const externaRows = externPerBas.get(f.bas) || [];
         let jämförRader, källa;
         if (internaRows.length) {
             jämförRader = internaRows; källa = 'intern';
@@ -453,8 +453,8 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
             let gapCI = null;
             try {
                 gapCI = (ärIntern && Array.isArray(g.lons))
-                    ? bootstrapMedianDiffKr(f.lons, g.lons, B, prngFor(f.lons, g.lons))
-                    : bootstrapMedianVsConstantKr(f.lons, g.median, B, prngFor(f.lons, [g.median]));
+                    ? bootstrapMedianskillnadKr(f.lons, g.lons, B, prngFor(f.lons, g.lons))
+                    : bootstrapMedianMotKonstantKr(f.lons, g.median, B, prngFor(f.lons, [g.median]));
             } catch (_) { gapCI = null; }
 
             if (ärIntern) jämförelse.internaPar++; else jämförelse.externaPar++;
@@ -489,23 +489,23 @@ export function byggPar(orgKvDom, internByBas, externByBas, opts = {}) {
  * jämförs: jämförelsestatistiken har inga poäng (ADR-76).
  *
  * @param {Array} orgKvDom
- * @param {Array} internAll - organisationens icke-kv-dom yrken (flat)
- * @param {Map<string,number>} poangByKey - 'AID|BAS' eller 'AID' → poäng
- * @param {Object} [opts] - { minGap, topN, B, rng, bandPct, golv }
+ * @param {Array} internAlla - organisationens icke-kv-dom yrken (flat)
+ * @param {Map<string,number>} poangPerNyckel - 'AID|BAS' eller 'AID' → poäng
+ * @param {Object} [val] - { minGap, topN, B, rng, bandPct, golv }
  * @returns {{pairs:Array, jämförelse:Object, antal:{totalt:number, overDirektiv:number, sakra:number}}}
  */
-export function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
-    const minGap = opts.minGap ?? 0;
-    const topN = opts.topN ?? 100;
-    const B = opts.B ?? 1000;
-    const golv = opts.golv ?? ALDERS_GOLV_DEFAULT;
+export function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
+    const minGap = val.minGap ?? 0;
+    const topN = val.topN ?? 100;
+    const B = val.B ?? 1000;
+    const golv = val.golv ?? ALDERS_GOLV_STANDARD;
     // Utan explicit rng seedas bootstrappen PER PAR ur parets egna löner
     // (slumpFor). Då blir konfidensintervallen reproducerbara mellan körningar —
     // ett Math.random-default gav nya KI varje gång och gjorde ett exporterat
     // underlag omöjligt att återskapa. Tester injicerar sin egen rng.
-    const rngOpt = opts.rng ?? null;
+    const rngOpt = val.rng ?? null;
     const prngFor = (a, b) => rngOpt || slumpFor(a, b);
-    const bandPct = opts.bandPct ?? 5;
+    const bandPct = val.bandPct ?? 5;
     // externaPar och basMedExternFallback står kvar (alltid 0) så att diagnostiken har samma form som i BAS-läget;
     // fliken och exporterna visar dem inte när kravProxy är 'poäng'.
     const jämförelse = {
@@ -515,17 +515,17 @@ export function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
     };
     const pairs = [];
     orgKvDom = orgKvDom || [];
-    internAll = internAll || [];
-    poangByKey = poangByKey || new Map();
-    if (!orgKvDom.length || !poangByKey.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
+    internAlla = internAlla || [];
+    poangPerNyckel = poangPerNyckel || new Map();
+    if (!orgKvDom.length || !poangPerNyckel.size) return { pairs, jämförelse, antal: _parAntal(pairs) };
 
-    const poangFor = g => poangByKey.get(g.aid + '|' + g.bas) ?? poangByKey.get(String(g.aid)) ?? null;
+    const poangFor = g => poangPerNyckel.get(g.aid + '|' + g.bas) ?? poangPerNyckel.get(String(g.aid)) ?? null;
     const candidates = [];
     for (const f of orgKvDom) {
         const fP = poangFor(f);
         if (fP == null) { jämförelse.kvUtanPoang++; continue; }
         const tak = fP * (1 + bandPct / 100);
-        const jämförRader = internAll.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
+        const jämförRader = internAlla.filter(g => { const p = poangFor(g); return p != null && p <= tak; });
         for (const g of jämförRader) {
             jämförelse.möjligaPar++;
             if (g.median <= f.median) { jämförelse.statLägreEllerLika++; continue; }
@@ -536,7 +536,7 @@ export function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
             /** @type {{lo:number, hi:number}|null} */
             let gapCI = null;
             try {
-                gapCI = bootstrapMedianDiffKr(f.lons, g.lons, B, prngFor(f.lons, g.lons));
+                gapCI = bootstrapMedianskillnadKr(f.lons, g.lons, B, prngFor(f.lons, g.lons));
             } catch (_) { gapCI = null; }
             jämförelse.internaPar++;
             candidates.push({
@@ -569,13 +569,13 @@ export function byggParPoäng(orgKvDom, internAll, poangByKey, opts = {}) {
  *
  * @param {Array} orgKvDom
  * @param {Array} orgIckeKv
- * @param {Object} opts - { rang: bas → tal, minGap, topN, B, rng }
+ * @param {Object} val - { rang: bas → tal, minGap, topN, B, rng }
  * @returns {Array} par med samma fält som interna kandidatpar plus basSteg
  */
-export function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
-    const { rang } = opts;
-    const minGap = opts.minGap ?? 0, topN = opts.topN ?? 100, B = opts.B ?? 1000;
-    const rngOpt = opts.rng ?? null;
+export function byggParLagreKrav(orgKvDom, orgIckeKv, val = {}) {
+    const { rang } = val;
+    const minGap = val.minGap ?? 0, topN = val.topN ?? 100, B = val.B ?? 1000;
+    const rngOpt = val.rng ?? null;
     const ut = [];
     for (const f of orgKvDom || []) {
         const rf = rang(f.bas);
@@ -598,7 +598,7 @@ export function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
     // Konfidensintervall bara för paren som behålls — sorteringen beror inte på dem, och
     // bootstrappen seedas per par, så resultatet blir detsamma som om alla räknats.
     return ut.slice(0, topN).map(({ _f, _g, ...p }) => {
-        try { p.gapCI = bootstrapMedianDiffKr(_f.lons, _g.lons, B, rngOpt || slumpFor(_f.lons, _g.lons)); } catch (_) { p.gapCI = null; }
+        try { p.gapCI = bootstrapMedianskillnadKr(_f.lons, _g.lons, B, rngOpt || slumpFor(_f.lons, _g.lons)); } catch (_) { p.gapCI = null; }
         return p;
     });
 }
@@ -611,13 +611,13 @@ export function byggParLagreKrav(orgKvDom, orgIckeKv, opts = {}) {
  * @param {string[]} allaBas - BAS-värdena i underlaget (behövs bara för det som inte är bokstäver)
  * @returns {(bas:string) => number}
  */
-export function basRangFn(allaBas) {
+export function basRangordning(allaBas) {
     const alfa = [...new Set(allaBas)].sort((a, b) => String(a).localeCompare(String(b), 'sv'));
     return b => { const i = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(String(b).toUpperCase()); return String(b).length === 1 && i >= 0 ? i + 1 : 100 + alfa.indexOf(b); };
 }
 
 /**
- * Orkestrator — speglar app.js `computeLikvardighetPairs()` (utan state).
+ * Orkestrator — speglar app.js `likvardighetspar()` (utan state).
  *
  * @param {Object} [input]
  * @param {Array} [input.data] - organisationens individdata
@@ -628,8 +628,8 @@ export function basRangFn(allaBas) {
  *   jamforelse: 'alla' (alla som inte är kvinnodominerade, standard) | 'mansdominerade' (ADR-60).
  * @returns {{orgKvDom:Array, orgIckeKv:Array, statIckeKv:Array, pairs:Array, parAntal:{totalt:number, overDirektiv:number, sakra:number}, lagreKrav:Array, diagnostik:Object, opts:Object}}
  */
-export function computeLikvardighetPairs({ data = [], statistik = [], nationellKlass = null, opts = {} } = {}) {
-    const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_DEFAULT;
+export function likvardighetspar({ data = [], statistik = [], nationellKlass = null, opts = {} } = {}) {
+    const kvinnoThr = opts.kvinnoTrosholdPct ?? KVINNO_TROSKEL_STANDARD;
     const definition = opts.kvDomDefinition === 'scb' ? 'scb' : 'do';
     const jamforelse = opts.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla';
     const minGap = opts.minGapPct ?? 0;
@@ -644,7 +644,7 @@ export function computeLikvardighetPairs({ data = [], statistik = [], nationellK
 
     const poangByKey = opts.poangByKey || null;   // #5: arbetsvärdering som krav-proxy
     const bandPct = opts.poangBandPct ?? 5;
-    const golv = opts.aldersGolv ?? ALDERS_GOLV_DEFAULT;   // minsta jämförelseyrke för åldersjusteringen
+    const golv = opts.aldersGolv ?? ALDERS_GOLV_STANDARD;   // minsta jämförelseyrke för åldersjusteringen
 
     // k-tröskeln används bara för att RÄKNA små kvinnodominerade grupper i diagnostiken (de ingår ändå).
     const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
@@ -659,12 +659,12 @@ export function computeLikvardighetPairs({ data = [], statistik = [], nationellK
             if (kvar.length) s2.statByBas.set(bas, kvar); else s2.statByBas.delete(bas);
         }
     }
-    const internByBas = orgIckeKvByBas(s1.orgIckeKv);
+    const internByBas = orgIckeKvPerBas(s1.orgIckeKv);
     const s3 = (poangByKey && poangByKey.size)
-        ? byggParPoäng(s1.orgKvDom, s1.orgIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
+        ? byggParPoang(s1.orgKvDom, s1.orgIckeKv, poangByKey, { minGap, topN, B, rng, bandPct, golv })
         : byggPar(s1.orgKvDom, internByBas, s2.statByBas, { minGap, topN, B, rng, golv });
     const lagreKrav = (poangByKey && poangByKey.size) ? [] : byggParLagreKrav(s1.orgKvDom, s1.orgIckeKv, {
-        rang: basRangFn([...s1.orgKvDom, ...s1.orgIckeKv].map(g => g.bas)),
+        rang: basRangordning([...s1.orgKvDom, ...s1.orgIckeKv].map(g => g.bas)),
         minGap, topN, B, rng });
 
     return {
@@ -705,7 +705,7 @@ export function computeLikvardighetPairs({ data = [], statistik = [], nationellK
  * @param {{k?: number, poangByKey?: Map<string, number>|null, definition?: string, grans?: number}} [opts] definition och
  *   grans: appens val av definitionen av kvinnodominerat (konsklass)
  */
-export function kravGrupper(rader, { k = 10, poangByKey = null, definition = 'do', grans = KVINNO_TROSKEL_DEFAULT } = {}) {
+export function kravGrupper(rader, { k = 10, poangByKey = null, definition = 'do', grans = KVINNO_TROSKEL_STANDARD } = {}) {
     const map = new Map();
     // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
     const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);

@@ -23,7 +23,7 @@
  * Ren modul utan DOM eller state. Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { median, kvantil } from './stat.js';
-import { basRangFn, konsklass } from './likvardighet.js';
+import { basRangordning, konsklass } from './likvardighet.js';
 import { arKvinna, arMan } from './kon.js';
 import { namnrader } from './aid.js';
 
@@ -113,7 +113,7 @@ export function grupperaAidBas(rader) {
 
 /** Sorterar grupper: BAS-intervall stigande (bokstavsordningen), därefter antal fallande, därefter AID-kod. */
 export function sorteraGrupper(grupper) {
-    const rang = basRangFn(grupper.map(g => g.bas));
+    const rang = basRangordning(grupper.map(g => g.bas));
     return [...grupper].sort((a, b) => rang(a.bas) - rang(b.bas) || b.n - a.n || String(a.aid).localeCompare(String(b.aid), 'sv'));
 }
 
@@ -192,7 +192,7 @@ export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', g
 export function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KV_GRANS_STANDARD, jamforelse = 'alla' } = {}) {
     const grupper = grupperaAidBas(rader).filter(g => g.n >= k)
         .map(g => ({ aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.n, median: median(g.loner), klass: dominans(g.nKv / g.n * 100, definition, grans) }));
-    const rang = basRangFn(grupper.map(g => g.bas));
+    const rang = basRangordning(grupper.map(g => g.bas));
     const par = [];
     for (const a of grupper.filter(g => arJamforelseKlass(g.klass, jamforelse))) {
         for (const b of grupper.filter(g => g.klass === KLASS_KV)) {

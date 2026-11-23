@@ -182,7 +182,7 @@ describe('process-trackern och § 3:10', () => {
     it('§ 3:10 och A/B-scenariojämförelsen ritas utan fel', () => {
         win.__loadDemoData();
         expect(() => win.__renderTabContent('likvardighet')).not.toThrow();
-        expect(typeof win.__computeLikvardighetPairs).toBe('function');
+        expect(typeof win.__likvardighetspar).toBe('function');
         expect(typeof win.eval('_lvParFigur')).toBe('function');
     });
 });

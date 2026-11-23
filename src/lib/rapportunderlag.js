@@ -19,7 +19,7 @@ import { lonebegreppReservation } from './struktur.js';
 import { personOrd } from './namn.js';
 import { sektorJusteradText, sektorAndelNot } from './sektor.js';
 import { kvDefinitionText } from './aidbas.js';
-import { basRangFn } from './likvardighet.js';
+import { basRangordning } from './likvardighet.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
 import { arKvinna } from './kon.js';
@@ -103,7 +103,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     }
     // Koderna efter den största skillnaden bland kodens grupper (störst först), inom koden intervallen i BAS-ordning.
     // Med en grupp per kod är ordningen densamma som förut: skillnaden, störst först.
-    const rang = basRangFn(grupper.map(g => g.bas));
+    const rang = basRangordning(grupper.map(g => g.bas));
     const storst = new Map();
     for (const g of grupper) storst.set(g.aid, Math.max(storst.get(g.aid) ?? -Infinity, g.gapPct));
     const forsta = new Map();

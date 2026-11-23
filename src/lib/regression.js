@@ -15,7 +15,7 @@
  * och runOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
  * som läser getData(), statGolv() och resten av tillståndet. OLS-kärnan
  * (anpassaOLS, invertera, matrisprodukt, pVardeTvasidigt, tKvantil) ligger i stat.js. Ingen modell här
- * räknar BAS som ett tal; BAS-rangen (basRangFn) finns kvar i likvardighet.js för Lägre krav.
+ * räknar BAS som ett tal; BAS-rangen (basRangordning) finns kvar i likvardighet.js för Lägre krav.
  *
  * @see 50-regressionsmodeller.js (adaptern i appen)
  */

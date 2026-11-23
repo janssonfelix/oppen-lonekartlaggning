@@ -119,7 +119,7 @@ Det generella och det riktade påslaget redovisas före avrundning (`generellCos
 | Över potten | använt > potten + 0,000001 när en pott är angiven, annars falskt; fliken säger *Fördelningen överskrider potten* |
 | Lönesumman före och efter | före + använt |
 | Den råa skillnaden före och efter | kvinnornas median i procent av männens, minus 100 (`raLonegap`) |
-| Varav till kvinnodominerade grupper | kostnaden i grupper (BAS och AID) som är kvinnodominerade enligt inställningen i Likvärdigt arbete; skickas ingen gräns gäller `KVINNO_TROSKEL_DEFAULT` (60 %) |
+| Varav till kvinnodominerade grupper | kostnaden i grupper (BAS och AID) som är kvinnodominerade enligt inställningen i Likvärdigt arbete; skickas ingen gräns gäller `KVINNO_TROSKEL_STANDARD` (60 %) |
 | Grupper som går om varandra | en grupp vars median låg under en annans och efter påslaget ligger över den (`hittaOmkorningar`) |
 | Total kostnad | se avsnitt 10 |
 

@@ -130,7 +130,7 @@ export const MODULES = [
     },
     {
         file: 'likvardighet.js', ns: '__mirrorLikvardighet',
-        expose: { computeLikvardighetPairs: '_lvComputePairs', basRangFn: '_lvBasRangFn', bootstrapMedianer: '_lvBootstrapMedianer',
+        expose: { likvardighetspar: '_lvLikvardighetspar', basRangordning: '_lvBasRangordning', bootstrapMedianer: '_lvBootstrapMedianer',
                   // Den enda definitionen av kvinnodominerat (ADR-60); aidbas.js och loneoversyn.js importerar dem
                   arKvinnodominerad: '_arKvinnodominerad', konsklass: '_konsklass', kravGrupper: '_lvKravGrupper' }
     },

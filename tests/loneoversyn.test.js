@@ -9,7 +9,7 @@ import {
     sammanstallGrupper, hittaOmkorningar, stangningsriktning, stegvisPlan,
     lonespannPerBas, individlyft, marknadsriktning, kanslighetskurva, ettParPerYrke, pottArAngiven
 } from '../src/lib/loneoversyn.js';
-import { KVINNO_TROSKEL_DEFAULT } from '../src/lib/likvardighet.js';
+import { KVINNO_TROSKEL_STANDARD } from '../src/lib/likvardighet.js';
 
 const rows = () => [
     { bas: 'A', aid: '5301', kon: 'kvinna', lon: 30000 },
@@ -403,7 +403,7 @@ describe('[B7.4] forecast: prognosutfall', () => {
     it('kvThreshold: saknad gräns ger standardgränsen, gränsen 0 är 0', () => {
         const gen = { mode: 'kr', value: 1000 };
         const utan = prognosutfall(rows(), null, gen, [], { months: 12, poPct: 0 });
-        const standard = prognosutfall(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: KVINNO_TROSKEL_DEFAULT });
+        const standard = prognosutfall(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: KVINNO_TROSKEL_STANDARD });
         expect(utan.equityCost).toBe(standard.equityCost);
         expect(utan.equityCost).toBe(3000);   // 5301 (2 av 3 kvinnor, 67 %); 2000 har 50 %
         const noll = prognosutfall(rows(), null, gen, [], { months: 12, poPct: 0, kvThreshold: 0 });

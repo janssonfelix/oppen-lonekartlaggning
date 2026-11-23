@@ -178,7 +178,7 @@ som når tröskeln; de övriga namnges i en not, och är referensintervallet und
 **Regressionerna per BAS-intervall** har BAS i urvalet, inte i modellen: en regression per intervall (avsnitt 7).
 
 **BAS som rang.** Ingen modell i `src/lib/regression.js` räknar BAS som ett tal. BAS-rangen, bokstavens plats
-(`basRangFn` i `src/lib/likvardighet.js`), används av *Lägre krav, högre lön* (`likvardighetsmodellen.md` §6), som
+(`basRangordning` i `src/lib/likvardighet.js`), används av *Lägre krav, högre lön* (`likvardighetsmodellen.md` §6), som
 ordning i tabellerna per AID-kod och BAS-intervall (`src/lib/aidbas.js`).
 
 **Översikten per huvudområde** (`src/lib/sektor.js`, kolumnen *Justerad (ålder, BAS)*) räknar den justerade

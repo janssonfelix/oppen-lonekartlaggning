@@ -34,7 +34,7 @@ function runDiagnostics() {
         // BAS-effekt ska finnas: nivån i högsta BAS mot referensen, utslagen per bokstavssteg
         if (reg.basEffekter && reg.basEffekter.length) {
             const sista = reg.basEffekter[reg.basEffekter.length - 1];
-            const rang = _lvBasRangFn(reg.basList);
+            const rang = _lvBasRangordning(reg.basList);
             const steg = rang(sista.bas) - rang(reg.basRef);
             const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
             tests.push({

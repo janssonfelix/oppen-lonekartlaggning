@@ -62,7 +62,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { anpassaOLS, tFordelningCdf, pVardeTvasidigt, bhJustera } from '../src/lib/stat.js';
-import { basRangFn } from '../src/lib/likvardighet.js';
+import { basRangordning } from '../src/lib/likvardighet.js';
 import { quantileRegression, kvantilDesign, computeSequentialGap } from '../src/lib/regression.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
@@ -81,7 +81,7 @@ const relNara = (a, b, tol) => expect(Math.abs(a - b) / Math.max(Math.abs(b), 1e
 describe('fixturen', () => {
     it('designkolumnerna är konsekventa med råraderna och verktygets centrering', () => {
         // Verktyget centrerar ålder på radmedel och BAS-rang på medel av de UNIKA rangerna.
-        const rang = basRangFn(fx.rows.map(r => r.bas));
+        const rang = basRangordning(fx.rows.map(r => r.bas));
         const unika = [...new Set(fx.rows.map(r => r.bas))].sort().map(rang);
         const basMean = unika.reduce((s, v) => s + v, 0) / unika.length;
         const ageMean = fx.rows.reduce((s, r) => s + r.alder, 0) / fx.rows.length;

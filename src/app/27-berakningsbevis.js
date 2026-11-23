@@ -67,7 +67,7 @@ document.addEventListener('keydown', e => {
 
 /**
  * Bygger bevis-payload för ett § 3:10-par.
- * @param {Object} p - par-objekt från computeLikvardighetPairs
+ * @param {Object} p - par-objekt från likvardighetspar
  */
 function _evidenceForLikvardighetPair(p) {
     const fmtKr = v => svKr(v);

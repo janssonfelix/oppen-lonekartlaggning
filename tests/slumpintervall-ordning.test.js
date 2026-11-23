@@ -10,7 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { mulberry32, slumpFor } from '../src/lib/rng.js';
 import { omkastningsGranser, slumpensGranser, bedomSkillnad } from '../src/lib/status.js';
-import { bootstrapMedianer, bootstrapMedianDiffKr, bootstrapMedianVsConstantKr } from '../src/lib/likvardighet.js';
+import { bootstrapMedianer, bootstrapMedianskillnadKr, bootstrapMedianMotKonstantKr } from '../src/lib/likvardighet.js';
 import { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, trattUnderlag, kvantilBootstrap } from '../src/lib/osakerhet.js';
 import { quantileRegressionAtAllTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
 
@@ -57,9 +57,9 @@ describe.each(STORLEKAR)('[B4.3] %i kvinnor och %i män i två ordningar', (nKv,
         identiska(medianKvotKIGiltiga(kv, ma), medianKvotKIGiltiga(kv2, ma2));
     });
     it('medianskillnadens intervall i kronor, mot en annan grupp och mot en konstant', () => {
-        identiska(bootstrapMedianDiffKr(kv, ma, 1000, slumpFor(kv, ma)), bootstrapMedianDiffKr(kv2, ma2, 1000, slumpFor(kv2, ma2)));
-        identiska(bootstrapMedianVsConstantKr(kv, 32000, 1000, slumpFor(kv, [32000])),
-            bootstrapMedianVsConstantKr(kv2, 32000, 1000, slumpFor(kv2, [32000])));
+        identiska(bootstrapMedianskillnadKr(kv, ma, 1000, slumpFor(kv, ma)), bootstrapMedianskillnadKr(kv2, ma2, 1000, slumpFor(kv2, ma2)));
+        identiska(bootstrapMedianMotKonstantKr(kv, 32000, 1000, slumpFor(kv, [32000])),
+            bootstrapMedianMotKonstantKr(kv2, 32000, 1000, slumpFor(kv2, [32000])));
     });
     it('[B4.9] omkastningens gränser, slumpens gränser och trappans nivå', () => {
         identiska(omkastningsGranser(kv, ma), omkastningsGranser(kv2, ma2));

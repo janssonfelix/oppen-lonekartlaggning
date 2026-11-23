@@ -345,7 +345,7 @@ export function prognosutfall(rader, budget, generell, riktningar, kostnadsval) 
     const pott = beraknaPott(rader, budget);
     const alloc = fordela(rader, generell, riktningar, kostnadsval && kostnadsval.roundStep);
     const totalRaise = alloc.totals.totalRaise;
-    // Gränsen för kvinnodominerat: saknas den gäller arKvinnodominerads standard, KVINNO_TROSKEL_DEFAULT i
+    // Gränsen för kvinnodominerat: saknas den gäller arKvinnodominerads standard, KVINNO_TROSKEL_STANDARD i
     // likvardighet.js (spegeln exponerar bara funktioner, så konstanten importeras inte hit). 0 är en gräns, inte en som saknas.
     const kvThreshold = kostnadsval?.kvThreshold ?? undefined;
     const lonsummaFore = lonesumma(rader);
