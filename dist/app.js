@@ -6575,7 +6575,7 @@ function vymodellRegressionskort(r, { k, rader, medAlder, basEffektNot }) {
 
 // src/app/08-version.js
 var APP_VERSION = "2026.11.22";
-var APP_BUILD_DATE = "2026-11-22";
+var APP_BYGGDATUM = "2026-11-22";
 
 // src/app/10-diagramtema.js
 var PALETT = {
@@ -9963,12 +9963,12 @@ function tomStatistikcacher({ recompute = true, likvardighet = true } = {}) {
 
 // src/app/06-uppgiftsminimering.js
 function _hittaAnsvarKolumn(rubriker) {
-  return hittaAnsvarKolumn(rubriker, _kolumnvalIState());
+  return hittaAnsvarKolumn(rubriker, _kolumnvalITillstandet());
 }
 function _lonefilensRubriker(headers) {
-  return lonefilensRubriker(headers, _kolumnvalIState());
+  return lonefilensRubriker(headers, _kolumnvalITillstandet());
 }
-function extractMinimalRecord(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
+function minimeraLonerad(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
   return minimeraRad(row, rubriker, state.ansvarKolumn, (/* @__PURE__ */ new Date()).getFullYear());
 }
 
@@ -22744,7 +22744,7 @@ function lasInStrukturfil(file) {
       state.ansvarKolumn = kol ? { namn: kol } : null;
     }
     if (state.ansvarKolumn) ansvarVarden.push(row[state.ansvarKolumn.namn]);
-    const rec = extractMinimalRecord(row, rubriker);
+    const rec = minimeraLonerad(row, rubriker);
     const truncEx = (v) => {
       if (v == null) return "(tom)";
       const s = String(v).trim();
@@ -31381,7 +31381,7 @@ var OM_AVSNITT = {
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
             <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
-            <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
+            <li><code>minimeraLonerad()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
@@ -31552,7 +31552,7 @@ var OM_AVSNITT = {
     `,
   releases: () => {
     const ver = APP_VERSION;
-    const date = APP_BUILD_DATE;
+    const date = APP_BYGGDATUM;
     return `
         <h3>Aktuell version</h3>
         <div class="info-build-card">
@@ -33671,11 +33671,11 @@ function tillampaDataStil(rot) {
     rot.querySelectorAll("[" + attr + "]").forEach(satt);
   }
 }
-function _kolumnvalIState() {
+function _kolumnvalITillstandet() {
   return { columnMap: state.columnMap, importprofil: state.importprofil };
 }
 function hamtaFalt(row, possibleNames, role) {
-  return vardeForRoll(row, possibleNames, role, _kolumnvalIState());
+  return vardeForRoll(row, possibleNames, role, _kolumnvalITillstandet());
 }
 function _importprofilLista() {
   return [...state.importprofiler || [], ...inbyggdaProfiler()];

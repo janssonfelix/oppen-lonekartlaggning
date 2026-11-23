@@ -11,7 +11,7 @@
  * Funktionerna är rena: inget tillstånd och ingen klocka. Vilken kolumn som bär vilket fält avgörs här (TILLATNA_FALT,
  * _rubrikForRoll), men kolumnmappningen, importprofilen och ansvarskolumnen kommer ur appens tillstånd och skickas in,
  * liksom året som ett födelseår i ålderskolumnen räknas mot. Appens tunna adaptrar (hamtaFalt, _lonefilensRubriker,
- * _hittaAnsvarKolumn och extractMinimalRecord) läser tillståndet. Funktionerna utan adapter behåller namnen de hade i
+ * _hittaAnsvarKolumn och minimeraLonerad) läser tillståndet. Funktionerna utan adapter behåller namnen de hade i
  * appen.
  */
 import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp, arAnsvarskodRubrik as _anArRubrik, andelGiltiga as _anAndelGiltiga } from './ansvar.js';
@@ -466,7 +466,7 @@ export function tolkaLonerad(falt, referensar, medAnsvar = false) {
  * Extraherar ENBART vitlistade fält ur en lönerad — GDPR Art. 5(1)(c) uppgiftsminimering. Säkerställer att verktyget
  * aldrig laddar identifierande fält (PNR, namn, e-post) även om användarens fil innehåller dem. Råvärdena slås upp i
  * raden (rubrikerna ur lonefilensRubriker, och den godkända ansvarskolumnen) och tolkas av tolkaLonerad.
- * Appens extractMinimalRecord (src/app/06-uppgiftsminimering.js) skickar tillståndets ansvarskolumn och innevarande år.
+ * Appens minimeraLonerad (src/app/06-uppgiftsminimering.js) skickar tillståndets ansvarskolumn och innevarande år.
  * @param {Object<string,*>} rad - Rå rad (PapaParse-objekt).
  * @param {Object<string,string|undefined>} rubriker - Uppslaget för filen (lonefilensRubriker).
  * @param {{namn: string}|null} ansvarKolumn - Den godkända kolumnen för AID:s ansvarskod, eller null.

@@ -11,7 +11,7 @@ import { ordForAntal, stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { _importprofilFor, _importprofilKalla, _importprofilLista, doljLaddning, importprofilText, visaLaddning } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _hittaAnsvarKolumn, _lonefilensRubriker, extractMinimalRecord } from './06-uppgiftsminimering.js';
+import { _hittaAnsvarKolumn, _lonefilensRubriker, minimeraLonerad } from './06-uppgiftsminimering.js';
 import { _kopplaNamnFalt, tillampaProfiletiketter, STANDARDPROFIL, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
@@ -377,7 +377,7 @@ function lasInStrukturfil(file) {
     // sparas under inläsningen, för bedömningen.
     let ansvarBedomd = false;
     const ansvarVarden = [];
-    // Ansvarskolumnen sätts redan på första raden (extractMinimalRecord behöver den). Fallerar
+    // Ansvarskolumnen sätts redan på första raden (minimeraLonerad behöver den). Fallerar
     // inläsningen efteråt ska den data som redan finns behålla sin kolumn.
     const tidigareAnsvarKolumn = state.ansvarKolumn;
     // Importprofilen (src/lib/importprofiler.js) väljs på filens rubriker innan första raden läses, så att kolumnuppslaget
@@ -397,7 +397,7 @@ function lasInStrukturfil(file) {
         }
         if (state.ansvarKolumn) ansvarVarden.push(row[state.ansvarKolumn.namn]);
         /** @type {any} */
-        const rec = extractMinimalRecord(row, rubriker);
+        const rec = minimeraLonerad(row, rubriker);
         // Trunkera exempel-värden för att undvika att en hel rad fastnar
         const truncEx = v => {
             if (v == null) return '(tom)';

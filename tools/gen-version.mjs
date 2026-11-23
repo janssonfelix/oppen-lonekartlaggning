@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Genererar src/app/08-version.js från VERSION-filen.
 //
-// BAKGRUND: APP_VERSION och APP_BUILD_DATE var hårdkodade i 60-print-init.js (nu uppdelad i 60–66)
+// BAKGRUND: APP_VERSION och APP_BYGGDATUM var hårdkodade i 60-print-init.js (nu uppdelad i 60–66)
 // och hade glidit isär från VERSION (app:en stämplade 2026.07.22 medan bygget
 // var 2026.10.04). Eftersom APP_VERSION är det användaren ser i rapportens
 // sidfot och i Excel-/Word-metadata innebar det att varje exporterad rapport
@@ -69,7 +69,7 @@ export function generateVersionSource() {
         '// ====================================================================',
         '',
         `export const APP_VERSION = '${version}';`,
-        `export const APP_BUILD_DATE = '${buildDateFor(version)}';`,
+        `export const APP_BYGGDATUM = '${buildDateFor(version)}';`,
         ''
     ].join('\n');
 }

@@ -24,7 +24,7 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
 ## Dataflödet från fil till export
 
 1. Filen läses i `src/app/32-filinlasning.js`: CSV eller XLSX, med kolumnmappningen och importprofilerna.
-2. Varje rad går genom `extractMinimalRecord` i `src/app/06-uppgiftsminimering.js`, en tunn adapter till
+2. Varje rad går genom `minimeraLonerad` i `src/app/06-uppgiftsminimering.js`, en tunn adapter till
    `minimeraRad` i `src/lib/inlasning.js`. Bara de godkända fälten (`TILLATNA_FALT`, också i `inlasning.js`) förs
    vidare; övriga kolumner tas inte med.
 3. `tolkaLonerad` i `src/lib/inlasning.js` tolkar talen, könet och BAS-intervallet.

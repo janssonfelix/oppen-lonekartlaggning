@@ -259,10 +259,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
 - **Var koden bor:** vitlistan och kolumnvalet (`TILLATNA_FALT`, kolumnuppslaget, ansvarskolumnen), tolkningen av
-  värdena — talen, kön, BAS, saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`minimeraRad`,
+  värdena — talen, kön, BAS, saneringen av AID-etiketten, kärnan i `minimeraLonerad` (`minimeraRad`,
   `tolkaLonerad`) — och `hittaKansligaKolumner` är rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan
   klocka. Kolumnmappningen, importprofilen, den godkända ansvarskolumnen och året som ett födelseår räknas mot skickas
-  in av appens tunna adaptrar (`hamtaFalt`, `extractMinimalRecord` m.fl. i `src/app/03-hjalpfunktioner.js` och
+  in av appens tunna adaptrar (`hamtaFalt`, `minimeraLonerad` m.fl. i `src/app/03-hjalpfunktioner.js` och
   `src/app/06-uppgiftsminimering.js`). Reglerna prövas i `tests/inlasning.test.js`, adaptrarna och hela filer i
   `tests/inlasning-app.test.js`.
 - **Fältvitlista** (`TILLATNA_FALT`): endast BAS, AID-etikett, lön och kön, samt valfri ålder
@@ -757,7 +757,7 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Lagringsspärren | Automatiskt test i jsdom och röktest i Chromium och Firefox: `setItem` med olika nycklar, direkt tilldelning och `defineProperty`, i localStorage och sessionStorage; cookie; sökning efter `setItem` i biblioteksfilerna | ✔ varje skrivning kastar, inga undantag, inget lagras; ✔ 0 `setItem` i de fyra biblioteken (§6.2) |
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
-| Dataminimering | `TILLATNA_FALT` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/inlasning-app.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
+| Dataminimering | `TILLATNA_FALT` + `minimeraLonerad` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/inlasning-app.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
 | PII-avvisning | `hittaKansligaKolumner` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/inlasning.test.js` (§6.4) |
 | Namn i fältet för AID-etikett | `_stadaYrkesfalt`, `yrkeNamnNyckel` och `sallsyntaNamnrader`; jsdom-prov med CSV och Excel | ✔ ingen maskering (ADR-85): "101010 Anna Andersson" behålls; ✔ två namnrader ger varningen med antal och radnummer på de tre ställena; ✔ "Sjuksköterska Natt" på 20 rader varnar inte; ✔ ingen etikett i etikettlistan och ingen AID-etikett i demona träffas |
 | Minsta gruppstorlek | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |

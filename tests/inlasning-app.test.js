@@ -378,7 +378,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data).toHaveLength(12);
         expect(w.__state.data.every(r => !('enhet' in r))).toBe(true);
-        const rec = w.eval(`extractMinimalRecord({ BAS: 'A', 'Månadslön': '30000', 'Ålder': '40', 'Kön': 'Kvinna', AID: '5301', Ansvar: '110045' })`);
+        const rec = w.eval(`minimeraLonerad({ BAS: 'A', 'Månadslön': '30000', 'Ålder': '40', 'Kön': 'Kvinna', AID: '5301', Ansvar: '110045' })`);
         expect('enhet' in rec).toBe(false);
     });
     it('hamtaData är hela datan, och tillståndet har inget enhetsfilter', () => {
@@ -601,10 +601,10 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — inläsning', (
 });
 
 // ---- Adaptrarna i appen: tillståndet och klockan (reglerna prövas i tests/inlasning.test.js) ----
-describe('extractMinimalRecord i appen', () => {
+describe('minimeraLonerad i appen', () => {
     it('tolkar födelseår i ålderskolumnen som ålder', () => {
         const w = createAppWindow();
-        const rec = w.eval(`extractMinimalRecord({ 'BAS': 'A', 'Månadslön': '30000', 'Ålder': '1980', 'Kön': 'Kvinna', 'AID': '5301' })`);
+        const rec = w.eval(`minimeraLonerad({ 'BAS': 'A', 'Månadslön': '30000', 'Ålder': '1980', 'Kön': 'Kvinna', 'AID': '5301' })`);
         const expectedAge = new Date().getFullYear() - 1980;
         expect(rec.alder).toBe(expectedAge);
         expect(rec._alderStatus).toBe('birthyear');

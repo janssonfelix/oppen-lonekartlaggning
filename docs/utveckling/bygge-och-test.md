@@ -80,7 +80,7 @@ genererade filerna motsvarar källan.
   i CI prövar (avsnitt 9).
 
 **Reproducerbart bygge** (ADR-101). Samma commit ger samma `dist/oppen-lonekartlaggning.html` bit för bit, oavsett
-katalog, tidszon, språk och datum: bygget läser inte klockan (`Build:` och `APP_BUILD_DATE` härleds ur `VERSION`;
+katalog, tidszon, språk och datum: bygget läser inte klockan (`Build:` och `APP_BYGGDATUM` härleds ur `VERSION`;
 datumet läses bara för påminnelsen om att `VERSION` inte är dagens), inga sökvägar hamnar i filen (esbuild skriver
 relativa sökvägar i sina kommentarer), filerna läses i en fast ordning (skripten i en lista, modulerna i
 importordning), och esbuilds version är låst i `package.json`. Radsluten är LF i varje utcheckning genom
@@ -96,7 +96,7 @@ annan katalog (avsnitt 9) och release-arbetsflödet ur taggen (avsnitt 10).
 ## 3. Versionering
 
 CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är källan, och `package.json` sätts samtidigt (npm kräver fältet). `APP_VERSION` och
-`APP_BUILD_DATE` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att
+`APP_BYGGDATUM` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att
 `package.json` följer den; att `src/app/08-version.js` följer den prövar artefaktgrinden. Bygget för in den i
 `src/app/08-version.js`, `dist/` och programvaruförteckningen; `CHANGELOG.md` och riskanalysen anger den och prövas av
 release-grinden. Hur en version släpps står i §10.

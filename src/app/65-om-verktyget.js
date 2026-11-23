@@ -10,14 +10,14 @@ import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { AID_METODTEXT } from './04-ordlista.js';
 import { kInstalld, statGolv } from './06-k-troskel.js';
 import { tillampaProfiletiketter } from './07-standardinstallningar.js';
-import { APP_BUILD_DATE, APP_VERSION } from './08-version.js';
+import { APP_BYGGDATUM, APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { state } from './12-tillstand.js';
 import { EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { _kopplaFlikradensTangenter } from './63-tangentbordsnavigering.js';
 
 // ---- Om verktyget-flik: render-funktion ----
-// APP_VERSION och APP_BUILD_DATE kommer från src/app/08-version.js, som
+// APP_VERSION och APP_BYGGDATUM kommer från src/app/08-version.js, som
 // genereras ur VERSION-filen (tools/gen-version.mjs). Hårdkoda dem inte här.
 
 const OM_AVSNITT = {
@@ -89,7 +89,7 @@ const OM_AVSNITT = {
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
             <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
-            <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
+            <li><code>minimeraLonerad()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
@@ -262,7 +262,7 @@ const OM_AVSNITT = {
         // Build-info kommer från VERSION via src/app/08-version.js; bundlern
         // stämplar samma version i HTML-kommentaren och i RELEASE.txt.
         const ver = APP_VERSION;
-        const date = APP_BUILD_DATE;
+        const date = APP_BYGGDATUM;
         return `
         <h3>Aktuell version</h3>
         <div class="info-build-card">

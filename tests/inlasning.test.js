@@ -1,7 +1,7 @@
 /**
  * Tolkningen av indata: src/lib/inlasning.js körd fristående i Node, utan appen och utan låst klocka. Filtexten
  * (teckenkodning, avgränsare, rubrikrad, filformat), kolumnvalet, talen, normaliseringarna, en lönerad och de
- * känsliga kolumnerna prövas här och bara här. Appens adaptrar (hamtaFalt, extractMinimalRecord m.fl., som läser
+ * känsliga kolumnerna prövas här och bara här. Appens adaptrar (hamtaFalt, minimeraLonerad m.fl., som läser
  * tillståndet och klockan) och inläsningen av hela filer prövas i tests/inlasning-app.test.js.
  *
  * Tabellerna låser dagens tolkning av indata. Där resultatet kan överraska står det med en kommentar; det låses ändå
@@ -543,7 +543,7 @@ describe('inläsning: kolumnvalet', () => {
     });
 });
 
-describe('_normaliseraBas + extractMinimalRecord', () => {
+describe('_normaliseraBas + minimeraLonerad', () => {
     it('vanlig ålder påverkas inte av födelseårsheuristiken', () => {
         const rec = minimera({ 'BAS': 'A', 'Månadslön': '30000', 'Ålder': '45', 'Kön': 'Man', 'AID': '5301' });
         expect(rec.alder).toBe(45);
@@ -567,7 +567,7 @@ describe('_normaliseraBas + extractMinimalRecord', () => {
 
 // ---- Lönefil utan ålderskolumn (ADR-64): ålder är valfri ----
 describe('inläsning: lönefil utan ålderskolumn', () => {
-    it('extractMinimalRecord: utan kolumnen blir åldern 0, inget fel', () => {
+    it('minimeraLonerad: utan kolumnen blir åldern 0, inget fel', () => {
         const rec = minimera({ BAS: 'C', AID: '207011 Handläggare', 'Månadslön': '31000', 'Kön': 'Kvinna' });
         expect(rec).toMatchObject({ bas: 'C', lon: 31000, kon: 'kvinna', alder: 0, _alderStatus: 'empty' });
     });

@@ -36,12 +36,12 @@ export function tillampaDataStil(rot) {
 // importerar gissaKolumnmappning under samma namn. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
 // kolumnmappningen och importprofilen ur tillståndet.
 /** Kolumnmappningen och importprofilen ur tillståndet, som lib-funktionerna för kolumnvalet tar emot. */
-export function _kolumnvalIState() {
+export function _kolumnvalITillstandet() {
     return { columnMap: state.columnMap, importprofil: state.importprofil };
 }
 /** Radens värde i kolumnen som bär rollen (manuell mappning, importprofilen, namnet), eller tom sträng. */
 export function hamtaFalt(row, possibleNames, role) {
-    return vardeForRoll(row, possibleNames, role, _kolumnvalIState());
+    return vardeForRoll(row, possibleNames, role, _kolumnvalITillstandet());
 }
 
 // ---- Importprofiler: kända kolumnuppsättningar (src/lib/importprofiler.js) ----
