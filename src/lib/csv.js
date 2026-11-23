@@ -25,20 +25,20 @@ export function neutraliseraCell(v) {
 }
 
 /** Rad-matris → CSV-text: semikolon som standard, CRLF-radslut och citerade fält där det behövs. */
-export function tillCsv(rows, delimiter) {
-    delimiter = delimiter || ';';
+export function tillCsv(rader, avgransare) {
+    avgransare = avgransare || ';';
     const escapeCell = v => {
         if (v == null) return '';
         let s = String(neutraliseraCell(v));
-        if (s.includes(delimiter) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+        if (s.includes(avgransare) || s.includes('"') || s.includes('\n') || s.includes('\r')) {
             s = '"' + s.replace(/"/g, '""') + '"';
         }
         return s;
     };
-    return rows.map(r => (Array.isArray(r) ? r : [r]).map(escapeCell).join(delimiter)).join('\r\n');
+    return rader.map(r => (Array.isArray(r) ? r : [r]).map(escapeCell).join(avgransare)).join('\r\n');
 }
 
 /** Rad-matris → TSV för urklipp, med samma formelskydd som CSV-exporten. */
-export function tillTsv(rows) {
-    return rows.map(r => r.map(c => (c == null ? '' : neutraliseraCell(c))).join('\t')).join('\n');
+export function tillTsv(rader) {
+    return rader.map(r => r.map(c => (c == null ? '' : neutraliseraCell(c))).join('\t')).join('\n');
 }
