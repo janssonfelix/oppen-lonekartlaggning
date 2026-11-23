@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { _sdStallningstagande, genereraDemodata, genereraStortDemoStatistik } from '../lib/demodata.js';
-import { basRangordning } from '../lib/likvardighet.js';
-import { konsMedianer } from '../lib/struktur.js';
-import { svPct, svTal } from '../lib/talformat.js';
+import { _sdStallningstagande, demodiagnostik, genereraDemodata, genereraStortDemoStatistik } from '../lib/demodata.js';
+import { svTal } from '../lib/talformat.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
@@ -35,76 +33,11 @@ import { _hpDemoSkal } from './56-handlingsplan.js';
 // ---- #16 Testdata + självdiagnostik ----
 // genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen importerar dem.
 
+// Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
 function runDiagnostics() {
-    const tests = [];
-
-    // Test 1: råa gapet ska vara märkbart negativt (kvinnor yngre + lägre BAS = lägre lön)
-    const rawGap = konsMedianer(state.data).gapPct;   // diagnostik på demodata: ingen tröskel (k = 1)
-    tests.push({
-        name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
-        expected: '< -3%',
-        actual: svPct(rawGap, 2),
-        pass: rawGap != null && rawGap < -3
-    });
-
-    // Test 2: oförklarat gap (efter ålder + BAS) ska vara nära den injicerade -3%-effekten
     const reg = runOLSRegression();
-    if (!reg.error) {
-        tests.push({
-            name: 'Oförklarad skillnad nära −3 % (inlagd könseffekt)',
-            expected: '-1% till -5%',
-            actual: svPct(reg.konPct, 2),
-            pass: reg.konPct > -5 && reg.konPct < -1
-        });
-        tests.push({
-            name: 'Oförklarad skillnad är statistiskt signifikant (p < 0,05)',
-            expected: 'p < 0,05',
-            actual: _formatPValue(reg.pValue),
-            pass: reg.pValue < 0.05
-        });
-        // BAS-effekt ska finnas: nivån i högsta BAS mot referensen, utslagen per bokstavssteg
-        if (reg.basEffekter && reg.basEffekter.length) {
-            const sista = reg.basEffekter[reg.basEffekter.length - 1];
-            const rang = basRangordning(reg.basList);
-            const steg = rang(sista.bas) - rang(reg.basRef);
-            const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
-            tests.push({
-                name: 'BAS-effekt är signifikant positiv (~10-15% per steg)',
-                expected: '+5% till +25% per steg',
-                actual: svPct(perSteg, 2) + ` (BAS ${sista.bas} mot ${reg.basRef}: ${svPct(sista.pct, 1)})`,
-                pass: perSteg > 5 && perSteg < 25
-            });
-        }
-        tests.push({
-            name: 'R² > 30% (modellen förklarar betydande andel av lönerna)',
-            expected: 'R² > 0.30',
-            actual: svPct(reg.R2 * 100, 2),
-            pass: reg.R2 > 0.30
-        });
-    } else {
-        tests.push({ name: 'Regression kunde estimeras', expected: 'OK', actual: 'Fel: ' + reg.error, pass: false });
-    }
-
-    // Test 3: Underlagets kvalitet får inte vara kritisk för testdatan
-    const dq = bedomningUnderlag({ reg });   // regressionen ovan skickas vidare (ADR-17)
-    if (dq) {
-        tests.push({
-            name: 'Underlagets kvalitet är inte kritisk (testdata)',
-            expected: 'OK eller Varning',
-            actual: UK_ETIKETT[dq.status],
-            pass: dq.status !== 'kritisk'
-        });
-    }
-
-    // Test 4: BAS-intervall korrekt antal
-    tests.push({
-        name: `Antal unika ${T.niva.fl} = 5 (testdatan har A–E)`,
-        expected: '5',
-        actual: getBasIntervals().length.toString(),
-        pass: getBasIntervals().length === 5
-    });
-
-    return tests;
+    return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: getBasIntervals().length },   // regressionen skickas vidare (ADR-17)
+        { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formatPValue });
 }
 
 // Demolägets påhittade organisation och ställningstagande (ADR-28). Bara i demoläget;

@@ -13,6 +13,9 @@ import { arKvinna, arMan } from './kon.js';
 import { ansvarsgrupp as _anGrupp } from './ansvar.js';
 import { _normaliseraPolicyAid } from './inlasning.js';
 import { median, kvantil } from './stat.js';
+import { basRangordning } from './likvardighet.js';
+import { konsMedianer } from './struktur.js';
+import { svPct } from './talformat.js';
 
 // ---- Det lilla demot ----
 export function genereraTestdata() {
@@ -328,4 +331,41 @@ export function _sdStallningstagande(data, k = 10) {
         };
         return [senast];
     });
+}
+
+/**
+ * Självdiagnostiken på demot (genereraDemodata, som genereraTestdata): räknar verktyget fram det som lagts in? Den råa skillnaden ska
+ * vara negativ, den oförklarade nära −3 % och säkerställd, BAS-effekten 5–25 % per bokstavssteg, R² över 0,30,
+ * underlagets kvalitet inte kritisk och fem BAS-intervall. Utan tröskel (k = 1): det är verktygets egen testdata.
+ * @param {{rader: any[], reg: any, underlag: {status: string}|null, antalBas: number}} m
+ *   reg: huvudregressionen på raderna (med `error` när den inte kunde skattas)
+ * @param {{nivaFl: string, underlagEtikett: (status: string) => string, pText: (p: number) => string}} ord
+ * @returns {{name: string, expected: string, actual: string, pass: boolean}[]}
+ */
+export function demodiagnostik({ rader, reg, underlag, antalBas }, ord) {
+    const tests = [];
+    // Den råa skillnaden ska vara märkbart negativ (kvinnor yngre + lägre BAS = lägre lön)
+    const rawGap = konsMedianer(rader).gapPct;
+    tests.push({ name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)', expected: '< -3%', actual: svPct(rawGap, 2), pass: rawGap != null && rawGap < -3 });
+    // Den oförklarade skillnaden (efter ålder + BAS) ska vara nära den inlagda effekten −3 %
+    if (!reg.error) {
+        tests.push({ name: 'Oförklarad skillnad nära −3 % (inlagd könseffekt)', expected: '-1% till -5%', actual: svPct(reg.konPct, 2), pass: reg.konPct > -5 && reg.konPct < -1 });
+        tests.push({ name: 'Oförklarad skillnad är statistiskt signifikant (p < 0,05)', expected: 'p < 0,05', actual: ord.pText(reg.pValue), pass: reg.pValue < 0.05 });
+        // BAS-effekten: nivån i högsta BAS mot referensen, utslagen per bokstavssteg
+        if (reg.basEffekter && reg.basEffekter.length) {
+            const sista = reg.basEffekter[reg.basEffekter.length - 1];
+            const rang = basRangordning(reg.basList);
+            const steg = rang(sista.bas) - rang(reg.basRef);
+            const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
+            tests.push({ name: 'BAS-effekt är signifikant positiv (~10-15% per steg)', expected: '+5% till +25% per steg',
+                actual: svPct(perSteg, 2) + ` (BAS ${sista.bas} mot ${reg.basRef}: ${svPct(sista.pct, 1)})`, pass: perSteg > 5 && perSteg < 25 });
+        }
+        tests.push({ name: 'R² > 30% (modellen förklarar betydande andel av lönerna)', expected: 'R² > 0.30', actual: svPct(reg.R2 * 100, 2), pass: reg.R2 > 0.30 });
+    } else {
+        tests.push({ name: 'Regression kunde estimeras', expected: 'OK', actual: 'Fel: ' + reg.error, pass: false });
+    }
+    // Underlagets kvalitet får inte vara kritisk för testdatan
+    if (underlag) tests.push({ name: 'Underlagets kvalitet är inte kritisk (testdata)', expected: 'OK eller Varning', actual: ord.underlagEtikett(underlag.status), pass: underlag.status !== 'kritisk' });
+    tests.push({ name: `Antal unika ${ord.nivaFl} = 5 (testdatan har A–E)`, expected: '5', actual: antalBas.toString(), pass: antalBas === 5 });
+    return tests;
 }

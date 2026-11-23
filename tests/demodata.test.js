@@ -7,10 +7,11 @@
  * självdiagnostiken i appens tester.
  */
 import { describe, it, expect } from 'vitest';
-import { genereraTestdata, genereraDemodata, genereraStortDemo, genereraStortDemoStatistik, _sdStallningstagande,
+import { genereraTestdata, genereraDemodata, genereraStortDemo, genereraStortDemoStatistik, _sdStallningstagande, demodiagnostik,
     _SD_GAP, _SD_LIKVARDIGT } from '../src/lib/demodata.js';
 import { aidKriterier } from '../src/lib/aidkontroll.js';
 import { arKvinna, arMan } from '../src/lib/kon.js';
+import { huvudregression } from '../src/lib/regression.js';
 
 const BAS_AK = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 const median = l => { const s = [...l].sort((a, b) => a - b); return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2; };
@@ -107,5 +108,20 @@ describe('stort demo: generatorn', () => {
         }
         const utanGap = alla.filter(g => !(g.aid in gap) && g.kv.length >= 10 && g.ma.length >= 10);
         expect(utanGap.some(g => median(g.kv) >= 0.99 * median(g.ma))).toBe(true);
+    });
+});
+
+describe('demodiagnostik: självdiagnostiken på demot', () => {
+    const ord = { nivaFl: 'BAS-intervall', underlagEtikett: s => s, pText: p => String(p) };
+    it.each([['demot', genereraDemodata], ['testdatan', genereraTestdata]])('%s klarar varje prov när regressionen skattas på det', (_namn, generera) => {
+        const rader = generera();
+        const reg = huvudregression(rader, { kInstalld: 10, golv: 10 });
+        const t = demodiagnostik({ rader, reg, underlag: { status: 'ok' }, antalBas: 5 }, ord);
+        expect(t.map(x => x.name)).toHaveLength(7);
+        expect(t.filter(x => !x.pass).map(x => `${x.name}: ${x.actual}`)).toEqual([]);
+    });
+    it('en regression som inte kunde skattas, ett kritiskt underlag och fel antal BAS fäller sina prov', () => {
+        const t = demodiagnostik({ rader: genereraTestdata(), reg: { error: 'x' }, underlag: { status: 'kritisk' }, antalBas: 4 }, ord);
+        expect(t.filter(x => !x.pass).map(x => x.name)).toEqual(['Regression kunde estimeras', 'Underlagets kvalitet är inte kritisk (testdata)', 'Antal unika BAS-intervall = 5 (testdatan har A–E)']);
     });
 });
