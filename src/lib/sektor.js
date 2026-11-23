@@ -20,6 +20,7 @@ import { median } from './stat.js';
 import { justeradSkillnad, harAlderIRader } from './regression.js';
 import { sektorsnamn, jamforSektor } from './aid.js';
 import { konAv } from './falt.js';
+import { konsMedianer } from './struktur.js';
 import { skrKvinnoandelSektor } from './skrreferens.js';
 import { skapaTermer, stor } from './termer.js';
 import { personOrd } from './namn.js';
@@ -69,9 +70,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
         const g = per.get(namn);
         const kv = g.filter(r => konAv(r) === 'Kvinna'), ma = g.filter(r => konAv(r) === 'Man');
         const n = g.length, maskerad = n < k;
-        const bada = kv.length >= k && ma.length >= k;
-        const medKv = !maskerad && bada ? median(kv.map(r => r.lon)) : null;
-        const medMa = !maskerad && bada ? median(ma.map(r => r.lon)) : null;
+        const km = konsMedianer(g, { k }), bada = km.konOk, visa = !maskerad && bada;
         const just = maskerad ? { just: null, skal: null } : _justerat(g, k, medAlder);
         const andelLedning = grupp => (grupp.length ? grupp.filter(r => r.ansvarsgrupp === 'ledning').length / grupp.length * 100 : null);
         return {
@@ -81,7 +80,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
             skrDel: skrKvinnoandelSektor(namn, { del: skrDel })?.del ?? null,
             maskerad, samladMedian: !maskerad && !bada,
             medTot: maskerad ? null : median(g.map(r => r.lon)),
-            medKv, medMa, kvot: medKv != null && medMa != null && medMa > 0 ? medKv / medMa * 100 : null,
+            medKv: visa ? km.medKv : null, medMa: visa ? km.medMa : null, kvot: visa ? km.kvotPct : null,
             justerat: just.just, justeratSkal: just.skal,   // 'ok' | 'fa' (för få) | 'ejBas' (kön och BAS går inte att skilja åt)
             justeratMedAlder: medAlder,   // rubriken och texterna säger vad som justeras för
             antalAid: new Set(g.map(r => r.aid)).size,
