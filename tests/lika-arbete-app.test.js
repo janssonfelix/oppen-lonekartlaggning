@@ -54,7 +54,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — Lika arbete
 describe('Var uppstår löneskillnaden?', () => {
     it('ritas med demodata: tre delar, demomärkning, noten om rangordning', () => {
         const w = createAppWindow();
-        w.__loadDemoData(); w.__renderTabContent('struktur');
+        w.__loadDemoData(); w.__ritaFlik('struktur');
         const host = w.document.getElementById('gap-uppdelning');
         expect(host.hidden).toBe(false);
         expect(host.querySelectorAll('[data-gu-del]').length).toBe(3);
@@ -129,8 +129,8 @@ describe('kvartiler utan enskilda löner', () => {
         rader.push({ bas: 'A', kon: 'kvinna', lon: 11111, alder: 30, yrke: '100 Yrke', aid: '100', yrkeLabel: 'Yrke', enhet: '' });
         rader.push({ bas: 'D', kon: 'man', lon: 99999, alder: 60, yrke: '100 Yrke', aid: '100', yrkeLabel: 'Yrke', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('struktur');
+        w.eval('populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('struktur');
         const t = w.document.getElementById('struktur-eu').textContent.replace(/(\d)[\s\u00a0\u202f](?=\d)/g, '$1');
         expect(t).toContain('upp till');
         expect(t).not.toContain('11111');
@@ -315,8 +315,8 @@ describe('ansvarskod i Lika arbete', () => {
     const oppna = (medAnsvar = true) => {
         const w = createAppWindow();
         w.__state.data = bygg(medAnsvar);
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('matrix'); w.__renderTabContent('struktur');
+        w.eval('populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('matrix'); w.__ritaFlik('struktur');
         return w;
     };
     it('yrket får en underrad per ansvarsgrupp och raden Utan ledningsansvar', () => {
@@ -395,7 +395,7 @@ describe('protokollet för gemensam lönebedömning: kvinnors median i % av män
         for (let i = 0; i < 15; i++) for (const [kon, mitt] of [['kvinna', 34059], ['man', 40000]])
             rader.push({ bas: 'A', kon, lon: mitt + (i - 7) * 10, alder: 30 + i, yrke: '7100 Yrke', aid: '7100', yrkeLabel: 'Yrke', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const { readFileSync } = await import('node:fs');
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
         w.alert = () => {};
@@ -411,7 +411,7 @@ describe('protokollet för gemensam lönebedömning: kvinnors median i % av män
 });
 
 describe('yrkesgruppstabellen i Lika arbete', () => {
-    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('matrix'); return w; };
+    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__ritaFlik('matrix'); return w; };
     const synlig = el => { const k = el.cloneNode(true); k.querySelectorAll('.bara-export').forEach(e => e.remove()); return k.textContent.replace(/\s+/g, ' ').trim(); };
     it('statusmärket står på en rad utan tröskeln, som finns i verktygstipset; cellens text för exporten är oförändrad', () => {
         const w = rita();

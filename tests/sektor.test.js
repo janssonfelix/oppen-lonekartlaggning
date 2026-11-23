@@ -275,7 +275,7 @@ describe('sektorsöversikten', () => {
     it('kortet visar en rad per sektor med demot, i prefixordning', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const rader = [...w.document.querySelectorAll('#sektor-table tbody tr')].map(tr => tr.querySelector('.sektor-namn').textContent.trim());
         expect(rader).toEqual(['Vård- och omsorgsarbete med mera', 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet', 'Teknikarbete']);
         expect(w.document.getElementById('struktur-sektorer').textContent).toMatch(/på att kvinnor och män arbetar i olika huvudområden/);
@@ -285,8 +285,8 @@ describe('sektorsöversikten', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
-        w.eval('tomStatistikcacher(); populateSelects(); unlockTabs();');
-        w.__renderTabContent('struktur');
+        w.eval('tomStatistikcacher(); populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('struktur');
         const rubriker = [...w.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim());
         expect(rubriker).toContain('Justerad (BAS)');
         expect(rubriker).not.toContain('Justerad (ålder, BAS)');
@@ -296,7 +296,7 @@ describe('sektorsöversikten', () => {
     it('klick på en sektor öppnar Utforska med sektorn som villkor', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         w.document.querySelector('#sektor-table [data-sektor="Teknikarbete"]').click();
         const u = w.eval('explorerUrval()').urval;
         expect(u.villkor).toEqual([expect.objectContaining({ falt: 'sektor', op: 'enAv', varde: ['Teknikarbete'] })]);

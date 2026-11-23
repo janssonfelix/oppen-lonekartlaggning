@@ -53,7 +53,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
 
     it('öppnas från Lönestrukturs tabell per BAS-intervall och från gruppdossiern (Hela BAS), och leder vidare till gruppdossiern', () => {
         const w = demo(), doc = w.document;
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const knapp = doc.querySelector('#la-oversikt [data-open-basdossier="C"]');
         expect(knapp).not.toBeNull();
         knapp.click();
@@ -233,7 +233,7 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         expect(y.ocksaI).toEqual(['D']);
         expect(y.helaTot).toBeUndefined();
         // Samma status som raden för intervallet i Lika arbetes tabell.
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const eu = [...w.document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).find(r => r && r.aid === '502010' && r.bas === 'C');
         expect({ granska: 'granska', folj: 'folj', balanserat: 'balanserat', ejbedomd: 'ejbedomd' }[y.status]).toBe(eu.niva);
         w.eval("openBasdossier('C')");

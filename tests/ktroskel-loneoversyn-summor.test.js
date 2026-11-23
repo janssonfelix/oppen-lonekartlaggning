@@ -25,7 +25,7 @@ const SMA_GRUPPER = [['E', '5400'], ['F', '5401'], ['X', '7002'], ['S1', '7001']
 
 const forbered = (w, pct = 2) => {
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: pct } });
-    w.__renderTabContent('loneoversyn');
+    w.__ritaFlik('loneoversyn');
     return w;
 };
 // Exporten i exportläget vid 10, med skärmens utfallstabell som den står före exporten (som ritar tillbaka skärmen).
@@ -51,7 +51,7 @@ const grupp = (bas, aid, n, lon0, kon) => Array.from({ length: n }, (_, i) => ra
 const exportera = async (data, pct = 2) => {
     const w = createAppWindow();
     w.__state.data = data;
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('populateSelects(); lasUppFlikar();');
     return exporteraFonster(forbered(iExport(w), pct));
 };
 const STOR = grupp('A', '6000', 30, 30000), MELLAN12 = grupp('B', '6100', 12, 35000);

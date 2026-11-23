@@ -37,7 +37,7 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         expect(await jamforAlla(w), 'skattningarna').toEqual([]);
         // Kvantilregressionens intervall: Lönestruktur ritas med raden "räknas i bakgrunden", sedan blir intervallet klart.
         await byt(w, 'struktur');
-        w.eval('_regKvantilMinne = null; renderTabContent("struktur")');
+        w.eval('_regKvantilMinne = null; ritaFlik("struktur")');
         expect(w.eval('!!_regKvantilBakgrund')).toBe(true);
         ritaAllaDirekt(w);
         w.klickaFlik(nav(w, 'dashboard'), { uppskjut: true });

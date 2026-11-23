@@ -23,7 +23,7 @@ describe('Sidindex', () => {
         // Ett avsnitt som döljs är borta när fliken ritas om.
         expect(lista).toContain('Var uppstår löneskillnaden?');
         w.document.getElementById('avsnitt-ov-gap').hidden = true;
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(poster(w)).not.toContain('Var uppstår löneskillnaden?');
         expect(poster(w).length).toBe(lista.length - 1);
         // Den dolda rubriken i kortet under avsnittet (samma text, hidden) räknas aldrig.
@@ -39,7 +39,7 @@ describe('Sidindex', () => {
         expect(mal.classList.contains('card')).toBe(true);
         expect(mal.querySelector('.card-header > h2').textContent).toBe(KORT);
         // Ombyggt index behåller id:t.
-        w.__renderTabContent('bestammelser');
+        w.__ritaFlik('bestammelser');
         expect(w.document.querySelector(`#sidindex a[data-sidindex="${a.dataset.sidindex}"]`)).toBeTruthy();
     });
     it('ett klick fäller ut avsnittet och ger summaryn fokus', () => {
@@ -149,7 +149,7 @@ describe('Sidindex', () => {
         const w = createAppWindow(); w.__loadDemoData();
         oppna(w, 'matrix');
         const fore = poster(w);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(poster(w)).toEqual(fore);
     });
     it('indexet lägger inga avsnitt till sidan och ser likadant ut i kompakt läge', () => {
@@ -158,7 +158,7 @@ describe('Sidindex', () => {
         const fore = poster(w);
         expect(w.document.querySelectorAll('#sidindex details.avsnitt, #sidindex h2, #sidindex h3').length).toBe(0);
         w.document.body.classList.add('lage-kompakt');
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(poster(w)).toEqual(fore);
     });
 });

@@ -26,7 +26,7 @@ import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
 import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
 import { _paketFilnamn, _synkaOrgTyp, _tomStatistik, skapaPaketMedImportprofil } from './29-organisationspaket.js';
-import { _aktivFlik, _visaFilkortet, unlockTabs } from './31-navigering.js';
+import { _aktivFlik, _visaFilkortet, lasUppFlikar } from './31-navigering.js';
 import { _fcGlomKnappresultat, _fcRensaParMal } from './36-loneoversyn.js';
 import { renderReferensKort } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
@@ -128,7 +128,7 @@ function _afterDataLoaded() {
     // Föreslagna riktade rader (kalla: 'par') prövas mot paren i den nya lönefilen, också när de lästs in ur en
     // konfigurationsfil innan det fanns en lönefil att pröva dem mot (ADR-69). Egna rader står kvar.
     if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
-    unlockTabs();
+    lasUppFlikar();
     ritaNyckeltal();
     populateSelects();
     ritaLoneoversikt();
@@ -157,7 +157,7 @@ function _afterDataLoaded() {
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
     // vid stora underlag. De körs EFTER att gränssnittet målats (deferrade i två steg så
     // statusnotisen hinner synas). Flikbesök renderar ändå on-demand via
-    // renderTabContent, och exporterna self-heal:ar (se exportAlltTillExcel).
+    // ritaFlik, och exporterna self-heal:ar (se exportAlltTillExcel).
     const DEFER_NOTE = ' · förbereder analyser i bakgrunden…';
     setTimeout(() => {
         if (dataStatus) dataStatus.textContent += DEFER_NOTE;

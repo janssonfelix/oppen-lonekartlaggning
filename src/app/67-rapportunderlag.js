@@ -18,7 +18,7 @@ import { _diagramexportBild, diagramRitat, diagramTillBild } from './11-diagrame
 import { hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag } from './13-oversikt.js';
 import { medExportLage } from './23-exportgrind.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { laLikaGrupper } from './41-lika-arbete.js';
 import { referensOverblick } from './44-referensoverblick.js';
@@ -222,7 +222,7 @@ async function _kopieraRapportDiagramExport(id) {
         || (id !== 'chart-likvardighet-heatmap' ? RAPPORT_DIAGRAM.find(g => g.id === id) : null);
     if (!def) return 'saknas';
     // Ritas alltid om: ett tidigare ritat diagram kan gälla ett annat urval än blocken.
-    try { renderTabContent(def.flik); } catch (_e) { /* ritas inte — hanteras nedan */ }
+    try { ritaFlik(def.flik); } catch (_e) { /* ritas inte — hanteras nedan */ }
     const gd = document.getElementById(id);
     if (!diagramRitat(gd)) return 'saknas';
     if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {

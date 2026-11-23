@@ -62,7 +62,7 @@ describe('stort demo: inläsningen', () => {
     });
 
     it('Översikt och flikarna ritas utan internt fel', () => {
-        for (const flik of ['dashboard', 'filer', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'utforska']) w.__renderTabContent(flik);
+        for (const flik of ['dashboard', 'filer', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'utforska']) w.__ritaFlik(flik);
         expect(w.__fel).toEqual([]);
         expect(w.__state._interntFel || []).toEqual([]);
         expect(w.document.getElementById('internt-fel-banner').hidden).toBe(true);

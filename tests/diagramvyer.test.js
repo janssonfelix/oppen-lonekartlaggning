@@ -157,7 +157,7 @@ describe('Struktur: chart-sektorer', () => {
     });
     it('ritas av kärnan med demodatan: en punkt per sektor och serie, inga staplar, talen i tips stämmer med tabellen', () => {
         const w2 = demo();
-        w2.__renderTabContent('struktur');
+        w2.__ritaFlik('struktur');
         const el = w2.document.getElementById('chart-sektorer');
         expect(el.data).toBeUndefined();
         expect(el.querySelectorAll('[data-marke="punkt"]').length).toBe(el._figur.lager[0].data.length + el._figur.lager[1].data.length);
@@ -176,7 +176,7 @@ describe('Struktur: chart-sektorer', () => {
         for (const utanAlder of [false, true]) {
             w2.__loadDemoData();
             if (utanAlder) w2.__state.data = w2.__state.data.map(r => ({ ...r, alder: 0 }));
-            w2.__renderTabContent('struktur');
+            w2.__ritaFlik('struktur');
             const rubrik = [...w2.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim()).find(t => t.startsWith('Justerad'));
             const fig = w2.document.getElementById('chart-sektorer')._figur;
             expect(fig.lager.map(l => l.serie), String(utanAlder)).toContain(rubrik);
@@ -207,8 +207,8 @@ describe('Rapporttext: auto-utkastets mening om vertikal könssegregering', () =
         for (let i = 0; i < 40; i++) r.push(rad('E', i < 20 ? 'kvinna' : 'man', 35000 + i));
         for (let i = 0; i < 40; i++) r.push(rad('J', i < 40 * andelKvJ / 100 ? 'kvinna' : 'man', 60000 + i));
         win.__state.data = r;
-        win.eval('populateSelects(); unlockTabs();');
-        win.__renderTabContent('rapporttext');
+        win.eval('populateSelects(); lasUppFlikar();');
+        win.__ritaFlik('rapporttext');
         return win.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
     };
     it('hög kvinnoandel i BAS A och låg i BAS J: A kallas lägre betalda och J högre betalda', () => {
@@ -261,7 +261,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
     });
     it('ritas av kärnan med demodatan: punkter, intervall och förklaring med symbol för de statusar som finns; inget BAS under tröskeln', () => {
         const w2 = demo();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         for (const id of ['chart-skevhet-overview', 'chart-perbas-gap']) {
             const el = w2.document.getElementById(id);
             if (!el._figur) { expect(el.textContent, id).toMatch(/För få BAS-intervall/); continue; }
@@ -284,12 +284,12 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
                       ...Array.from({ length: 24 }, (_, i) => person('B', i < 4 ? 'kvinna' : 'man', i < 4 ? 71111 : 40000 + i))];
         medData(data, [], () => {
             w.__state.kLage = 'export';
-            w.__renderTabContent('struktur');
+            w.__ritaFlik('struktur');
             const el = w.document.getElementById('chart-skevhet-overview');
             expect(el._figur.y.ordning).toEqual(['BAS A', 'BAS C']);
             expect(utdata(el)).not.toMatch(/BAS B|71\s?111/);
             w.eval('sattKTroskel(20, { fraga: false })');                          // nu når inget BAS tröskeln per kön
-            w.__renderTabContent('struktur');
+            w.__ritaFlik('struktur');
             const el2 = w.document.getElementById('chart-skevhet-overview');
             expect(el2._figur).toBeUndefined();
             expect(el2.querySelector('svg')).toBeNull();
@@ -300,7 +300,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
 describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => {
     it('en rad per BAS med antal, medianer, skillnad, kvot med intervall och status — samma tal som figuren', () => {
         const w2 = demo();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         const d = w2.document, rader = [...d.querySelectorAll('#la-oversikt tbody tr')];
         const figur = d.getElementById('chart-skevhet-overview')._figur, ov = w2.eval('_laOversiktRader(hamtaData())');
         expect(rader.map(r => r.querySelector('th').textContent)).toEqual(figur.y.ordning);
@@ -333,12 +333,12 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
                       ...Array.from({ length: 24 }, (_, i) => person('B', i < 4 ? 'kvinna' : 'man', i < 4 ? 71111 : 40000 + i))];
         medData(data, [], () => {
             w.__state.kLage = 'export';
-            w.__renderTabContent('struktur');
+            w.__ritaFlik('struktur');
             const tb = w.document.querySelector('#la-oversikt tbody');
             expect([...tb.querySelectorAll('tr th')].map(t => t.textContent)).toEqual(['BAS A']);
             expect(tb.textContent).not.toMatch(/BAS B|71\s?111/);
             w.eval('sattKTroskel(20, { fraga: false })');
-            w.__renderTabContent('struktur');
+            w.__ritaFlik('struktur');
             expect(tb.querySelectorAll('tr')).toHaveLength(1);
             expect(tb.textContent).toMatch(/För få BAS-intervall/);
             expect(w.document.getElementById('la-oversikt-skala').innerHTML).toBe('');
@@ -350,7 +350,7 @@ describe('Lika arbete: översiktstabellen med inbyggd grafik (huvudvyn)', () => 
 describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     it('lönespridning per BAS och kön: lådor utan enskilda avvikare, och ett kön under tröskeln ritas inte', () => {
         const w2 = demo();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         const el = w2.document.getElementById('chart-skevhet-lador'), f = el._figur;
         expect(f.lager.map(l => [l.marke, l.serie, l.avvikare, l.form])).toEqual([['lada', 'Kvinna', false, undefined], ['lada', 'Man', false, undefined]]);
         expect(el.querySelectorAll('[data-marke="avvikare"]')).toHaveLength(0);          // en avvikare är en person
@@ -406,7 +406,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
     });
     it('yrkesgruppstabellen ritar kvoten i raden, och exporten bär fortfarande bara talet', () => {
         const w2 = demo();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         const rader = [...w2.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow && !tr._euRow.samladMedian);
         expect(rader.length).toBeGreaterThan(0);
         for (const tr of rader) {
@@ -419,7 +419,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__state.kLage = 'export';   // figurerna så som exporterna läser dem (ADR-51)
-        for (const t of ['matrix', 'likvardighet', 'prioritering', 'kon', 'benchmark', 'loneoversyn']) w2.__renderTabContent(t);
+        for (const t of ['matrix', 'likvardighet', 'prioritering', 'kon', 'benchmark', 'loneoversyn']) w2.__ritaFlik(t);
         const d = w2.document, f = id => (d.getElementById(id) || {})._figur;
         const kostnad = f('chart-prio-pareto');
         expect(kostnad.y2).toBeUndefined();                                       // en axel
@@ -556,11 +556,11 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__state.kLage = 'export';
-        w2.__renderTabContent('lonepolitik');
+        w2.__ritaFlik('lonepolitik');
         expect(w2.document.getElementById('lp-konlagen-kort').hidden).toBe(false);
         expect(w2.document.getElementById('chart-lp-konlagen')._figur.lager).toHaveLength(5);
         w2.eval('sattKTroskel(200, { fraga: false })');
-        w2.__renderTabContent('lonepolitik');
+        w2.__ritaFlik('lonepolitik');
         expect(w2.document.getElementById('lp-konlagen-kort').hidden).toBe(true);
         expect(w2.document.getElementById('chart-lp-konlagen')._figur).toBeUndefined();
     });
@@ -568,7 +568,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__state.kLage = 'export';
-        for (const t of ['matrix', 'kon']) w2.__renderTabContent(t);
+        for (const t of ['matrix', 'kon']) w2.__ritaFlik(t);
         const d = w2.document;
         expect(d.getElementById('chart-kon-aldergap')._figur.y.ordning.length).toBeGreaterThan(0);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(false);
@@ -577,7 +577,7 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         expect(d.getElementById('la-tratt-not').textContent).toMatch(/^En punkt per AID-etikett i ett BAS-intervall där både kvinnor och män når minsta gruppstorlek\. Statusen per grupp står i tabellen nedan/);
         expect(d.getElementById('la-tratt-not').textContent).not.toMatch(/bedömda grupper/);
         w2.eval('sattKTroskel(200, { fraga: false })');
-        for (const t of ['matrix', 'kon']) w2.__renderTabContent(t);
+        for (const t of ['matrix', 'kon']) w2.__ritaFlik(t);
         expect(d.getElementById('la-tratt-kort').hidden).toBe(true);
         expect(d.getElementById('chart-la-tratt')._figur).toBeUndefined();
         expect(d.getElementById('chart-kon-aldergap')._figur).toBeUndefined();
@@ -634,7 +634,7 @@ describe('Ålder & karriär: chart-demo-hist', () => {
     it('ritas av kärnan: tio raka etiketter också på smal skärm, ingen zon, ZIP och meny känner diagrammet', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
-        w2.__renderTabContent('demografi');
+        w2.__ritaFlik('demografi');
         const el = w2.document.getElementById('chart-demo-hist');
         expect(el.data).toBeUndefined();
         expect(el.querySelectorAll('[data-marke="zon"]')).toHaveLength(0);
@@ -742,7 +742,7 @@ describe('Ålder & karriär: chart-demo-agecurve, chart-demo-spread', () => {
         const w2 = createAppWindow();
         w2.__state.kLage = 'export';
         w2.__loadDemoData();
-        w2.__renderTabContent('demografi');
+        w2.__ritaFlik('demografi');
         const el = id => w2.document.getElementById(id);
         for (const id of ['chart-demo-agecurve', 'chart-demo-spread']) {
             expect(el(id).data, id).toBeUndefined();
@@ -851,7 +851,7 @@ describe('Jämförelsestatistik: figurerna', () => {
 describe('Lönepolitik: chart-lp-bandmap', () => {
     it('ritas av kärnan: referensens och organisationens spann som intervall, yrkesgrupper som punkter i tre klasser efter könsfördelning', () => {
         const w2 = demo();
-        w2.__renderTabContent('lonepolitik');
+        w2.__ritaFlik('lonepolitik');
         const el = w2.document.getElementById('chart-lp-bandmap'), f = el._figur;
         expect(el.data).toBeUndefined();
         expect(f.lager.filter(l => l.marke === 'intervall')).toHaveLength(2);
@@ -866,7 +866,7 @@ describe('Lönepolitik: chart-lp-bandmap', () => {
         expect(() => valideraFigur(f, 't')).not.toThrow();
         // Förskjutningen är stabil mellan omritningar.
         const fore = JSON.stringify(grupper.data.map(p => p.forskjutning));
-        w2.__renderTabContent('lonepolitik');
+        w2.__ritaFlik('lonepolitik');
         expect(JSON.stringify(w2.document.getElementById('chart-lp-bandmap')._figur.lager.filter(l => /AID-etikett$/.test(l.serie)).flatMap(l => l.data).map(p => p.forskjutning))).toBe(fore);
     });
 });
@@ -921,7 +921,7 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
     it('ritas av kärnan med demodatan, och exportknappen för matrisen ger en bild med alla etiketter', async () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
-        w2.__renderTabContent('prioritering');
+        w2.__ritaFlik('prioritering');
         const el = w2.document.getElementById('chart-prio-matrix');
         expect(el.data).toBeUndefined();
         expect(el.querySelectorAll('[data-marke="punkt"]').length).toBe(el._figur.lager.reduce((n, l) => n + l.data.length, 0));
@@ -957,7 +957,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
     });
     it('exporten bär stämpeln om undantaget för fliken', () => {
         const w2 = demo();
-        w2.__renderTabContent('likvardighet');
+        w2.__ritaFlik('likvardighet');
         const el = w2.document.getElementById('chart-likvardighet-heatmap');
         if (!el || !el._figur) return;   // demodatan har för få kandidatpar: vyns text visas
         expect(el.data).toBeUndefined();
@@ -974,9 +974,9 @@ describe('Utforska: små grupper visas markerade och exporteras bara när rutan 
         w2.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('A', 'man', 30000 + i * 7)), ...Array.from({ length: 3 }, () => rad('A', 'kvinna', MARKOR)),
                            ...Array.from({ length: 24 }, (_, i) => rad('B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11, 30 + (i % 3) * 12)),
                            ...Array.from({ length: 4 }, (_, i) => rad('LITEN', i % 2 ? 'man' : 'kvinna', MARKOR + 1 + i))];
-        w2.eval('populateSelects(); unlockTabs();');
+        w2.eval('populateSelects(); lasUppFlikar();');
         w2.__state.kLage = 'export';   // så som det lämnar verktyget (ADR-51)
-        w2.__renderTabContent('utforska');
+        w2.__ritaFlik('utforska');
         return w2;
     };
     const delat = delatFonster(null, skapa), oppna = () => delat();   // ett läsande test delar, ett som ändrar tar skapa()
@@ -1219,8 +1219,8 @@ describe('länkade vyer: markering', () => {
     it('i verktyget: ett klick på ett BAS i Lika arbete framhäver samma BAS i Lönepolitik, och gruppdossiern erbjuds för en yrkesgrupp', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
-        w2.__renderTabContent('matrix');
-        w2.__renderTabContent('lonepolitik');
+        w2.__ritaFlik('matrix');
+        w2.__ritaFlik('lonepolitik');
         const skev = w2.document.getElementById('chart-skevhet-overview');
         const stapel = skev.querySelector('[data-marke="punkt"]');
         const l = skev._figur.lager[Number(stapel.getAttribute('data-l'))], d = l.data[Number(stapel.getAttribute('data-i'))];
@@ -1304,13 +1304,13 @@ describe('länkade vyer: flera grupper, tabeller och pensling', () => {
     it('i verktyget: tabellen i Lika arbete följer markeringen, också efter att fliken ritats om', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         // En rad med könsuppdelat gap (rader för BAS där ett kön är under tröskeln byggs för sig och går inte att markera).
         const bas = [...w2.document.querySelectorAll('#paygap-table tbody tr')].find(r => Array.isArray(r._markering)).cells[0].textContent.trim();
         w2.eval(`sattDiagramMarkering('bas:${bas}')`);
         const markerade = () => [...w2.document.querySelectorAll('#paygap-table tbody tr.rad-markerad')].map(r => r.cells[0].textContent.trim());
         expect(markerade()).toEqual([bas]);
-        w2.__renderTabContent('matrix');                                  // raderna byggs om: markeringen sätts på de nya
+        w2.__ritaFlik('matrix');                                  // raderna byggs om: markeringen sätts på de nya
         expect(markerade()).toEqual([bas]);
         expect(w2.document.querySelectorAll('#skevhet-table tbody tr.rad-markerad').length).toBe(1);
     });
@@ -1428,8 +1428,8 @@ describe('nedborrning: från ett markerat BAS till yrkesgrupperna i Utforska, oc
         w2.__state.data = [...Array.from({ length: 24 }, (_, i) => rad('207011 Usk', 'A', i % 2 ? 'man' : 'kvinna', 30000 + i * 7)),
                            ...Array.from({ length: 24 }, (_, i) => rad('502010 Sys', 'A', i % 2 ? 'man' : 'kvinna', 34000 + i * 9)),
                            ...Array.from({ length: 24 }, (_, i) => rad('403010 Bsk', 'B', i % 2 ? 'man' : 'kvinna', 26000 + i * 11))];
-        w2.eval('populateSelects(); unlockTabs();');
-        w2.__renderTabContent('utforska');
+        w2.eval('populateSelects(); lasUppFlikar();');
+        w2.__ritaFlik('utforska');
         return w2;
     };
     const knapp = w2 => w2.document.querySelector('#markering-rad button[data-markering="borra"]');
@@ -1671,7 +1671,7 @@ describe('metodförbehåll under diagram', () => {
     });
     it('i verktyget: noten under tratten och samma mening under diagrammet i rapporten; metodbilagan har raden', () => {
         const w2 = demo();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         const d = w2.document, antal = d.getElementById('chart-la-tratt')._figur.lager.filter(l => l.marke === 'punkt').reduce((n, l) => n + l.data.length, 0);
         const not = d.getElementById('chart-la-tratt-metod-not');
         const delar = w2.eval('rapportModell({ alla: true })').avsnitt.flatMap(a => a.delar);
@@ -1706,7 +1706,7 @@ describe('radpaneler i vyerna', () => {
     it('Utforskas hantel och jämförelseflikens två figurer delas vid fler än femton kategorier', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
-        w2.__renderTabContent('utforska');
+        w2.__ritaFlik('utforska');
         const d = w2.document;
         for (const [id, v] of Object.entries({ 'explore-rad': 'aidbas', 'explore-kolumn': 'ingen', 'explore-typ': 'hantel' })) d.getElementById(id).value = v;
         w2.__renderExplorer();
@@ -1743,7 +1743,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
         w2.__cfg = cfg; w2.eval('tillampaKonfiguration(window.__cfg)');
         w2.__state.statistik = [...new Set(w2.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
         w2.__state.statistikHasP10 = true; w2.__state.statistikHasP90 = true;
-        for (const t of ['dashboard', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'demografi', 'prioritering', 'loneoversyn', 'arbetet']) w2.__renderTabContent(t);
+        for (const t of ['dashboard', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'demografi', 'prioritering', 'loneoversyn', 'arbetet']) w2.__ritaFlik(t);
     });
     const figur = id => { const el = fonster().document.getElementById(id); return el && el._figur; };
     const BAS_KAT = /(^|· )BAS (\S+)$/;
@@ -1865,7 +1865,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
 describe('Diagramfilter v3: filtren i vyerna', () => {
     const fonster = delatFonster(w2 => {
         w2.__loadDemoData();
-        for (const t of ['kon', 'demografi', 'struktur', 'matrix', 'likvardighet']) w2.__renderTabContent(t);
+        for (const t of ['kon', 'demografi', 'struktur', 'matrix', 'likvardighet']) w2.__ritaFlik(t);
     });
     // Figuren utan filter och härledning: bilden utan filter ska vara byte för byte densamma som den.
     const utanFilter = f => ({ ...f, urval: undefined, lager: f.lager.map(l => { const { harleddAv: _h, ...rest } = l; return rest; }) });
@@ -1873,7 +1873,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     const rader = el => [...el.parentNode.querySelectorAll(':scope > [data-urval-filter] > .diagram-urval')];
     const rad = (el, falt) => rader(el).find(r => r.getAttribute('data-urval-falt') === falt);
     const not = el => (el.parentNode.querySelector('[data-rf="urval"]') || {}).textContent || '';
-    const nollstall = (w2, ...flikar) => { w2.eval('_rfUrvalGlom()'); for (const t of flikar) w2.__renderTabContent(t); };
+    const nollstall = (w2, ...flikar) => { w2.eval('_rfUrvalGlom()'); for (const t of flikar) w2.__ritaFlik(t); };
     const trend = (f, serie) => f.lager.find(l => String(l.serie).startsWith(serie));
 
     it('lön mot ålder: BAS (hela urvalet), yrkesgrupp, ålder och lön; utan filter är bilden byte-lik och trendlagren härledda med minN = k', () => {
@@ -1915,7 +1915,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
         w2.__state.kLage = 'export';
-        w2.__renderTabContent('kon');
+        w2.__ritaFlik('kon');
         const el = w2.document.getElementById('chart-kon-scatter'), f = el._figur, k = w2.eval('kTroskel()');
         expect(k).toBe(10);
         const kv = f.lager.find(l => l.serie === 'Kvinna').data.filter(d => !d.liten), ma = f.lager.find(l => l.serie === 'Man').data.filter(d => !d.liten);
@@ -1941,7 +1941,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         w2.__loadDemoData();
         w2.document.getElementById('kon-color-by').value = 'bas';
         w2.document.getElementById('kon-trend-alla').checked = true;
-        w2.__renderTabContent('kon');
+        w2.__ritaFlik('kon');
         const el = w2.document.getElementById('chart-kon-scatter'), f = el._figur;
         const kvTrend = trend(f, 'Kvinna (trend)');
         expect(kvTrend.harleddAv.lager).toEqual(f.lager.filter(l => l.marke === 'punkt').map(l => l.serie));
@@ -2039,7 +2039,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     it('röktest: listan med yrkesgrupper i trattdiagrammet (Lika arbete) — Avmarkera alla och en yrkesgrupp ritar bara dess punkter', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         const el = w2.document.getElementById('chart-la-tratt'), f = el._figur;
         expect(urvalLista(f).map(u => u.falt)).toEqual(['bas', 'yrke', 'sektor', 'n']);
         const p = f.lager.filter(l => l.marke === 'punkt').flatMap(l => l.data);
@@ -2057,7 +2057,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     it('rutan Filter i trattdiagrammet (Lika arbete): utfälld, och rubriken visar ett aktivt filter direkt', () => {
         const w2 = createAppWindow();
         w2.__loadDemoData();
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         const el = w2.document.getElementById('chart-la-tratt');
         const filter = el.previousElementSibling;
         expect(filter.matches('div.diagram-filter[data-urval-filter]')).toBe(true);
@@ -2068,7 +2068,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         expect(filter.hasAttribute('data-aktivt')).toBe(true);
         expect(not(el)).toMatch(/^Diagrammet visar ett urval: /);   // noten under diagrammet som förut
         // Fliken ritas om: urvalet och summeringen står kvar.
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         const el2 = w2.document.getElementById('chart-la-tratt');
         expect(el2.previousElementSibling.querySelector(':scope > [data-urval-filtersummering]').textContent).toBe('Filter: 1 aktivt');
         w2.close();

@@ -7,7 +7,7 @@
 // flyttar mellan dem): Egna vyer (förvald) och Alla diagram. Valet minns så länge sidan är öppen.
 //
 // Alla diagram (#ut-alla-diagram) samlar diagrammen från de andra flikarna, en grupp per upplåst flik i menyns
-// ordning (<details class="avsnitt">, stängd från början). När en grupp öppnas ritas fliken (renderTabContent) om
+// ordning (<details class="avsnitt">, stängd från början). När en grupp öppnas ritas fliken (ritaFlik) om
 // den inte är ritad eller är inaktuell, och varje diagram i den som är ritat, har något att visa, får lämna verktyget
 // (diagramUrval, samma urval som ZIP-filen) och inte är dolt i sin flik får en kopia:
 //   ritaFigur(kopia, källa._figur, källa._figurVal)  i en egen behållare  ut-diagram-<källans id>.
@@ -26,7 +26,7 @@ import { _rfBehallare, _rfExportFigur, rensaFigur, ritaFigur } from './10-diagra
 import { diagramexportRubrik, exportTillaten } from './11-diagramexport.js';
 import { hamtaData } from './12-tillstand.js';
 import { _egFlikFor, _exportDjup, _ritadVid, exportSakra, flikInaktuell, iExportLage, iForhandsvisning } from './23-exportgrind.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { _wireTablistKeys } from './63-tangentbordsnavigering.js';
 import { sidindexBygg } from './89-sidindex.js';
 
@@ -195,7 +195,7 @@ function utAllaGruppRita(grupp) {
     if (!flik || !yta || (typeof _exportDjup !== 'undefined' && _exportDjup > 0)) return 0;
     if (!_ritadVid.has(flik) || flikInaktuell(flik)) {
         const fokus = /** @type {HTMLElement|null} */ (document.activeElement), x = window.scrollX, y = window.scrollY;
-        try { renderTabContent(flik); } catch (e) { rapporteraFel(`Alla diagram: ${flik}`, e); }
+        try { ritaFlik(flik); } catch (e) { rapporteraFel(`Alla diagram: ${flik}`, e); }
         if (fokus && fokus !== document.activeElement && fokus.isConnected && typeof fokus.focus === 'function') fokus.focus({ preventScroll: true });
         if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
     }
@@ -253,7 +253,7 @@ function _utNyKopia(kalla, flik) {
     return kort;
 }
 
-/** Fliken Tabeller och egna vyer har ritats (renderTabContent): Alla diagram ritas om när den visas. */
+/** Fliken Tabeller och egna vyer har ritats (ritaFlik): Alla diagram ritas om när den visas. */
 export function utAllaDiagramVidRitning() {
     if (_utUnderflik === 'alla' && _utFlikVisas()) utAllaDiagramRita();
 }

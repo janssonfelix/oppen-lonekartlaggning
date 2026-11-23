@@ -18,7 +18,7 @@ function fonster(k = null, rader = byggDataset()) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = rader;
     win.__state.policy = [...STORA, TOPP, ...MELLAN, ...SMA].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-    win.eval('populateSelects(); unlockTabs();');
+    win.eval('populateSelects(); lasUppFlikar();');
     return win;
 }
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
@@ -55,7 +55,7 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
 });
 
 describe('[R5] Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
-    const resultat = w => { iExport(w); w.eval("renderTabContent('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
+    const resultat = w => { iExport(w); w.eval("ritaFlik('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
     it('med 6 kvinnor i urvalet: streck och meningen om utelämnat könsuppdelat mått', () => {
         const alla = byggDataset();
         const kvinnor = alla.filter(r => r.kon === 'kvinna').slice(0, 6);
@@ -84,7 +84,7 @@ function parFonster(k = 5) {
     lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
     lagg(6, 'kvinna', 36421, 'C', '5300');
     w.__state.data = rader;
-    w.eval(`populateSelects(); unlockTabs(); sattKTroskel(${k}, { fraga: false });`);
+    w.eval(`populateSelects(); lasUppFlikar(); sattKTroskel(${k}, { fraga: false });`);
     w.alert = () => {};
     return w;
 }
@@ -92,7 +92,7 @@ function parFonster(k = 5) {
 function parFonsterMedRader() {
     const w = parFonster(5);
     Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
-    w.eval("renderTabContent('loneoversyn'); _forecastOptimize()");
+    w.eval("ritaFlik('loneoversyn'); _forecastOptimize()");
     expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
     w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
     return w;
@@ -189,7 +189,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
     const rader = (w, id) => { w.__id = id; return w.eval('diagramexportRader(document.getElementById(window.__id))'); };
     it('spridningsdiagrammen i Ålder & karriär bär raden på rad 2, efter stämpeln; aggregerade diagram bär den inte', () => {
         const w = fonster();
-        w.eval("renderTabContent('kon')");
+        w.eval("ritaFlik('kon')");
         for (const id of ['chart-kon-scatter', 'chart-kon-multiplar']) {
             const r = rader(w, id);
             expect(r.length, id).toBeGreaterThan(3);
@@ -205,7 +205,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
     });
     it('färglagt efter AID-etikett blir texten ur fältet serienamn, som den står i lönefilen (ADR-85)', () => {
         const w = fonster();
-        w.eval("renderTabContent('kon')");
+        w.eval("ritaFlik('kon')");
         w.document.getElementById('kon-color-by').value = 'aid';
         w.eval("ritaAlderOchLon('__ALLA__')");
         const serier = new Set(rader(w, 'chart-kon-scatter').slice(2).map(r => r[0]));
@@ -213,7 +213,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
     });
     it('raden följer med till urklipp och CSV', async () => {
         const w = fonster();
-        w.eval("renderTabContent('kon')");
+        w.eval("ritaFlik('kon')");
         const texter = [];
         w.navigator.clipboard = { writeText: t => { texter.push(t); return Promise.resolve(); } };
         w.__id = 'chart-kon-scatter';
@@ -236,7 +236,7 @@ describe('autocomplete="off" på alla fält, också de som skapas efter start', 
         .map(el => `${el.tagName.toLowerCase()}#${el.id || '?'}[name=${el.name || ''}][type=${el.type || ''}]`);
     it('efter att alla flikar ritats och riktade rader lagts till saknar inget fält attributet', async () => {
         const w = fonster();
-        for (const f of FLIKAR) { try { w.eval(`renderTabContent('${f}')`); } catch (_e) { /* fliken finns inte */ } }
+        for (const f of FLIKAR) { try { w.eval(`ritaFlik('${f}')`); } catch (_e) { /* fliken finns inte */ } }
         w.__state.forecast.targets.push({ bas: 'A', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         w.eval('ritaRiktadeRader()');
         // Fält som en knapp skapar (de riktade raderna) får attributet av observatören, strax efter.

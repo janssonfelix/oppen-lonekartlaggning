@@ -10,7 +10,7 @@ vi.setConfig({ testTimeout: 30000 });
 const fonster = () => {
     const w = createAppWindow();
     w.__loadDemoData();
-    w.__renderTabContent('utforska');
+    w.__ritaFlik('utforska');
     return w;
 };
 const laggTill = (w, namn, perBas = false) => {
@@ -191,12 +191,12 @@ describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
     });
     it('efter en export ritas Översikt tillbaka bara när exporten ritade den', () => {
         const w = fonster();
-        w.__renderTabContent('dashboard');
+        w.__ritaFlik('dashboard');
         let antal = 0;
         w.ritaNyckeltal = () => { antal++; };
-        w.__renderTabContent('dokumentera');                       // ritar inga andra flikar
+        w.__ritaFlik('dokumentera');                       // ritar inga andra flikar
         expect(antal).toBe(0);
-        w.eval("medExportLage(() => renderTabContent('dashboard'))");   // som ZIP-exporten
+        w.eval("medExportLage(() => ritaFlik('dashboard'))");   // som ZIP-exporten
         expect(antal).toBe(2);                                     // en gång i exportläget, en gång tillbaka
         expect(w.__state.kLage).toBe('skarm');
     });
@@ -215,14 +215,14 @@ describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
         expect(block[0].tabell.rader.length).toBeGreaterThan(0);
         expect(block[0].tabell.rader[0][1]).toMatch(/^\d[\d\s ]* kr$/);
         expect(block[0].stycken.join(' ')).toMatch(/Urval: Hela organisationen/);
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const host = d.getElementById('rapportunderlag-innehall');
         expect(host.textContent).toContain('Egna tabeller från Tabeller och egna vyer');
         expect(host.querySelector('[data-rapport-kopiera="egen:0:0"]')).not.toBeNull();
         expect(host.querySelector('.ru-toc').textContent).toContain('Median per yrke');
         // Utan recept finns varken rubrik eller block.
         w.__state.rapportTabeller = [];
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         expect(host.textContent).not.toContain('Egna tabeller från Tabeller och egna vyer');
     });
 });

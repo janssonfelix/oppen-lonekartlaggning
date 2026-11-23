@@ -52,7 +52,7 @@ export function fonster(k) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = byggDataset();
     win.__state.policy = [...STORA, TOPP, ...MELLAN, ...SMA].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-    win.eval('populateSelects(); unlockTabs();');
+    win.eval('populateSelects(); lasUppFlikar();');
     return win;
 }
 // En liten fixtur för tester som bara prövar en stämpel eller en mening om tröskeln (utskriften, Word-utkastets
@@ -76,10 +76,10 @@ export function fonsterLitet(k) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = byggLitetDataset();
     win.__state.policy = LITEN_BAS.map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-    win.eval('populateSelects(); unlockTabs();');
+    win.eval('populateSelects(); lasUppFlikar();');
     return win;
 }
-export const ritaAlla = win => { for (const f of FLIKAR) win.__renderTabContent(f); };
+export const ritaAlla = win => { for (const f of FLIKAR) win.__ritaFlik(f); };
 // Öppnar fliken som användaren gör, genom menyn. Bara den öppna fliken ritas om
 // när tröskeln ändras; övriga töms och ritas när de öppnas eller när en export behöver dem (23-exportgrind.js).
 export const oppnaFlik = (win, flik) => { const n = win.document.querySelector(`.nav-item[data-tab="${flik}"]`); n.disabled = false; n.click(); };
@@ -159,7 +159,7 @@ export function fonsterKon(k) {
     const sedda = new Set();
     win.__state.statistik = data.filter(r => !sedda.has(r.aid + '|' + r.bas) && sedda.add(r.aid + '|' + r.bas))
         .map(r => ({ aid: r.aid, bas: r.bas, median: 61700, p10: 55000, p90: 71000 }));
-    win.eval('populateSelects(); unlockTabs();');
+    win.eval('populateSelects(); lasUppFlikar();');
     return win;
 }
 export const harNagon = (text, varden) => varden.filter(v => text.includes(String(v)));
@@ -249,7 +249,7 @@ export async function samlaUtdata(w) {
         headers: ['BAS', 'AID', 'Lön', 'Ålder', 'Kön', 'FKKOLUMN'],
         mappning: { bas: 'BAS', yrke: 'AID', lon: 'Lön', alder: 'Ålder', kon: 'Kön' }, k: kInstalld() })`);
     // Översikt som efter en inläsning, och en prognos i Löneöversyn så att utfallstabellen finns.
-    w.eval('tomStatistikcacher(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
+    w.eval('tomStatistikcacher(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
     // Påslaget är 100 %: då är varje grupps kostnad lika med gruppens lönesumma, och kostnaden för en
     // ensam person hennes lön — så att en omaskerad kostnad syns i textsökningen.
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });
@@ -259,7 +259,7 @@ export async function samlaUtdata(w) {
     d.getElementById('btn-snapshot-save').click();
     d.getElementById('btn-snapshot-compare').click();
     const flikar = [...d.querySelectorAll('.nav-item[data-tab]')].map(e => e.getAttribute('data-tab'));
-    for (const f of flikar) { w.__renderTabContent(f); await new Promise(r => setTimeout(r, 0)); }
+    for (const f of flikar) { w.__ritaFlik(f); await new Promise(r => setTimeout(r, 0)); }
     // Det som ritas efter flikens ritning: kvantilregressionens intervall i bakgrunden (_regKvantilKlar, som ritar om
     // regressionskortet) och det som skärmen ritar i nästa bildruta (livscykelns kurva). En bildruta som begärs efter
     // deras körs efter dem.
@@ -279,7 +279,7 @@ export async function samlaUtdata(w) {
     // Personer att granska; se I4); vägen prövas som en export. Läget återställs av medExportLage, och flikarna som
     // ritades i exportläget är inaktuella tills de öppnas eller en export behöver dem (23-exportgrind.js), som efter en export.
     lagg('skärm i exportläget: alla flikar', w.eval('medExportLage')(() => {
-        for (const f of flikar) w.__renderTabContent(f);
+        for (const f of flikar) w.__ritaFlik(f);
         w.eval('_forecastRemediation(); _forecastSensitivity();');
         const rader = [];
         for (const el of d.body.querySelectorAll('*')) {
@@ -307,7 +307,7 @@ export async function samlaUtdata(w) {
     lagg('Word-utkastet', w.__docDraftHtml());
     // Rapporttextens utkast: textrutans värde (skärmtexten läser inte en textrutas värde), med delen per BAS-intervall,
     // och rapportens avsnitt Lönekartläggning per BAS-intervall för sig (det står också i Word-utkastet och utskriften).
-    w.__renderTabContent('rapporttext');
+    w.__ritaFlik('rapporttext');
     lagg('rapportutkastet', d.getElementById('struktur-narrative').value);
     lagg('rapportmodell: basintervall', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'basintervall') }))(rapportModell())"));
     for (const b of w.__rapportunderlagBlock()) lagg(`rapportunderlag: ${b.id}`, w.__ruTillWordHtml(b) + '\n' + w.__ruTillText(b));
@@ -426,13 +426,13 @@ export async function samlaUtdata(w) {
     if (!ars || !ars.tabeller) throw new Error('blocket om förra året saknar tabellen per BAS-intervall');
     lagg('rapportunderlag: arsjamforelse (med bokslut)', w.__ruTillWordHtml(ars) + '\n' + w.__ruTillText(ars));
     lagg('rapportmodell: arsjamforelse (med bokslut)', w.eval("(m => rmTillHtml({ ...m, avsnitt: m.avsnitt.filter(a => a.id === 'arsjamforelse') }))(rapportModell())"));
-    w.__renderTabContent('arbetet');
+    w.__ritaFlik('arbetet');
     ritade.push(...ritadeDiagram(w, 'bokslut').filter(e => e.flik === 'arbetet'));
     const hantel = d.getElementById('chart-arsjamforelse-bas');
     if (!hantel || !hantel._figur) throw new Error('BAS-hanteln ritades inte');
     // Diagrammen i fliken med bokslutet inläst (BAS-hanteln och de andra), som ovan ur registret och i ett exportläge.
     w.eval('medExportLage')(() => {
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         ritade.push(...ritadeDiagram(w, 'bokslut').filter(e => e.flik === 'arbetet'));
         const bokslut = ritade.filter(e => e.steg === 'bokslut');
         for (const id of new Set(bokslut.filter(e => !bokslut.some(u => u.id === e.id && u.undantag)).map(e => e.id))) {
@@ -561,7 +561,7 @@ export function fonsterMan(k, manLoner) {
     for (let i = 0; i < 60; i++) r.push(rad(i < 30 ? 'S1' : 'S2', 'kvinna', 25000 + i * 10 + (i % 7) * 130, 30 + (i * 3) % 25));
     manLoner.forEach((l, i) => r.push(rad(i % 2 ? 'S2' : 'S1', 'man', l, 38 + i * 3)));
     w.__state.data = r;
-    w.eval('populateSelects(); unlockTabs(); refreshCurrentTab();');
+    w.eval('populateSelects(); lasUppFlikar(); uppdateraAktivFlik();');
     return w;
 }
 // Ett tal som det skrivs med två decimaler, med punkt och med komma, utan tecken.

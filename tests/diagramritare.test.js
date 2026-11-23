@@ -3402,9 +3402,9 @@ describe('inga råa decimaltal i någon ritad figur (DU4)', () => {
         const flikar = [...w2.document.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab);
         expect(flikar.length).toBeGreaterThan(5);
         const hittat = [];
-        for (const t of flikar) { w2.__renderTabContent(t); hittat.push(...raa(w2.document).map(x => `${t}: ${x}`)); }
+        for (const t of flikar) { w2.__ritaFlik(t); hittat.push(...raa(w2.document).map(x => `${t}: ${x}`)); }
         await w2.eval('_regKvantilKlar()');
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         expect(w2.document.getElementById('chart-reg-kvantil')._figur.lager[1].data.some(d => d.fel)).toBe(true);
         hittat.push(...raa(w2.document).map(x => `matrix: ${x}`));
         expect(hittat).toEqual([]);

@@ -10,7 +10,7 @@
 //  1. När tröskeln ändras TÖMS varje flik som inte syns (tomFlikarUtom): tabellkroppar, diagram och flikens topp.
 //     En flik som inte syns bär alltså aldrig tal från en tröskel som inte längre gäller, hur den än ritades.
 //  2. En räknare (generationen) ökar vid samma tillfälle, och varje flik minns vid vilken generation
-//     renderTabContent senast ritade den. De två funktioner som ALL export av tabeller respektive diagram går genom
+//     ritaFlik senast ritade den. De två funktioner som ALL export av tabeller respektive diagram går genom
 //     (_tabellkopiaForExport och _diagramexportUnderlag) frågar grinden först: en flik som ritades före
 //     ändringen ritas om innan något läses ur den. Går det inte, exporteras ingenting ur den — hellre en utebliven
 //     export än en med fel tröskel.
@@ -24,11 +24,11 @@
 // exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
 import { flikInaktuellVid, skaRitasForeExport } from '../lib/exportgrind.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
-import { _omritningForsok, _omritningssteg, _renderaOmAllaFlikar, _renderaOmAllaFlikarStegvis } from './06-k-troskel.js';
+import { _omritningForsok, _omritningssteg, _ritaOmAllaFlikar, _ritaOmAllaFlikarStegvis } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
 import { RENSA_BEHALLARE, RENSA_OVRIGT, RENSA_TABELLER } from './26-rensning.js';
-import { PANEL_GROUPS, renderTabContent } from './31-navigering.js';
+import { PANELGRUPPER, ritaFlik } from './31-navigering.js';
 import { _exportSakraKopia, arDiagramKopia, utAllaDiagramEfterExport } from './74-alla-diagram.js';
 export function iExportLage() { return state.kLage === 'export'; }
 function _bytKLage(lage, { tur = false } = {}) {
@@ -104,8 +104,8 @@ function sattForhandsvisning(pa, { stegvis = false } = {}) {
     const banner = document.getElementById('forhandsvisning-banner');
     if (banner) banner.hidden = !pa;
     if (state.data.length) {
-        if (stegvis && typeof _renderaOmAllaFlikarStegvis === 'function') _renderaOmAllaFlikarStegvis();
-        else if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+        if (stegvis && typeof _ritaOmAllaFlikarStegvis === 'function') _ritaOmAllaFlikarStegvis();
+        else if (typeof _ritaOmAllaFlikar === 'function') _ritaOmAllaFlikar();
     }
     return true;
 }
@@ -138,7 +138,7 @@ export function _egFlikFor(el) {
     const panel = el && el.closest ? el.closest('.view-panel') : null;
     if (!panel) return null;
     const id = panel.id.replace(/^view-/, '');
-    for (const [flik, paneler] of Object.entries(PANEL_GROUPS)) if (paneler.includes(id)) return flik;
+    for (const [flik, paneler] of Object.entries(PANELGRUPPER)) if (paneler.includes(id)) return flik;
     return id;
 }
 
@@ -156,7 +156,7 @@ export function exportSakra(el) {
     // Regeln (skaRitasForeExport, src/lib/exportgrind.js): en inaktuell flik ritas i det läge som gäller nu — i
     // exportläget också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
     if (skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik), exportLage: iExportLage() })) {
-        try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
+        try { ritaFlik(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
         if (flikInaktuell(flik)) return false;                      // fliken gick inte att rita om: ingenting exporteras ur den
     }
     return el.isConnected !== false;
@@ -174,7 +174,7 @@ export function exportElement(id) {
 export function exportSakraAlla() {
     for (const flik of [..._ritadVid.keys()]) {
         if (!skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik) })) continue;
-        try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
+        try { ritaFlik(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
     }
 }
 

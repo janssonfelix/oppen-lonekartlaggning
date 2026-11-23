@@ -14,7 +14,7 @@ import { svPct, svTal } from '../lib/talformat.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
-import { _konFarRedovisas, _kVisaFel, _renderaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
+import { _konFarRedovisas, _kVisaFel, _ritaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { COST_DEFAULTS, jmfNamn, orgNamn, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS, sattJmfNamn, sattOrgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -27,7 +27,7 @@ import { _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { sattOrgTyp } from './29-organisationspaket.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
-import { refreshCurrentTab } from './31-navigering.js';
+import { uppdateraAktivFlik } from './31-navigering.js';
 import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversyn.js';
 import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
 import { sattLonemanad } from './45-aid-bas-tabeller.js';
@@ -471,9 +471,9 @@ function _tillampaKonfiguration(cfg) {
         if (tmp.ui.jamforelse && typeof tmp.ui.jamforelse === 'object') jamforelseSattVal(tmp.ui.jamforelse);
     }
     tomStatistikcacher({ recompute: false });
-    // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker refreshCurrentTab och Att göra).
-    if (kAndrad && state.data.length) { populateSelects(); _renderaOmAllaFlikar(); }
-    else { refreshCurrentTab(); renderActionChecklist(); }
+    // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker uppdateraAktivFlik och Att göra).
+    if (kAndrad && state.data.length) { populateSelects(); _ritaOmAllaFlikar(); }
+    else { uppdateraAktivFlik(); renderActionChecklist(); }
     // Påminnelse om organisationspaketet som konfigurationen skapades med.
     const op = tmp.organisationspaket;
     if (op && !(state.paket && state.paket.organisation === op.organisation && state.paket.skapat === op.skapat)) {

@@ -10,7 +10,7 @@
 // OLS-kärnan (anpassaOLS m.fl.) står i src/lib/stat.js.
 // Huvudregressionens adapter, runOLSRegression, står i 51-lika-arbete-regressionskort.js; den cachas aldrig (ADR-17).
 import { blinderOaxaca, forklaringsmodellArStandard, gapPerBas, harAlderIRader, kvantilregressionAllaTau, normaliseraForklaringsmodell, stegNamn } from '../lib/regression.js';
-import { _renderaOmAllaFlikar, statGolv } from './06-k-troskel.js';
+import { _ritaOmAllaFlikar, statGolv } from './06-k-troskel.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { ritGenerationNy } from './23-exportgrind.js';
 
@@ -65,7 +65,7 @@ export function sattForklaringsmodell(v, { rita = true } = {}) {
     state.forklaringsmodell = ny;
     if (andrad && rita) {
         if (typeof ritGenerationNy === 'function') ritGenerationNy();
-        if (typeof _renderaOmAllaFlikar === 'function') _renderaOmAllaFlikar();
+        if (typeof _ritaOmAllaFlikar === 'function') _ritaOmAllaFlikar();
     }
     return { ok: true, modell, varningar, andrad };
 }

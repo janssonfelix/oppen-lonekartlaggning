@@ -31,13 +31,13 @@ function fonster() {
     w.__state.data = r;
     w.__state.policy = NIVAER.map(([bas]) => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
     w.__state.statistik = NIVAER.map(([bas]) => ({ aid: '6100', bas, median: 61700, p10: 55000, p90: 71000 }));
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('populateSelects(); lasUppFlikar();');
     return w;
 }
 const vanta = () => new Promise(r => setTimeout(r, 30));
 // Väljer intervallet i rullistan, som användaren gör, på skärmen.
 async function valj(w, bas) {
-    w.__renderTabContent('kon');
+    w.__ritaFlik('kon');
     await vanta();
     const sel = w.document.getElementById('lifecycle-bas-select');
     sel.value = bas;
@@ -124,7 +124,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         const w = fonster();
         await valj(w, 'D');
         iExport(w);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         await vanta();
         const el = w.document.getElementById('lifecycle-chart');
         expect(el._figur).toBeFalsy();
@@ -143,7 +143,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         await valj(w, 'D');
         const faktor = w.eval('svTal(runLifecycleRegression("D").basFaktor.B, 3)');
         iExport(w);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         await vanta();
         w.document.querySelector('.btn-evidence[data-livscykel-bas="B"]').click();
         const modal = normalisera(w.document.getElementById('evidence-modal-content').textContent);
@@ -175,7 +175,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         expect(vagar['bilden (SVG före rastrering)']).toMatch(/<svg/);
         expect(vagar['ZIP-filens diagram']).toMatch(/lifecycle-chart/);
         iExport(w);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         await vanta();
         expect(w.document.getElementById('lifecycle-chart')._figur).toBeTruthy();
         expect(normalisera(w.document.getElementById('livscykel-content').textContent)).not.toMatch(/Lönekurvan visas inte/);

@@ -15,7 +15,7 @@ import { renderActionChecklist } from './18-atgardslista.js';
 import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { _fcRensaParMal } from './36-loneoversyn.js';
 import { forklaringsmodell } from './50-regressionsmodeller.js';
 import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
@@ -273,7 +273,7 @@ export function _kVisaFel(meddelande) {
  * hoppar över den; används av tester och när anroparen redan har frågat).
  *
  * `rita: false` hoppar över omritningen — bara för anropare som själva anropar
- * _renderaOmAllaFlikar() innan de återvänder (inläsning av konfigurationsfil och
+ * _ritaOmAllaFlikar() innan de återvänder (inläsning av konfigurationsfil och
  * organisationspaket, som ändrar mer än tröskeln och annars skulle rita allt två gånger).
  * Ett värde under organisationspaketets golv (ADR-47) avvisas som ett ogiltigt värde, oavsett varifrån det kommer.
  * @param {any} v
@@ -311,7 +311,7 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     // Från gränssnittet ritas allt om stegvis, med förlopp (stegvis); program och tester får det direkt.
     /** @type {Promise<void>|null} */
     let klar = null;
-    if (rita) { if (stegvis) klar = _renderaOmAllaFlikarStegvis(); else _renderaOmAllaFlikar(); }
+    if (rita) { if (stegvis) klar = _ritaOmAllaFlikarStegvis(); else _ritaOmAllaFlikar(); }
     // Skattningarna som läser golvet räknas om i bakgrunden när omritningen är klar (rutan är borta), som vid inläsning.
     if (golvAndrat) { if (klar) klar.then(() => _skattningarIBakgrunden()); else _skattningarIBakgrunden(); }
     return { ok: true, varde: n, andrad: true, ...(klar ? { klar } : {}) };
@@ -339,7 +339,7 @@ function _skattningarIBakgrunden() {
                 if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet();
                 const oppen = document.querySelector('.nav-item.active[data-tab]');
                 const flik = oppen ? oppen.getAttribute('data-tab') : null;
-                if ((flik === 'matrix' || flik === 'prioritering') && typeof renderTabContent === 'function') renderTabContent(flik);
+                if ((flik === 'matrix' || flik === 'prioritering') && typeof ritaFlik === 'function') ritaFlik(flik);
             }
         } catch (e) { rapporteraFel('skattningar i bakgrunden', e); }
         finally {
@@ -353,12 +353,12 @@ function _skattningarIBakgrunden() {
 }
 
 /**
- * Ritar om det som syns efter ändrad tröskel: Översikts delar (som inläsningen ritar men renderTabContent inte
+ * Ritar om det som syns efter ändrad tröskel: Översikts delar (som inläsningen ritar men ritaFlik inte
  * gör, jämför 32-filinlasning.js) och den flik som är öppen. Övriga flikar ritas om när de öppnas — navigeringen
  * visar aldrig en flik som ritades före en ändring (ADR-81) — och exporterna går genom exportgrinden (23-exportgrind.js), som ritar om en flik som inte
  * är aktuell innan något läses ur den.
  */
-export function _renderaOmAllaFlikar() {
+export function _ritaOmAllaFlikar() {
     for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
     visningNy();   // omritningen rör flera flikar: ingen visas igen som den var (ADR-81)
 }
@@ -366,7 +366,7 @@ export function _omritningForsok(namn, fn) { try { fn(); } catch (e) { rapporter
 
 // Stegen i omritningen efter ändrad tröskel, i ordning: [namn, funktion].
 export function _omritningssteg() {
-    if (!state.data.length || typeof renderTabContent !== 'function') return [];
+    if (!state.data.length || typeof ritaFlik !== 'function') return [];
     const steg = [];
     // Först töms de flikar som inte syns: de bär tal från den gamla tröskeln tills de ritas om (exportgrinden).
     steg.push(['flikar som inte syns', () => {
@@ -412,9 +412,9 @@ export function _omritningssteg() {
         if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
     }]);
     // Bara den öppna fliken. De övriga är inaktuella tills de öppnas eller en export behöver dem (exportgrinden).
-    // Översikt är redan ritad av stegen ovan (renderTabContent('dashboard') gör inget annat).
+    // Översikt är redan ritad av stegen ovan (ritaFlik('dashboard') gör inget annat).
     const oppen = document.querySelector('.nav-item.active[data-tab]');
-    if (oppen && oppen.getAttribute('data-tab') !== 'dashboard') steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
+    if (oppen && oppen.getAttribute('data-tab') !== 'dashboard') steg.push([oppen.getAttribute('data-tab'), () => ritaFlik(oppen.getAttribute('data-tab'))]);
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', () => {
         const dossier = document.getElementById('dossier-body');
@@ -431,7 +431,7 @@ export function _omritningssteg() {
  */
 /** @type {Promise<void>|null} */
 let _omritningPagar = null;
-export function _renderaOmAllaFlikarStegvis() {
+export function _ritaOmAllaFlikarStegvis() {
     if (_omritningPagar) return _omritningPagar;
     const steg = _omritningssteg();
     if (!steg.length) return Promise.resolve();

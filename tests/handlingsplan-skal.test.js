@@ -134,7 +134,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         // Sammanfattningen står också i knappens tillgängliga namn, och följer med när den räknas om.
         expect(ren(knapp(tr).getAttribute('aria-label'))).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat, ${ren(tr.cells[1].textContent)}`);
         // Står kvar efter flikbyte
-        w.__renderTabContent('dashboard'); w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('dashboard'); w.__ritaFlik('handlingsplan');
         expect(ren(knapp(radMedSkillnad(w)).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
         expect(knapp(radMedSkillnad(w)).getAttribute('aria-label')).toMatch(/^Sakliga skäl \(1\) · .* förklarat, /);
     });
@@ -364,7 +364,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
     });
     it('länken stänger dossiern och visar raden i Handlingsplan med fokus på knappen Sakliga skäl', () => {
         const { w, nyckel, aid, bas } = medSkal();
-        w.__renderTabContent('dashboard');
+        w.__ritaFlik('dashboard');
         w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         [...w.document.querySelectorAll('#dossier-modal [data-hp-ga-till]')].find(a => a.dataset.hpGaTill === nyckel).click();
         expect(w.document.getElementById('dossier-modal').style.display).not.toBe('flex');

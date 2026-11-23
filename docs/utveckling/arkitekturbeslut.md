@@ -763,7 +763,13 @@ DOM:ens id:n och klasser, eftersom de är ett kontrakt med stilmallen, rökteste
 tabellerna med sitt id; en granskare läser dem inte. *Skäl:* den som följer en regel från vymodellen (ADR-99) till
 skärmen och exporten ska känna igen samma ord i koden, dokumenten och spårbarhetsmatrisen (ADR-95). Bygget fäller ett
 namn som krockar med ett annat eller med `window` (`bygge-och-test.md` §2). *Avvisat:* att byta tillståndets fält och
-id:n i samma ändring, som rör varje fil utan att en granskare vinner något. En tabell som i ADR-97 visar vad appens namn
-som nämns i de äldre besluten och i CHANGELOG heter nu, och fylls på grupp för grupp; namnen i S4 och exporten (`06-k-troskel.js`, `06-maskeringsnoter.js`,
-`11-diagramexport.js`, `19-konfiguration.js`, `22-exporthjalpare.js`, `23-exportgrind.js`, `24-excelexport.js`) nämns
-inte där. *Gäller i dag:* `src/app/README.md`.
+id:n i samma ändring, som rör varje fil utan att en granskare vinner något. De äldre besluten och CHANGELOG nämner
+några av appens gamla namn; tabellen visar vad de heter nu och fylls på grupp för grupp:
+
+| Modul | Gammalt namn | Nytt namn |
+|---|---|---|
+| `31-navigering.js` | `renderTabContent` | `ritaFlik` |
+
+Namnen i S4 och exporten (`06-k-troskel.js`, `06-maskeringsnoter.js`, `11-diagramexport.js`, `19-konfiguration.js`,
+`22-exporthjalpare.js`, `23-exportgrind.js`, `24-excelexport.js`) nämns inte där, och inte heller de övriga i
+tillståndet och starten. *Gäller i dag:* `src/app/README.md`.

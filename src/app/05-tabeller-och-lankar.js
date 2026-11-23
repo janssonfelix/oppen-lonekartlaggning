@@ -4,7 +4,7 @@ import { svPct } from '../lib/talformat.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { T } from './09-termer.js';
 import { hamtaData, referensKalla, referensNamn, state } from './12-tillstand.js';
-import { klickaFlik, tabMal } from './31-navigering.js';
+import { klickaFlik, flikMal } from './31-navigering.js';
 
 // ---- Audit / spårbarhet av beräkningar ("Beräkning & urval") ----
 // Varje analysfunktion fyller i sitt audit-objekt så användaren kan kvalitetssäkra.
@@ -248,7 +248,7 @@ export function vaxlaAllaGrupper(tableId, collapse) {
  *   highlightMatch?: {tableId: string, contains: string[]}}} [opts]
  */
 export function navigeraTill(tabName, opts = {}) {
-    tabName = tabMal(tabName);
+    tabName = flikMal(tabName);
     const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
     if (!btn || /** @type {HTMLInputElement} */ (btn).disabled) return false;
     klickaFlik(btn, { uppskjut: !!opts.uppskjut, efter: () => _navigeratTill(opts) });

@@ -57,7 +57,7 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
         w.__loadDemoData();
         w.__state.statistik = w.__state.data.slice(0, 40).map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }));
         w.eval("sattJmfNamn('<img src=x onerror=alert(1)>')");
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         // Diagramkärnan (ADR-39): namnet står i serien och i verktygstipset, och sätts alltid som text.
         const el = w.document.getElementById('chart-jamforelse-spann');
         expect(el.querySelector('img')).toBeNull();
@@ -176,7 +176,7 @@ describe('samma bild på Översikt', () => {
     it('Lika arbete AID x BAS: nyckeltalet är detsamma som tabellen per AID-etikett, i båda lägena (ADR-90)', () => {
         for (const lage of ['export', 'skarm']) {
             w.__state.kLage = lage;
-            w.__renderTabContent('matrix');
+            w.__ritaFlik('matrix');
             const nyckel = w.document.getElementById('nyckel-la-aidbas').textContent;
             expect(nyckel, lage).toMatch(/^\d+ att granska/);
             expect(nyckel, lage).toBe(w.document.getElementById('nyckel-la-yrkesgrupper').textContent);
@@ -261,7 +261,7 @@ describe('samma bild på Översikt', () => {
         w.__loadDemoData();
         const diagram = () => w.eval('rapportModell()').avsnitt.flatMap(a => a.delar.filter(x => x.typ === 'diagram').map(x => `${a.id}:${x.id}`));
         expect(diagram()).toEqual(expect.arrayContaining(['lika:chart-la-tratt', 'struktur:chart-kon-aldergap', 'struktur:chart-lp-konlagen']));
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         const val = w.document.getElementById('bas-select-kon'), ettBas = [...val.options].map(o => o.value).find(v => v && v !== '__ALLA__');
         val.value = ettBas;
         expect(diagram()).not.toContain('struktur:chart-kon-aldergap');                      // fliken visar ett enda BAS-intervall
@@ -270,7 +270,7 @@ describe('samma bild på Översikt', () => {
     });
     it('nyckeltalen är korta tal med en förklarande rad, och Prioritering följer flikarnas form', () => {
         w.__loadDemoData();
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         const d = w.document, ren = t => t.replace(/[\u00a0\u202f]/g, ' ');
         expect(ren(d.getElementById('kon-kpi-n').textContent)).toMatch(/^\d[\d ]*$/);              // bara antalet …
         expect(ren(d.getElementById('kon-kpi-n-under').textContent)).toMatch(/^\d+ kvinnor · \d+ män$/);   // … könen på raden under
@@ -299,7 +299,7 @@ describe('Att göra', () => {
             lon: (i % 2 ? maLon : kvLon) + (i % 7) * 50 + 'ABC'.indexOf('ABC'[i % 3]) * 2000, yrke: '100 Y', aid: '100', yrkeLabel: 'Y' });
         return r;
     };
-    const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('populateSelects(); unlockTabs();'); return w; };
+    const med = (data) => { const w = createAppWindow(); w.__state.data = data; w.eval('populateSelects(); lasUppFlikar();'); return w; };
     it('punkten om oförklarat gap: hög vid signifikant gap på minst 3 %, ingen när gapet inte är signifikant', () => {
         const hog = med(rader(30000, 33000)).eval('buildActionChecklist()').find(i => i.id === 'reg-oforklarat');
         expect(hog).toMatchObject({ kategori: 'Lika arbete', prioritet: 'hög', tab: 'struktur' });

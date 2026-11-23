@@ -303,7 +303,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
     it('referensens namn ur ett paket escapas i beräkningsbeviset och utskriften', async () => {
         const w = createAppWindow();
         w.__state.data = rader();
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         las(w, paket({ referens: { ...paket().referens, namn: XSS, kortnamn: XSS } }));
         const it0 = w.eval("computePrioritization('stallningstagande')")[0];
         const bevis = w.eval('_evidenceForPrioItem')(it0, 'stallningstagande');
@@ -442,18 +442,18 @@ describe('namnen i etiketterna', () => {
     const serier = (w, id) => ((w.document.getElementById(id)._figur || {}).lager || []).map(l => l.serie);
     it('diagramserier: Jämförelsestatistik, Lönepolitik, Ålder & karriär', () => {
         const w = oppna();
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(serier(w, 'chart-jamforelse-spann')).toEqual(expect.arrayContaining(['Testkommunen P10–P90', 'Testkommunen median', 'Teststatistiken P10–P90']));
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(serier(w, 'chart-lp-bandmap')).toContain('Testkommunen (P10–P90)');
     });
     it('tabellrubriker: Likvärdigt arbete och Jämförelsestatistik', () => {
         const w = oppna();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const lv = w.document.getElementById('likvardighet-content').textContent;
         expect(lv).toMatch(/Median Testkommunen/);
         expect(lv).toMatch(/Kvinnodom\. AID-etikett \(Testkommunen\)/);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const th = [...w.document.querySelectorAll('#benchmark-table thead th')].map(t => t.textContent.trim());
         expect(th).toContain('P10 Testkommunen');
         expect(th).toContain('Median Testkommunen');
@@ -462,15 +462,15 @@ describe('namnen i etiketterna', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.eval("sattOrgNamn('')");   // demot heter Exempelkommunen
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         expect(w.document.getElementById('likvardighet-content').textContent).toMatch(/Median org\./);
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(serier(w, 'chart-lp-bandmap')).toContain('Organisationen (P10–P90)');
     });
     it('namn med <, & och %{x} visas som text', () => {
         const w = oppna();
         w.eval("sattOrgNamn('A<b>&%{x}')");
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         expect(w.document.getElementById('likvardighet-content').innerHTML).not.toMatch(/<b>&/);
         expect(w.document.getElementById('likvardighet-content').textContent).toMatch(/Median A<b>&%\{x\}/);
     });
@@ -488,12 +488,12 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
     it('namn med < och > tolkas inte i diagrammens förklaringar', () => {
         const w = medStatistik();
         w.eval("sattOrgNamn('A<b>B</b>'); sattJmfNamn('<br>X')");
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const namn = w.document.getElementById('chart-jamforelse-spann')._figur.lager.map(l => l.serie).join('|');
         expect(namn).not.toMatch(/[<>]/);
         expect(namn).toMatch(/A‹b›B‹\/b› P10–P90/);
         expect(w.document.getElementById('chart-jamforelse-spann').querySelector('b, br')).toBeNull();
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(w.document.getElementById('chart-lp-bandmap')._figur.lager.map(l => l.serie).join('|')).not.toMatch(/[<>]/);
     });
     it('namn ur ett paket kortas till 100 tecken', () => {

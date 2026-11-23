@@ -121,7 +121,7 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
     const kol = (id, namn) => rubriker(id).indexOf(namn);
     it('Lika arbete: kolumnen "Kvinnor nationellt" per yrke, och underraderna följer kolumnantalet', async () => {
         const { skrKvinnoandel } = await import('../src/lib/skrreferens.js');
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const i = kol('matrix-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
@@ -139,14 +139,14 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
     });
     it('sektorsöversikten: kolumnen "Kvinnor nationellt" per sektor', async () => {
         const { skrKvinnoandelSektor } = await import('../src/lib/skrreferens.js');
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const i = kol('sektor-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#sektor-table tbody tr')].find(t => /Teknikarbete/.test(t.textContent));
         expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandelSektor('Teknikarbete', { del: 'kommun' }).pct.toFixed(1).replace('.', ',')}\u00a0%`);
     });
     it('Likvärdigt arbete: organisationens yrkeslistor har "% kvinnor, SKR"', () => {
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const th = [...w.document.querySelectorAll('#likvardighet-content thead th')].map(t => t.textContent.trim());
         expect(th.filter(t => t === '% kvinnor, SKR').length).toBeGreaterThanOrEqual(1);
     });
@@ -167,7 +167,7 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
 describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', () => {
     const skr = async () => (await import('../src/lib/skrreferens.js'));
     const matrisCell = w => {
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const i = [...w.document.querySelectorAll('#matrix-table thead th')].map(t => t.textContent.trim()).indexOf('Kvinnor nationellt');
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
         return tr.children[i].textContent.trim();

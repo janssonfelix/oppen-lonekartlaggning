@@ -315,8 +315,8 @@ describe('Utforska: klick till gruppdossiern', () => {
         for (let i = 0; i < 4; i++) rader.push({ bas: 'B', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i, alder: 40,
             yrke: '200 Liten', aid: '200', yrkeLabel: 'Liten', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('utforska');
+        w.eval('populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('utforska');
         expect(w.__explorerDossierTarget(spec(), 'B', null)).toEqual({ key: '200|B' });
         w.__state.kLage = 'export';
         expect(w.__explorerDossierTarget(spec(), 'B', null)).toEqual({ saknas: true });
@@ -343,7 +343,7 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         for (let i = 0; i < 2; i++) rader.push(r('kvinna', 25000, '100'));
         for (let i = 0; i < 20; i++) rader.push(r(i % 2 ? 'man' : 'kvinna', 30000, '200'));   // 10 + 10
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const d = w.document;
         d.getElementById('explore-rad').value = 'bas';
         d.getElementById('explore-kolumn').value = 'aid';
@@ -534,7 +534,7 @@ describe('Utforska: urval', () => {
         const w = createAppWindow();
         const rad = bas => ({ bas, kon: 'kvinna', lon: 30000, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w.__state.data = Array.from({ length: 12 }, () => rad('E'));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         w.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [], inte: false }] });
         w.__renderExplorer();
         w.__state.data = Array.from({ length: 12 }, () => rad('X'));
@@ -724,7 +724,7 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         const w = createAppWindow();
         const r = (kon, i) => ({ bas: 'A', kon, lon: 30000 + i, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => r('man', i)), ...Array.from({ length: 3 }, (_, i) => r('kvinna', i))];
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const d = w.document;
         d.getElementById('explore-measure').value = 'n';
         d.getElementById('explore-visa').value = 'kon';
@@ -858,11 +858,11 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
     const p = (aid, label, n) => Array.from({ length: n }, (_, i) => ({ aid, yrke: `${aid} ${label}`, yrkeLabel: label, bas: 'C',
         kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 37, alder: 30 + i, radnr: i + 2 }));
     w.__state.data = [...p('207011', 'Usk', 24), ...p('207024', 'Vb', 5), ...p('207009', 'Usk hemtj', 7), ...p('502010', 'Sysutv', 22)];
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('populateSelects(); lasUppFlikar();');
     const d = w.document;
     const satt = (id, v) => { d.getElementById(id).value = v; };
     it('rutan syns bara när raderna är yrkesgrupper', () => {
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         satt('explore-rad', 'bas'); w.__renderExplorer();
         expect(d.getElementById('explore-sla-ihop-rad').hidden).toBe(true);
         satt('explore-rad', 'aid'); w.__renderExplorer();
@@ -892,7 +892,7 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
     it('Lika arbete påverkas aldrig av hopslagningen', () => {
         d.getElementById('explore-sla-ihop').checked = true;
         w.__renderExplorer();
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         expect(d.getElementById('matrix-table').textContent).not.toMatch(/Övriga i/);
     });
 });
@@ -904,7 +904,7 @@ describe('Rensa all data tömmer även Utforska', () => {
     it('inga individrader finns kvar i Utforskas minne efter rensning', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         expect(w.__explorerMinne().rows).toBeGreaterThan(0);
         w.__rensaAllData();
         expect(w.__state.data).toHaveLength(0);
@@ -913,7 +913,7 @@ describe('Rensa all data tömmer även Utforska', () => {
 });
 
 describe('Löneöversikten i Utforska', () => {
-    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('utforska'); return w; };
+    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__ritaFlik('utforska'); return w; };
     it('heter Löneöversikt, och sökfältet säger vad man söker på', () => {
         const html = las('src/index.html');
         expect(html).not.toMatch(/Hierarkisk Rapport/i);
@@ -929,7 +929,7 @@ describe('Löneöversikten i Utforska', () => {
         expect(t.querySelectorAll('thead th').length).toBe(8);   // kolumnerna står kvar för exporten
         expect(las('src/style.css')).toContain('#rapport-table.utan-jamforelse :is(th, td):nth-child(n+7) { display: none; }');
         w.__state.statistik = [{ aid: '207011', bas: 'C', median: 30000 }];
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         expect(t.classList.contains('utan-jamforelse')).toBe(false);
     });
     it('lönespridningen skrivs med decimalkomma och bär talet för sortering och export', () => {
@@ -953,7 +953,7 @@ describe('Löneöversikten i Utforska', () => {
         expect(synliga(rubriker()[1]).some(Boolean)).toBe(false);
         rubriker()[1].firstElementChild.click();
         await new Promise(r => setTimeout(r, 10));
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         expect(rubriker()[1].classList.contains('collapsed')).toBe(false);
         expect(synliga(rubriker()[1]).every(Boolean)).toBe(true);
         const sok = d.getElementById('search-rapport');
@@ -965,7 +965,7 @@ describe('Löneöversikten i Utforska', () => {
     });
     it('PDF-rapportens kopia av en tabell har alla rader synliga, också hopfällda grupper och ansvarsrader', () => {
         const w = rita();
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         for (const id of ['rapport-table', 'matrix-table']) {
             const klon = w.eval(`_exportVisaAllaRader(document.getElementById('${id}').cloneNode(true))`);
             expect([...klon.querySelectorAll('tbody tr')].filter(tr => tr.hidden || tr.style.display === 'none' || tr.classList.contains('collapsed')).length, id).toBe(0);

@@ -113,7 +113,7 @@ const långsamma = [];
 for (const flik of FLIKAR) {
     const t = await page.evaluate(async namn => {
         const start = performance.now();
-        try { renderTabContent(namn); } catch (e) { return { fel: String(e && e.message || e) }; }
+        try { ritaFlik(namn); } catch (e) { return { fel: String(e && e.message || e) }; }
         await new Promise(r => requestAnimationFrame(() => r()));
         return { ms: Math.round(performance.now() - start) };
     }, flik);

@@ -19,7 +19,7 @@ const TABELLER = [
     { flik: 'matrix', id: 'aidbas-lika-tabell', nyckel: 'aidbasLika', dolda: ['nedre', 'ovre', 'direktiv'], forst: [] },
     { flik: 'likvardighet', id: 'aidbas-likvardigt-tabell', nyckel: 'aidbasLikvardigt', dolda: ['nationellt', 'brukar', 'spridning'], forst: [] }
 ];
-const rita = (flik) => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent(flik); return w; };
+const rita = (flik) => { const w = createAppWindow(); w.__loadDemoData(); w.__ritaFlik(flik); return w; };
 const rubriker = (w, id) => [...w.document.querySelectorAll(`#${id} thead th`)];
 const knapp = (w, id) => w.document.querySelector(`[data-fler-kolumner="${id}"]`);
 const spann = td => +(td.getAttribute('colspan')) || 1;
@@ -59,7 +59,7 @@ describe('Fler kolumner: grundvyn och full vy', () => {
             const w = rita(t.flik);
             expect(rubriker(w, t.id).slice(0, t.forst.length).map(th => th.getAttribute('data-kol'))).toEqual(t.forst);
             knapp(w, t.id).click();
-            w.__renderTabContent(t.flik);
+            w.__ritaFlik(t.flik);
             expect(knapp(w, t.id).getAttribute('aria-pressed')).toBe('true');
             expect(rubriker(w, t.id).some(th => th.hidden)).toBe(false);
         });

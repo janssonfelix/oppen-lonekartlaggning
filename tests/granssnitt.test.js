@@ -29,7 +29,7 @@ describe('modalerna skriver tal på svenska', () => {
         const fel = {};
         let oppnade = 0;
         for (const flik of ['matrix', 'prioritering', 'likvardighet', 'utforska', 'kon']) {
-            w.__renderTabContent(flik);
+            w.__ritaFlik(flik);
             const knappar = [...w.document.querySelectorAll('.evidence-btn, [data-evidence], .btn-evidence, button[class*="evidence"], button[class*="bevis"], [data-bevis]')];
             for (const b of knappar.slice(0, 400)) {
                 b.click();
@@ -49,7 +49,7 @@ describe('modalerna skriver tal på svenska', () => {
 describe('samma tal i samma precision på sidan', () => {
     it('regressionskortet skriver den oförklarade skillnaden med en decimal, som flikens nyckeltal', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const tal = w.document.querySelector('.reg-hero .hero-number').textContent.trim();
         expect(tal).toMatch(/^[+\u2212-]?\d+,\d\s%$/);
         expect(w.document.querySelector('.reg-hero .hero-label').textContent).toBe('Oförklarad löneskillnad, kvinnor mot män');
@@ -57,7 +57,7 @@ describe('samma tal i samma precision på sidan', () => {
     });
     it('Prioriteringens tabell skriver avvikelsen med en decimal', () => {
         const w = demo();
-        w.__renderTabContent('prioritering');
+        w.__ritaFlik('prioritering');
         const tal = [...w.document.querySelectorAll('#prio-table .cell-bar-value')].map(e => e.textContent.trim()).filter(t => t !== '–');
         expect(tal.length).toBeGreaterThan(4);
         expect(tal.filter(t => !/^[+\u2212-]?\d+,\d\s%$/.test(t))).toEqual([]);
@@ -68,7 +68,7 @@ describe('en exportknapp per kort', () => {
     const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska'];
     it('varje diagram har en exportmeny, ingen behållare har två, och ingen fristående exportknapp står bredvid', () => {
         const w = demo();
-        for (const flik of FLIKAR) w.__renderTabContent(flik);
+        for (const flik of FLIKAR) w.__ritaFlik(flik);
         const d = w.document;
         const namn = el => (el.closest('.card, .diagramkort')?.querySelector('h2, h3, h4')?.textContent || el.id || '').trim().slice(0, 40);
         const varder = [...d.querySelectorAll('.view-panel .chart-export-host')];
@@ -89,7 +89,7 @@ describe('en exportknapp per kort', () => {
     it('kandidatparens tabell har en meny Exportera med CSV och Excel', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const meny = w.document.getElementById('lv-export-meny');
         const knapp = meny.parentElement.querySelector('.chart-export-btn');
         expect(knapp.textContent.trim()).toBe('Exportera tabellen');
@@ -142,15 +142,15 @@ describe('samma skillnad sägs på ett sätt', () => {
             expect(p.titel).toMatch(/^BAS \S+: kvinnors medianlön \d+,\d\s% av mäns$/);
             expect(p.titel).not.toMatch(/lägre|högre/);
         }
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const kvoter = [...w.document.querySelectorAll('#la-oversikt tbody tr')].map(tr => tr.textContent);
         const b = punkter[0].titel.match(/^BAS (\S+): kvinnors medianlön (\d+,\d)\s%/);
         expect(kvoter.some(t => t.includes(`BAS ${b[1]}`) && t.replace(/\s/g, ' ').includes(`${b[2]} %`))).toBe(true);
     });
     it('där skillnaden står kvar heter den skillnad, och den oförklarade skillnaden har en decimal där den står som huvudtal', () => {
         const w = demo();
-        w.__renderTabContent('matrix');
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('matrix');
+        w.__ritaFlik('loneoversyn');
         const d = w.document;
         const tvaDec = el => /[+\u2212-]?\d+,\d\d\s%/.test(el.textContent);
         const ytor = ['.reg-hero', '.reg-kronor-head', '#la-slutsatser', '#lo-slutsatser', '#forecast-outcome'];
@@ -232,7 +232,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     });
     it('Lika arbete och Prioritering säger samma ord med samma färg', () => {
         const w = demo();
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const d = w.document;
         // Går ej att bedöma (ett kön under golvet, ADR-59) är grå: ingen allvarlighetsgrad.
         const farg = { 'Balanserat': 'ok', 'Följ upp': 'varning', 'Värt att granska': 'granska', 'Går ej att bedöma': 'neutral' };
@@ -252,7 +252,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     });
     it('livscykelns nyckeltal är kvinnors lön i % av mäns, och modellens skillnad står bredvid', () => {
         const w = demo();
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         w.eval('ritaLivscykel()');
         const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
         const pct = v => v.toFixed(1).replace('.', ',') + '\u00a0%';
@@ -272,7 +272,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     });
     it('modelljämförelsen när huvudregressionen inte kunde skattas: streck i huvudmodellens kolumn, aldrig "undefined"', () => {
         const w = demo();
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         w.eval('ritaLivscykel({ error: "x" })');
         const rader = [...w.document.querySelectorAll('#livscykel-modelljamforelse tbody tr')].map(tr => [...tr.cells].map(c => c.textContent.trim()));
         expect(rader[0][0]).toBe('Antal personer');
@@ -281,7 +281,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     });
     it('förändringen 25–65 år färgas på prövningen av samspelet mellan kön och ålder, inte på storleken', () => {
         const w = demo();
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         // Samma modell med andra p-värden för samspelet och en annan förändring: bara prövningen avgör färgen.
         const ruta = (kvAgePVal, kvAge2PVal, gapDelta) => {
             w.eval(`globalThis.__lcOrig = runLifecycleRegression; runLifecycleRegression = b => ({ ...__lcOrig(b), kvAgePVal: ${kvAgePVal}, kvAge2PVal: ${kvAge2PVal}, gapDelta: ${gapDelta} });`);
@@ -306,7 +306,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
     });
     it('livscykeln säger "inte säkerställd" i ord, stjärnorna förklaras, och modellformeln står i beräkningspanelen', () => {
         const w = demo();
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         w.eval('ritaLivscykel()');
         const d = w.document, r = w.eval('runLifecycleRegression(_lifecycleFixBas)');
         const lop = d.getElementById('livscykel-content').textContent;

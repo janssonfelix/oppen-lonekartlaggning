@@ -21,8 +21,8 @@ describe('Lägre krav, högre lön', () => {
     const oppna = (w, data) => {
         w.__state.data = data;
         if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
     };
     it('avsnittet ritas med paret, utan §; blocket kommer efter Likvärdigt arbete', () => {
         const w = createAppWindow();
@@ -78,8 +78,8 @@ describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall'
         w.__state.data = [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)];
         w.__state.arbetsvardering = poang ? { byKey: new Map([['100', 500], ['200', 480]]), count: 2, hasBas: false } : null;
         if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
         return w;
     };
     const text = el => el.textContent.replace(/\s+/g, ' ');
@@ -207,7 +207,7 @@ describe('demodata med kandidatpar', () => {
         const totalt = lv.pairs.length;
         w.__state.likvardighet.topN = 2;
         w.__state.likvardighet.result = null;
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(2);
         expect(d.getElementById('nyckel-lv-par').textContent).toBe(`2 av ${totalt} par`);
         expect([...d.querySelectorAll('#lv-slutsatser .slutsats-varde')][2].textContent).toBe(String(totalt));
@@ -323,14 +323,14 @@ describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () 
 
     it('likvärdighetsfliken ritar kandidatparen i sin behållare', () => {
         win.__loadDemoData();
-        win.__renderTabContent('likvardighet');
+        win.__ritaFlik('likvardighet');
         const pairs = (win.__likvardighetspar() || {}).pairs || [];
         const el = win.document.getElementById('chart-likvardighet-heatmap');
         if (pairs.length) expect(el).not.toBeNull();
     });
 
     it('tabellTillMatris läser rubrik + rader och rensar knappar/ikoner', () => {
-        win.__renderTabContent('matrix');   // fyller matrix-table
+        win.__ritaFlik('matrix');   // fyller matrix-table
         const m = win.__tabellTillMatris('matrix-table');
         expect(Array.isArray(m)).toBe(true);
         if (m.length) {
@@ -357,7 +357,7 @@ describe('kandidatparens tabell', () => {
     it('intervallet står som ett spann på en rad med omdömet som märke, och exporten bär formen med klamrar', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const d = w.document;
         const ki = [...d.querySelectorAll('#likvardighet-table .lv-ki')];
         expect(ki.length).toBeGreaterThan(0);
@@ -378,7 +378,7 @@ describe('kandidatparens tabell', () => {
     it('ett par under 5 % syns utan att något ändrats, och fältet säger att 0 betyder alla (ADR-61)', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const d = w.document;
         expect(w.__state.likvardighet.minGapPct).toBe(0);
         const lv = w.__state.likvardighet.result;

@@ -17,7 +17,7 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const provade = [];
         for (const flik of flikar(w)) {
             await byt(w, flik);
-            const paneler = w.eval(`PANEL_GROUPS[${JSON.stringify(flik)}] || [${JSON.stringify(flik)}]`).map(p => w.document.getElementById('view-' + p)).filter(Boolean);
+            const paneler = w.eval(`PANELGRUPPER[${JSON.stringify(flik)}] || [${JSON.stringify(flik)}]`).map(p => w.document.getElementById('view-' + p)).filter(Boolean);
             const val = paneler.flatMap(p => [...p.querySelectorAll('select')]).find(s => !s.disabled && s.options.length > 1);
             if (!val) continue;
             val.selectedIndex = (val.selectedIndex + 1) % val.options.length;

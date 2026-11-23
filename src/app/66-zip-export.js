@@ -6,7 +6,7 @@ import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { exportSakraAlla, medExportLage } from './23-exportgrind.js';
 import { _excelAlltBok } from './24-excelexport.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { renderExportBesked } from './59-exportbesked.js';
 import { byggWordUtkast } from './62-word-utkast.js';
 import { diagramUrval } from './74-alla-diagram.js';
@@ -53,12 +53,12 @@ async function _exportZipExport() {
             if (/** @type {HTMLInputElement} */ (knapp).disabled || /** @type {HTMLElement} */ (knapp).hidden) continue;
             const flik = knapp.getAttribute('data-tab');
             if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info'].includes(flik)) continue;      // som förut: inga diagram hämtas där
-            try { renderTabContent(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
+            try { ritaFlik(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
         }
         // Jämförelsen med förra året (Spara och jämför år) har sina två hantlar när ett bokslut är inläst; panelen ritas
         // här (som rmDiagramBild gör för Word-utkastet), så att bilderna följer med också när fliken inte har öppnats.
         if (state.forraArsbokslut) {
-            try { renderTabContent('arbetet'); } catch (e) { rapporteraFel('ZIP: arbetet', e); }
+            try { ritaFlik('arbetet'); } catch (e) { rapporteraFel('ZIP: arbetet', e); }
         }
         for (const el of zipDiagram()) {
             try { const b64 = (await diagramTillBild(el, { bredd: 1920, hojd: 1080 })).split(',')[1]; zip.file(`diagram/${el.id}.png`, b64, { base64: true }); } catch (_err) { /* ett diagram som inte går att rita följer inte med */ }

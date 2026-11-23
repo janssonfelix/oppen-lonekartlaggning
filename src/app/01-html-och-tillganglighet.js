@@ -18,7 +18,7 @@ export const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;
 // anteckningar m.m. inte sparas i webbläsarens autofyll-historik (som kan synkas till leverantörens moln vid
 // Chrome Sync/Edge Sync etc.). Gäller sidans fasta fält och alla fält som skapas medan användaren arbetar
 // (anteckningarna i Regler & praxis, Löneöversyns riktade rader, Utforska …): en observatör sätter attributet
-// på varje fält som läggs till i dokumentet, och flikritningen (renderTabContent) gör det en gång till
+// på varje fält som läggs till i dokumentet, och flikritningen (ritaFlik) gör det en gång till
 // synkront. Vaktas av tests/troskelbeslut.test.js.
 /**
  * Sätter autocomplete="off" på varje fält under `rot` (och på `rot` självt) som saknar attributet.

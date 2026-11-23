@@ -100,7 +100,7 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
 ;try {
     Object.assign(window, {
         __state: (typeof state !== 'undefined' ? state : null),
-        __renderTabContent: renderTabContent,
+        __ritaFlik: ritaFlik,
         __loadDemoData: loadDemoData,
         __likvardighetspar: likvardighetspar,
         __metodbilaga: _metodbilaga,

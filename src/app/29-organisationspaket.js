@@ -13,7 +13,7 @@ import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
-import { _renderaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
+import { _ritaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
@@ -26,7 +26,7 @@ import { visningNy } from './23-exportgrind.js';
 import { _rensaAllData } from './26-rensning.js';
 import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
-import { refreshCurrentTab } from './31-navigering.js';
+import { uppdateraAktivFlik } from './31-navigering.js';
 import { markUploadLoaded, resetUploadCell } from './32-filinlasning.js';
 import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { lvJamforelse } from './45-aid-bas-tabeller.js';
@@ -221,8 +221,8 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     renderPaketInfo();
     renderConsistencyBanner();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
-    if (kAndrad && state.data.length) { populateSelects(); _renderaOmAllaFlikar(); }
-    else { ritaKravstatus(); renderActionChecklist(); renderProcessTracker(); refreshCurrentTab(); }
+    if (kAndrad && state.data.length) { populateSelects(); _ritaOmAllaFlikar(); }
+    else { ritaKravstatus(); renderActionChecklist(); renderProcessTracker(); uppdateraAktivFlik(); }
 
     const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.`
         + (varningar.length ? ' ' + varningar.join(' ') : '');
@@ -582,7 +582,7 @@ export function uppstartOrganisationspaket() {
         tomStatistikcacher();
         ritaKravstatus();
         renderActionChecklist();
-        refreshCurrentTab();
+        uppdateraAktivFlik();
     });
     _fyllPaketFormular();
     _synkaOrgTyp();

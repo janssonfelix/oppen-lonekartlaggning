@@ -72,11 +72,11 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const r = runda(w, 'struktur');
         nav(w, 'struktur').click();                                             // ett klick från koden
         expect(runda(w, 'struktur')).toBe(r + 1);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(runda(w, 'struktur')).toBe(r + 2);
         // Ritad i exportläget medan den inte syns (som exportgrinden gör): fliken visas inte som den är utan ritas om.
         await byt(w, 'dashboard');
-        w.eval('medExportLage(() => renderTabContent("struktur"))');
+        w.eval('medExportLage(() => ritaFlik("struktur"))');
         expect(runda(w, 'struktur')).toBe(r + 3);
         await byt(w, 'struktur');
         expect(runda(w, 'struktur')).toBe(r + 4);

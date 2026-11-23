@@ -20,7 +20,7 @@ const fyll = (w, el, varde) => { el.value = varde; el.dispatchEvent(new w.Event(
 describe('Handlingsplan: fälten fylls i på skärmen', () => {
     it('raderna har yrkesnamn i samma form och säger var de kommer ifrån; ingressen stämmer med etiketterna', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         const r = rader(w);
         expect(r.length).toBeGreaterThan(0);
         for (const tr of r) {
@@ -34,7 +34,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     });
     it('fälten har etiketter med yrke och kolumn, lagras i state och står kvar efter flikbyte', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         const tr = rader(w)[0], g = grupp(tr);
         const [sakligt, ansvarig, tidsplan, status] = [4, 7, 8, 9].map(i => tr.cells[i].querySelector('.hp-falt'));
         expect(sakligt.tagName).toBe('SELECT');
@@ -45,14 +45,14 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         fyll(w, sakligt, 'Nej, åtgärd behövs'); fyll(w, ansvarig, 'HR-chef'); fyll(w, tidsplan, 'Lönerevisionen 2027'); fyll(w, status, 'Planerad');
         const nyckel = ansvarig.dataset.hpNyckel;
         expect(w.__state.handlingsplan[nyckel]).toEqual({ sakligt: 'Nej, åtgärd behövs', ansvarig: 'HR-chef', tidsplan: 'Lönerevisionen 2027', status: 'Planerad' });
-        w.__renderTabContent('dashboard'); w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('dashboard'); w.__ritaFlik('handlingsplan');
         const igen = rader(w)[0];
         expect(igen.cells[7].querySelector('input').value).toBe('HR-chef');
         expect(igen.cells[9].querySelector('select').value).toBe('Planerad');
     });
     it('ett fält som liknar ett personnummer varnar men texten står kvar', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         const varning = w.document.getElementById('handlingsplan-varning');
         expect(varning.hidden).toBe(true);
         const falt = rader(w)[0].cells[7].querySelector('input');
@@ -65,7 +65,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     });
     it('följer med i konfigurationsfilen och läses in igen; felaktiga val läses som tomma', () => {
         const a = fonster();
-        a.__renderTabContent('handlingsplan');
+        a.__ritaFlik('handlingsplan');
         const falt = rader(a)[0].cells[7].querySelector('input');
         fyll(a, falt, 'Avdelningschef');
         const cfg = JSON.parse(a.eval('JSON.stringify(byggKonfiguration())'));
@@ -75,14 +75,14 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.__state.handlingsplan[falt.dataset.hpNyckel].ansvarig).toBe('Avdelningschef');
         expect(b.__state.handlingsplan['prio|9|Z']).toEqual({ sakligt: '', ansvarig: '', tidsplan: 'Hösten', status: '' });
-        b.__renderTabContent('handlingsplan');   // en rad som inte finns i underlaget ritas inte och kraschar inget
+        b.__ritaFlik('handlingsplan');   // en rad som inte finns i underlaget ritas inte och kraschar inget
         expect(rader(b).length).toBe(rader(a).length);
         expect(() => b.eval("tillampaKonfiguration({ version: 2, handlingsplan: [{ nyckel: 5 }] })")).toThrow();
     });
     it('följer med i Excel-filen, Word-utkastets åtgärdstabell och utskriften', async () => {
         const w = fonster();
         await laddaXlsx(w);
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         const tr = rader(w)[0];
         fyll(w, tr.cells[4].querySelector('select'), 'Ja, sakligt skäl finns'); fyll(w, tr.cells[7].querySelector('input'), 'HR-chef');
         const bok = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
@@ -126,7 +126,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         const cfg = JSON.parse(w.eval('JSON.stringify(byggKonfiguration())'));
         expect(cfg.handlingsplan.find(r => r.nyckel === nyckel)).toMatchObject({ egen: true, atgard: 'Se över lönekriterierna', grupp: 'Alla chefer' });
         const b = fonster();
-        b.__cfg = cfg; b.eval('tillampaKonfiguration(window.__cfg)'); b.__renderTabContent('handlingsplan');
+        b.__cfg = cfg; b.eval('tillampaKonfiguration(window.__cfg)'); b.__ritaFlik('handlingsplan');
         expect(b.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-egen')).toHaveLength(1);
         expect(b.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen').cells[0].querySelector('[data-hp-falt="grupp"]').value).toBe('Alla chefer');
         // Översikt-kortet räknar raderna efter status, inte åtgärdslistans bockar.
@@ -139,7 +139,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     });
     it('Rensa all data nollar fälten', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         fyll(w, rader(w)[0].cells[8].querySelector('input'), 'Våren');
         expect(Object.keys(w.__state.handlingsplan)).toHaveLength(1);
         w.eval('_rensaAllData()');
@@ -149,7 +149,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     // S2 i punkt 26: åtgärden tog fyra rader i varje rad, och BAS-bokstaven hamnade ensam på en rad.
     it('åtgärden för ett kandidatpar är kort, och BAS och bokstaven står ihop i gruppkolumnen', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         const par = rader(w).filter(tr => tr.cells[3].textContent === UNDERLAG[1]);
         expect(par.length).toBeGreaterThan(0);
         for (const tr of par) expect(tr.querySelector('.hp-atgard').textContent.length, tr.cells[0].textContent).toBeLessThanOrEqual(45);
@@ -176,7 +176,7 @@ describe('Handlingsplan: skärmen samlar det som bara visas i första kolumnen',
     };
     it('grupp, antal och underlag står under åtgärden på skärmen och som egna kolumner bara på utskriften', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
         const th = [...tabell.querySelectorAll('thead th')];
         expect(th.filter(t => t.classList.contains('hp-bara-utskrift')).map(t => ren(t.textContent))).toEqual(RUBRIKER.slice(1, 4));
@@ -189,7 +189,7 @@ describe('Handlingsplan: skärmen samlar det som bara visas i första kolumnen',
     });
     it('utskriften av mallen har samma kolumner som förut, utan skärmens undertext', () => {
         const w = fonster();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         w.eval('_hpLaggTillEgen()');
         const egen = w.document.querySelector('#handlingsplan-tbody tr.handlingsplan-egen');
         const fyll = (el, v) => { el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
@@ -234,7 +234,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
     it('fliken, Excel-bladet, utskriften, Word-utkastets åtgärdstabell och rapportunderlaget har kolumnen direkt efter kostnaden', async () => {
         const w = fonster();
         await laddaXlsx(w);
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         w.eval('_hpLaggTillEgen()');
         const skarm = w.eval('_handlingsplanSeedRows()').rows.map(r => r[2]);
         const ut = w.eval('medExportLage(() => _handlingsplanSeedRows())').rows.map(r => r[2]);
@@ -282,7 +282,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
     it('en plan med bara egna rader ger tomma celler, aldrig undefined eller null', async () => {
         const w = createAppWindow();
         await laddaXlsx(w);
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         w.eval('_hpLaggTillEgen()');
         expect(w.eval('_handlingsplanSeedRows()').rows.map(r => r[2])).toEqual(['Egen rad']);
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
@@ -303,7 +303,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
     });
     it('konfigurationsfilen får inget nytt fält: kolumnen är härledd, och en sparad fil läses in och sparas likadant', () => {
         const a = fonster();
-        a.__renderTabContent('handlingsplan');
+        a.__ritaFlik('handlingsplan');
         fyll(a, rader(a)[0].cells[4].querySelector('select'), 'Pågår');
         a.eval('_hpLaggTillEgen()');
         const cfg = JSON.parse(a.eval('JSON.stringify(byggKonfiguration())'));
@@ -329,7 +329,7 @@ describe('Handlingsplan och gruppdossier: en AID-kod med två texter är en grup
         w.__state.data = data;
         w.__state.policy = [{ bas: 'C', p10: 30000, med: 35000, p90: 40000 }];
         w.__state.handlingsplan = {};
-        w.eval('populateSelects(); unlockTabs(); sattKTroskel(10, { fraga: false });');
+        w.eval('populateSelects(); lasUppFlikar(); sattKTroskel(10, { fraga: false });');
         return w;
     };
     it('[B7.10] prioriteringen har en post på 15 personer, och handlingsplanen en förifylld rad för den', () => {
@@ -355,7 +355,7 @@ describe('Handlingsplanens tabell', () => {
         expect(css).toMatch(/#handlingsplan-tbody \.handlingsplan-empty \{ display: none; \}/);
         expect(css).toMatch(/@media print \{ #handlingsplan-tbody \.handlingsplan-empty \{ display: table-row; \} \}/);
         const w = demo();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
         expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte');
     });

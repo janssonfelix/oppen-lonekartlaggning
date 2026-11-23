@@ -30,14 +30,14 @@ describe('säkerhet, dataskydd och HR-logik', () => {
             statistik: { namn: X('stat'), rader: [0, 1, 2, 3, 4, 5].map(g => ({ aid: g < 3 ? `10${g}` : `20${g}`, aidFull: X('aidfull' + g), bas: 'ABC'[g % 3],
                 median: 33000 + g * 1000, p10: 30000, p90: 36000, nKv: 20, nMa: 20, andelKv: g < 3 ? 80 : 20 })) } };
         w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket))}, 'x')`);
-        w.eval('populateSelects(); unlockTabs(); ritaNyckeltal(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell());');
+        w.eval('populateSelects(); lasUppFlikar(); ritaNyckeltal(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell());');
     };
 
     it('skadlig text i fil och organisationspaket skapar inga element i någon flik', async () => {
         const w = createAppWindow();
         skadligtUnderlag(w);
         for (const t of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__renderTabContent(t);
+            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__ritaFlik(t);
         await new Promise(r => setTimeout(r, 300));
         const injicerat = [...w.document.querySelectorAll('img[onerror], [onerror], b.inj')]
             .map(e => `${e.closest('[id]')?.id}: ${e.outerHTML.slice(0, 60)}`);
@@ -190,10 +190,10 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         // har något att visa.
         rader.push({ bas: 'A', kon: 'man', lon: 187650, alder: 50, yrke: '100 Yrke', aid: '100', yrkeLabel: 'Yrke', enhet: '1000' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
                             'kon', 'demografi', 'benchmark', 'utforska', 'kvalitet', 'rapport', 'handlingsplan']) {
-            try { w.__renderTabContent(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }
+            try { w.__ritaFlik(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }
         }
         w.eval('renderOutliers()');
         // Utskriftsrapporten byggs i dokumentet (window.print stubbas) — även den ska rensas.

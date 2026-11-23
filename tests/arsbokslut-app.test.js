@@ -40,7 +40,7 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
         w.__cfg = cfg;
         w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.forraArsbokslut).toMatchObject({ ar: cfg.arsbokslut.ar });
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         const host = w.document.getElementById('arsjamforelse');
         expect(host.textContent).toContain(`Förra årets bokslut: ${cfg.arsbokslut.ar}`);
         expect(host.textContent).toContain('Nyckeltal');
@@ -55,7 +55,7 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
     });
     it('utan bokslut säger panelen hur man får ett; ett trasigt bokslut i filen ger en varning, inte ett stopp', () => {
         const w = createAppWindow();
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         expect(w.document.getElementById('arsjamforelse').textContent).toContain('Inget årsbokslut inläst');
         const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.arsbokslut).toBeNull();
@@ -106,9 +106,9 @@ describe('årsjämförelsen i rapporten, rapportunderlaget och som hantel (ADR-5
         const block = w.eval('rapportunderlagBlock()').find(b => b.id === 'arsjamforelse');
         expect(block).toBeTruthy();
         expect(block.tabell.rubriker).toEqual(['Mått', String(cfg.arsbokslut.ar), String(cfg.arsbokslut.ar + 1), 'Skillnad']);
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         expect(w.document.querySelector('[data-rapport-kopiera="arsjamforelse"]')).not.toBeNull();
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         const el = w.document.getElementById('chart-arsjamforelse');
         expect(el && el._figur).toBeTruthy();
         const f = el._figur;
@@ -153,7 +153,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; }));
         const w = createAppWindow(); w.__loadDemoData();
         lasIn(w, cfg);
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         const host = w.document.getElementById('arsjamforelse');
         expect(host.textContent).toContain('Löneutveckling per BAS-intervall');
         const tab = host.querySelector('#arsjamforelse-bas');
@@ -178,7 +178,7 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         const w = createAppWindow(); w.__loadDemoData();
         lasIn(w, cfg);
         expect(w.__state.forraArsbokslut.basIntervall).toBeNull();
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         const host = w.document.getElementById('arsjamforelse');
         expect(host.textContent).toMatch(/Löneutveckling per BAS-intervall.*saknas i förra årets fil/s);
         expect(host.querySelector('#arsjamforelse-bas')).toBeNull();
@@ -214,7 +214,7 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
         const cfg = forraArs(JSON.parse(JSON.stringify(a.__byggKonfiguration())), ab => ab.basIntervall.forEach(r => { r.spridning = 0.5; }));
         const w = createAppWindow(); w.__loadDemoData();
         lasIn(w, cfg);
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         const tab = w.document.getElementById('arsjamforelse-bas');
         const forsta = [...tab.querySelectorAll('thead tr:first-child th')].map(th => th.textContent.trim());
         expect(forsta.at(-1)).toBe('Lönespridning');
@@ -240,7 +240,7 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
         const s1 = tab.rader.find(r => r[0] === `BAS ${STORA[0]}`);
         expect(w.eval('rmCell')(s1[5], 'text')).toMatch(/^– till \d+\s%$/);
         // Panelen visar streck för förra året.
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         const rad = [...w.document.querySelectorAll('#arsjamforelse-bas tbody tr')].find(tr => tr.cells[0].textContent.trim() === `BAS ${STORA[0]}`);
         expect(rad.cells[rad.cells.length - 2].textContent.trim()).toBe('–');
     });
@@ -264,7 +264,7 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
         it(`k = ${k} i filen: inga små intervall eller kön i panelen, i rapportmodellen eller i BAS-dossierns text`, () => {
             const w = lagK(k);
             expect(w.__state.forraArsbokslut.k).toBe(Math.max(3, k));   // K_MIN (ADR-102)
-            w.__renderTabContent('arbetet');
+            w.__ritaFlik('arbetet');
             const panel = normalisera(w.document.getElementById('arsjamforelse').textContent);
             const modell = normalisera(JSON.stringify(w.eval('medExportLage(() => rapportModell())').avsnitt.find(a => a.id === 'arsjamforelse')));
             const texter = [MELLAN[0], STORA[0]].map(b => normalisera(w.eval(`basdossierText(${JSON.stringify(b)})`) || ''));
@@ -324,7 +324,7 @@ describe('panelen: Sakliga skäl per kategori', () => {
         forra.bedomningar.push({ ...forra.bedomningar[0], nyckel: 'prio|9999|Z', grupp: 'Bortflyttad grupp' });
         w.__forra = andra(forra);
         w.eval('state.forraArsbokslut = valideraArsbokslut(window.__forra)');
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         return { w, nu, host: w.document.getElementById('arsjamforelse') };
     };
     it('tabellen har kolumnerna Kategori, förra året, i år och Förändring, och en rad per kategori', () => {

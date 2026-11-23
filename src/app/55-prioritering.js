@@ -26,7 +26,7 @@ import { computeGroupMDE, styrkaGallande } from './13-oversikt.js';
 import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { _evidenceForPrioItem, _openEvidenceModal } from './27-berakningsbevis.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { _laNyckel } from './41-lika-arbete.js';
 
 // ---- Prioriteringsanalys ----
@@ -522,7 +522,7 @@ function _kostnadAndrad() {
     if (!state.data.length) return;
     renderPrioritering();
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-    if (aktiv && aktiv !== 'prioritering' && typeof renderTabContent === 'function') renderTabContent(aktiv);
+    if (aktiv && aktiv !== 'prioritering' && typeof ritaFlik === 'function') ritaFlik(aktiv);
 }
 
 // ---- Print-to-PDF: komplett rapport ----

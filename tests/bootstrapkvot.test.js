@@ -124,9 +124,9 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
             rader.push(rad('S2', i < 10 ? 'kvinna' : 'man', 34000 + ((i * 53) % 29) * 100, 25 + (i * 11) % 35));
         }
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         w.computeBootstrapCI();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(w.runOLSRegression().pValue).toBeGreaterThanOrEqual(0.05);
         const text = w.document.getElementById('regression-card').textContent.replace(/ /g, ' ');
         const m = text.match(/Den råa löneskillnaden \((−?\d+,\d) % \[95 % KI: (−?\d+,\d) % till (−?\d+,\d) %\]\)/);

@@ -20,7 +20,7 @@ import { visningNy } from './23-exportgrind.js';
 import { updateGdprBanner } from './25-dataskyddsinfo.js';
 import { _rensaAllData, rensaAllData } from './26-rensning.js';
 import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
-import { unlockTabs } from './31-navigering.js';
+import { lasUppFlikar } from './31-navigering.js';
 import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
 import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
@@ -104,7 +104,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     _lasInDemoStatistik({ stort });
     state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
-    unlockTabs();
+    lasUppFlikar();
     ritaNyckeltal();
     populateSelects();
     ritaLoneoversikt();

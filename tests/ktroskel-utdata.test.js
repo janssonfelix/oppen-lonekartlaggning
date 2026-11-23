@@ -17,7 +17,7 @@ describe('k-tröskeln under 5 i Lönepolitik', () => {
         const w = iExport(fonster(3));
         expect(w.eval('_lpTier(4)')).toBe('full');
         expect(w.eval('_lpTier(2)')).toBe('masked');
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(w.document.getElementById('view-benchmark').textContent).not.toMatch(/under 5 maskeras/);
     });
 });
@@ -33,9 +33,9 @@ describe('k-tröskeln: Prioritering visar ingen könsjämförelse för ett kön 
         for (let i = 0; i < 2; i++) rader.push(rad('P', i, MA, 7000, 'Skevyrke', 'man'));
         w.__state.data = rader;
         w.__state.policy = ['F0', 'F1', 'F2', 'P'].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         iExport(w);   // så som tabellen lämnar verktyget; skärmen maskerar inget (ADR-51)
-        w.__renderTabContent('prioritering');
+        w.__ritaFlik('prioritering');
         const vy = w.document.getElementById('view-prioritering');
         const text = normalisera(vy.textContent + ' ' + [...vy.querySelectorAll('*')].map(e => Array.from(e.attributes, a => a.value).join(' ')).join(' '));
         const gapPct = (KV / MA - 1) * 100;   // tabellen visar två decimaler, hovertexten en
@@ -59,7 +59,7 @@ describe('k-tröskeln: par i likvärdigt arbete i Word-utkastet och utskriften',
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');   // jämförelseyrke
         lagg(6, 'kvinna', SENT, 'C', '5300');                                         // litet, kvinnodominerat
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         if (k !== null) w.eval(`sattKTroskel(${k}, { fraga: false })`);
         return w;
     };
@@ -105,7 +105,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');   // jämförelseyrke
         lagg(6, 'kvinna', 36421, 'C', '5300');                                        // litet, kvinnodominerat
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         if (k !== null) w.eval(`sattKTroskel(${k}, { fraga: false })`);
         return w;
     };
@@ -250,7 +250,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
             const w = fonsterPar(k);
             w.alert = () => {};
             Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
-            w.__renderTabContent('loneoversyn');
+            w.__ritaFlik('loneoversyn');
             w.eval('_forecastOptimize()');
             return { w, aid: w.__state.forecast.targets.map(t => t.aid) };
         };
@@ -270,7 +270,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         lagg(40, 'man', 60000, 'C', '6100');
         for (let g = 0; g < 26; g++) lagg(g < 6 ? 6 : 12, 'kvinna', g < 6 ? 30000 : 45000 + g * 100, 'C', String(5300 + g));
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         w.__state.likvardighet.topN = 100; w.__state.likvardighet.result = null;
         const par = w.eval('likvardighetResultat().pairs');
         expect(par.length).toBe(26);
@@ -727,7 +727,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
             }
         });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         return w;
     };
     const perBas = w => {
@@ -792,7 +792,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
                 alder: 25 + ((j * 13) % 40), yrke: '7004 Yrke 4', aid: '7004', yrkeLabel: 'Yrke 4', enhet: '' });
         }
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const pb = w.eval(`_computePerBasGap(hamtaData(), ['E'])`);
         expect(pb).toHaveLength(1);
         expect(pb[0].status).toBe('ok');
@@ -832,7 +832,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
         R_KV.forEach((l, i) => rad('R', '7200', 'Smågrupp', 'kvinna', l, i));
         R_MA.forEach((l, i) => rad('R', '7200', 'Smågrupp', 'man', l, i));
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         return w;
     };
     const protokollet = async (w, fn = 'exportJPAProtokoll') => {
@@ -927,7 +927,7 @@ describe('[B5.5] k-tröskeln: Lika arbete AID x BAS har samma grupper som tabell
     for (const k of [10, 25]) {
         it(`tröskeln ${k}`, () => {
             const w = iExport(fonster(k));
-            w.__renderTabContent('matrix');
+            w.__ritaFlik('matrix');
             const aidbas = rader(w, 'aidbas-lika-tabell', tr => `${tr.cells[1].textContent.trim()}|${tr.cells[0].textContent.trim()}`);
             const huvud = rader(w, 'matrix-table', tr => `${tr.cells[0].textContent.trim().split(' ')[0]}|${tr.cells[1].textContent.trim()}`);
             expect(aidbas.length).toBeGreaterThan(0);

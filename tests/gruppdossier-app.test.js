@@ -124,7 +124,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         w.__state.kLage = 'export';   // panelen hör till Exportera och ritas alltid i exportläget (ADR-51)
         return w;
     };

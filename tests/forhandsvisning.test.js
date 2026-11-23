@@ -25,7 +25,7 @@ describe('förhandsvisning: Som i exporten', () => {
         expect(d.getElementById('forhandsvisning-banner').hidden).toBe(false);
         expect(d.getElementById('forhandsvisning-banner').textContent).toMatch(/färre än 10 personer/);
         // Omritningen från gränssnittet är stegvis; här körs den klar direkt.
-        return w.eval('_renderaOmAllaFlikarStegvis()').then(() => {
+        return w.eval('_ritaOmAllaFlikarStegvis()').then(() => {
             expect(synliga(w, SENT_SMA)).toEqual([]);                          // vid 10 är grupperna om 6 borta; de om 20 kvar
             expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
             w.eval('sattKTroskel(25, { fraga: false })');
@@ -38,7 +38,7 @@ describe('förhandsvisning: Som i exporten', () => {
             expect(w.__state.kLage).toBe('skarm');
             expect(d.body.classList.contains('forhandsvisning')).toBe(false);
             expect(d.getElementById('forhandsvisning-banner').hidden).toBe(true);
-            return w.eval('_renderaOmAllaFlikarStegvis()');
+            return w.eval('_ritaOmAllaFlikarStegvis()');
         }).then(() => {
             expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);             // skärmen visar grupperna igen
         });
@@ -79,7 +79,7 @@ describe('tröskelbytet räknar bara om det som beror på tröskeln', () => {
         w.eval('window.__byggda = 0; const __b = buildActionChecklist; buildActionChecklist = function (...a) { window.__byggda++; return __b.apply(null, a); };');
         w.eval('renderOversiktDelar()');
         expect(w.__byggda).toBe(1);
-        w.eval('window.__byggda = 0; _renderaOmAllaFlikar()');
+        w.eval('window.__byggda = 0; _ritaOmAllaFlikar()');
         expect(w.__byggda).toBe(1);
         w.eval('window.__byggda = 0; renderProcessTracker()');                 // ensam bygger den själv
         expect(w.__byggda).toBe(1);

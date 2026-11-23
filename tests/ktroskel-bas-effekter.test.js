@@ -33,7 +33,7 @@ function fonsterMed(nivaer) {
     const basar = nivaer.map(n => n[0]);
     w.__state.policy = basar.map(bas => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
     w.__state.statistik = basar.map(bas => ({ aid: '6100', bas, median: 61700, p10: 55000, p90: 71000 }));
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('populateSelects(); lasUppFlikar();');
     return w;
 }
 // Det lilla intervallet D ligger 80 % över de andra; referensen är A.
@@ -64,7 +64,7 @@ describe('[S4] BAS-effekterna i regressionen: ett intervall under tröskeln har 
 
     it('på skärmen visar regressionskortet varje intervalls effekt (ADR-51)', () => {
         const w = fonsterMed(LITET_D);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const t = normalisera(w.document.getElementById('regression-card').textContent);
         for (const e of effekter(w)) expect(t, e.bas).toContain(svPct1(e.pct));
     });
@@ -98,7 +98,7 @@ describe('[S4] BAS-effekterna i regressionen: ett intervall under tröskeln har 
         expect(kort).toMatch(/BAS-effekterna visas inte här: referensintervallet, BAS A, har färre än 10 personer/);
         // Skärmen visar effekterna som förut.
         const w2 = fonsterMed(LITEN_REF);
-        w2.__renderTabContent('struktur');
+        w2.__ritaFlik('struktur');
         const skarm = normalisera(w2.document.getElementById('regression-card').textContent);
         for (const x of e) expect(skarm, x.bas).toContain(svPct1(x.pct));
     }, 180000);

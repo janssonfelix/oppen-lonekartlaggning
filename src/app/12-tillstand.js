@@ -21,7 +21,7 @@ import { renderConsistencyBanner } from './16-inlasningskontroll.js';
 import { renderActionChecklist } from './18-atgardslista.js';
 import { _laddaNedCSV } from './22-exporthjalpare.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
-import { refreshCurrentTab } from './31-navigering.js';
+import { uppdateraAktivFlik } from './31-navigering.js';
 import { renderReferensKort } from './38-referensfiler.js';
 /**
  * Appens tillstånd. Fälten som bär inlästa eller beräknade data är löst typade (`any`): deras form
@@ -244,7 +244,7 @@ export function sattReferensNamn(namn) {
 }
 // Allt som namnger eller räknar mot referensen ritas om när den byts eller döps om.
 export function ritaOmReferens() {
-    for (const fn of [renderReferensKort, refreshCurrentTab, ritaKravstatus, renderConsistencyBanner,
+    for (const fn of [renderReferensKort, uppdateraAktivFlik, ritaKravstatus, renderConsistencyBanner,
                       renderActionChecklist, renderProcessTracker]) {
         if (typeof fn === 'function') { try { fn(); } catch (e) { rapporteraFel(`Omritning (${fn.name})`, e); } }   // en vy får inte stoppa de andra
     }

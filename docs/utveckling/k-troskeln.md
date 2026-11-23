@@ -317,7 +317,7 @@ rapportunderlaget i Rapporttext (båda i exportläget), regressionskorten i Lön
 åldersgrupp i Ålder & karriär. Ett block räknas i sin uppgift ur det som gäller då och ritar ingenting om fliken har
 ritats om eller lämnats, eller om underlaget, tröskeln, förhandsvisningen eller ett val har ändrats sedan fliken
 ritades; står platshållaren kvar ritas fliken då om från början. Medan block väntar räknas fliken som inte ritad,
-så att exportgrinden ritar om den innan något läses ur den. Allt annat ritar synkront som förut: `renderTabContent`
+så att exportgrinden ritar om den innan något läses ur den. Allt annat ritar synkront som förut: `ritaFlik`
 anropad direkt (exportgrinden, exporterna, omritningen efter ändrad tröskel, testerna) och ett klick från koden
 (`el.click()`); ett test som vill pröva det uppskjutna flikbytet anropar `klickaFlik(nav, { uppskjut: true })`
 (`tests/flikbyte.test.js`).
@@ -336,7 +336,7 @@ kvantilregressionens intervall, inläsningens efterarbete, robusthetsanalysen). 
 läge (skärm eller export, förhandsvisningen) och samma dag, och inte ha ritats om sedan dess. Det som görs efter en
 ritning och inte är räkning görs ändå: navigeringen längst ned, sidindexet, sidtiteln, rullningen överst, markeringen
 i tabellerna och `efter`-anropen. Inget resultat återanvänds: det som visas igen är flikens innehåll i sidan, och allt
-räknas om när fliken ritas (ADR-17). Bara användarens flikbyte visar en flik igen; `renderTabContent` anropad direkt,
+räknas om när fliken ritas (ADR-17). Bara användarens flikbyte visar en flik igen; `ritaFlik` anropad direkt,
 exportläget, exportgrinden och klick från koden ritar alltid. Exportgrinden ser fliken som förut: den räknas som
 aktuell bara när den ritats i den generation som gäller, så en flik som visas igen efter en exports tur och retur ritas
 om innan något exporteras ur den. Vakten är `tests/visningsminne*.test.js`: för varje sorts ändring öppnas varje flik
@@ -349,7 +349,7 @@ medan en export pågår avvisas.
 **När tröskeln ändras** töms cacherna och flikarna som inte syns, och det som syns ritas om: den öppna fliken och de
 delar av Översikt som inläsningen ritar men flikbytet inte gör — nyckeltalen, kompliansöversikten, underlagets kvalitet,
 Att göra (vars CSV-knapp bär listan den ritades med), processöversikten, inläsningsrapporten, extremvärdeslistan, en
-visad A/B-jämförelse och en öppen gruppdossier (`_renderaOmAllaFlikar`). Från fältet ritas allt om ett steg i taget, med
+visad A/B-jämförelse och en öppen gruppdossier (`_ritaOmAllaFlikar`). Från fältet ritas allt om ett steg i taget, med
 en ruta som visar förloppet och tar emot alla klick och tangenter tills omritningen är klar. Inläsning av
 konfigurationsfil och organisationspaket sätter värdet med `rita: false` och gör omritningen själva, sist, så att allt
 ritas en gång. Ett tröskelbyte räknar om skattningarna (`tomStatistikcacher`) bara när `statGolv()` ändras, alltså bara

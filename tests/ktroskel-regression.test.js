@@ -29,13 +29,13 @@ describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln f
     });
     it('på skärmen visar kortet första steget också med 7 män (ADR-51)', () => {
         const w = fonsterMan(null, SJU_MAN);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(w.document.getElementById('regression-card').textContent).toMatch(/Endast kön/);
     });
     it('i exportläget vid 10: kortet i Lika arbete visar det justerade gapet men varken första steget, budgeten eller förklarad andel', () => {
         const w = iExport(fonsterMan(null, SJU_MAN));
         const { forsta, justerat } = tal(w);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const kort = w.document.getElementById('regression-card');
         const t = normalisera(kort.innerHTML);
         expect(harNagon(t, tvaDec(forsta))).toEqual([]);
@@ -54,7 +54,7 @@ describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln f
         // Referens och jämförelsestatistik, så att varje export har något att skriva (som fonsterKon).
         w.__state.policy = ['S1', 'S2'].map(bas => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
         w.__state.statistik = ['S1', 'S2'].map(bas => ({ aid: '6000', bas, median: 60000, p10: 55000, p90: 71000 }));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const { forsta, justerat } = tal(w);
         const utdata = await samlaUtdata(w);
         expect(utdata.length).toBeGreaterThan(20);
@@ -79,13 +79,13 @@ describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln f
     it('Blinder-Oaxaca (som delar upp det råa medelgapet) körs aldrig med ett kön under tröskeln: golvet är max(tröskeln, 10)', () => {
         for (const k of [null, 5, 7]) expect(fonsterMan(k, SJU_MAN).eval('runBlinderOaxaca()'), String(k)).toBeNull();
         const w = fonsterMan(null, SJU_MAN);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(w.document.getElementById('blinder-oaxaca-card').textContent).toMatch(/För få observationer/);
     });
     it('vid 5: första steget och förklarad andel visas i kortet och utskriften', async () => {
         const w = fonsterMan(5, SJU_MAN);
         const { forsta } = tal(w);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const kort = w.document.getElementById('regression-card');
         expect(kort.textContent).toMatch(/Endast kön/);
         expect(normalisera(kort.innerHTML)).toMatch(somTal(Math.abs(forsta).toFixed(2)));
@@ -120,7 +120,7 @@ describe('[R4] Löneöversynens scenariojämförelse maskerar ett rågap som spa
         const w = iExport(fonsterKon(null));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 },
             targets: [{ bas: 'S1', aid: '7001', mode: 'kr', value: 40000, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }] });
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const o = w.__state.forecast.result;
         // Antalet som utfallet på skärmen anger (grupper över tröskeln); kortet saknas när inget går om.
         const m = w.document.getElementById('forecast-outcome').textContent.match(/Spillover: (\d+) grupp/);
@@ -137,7 +137,7 @@ describe('[R2] en egen riktad rad på en grupp under tröskeln är tillåten och
         w.__state.forecast.targets = [
             { bas: 'S1', aid: '7001', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' },
             { bas: 'S1', aid: '6000', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const host = w.document.getElementById('forecast-targets');
         const rader = [...host.querySelectorAll('.forecast-target-row')];
         expect(rader).toHaveLength(2);
@@ -151,7 +151,7 @@ describe('[R2] en egen riktad rad på en grupp under tröskeln är tillåten och
     it('beloppet för en egen rad på en ensam person ingår i Excel-exportens summor (dokumenterat, inte filtrerat)', async () => {
         const w = fonsterKon(null);
         w.__state.forecast.targets = [{ bas: 'S1', aid: '7001', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         await laddaXlsx(w);
         const blad = Object.values(fangaBocker(w, () => w.eval('exportForecast()')))[0].split('[Sammanfattning]')[1].split('[')[0].split('\n');
         const belopp = String(Math.round(ENSAM * 0.1));   // en persons lön gånger procentsatsen
@@ -161,7 +161,7 @@ describe('[R2] en egen riktad rad på en grupp under tröskeln är tillåten och
     it('noten följer tröskeln: vid 25 får också en grupp om 20 den', () => {
         const w = fonsterKon(25);
         w.__state.forecast.targets = [{ bas: 'A', aid: '5300', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         expect(w.document.querySelector('#forecast-targets .k-mask-note').textContent).toMatch(/färre än 25 personer/);
     });
 });
@@ -176,13 +176,13 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
     };
     it('på skärmen med 3 män: gap, låda och trendlinje för män visas (ADR-51)', () => {
         const w = fonsterMan(null, TRE_MAN);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         expect(namn(w, 'chart-kon-boxplot')).toEqual(['Kvinna', 'Man']);
         expect(w.document.getElementById('kon-kpi-gap').textContent).toMatch(/^\d+,\d\s%$/);
     });
     it('i exportläget vid 10 med 3 män: inget gap, inga mått för män, ingen låda och ingen trendlinje för män; punkterna står kvar', () => {
         const w = iExport(fonsterMan(null, TRE_MAN));
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         const d = w.document;
         const kvLoner = w.__state.data.filter(r => r.kon === 'kvinna').map(r => r.lon).sort((x, y) => x - y);
         const kvMed = (kvLoner[29] + kvLoner[30]) / 2;
@@ -211,7 +211,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
     });
     it('ett valt BAS med 30 kvinnor och en man: samma regel som för hela urvalet (exportläget)', () => {
         const w = iExport(fonsterKon(null));
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
         expect(d.getElementById('kon-kpi-gap').textContent.trim()).toBe('–');
@@ -226,7 +226,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
     });
     it('på skärmen, ett valt BAS med en man: ingen lutning, ingen åldersjustering och ingen insikt för män', () => {
         const w = fonsterKon(null);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
         expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
@@ -237,7 +237,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
     });
     it('kvoten räknas om för det valda BAS-intervallet (konsMedianer) och maskeras där i exportläget', () => {
         const w = fonsterKon(null);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         const d = w.document, gap = () => d.getElementById('kon-kpi-gap').textContent.replace(/[\u00a0\u202f]/g, ' ');
         const alla = gap();
         w.eval("ritaAlderOchLon('Y1')");
@@ -249,7 +249,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
     });
     it('färgläggning efter BAS: könens trendlinjer följer samma regel (exportläget)', () => {
         const w = iExport(fonsterMan(null, TRE_MAN));
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         w.document.getElementById('kon-color-by').value = 'bas';
         w.eval("ritaAlderOchLon('__ALLA__')");
         const spridning = namn(w, 'chart-kon-scatter');
@@ -258,7 +258,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
     });
     it('vid 3 (männens antal): gap, låda och trendlinje finns, och ingen not (exportläget)', () => {
         const w = iExport(fonsterMan(3, TRE_MAN));
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         const d = w.document;
         expect(d.getElementById('kon-kpi-gap').textContent).toMatch(/^\d+,\d\s%$/);   // svenskt format: decimalkomma, mellanslag före %
         expect(d.getElementById('kon-kpi-agegap').textContent).toMatch(/^\d+,\d\s%$/);
@@ -285,8 +285,8 @@ describe('omritning efter ändrad tröskel från gränssnittet: stegvis, med fö
         ritaAlla(w);
         const d = w.document;
         const ritade = [];
-        const org = w.renderTabContent;
-        w.renderTabContent = t => { ritade.push(t); return org(t); };
+        const org = w.ritaFlik;
+        w.ritaFlik = t => { ritade.push(t); return org(t); };
         let klick = 0;
         d.body.addEventListener('click', () => { klick++; });
         const f = d.getElementById('k-troskel');
@@ -304,7 +304,7 @@ describe('omritning efter ändrad tröskel från gränssnittet: stegvis, med fö
         f.value = '30';
         f.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(w.eval('kInstalld()')).toBe(25);
-        await w.eval('_renderaOmAllaFlikarStegvis()');
+        await w.eval('_ritaOmAllaFlikarStegvis()');
         expect(d.getElementById('omritning-ruta')).toBeNull();
         const oppen = d.querySelector('.nav-item.active[data-tab]').getAttribute('data-tab');
         expect(ritade).toEqual(oppen === 'dashboard' ? [] : [oppen]);     // bara den öppna fliken, en gång (Översikts delar ritas av stegen själva); övriga töms
@@ -320,7 +320,7 @@ describe('omritning efter ändrad tröskel från gränssnittet: stegvis, med fö
         expect(w.document.getElementById('omritning-ruta')).toBeNull();
         const r2 = w.eval('sattKTroskel(10, { fraga: false, stegvis: true })');
         expect(typeof r2.klar.then).toBe('function');
-        expect(w.eval('_renderaOmAllaFlikarStegvis()')).toBe(r2.klar);     // samma omritning, inte en till
+        expect(w.eval('_ritaOmAllaFlikarStegvis()')).toBe(r2.klar);     // samma omritning, inte en till
         await r2.klar;
         expect(w.document.getElementById('omritning-ruta')).toBeNull();
     }, 20000);   // ritar om alla flikar tre gånger: under full last räcker inte standardgränsen
@@ -476,7 +476,7 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
     it('demodatan: texten säger hur många tester som körs, inte "20+"', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const t = bhText(w), n = antalTester(w);
         expect(t).not.toMatch(/20\+/);
         expect(t).toContain(`Här körs ${n} tester samtidigt`);
@@ -494,13 +494,13 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
     });
     it('förklaringsbudgeten säger att det som tillskrivs varje steg beror på ordningen', () => {
         const w = fonsterMan(5, SJU_MAN);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const budget = w.document.querySelector('#regression-card .reg-budget');
         expect(budget).not.toBeNull();
         expect(normalisera(budget.textContent).replace(/\s+/g, ' ')).toMatch(/Stegen läggs till i ordningen BAS, ålder(, AID-etikett inom BAS)?; vad som tillskrivs varje steg beror på ordningen\. Kortet Vad varje variabel tillför mäter varje variabel ovanpå alla andra\./);
     });
     it('Lika arbetes nyckeltal efter ålder och BAS-intervall varnar i verktygstipset när ett kön har färre än 10 i modellen', () => {
-        const tips = w => { w.__renderTabContent('matrix');
+        const tips = w => { w.__ritaFlik('matrix');
             const e = [...w.document.querySelectorAll('#la-slutsatser .slutsats')].find(s => /^Efter /.test(s.querySelector('.slutsats-etikett').textContent));
             return e ? e.getAttribute('title') : null; };
         const liten = tips(fonsterMan(5, SJU_MAN));

@@ -247,7 +247,7 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
 });
 
 describe('modellpanelen (ADR-56)', () => {
-    const oppna = w => { w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('renderTabContent("struktur")'); return w.document.getElementById('forklaringsmodell-panel'); };
+    const oppna = w => { w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('ritaFlik("struktur")'); return w.document.getElementById('forklaringsmodell-panel'); };
     const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
     const andra = (w, el, varde) => { if (typeof varde === 'boolean') el.checked = varde; else el.value = varde; el.dispatchEvent(new w.Event('change', { bubbles: true })); };
     it('panelen ligger före huvudtalet med BAS och ålder ikryssade och en rad per variabel i tabellen', () => {
@@ -266,7 +266,7 @@ describe('modellpanelen (ADR-56)', () => {
     it('utan AID och yrke finns ingen kryssruta för yrkesgrupp och tabellen har två rader', () => {
         const w = createAppWindow();
         w.__state.data = Array.from({ length: 120 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i % 2 ? 'kvinna' : 'man', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 7) * 100 }));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const p = oppna(w);
         expect(p.querySelector('input[data-fm="yrkesgrupp"]')).toBeNull();
         expect(p.querySelectorAll('table tbody tr').length).toBe(2);
@@ -309,7 +309,7 @@ describe('modellpanelen (ADR-56)', () => {
     it('med ett kön under tröskeln kan inte båda kryssas ur: BAS och ålder är åter ikryssade och varningen visas', () => {
         const w = createAppWindow();
         w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i < 7 ? 'man' : 'kvinna', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 9) * 100 }));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const p = oppna(w);
         andra(w, p.querySelector('input[data-fm="alder"]'), false);
         andra(w, w.document.getElementById('forklaringsmodell-panel').querySelector('input[data-fm="bas"]'), false);
@@ -329,7 +329,7 @@ describe('modellpanelen (ADR-56)', () => {
 describe('avsnittet följer modellen (ADR-56)', () => {
     const rita = modell => {
         const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell;
-        w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('renderTabContent("struktur")');
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('ritaFlik("struktur")');
         const kort = w.document.getElementById('regression-card'), oax = w.document.getElementById('blinder-oaxaca-card');
         const trappa = w.document.getElementById('chart-reg-trappa');
         return { w, kort, oax, kortText: kort.textContent.replace(/\s+/g, ' '), oaxText: oax.textContent.replace(/\s+/g, ' '), figur: trappa ? trappa._figur : null };
@@ -375,7 +375,7 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
     const rita = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return w; };
     it('Lika arbetes nyckeltal och Att göra säger "efter BAS-intervall" utan ålder', () => {
         const w = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
-        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('renderTabContent("matrix"); renderTabContent("struktur")');
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click(); w.eval('ritaFlik("matrix"); ritaFlik("struktur")');
         expect(w.document.getElementById('nyckel-ls-regression').textContent).toMatch(/efter BAS-intervall$/);
         expect(w.document.getElementById('la-slutsatser').textContent).toMatch(/Efter BAS-intervall/);
         expect(w.document.getElementById('la-slutsatser').textContent).not.toMatch(/ålder och BAS-intervall/);
@@ -420,7 +420,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
         const w = createAppWindow(); await laddaXlsx(w); w.__loadDemoData();
         if (utanAlder) {
             w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
-            w.eval('tomStatistikcacher(); populateSelects(); unlockTabs();');
+            w.eval('tomStatistikcacher(); populateSelects(); lasUppFlikar();');
         }
         w.__state.forklaringsmodell = modell;
         const blad = w.eval('_excelAlltBok()').Sheets['Metod & parametrar'];
@@ -470,7 +470,7 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
 describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-56)', () => {
     const rita = modell => {
         const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell;
-        w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('renderTabContent("struktur")');
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('ritaFlik("struktur")');
         const not = w.document.querySelector('#regression-card .step-yrke .step-note, #regression-card .step-note');
         const bilaga = JSON.stringify(w.eval('rapportModell()').avsnitt.find(a => a.id === 'regression').delar);
         return { kortNot: not ? not.textContent.replace(/\s+/g, ' ') : '', bilaga };
@@ -504,7 +504,7 @@ describe('regressionskortets tekniska specifikation', () => {
         w.__loadDemoData();
         const r = w.eval('runOLSRegression()');
         expect(Number.isInteger(r.hHoga)).toBe(true);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const t = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
         expect(t).toMatch(new RegExp(`Observationer med hävstång > 0,99 \\(bidrar inte till HC3\\) ?${r.hHoga} Antal observationer`));
     });
@@ -566,7 +566,7 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         raknaRegressioner(w);
         w.eval('const __ukOrig = renderUnderlagetsKvalitet; renderUnderlagetsKvalitet = function (v) { __ukOrig(v); '
             + 'state.data = state.data.slice(0, 150); };');
-        w.eval('_renderaOmAllaFlikar()');
+        w.eval('_ritaOmAllaFlikar()');
         expect(w.__regKorningar).toBe(3);   // underlagets kvalitet, Att göra och processöversikten var för sig
         const delad = ['action-checklist-container', 'process-tracker'].map(id => html(w, id));
         w.eval('renderProcessTracker({ punkter: renderActionChecklist() });');

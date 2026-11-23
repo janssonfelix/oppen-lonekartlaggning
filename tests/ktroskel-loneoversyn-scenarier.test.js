@@ -26,9 +26,9 @@ const STAR = [...STOR, ...grupp('B', '6100', 12, 35000, 'kvinna'), rad('C', '620
 function fonster(data) {
     const w = createAppWindow();
     w.__state.data = data;
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('populateSelects(); lasUppFlikar();');
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
-    w.__renderTabContent('loneoversyn');
+    w.__ritaFlik('loneoversyn');
     return w;
 }
 const celler = tr => [...tr.children].map(c => normalisera(c.textContent).trim());
@@ -62,7 +62,7 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
         const w = fonster(STRECK);
         w.eval("_forecastSaveScenario('A')");
         iExport(w);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const u = utfall(w);
         expect(u.varav).toBe('–');
         const s = scenario(w);
@@ -77,7 +77,7 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
 
     it('exportläget vid 10, scenariot sparat i exportläget: samma streck', () => {
         const w = iExport(fonster(STRECK));
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         w.eval("_forecastSaveScenario('A')");
         expect(scenario(w)['Till kv-dom']).toBe('–');
         expect(utfall(w).varav).toBe('–');
@@ -87,7 +87,7 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
         const w = fonster(STAR);
         w.eval("_forecastSaveScenario('A')");
         iExport(w);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const u = utfall(w);
         expect(u.varav).not.toBe('–');
         expect(scenario(w)['Till kv-dom']).toBe(u.varav);
@@ -97,7 +97,7 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
         const w = fonster(STRECK);
         w.eval("_forecastSaveScenario('A')");
         iExport(w);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const s = scenario(w);
         const o = w.eval('_fcBeraknaUtfall(hamtaData())');
         expect(krTal(s['Använt/mån'])).toBe(Math.round(o.använt));

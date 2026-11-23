@@ -65,7 +65,7 @@ describe('förhandskontrollen efter inläsningen', () => {
         expect(p).toHaveLength(1);
         expect(p[0]).toMatchObject({ id: 'fk-lon-arslon', kategori: 'Underlagets kvalitet', prioritet: 'hög', tab: 'filer', källa: 'Förhandskontroll av lönefilen' });
         // Att göra leder till avsnittet.
-        w.__renderTabContent('dashboard');
+        w.__ritaFlik('dashboard');
         w.eval('renderActionChecklist()');
         const lank = w.document.querySelector('#action-checklist-container a[data-go-to-anchor="avsnitt-fi-forhandskontroll"]');
         expect(lank).toBeTruthy();

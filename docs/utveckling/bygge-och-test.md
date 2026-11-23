@@ -160,7 +160,7 @@ Vilka tester som vaktar skydden står i [`skydd.md`](skydd.md), och vilka som va
 
 **Fokus i jsdom kräver en synlig vy.** Som i en webbläsare får ett element inte fokus när det eller en förälder har
 `display: none`, och de stängda flikarnas paneler har det. Ett test som prövar fokus öppnar därför fliken som
-användaren gör, med ett klick på `.nav-item[data-tab="…"]`; `__renderTabContent` ritar bara innehållet och lämnar
+användaren gör, med ett klick på `.nav-item[data-tab="…"]`; `__ritaFlik` ritar bara innehållet och lämnar
 panelen dold.
 
 **Flikbytet är synkront i jsdom och uppskjutet i webbläsaren** (ADR-80). Ett klick från koden (`el.click()`) är inte

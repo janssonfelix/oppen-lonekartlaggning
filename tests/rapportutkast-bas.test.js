@@ -34,7 +34,7 @@ const medBokslut = (andra = ab => ab.basIntervall.forEach(r => { if (typeof r.me
 describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
     it('efter helheten står PER BAS-INTERVALL med ett stycke per intervall som når k, i intervallens ordning och i dossierns form', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const t = utkast(w).value;
         expect(t.split('\n')[0]).toBe('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
         const i = t.indexOf('\nPER BAS-INTERVALL\n');
@@ -59,7 +59,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
     it('i exportläget: med k = 25 faller BAS E (23 personer) bort och nämns, utan lönemått', () => {
         const w = demo();
         w.eval('sattKTroskel(25, { fraga: false })');
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const del = utkast(w).value.split('\nPER BAS-INTERVALL\n')[1];
         expect(del.split('\n').filter(r => /^BAS-intervall [A-Z]$/.test(r))).toEqual(['BAS-intervall A', 'BAS-intervall B', 'BAS-intervall C', 'BAS-intervall D']);
         expect(del).toMatch(/BAS E .*färre än 25 personer/);
@@ -68,7 +68,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
 
     it('förra året står med när ett bokslut är inläst', () => {
         const { w, cfg } = medBokslut();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const del = utkast(w).value.split('\nPER BAS-INTERVALL\n')[1];
         expect(del).toContain('\nFörra året\n');
         expect(del).toContain(`Jämfört med ${cfg.arsbokslut.ar}:`);
@@ -77,7 +77,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
 
     it('väljaren ovanför textrutan: standard med intervallen; valet ligger i state, inte i filen, och Återskapa följer det', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const s = valjare(w);
         expect(s).not.toBeNull();
         expect([...s.options].map(o => o.textContent)).toEqual(['Hela organisationen', 'Hela organisationen + per BAS-intervall']);
@@ -103,7 +103,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
         w.document.getElementById('struktur-narrative-regen').click();
         expect(utkast(w).value).not.toContain('PER BAS-INTERVALL');
         // Att öppna fliken igen ritar efter valet.
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         expect(utkast(w).value).not.toContain('PER BAS-INTERVALL');
         expect(w.__state.kLage).toBe('skarm');
         // Rensa all data återställer valet.
@@ -219,7 +219,7 @@ describe('rapportunderlaget: Per BAS-intervall', () => {
         expect(c.tabell.rubriker).toEqual(['AID', 'Etikettnamn', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
         expect(c.tabell.rader.length).toBeGreaterThan(0);
         expect(c.tabell.rader.every(r => r.every(x => typeof x === 'string'))).toBe(true);
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const d = w.document;
         const rubrik = [...d.querySelectorAll('#rapportunderlag-innehall .ru-grupprubrik')].find(h => h.textContent === 'Per BAS-intervall');
         expect(rubrik).toBeTruthy();
@@ -298,7 +298,7 @@ describe('förra året: tabellen per BAS-intervall i rapportunderlaget och BAS-h
         expect(w2.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse-bas').om()")).toBe(false);
         expect(alla(w2.eval('rapportModell()'))).not.toContain('chart-arsjamforelse-bas');
         // Bilden görs ur den ritade figuren (rmDiagramBild ritar fliken och läser den).
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         expect(w.eval("diagramRitat(document.getElementById('chart-arsjamforelse-bas'))")).toBe(true);
     });
 
@@ -386,7 +386,7 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
 describe('inledningen nämner ställningstagandet bara när ett är inläst (fixrunda 1)', () => {
     it('utkastet och rapportens avsnitt', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const inledning = () => utkast(w).value.split('\nPER BAS-INTERVALL\n')[1].split('\n')[0];
         const avsnitt = () => w.eval('rapportModell()').avsnitt.find(a => a.id === 'basintervall').delar[0].text;
         expect(inledning()).toContain('läget mot ställningstagandet');
@@ -405,7 +405,7 @@ describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
 
     it('redigerat och OK: frågar en gång och ritar om', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         redigera(w, 'Egen text');
         const fragor = medFragor(w, true);
         aterskapa(w);
@@ -417,7 +417,7 @@ describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
 
     it('redigerat och Avbryt: texten och markeringen är orörda', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         redigera(w, 'Egen text');
         const fragor = medFragor(w, false);
         aterskapa(w);
@@ -428,7 +428,7 @@ describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
 
     it('oredigerat: ingen fråga', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const fragor = medFragor(w, false);
         aterskapa(w);
         expect(fragor).toHaveLength(0);

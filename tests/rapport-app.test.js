@@ -142,7 +142,7 @@ describe('Word-utkastet som .docx', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.kLage = 'export';
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const ren = t => t.replace(/[\u00a0\u202f]/g, ' ');
         const skarm = [...w.document.querySelectorAll('#la-oversikt tbody tr')].map(tr => [...tr.children].map(c => ren(c.textContent)));
         expect(skarm.length).toBeGreaterThan(0);
@@ -503,7 +503,7 @@ describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
     it('står i Lönestrukturs kort, i rapportmodellens avsnitt, i Word-utkastet, i utskriften, i rapportunderlaget och i Om verktyget', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(ren(w.document.getElementById('struktur-eu').textContent)).toContain(MENING);
         const struktur = w.eval('rapportModell()').avsnitt.find(a => a.id === 'struktur');
         expect(ren(JSON.stringify(struktur.delar))).toContain(MENING);
@@ -524,7 +524,7 @@ describe('rapportunderlag', () => {
     };
     it('utan data visar panelen hur man kommer igång', () => {
         const w = createAppWindow();
-        w.__renderTabContent('rapporttext');   // fliken är låst utan lönefil; en direktlänk ritar den ändå
+        w.__ritaFlik('rapporttext');   // fliken är låst utan lönefil; en direktlänk ritar den ändå
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).toContain('Läs in underlag');
     });
     it('med demodata: fem avsnitt, ett block per flaggat yrke och godkänt par, tre diagram', () => {
@@ -634,8 +634,8 @@ describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const anrop = [];
-        const orig = w.renderTabContent;
-        w.renderTabContent = t => { anrop.push(t); return orig(t); };
+        const orig = w.ritaFlik;
+        w.ritaFlik = t => { anrop.push(t); return orig(t); };
         w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
         await w.__kopieraRapportDiagram('chart-skevhet-overview');
@@ -700,7 +700,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — kopiering',
         w.__loadDemoData();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         expect(d.querySelectorAll('#view-regression .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
         expect(d.getElementById('view-dashboard').classList.contains('active') || d.getElementById('view-dashboard').style.display === 'block').toBe(true);
     });

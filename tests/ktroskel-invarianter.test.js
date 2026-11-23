@@ -18,13 +18,13 @@ vi.setConfig({ testTimeout: 30000 });
 describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', () => {
     it('individnivån: på skärmen visas jämförelsen också mot få män (skärmen maskerar inget, ADR-51)', () => {
         const w = fonsterKon(null);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         w.eval('_forecastRemediation()');
         expect(w.document.querySelectorAll('#forecast-rem-result tbody tr').length).toBeGreaterThan(0);
     });
     it('individnivån i exportläget: jämförelsen kräver tröskeln i antal män, och kostnaden visas inte där antalet maskeras', () => {
         const w = iExport(fonsterKon(null));
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         w.eval('_forecastRemediation()');
         const t = normalisera(w.document.getElementById('forecast-rem-result').textContent);
         expect(t).not.toContain(String(PAR_MA - PAR_KV));                       // en man minus en kvinna
@@ -40,9 +40,9 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         for (let i = 0; i < 12; i++) r.push(rad('man', 40000 + i, i));
         for (let i = 0; i < 12; i++) r.push(rad('kvinna', i < 3 ? 31117 : 40000 + i, i));   // tre kvinnor långt under männens median
         w.__state.data = r;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         iExport(w);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         w.eval('_forecastRemediation()');
         const el = w.document.getElementById('forecast-rem-result');
         const kostnad = String(Math.round(3 * (40005.5 - 31117)));
@@ -55,7 +55,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
     it('utfallstabellen (i exportläget) och Excel: kostnaden maskeras där medianerna maskeras, och antalet grupper anges', async () => {
         const w = iExport(fonsterKon(null));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const kostnad = v => String(Math.round(v * 0.02));
         // Kostnaden per grupp vid 2 % påslag: en persons lön, ett pars löner och fyra personers löner gånger 0,02.
         const dolda = { 7001: kostnad(ENSAM), 7300: kostnad(PAR_KV + PAR_MA), 7002: kostnad(2 * X_KV + 2 * X_MA) };
@@ -90,7 +90,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs(); sattKTroskel(5, { fraga: false });');
+        w.eval('populateSelects(); lasUppFlikar(); sattKTroskel(5, { fraga: false });');
         w.alert = () => {};
         Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
         oppnaFlik(w, 'loneoversyn');
@@ -164,7 +164,7 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         w.eval('_rensaAllData()');
         for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
         w.__state.data = byggKonDataset();
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         oppnaFlik(w, 'loneoversyn');
         for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
         const v = fyllt();
@@ -200,10 +200,10 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
         for (let i = 0; i < 3; i++) r.push(rad('101010', 'kvinna', 41000 + i * 100, 55, 'S3'));
         for (let i = 0; i < man; i++) r.push(rad('101010', 'man', LEDNING_MAN, 56, 'S3'));
         w.__state.data = r;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         if (export_) iExport(w);
-        w.__renderTabContent('kon');
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('kon');
+        w.__ritaFlik('struktur');
         return w;
     };
     // Kryssar ur alla sektorer utom Vård. I exportläget går Ledning inte att välja (3 kvinnor); på skärmen (tröskeln 1) gör den det.
@@ -289,7 +289,7 @@ describe.each([[10, []], [25, SENT_MELLAN]])('[I7] uppdelningen med andra val av
     const utdataFor = val => {
         const w = iExport(fonsterKon(k === 10 ? null : k));
         w.eval(`sattGapVariabler(${JSON.stringify(val)}, { rita: false })`);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const u = w.eval('gapUppdelning(hamtaData(), { k: kTroskel(), variabler: gapVariabler() })');
         const block = w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
         return { u, utdata: [

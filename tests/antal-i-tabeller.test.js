@@ -20,7 +20,7 @@ const demo = delatFonster(w => { w.__loadDemoData(); });
 describe('Lönestruktur: antal i tabellerna', () => {
     it('Var i lönefördelningen är skillnaden störst? bär antalet kvinnor och män i tabellens rubrikrad', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const d = w.__state.data.filter(r => arKv(r) || arMa(r));
         const tabell = w.document.querySelector('#struktur-distribution table');
         expect(rubriker(tabell)[0]).toBe('Percentil');
@@ -44,7 +44,7 @@ describe('Lönestruktur: antal i tabellerna', () => {
 
     it('Könsfördelning per BAS-intervall har Antal kvinnor och Antal män, i skärmen och i Excel-bladet', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const tabell = w.document.getElementById('skevhet-table');
         const r = rubriker(tabell);
         const kv = r.indexOf('Antal kvinnor'), ma = r.indexOf('Antal män');
@@ -62,7 +62,7 @@ describe('Lönestruktur: antal i tabellerna', () => {
 
     it('regressionskortet: kvantiltabellen, tabellen Vad varje variabel tillför och Oaxaca-tabellen bär n i rubrikraden', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
         const kort = w.document.getElementById('regression-card');
         const kvantil = [...kort.querySelectorAll('table')].find(t => rubriker(t)[0] === 'Position i lönefördelningen');
@@ -77,7 +77,7 @@ describe('Lönestruktur: antal i tabellerna', () => {
 describe('Metodtabellerna bär n i rubrikraden', () => {
     it('regressionskortets tekniska specifikation: tabellen BAS-effekter', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
         const reg = w.eval('runOLSRegression()');
         expect(reg.basEffekter).toBeTruthy();
@@ -108,7 +108,7 @@ describe('Metodtabellerna bär n i rubrikraden', () => {
 describe('Ålder & karriär: modelljämförelsen', () => {
     it('bär n med kvinnor och män i rubrikraden', () => {
         const w = demo();
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
         const tabell = [...w.document.querySelectorAll('table')].find(t => rubriker(t)[0] === 'Mått' && /Livscykelmodell/.test(rubriker(t)[2] || ''));
         expect(ren(tabell.querySelector('caption').textContent)).toBe(nText(d));
@@ -118,7 +118,7 @@ describe('Ålder & karriär: modelljämförelsen', () => {
 describe('Likvärdigt arbete: kandidatparen', () => {
     it('kolumnen Antal (kvinnodom. / jämf.) visar båda yrkenas antal, på skärmen, i Word-utkastet och i rapportunderlaget', () => {
         const w = demo();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const par = w.eval('likvardighetResultat()').pairs;
         expect(par.length).toBeGreaterThan(0);
         const tabell = w.document.getElementById('likvardighet-table');
@@ -151,9 +151,9 @@ describe('Löneöversyn: löneskillnad per BAS-intervall före och efter', () =>
         const rad = (aid, bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: `${aid} Yrke${aid}`, aid, yrkeLabel: `Yrke${aid}`, enhet: '' });
         w.__state.data = [...Array.from({ length: 14 }, (_, i) => rad('6000', 'A', 'kvinna', 30000 + i * 10)), ...Array.from({ length: 10 }, (_, i) => rad('6000', 'A', 'man', 30000 + i * 10)),
                           ...Array.from({ length: 10 }, (_, i) => rad('6100', 'A', 'kvinna', 36000 + i * 10)), ...Array.from({ length: 14 }, (_, i) => rad('6100', 'A', 'man', 36000 + i * 10))];
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         w.__state.forecast.targets = [{ bas: 'A', aid: '6000', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const tabell = w.document.getElementById('forecast-lutning-table');
         const i = rubriker(tabell).indexOf('Kvinnor / män');
         expect(i).toBe(1);
@@ -164,7 +164,7 @@ describe('Löneöversyn: löneskillnad per BAS-intervall före och efter', () =>
 describe('Handlingsplan: Antal berörda', () => {
     it('skärmen, Excel-underlaget, Word-utkastets tabell och rapportunderlaget har kolumnen; egna rader är tomma', async () => {
         const w = createAppWindow(); w.__loadDemoData();
-        w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('handlingsplan');
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
         const i = rubriker(tabell).indexOf('Antal berörda');
         expect(i).toBe(2);

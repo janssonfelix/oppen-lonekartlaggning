@@ -17,7 +17,7 @@ describe('k-tröskeln styr varje flik', () => {
     it('höjning 10 → 25 ritar om redan ritade flikar, utan egen rendering (exportläget)', async () => {
         const w = iExport(fonster(null));
         ritaAlla(w);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA])).toEqual([]);
@@ -27,7 +27,7 @@ describe('k-tröskeln styr varje flik', () => {
         const w = fonster(null);
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
         ritaAlla(w);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         w.eval('sattKTroskel(25, { fraga: false })');
         w.alert = () => {};
         const fangat = {};
@@ -45,7 +45,7 @@ describe('k-tröskeln styr varje flik', () => {
     });
     it('höjning 10 → 25: Utforskas export behandlar 20-personersgrupperna som små', async () => {
         const w = fonster(null);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
         w.eval('sattKTroskel(25, { fraga: false })');
         await new Promise(r => setTimeout(r, 0));
@@ -67,10 +67,10 @@ describe('k-tröskeln styr varje flik', () => {
     });
     it('10 → 25 → 10 ger samma flikar som före ändringen (inga kvarlevande cacher)', async () => {
         const w = fonster(null);
-        const bild = () => FLIKAR.map(f => { w.__renderTabContent(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
+        const bild = () => FLIKAR.map(f => { w.__ritaFlik(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.
-        w.eval('tomStatistikcacher(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
-        w.__renderTabContent('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
+        w.eval('tomStatistikcacher(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); uppdateraAktivFlik();');
+        w.__ritaFlik('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
         const fore = bild();
         // Golvet ändras (10 → 25 → 10): bootstrap-KI och styrkan räknas om i bakgrunden efter omritningen; vänta in den.
         w.eval('sattKTroskel(25, { fraga: false })'); await w.eval('_skattningarIBakgrunden()'); bild();
@@ -106,7 +106,7 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
             alder: 25 + ((i * 11) % 40), yrke: '6001 Säkeryrke 1', aid: '6001', yrkeLabel: 'Säkeryrke 1', enhet: '' });
         w.__state.data = rader;
         w.__state.policy = ['S1', 'S2'].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         return w;
     }
     const json = v => JSON.parse(JSON.stringify(v));

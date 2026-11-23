@@ -41,7 +41,7 @@ import { hamtaBasIntervall, hamtaData, policyFor, referensKalla, referensKortnam
 import { bedomningUnderlag, bootstrapCIGallande, styrkaGallande, UK_ETIKETT } from './13-oversikt.js';
 import { _metodbilaga, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laOversiktRader, _laTrattGlesNot, laLikaGrupper } from './41-lika-arbete.js';
 import { referensOverblick } from './44-referensoverblick.js';
@@ -805,7 +805,7 @@ export function rmBesked(m) {
 const RM_BILD = { bredd: 1400, hojd: 620 };
 export async function rmDiagramBild(del, ritade = new Set()) {
     try {
-        if (del.flik && !ritade.has(del.flik)) { ritade.add(del.flik); try { renderTabContent(del.flik); } catch (_e) { /* diagrammet är då inte ritat */ } }
+        if (del.flik && !ritade.has(del.flik)) { ritade.add(del.flik); try { ritaFlik(del.flik); } catch (_e) { /* diagrammet är då inte ritat */ } }
         const el = document.getElementById(del.id);
         if (!el || !diagramRitat(el)) return null;
         const url = String(await diagramTillBild(el, { ...RM_BILD, utanRubrik: true }));

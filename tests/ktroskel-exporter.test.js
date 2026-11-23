@@ -16,7 +16,7 @@ describe('[I4] listan över flikar är menyns flikar', () => {
     it('FLIKAR täcker varje flik i menyn (utom Utforska, som är undantagen på skärmen)', () => {
         const w = createAppWindow();
         const meny = [...w.document.querySelectorAll('.nav-item[data-tab]')].map(e => e.getAttribute('data-tab'));
-        const tackta = new Set(FLIKAR.map(f => w.eval(`tabMal(${JSON.stringify(f)})`)));
+        const tackta = new Set(FLIKAR.map(f => w.eval(`flikMal(${JSON.stringify(f)})`)));
         expect(meny.filter(f => f !== 'utforska' && !tackta.has(f))).toEqual([]);
         expect([...tackta].filter(f => !meny.includes(f))).toEqual([]);
     });
@@ -35,8 +35,8 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000');
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = data;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
         const rader = fangaCsv(w);
         w.eval('exportLikvardighetCSV()');
         expect(rader().some(r => r.includes('Yrke 5300'))).toBe(true);
@@ -51,7 +51,7 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
     it('Utforska: stämpeln säger det bara när rutan är ikryssad — tabell-CSV, urklipp och diagramdata', async () => {
         const w = fonsterKon(null);
         const d = w.document;
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
         const rader = fangaCsv(w);
         let kopierat = null;
@@ -101,7 +101,7 @@ describe('[I3] tröskeln står i ZIP-filens Excel-fil och i utskriftens korta ur
     it('ZIP-filens Excel-fil har bladet Metod & parametrar med raden om minsta gruppstorlek', async () => {
         const w = fonsterLitet(null);
         await laddaXlsx(w);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         const bocker = [];
         const skriv = w.XLSX.write;
         w.XLSX.write = (wb, opt) => { bocker.push(wb); return skriv(wb, opt); };
@@ -170,7 +170,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         expect(w.document.getElementById('k-troskel-fel').textContent).toBe('');
     });
     it('Auto-utkastet i Rapporttext: stämpeln under 10, och bara BAS som tabellen visar namnges', () => {
-        const text = k => { const w = iExport(fonster(k)); w.__renderTabContent('rapporttext'); return w.document.getElementById('struktur-narrative').value; };
+        const text = k => { const w = iExport(fonster(k)); w.__ritaFlik('rapporttext'); return w.document.getElementById('struktur-narrative').value; };
         expect(text(6).trimEnd().endsWith('Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.')).toBe(true);
         expect(text(null)).not.toContain('Minsta gruppstorlek');
         // Segregeringsmeningen jämför första och sista BAS i tabellen: vid 10 får E och F (6 personer) inte namnges.
@@ -182,9 +182,9 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         for (let i = 0; i < 40; i++) r.push(rad('C', i < 10 ? 'kvinna' : 'man', 32000 + i));            // 25 % kvinnor (högst namngivna BAS)
         for (let i = 0; i < 4; i++) r.push(rad('D', 'man', 33000 + i));                                 // 4 personer, 0 % kvinnor
         w.__state.data = r;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         iExport(w);
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const seg = w.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
         expect(seg).toMatch(/lägre betalda BAS \(B: 75\s%\)/);
         expect(seg).toMatch(/högre betalda \(C: 25\s%\)/);
@@ -198,7 +198,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
             const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
             lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
             w.__state.data = rader;
-            w.eval('populateSelects(); unlockTabs();');
+            w.eval('populateSelects(); lasUppFlikar();');
             return w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         };
         expect(antal(5)).toBe(0);
@@ -211,8 +211,8 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('populateSelects(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
         const text = w.document.getElementById('likvardighet-content').textContent.replace(/\s+/g, ' ');
         expect(text).toContain('varav 1 grupp med n < 10');
     });
@@ -222,7 +222,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('populateSelects(); lasUppFlikar();');
         const antal = () => w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         expect(antal()).toBe(1);
         const par = w.eval('likvardighetResultat().pairs');
@@ -230,7 +230,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         // Golvet för skattningarna står kvar (5 < 10) och flyttas (25): i inget av fallen räknas paren om.
         for (const [k, vantat] of [[5, 0], [25, 2], [10, 1]]) {
             w.eval(`sattKTroskel(${k}, { fraga: false })`);
-            w.__renderTabContent('likvardighet');
+            w.__ritaFlik('likvardighet');
             expect(antal(), `k = ${k}`).toBe(vantat);
         }
         expect(w.__lvBerakningar).toBe(0);
@@ -239,13 +239,13 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
 });
 
 describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om en gång när tröskeln ändras, resten töms', () => {
-    const rakna = w => w.eval('window.__antal = {}; const __orig = renderTabContent; renderTabContent = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
-    it('konfigurationsfil med annan tröskel: Översikts delar ritas av stegen (ingen flik genom renderTabContent), övriga töms, och Att göra följer den nya tröskeln', () => {
+    const rakna = w => w.eval('window.__antal = {}; const __orig = ritaFlik; ritaFlik = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
+    it('konfigurationsfil med annan tröskel: Översikts delar ritas av stegen (ingen flik genom ritaFlik), övriga töms, och Att göra följer den nya tröskeln', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(25, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const w = fonster(null);
-        w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); refreshCurrentTab();');
+        w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); uppdateraAktivFlik();');
         ritaAlla(w);
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         rakna(w);

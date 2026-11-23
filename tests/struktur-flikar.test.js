@@ -164,7 +164,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
     it('Rensa all data tömmer rapportutkastet, också ett redigerat', () => {
         const w = createAppWindow(); w.__loadDemoData();
         const nb = w.document.getElementById('struktur-narrative');
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         expect(nb.value).toContain('LÖNEKARTLÄGGNING');
         nb.dataset.dirty = '1';
         w.eval('_rensaAllData()');
@@ -202,7 +202,7 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
     it('fliken säger om trösklarna är ändrade, och "Ändra" öppnar dialogen med fokus i granskningsgränsen', () => {
         const w = createAppWindow(), d = w.document;
         w.__loadDemoData();
-        w.__renderTabContent('prioritering');
+        w.__ritaFlik('prioritering');
         const rad = d.getElementById('pr-installningar-rad');
         expect(rad.textContent).toMatch(/^Trösklar och viktning: standardvärden/);
         rad.querySelector('[data-oppna-installningar]').click();
@@ -221,15 +221,15 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
         expect(d.getElementById('installningar-modal').contains(falt)).toBe(true);
         expect(falt.value).toBe('7');
         w.__loadDemoData();
-        w.__renderTabContent('prioritering');
+        w.__ritaFlik('prioritering');
         expect(w.__state.prioConfig.akutMinN).toBe(7);
         expect(d.getElementById('pr-installningar-rad').textContent).toMatch(/anpassade värden/);
     });
 });
 
 describe('Uppgift 5: menyn i rapportens ordning', () => {
-    it('menyknapparnas aria-controls nämner flikens paneler (PANEL_GROUPS), redan i index.html', () => {
-        const w = createAppWindow(), d = w.document, grupper = w.eval('PANEL_GROUPS');
+    it('menyknapparnas aria-controls nämner flikens paneler (PANELGRUPPER), redan i index.html', () => {
+        const w = createAppWindow(), d = w.document, grupper = w.eval('PANELGRUPPER');
         // 63-tangentbordsnavigering.js sätter attributet vid start; markeringen i index.html ska säga samma sak.
         const kalla = new w.DOMParser().parseFromString(readFileSync(join(__dirname, '..', 'src', 'index.html'), 'utf8'), 'text/html');
         for (const dok of [d, kalla]) {
@@ -283,15 +283,15 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
     it('Nästa steg följer rapportens ordning; Löneläget och Ålder & karriär hoppas över när de är låsta', () => {
         const w = createAppWindow();
         const kedja = [];
-        for (let t = 'bestammelser'; w.eval('FLOW_NEXT')[t]; t = w.eval('FLOW_NEXT')[t].tab) kedja.push(w.eval('FLOW_NEXT')[t].tab);
+        for (let t = 'bestammelser'; w.eval('NASTA_STEG')[t]; t = w.eval('NASTA_STEG')[t].tab) kedja.push(w.eval('NASTA_STEG')[t].tab);
         expect(kedja).toEqual(['benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'prioritering', 'loneoversyn',
             'handlingsplan', 'rapporttext', 'dokumentera']);
-        expect(w.eval('_FLOW_VALFRIA')).toEqual(['benchmark', 'kon']);
+        expect(w.eval('_NASTA_STEG_VALFRIA')).toEqual(['benchmark', 'kon']);
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="benchmark"]').disabled = true;
         w.document.querySelector('.nav-item[data-tab="kon"]').disabled = true;
-        expect(w.eval("_flowNasta('bestammelser').tab")).toBe('matrix');
-        expect(w.eval("_flowNasta('struktur').tab")).toBe('prioritering');
+        expect(w.eval("_nastaSteg('bestammelser').tab")).toBe('matrix');
+        expect(w.eval("_nastaSteg('struktur').tab")).toBe('prioritering');
     });
     it('utan lönefil leder Nästa steg till en låst flik som menyn gör: till lönefilen i Filer och kvalitet', () => {
         for (const [fran, mal] of [['handlingsplan', 'rapporttext'], ['bestammelser', 'matrix']]) {

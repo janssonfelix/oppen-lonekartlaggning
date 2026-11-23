@@ -22,7 +22,7 @@ describe('Funktionssök', () => {
         const w = createAppWindow(), d = w.document, reg = w.eval('SOK_FUNKTIONER');
         for (const id of DYNAMISKA) expect(d.getElementById(id), `${id} finns inte i index.html`).toBeNull();
         w.__loadDemoData();
-        for (const flik of ['dashboard', 'likvardighet', 'benchmark']) w.__renderTabContent(flik);
+        for (const flik of ['dashboard', 'likvardighet', 'benchmark']) w.__ritaFlik(flik);
         // Varje avsnitt som flikarna byggt (details.avsnitt med id) är antingen i index.html eller i listan ovan.
         const html = new Set([...createAppWindow().document.querySelectorAll('details.avsnitt[id]')].map(x => x.id));
         const byggda = [...d.querySelectorAll('details.avsnitt[id]')].map(x => x.id).filter(id => !html.has(id) && !/^avsnitt-[a-z]+-\d+$/.test(id));
@@ -194,7 +194,7 @@ describe('Funktionssök', () => {
         w.__loadDemoData();
         w.eval('window.__sagt = []; { const o = meddelaSkarmlasare; window.meddelaSkarmlasare = m => { window.__sagt.push(m); return o(m); }; }');
         // Avsnittet döljs när fliken ritas, som ett avsnitt som inte gäller underlaget.
-        w.eval(`{ const o = renderTabContent; window.renderTabContent = (...a) => { const r = o(...a); document.getElementById('avsnitt-ar-ogonblick').hidden = true; return r; }; }`);
+        w.eval(`{ const o = ritaFlik; window.ritaFlik = (...a) => { const r = o(...a); document.getElementById('avsnitt-ar-ogonblick').hidden = true; return r; }; }`);
         skriv(w, 'ögonblicksbild');
         d.querySelector('#sok-grupp-lista [data-sok-funktion]').click();
         expect(aktivFlik(w)).toBe('arbetet');

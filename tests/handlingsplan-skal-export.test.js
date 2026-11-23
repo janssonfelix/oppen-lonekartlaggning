@@ -79,7 +79,7 @@ describe('rapportmodellen: handlingsplanens avsnitt', () => {
     });
     it('Rapporttext visar tabellerna', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const text = ren(w.document.getElementById('view-rapporttext').textContent);
         expect(text).toContain('Sakliga skäl per grupp');
         expect(text).toContain('Sammanställning per kategori');
@@ -192,7 +192,7 @@ describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget',
     });
     it('Rapporttext, Excel och handlingsplansunderlaget: talen finns inte, noten gör det', async () => {
         const { w } = medKonUnder();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const rt = ren(w.document.getElementById('view-rapporttext').textContent);
         expect(rt).toContain(NOT);
         for (const v of ['13579', '13 579', '24680']) expect(rt).not.toContain(v);
@@ -218,7 +218,7 @@ describe('Rapporttext: skälen överstiger skillnaden', () => {
         const i = skillnader.findIndex(s => s > 0);
         w.eval(`_hpSattSkal(${JSON.stringify(nycklar[i])}, [{ kategori: 'marknad', belopp: ${skillnader[i] + 300}, kommentar: '' }])`);
         const kr = v => w.eval(`svTal(${v}, 0)`).replace(/\s/g, ' ');
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const rt = ren(w.document.getElementById('view-rapporttext').textContent);
         expect(rt).toContain(`skälen är tillsammans större än skillnaden (${kr(skillnader[i] + 300)} kr mot ${kr(skillnader[i])} kr). Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`);
     });
@@ -241,7 +241,7 @@ describe('noten under Sammanställning per kategori', () => {
     });
     it('Rapporttext: noten står efter tabellen Sammanställning per kategori', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const rt = ren(w.document.getElementById('view-rapporttext').textContent);
         const i = rt.lastIndexOf('Sammanställning per kategori');
         expect(i).toBeGreaterThan(-1);

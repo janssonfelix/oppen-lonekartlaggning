@@ -22,7 +22,7 @@ beforeAll(() => {
 describe('överblicken: löneläget och statistiken mot ställningstagandet', () => {
     it('ritas i Jämförelse med tal, tabell, hantel och statistiken mot ställningstagandet när båda referenserna finns', () => {
         const w = fonster(); medStatistik(w);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const d = w.document, host = d.getElementById('ref-overblick');
         expect(host.textContent).toMatch(/löneläget (ovanför|nedanför|inom) ställningstagandet/i);
         expect(host.textContent).not.toMatch(/ställningstagandet ligger/);
@@ -55,7 +55,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     });
     it('utan statistik visas överblicken mot ställningstagandet ensamt och säger att statistik saknas', () => {
         const w = fonster();
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const d = w.document, host = d.getElementById('ref-overblick');
         expect(host.textContent).toMatch(/Jämförelsestatistik saknas/);
         expect(d.getElementById('ref-stat-mot-stallning')).toBeNull();
@@ -64,7 +64,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     });
     it('statistik med bara median: inget läge mot statistiken, hanteln ritar bara strecket för den', () => {
         const w = fonster(); medStatistik(w, { spann: false });
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const f = w.document.getElementById('chart-ref-hantel')._figur;
         const stat = f.lager.filter(l => l.serie === 'Statistiken');
         expect(stat.find(l => l.marke === 'intervall').data).toHaveLength(0);
@@ -80,7 +80,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     });
     it('grupper utanför listans bild nämns: tabellen har alla', () => {
         const w = fonster(); medStatistik(w);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const rader = w.document.querySelectorAll('#ref-tabell tbody tr').length;
         const antal = new Set(w.document.getElementById('chart-ref-hantel')._figur.y.ordning).size;
         expect(antal).toBeLessThanOrEqual(25);
@@ -95,8 +95,8 @@ describe('Lönepolitik är avsnitt två i Löneläget', () => {
         expect(d.getElementById('view-lonepolitik')).toBeNull();
         expect(d.getElementById('tab-benchmark').hidden).toBe(false);
         expect(d.getElementById('tab-benchmark').textContent.trim()).toBe('Löneläget');
-        expect(w.eval("tabMal('lonepolitik')")).toBe('benchmark');
-        w.__renderTabContent('lonepolitik');
+        expect(w.eval("flikMal('lonepolitik')")).toBe('benchmark');
+        w.__ritaFlik('lonepolitik');
         expect([...d.querySelectorAll('#view-benchmark > details.avsnitt')].map(a => a.id)).toEqual(['avsnitt-jmf-bandkartor', 'avsnitt-jmf-stallningstagande', 'avsnitt-jmf-statistik', 'avsnitt-jmf-overblick']);
         expect(d.querySelector('#avsnitt-jmf-stallningstagande #lonepolitik-content').textContent).toMatch(/AID-etiketter mot sitt spann/);
         expect(d.querySelector('.benchmark-metric-btn')).toBeNull();
@@ -153,7 +153,7 @@ describe('överblicken i exporterna', () => {
         const iBlock = JSON.stringify(w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser'));
         for (const bas of SMA) { expect(iRapport).not.toContain(`BAS ${bas}"`); expect(iBlock).not.toContain(`BAS ${bas}"`); }
         for (const s of SENT_SMA) { expect(iRapport).not.toContain(String(s)); expect(iBlock).not.toContain(String(s)); }
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(w.document.getElementById('ref-tabell').textContent).toContain(namn);
         expect(w.document.getElementById('ref-tabell').textContent).toContain(`BAS ${SMA[0]}`);
     });
@@ -201,7 +201,7 @@ describe('överblicken i exporterna', () => {
     });
     it('utskriften tar med listan ur överblicken före avsnittet mot statistiken', () => {
         const w = fonster(); medStatistik(w);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         w.eval("sattRapportUrval('hela')");
         expect(w.eval('_utskriftReferenserHtml(id => { const t = document.getElementById(id); return t ? t.outerHTML : ""; })')).toMatch(/ref-tabell[^]*ref-stat-mot-stallning/);
     });
@@ -240,7 +240,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
             return { aid: r.aid, bas: i % 3 === 1 ? '' : r.bas, p10, median: (p10 + p90) / 2, p90 };
         });
         w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         return w;
     };
     it('ordningen: Överblick, Mot ställningstagandet, Mot jämförelsestatistiken, Yrkesgrupp för yrkesgrupp; bara överblicken öppen', () => {
@@ -339,20 +339,20 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         const w = createAppWindow(); w.__loadDemoData();
         w.__state.statistik = w.eval('jamforelseUnderlag()').rader.map(r => ({ aid: r.aid, bas: r.bas, median: 34000 }));
         w.__state.statistikHasP10 = false; w.__state.statistikHasP90 = false;
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(el(w, 'jmf-statlage-kort').hidden).toBe(false);
         expect(el(w, 'chart-jmf-statlage')._figur).toBeUndefined();
         expect(el(w, 'chart-jmf-statlage').textContent).toMatch(/P10 och P90/);
     });
     it('utan statistik bara bandkartan; utan ställningstagande bara statistikens spann', () => {
         const w = createAppWindow(); w.__loadDemoData();
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(el(w, 'lp-bandkarta-kort').hidden).toBe(false);
         expect(el(w, 'jmf-statlage-kort').hidden).toBe(true);
         expect(el(w, 'chart-jmf-statlage')._figur).toBeUndefined();
         const w2 = medBlandad();
         w2.__state.policy = [];
-        w2.__renderTabContent('benchmark');
+        w2.__ritaFlik('benchmark');
         expect(el(w2, 'lp-bandkarta-kort').hidden).toBe(true);
         expect(el(w2, 'chart-lp-bandmap')._figur).toBeUndefined();
         expect(el(w2, 'jmf-statlage-kort').hidden).toBe(false);

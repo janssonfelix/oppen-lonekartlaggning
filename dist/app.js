@@ -10824,7 +10824,7 @@ function sattForklaringsmodell(v, { rita = true } = {}) {
   state.forklaringsmodell = ny;
   if (andrad && rita) {
     if (typeof ritGenerationNy === "function") ritGenerationNy();
-    if (typeof _renderaOmAllaFlikar === "function") _renderaOmAllaFlikar();
+    if (typeof _ritaOmAllaFlikar === "function") _ritaOmAllaFlikar();
   }
   return { ok: true, modell, varningar, andrad };
 }
@@ -11270,7 +11270,7 @@ function _kostnadAndrad() {
   if (!state.data.length) return;
   renderPrioritering();
   const aktiv = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-  if (aktiv && aktiv !== "prioritering" && typeof renderTabContent === "function") renderTabContent(aktiv);
+  if (aktiv && aktiv !== "prioritering" && typeof ritaFlik === "function") ritaFlik(aktiv);
 }
 var PRIO_KOSTNAD_MAX = 15;
 function _prioKostnadNot({ ovriga, ovrigaSumma: summa, total: totalt }) {
@@ -11854,7 +11854,7 @@ function setupTabA11y() {
   });
   tabs.forEach((tab) => {
     const target = tab.getAttribute("data-tab");
-    if (target) tab.setAttribute("aria-controls", (PANEL_GROUPS[target] || [target]).map((p) => `view-${p}`).join(" "));
+    if (target) tab.setAttribute("aria-controls", (PANELGRUPPER[target] || [target]).map((p) => `view-${p}`).join(" "));
     tab.addEventListener("keydown", (e) => {
       const enabled = tabs.filter((t) => !/** @type {HTMLInputElement} */
       t.disabled && !t.hidden);
@@ -11967,7 +11967,7 @@ function _sidindexBred() {
 }
 function _sidindexRubriker(flik) {
   const ut = [], layout = _sidindexHarLayout();
-  for (const p of PANEL_GROUPS[flik] || [flik]) {
+  for (const p of PANELGRUPPER[flik] || [flik]) {
     const panel = document.getElementById("view-" + p);
     if (!panel || _sidindexDoltIMarkering(panel, panel.parentElement)) continue;
     panel.querySelectorAll("details.avsnitt > summary h2, details.avsnitt > summary h3, .card-header > h2").forEach((h) => {
@@ -12245,7 +12245,7 @@ function utAllaGruppRita(grupp) {
       document.activeElement
     ), x = window.scrollX, y = window.scrollY;
     try {
-      renderTabContent(flik);
+      ritaFlik(flik);
     } catch (e) {
       rapporteraFel(`Alla diagram: ${flik}`, e);
     }
@@ -21162,7 +21162,7 @@ async function rmDiagramBild(del, ritade = /* @__PURE__ */ new Set()) {
     if (del.flik && !ritade.has(del.flik)) {
       ritade.add(del.flik);
       try {
-        renderTabContent(del.flik);
+        ritaFlik(del.flik);
       } catch (_e) {
       }
     }
@@ -21600,9 +21600,9 @@ function _tillampaKonfiguration(cfg) {
   tomStatistikcacher({ recompute: false });
   if (kAndrad && state.data.length) {
     populateSelects();
-    _renderaOmAllaFlikar();
+    _ritaOmAllaFlikar();
   } else {
-    refreshCurrentTab();
+    uppdateraAktivFlik();
     renderActionChecklist();
   }
   const op = tmp.organisationspaket;
@@ -22518,7 +22518,7 @@ function _afterDataLoaded() {
   document.getElementById("dashboard-summary").style.display = "grid";
   const poangCount = _deriveArbetsvarderingFromData();
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
-  unlockTabs();
+  lasUppFlikar();
   ritaNyckeltal();
   populateSelects();
   ritaLoneoversikt();
@@ -24625,12 +24625,12 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   renderConsistencyBanner();
   if (kAndrad && state.data.length) {
     populateSelects();
-    _renderaOmAllaFlikar();
+    _ritaOmAllaFlikar();
   } else {
     ritaKravstatus();
     renderActionChecklist();
     renderProcessTracker();
-    refreshCurrentTab();
+    uppdateraAktivFlik();
   }
   const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.` + (varningar.length ? " " + varningar.join(" ") : "");
   _paketStatus(meddelande, true);
@@ -25027,7 +25027,7 @@ function uppstartOrganisationspaket() {
     tomStatistikcacher();
     ritaKravstatus();
     renderActionChecklist();
-    refreshCurrentTab();
+    uppdateraAktivFlik();
   });
   _fyllPaketFormular();
   _synkaOrgTyp();
@@ -25094,7 +25094,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   _lasInDemoStatistik({ stort });
   state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
   document.getElementById("dashboard-summary").style.display = "grid";
-  unlockTabs();
+  lasUppFlikar();
   ritaNyckeltal();
   populateSelects();
   ritaLoneoversikt();
@@ -25457,8 +25457,8 @@ function sattForhandsvisning(pa, { stegvis = false } = {}) {
   const banner = document.getElementById("forhandsvisning-banner");
   if (banner) banner.hidden = !pa;
   if (state.data.length) {
-    if (stegvis && typeof _renderaOmAllaFlikarStegvis === "function") _renderaOmAllaFlikarStegvis();
-    else if (typeof _renderaOmAllaFlikar === "function") _renderaOmAllaFlikar();
+    if (stegvis && typeof _ritaOmAllaFlikarStegvis === "function") _ritaOmAllaFlikarStegvis();
+    else if (typeof _ritaOmAllaFlikar === "function") _ritaOmAllaFlikar();
   }
   return true;
 }
@@ -25489,7 +25489,7 @@ function _egFlikFor(el) {
   const panel = el && el.closest ? el.closest(".view-panel") : null;
   if (!panel) return null;
   const id = panel.id.replace(/^view-/, "");
-  for (const [flik, paneler] of Object.entries(PANEL_GROUPS)) if (paneler.includes(id)) return flik;
+  for (const [flik, paneler] of Object.entries(PANELGRUPPER)) if (paneler.includes(id)) return flik;
   return id;
 }
 function exportSakra(el) {
@@ -25499,7 +25499,7 @@ function exportSakra(el) {
   if (!flik) return el.isConnected !== false;
   if (skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik), exportLage: iExportLage() })) {
     try {
-      renderTabContent(flik);
+      ritaFlik(flik);
     } catch (e) {
       rapporteraFel(`exportgrinden (${flik})`, e);
     }
@@ -25520,7 +25520,7 @@ function exportSakraAlla() {
   for (const flik of [..._ritadVid.keys()]) {
     if (!skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik) })) continue;
     try {
-      renderTabContent(flik);
+      ritaFlik(flik);
     } catch (e) {
       rapporteraFel(`exportgrinden (${flik})`, e);
     }
@@ -30909,8 +30909,8 @@ Lönemått kommer att redovisas för grupper med ned till ${n} ${personOrd(n)}. 
   _synkaKTroskel();
   let klar = null;
   if (rita) {
-    if (stegvis) klar = _renderaOmAllaFlikarStegvis();
-    else _renderaOmAllaFlikar();
+    if (stegvis) klar = _ritaOmAllaFlikarStegvis();
+    else _ritaOmAllaFlikar();
   }
   if (golvAndrat) {
     if (klar) klar.then(() => _skattningarIBakgrunden());
@@ -30941,7 +30941,7 @@ function _skattningarIBakgrunden() {
         if (typeof renderUnderlagetsKvalitet === "function") renderUnderlagetsKvalitet();
         const oppen = document.querySelector(".nav-item.active[data-tab]");
         const flik = oppen ? oppen.getAttribute("data-tab") : null;
-        if ((flik === "matrix" || flik === "prioritering") && typeof renderTabContent === "function") renderTabContent(flik);
+        if ((flik === "matrix" || flik === "prioritering") && typeof ritaFlik === "function") ritaFlik(flik);
       }
     } catch (e) {
       rapporteraFel("skattningar i bakgrunden", e);
@@ -30954,7 +30954,7 @@ function _skattningarIBakgrunden() {
   }, 0));
   return _bakgrundsrakning;
 }
-function _renderaOmAllaFlikar() {
+function _ritaOmAllaFlikar() {
   for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
   visningNy();
 }
@@ -30966,7 +30966,7 @@ function _omritningForsok(namn, fn) {
   }
 }
 function _omritningssteg() {
-  if (!state.data.length || typeof renderTabContent !== "function") return [];
+  if (!state.data.length || typeof ritaFlik !== "function") return [];
   const steg = [];
   steg.push(["flikar som inte syns", () => {
     const oppen2 = document.querySelector(".nav-item.active[data-tab]");
@@ -31013,7 +31013,7 @@ function _omritningssteg() {
     if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
   }]);
   const oppen = document.querySelector(".nav-item.active[data-tab]");
-  if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), () => renderTabContent(oppen.getAttribute("data-tab"))]);
+  if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), () => ritaFlik(oppen.getAttribute("data-tab"))]);
   steg.push(["gruppdossiern", () => {
     const dossier = document.getElementById("dossier-body");
     if (dossier && dossier.innerHTML.trim() && typeof ritaGruppdossier === "function") ritaGruppdossier();
@@ -31021,7 +31021,7 @@ function _omritningssteg() {
   return steg;
 }
 var _omritningPagar = null;
-function _renderaOmAllaFlikarStegvis() {
+function _ritaOmAllaFlikarStegvis() {
   if (_omritningPagar) return _omritningPagar;
   const steg = _omritningssteg();
   if (!steg.length) return Promise.resolve();
@@ -32258,7 +32258,7 @@ async function _kopieraRapportDiagramExport(id) {
   const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find((g) => g.id === id) || (id !== "chart-likvardighet-heatmap" ? RAPPORT_DIAGRAM.find((g) => g.id === id) : null);
   if (!def) return "saknas";
   try {
-    renderTabContent(def.flik);
+    ritaFlik(def.flik);
   } catch (_e) {
   }
   const gd = document.getElementById(id);
@@ -32390,14 +32390,14 @@ var _valRaknare = 0;
 var FLIK_RAKNAS_TEXT = "Räknar fram fliken …";
 var BLOCK_RAKNAS_TEXT = "Räknar …";
 function flikbyte(target, { uppskjut = false, efter = null } = {}) {
-  const val = ++_flikVal, flik = tabMal(target);
+  const val = ++_flikVal, flik = flikMal(target);
   document.querySelectorAll(".view-panel[aria-busy]").forEach((p) => _flikRaknas(
     /** @type {HTMLElement} */
     p,
     false
   ));
   if (!uppskjut) {
-    renderTabContent(target);
+    ritaFlik(target);
     if (efter) efter();
     return;
   }
@@ -32408,14 +32408,14 @@ function flikbyte(target, { uppskjut = false, efter = null } = {}) {
   }
   const paneler = (
     /** @type {HTMLElement[]} */
-    (PANEL_GROUPS[flik] || [flik]).map((p) => document.getElementById("view-" + p)).filter(Boolean)
+    (PANELGRUPPER[flik] || [flik]).map((p) => document.getElementById("view-" + p)).filter(Boolean)
   );
   paneler.forEach((p) => _flikRaknas(p, true));
   _efterMalning(() => {
     if (val !== _flikVal) return;
     _uppskjutNasta = flik;
     try {
-      renderTabContent(target);
+      ritaFlik(target);
     } catch (e) {
       rapporteraFel(`flikbytet (${flik})`, e);
     } finally {
@@ -32463,7 +32463,7 @@ function _sammaFangst(f) {
 }
 function _aktivFlik() {
   const a = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-  return a ? tabMal(a) : null;
+  return a ? flikMal(a) : null;
 }
 function _ritaTungtBlock(flik, hostIds, fn) {
   const hosts = _ritasUppskjutet === flik && hamtaData().length ? (
@@ -32564,7 +32564,7 @@ function _visasSomRitad(flik) {
 }
 function _visaRitad(flik) {
   if (_aktivFlik() === flik) {
-    renderFlowNav(flik);
+    ritaNastaSteg(flik);
     sidindexBygg(flik);
   }
   _efterRitning(flik);
@@ -32591,7 +32591,7 @@ function _efterRitning(flik) {
   if (typeof _mkTabeller === "function" && diagramMarkering()) _mkTabeller();
   if (typeof stangAutofyll === "function") stangAutofyll(document.getElementById("view-" + flik) || document);
 }
-var PANEL_GROUPS = {
+var PANELGRUPPER = {
   matrix: ["lika-yrken"],
   // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
   struktur: ["struktur", "skevhet", "regression"],
@@ -32603,11 +32603,11 @@ var PANEL_GROUPS = {
   dokumentera: ["kvalitet", "dokumentera"]
   // Exportera: färdigcheck + robusthet + export
 };
-var TAB_ALIAS = { rapport: "utforska", demografi: "kon", kvalitet: "dokumentera", lonepolitik: "benchmark", skevhet: "struktur", regression: "struktur", spara: "arbetet" };
-function tabMal(namn) {
-  return TAB_ALIAS[namn] || namn;
+var FLIKALIAS = { rapport: "utforska", demografi: "kon", kvalitet: "dokumentera", lonepolitik: "benchmark", skevhet: "struktur", regression: "struktur", spara: "arbetet" };
+function flikMal(namn) {
+  return FLIKALIAS[namn] || namn;
 }
-function unlockTabs() {
+function lasUppFlikar() {
   ["tab-kon", "tab-matrix", "tab-prioritering", "tab-loneoversyn", "tab-struktur", "tab-likvardighet", "tab-utforska", "tab-rapporttext"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -32619,8 +32619,8 @@ function unlockTabs() {
   synkaJamforelseFlik();
   synkaAlderFlik();
 }
-function renderTabContent(target) {
-  const flik = tabMal(target), yttre = !_ritasNu.has(flik);
+function ritaFlik(target) {
+  const flik = flikMal(target), yttre = !_ritasNu.has(flik);
   _ritasNu.add(flik);
   const runda = yttre ? (_flikRunda.get(flik) || 0) + 1 : _flikRunda.get(flik) || 0;
   if (yttre) {
@@ -32635,7 +32635,7 @@ function renderTabContent(target) {
     _ritasUppskjutet = flik;
   }
   try {
-    const ut = _renderTabContent(target);
+    const ut = _ritaFlik(target);
     if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) {
       _ritadVid.delete(flik);
       _visadSom.delete(flik);
@@ -32652,7 +32652,7 @@ function renderTabContent(target) {
 }
 var KRAVER_UNDERLAG = ["kon", "matrix", "prioritering", "struktur", "loneoversyn", "utforska", "benchmark", "rapporttext"];
 function _ritaIngetUnderlag(target, tomt) {
-  const vy = document.getElementById("view-" + (PANEL_GROUPS[target] || [target])[0]);
+  const vy = document.getElementById("view-" + (PANELGRUPPER[target] || [target])[0]);
   if (!vy) return;
   let rad = vy.querySelector(":scope > .inget-underlag");
   if (!tomt || !KRAVER_UNDERLAG.includes(target)) {
@@ -32667,7 +32667,7 @@ function _ritaIngetUnderlag(target, tomt) {
   vy.insertBefore(rad, vy.firstChild);
 }
 function _ritaUtanAlder(target, utan) {
-  const vy = document.getElementById("view-" + (PANEL_GROUPS[target] || [target])[0]);
+  const vy = document.getElementById("view-" + (PANELGRUPPER[target] || [target])[0]);
   if (!vy) return;
   let rad = vy.querySelector(":scope > .utan-alder");
   if (!utan) {
@@ -32681,8 +32681,8 @@ function _ritaUtanAlder(target, utan) {
   rad.textContent = "Lönefilen saknar ålder: Ålder & karriär kräver ålder i lönefilen. Analysen i de andra flikarna körs utan åldersjustering.";
   vy.insertBefore(rad, vy.firstChild);
 }
-function _renderTabContent(target) {
-  target = tabMal(target);
+function _ritaFlik(target) {
+  target = flikMal(target);
   const d = hamtaData();
   _ritaIngetUnderlag(target, !d.length);
   if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
@@ -32745,11 +32745,11 @@ function _renderTabContent(target) {
   }
   if (target === "filer") renderForhandskontroll();
   const aktiv = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-  if (aktiv && tabMal(aktiv) !== target) return;
-  renderFlowNav(target);
+  if (aktiv && flikMal(aktiv) !== target) return;
+  ritaNastaSteg(target);
   sidindexBygg(target);
 }
-var FLOW_NEXT = {
+var NASTA_STEG = {
   bestammelser: { tab: "benchmark", label: "Löneläget" },
   benchmark: { tab: "matrix", label: "Lika arbete" },
   matrix: { tab: "likvardighet", label: "Likvärdigt arbete" },
@@ -32761,25 +32761,25 @@ var FLOW_NEXT = {
   handlingsplan: { tab: "rapporttext", label: "Rapporttext" },
   rapporttext: { tab: "dokumentera", label: "Exportera" }
 };
-var _FLOW_VALFRIA = ["benchmark", "kon"];
-function _flowNasta(target) {
-  let next = FLOW_NEXT[target];
-  while (next && _FLOW_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */
-  document.querySelector(`.nav-item[data-tab="${next.tab}"]`)?.disabled) next = FLOW_NEXT[next.tab];
+var _NASTA_STEG_VALFRIA = ["benchmark", "kon"];
+function _nastaSteg(target) {
+  let next = NASTA_STEG[target];
+  while (next && _NASTA_STEG_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */
+  document.querySelector(`.nav-item[data-tab="${next.tab}"]`)?.disabled) next = NASTA_STEG[next.tab];
   return next;
 }
-function renderFlowNav(target) {
+function ritaNastaSteg(target) {
   document.querySelectorAll(".flow-next-bar").forEach((el) => el.remove());
-  const next = _flowNasta(target);
+  const next = _nastaSteg(target);
   if (!next || target !== "bestammelser" && target !== "handlingsplan" && !hamtaData().length) return;
-  const view = document.getElementById("view-" + (PANEL_GROUPS[target] || [target]).at(-1));
+  const view = document.getElementById("view-" + (PANELGRUPPER[target] || [target]).at(-1));
   if (!view) return;
   const bar = document.createElement("div");
   bar.className = "flow-next-bar";
   bar.innerHTML = `<span class="flow-next-label">Klar här?</span> <span>Nästa steg i kartläggningen:</span><button type="button" class="flow-next-btn" data-flow-tab="${next.tab}">${esc(next.label)}</button>`;
   view.appendChild(bar);
 }
-function refreshCurrentTab() {
+function uppdateraAktivFlik() {
   const active = document.querySelector(".nav-item.active");
   if (!active) return;
   const target = active.getAttribute("data-tab");
@@ -32787,7 +32787,7 @@ function refreshCurrentTab() {
   populateSelects();
   ritaKravstatus();
   renderUnderlagetsKvalitet();
-  renderTabContent(target);
+  ritaFlik(target);
 }
 function oppnaHopfallda(el) {
   if (typeof utVisaUnderflikFor === "function") utVisaUnderflikFor(el);
@@ -32849,7 +32849,7 @@ function uppstartNavigering() {
         /** @type {HTMLElement} */
         v.style.display = "none"
       ));
-      (PANEL_GROUPS[target] || [target]).forEach((p) => {
+      (PANELGRUPPER[target] || [target]).forEach((p) => {
         const el = document.getElementById(`view-${p}`);
         if (el) el.style.display = "block";
       });
@@ -32901,7 +32901,7 @@ function uppstartNavigering() {
       e.target.closest("[data-flow-tab]")
     );
     if (!btn) return;
-    const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute("data-flow-tab"))}"]`);
+    const nav = document.querySelector(`.nav-item[data-tab="${flikMal(btn.getAttribute("data-flow-tab"))}"]`);
     if (!nav) return;
     const last = (
       /** @type {HTMLInputElement} */
@@ -33177,7 +33177,7 @@ function vaxlaAllaGrupper(tableId, collapse) {
   });
 }
 function navigeraTill(tabName, opts = {}) {
-  tabName = tabMal(tabName);
+  tabName = flikMal(tabName);
   const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
   if (!btn || /** @type {HTMLInputElement} */
   btn.disabled) return false;
@@ -33483,7 +33483,7 @@ function sattReferensNamn(namn) {
 function ritaOmReferens() {
   for (const fn of [
     renderReferensKort,
-    refreshCurrentTab,
+    uppdateraAktivFlik,
     ritaKravstatus,
     renderConsistencyBanner,
     renderActionChecklist,
@@ -33760,7 +33760,7 @@ function uppstartHjalpfunktioner() {
       e.target.closest("[data-goto-tab]")
     );
     if (goto) {
-      const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute("data-goto-tab")) + '"]');
+      const nav = document.querySelector('.nav-item[data-tab="' + flikMal(goto.getAttribute("data-goto-tab")) + '"]');
       const avsnitt = goto.getAttribute("data-goto-avsnitt");
       const tillAvsnitt = () => {
         if (nav && avsnitt && typeof sidindexGaTill === "function") sidindexGaTill(avsnitt);
@@ -36742,14 +36742,14 @@ async function _exportZipExport() {
       const flik = knapp.getAttribute("data-tab");
       if (!flik || ["dokumentera", "rapporttext", "arbetet", "info"].includes(flik)) continue;
       try {
-        renderTabContent(flik);
+        ritaFlik(flik);
       } catch (e) {
         rapporteraFel(`ZIP: ${flik}`, e);
       }
     }
     if (state.forraArsbokslut) {
       try {
-        renderTabContent("arbetet");
+        ritaFlik("arbetet");
       } catch (e) {
         rapporteraFel("ZIP: arbetet", e);
       }

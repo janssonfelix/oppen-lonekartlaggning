@@ -7,7 +7,7 @@ import { tillDirektivtecken } from '../lib/struktur.js';
 import { svPct, svTal } from '../lib/talformat.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { state } from './12-tillstand.js';
-import { klickaFlik, tabMal } from './31-navigering.js';
+import { klickaFlik, flikMal } from './31-navigering.js';
 import { _kolumnval } from './32-filinlasning.js';
 import { sidindexGaTill } from './89-sidindex.js';
 
@@ -178,7 +178,7 @@ export function uppstartHjalpfunktioner() {
     document.addEventListener('click', e => {
         const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
         if (goto) {
-            const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
+            const nav = document.querySelector('.nav-item[data-tab="' + flikMal(goto.getAttribute('data-goto-tab')) + '"]');
             const avsnitt = goto.getAttribute('data-goto-avsnitt');
             const tillAvsnitt = () => { if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt); };
             // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.

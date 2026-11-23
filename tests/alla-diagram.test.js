@@ -238,7 +238,7 @@ describe('Alla diagram: grupperna och kopiorna', () => {
     it('flikarna utan grupp har inga diagram ritade med diagramkärnan', () => {
         const w = createAppWindow();
         w.__loadDemoData();
-        for (const f of ['dashboard', 'filer', 'bestammelser', 'handlingsplan']) w.__renderTabContent(f);
+        for (const f of ['dashboard', 'filer', 'bestammelser', 'handlingsplan']) w.__ritaFlik(f);
         const iFlik = w.eval("[..._rfBehallare].filter(el => el.isConnected && ['dashboard', 'filer', 'bestammelser', 'handlingsplan'].includes(_egFlikFor(el))).map(el => el.id)");
         expect(iFlik).toEqual([]);
     });
@@ -250,7 +250,7 @@ describe('exportmeny på alla diagram', () => {
         win.__loadDemoData();
         for (const flik of ['matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
                             'kon', 'demografi', 'utforska', 'benchmark', 'kvalitet', 'rapport']) {
-            win.__renderTabContent(flik);
+            win.__ritaFlik(flik);
         }
         await vanta();
     });
@@ -265,7 +265,7 @@ describe('exportmeny på alla diagram', () => {
     });
 
     it('knappen läggs bara till en gång även om diagrammet ritas om', async () => {
-        win.__renderTabContent('demografi');
+        win.__ritaFlik('demografi');
         await vanta();
         const host = win.document.getElementById('chart-demo-hist').parentElement;
         expect(host.querySelectorAll(':scope > .chart-export')).toHaveLength(1);
@@ -322,7 +322,7 @@ describe('exportmeny på alla diagram', () => {
 
     it('[I10] varje behållare utan export i det ritade dokumentet har ett registrerat skäl', () => {
         // Alla flikar är ritade (beforeAll); Lika arbete bär den märkta behållaren.
-        win.__renderTabContent('dashboard');
+        win.__ritaFlik('dashboard');
         const skal = win.__exportSkal();
         const markta = [...win.document.querySelectorAll('[data-no-export]')];
         expect(markta.map(el => el.id).sort()).toEqual(['pag-diagram-ruta']);

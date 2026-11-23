@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { klickaFlik, PANEL_GROUPS } from './31-navigering.js';
+import { klickaFlik, PANELGRUPPER } from './31-navigering.js';
 
 // ---- A11y: Sidopanels-NAVIGATION ----
 // Sidopanelen är PRIMÄR navigation, inte ett ARIA-tabs-widget: <nav> ger
@@ -17,7 +17,7 @@ export function setupTabA11y() {
     });
     tabs.forEach(tab => {
         const target = tab.getAttribute('data-tab');
-        if (target) tab.setAttribute('aria-controls', (PANEL_GROUPS[target] || [target]).map(p => `view-${p}`).join(' '));
+        if (target) tab.setAttribute('aria-controls', (PANELGRUPPER[target] || [target]).map(p => `view-${p}`).join(' '));
         tab.addEventListener('keydown', e => {
             // Dolda flikar (t.ex. Löneläget utan statistik) och låsta flikar hoppas över.
             const enabled = tabs.filter(t => !/** @type {HTMLInputElement} */ (t).disabled && !t.hidden);

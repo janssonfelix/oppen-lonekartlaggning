@@ -453,7 +453,7 @@ export function renderOversiktDelar() {
     /** @type {[string, () => void][]} */
     const delar = [['nyckeltal', () => ritaNyckeltal()], ['kompliansöversikt', () => ritaKravstatus()],
         ['Att göra', () => { reg = runOLSRegression(); punkter = renderActionChecklist({ reg }); }],
-        ['processöversikten', () => renderProcessTracker({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (renderTabContent('struktur'))
+        ['processöversikten', () => renderProcessTracker({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (ritaFlik('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
     if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
