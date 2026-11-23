@@ -5773,70 +5773,6 @@ function bedomUnderlag(rader, { k, audit, mde, modell, modellFras: modellFras2 }
   return { status, kriterier };
 }
 
-// src/app/15-extremvarden-basrang.js
-function detectOutliers(threshold) {
-  return extremvarden(getData(), statGolv(), threshold);
-}
-function renderOutliers() {
-  const container = document.getElementById("outliers-container");
-  const wrap = document.getElementById("outliers-table-wrap");
-  const countEl = document.getElementById("outliers-count");
-  if (!container || !wrap) return;
-  if (!state.data.length) {
-    container.style.display = "none";
-    return;
-  }
-  container.style.display = "block";
-  const threshold = parseFloat(
-    /** @type {HTMLInputElement} */
-    document.getElementById("outliers-threshold")?.value
-  ) || 3;
-  const outs = detectOutliers(threshold);
-  if (countEl) countEl.textContent = outs.length === 0 ? `(inga minst ${threshold} standardavvikelser från medel)` : `(${outs.length} rader flaggade)`;
-  if (!outs.length) {
-    wrap.innerHTML = `<p class="farg-dampad pad-20 ta-mitt">Inga extremvärden med gränsen ${threshold} standardavvikelser. Datan är homogen inom BAS-grupperna.</p>`;
-    return;
-  }
-  const fmt = new Intl.NumberFormat("sv-SE");
-  wrap.innerHTML = `<div class="rulla-x"><table class="data-table st-088">
-        <thead><tr>
-            <th>Rad</th><th>BAS</th><th>${stor(T.enhet.en)}</th><th>Kön</th><th class="t-hoger">Ålder</th>
-            <th class="t-hoger">Lön</th><th class="t-hoger">BAS-median</th>
-            <th class="t-hoger">Diff %</th><th class="t-hoger">Avvikelse (sd)</th><th>Bedömning</th>
-        </tr></thead>
-        <tbody>
-            ${outs.map((o) => {
-    const sgnD = o.diffPct >= 0 ? "+" : "";
-    const sgnZ = o.z >= 0 ? "+" : "";
-    const color = Math.abs(o.z) > 4 ? "f-kritisk" : "fg-varning";
-    const bedömning = Math.abs(o.z) > 4 ? "Mycket avvikande — kan vara registerfel" : "Bör granskas (specialkompetens? marknadsläge? fel?)";
-    return `<tr>
-                    <td>${o.radnr ?? "—"}</td>
-                    <td>${esc(o.bas)}</td>
-                    <td>${esc(o.yrke)}</td>
-                    <td>${esc(o.kon)}</td>
-                    <td class="t-hoger">${o.alder}</td>
-                    <td class="tabelltal fw-600 ta-hoger">${fmt.format(o.lon)}</td>
-                    <td class="farg-dampad tabelltal ta-hoger">${fmt.format(Math.round(o.groupMedian))}</td>
-                    <td class="t-tal ${color}">${sgnD}${svPct(o.diffPct, 1)}</td>
-                    <td class="t-tal fet ${color}">${sgnZ}${svTal(o.z, 2)}</td>
-                    <td class="fs-xs">${bedömning}</td>
-                </tr>`;
-  }).join("")}
-        </tbody>
-    </table></div>
-    <p class="text-dampad-xs lh-1_5 marg-t-10">
-        <strong>Tolkning:</strong> en avvikelse på minst ${threshold} betyder att personens lön ligger minst ${threshold} standardavvikelser från BAS-gruppens log-medellön. Negativa värden = lön betydligt under gruppen, positiva = betydligt över. Granska för att avgöra om det är registerfel, sakligt motiverat eller faktisk avvikelse.
-    </p>`;
-}
-function uppstartExtremvardenBasrang() {
-  document.getElementById("outliers-threshold")?.addEventListener("input", renderOutliers);
-}
-
-// src/app/08-version.js
-var APP_VERSION = "2026.11.22";
-var APP_BUILD_DATE = "2026-11-22";
-
 // src/lib/vymodell-lonestruktur.js
 var JAMN_KONSFORDELNING = 40;
 var kvinnorsLoner = (rader) => rader.filter((r) => arKvinna(r)).map((r) => r.lon);
@@ -5919,6 +5855,136 @@ function vymodellLonestruktur(rader, { bas, k, golv, litetUnderlag: litetUnderla
     konsfordelning
   };
 }
+
+// src/lib/vymodell-oversikt.js
+function oversiktNyckeltal(rader, k) {
+  if (!rader.length) return null;
+  const aldrar = rader.map((r) => r.alder).filter((a) => a && !isNaN(a));
+  const m = konsMedianer(rader, { k });
+  return {
+    n: rader.length,
+    nKv: m.nKv,
+    nMa: m.nMa,
+    medelalder: aldrar.length ? aldrar.reduce((a, b) => a + b, 0) / aldrar.length : null,
+    lage: !m.nKv || !m.nMa ? "ettKonSaknas" : m.konOk ? "ok" : "underK",
+    kvotPct: m.konOk ? m.kvotPct : null
+  };
+}
+var kortLage = (antal, av, kritisk) => av === 0 ? "na" : antal === 0 ? "ok" : kritisk(antal, av) ? "crit" : "warn";
+function kravstatus(rader, { bas, k, golv, oversikt, policyFor: policyFor2, statistik }) {
+  if (!rader.length) return null;
+  const jb = jamforbaraBas(rader, k);
+  const granskaBas = new Set((oversikt || oversiktPerBas(rader, jb.jamforbara, k)).filter((o) => oversiktNiva(o, golv) === "granska").map((o) => o.bas));
+  let gap = 0, skev = 0;
+  for (const b of jb.jamforbara) {
+    const df = rader.filter((r) => r.bas === b);
+    const nKv = df.filter((r) => arKvinna(r)).length, nMa = df.filter((r) => arMan(r)).length, tot = nKv + nMa;
+    if (granskaBas.has(b)) gap++;
+    if (nKv / tot < JAMN_KONSFORDELNING / 100 || nMa / tot < JAMN_KONSFORDELNING / 100) skev++;
+  }
+  const av = jb.jamforbara.length;
+  let referens = null;
+  if (policyFor2) {
+    let under = 0, total = 0;
+    for (const b of bas) {
+      const pol = policyFor2(null, b);
+      const df = rader.filter((r) => r.bas === b);
+      if (!pol || !pol.p10 || df.length < k) continue;
+      total++;
+      if (median(df.map((r) => r.lon)) < pol.p10) under++;
+    }
+    referens = { antal: under, av: total, lage: kortLage(under, total, (a) => a >= 2) };
+  }
+  let stat = null;
+  if (statistik && statistik.length) {
+    const perGrupp = /* @__PURE__ */ new Map();
+    for (const r of rader) {
+      const nyckel = `${aidAvYrke(r.yrke)}|${r.bas}`;
+      if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { aid: aidAvYrke(r.yrke), bas: r.bas, lon: [] });
+      perGrupp.get(nyckel).lon.push(r.lon);
+    }
+    let under = 0, total = 0;
+    for (const g of perGrupp.values()) {
+      const rad = statistikFor(statistik, g.aid, g.bas)?.rad;
+      if (!rad) continue;
+      total++;
+      if (median(g.lon) < rad.median) under++;
+    }
+    stat = { antal: under, av: total, lage: kortLage(under, total, (a, t) => a / t > 0.5) };
+  }
+  return {
+    jamforbara: av,
+    maskerade: jb.maskerade.length,
+    gap: { antal: gap, av, lage: kortLage(gap, av, (a) => a >= 3) },
+    skev: { antal: skev, av, lage: kortLage(skev, av, () => false) },
+    referens,
+    statistik: stat
+  };
+}
+
+// src/app/15-extremvarden-basrang.js
+function detectOutliers(threshold) {
+  return extremvarden(getData(), statGolv(), threshold);
+}
+function renderOutliers() {
+  const container = document.getElementById("outliers-container");
+  const wrap = document.getElementById("outliers-table-wrap");
+  const countEl = document.getElementById("outliers-count");
+  if (!container || !wrap) return;
+  if (!state.data.length) {
+    container.style.display = "none";
+    return;
+  }
+  container.style.display = "block";
+  const threshold = parseFloat(
+    /** @type {HTMLInputElement} */
+    document.getElementById("outliers-threshold")?.value
+  ) || 3;
+  const outs = detectOutliers(threshold);
+  if (countEl) countEl.textContent = outs.length === 0 ? `(inga minst ${threshold} standardavvikelser från medel)` : `(${outs.length} rader flaggade)`;
+  if (!outs.length) {
+    wrap.innerHTML = `<p class="farg-dampad pad-20 ta-mitt">Inga extremvärden med gränsen ${threshold} standardavvikelser. Datan är homogen inom BAS-grupperna.</p>`;
+    return;
+  }
+  const fmt = new Intl.NumberFormat("sv-SE");
+  wrap.innerHTML = `<div class="rulla-x"><table class="data-table st-088">
+        <thead><tr>
+            <th>Rad</th><th>BAS</th><th>${stor(T.enhet.en)}</th><th>Kön</th><th class="t-hoger">Ålder</th>
+            <th class="t-hoger">Lön</th><th class="t-hoger">BAS-median</th>
+            <th class="t-hoger">Diff %</th><th class="t-hoger">Avvikelse (sd)</th><th>Bedömning</th>
+        </tr></thead>
+        <tbody>
+            ${outs.map((o) => {
+    const sgnD = o.diffPct >= 0 ? "+" : "";
+    const sgnZ = o.z >= 0 ? "+" : "";
+    const color = Math.abs(o.z) > 4 ? "f-kritisk" : "fg-varning";
+    const bedömning = Math.abs(o.z) > 4 ? "Mycket avvikande — kan vara registerfel" : "Bör granskas (specialkompetens? marknadsläge? fel?)";
+    return `<tr>
+                    <td>${o.radnr ?? "—"}</td>
+                    <td>${esc(o.bas)}</td>
+                    <td>${esc(o.yrke)}</td>
+                    <td>${esc(o.kon)}</td>
+                    <td class="t-hoger">${o.alder}</td>
+                    <td class="tabelltal fw-600 ta-hoger">${fmt.format(o.lon)}</td>
+                    <td class="farg-dampad tabelltal ta-hoger">${fmt.format(Math.round(o.groupMedian))}</td>
+                    <td class="t-tal ${color}">${sgnD}${svPct(o.diffPct, 1)}</td>
+                    <td class="t-tal fet ${color}">${sgnZ}${svTal(o.z, 2)}</td>
+                    <td class="fs-xs">${bedömning}</td>
+                </tr>`;
+  }).join("")}
+        </tbody>
+    </table></div>
+    <p class="text-dampad-xs lh-1_5 marg-t-10">
+        <strong>Tolkning:</strong> en avvikelse på minst ${threshold} betyder att personens lön ligger minst ${threshold} standardavvikelser från BAS-gruppens log-medellön. Negativa värden = lön betydligt under gruppen, positiva = betydligt över. Granska för att avgöra om det är registerfel, sakligt motiverat eller faktisk avvikelse.
+    </p>`;
+}
+function uppstartExtremvardenBasrang() {
+  document.getElementById("outliers-threshold")?.addEventListener("input", renderOutliers);
+}
+
+// src/app/08-version.js
+var APP_VERSION = "2026.11.22";
+var APP_BUILD_DATE = "2026-11-22";
 
 // src/app/10-diagramtema.js
 var PALETTE = {
@@ -16540,6 +16606,61 @@ function uppstartLoneoversyn() {
   })();
 }
 
+// src/lib/vymodell-loneoversikt.js
+var LONEOVERSIKT_MINSTA_YRKE = 5;
+function vymodellLoneoversikt(rader, { bas, k, policyFor: policyFor2, statistik = [] }) {
+  let utelamnade = 0, smaYrken = 0;
+  const block = bas.map((b) => {
+    const df = rader.filter((r) => r.bas === b);
+    const referens = policyFor2 ? policyFor2(null, b) || null : null;
+    const radlista = [], basUtelamnade = [];
+    const rad = (kategori, subset) => {
+      if (!subset.length) return;
+      if (subset.length < k) {
+        utelamnade++;
+        basUtelamnade.push(kategori);
+        return;
+      }
+      const lons = subset.map((r) => r.lon);
+      const med = median(lons), p10 = kvantil(lons, 0.1), p90 = kvantil(lons, 0.9);
+      let statMedian = null;
+      let statDiff = null;
+      if (statistik.length) {
+        const sr = statistikFor(statistik, aidAvYrke(kategori), b)?.rad;
+        if (sr && sr.median > 0) {
+          statMedian = sr.median;
+          statDiff = (med / sr.median - 1) * 100;
+        }
+      }
+      radlista.push({
+        kategori,
+        lons,
+        n: lons.length,
+        p10,
+        med,
+        p90,
+        spridning: p10 > 0 ? p90 / p10 : null,
+        underReferens: !!(referens && referens.p10 && med < referens.p10),
+        statMedian,
+        statDiff
+      });
+    };
+    rad("Organisationen", df);
+    rad("Kvinna", df.filter((r) => arKvinna(r)));
+    rad("Man", df.filter((r) => arMan(r)));
+    const perYrke = {};
+    df.forEach((r) => {
+      (perYrke[r.yrke] ||= []).push(r);
+    });
+    Object.keys(perYrke).sort().forEach((y) => {
+      if (perYrke[y].length >= LONEOVERSIKT_MINSTA_YRKE) rad(y, perYrke[y]);
+      else smaYrken++;
+    });
+    return { bas: b, referens, rader: radlista, utelamnade: basUtelamnade };
+  });
+  return { block, utelamnade, smaYrken };
+}
+
 // src/lib/sakligaskal.js
 var SKAL_KATEGORIER = Object.freeze([
   Object.freeze({ id: "marknad", namn: "Marknad", forklaring: "Svårrekryterade yrken eller konkurrens från andra arbetsgivare, som organisationen kan visa." }),
@@ -16632,6 +16753,24 @@ function lonespridning(lon, k) {
   const med = median(lon);
   if (!(med > 0)) return null;
   return Math.round((kvantil(lon, 0.9) - kvantil(lon, 0.1)) / med * 1e4) / 1e4;
+}
+function bokslutBasRad(rader, bas, k) {
+  const df = rader.filter((r) => r.bas === bas && r.lon > 0);
+  if (df.length < k) return null;
+  const kv = df.filter((r) => arKvinna(r)), ma = df.filter((r) => arMan(r));
+  const lon = df.map((r) => r.lon), konOk = kv.length >= k && ma.length >= k;
+  return {
+    bas,
+    n: df.length,
+    nKv: kv.length,
+    nMa: ma.length,
+    p10: kvantil(lon, 0.1),
+    med: median(lon),
+    p90: kvantil(lon, 0.9),
+    medKv: konOk ? median(kv.map((r) => r.lon)) : null,
+    medMa: konOk ? median(ma.map((r) => r.lon)) : null,
+    spridning: lonespridning(lon, k)
+  };
 }
 function valideraArsbokslut(o) {
   if (!o || typeof o !== "object" || Array.isArray(o)) return null;
@@ -16895,6 +17034,377 @@ function basHantelRader(j) {
     return { namn: `BAS ${r.bas}`, bas: r.bas, fore: r.med.forra, efter: r.med.nu, andring, riktning: andring > 0 ? "upp" : andring < 0 ? "ned" : "lika" };
   });
   return { rader, utelamnade: j.basIntervall.length - med.length };
+}
+
+// src/lib/lonepolitik.js
+var ANTAL_MIN = 5;
+function lonepolitikKonstanter() {
+  return Object.freeze({ ANTAL_MIN });
+}
+function organisationsBand(rader, k) {
+  const lons = (rader || []).map((r) => r.lon).filter((v) => v > 0).sort((a, b) => a - b);
+  if (lons.length < k) return null;
+  return { n: lons.length, p10: kvantil(lons, 0.1), med: median(lons), p90: kvantil(lons, 0.9) };
+}
+function bandlage(lon, p10, p90) {
+  if (!(lon > 0) || !(p10 > 0) || !(p90 > 0)) return null;
+  if (p90 <= p10) return null;
+  return (lon - p10) / (p90 - p10);
+}
+function gruppMotBand(rader, pol) {
+  if (!Array.isArray(rader) || !rader.length || !pol) return null;
+  const lons = rader.map((r) => r.lon).filter((v) => v > 0);
+  if (!lons.length) return null;
+  const median2 = median(lons);
+  return {
+    n: lons.length,
+    median: median2,
+    position: bandlage(median2, pol.p10, pol.p90),
+    medianVsPolicyPct: pol.med > 0 ? (median2 / pol.med - 1) * 100 : null,
+    p10: pol.p10,
+    med: pol.med,
+    p90: pol.p90
+  };
+}
+function antalMotBand(rader, pol) {
+  if (!Array.isArray(rader) || !rader.length || !pol) return null;
+  if (!(pol.p10 > 0) || !(pol.p90 > 0)) return null;
+  if (pol.p90 <= pol.p10) return null;
+  let under = 0, over = 0, n = 0;
+  for (const r of rader) {
+    if (!(r.lon > 0)) continue;
+    n++;
+    if (r.lon < pol.p10) under++;
+    else if (r.lon > pol.p90) over++;
+  }
+  if (!n) return null;
+  return {
+    n,
+    under,
+    over,
+    within: n - under - over,
+    underPct: under / n * 100,
+    overPct: over / n * 100
+  };
+}
+function konsskillnadIBand(rader, pol, minPerKon = 10) {
+  if (!Array.isArray(rader) || !pol) return null;
+  const posOf = (r) => bandlage(r.lon, pol.p10, pol.p90);
+  const kv = rader.filter(arKvinna).map(posOf).filter((v) => v != null);
+  const ma = rader.filter(arMan).map(posOf).filter((v) => v != null);
+  if (kv.length < minPerKon || ma.length < minPerKon) return null;
+  const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+  const kvPos = mean(kv), maPos = mean(ma);
+  return { nKv: kv.length, nMa: ma.length, kvPos, maPos, diff: kvPos - maPos };
+}
+function kostnadTillGolv(rader, pol) {
+  if (!Array.isArray(rader) || !pol || !(pol.p10 > 0)) return null;
+  if (pol.p90 > 0 && pol.p90 <= pol.p10) return null;
+  let nAffected = 0, totalMonth = 0;
+  for (const r of rader) {
+    if (!(r.lon > 0)) continue;
+    if (r.lon < pol.p10) {
+      nAffected++;
+      totalMonth += pol.p10 - r.lon;
+    }
+  }
+  return { nAffected, totalMonth };
+}
+function tackningsgrad(grupper) {
+  const g = Array.isArray(grupper) ? grupper : [];
+  let personsTotal = 0, personsCovered = 0, groupsCovered = 0;
+  for (const x of g) {
+    const n = x && x.n > 0 ? x.n : 0;
+    personsTotal += n;
+    if (x && x.hasPolicy) {
+      groupsCovered++;
+      personsCovered += n;
+    }
+  }
+  return {
+    groupsTotal: g.length,
+    groupsCovered,
+    personsTotal,
+    personsCovered,
+    personsPct: personsTotal ? personsCovered / personsTotal * 100 : 0
+  };
+}
+function maskeringsniva(n, k) {
+  if (n >= k) return "full";
+  if (n >= ANTAL_MIN) return "count";
+  return "masked";
+}
+function lagesklass(pos) {
+  return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4;
+}
+function konLagen(rader, pol) {
+  const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
+  for (const r of rader) {
+    const kon = arKvinna(r) ? "kv" : arMan(r) ? "ma" : null;
+    const pos = kon ? bandlage(r.lon, pol.p10, pol.p90) : null;
+    if (pos != null && isFinite(pos)) ut[kon][lagesklass(pos)]++;
+  }
+  return ut;
+}
+function lonepolitikModell(rader, { policyFor: policyFor2, nivaEtikett, k, harPolicy }) {
+  const out = { byBas: [], coverage: null, hasPolicy: !!harPolicy };
+  if (!rader.length || !out.hasPolicy) return out;
+  const groups = /* @__PURE__ */ new Map();
+  const namnrad = namnrader(rader.filter((r) => r.lon > 0 && r.bas), (r) => aidAvYrke(r.yrke) + "|" + r.bas);
+  rader.forEach((r) => {
+    if (!(r.lon > 0) || !r.bas) return;
+    const aid = aidAvYrke(r.yrke);
+    const key = aid + "|" + r.bas;
+    if (!groups.has(key)) groups.set(key, { aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
+    groups.get(key).rows.push(r);
+  });
+  const coverageInput = [];
+  const basMap = /* @__PURE__ */ new Map();
+  for (const g of groups.values()) {
+    const pol = policyFor2(g.aid, g.bas);
+    coverageInput.push({ n: g.rows.length, hasPolicy: !!pol });
+    if (!basMap.has(g.bas)) basMap.set(g.bas, { bas: g.bas, rows: [], groups: [] });
+    const b = basMap.get(g.bas);
+    b.rows.push(...g.rows);
+    b.groups.push({
+      aid: g.aid,
+      bas: g.bas,
+      yrke: g.yrke,
+      n: g.rows.length,
+      rows: g.rows,
+      pol,
+      level: nivaEtikett(pol),
+      tier: maskeringsniva(g.rows.length, k),
+      stats: pol ? gruppMotBand(g.rows, pol) : null,
+      compliance: pol ? antalMotBand(g.rows, pol) : null
+    });
+  }
+  out.coverage = tackningsgrad(coverageInput);
+  out.byBas = [...basMap.values()].map((b) => {
+    const pol = policyFor2(null, b.bas);
+    return {
+      bas: b.bas,
+      pol,
+      level: nivaEtikett(pol),
+      n: b.rows.length,
+      stats: pol ? gruppMotBand(b.rows, pol) : null,
+      compliance: pol ? antalMotBand(b.rows, pol) : null,
+      genderGap: pol ? konsskillnadIBand(b.rows, pol, k) : null,
+      konLagen: pol ? konLagen(b.rows, pol) : null,
+      cost: pol ? kostnadTillGolv(b.rows, pol) : null,
+      orgBand: organisationsBand(b.rows, k),
+      // organisationens eget P10–P90 (null under k)
+      groups: b.groups.sort((x, y) => y.n - x.n)
+    };
+  }).sort((a, b) => String(a.bas).localeCompare(String(b.bas), "sv"));
+  return out;
+}
+
+// src/lib/vymodell-gruppdossier.js
+function gruppdossierGrupper(rader, k) {
+  const map = /* @__PURE__ */ new Map();
+  const giltiga = rader.filter((r) => r.lon > 0 && r.bas);
+  const namnrad = namnrader(giltiga, (r) => aidAvYrke(r.yrke) + "|" + r.bas);
+  giltiga.forEach((r) => {
+    const aid = aidAvYrke(r.yrke), key = aid + "|" + r.bas;
+    if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
+    map.get(key).rows.push(r);
+  });
+  return [...map.values()].filter((g) => g.rows.length >= k).sort((a, b) => b.rows.length - a.rows.length);
+}
+function vymodellGruppdossier(g, {
+  k,
+  ki = true,
+  kostnad,
+  referens = null,
+  referensNiva = null,
+  par = [],
+  statistik = [],
+  skrDel,
+  justerat = null,
+  prio = null,
+  forslag: forslag2 = []
+}) {
+  const lons = g.rows.map((r) => r.lon);
+  const kv = g.rows.filter((r) => arKvinna(r)), ma = g.rows.filter((r) => arMan(r));
+  const kvLons = kv.map((r) => r.lon), maLons = ma.map((r) => r.lon);
+  let gap = null;
+  const km = konsMedianer(g.rows, { k });
+  if (km.konOk) {
+    gap = {
+      pct: km.kvotPct,
+      medKv: km.medKv,
+      medMa: km.medMa,
+      ci: ki ? medianKvotKIGiltiga(kvLons, maLons) : null,
+      arsbelopp: arsbeloppMening({ medKv: km.medKv, medMa: km.medMa, nKv: kvLons.length }, kostnad, (v) => talformat(v, "kr"))
+    };
+  }
+  let ansvar = null;
+  if (g.rows.some((r) => r.ansvarsgrupp)) {
+    ansvar = {};
+    for (const grupp of ["ledning", "uppdrag"]) {
+      ansvar[grupp] = { kv: kv.filter((r) => r.ansvarsgrupp === grupp).length, ma: ma.filter((r) => r.ansvarsgrupp === grupp).length };
+    }
+  }
+  const gruppens = par.filter((p) => p.kvAid === g.aid && p.kvBas === g.bas || p.maAid === g.aid && p.maBas === g.bas);
+  const { par: redovisade, utelamnade } = parForRedovisning(gruppens, k);
+  return {
+    key: g.key,
+    aid: g.aid,
+    bas: g.bas,
+    yrke: g.yrke,
+    n: g.rows.length,
+    nKv: kv.length,
+    nMa: ma.length,
+    median: median(lons),
+    p10: kvantil(lons, 0.1),
+    p90: kvantil(lons, 0.9),
+    gap,
+    adjusted: justerat,
+    ansvar,
+    skr: skrKvinnoandel(g.aid, { del: skrDel }),
+    pol: referens,
+    polLevel: referensNiva,
+    band: referens ? gruppMotBand(g.rows, referens) : null,
+    compliance: referens ? antalMotBand(g.rows, referens) : null,
+    lvAsSubject: redovisade.filter((p) => p.kvAid === g.aid && p.kvBas === g.bas),
+    lvAsComparator: redovisade.filter((p) => p.maAid === g.aid && p.maBas === g.bas),
+    lvUtelamnade: utelamnade,
+    bench: statistikFor(statistik, g.aid, g.bas)?.rad || null,
+    prio,
+    suggestions: forslag2
+  };
+}
+
+// src/lib/vymodell-basdossier.js
+var BASDOSSIER_ALDERSGRANSER = [35, 50];
+function basdossierIntervall(rader, bas, k) {
+  return bas.map((b) => ({ bas: b, n: rader.filter((r) => r.bas === b && r.lon > 0).length })).filter((x) => x.n > 0 && x.n >= k);
+}
+function basdossierStatus(g) {
+  if (g.samladMedian) return "liten";
+  return g.niva || "ejbedomd";
+}
+function vymodellBasdossier(rader, bas, {
+  k,
+  basIntervall,
+  golv = 10,
+  kInstalld: kInstalld2 = k,
+  referens = null,
+  referensNamn: referensNamn2 = "",
+  lika,
+  likvardighet = null,
+  harAlder: harAlder2 = false,
+  forraBokslut = null
+}) {
+  if (!basdossierIntervall(rader, basIntervall, k).some((x) => x.bas === bas)) return null;
+  const df = rader.filter((r) => r.bas === bas && r.lon > 0);
+  const lon = df.map((r) => r.lon);
+  const med = median(lon), p10 = kvantil(lon, 0.1), p90 = kvantil(lon, 0.9);
+  const { nKv, nMa, medKv, medMa, kvotPct, konOk } = konsMedianer(df, { k });
+  const pct = (v, ref2) => v != null && ref2 > 0 ? (v / ref2 - 1) * 100 : null;
+  const ref = referens ? {
+    namn: referensNamn2,
+    p10: referens.p10 ?? null,
+    med: referens.med ?? null,
+    p90: referens.p90 ?? null,
+    diffPct: { p10: pct(p10, referens.p10), med: pct(med, referens.med), p90: pct(p90, referens.p90) }
+  } : null;
+  const lg = lika || likaArbeteGrupper(rader, { k, golv });
+  const iBas = (g) => g.bas === String(bas);
+  const basPerYrke = /* @__PURE__ */ new Map();
+  for (const r of rader) {
+    if (!(r.lon > 0)) continue;
+    const kod = aidAvRad(r);
+    if (!basPerYrke.has(kod)) basPerYrke.set(kod, /* @__PURE__ */ new Set());
+    basPerYrke.get(kod).add(r.bas);
+  }
+  const nycklar = new Set(gruppdossierGrupper(rader, k).map((g) => g.key));
+  const yrken = lg.grupper.filter(iBas).map((g) => {
+    const aid = g.aid, delade = !g.samladMedian;
+    const ocksaI = [...basPerYrke.get(aid) || []].filter((b2) => b2 !== bas).sort();
+    return {
+      yrke: g.yrke,
+      aid,
+      nKv: g.nKv,
+      nMa: g.nMa,
+      tot: g.tot,
+      status: basdossierStatus(g),
+      samlad: !!g.samladMedian,
+      ocksaI,
+      medKv: delade ? g.medKv : null,
+      medMa: delade ? g.medMa : null,
+      kvotPct: delade ? g.kvot * 100 : null,
+      medTot: g.samladMedian ? g.medTot : null,
+      dossierKey: nycklar.has(`${aid}|${bas}`) ? `${aid}|${bas}` : null
+    };
+  }).sort((a2, b2) => b2.tot - a2.tot || String(a2.yrke).localeCompare(String(b2.yrke), "sv"));
+  const a = parForRedovisning((likvardighet && likvardighet.pairs || []).filter((p) => p.kvBas === bas), k);
+  const b = parForRedovisning((likvardighet && likvardighet.lagreKrav || []).filter((p) => p.kvBas === bas), k);
+  const parRad = (p) => ({
+    kvLabel: p.kvLabel,
+    kvAid: p.kvAid,
+    kvBas: p.kvBas,
+    kvN: p.kvN,
+    kvMedian: p.kvMedian,
+    maLabel: p.maLabel,
+    maAid: p.maAid,
+    maBas: p.maBas,
+    maN: p.maN ?? null,
+    maMedian: p.maMedian,
+    gapKr: p.gapKr,
+    gapPct: p.gapPct
+  });
+  const G = BASDOSSIER_ALDERSGRANSER;
+  const iGrupp = (r, i) => {
+    const lo = i === 0 ? -Infinity : G[i - 1], hi = i < G.length ? G[i] : Infinity;
+    return r.alder >= lo && r.alder < hi;
+  };
+  const medAlder = df.filter((r) => typeof r.alder === "number" && r.alder > 0);
+  const alder = !harAlder2 ? null : aldersgruppNamn(G).map((namn, i) => {
+    const grupp = medAlder.filter((r) => iGrupp(r, i)), gKv = grupp.filter((r) => arKvinna(r)), gMa = grupp.filter((r) => arMan(r));
+    const ok = konFarRedovisas(gKv.length, gMa.length, k);
+    return {
+      namn,
+      n: grupp.length,
+      nKv: gKv.length,
+      nMa: gMa.length,
+      med: grupp.length && grupp.length >= k ? median(grupp.map((r) => r.lon)) : null,
+      medKv: ok ? median(gKv.map((r) => r.lon)) : null,
+      medMa: ok ? median(gMa.map((r) => r.lon)) : null
+    };
+  });
+  const fb = forraBokslut ? bokslutMedGrans(forraBokslut, Math.max(forraBokslut.k, kInstalld2)) : null;
+  let forra = { lage: "ingetBokslut" };
+  if (fb && !Array.isArray(fb.basIntervall)) forra = { lage: "saknasFalt", ar: fb.ar };
+  else if (fb) {
+    const f = fb.basIntervall.find((r) => r.bas === bas);
+    const nu = bokslutBasRad(rader, bas, k);
+    const j = f && nu ? jamforBasIntervall([f], [nu]) : null;
+    forra = j && j[0] ? { lage: "ok", ar: fb.ar, rad: j[0] } : { lage: "saknasIntervall", ar: fb.ar };
+  }
+  return {
+    bas,
+    n: df.length,
+    nKv,
+    nMa,
+    andelKv: df.length ? nKv / df.length * 100 : null,
+    median: med,
+    p10,
+    p90,
+    konOk,
+    medKv,
+    medMa,
+    kvotPct,
+    referens: ref,
+    yrken,
+    yrkenUtelamnade: lg.utelamnadeGrupper.filter(iBas).map((g) => g.yrke).sort((x, y) => String(x).localeCompare(String(y), "sv")),
+    ejJamforbara: lg.ejJamforbaraGrupper.filter(iBas).map((g) => g.yrke),
+    par: { kandidat: a.par.map(parRad), hierarkiska: b.par.map(parRad), utelamnade: a.utelamnade + b.utelamnade },
+    alder,
+    forra,
+    k
+  };
 }
 
 // src/app/56-handlingsplan.js
@@ -17367,170 +17877,6 @@ function _byt(v, vag) {
     Object.defineProperty(ut, ny, { value: _byt(x, vag ? `${vag}.${ny}` : ny), enumerable: true, writable: true, configurable: true });
   }
   return ut;
-}
-
-// src/lib/lonepolitik.js
-var ANTAL_MIN = 5;
-function lonepolitikKonstanter() {
-  return Object.freeze({ ANTAL_MIN });
-}
-function organisationsBand(rader, k) {
-  const lons = (rader || []).map((r) => r.lon).filter((v) => v > 0).sort((a, b) => a - b);
-  if (lons.length < k) return null;
-  return { n: lons.length, p10: kvantil(lons, 0.1), med: median(lons), p90: kvantil(lons, 0.9) };
-}
-function bandlage(lon, p10, p90) {
-  if (!(lon > 0) || !(p10 > 0) || !(p90 > 0)) return null;
-  if (p90 <= p10) return null;
-  return (lon - p10) / (p90 - p10);
-}
-function gruppMotBand(rader, pol) {
-  if (!Array.isArray(rader) || !rader.length || !pol) return null;
-  const lons = rader.map((r) => r.lon).filter((v) => v > 0);
-  if (!lons.length) return null;
-  const median2 = median(lons);
-  return {
-    n: lons.length,
-    median: median2,
-    position: bandlage(median2, pol.p10, pol.p90),
-    medianVsPolicyPct: pol.med > 0 ? (median2 / pol.med - 1) * 100 : null,
-    p10: pol.p10,
-    med: pol.med,
-    p90: pol.p90
-  };
-}
-function antalMotBand(rader, pol) {
-  if (!Array.isArray(rader) || !rader.length || !pol) return null;
-  if (!(pol.p10 > 0) || !(pol.p90 > 0)) return null;
-  if (pol.p90 <= pol.p10) return null;
-  let under = 0, over = 0, n = 0;
-  for (const r of rader) {
-    if (!(r.lon > 0)) continue;
-    n++;
-    if (r.lon < pol.p10) under++;
-    else if (r.lon > pol.p90) over++;
-  }
-  if (!n) return null;
-  return {
-    n,
-    under,
-    over,
-    within: n - under - over,
-    underPct: under / n * 100,
-    overPct: over / n * 100
-  };
-}
-function konsskillnadIBand(rader, pol, minPerKon = 10) {
-  if (!Array.isArray(rader) || !pol) return null;
-  const posOf = (r) => bandlage(r.lon, pol.p10, pol.p90);
-  const kv = rader.filter(arKvinna).map(posOf).filter((v) => v != null);
-  const ma = rader.filter(arMan).map(posOf).filter((v) => v != null);
-  if (kv.length < minPerKon || ma.length < minPerKon) return null;
-  const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
-  const kvPos = mean(kv), maPos = mean(ma);
-  return { nKv: kv.length, nMa: ma.length, kvPos, maPos, diff: kvPos - maPos };
-}
-function kostnadTillGolv(rader, pol) {
-  if (!Array.isArray(rader) || !pol || !(pol.p10 > 0)) return null;
-  if (pol.p90 > 0 && pol.p90 <= pol.p10) return null;
-  let nAffected = 0, totalMonth = 0;
-  for (const r of rader) {
-    if (!(r.lon > 0)) continue;
-    if (r.lon < pol.p10) {
-      nAffected++;
-      totalMonth += pol.p10 - r.lon;
-    }
-  }
-  return { nAffected, totalMonth };
-}
-function tackningsgrad(grupper) {
-  const g = Array.isArray(grupper) ? grupper : [];
-  let personsTotal = 0, personsCovered = 0, groupsCovered = 0;
-  for (const x of g) {
-    const n = x && x.n > 0 ? x.n : 0;
-    personsTotal += n;
-    if (x && x.hasPolicy) {
-      groupsCovered++;
-      personsCovered += n;
-    }
-  }
-  return {
-    groupsTotal: g.length,
-    groupsCovered,
-    personsTotal,
-    personsCovered,
-    personsPct: personsTotal ? personsCovered / personsTotal * 100 : 0
-  };
-}
-function maskeringsniva(n, k) {
-  if (n >= k) return "full";
-  if (n >= ANTAL_MIN) return "count";
-  return "masked";
-}
-function lagesklass(pos) {
-  return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4;
-}
-function konLagen(rader, pol) {
-  const ut = { kv: [0, 0, 0, 0, 0], ma: [0, 0, 0, 0, 0] };
-  for (const r of rader) {
-    const kon = arKvinna(r) ? "kv" : arMan(r) ? "ma" : null;
-    const pos = kon ? bandlage(r.lon, pol.p10, pol.p90) : null;
-    if (pos != null && isFinite(pos)) ut[kon][lagesklass(pos)]++;
-  }
-  return ut;
-}
-function lonepolitikModell(rader, { policyFor: policyFor2, nivaEtikett, k, harPolicy }) {
-  const out = { byBas: [], coverage: null, hasPolicy: !!harPolicy };
-  if (!rader.length || !out.hasPolicy) return out;
-  const groups = /* @__PURE__ */ new Map();
-  const namnrad = namnrader(rader.filter((r) => r.lon > 0 && r.bas), (r) => aidAvYrke(r.yrke) + "|" + r.bas);
-  rader.forEach((r) => {
-    if (!(r.lon > 0) || !r.bas) return;
-    const aid = aidAvYrke(r.yrke);
-    const key = aid + "|" + r.bas;
-    if (!groups.has(key)) groups.set(key, { aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
-    groups.get(key).rows.push(r);
-  });
-  const coverageInput = [];
-  const basMap = /* @__PURE__ */ new Map();
-  for (const g of groups.values()) {
-    const pol = policyFor2(g.aid, g.bas);
-    coverageInput.push({ n: g.rows.length, hasPolicy: !!pol });
-    if (!basMap.has(g.bas)) basMap.set(g.bas, { bas: g.bas, rows: [], groups: [] });
-    const b = basMap.get(g.bas);
-    b.rows.push(...g.rows);
-    b.groups.push({
-      aid: g.aid,
-      bas: g.bas,
-      yrke: g.yrke,
-      n: g.rows.length,
-      rows: g.rows,
-      pol,
-      level: nivaEtikett(pol),
-      tier: maskeringsniva(g.rows.length, k),
-      stats: pol ? gruppMotBand(g.rows, pol) : null,
-      compliance: pol ? antalMotBand(g.rows, pol) : null
-    });
-  }
-  out.coverage = tackningsgrad(coverageInput);
-  out.byBas = [...basMap.values()].map((b) => {
-    const pol = policyFor2(null, b.bas);
-    return {
-      bas: b.bas,
-      pol,
-      level: nivaEtikett(pol),
-      n: b.rows.length,
-      stats: pol ? gruppMotBand(b.rows, pol) : null,
-      compliance: pol ? antalMotBand(b.rows, pol) : null,
-      genderGap: pol ? konsskillnadIBand(b.rows, pol, k) : null,
-      konLagen: pol ? konLagen(b.rows, pol) : null,
-      cost: pol ? kostnadTillGolv(b.rows, pol) : null,
-      orgBand: organisationsBand(b.rows, k),
-      // organisationens eget P10–P90 (null under k)
-      groups: b.groups.sort((x, y) => y.n - x.n)
-    };
-  }).sort((a, b) => String(a.bas).localeCompare(String(b.bas), "sv"));
-  return out;
 }
 
 // src/lib/referenser.js
@@ -19190,16 +19536,7 @@ function _gdBootstrapGapCI(kvLons, maLons, B) {
   return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
 function gruppdossierCandidates() {
-  const map = /* @__PURE__ */ new Map(), d = getData();
-  const namnrad = namnrader(d.filter((r) => r.lon > 0 && r.bas), (r) => aidAvYrke(r.yrke) + "|" + r.bas);
-  d.forEach((r) => {
-    if (!(r.lon > 0) || !r.bas) return;
-    const aid = aidAvYrke(r.yrke);
-    const key = aid + "|" + r.bas;
-    if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
-    map.get(key).rows.push(r);
-  });
-  return [...map.values()].filter((g) => !isKMasked(g.rows.length)).sort((a, b) => b.rows.length - a.rows.length);
+  return gruppdossierGrupper(getData(), kTroskel());
 }
 function _gdKon(rows) {
   return { kv: rows.filter((r) => arKvinna(r)), ma: rows.filter((r) => arMan(r)) };
@@ -19210,30 +19547,7 @@ function gruppdossierDelat({ text = false } = {}) {
 function buildGruppdossier(key, delat = null) {
   const g = (delat ? delat.kandidater : gruppdossierCandidates()).find((x) => x.key === key);
   if (!g) return null;
-  const lons = g.rows.map((r) => r.lon);
-  const { kv, ma } = _gdKon(g.rows);
-  const kvLons = kv.map((r) => r.lon), maLons = ma.map((r) => r.lon);
-  let gap = null;
-  const km = konsMedianer(g.rows, { k: kTroskel() });
-  if (km.konOk) {
-    const mKv = km.medKv, mMa = km.medMa;
-    gap = {
-      pct: km.kvotPct,
-      medKv: mKv,
-      medMa: mMa,
-      ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
-      // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
-      arsbelopp: arsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, (v) => talformat(v, "kr"))
-    };
-  }
-  let ansvar = null;
-  if (g.rows.some((r) => r.ansvarsgrupp)) {
-    ansvar = {};
-    for (const grupp of ["ledning", "uppdrag"]) {
-      ansvar[grupp] = { kv: kv.filter((r) => r.ansvarsgrupp === grupp).length, ma: ma.filter((r) => r.ansvarsgrupp === grupp).length };
-    }
-  }
-  let adjusted = null;
+  let justerat = null;
   if (harAlder()) try {
     const rakna = () => _computePerBasGap(getData(), [g.bas]);
     let perBas;
@@ -19242,26 +19556,17 @@ function buildGruppdossier(key, delat = null) {
       if (!delat.perBas.has(g.bas)) delat.perBas.set(g.bas, rakna());
       perBas = delat.perBas.get(g.bas);
     }
-    adjusted = (perBas || []).find((p) => p.bas === g.bas) || null;
+    justerat = (perBas || []).find((p) => p.bas === g.bas) || null;
   } catch (_e) {
-    adjusted = null;
+    justerat = null;
   }
-  const pol = typeof policyFor === "function" ? policyFor(g.aid, g.bas) : null;
-  const band = pol ? gruppMotBand(g.rows, pol) : null;
-  const compliance = pol ? antalMotBand(g.rows, pol) : null;
-  let lvAsSubject = [], lvAsComparator = [], lvUtelamnade = 0;
+  let par = [];
   try {
-    const res = likvardighetResultat();
-    const gruppens = (res && res.pairs || []).filter((p) => p.kvAid === g.aid && p.kvBas === g.bas || p.maAid === g.aid && p.maBas === g.bas);
-    const { par: pairs, utelamnade } = _parForRedovisning(gruppens);
-    lvUtelamnade = utelamnade;
-    lvAsSubject = pairs.filter((p) => p.kvAid === g.aid && p.kvBas === g.bas);
-    lvAsComparator = pairs.filter((p) => p.maAid === g.aid && p.maBas === g.bas);
+    par = (likvardighetResultat() || {}).pairs || [];
   } catch (e) {
     rapporteraFel("Gruppdossier: likvärdigt arbete", e);
   }
-  const bench = statistikFor(state.statistik, g.aid, g.bas)?.rad || null;
-  let prio = null, suggestions = [];
+  let prio = null, forslag2 = [];
   try {
     const ref = typeof _selectedPrioReference === "function" ? _selectedPrioReference() : "statistik";
     let alla;
@@ -19272,42 +19577,30 @@ function buildGruppdossier(key, delat = null) {
     }
     prio = (alla || []).find((i) => i.aid === g.aid && i.bas === g.bas) || null;
     if (prio && typeof generateMotivationSuggestions === "function") {
-      suggestions = generateMotivationSuggestions(prio) || [];
+      forslag2 = generateMotivationSuggestions(prio) || [];
     }
   } catch (e) {
     rapporteraFel("Gruppdossier: prioriteringen", e);
   }
-  return {
-    key: g.key,
-    aid: g.aid,
-    bas: g.bas,
-    yrke: g.yrke,
-    n: g.rows.length,
-    nKv: kv.length,
-    nMa: ma.length,
-    median: Stat.median(lons),
-    p10: Stat.kvantil(lons, 0.1),
-    p90: Stat.kvantil(lons, 0.9),
-    gap,
-    adjusted,
-    ansvar,
-    skr: skrKvinnoandel(g.aid, { del: _skrDel() }),
-    pol,
-    polLevel: policyLevelLabel(pol),
-    band,
-    compliance,
-    lvAsSubject,
-    lvAsComparator,
-    lvUtelamnade,
-    bench,
+  const referens = policyFor(g.aid, g.bas);
+  return vymodellGruppdossier(g, {
+    k: kTroskel(),
+    ki: !(delat && delat.text),
+    kostnad: state.costSettings,
+    referens,
+    referensNiva: policyLevelLabel(referens),
+    par,
+    statistik: state.statistik,
+    skrDel: _skrDel(),
+    justerat,
     prio,
-    suggestions
-  };
+    forslag: forslag2
+  });
 }
 function openGruppdossier(preselectKey) {
   const modal = document.getElementById("dossier-modal");
   if (!modal) return;
-  renderGruppdossier(preselectKey);
+  ritaGruppdossier(preselectKey);
   modal.style.display = "flex";
   if (typeof trapFocus === "function") trapFocus(modal);
 }
@@ -19317,7 +19610,7 @@ function closeGruppdossier() {
   if (typeof releaseFocus === "function") releaseFocus(modal);
   modal.style.display = "none";
 }
-function renderGruppdossier(preselectKey) {
+function ritaGruppdossier(preselectKey) {
   const sel = document.getElementById("dossier-select");
   const body = document.getElementById("dossier-body");
   if (!sel || !body) return;
@@ -19343,7 +19636,7 @@ function renderGruppdossier(preselectKey) {
     body.innerHTML = '<p class="f-dampad">Gruppen kunde inte läsas.</p>';
     return;
   }
-  body.innerHTML = _gdRenderBody(d);
+  body.innerHTML = _gdRitaInnehall(d);
   const modal = document.getElementById("dossier-modal");
   if (modal && modal.style.display === "flex") {
     if (typeof releaseFocus === "function") releaseFocus(modal);
@@ -19355,7 +19648,7 @@ function gruppNamn(g) {
   if (!yrke || yrke === aid) return aid;
   return yrke.startsWith(aid) ? yrke : `${aid} ${yrke}`;
 }
-function _gdRenderBody(d) {
+function _gdRitaInnehall(d) {
   const kr2 = (v) => svKr(v);
   const pct = (v, dec = 1) => svPct(v, dec);
   const card = (title, inner, note) => `
@@ -19437,7 +19730,7 @@ function gruppdossierAsText(d, { stampel = true } = {}) {
   return L.join("\n");
 }
 function uppstartGruppdossier() {
-  document.getElementById("dossier-select")?.addEventListener("change", () => renderGruppdossier());
+  document.getElementById("dossier-select")?.addEventListener("change", () => ritaGruppdossier());
   document.addEventListener("click", (e) => {
     const btn = (
       /** @type {HTMLElement} */
@@ -21091,7 +21384,7 @@ function byggArsbokslutNu() {
         spridning: lonespridning(lonPerYrke.get(`${g.aid}|${g.bas}`) || [], k)
       })),
       punkter: punkter.map((p) => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
-      basIntervall: getBasIntervals().map((b) => _abBasRad(d, b, k)).filter(Boolean),
+      basIntervall: getBasIntervals().map((b) => bokslutBasRad(d, b, k)).filter(Boolean),
       bedomningar: _abBedomningarNu()
     });
   });
@@ -21107,24 +21400,6 @@ function _abBedomningarNu() {
     // Ett kön under minsta gruppstorlek: bara kategorierna (lib-valideringen gör samma sak vid inläsning).
     skal: g.utanBelopp ? g.sammanstallning.skal.map((s) => ({ kategori: s.kategori })) : g.sammanstallning.skal
   }));
-}
-function _abBasRad(d, bas, k) {
-  const df = d.filter((r) => r.bas === bas && r.lon > 0);
-  if (df.length < k) return null;
-  const kv = df.filter((r) => arKvinna(r)), ma = df.filter((r) => arMan(r));
-  const lon = df.map((r) => r.lon), konOk = kv.length >= k && ma.length >= k;
-  return {
-    bas,
-    n: df.length,
-    nKv: kv.length,
-    nMa: ma.length,
-    p10: Stat.kvantil(lon, 0.1),
-    med: Stat.median(lon),
-    p90: Stat.kvantil(lon, 0.9),
-    medKv: konOk ? Stat.median(kv.map((r) => r.lon)) : null,
-    medMa: konOk ? Stat.median(ma.map((r) => r.lon)) : null,
-    spridning: lonespridning(lon, k)
-  };
 }
 function arsjamforelse() {
   const forra = state.forraArsbokslut;
@@ -21290,147 +21565,37 @@ function renderArsjamforelse() {
 }
 
 // src/app/81-basdossier.js
-var BD_ALDERSGRANSER = [35, 50];
 function basdossierKandidater() {
-  const d = getData();
-  return getBasIntervals().map((bas) => ({ bas, n: d.filter((r) => r.bas === bas && r.lon > 0).length })).filter((x) => x.n > 0 && !isKMasked(x.n));
-}
-function _bdStatus(g) {
-  if (g.samladMedian) return "liten";
-  return g.niva || "ejbedomd";
+  return basdossierIntervall(getData(), getBasIntervals(), kTroskel());
 }
 var BD_STATUS_TEXT = { granska: "Värt att granska", folj: "Följ upp", balanserat: "Balanserat", ejbedomd: "Går ej att bedöma", liten: "Könsuppdelningen är för liten" };
 var BD_STATUS_KLASS = { granska: ["farg-granska", "sok"], folj: ["farg-varning", "oga"], balanserat: ["farg-ok", "bock"], ejbedomd: ["f-dampad", "streck"], liten: ["f-dampad", null] };
 function buildBasdossier(bas) {
-  if (!basdossierKandidater().some((x) => x.bas === bas)) return null;
-  const k = kTroskel();
-  const df = getData().filter((r) => r.bas === bas && r.lon > 0);
-  const arKv2 = arKvinna, arMa2 = arMan;
-  const lon = df.map((r) => r.lon);
-  const median2 = Stat.median(lon), p10 = Stat.kvantil(lon, 0.1), p90 = Stat.kvantil(lon, 0.9);
-  const { nKv, nMa, medKv, medMa, kvotPct, konOk } = konsMedianer(df, { k });
-  const pol = typeof policyFor === "function" ? policyFor(null, bas) : null;
-  const pct = (v, ref) => v != null && ref > 0 ? (v / ref - 1) * 100 : null;
-  const referens = pol ? {
-    namn: referensKortnamn(),
-    p10: pol.p10 ?? null,
-    med: pol.med ?? null,
-    p90: pol.p90 ?? null,
-    diffPct: { p10: pct(p10, pol.p10), med: pct(median2, pol.med), p90: pct(p90, pol.p90) }
-  } : null;
-  const alla = getData();
-  const lika = laLikaGrupper(alla, k);
-  const iBas = (g) => g.bas === String(bas);
-  const basPerYrke = /* @__PURE__ */ new Map();
-  for (const r of alla) {
-    if (!(r.lon > 0)) continue;
-    const kod = aidAvRad(r);
-    if (!basPerYrke.has(kod)) basPerYrke.set(kod, /* @__PURE__ */ new Set());
-    basPerYrke.get(kod).add(r.bas);
-  }
-  const nycklar = new Set(gruppdossierCandidates().map((g) => g.key));
-  const yrken = lika.grupper.filter(iBas).map((g) => {
-    const aid = g.aid;
-    const delade = !g.samladMedian;
-    const ocksaI = [...basPerYrke.get(aid) || []].filter((b) => b !== bas).sort();
-    return {
-      yrke: g.yrke,
-      aid,
-      nKv: g.nKv,
-      nMa: g.nMa,
-      tot: g.tot,
-      status: _bdStatus(g),
-      samlad: !!g.samladMedian,
-      ocksaI,
-      medKv: delade ? g.medKv : null,
-      medMa: delade ? g.medMa : null,
-      kvotPct: delade ? g.kvot * 100 : null,
-      medTot: g.samladMedian ? g.medTot : null,
-      dossierKey: nycklar.has(`${aid}|${bas}`) ? `${aid}|${bas}` : null
-    };
-  }).sort((a, b) => b.tot - a.tot || String(a.yrke).localeCompare(String(b.yrke), "sv"));
-  let kandidat = [], hierarkiska = [], parUtelamnade = 0;
+  const k = kTroskel(), d = getData();
+  let likvardighet = null;
   try {
-    const lv = likvardighetResultat();
-    const a = _parForRedovisning((lv && lv.pairs || []).filter((p) => p.kvBas === bas));
-    const b = _parForRedovisning((lv && lv.lagreKrav || []).filter((p) => p.kvBas === bas));
-    kandidat = a.par;
-    hierarkiska = b.par;
-    parUtelamnade = a.utelamnade + b.utelamnade;
+    likvardighet = likvardighetResultat();
   } catch (e) {
     rapporteraFel("BAS-dossier: likvärdigt arbete", e);
   }
-  const parRad = (p) => ({
-    kvLabel: p.kvLabel,
-    kvAid: p.kvAid,
-    kvBas: p.kvBas,
-    kvN: p.kvN,
-    kvMedian: p.kvMedian,
-    maLabel: p.maLabel,
-    maAid: p.maAid,
-    maBas: p.maBas,
-    maN: p.maN ?? null,
-    maMedian: p.maMedian,
-    gapKr: p.gapKr,
-    gapPct: p.gapPct
+  return vymodellBasdossier(d, bas, {
+    k,
+    basIntervall: getBasIntervals(),
+    golv: statGolv(),
+    kInstalld: kInstalld(),
+    referens: policyFor(null, bas),
+    referensNamn: referensKortnamn(),
+    lika: laLikaGrupper(d, k),
+    likvardighet,
+    harAlder: harAlder(),
+    forraBokslut: state.forraArsbokslut
   });
-  const namn = aldersgruppNamn(BD_ALDERSGRANSER);
-  const iGrupp = (r, i) => {
-    const lo = i === 0 ? -Infinity : BD_ALDERSGRANSER[i - 1], hi = i < BD_ALDERSGRANSER.length ? BD_ALDERSGRANSER[i] : Infinity;
-    return r.alder >= lo && r.alder < hi;
-  };
-  const medAlder = df.filter((r) => typeof r.alder === "number" && r.alder > 0);
-  const alder = !harAlder() ? null : namn.map((n, i) => {
-    const rader = medAlder.filter((r) => iGrupp(r, i)), gKv = rader.filter(arKv2), gMa = rader.filter(arMa2);
-    const ok = _konFarRedovisas(gKv.length, gMa.length);
-    return {
-      namn: n,
-      n: rader.length,
-      nKv: gKv.length,
-      nMa: gMa.length,
-      med: rader.length && !isKMasked(rader.length) ? Stat.median(rader.map((r) => r.lon)) : null,
-      medKv: ok ? Stat.median(gKv.map((r) => r.lon)) : null,
-      medMa: ok ? Stat.median(gMa.map((r) => r.lon)) : null
-    };
-  });
-  const fb0 = state.forraArsbokslut;
-  const fb = fb0 ? bokslutMedGrans(fb0, Math.max(fb0.k, kInstalld())) : null;
-  let forra = { lage: "ingetBokslut" };
-  if (fb && !Array.isArray(fb.basIntervall)) forra = { lage: "saknasFalt", ar: fb.ar };
-  else if (fb) {
-    const f = fb.basIntervall.find((r) => r.bas === bas);
-    const nu = typeof _abBasRad === "function" ? _abBasRad(getData(), bas, k) : null;
-    const j = f && nu ? jamforBasIntervall([f], [nu]) : null;
-    forra = j && j[0] ? { lage: "ok", ar: fb.ar, rad: j[0] } : { lage: "saknasIntervall", ar: fb.ar };
-  }
-  return {
-    bas,
-    n: df.length,
-    nKv,
-    nMa,
-    andelKv: df.length ? nKv / df.length * 100 : null,
-    median: median2,
-    p10,
-    p90,
-    konOk,
-    medKv,
-    medMa,
-    kvotPct,
-    referens,
-    yrken,
-    yrkenUtelamnade: lika.utelamnadeGrupper.filter(iBas).map((g) => g.yrke).sort((a, b) => String(a).localeCompare(String(b), "sv")),
-    ejJamforbara: lika.ejJamforbaraGrupper.filter(iBas).map((g) => g.yrke),
-    par: { kandidat: kandidat.map(parRad), hierarkiska: hierarkiska.map(parRad), utelamnade: parUtelamnade },
-    alder,
-    forra,
-    k
-  };
 }
 var _bdVald = null;
 function openBasdossier(bas, opener) {
   const modal = document.getElementById("basdossier-modal");
   if (!modal) return;
-  renderBasdossier(bas);
+  ritaBasdossier(bas);
   modal.style.display = "flex";
   if (typeof trapFocus === "function") trapFocus(modal, opener || document.activeElement);
 }
@@ -21440,7 +21605,7 @@ function closeBasdossier() {
   if (typeof releaseFocus === "function") releaseFocus(modal);
   modal.style.display = "none";
 }
-function renderBasdossier(bas) {
+function ritaBasdossier(bas) {
   const sel = (
     /** @type {HTMLSelectElement|null} */
     document.getElementById("basdossier-select")
@@ -21460,7 +21625,7 @@ function renderBasdossier(bas) {
   _bdVald = sel.value;
   if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
   const d = buildBasdossier(sel.value);
-  body.innerHTML = d ? _bdRenderBody(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
+  body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
   const modal = document.getElementById("basdossier-modal");
   if (modal && modal.style.display === "flex") {
     const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
@@ -21474,7 +21639,7 @@ function renderBasdossier(bas) {
 var _bdKr = (v) => svKr(v);
 var _bdTecken = (v) => v > 0 ? "+" : v < 0 ? "−" : "±";
 var _bdPctTecken = (v) => v == null ? "–" : `${_bdTecken(v)}${svPct(Math.abs(v), 1)}`;
-function _bdRenderBody(d) {
+function _bdRitaInnehall(d) {
   const card = (title, inner, note) => `<div class="gd-card bd-card"><h3>${title}</h3>${note ? `<p class="gd-note">${note}</p>` : ""}${inner}</div>`;
   const missing = (txt) => `<p class="gd-missing">${txt}</p>`;
   const k = d.k;
@@ -21609,7 +21774,7 @@ function basdossierKnapp(bas, { text = "BAS-dossier", ikonEndast = false } = {})
   return ikonEndast ? `<button ${attr} class="btn-evidence bd-oppna-ikon">${ikon("dokument")}</button>` : `<button ${attr} class="btn-table-tool bd-oppna">${esc(text)}</button>`;
 }
 function uppstartBasdossier() {
-  document.getElementById("basdossier-select")?.addEventListener("change", () => renderBasdossier());
+  document.getElementById("basdossier-select")?.addEventListener("change", () => ritaBasdossier());
   document.addEventListener("click", (e) => {
     const btn = (
       /** @type {HTMLElement} */
@@ -21676,81 +21841,44 @@ function uppstartBasdossier() {
 }
 
 // src/app/39-loneoversikt.js
-function generateRapport() {
+function ritaLoneoversikt() {
   const tbody = (
     /** @type {HTMLElement} */
     document.querySelector("#rapport-table tbody")
   );
   tbody.innerHTML = "";
   const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
-  const d = getData();
-  const bas = getBasIntervals();
-  let kMaskedRowsCount = 0;
-  let yrkenSkippedCount = 0;
-  bas.forEach((b) => {
-    const df = d.filter((r) => r.bas === b);
-    const pol = policyFor(null, b);
+  const vm = vymodellLoneoversikt(getData(), { bas: getBasIntervals(), k: kTroskel(), policyFor, statistik: state.statistik });
+  const dossierBas = new Set(basdossierKandidater().map((x) => x.bas));
+  vm.block.forEach(({ bas: b, referens: pol, rader, utelamnade }) => {
     const trH = document.createElement("tr");
     trH.className = "group-header";
     trH.dataset.bas = b;
-    trH.innerHTML = `<td colspan="8">BAS ${esc(b)}${basdossierKandidater().some((x) => x.bas === b) ? basdossierKnapp(b) : ""}</td>`;
+    trH.innerHTML = `<td colspan="8">BAS ${esc(b)}${dossierBas.has(b) ? basdossierKnapp(b) : ""}</td>`;
     tbody.appendChild(trH);
-    const basUtelamnade = [];
     if (pol) {
       const tr = document.createElement("tr");
       tr.innerHTML = `<td>${esc(referensKortnamn())}</td><td data-sort-value="${pol.p10}">${fmt.format(pol.p10)}</td><td data-sort-value="${pol.med}">${fmt.format(pol.med)}</td><td data-sort-value="${pol.p90}">${fmt.format(pol.p90)}</td><td>-</td><td>-</td><td>-</td><td>-</td>`;
       tbody.appendChild(tr);
     }
-    const addRow = (kategori, subset) => {
-      if (!subset.length) return;
-      if (isKMasked(subset.length)) {
-        kMaskedRowsCount++;
-        basUtelamnade.push(kategori);
-        return;
-      }
-      const lons = subset.map((r) => r.lon);
-      const med = Stat.median(lons), p10 = Stat.kvantil(lons, 0.1), p90 = Stat.kvantil(lons, 0.9);
-      const isWarn = pol && pol.p10 && med < pol.p10;
-      const spreadTal = p10 > 0 ? p90 / p10 : null;
-      const spread = spreadTal != null ? svTal(spreadTal, 2) : "-";
-      let statMed = "-", statDiff = "-", statColor = "";
-      let statRefMedian = null;
-      let statDiffRaw = null;
-      if (state.statistik.length > 0) {
-        const aidCode = aidAvYrke(kategori);
-        const sr = statistikFor(state.statistik, aidCode, b)?.rad;
-        if (sr && sr.median > 0) {
-          statMed = fmt.format(sr.median);
-          statRefMedian = sr.median;
-          const diff = (med / sr.median - 1) * 100;
-          statDiffRaw = +diff.toFixed(1);
-          statDiff = (diff > 0 ? "+" : "") + svPct(diff, 1);
-          statColor = diff < 0 ? "f-kritisk" : "fg-ok";
-        }
-      }
+    for (const r of rader) {
+      const kategori = r.kategori, lons = r.lons, med = r.med, p10 = r.p10, p90 = r.p90, spridning = r.spridning, statMedian = r.statMedian;
+      const warn = r.underReferens ? "warning-cell" : "";
+      const statDiffRaw = r.statDiff != null ? +r.statDiff.toFixed(1) : null;
+      const statMed = statMedian != null ? fmt.format(statMedian) : "-";
+      const statDiff = r.statDiff != null ? (r.statDiff > 0 ? "+" : "") + svPct(r.statDiff, 1) : "-";
+      const statColor = r.statDiff != null ? r.statDiff < 0 ? "f-kritisk" : "fg-ok" : "";
       const evidenceBtn = ` <button class="btn-evidence" data-rapport-row="1" type="button" title="Visa beräkningen bakom denna rad" aria-label="Visa beräkningen för ${esc(kategori)}">${ikon("sok")}</button>`;
       const tr = document.createElement("tr");
-      const svMed = statRefMedian != null ? ` data-sort-value="${statRefMedian}"` : "";
+      const svMed = statMedian != null ? ` data-sort-value="${statMedian}"` : "";
       const svDiff = statDiffRaw != null ? ` data-sort-value="${statDiffRaw}"` : "";
-      tr.innerHTML = `<td>${esc(kategori)}${evidenceBtn}</td><td class="${isWarn ? "warning-cell" : ""}" data-sort-value="${p10}">${fmt.format(p10)}</td><td class="${isWarn ? "warning-cell" : ""}" data-sort-value="${med}">${fmt.format(med)}</td><td data-sort-value="${p90}">${fmt.format(p90)}</td><td data-sort-value="${lons.length}">${lons.length}</td><td${spreadTal != null ? ` data-sort-value="${spreadTal.toFixed(2)}"` : ""}>${spread}</td><td class="bak-info-yta"${svMed}>${statMed}</td><td class="bg-info-yta halvfet ${statColor}"${svDiff}>${statDiff}</td>`;
-      tr._rapportRow = { kategori, bas: b, lons: lons.slice(), polRow: pol, statRefMedian, masked: false };
+      tr.innerHTML = `<td>${esc(kategori)}${evidenceBtn}</td><td class="${warn}" data-sort-value="${p10}">${fmt.format(p10)}</td><td class="${warn}" data-sort-value="${med}">${fmt.format(med)}</td><td data-sort-value="${p90}">${fmt.format(p90)}</td><td data-sort-value="${lons.length}">${lons.length}</td><td${spridning != null ? ` data-sort-value="${spridning.toFixed(2)}"` : ""}>${spridning != null ? svTal(spridning, 2) : "-"}</td><td class="bak-info-yta"${svMed}>${statMed}</td><td class="bg-info-yta halvfet ${statColor}"${svDiff}>${statDiff}</td>`;
+      tr._rapportRow = { kategori, bas: b, lons: lons.slice(), polRow: pol, statRefMedian: statMedian, masked: false };
       tbody.appendChild(tr);
-    };
-    addRow("Organisationen", df);
-    addRow("Kvinna", df.filter((r) => arKvinna(r)));
-    addRow("Man", df.filter((r) => arMan(r)));
-    const yrkeMap = {};
-    df.forEach((r) => {
-      if (!yrkeMap[r.yrke]) yrkeMap[r.yrke] = [];
-      yrkeMap[r.yrke].push(r);
-    });
-    Object.keys(yrkeMap).sort().forEach((y) => {
-      if (yrkeMap[y].length >= 5) addRow(y, yrkeMap[y]);
-      else yrkenSkippedCount++;
-    });
-    if (basUtelamnade.length) {
+    }
+    if (utelamnade.length) {
       const trN = document.createElement("tr");
-      trN.innerHTML = `<td colspan="8">${kMaskNote(basUtelamnade, "grupp i detta BAS|grupper i detta BAS")}</td>`;
+      trN.innerHTML = `<td colspan="8">${kMaskNote(utelamnade, "grupp i detta BAS|grupper i detta BAS")}</td>`;
       tbody.appendChild(trN);
     }
   });
@@ -21772,7 +21900,7 @@ function generateRapport() {
     ...base,
     usedInAnalysis: base.afterFilter,
     analysisExclusions: [
-      ...yrkenSkippedCount > 0 ? [[`${stor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, yrkenSkippedCount]] : []
+      ...vm.smaYrken > 0 ? [[`${stor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, vm.smaYrken]] : []
     ],
     formler: [
       ["Median", "P50, mittersta värdet av sorterad lönelista"],
@@ -21782,7 +21910,7 @@ function generateRapport() {
       ["Diff mot jämförelsestatistiken", "<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %"]
     ],
     notes: [
-      `K-anonymitet: ${kMaskedRowsCount} grupp${kMaskedRowsCount === 1 ? "" : "er"} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
+      `K-anonymitet: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? "" : "er"} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,
       `BAS-grupper visar i ordning: "${esc(referensKortnamn())}" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje ${T.enhet.en} med ≥5 personer`
     ]
   });
@@ -21935,15 +22063,15 @@ function _afterDataLoaded() {
   const poangCount = _deriveArbetsvarderingFromData();
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
   unlockTabs();
-  updateDashboardStats();
+  ritaNyckeltal();
   populateSelects();
-  generateRapport();
+  ritaLoneoversikt();
   const bas = getBasIntervals();
   dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
   if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
   dataStatus.className = "status-msg success";
   markUploadLoaded("upload-cell-data", "Inläst");
-  updateCompliance();
+  ritaKravstatus();
   const reg = runOLSRegression();
   renderUnderlagetsKvalitet({ reg });
   renderProcessTracker({ reg });
@@ -24043,7 +24171,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     populateSelects();
     _renderaOmAllaFlikar();
   } else {
-    updateCompliance();
+    ritaKravstatus();
     renderActionChecklist();
     renderProcessTracker();
     refreshCurrentTab();
@@ -24441,7 +24569,7 @@ function uppstartOrganisationspaket() {
     );
     if (!state.data.length) return;
     invalidateStatCaches();
-    updateCompliance();
+    ritaKravstatus();
     renderActionChecklist();
     refreshCurrentTab();
   });
@@ -24564,12 +24692,12 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
   document.getElementById("dashboard-summary").style.display = "grid";
   unlockTabs();
-  updateDashboardStats();
+  ritaNyckeltal();
   populateSelects();
-  generateRapport();
+  ritaLoneoversikt();
   ritaLoneskillnadPerBas(lsBasVymodell());
   ritaAlderOchLon("__ALLA__");
-  updateCompliance();
+  ritaKravstatus();
   const reg = runOLSRegression();
   renderUnderlagetsKvalitet({ reg });
   updateGdprBanner();
@@ -24858,7 +24986,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof renderFilrutor === "function") renderFilrutor();
   if (typeof navigateTo === "function") navigateTo("dashboard");
   updateGdprBanner();
-  if (typeof updateCompliance === "function") updateCompliance();
+  if (typeof ritaKravstatus === "function") ritaKravstatus();
   announceToScreenReader("All data har raderats ur minnet.");
   if (inbakat && typeof lasInInbakatPaket === "function") lasInInbakatPaket();
   visningNy();
@@ -27022,7 +27150,7 @@ function __excelAlltBokExport() {
       }
     }
   };
-  ensure("#rapport-table tbody tr", generateRapport);
+  ensure("#rapport-table tbody tr", ritaLoneoversikt);
   ensure("#skevhet-table tbody tr", () => ritaLoneskillnadPerBas(lsBasVymodell()));
   ensure("#matrix-table tbody tr", () => ritaLikaArbete(laVymodell()));
   if (state.policy.length || state.statistik.length) ensure("#prio-table tbody tr", renderPrioritering);
@@ -28729,11 +28857,11 @@ function uppstartReferensfiler() {
       state.filnamn.policy = file.name;
       renderFilrutor();
       hideLoading();
-      updateCompliance();
+      ritaKravstatus();
       renderConsistencyBanner();
       renderActionChecklist();
       renderProcessTracker();
-      if (getData().length > 0) generateRapport();
+      if (getData().length > 0) ritaLoneoversikt();
     }, "stallningstagande");
   });
   statInput.addEventListener("change", (e) => {
@@ -28826,7 +28954,7 @@ function uppstartReferensfiler() {
         }
         synkaJamforelseFlik();
         hideLoading();
-        updateCompliance();
+        ritaKravstatus();
         renderConsistencyBanner();
         renderActionChecklist();
         renderProcessTracker();
@@ -29855,72 +29983,42 @@ function setCompCard(id, count, total, valueText, cardState) {
   icon.innerHTML = { ok: ikon("bock"), warn: ikon("statusVarning"), crit: ikon("stopp"), na: "—" }[cardState] || "—";
   card.className = `compliance-card ${cardState}`;
 }
-function updateCompliance() {
+function ritaKravstatus() {
   const overview = document.getElementById("compliance-overview");
-  if (!overview || !getData().length) return;
-  overview.style.display = "block";
   const d = getData();
-  const bas = getBasIntervals();
-  const jb = jamforbaraBas(d, kInstalld());
-  const gapTotal = jb.jamforbara.length;
-  const maskText = jb.maskerade.length ? ` · ${jb.maskerade.length} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : "";
-  let gapCrit = 0, skevCount = 0;
-  const granskaBas = new Set(_laOversiktRader(d).filter((o) => _laOversiktStatus(o).niva === "granska").map((o) => o.bas));
-  jb.jamforbara.forEach((b) => {
-    const df = d.filter((r) => r.bas === b);
-    const kv = df.filter((r) => arKvinna(r)).map((r) => r.lon);
-    const ma = df.filter((r) => arMan(r)).map((r) => r.lon);
-    if (granskaBas.has(b)) gapCrit++;
-    const tot = kv.length + ma.length;
-    if (kv.length / tot < 0.4 || ma.length / tot < 0.4) skevCount++;
-  });
-  if (gapTotal === 0) {
+  if (!overview || !d.length) return;
+  overview.style.display = "block";
+  const vm = (
+    /** @type {NonNullable<ReturnType<typeof kravstatus>>} */
+    kravstatus(d, {
+      bas: getBasIntervals(),
+      k: kInstalld(),
+      golv: statGolv(),
+      oversikt: _laOversiktRader(d),
+      policyFor: harReferens() ? policyFor : null,
+      statistik: state.statistik
+    })
+  );
+  const maskText = vm.maskerade ? ` · ${vm.maskerade} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : "";
+  if (vm.jamforbara === 0) {
     setCompCard("comp-gap", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
     setCompCard("comp-skev", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
   } else {
-    setCompCard("comp-gap", gapCrit, gapTotal, `${gapCrit} av ${gapTotal} jämförbara ${T.niva.fl}${maskText}`, gapCrit === 0 ? "ok" : gapCrit >= 3 ? "crit" : "warn");
-    setCompCard("comp-skev", skevCount, gapTotal, `${skevCount} av ${gapTotal} jämförbara ${T.niva.fl}${maskText}`, skevCount === 0 ? "ok" : "warn");
+    setCompCard("comp-gap", vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
+    setCompCard("comp-skev", vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
   }
   const polLabel = document.getElementById("comp-pol-label");
   if (polLabel) polLabel.textContent = harReferens() ? `Under P10 i ${referensKortnamn()}` : "Under ställningstagandets P10";
   const polSub = document.getElementById("comp-pol-sub");
   if (polSub) polSub.textContent = referensNamn();
-  if (!harReferens()) {
-    setCompCard("comp-pol", 0, 0, "Kräver lönepolitiskt ställningstagande", "na");
-  } else {
-    let polLow = 0, polTotal = 0;
-    bas.forEach((b) => {
-      const pol = policyFor(null, b);
-      if (!pol || !pol.p10) return;
-      if (d.filter((r) => r.bas === b).length < kInstalld()) return;
-      polTotal++;
-      if (Stat.median(d.filter((r) => r.bas === b).map((r) => r.lon)) < pol.p10) polLow++;
-    });
-    if (polTotal === 0) {
-      setCompCard("comp-pol", 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, "na");
-    } else {
-      setCompCard("comp-pol", polLow, polTotal, `${polLow} av ${polTotal} ${T.niva.fl}`, polLow === 0 ? "ok" : polLow >= 2 ? "crit" : "warn");
-    }
-  }
-  if (state.statistik.length > 0) {
-    let bmLow = 0, bmTotal = 0;
-    const seen = /* @__PURE__ */ new Set();
-    d.forEach((r) => {
-      const aid = aidAvYrke(r.yrke);
-      const key = `${aid}|${r.bas}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      const statRow = statistikFor(state.statistik, aid, r.bas)?.rad;
-      if (!statRow) return;
-      bmTotal++;
-      const orgMed = Stat.median(d.filter((x) => {
-        return aidAvYrke(x.yrke) === aid && x.bas === r.bas;
-      }).map((x) => x.lon));
-      if (orgMed < statRow.median) bmLow++;
-    });
-    if (bmTotal === 0) setCompCard("comp-bm", 0, 0, "Ingen matchning hittad", "na");
-    else if (bmLow === 0) setCompCard("comp-bm", 0, bmTotal, `0 av ${bmTotal} ${T.enhet.fl} i ${T.niva.en}`, "ok");
-    else setCompCard("comp-bm", bmLow, bmTotal, `${bmLow} av ${bmTotal} ${T.enhet.fl} i ${T.niva.en}`, bmLow / bmTotal > 0.5 ? "crit" : "warn");
+  const ref = vm.referens;
+  if (!ref) setCompCard("comp-pol", 0, 0, "Kräver lönepolitiskt ställningstagande", "na");
+  else if (ref.av === 0) setCompCard("comp-pol", 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, "na");
+  else setCompCard("comp-pol", ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
+  const bm = vm.statistik;
+  if (bm) {
+    if (bm.av === 0) setCompCard("comp-bm", 0, 0, "Ingen matchning hittad", "na");
+    else setCompCard("comp-bm", bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}`, bm.lage);
   }
   const bmLank = document.querySelector("#comp-bm .comp-lank");
   if (bmLank) bmLank.hidden = !state.statistik.length;
@@ -30146,24 +30244,26 @@ function _ovRitaFilrad(har, antal) {
 function computeGroupMDE(nKv, nMa, sigmaLog) {
   return gruppMde(nKv, nMa, sigmaLog || state.powerAnalysis?.sigma);
 }
-function updateDashboardStats() {
-  const d = getData();
-  if (!d.length) return;
-  const allAges = d.map((r) => r.alder).filter((a) => a && !isNaN(a));
-  const m = konsMedianer(d, { k: kTroskel() }), { nKv, nMa } = m;
-  document.getElementById("stat-n").textContent = String(d.length);
+function ritaNyckeltal() {
+  const vm = oversiktNyckeltal(getData(), kTroskel());
+  if (!vm) return;
+  document.getElementById("stat-n").textContent = String(vm.n);
   const konEl = document.getElementById("stat-kon");
-  if (konEl) konEl.textContent = `${nKv.toLocaleString("sv-SE")} / ${nMa.toLocaleString("sv-SE")}`;
-  document.getElementById("stat-age").textContent = allAges.length ? svTal(allAges.reduce((a, b) => a + b, 0) / allAges.length, 1) : "–";
+  if (konEl) konEl.textContent = `${vm.nKv.toLocaleString("sv-SE")} / ${vm.nMa.toLocaleString("sv-SE")}`;
+  document.getElementById("stat-age").textContent = vm.medelalder != null ? svTal(vm.medelalder, 1) : "–";
   const pgEl = document.getElementById("stat-paygap");
   if (pgEl) {
-    if (!nKv || !nMa) {
+    if (vm.lage === "ettKonSaknas") {
       pgEl.textContent = "-";
-    } else if (!m.konOk) {
+    } else if (vm.lage === "underK") {
       pgEl.innerHTML = `–<div class="stat-tip">Visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.</div>`;
     } else {
       const tipText = `Rå skillnad för hela organisationen, före hänsyn till ${T.enhet.en}, ${T.niva.en} och ålder. Se Lika arbete för skillnaden per grupp.`;
-      pgEl.innerHTML = svPct(m.kvotPct, 1) + `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan ${T.enhet.en} och ${T.niva.en} räknats bort</div>`;
+      pgEl.innerHTML = svPct(
+        /** @type {number} */
+        vm.kvotPct,
+        1
+      ) + `<div class="stat-tip" title="${esc(tipText)}">rå skillnad, innan ${T.enhet.en} och ${T.niva.en} räknats bort</div>`;
     }
   }
 }
@@ -30171,8 +30271,8 @@ function renderOversiktDelar() {
   let punkter;
   let reg;
   const delar = [
-    ["nyckeltal", () => updateDashboardStats()],
-    ["kompliansöversikt", () => updateCompliance()],
+    ["nyckeltal", () => ritaNyckeltal()],
+    ["kompliansöversikt", () => ritaKravstatus()],
     ["Att göra", () => {
       reg = runOLSRegression();
       punkter = renderActionChecklist({ reg });
@@ -30449,7 +30549,7 @@ function _skattningarIBakgrunden() {
         } catch (_e) {
           state.powerAnalysis = null;
         }
-        if (typeof updateDashboardStats === "function") updateDashboardStats();
+        if (typeof ritaNyckeltal === "function") ritaNyckeltal();
         if (typeof renderUnderlagetsKvalitet === "function") renderUnderlagetsKvalitet();
         const oppen = document.querySelector(".nav-item.active[data-tab]");
         const flik = oppen ? oppen.getAttribute("data-tab") : null;
@@ -30485,10 +30585,10 @@ function _omritningssteg() {
     if (typeof tomFlikarUtom === "function") tomFlikarUtom(/* @__PURE__ */ new Set(["dashboard", ...oppen2 ? [oppen2.getAttribute("data-tab")] : []]));
   }]);
   steg.push(["nyckeltal", () => {
-    if (typeof updateDashboardStats === "function") updateDashboardStats();
+    if (typeof ritaNyckeltal === "function") ritaNyckeltal();
   }]);
   steg.push(["kompliansöversikt", () => {
-    if (typeof updateCompliance === "function") updateCompliance();
+    if (typeof ritaKravstatus === "function") ritaKravstatus();
   }]);
   const indata = () => ({ data: state.data, rest: `${kInstalld()}|${JSON.stringify(typeof forklaringsmodell === "function" ? forklaringsmodell() : null)}` });
   const oforandrat = (f) => {
@@ -30528,7 +30628,7 @@ function _omritningssteg() {
   if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), () => renderTabContent(oppen.getAttribute("data-tab"))]);
   steg.push(["gruppdossiern", () => {
     const dossier = document.getElementById("dossier-body");
-    if (dossier && dossier.innerHTML.trim() && typeof renderGruppdossier === "function") renderGruppdossier();
+    if (dossier && dossier.innerHTML.trim() && typeof ritaGruppdossier === "function") ritaGruppdossier();
   }]);
   return steg;
 }
@@ -32207,7 +32307,7 @@ function _renderTabContent(target) {
     renderLikvardighet();
     renderAidBasLikvardigt();
   } else if (target === "utforska" && d.length) {
-    generateRapport();
+    ritaLoneoversikt();
     renderExplorer();
     utAllaDiagramVidRitning();
   } else if (target === "rapporttext") medExportLage(() => {
@@ -32269,9 +32369,9 @@ function refreshCurrentTab() {
   const active = document.querySelector(".nav-item.active");
   if (!active) return;
   const target = active.getAttribute("data-tab");
-  updateDashboardStats();
+  ritaNyckeltal();
   populateSelects();
-  updateCompliance();
+  ritaKravstatus();
   renderUnderlagetsKvalitet();
   renderTabContent(target);
 }
@@ -32970,7 +33070,7 @@ function ritaOmReferens() {
   for (const fn of [
     renderReferensKort,
     refreshCurrentTab,
-    updateCompliance,
+    ritaKravstatus,
     renderConsistencyBanner,
     renderActionChecklist,
     renderProcessTracker
@@ -35523,7 +35623,7 @@ async function _buildPrintReportExport() {
     const helaDokumentationen = rmArHelaDokumentationen(modell, bada.alla);
     let bilagor = "";
     if (helaDokumentationen) {
-      generateRapport();
+      ritaLoneoversikt();
       ritaLoneskillnadPerBas(lsBasVymodell());
       ritaLikaArbete(laVymodell());
       if (state.statistik.length) generateBenchmark();
