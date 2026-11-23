@@ -5,16 +5,12 @@
  *
  * En tabell som användaren byggt i Utforska sparas som ett RECEPT — rader, kolumner, mått, urval och om tabellen ska
  * upprepas per BAS-intervall — aldrig som tal. Recepten ritas om i exportläget när Word-utkastet, PDF-rapporten och
- * Excel-filen byggs, med samma pivot som fliken (computePivot) och samma regler för minsta gruppstorlek som Utforskas
+ * Excel-filen byggs, med samma pivot som fliken (pivottabell) och samma regler för minsta gruppstorlek som Utforskas
  * export: en cell under tröskeln blir tom, och rader och kolumner som bara har tomma celler utelämnas och räknas.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { computePivot } from './utforska.js';
+import { pivottabell } from './utforska.js';
 import { personOrd } from './namn.js';
-import { skapaTermer, stor } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { STANDARDTERMER as T, stor } from './termer.js';
 
 
 // Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
@@ -85,19 +81,19 @@ const _nText = c => `${c.n} (${c.nKv}/${c.nMa})`;
 /**
  * Tabellerna ur ett recept, i rapportmodellens form: { rubrik, kolumner: [{rubrik, typ}], rader: [[...]], utelamnade, not }.
  * Flera tabeller när receptet upprepas per BAS-intervall. Tröskeln k tillämpas här.
- * @param {any[]} rows
+ * @param {any[]} allaRader
  * @param {any} recept
  * @param {{k?: number}} [opt]
  * @returns {Array<{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], utelamnade: number, not: string}>}
  */
-export function receptTillTabeller(rows, recept, { k = 10 } = {}) {
+export function receptTillTabeller(allaRader, recept, { k = 10 } = {}) {
     const r = valideraRecept(recept);
     if (!r) return [];
-    const bygg = (rader, rubrik) => _tabell(computePivot(rader, r.spec, { k }), r.spec, k, rubrik);
+    const bygg = (rader, rubrik) => _tabell(pivottabell(rader, r.spec, { k }), r.spec, k, rubrik);
     if (r.upprepa === 'bas') {
-        return /** @type {any[]} */ (_bas(rows).map(b => bygg(rows.filter(x => String(x.bas) === b), `${r.namn} — BAS ${b}`)).filter(t => t && t.rader.length));
+        return /** @type {any[]} */ (_bas(allaRader).map(b => bygg(allaRader.filter(x => String(x.bas) === b), `${r.namn} — BAS ${b}`)).filter(t => t && t.rader.length));
     }
-    const t = bygg(rows, r.namn);
+    const t = bygg(allaRader, r.namn);
     return t && t.rader.length ? [t] : [];   // en tabell där ingen grupp når tröskeln utelämnas (anroparen anger det)
 }
 

@@ -13,6 +13,18 @@
 // grupp som inte följer med i exporterna (färre än minsta gruppstorlek) får inga andelar, och dialogen säger det.
 // Samma dialogmönster som BAS-dossiern (81-basdossier.js).
 // ====================================================================
+import { personOrd } from '../lib/namn.js';
+import { skalKategorier, skalSammanstallning } from '../lib/sakligaskal.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { genitiv, stor, termFras } from '../lib/termer.js';
+import { _focusTraps, announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { kInstalld } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { getData } from './12-tillstand.js';
+import { medExportLage } from './23-exportgrind.js';
+import { _handlingsplanSeedRows, _hpArEgen, _hpGaTillRad, _hpLiknarPersonuppgift, _hpSatt, _hpSattSkal, _hpSkalEtikett, _hpSkalSammanfattning, _hpUtanBelopp, _hpVarden } from './56-handlingsplan.js';
+import { closeGruppdossier } from './80-gruppdossier.js';
+import { closeBasdossier } from './81-basdossier.js';
 
 /** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, konUnder: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
 let _skal = null;
@@ -77,15 +89,15 @@ function _skalSkillnadHtml() {
     if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
     const par = s.kalla === 'par';
     if (s.skillnadKr <= 0) return par
-        ? `<p class="skal-skillnad">${termStor(termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad', genitiv: true }))} median är inte lägre än ${termGenitiv(T.jamforelse.bf)} (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`
+        ? `<p class="skal-skillnad">${stor(termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad', genitiv: true }))} median är inte lägre än ${genitiv(T.jamforelse.bf)} (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`
         : `<p class="skal-skillnad">Kvinnors median är inte lägre än mäns (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`;
-    const vad = par ? `${termGenitiv(T.jamforelse.bf)} median minus ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad', genitiv: true })}` : 'mäns median minus kvinnors i gruppen';
+    const vad = par ? `${genitiv(T.jamforelse.bf)} median minus ${termFras(T.enhet, 'bf', { adjektiv: 'kvinnodominerad', genitiv: true })}` : 'mäns median minus kvinnors i gruppen';
     return `<p class="skal-skillnad"><strong>Medianskillnad ${svTal(s.skillnadKr, 0)} kr/mån</strong> <span class="text-dampad-sm">(${vad})</span></p>`
         + (par ? '' : '<p class="text-dampad-sm marg-0">Skälen gäller skillnaden mellan kvinnor och män i gruppen, inte gruppens avstånd till referensen.</p>');
 }
 
 function _skalRadHtml(r, i) {
-    const k = _sakKategorier();
+    const k = skalKategorier();
     const vald = k.find(x => x.id === r.kategori) || k[0];
     const ogiltig = _skalBelopp(r.belopp) == null;   // också ett tomt belopp: raden om beloppet visas
     return `<tr class="skal-rad" data-skal-i="${i}">`
@@ -133,7 +145,7 @@ function _skalUppdatera() {
     if (!_skal) return;
     const s = _skal;
     _hpSattSkal(s.nyckel, _skalGiltiga());
-    const sum = _sakSammanstallning(_skalGiltiga(), s.iExport ? s.skillnadKr : null);
+    const sum = skalSammanstallning(_skalGiltiga(), s.iExport ? s.skillnadKr : null);
     const status = document.getElementById('skal-status');
     if (status) {
         const summa = sum.forklaradAndel != null
@@ -175,73 +187,76 @@ function _skalUppdatera() {
     });
 }
 
-// ---- Wiring ----
-document.addEventListener('click', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (!t || !t.closest) return;
-    // Läs-raden i gruppdossiern och BAS-dossiern: dossiern stängs och raden i Handlingsplan får fokus.
-    const gaTill = t.closest('[data-hp-ga-till]');
-    if (gaTill) {
-        e.preventDefault();
-        if (typeof closeGruppdossier === 'function') closeGruppdossier();
-        if (typeof closeBasdossier === 'function') closeBasdossier();
-        _hpGaTillRad(gaTill.getAttribute('data-hp-ga-till') || '');
-        return;
-    }
-    const oppna = t.closest('[data-hp-skal]');
-    if (oppna) { openSkalDialog(oppna.getAttribute('data-hp-skal') || '', oppna); return; }
-    if (!t.closest('#skal-modal')) return;
-    if (t.closest('[data-skal-close]')) { closeSkalDialog(); return; }
-    if (!_skal) return;
-    if (t.closest('#skal-lagg-till')) {
-        if (_skal.rader.length >= 8) return;
-        const anvanda = new Set(_skal.rader.map(r => r.kategori));
-        const forsta = _sakKategorier().find(k => !anvanda.has(k.id)) || _sakKategorier()[0];
-        _skal.rader.push({ kategori: forsta.id, belopp: '', kommentar: '' });
-        _skalRender();
-        const sel = [...document.querySelectorAll('#skal-body select.skal-kategori')].at(-1);
-        if (sel) /** @type {HTMLElement} */ (sel).focus();
-        return;
-    }
-    const bort = t.closest('[data-skal-ta-bort]');
-    if (bort) {
-        _skal.rader.splice(Number(bort.getAttribute('data-skal-ta-bort')), 1);
-        _skalRender();
-        document.getElementById('skal-lagg-till')?.focus();
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('Skälet är borttaget.');
-        return;
-    }
-    if (t.closest('#skal-markera')) {
-        const nyckel = _skal.nyckel;
-        _hpSatt(nyckel, 'sakligt', SKAL_JA);
-        document.querySelectorAll('#handlingsplan-tbody select.hp-falt').forEach(el => {
-            const sel = /** @type {HTMLSelectElement} */ (el);
-            if (sel.dataset.hpNyckel === nyckel && sel.dataset.hpFalt === 'sakligt') sel.value = SKAL_JA;
-        });
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartSakligaSkal() {
+    // ---- Wiring ----
+    document.addEventListener('click', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (!t || !t.closest) return;
+        // Läs-raden i gruppdossiern och BAS-dossiern: dossiern stängs och raden i Handlingsplan får fokus.
+        const gaTill = t.closest('[data-hp-ga-till]');
+        if (gaTill) {
+            e.preventDefault();
+            if (typeof closeGruppdossier === 'function') closeGruppdossier();
+            if (typeof closeBasdossier === 'function') closeBasdossier();
+            _hpGaTillRad(gaTill.getAttribute('data-hp-ga-till') || '');
+            return;
+        }
+        const oppna = t.closest('[data-hp-skal]');
+        if (oppna) { openSkalDialog(oppna.getAttribute('data-hp-skal') || '', oppna); return; }
+        if (!t.closest('#skal-modal')) return;
+        if (t.closest('[data-skal-close]')) { closeSkalDialog(); return; }
+        if (!_skal) return;
+        if (t.closest('#skal-lagg-till')) {
+            if (_skal.rader.length >= 8) return;
+            const anvanda = new Set(_skal.rader.map(r => r.kategori));
+            const forsta = skalKategorier().find(k => !anvanda.has(k.id)) || skalKategorier()[0];
+            _skal.rader.push({ kategori: forsta.id, belopp: '', kommentar: '' });
+            _skalRender();
+            const sel = [...document.querySelectorAll('#skal-body select.skal-kategori')].at(-1);
+            if (sel) /** @type {HTMLElement} */ (sel).focus();
+            return;
+        }
+        const bort = t.closest('[data-skal-ta-bort]');
+        if (bort) {
+            _skal.rader.splice(Number(bort.getAttribute('data-skal-ta-bort')), 1);
+            _skalRender();
+            document.getElementById('skal-lagg-till')?.focus();
+            if (typeof announceToScreenReader === 'function') announceToScreenReader('Skälet är borttaget.');
+            return;
+        }
+        if (t.closest('#skal-markera')) {
+            const nyckel = _skal.nyckel;
+            _hpSatt(nyckel, 'sakligt', SKAL_JA);
+            document.querySelectorAll('#handlingsplan-tbody select.hp-falt').forEach(el => {
+                const sel = /** @type {HTMLSelectElement} */ (el);
+                if (sel.dataset.hpNyckel === nyckel && sel.dataset.hpFalt === 'sakligt') sel.value = SKAL_JA;
+            });
+            _skalUppdatera();
+            document.getElementById('skal-summa')?.setAttribute('tabindex', '-1');
+            document.getElementById('skal-summa')?.focus();
+            if (typeof announceToScreenReader === 'function') announceToScreenReader('Raden är markerad: sakligt skäl finns.');
+        }
+    });
+    ['input', 'change'].forEach(typ => document.getElementById('skal-modal')?.addEventListener(typ, e => {
+        const el = /** @type {HTMLInputElement} */ (e.target);
+        if (!_skal || !el || !el.dataset || el.dataset.skalI == null) return;
+        const r = _skal.rader[Number(el.dataset.skalI)];
+        if (!r) return;
+        if (el.classList.contains('skal-kategori')) {
+            r.kategori = el.value;
+            const f = el.parentElement && el.parentElement.querySelector('.skal-forklaring');
+            const k = skalKategorier().find(x => x.id === el.value);
+            if (f && k) f.textContent = k.forklaring;
+        } else if (el.classList.contains('skal-belopp')) {
+            r.belopp = el.value;
+            if (_skalBelopp(el.value) == null && el.value !== '') el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+            const andel = el.closest('tr')?.querySelector('.skal-andel');
+            if (andel) andel.textContent = _skalAndelText(r);
+        } else if (el.classList.contains('skal-kommentar')) r.kommentar = el.value.slice(0, 200);
         _skalUppdatera();
-        document.getElementById('skal-summa')?.setAttribute('tabindex', '-1');
-        document.getElementById('skal-summa')?.focus();
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('Raden är markerad: sakligt skäl finns.');
-    }
-});
-['input', 'change'].forEach(typ => document.getElementById('skal-modal')?.addEventListener(typ, e => {
-    const el = /** @type {HTMLInputElement} */ (e.target);
-    if (!_skal || !el || !el.dataset || el.dataset.skalI == null) return;
-    const r = _skal.rader[Number(el.dataset.skalI)];
-    if (!r) return;
-    if (el.classList.contains('skal-kategori')) {
-        r.kategori = el.value;
-        const f = el.parentElement && el.parentElement.querySelector('.skal-forklaring');
-        const k = _sakKategorier().find(x => x.id === el.value);
-        if (f && k) f.textContent = k.forklaring;
-    } else if (el.classList.contains('skal-belopp')) {
-        r.belopp = el.value;
-        if (_skalBelopp(el.value) == null && el.value !== '') el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
-        const andel = el.closest('tr')?.querySelector('.skal-andel');
-        if (andel) andel.textContent = _skalAndelText(r);
-    } else if (el.classList.contains('skal-kommentar')) r.kommentar = el.value.slice(0, 200);
-    _skalUppdatera();
-}));
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('skal-modal')?.style.display === 'flex') closeSkalDialog();
-});
+    }));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('skal-modal')?.style.display === 'flex') closeSkalDialog();
+    });
+}

@@ -69,13 +69,13 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
             ...flera(25, 'G', 'kvinna', 38000, 'G1'), ...flera(15, 'G', 'man', 41000, 'G1')];
         w.__state.data = [...flera(20, 'A', 'kvinna', 30000, 'A1'), ...flera(20, 'A', 'man', 31000, 'A1'),
             ...flera(5, 'C', 'kvinna', 50000, 'C1'), ...flera(3, 'C', 'man', 60000, 'C1'), ...bakgrund];
-        w.eval('populateSelects(); unlockTabs(); renderGapUppdelning();');
+        w.eval('populateSelects(); unlockTabs(); ritaGapUppdelning();');
         const ovriga = [...w.document.querySelectorAll('#gap-uppdelning .gu-ovriga')].map(li => li.textContent);
         expect(ovriga.length).toBeGreaterThan(0);
         for (const t of ovriga) { expect(t).not.toMatch(/kr/); expect(t).toMatch(/namnges inte: ett kön har färre än 10 personer/); }
         w.__state.data = [...flera(20, 'A', 'kvinna', 30000, 'A1'), ...flera(20, 'A', 'man', 31000, 'A1'),
             ...flera(5, 'C', 'kvinna', 50000, 'C1'), ...flera(3, 'C', 'man', 60000, 'C1')];
-        w.eval('renderGapUppdelning();');
+        w.eval('ritaGapUppdelning();');
         // Räcker inte de andra grupperna räknas alla samman: delarna står, men ingen grupp namnges.
         const kort = w.document.getElementById('gap-uppdelning-innehall');
         expect(kort.querySelectorAll('.gu-rad')).toHaveLength(3);
@@ -192,7 +192,7 @@ describe('ansvarskodskolumnen vid inläsning', () => {
     });
 });
 
-describe('PII-kontrollen vid inläsning samplar hela filen (B4)', () => {
+describe('PII-kontrollen vid inläsning samplar hela filen', () => {
     const vendorPapa = async w => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');

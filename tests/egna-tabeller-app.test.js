@@ -136,7 +136,7 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
     });
     it('per sektor: avsnittet heter Lönestruktur per sektor och tabellerna saknar referensrad', () => {
         const w = fonster();
-        w.__state.perBasRecept = w.eval("_pbValideraRecept({ dim: 'sektor' })");
+        w.__state.perBasRecept = w.eval("valideraPerBasRecept({ dim: 'sektor' })");
         const perbas = w.eval('rapportModell()').avsnitt.find(a => a.id === 'perbas');
         expect(perbas.rubrik).toMatch(/Lönestruktur per huvudområde$/);
         expect(perbas.delar.filter(p => p.typ === 'rubrik').map(p => p.text)[0]).toMatch(/^Huvudområde /);
@@ -193,7 +193,7 @@ describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
         const w = fonster();
         w.__renderTabContent('dashboard');
         let antal = 0;
-        w.updateDashboardStats = () => { antal++; };
+        w.ritaNyckeltal = () => { antal++; };
         w.__renderTabContent('dokumentera');                       // ritar inga andra flikar
         expect(antal).toBe(0);
         w.eval("medExportLage(() => renderTabContent('dashboard'))");   // som ZIP-exporten
@@ -235,7 +235,7 @@ describe('egna tabeller i organisationspaketet (ADR-52)', () => {
         const d = w.document;
         d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
         laggTill(w, 'Min egen');
-        const recept = w.eval("_trNytt({ rad: 'bas', matt: 'p90' }, { namn: 'Paketets tabell' })");
+        const recept = w.eval("nyttRecept({ rad: 'bas', matt: 'p90' }, { namn: 'Paketets tabell' })");
         const r = w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket({ tabeller: [recept], perBasRecept: { dim: 'sektor' } })))}, 'x.lonepaket.json')`);
         expect(r.ok).toBe(true);
         expect(w.__state.rapportTabeller.map(t => t.namn)).toEqual(['Paketets tabell']);

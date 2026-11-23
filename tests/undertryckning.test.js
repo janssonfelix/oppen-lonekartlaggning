@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { kompletterandeUndertryckning, sammanslagning, kompletterandeUndertryckningPerNyckel } from '../src/lib/undertryckning.js';
 import { mulberry32 } from '../src/lib/rng.js';
 
-describe('kompletterandeUndertryckning', () => {
+describe('[B6.7] kompletterandeUndertryckning', () => {
     const del = (namn, n, dold = false) => ({ namn, n, dold });
     it('inga dolda delar: ingenting undertrycks', () => {
         expect(kompletterandeUndertryckning([del('A', 12), del('B', 30)], 10)).toEqual([]);
@@ -39,7 +39,7 @@ describe('kompletterandeUndertryckning', () => {
     });
 });
 
-describe('sammanslagning', () => {
+describe('[B6.9] sammanslagning', () => {
     const del = (namn, nKv, nMa) => ({ namn, nKv, nMa });
     it('varje del har 0 eller minst k av varje kön: ingenting slås samman', () => {
         expect(sammanslagning([del('A', 12, 0), del('B', 0, 30), del('C', 10, 10)], 10)).toEqual([]);
@@ -83,7 +83,7 @@ describe('sammanslagning', () => {
     });
 });
 
-describe('kompletterandeUndertryckningPerNyckel (ADR-91: JPA-protokollets blad 2 mot blad 3)', () => {
+describe('[B6.8] kompletterandeUndertryckningPerNyckel (ADR-91: JPA-protokollets blad 2 mot blad 3)', () => {
     const total = (nyckel, nKv, nMa) => ({ nyckel, nKv, nMa });
     const del = (nyckel, nKv, nMa, namn, dold = false) => ({ nyckel, nKv, nMa, namn, dold });
     for (const k of [10, 25]) {

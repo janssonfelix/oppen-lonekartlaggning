@@ -14,22 +14,24 @@
  *   - kvantilBootstrap: intervallen kring kvantilregressionens skattningar (ADR-63).
  *
  * Rena funktioner: raderna, golvet och tröskeln kommer in som argument. Där slump används är generatorn ett val
- * (`rng`); utan den seedas den ur datat (rngFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
+ * (`rng`); utan den seedas den ur datat (slumpFor), så att resultatet är detsamma varje gång, och dragningarna görs ur
  * sorterade listor, så att det inte beror på radordningen (ADR-86). Percentilintervallet tas
  * med percentilintervall i stat.js. Appens funktioner med de tidigare namnen (computeBootstrapCI,
  * computePowerAnalysis, computeGroupMDE, linearRegressionCI, detectOutliers, _laBootstrapGapCI, _gdBootstrapGapCI,
  * _laTrattUnderlagRakna, _regKvantilBootstrap) är tunna adaptrar som läser tillståndet och anropar funktionerna här.
  *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
+ * Inga DOM-/state-beroenden.
  *
- * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
  */
-import { median, linearRegression, percentilintervall } from './stat.js';
-import { rngFor } from './rng.js';
+import { median, linjarRegression, percentilintervall } from './stat.js';
+import { slumpFor } from './rng.js';
 import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
-import { kvantilDesign, quantileRegression } from './regression.js';
+import { kvantilDesign, kvantilregression } from './regression.js';
 import { arKvinna, arMan } from './kon.js';
+import { konsMedianerUrLoner } from './struktur.js';
 import { aidAvRad, namnrader } from './aid.js';
 
 /** Antalet dragningar i intervallet för hela organisationen (Översikt). */
@@ -69,7 +71,7 @@ export const SMA_GRUPPER_RATTNING = 0.6;
 /** Kvantilregressionens bootstrap: antalet omsamplingar och största antal personer som intervallet räknas för. */
 export const KVANTIL_KI_B = 200, KVANTIL_KI_MAX_N = 2000;
 
-/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+/** Konstanterna ovan i ett objekt, för appen. */
 export function osakerhetKonstanter() {
     return Object.freeze({ B_ORGANISATION, B_PER_GRUPP, B_DOSSIER, KVOT_MIN_N, DOSSIER_MIN_GILTIGA, Z_95, BAND_MIN_N, BAND_STEG,
         Z_STYRKA, BALANSGRANS, STYRKA_MIN_N, MDE_SIGMA_MIN_RESIDUALER, MDE_GOD, MDE_GODTAGBAR, MDE_FOR_LITEN, EXTREMVARDE_Z,
@@ -99,19 +101,19 @@ export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } =
     const d = rader.filter(r => r.lon > 0);
     const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
     const ma = d.filter(r => arMan(r)).map(r => r.lon);
-    if (kv.length < golv || ma.length < golv) return null;
+    const km = konsMedianerUrLoner(kv, ma, { k: golv });
+    if (!km.konOk) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kv, ma, B, rng || rngFor(kv, ma));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kv, ma, B, rng || slumpFor(kv, ma));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? mKv / mMa : 1;
     }
     ratios.sort((a, b) => a - b);
     const { lag: lo, hog: hi } = percentilintervall(ratios);
-    const point = median(kv) / median(ma);
     return {
-        ratio:  { point, lo, hi },
-        gapPct: { point: (point - 1) * 100, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
+        ratio:  { point: km.medKv / km.medMa, lo, hi },
+        gapPct: { point: km.gapPct, lo: (lo - 1) * 100, hi: (hi - 1) * 100 },
         B
     };
 }
@@ -119,15 +121,15 @@ export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } =
 /**
  * 95-procentigt percentil-bootstrapintervall för kvinnors median i procent av mäns, för en grupp (BAS-intervall,
  * åldersgrupp). En dragning där männens median inte är positiv ger 100.
- * @param {number[]} kvLons
- * @param {number[]} maLons
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
  * @returns {null | {lo:number, hi:number}} null med färre än KVOT_MIN_N av något kön
  */
-export function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
-    if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
+export function medianKvotKI(kvLoner, maLoner, { B = B_PER_GRUPP, rng } = {}) {
+    if (kvLoner.length < KVOT_MIN_N || maLoner.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLoner, maLoner, B, rng || slumpFor(kvLoner, maLoner));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mKv = m.kv[b], mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
@@ -140,8 +142,8 @@ export function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
 /**
  * Kvinnors median i procent av mäns per grupp (BAS-intervall, åldersgrupp, yrkesgrupp), bara där både kvinnorna och
  * männen är minst k (k-tröskeln, S4). Den enda prövningen mot k för översikten per BAS-intervall, lönegapet per
- * åldersgrupp och löneöversynens grupper före och efter. En grupp utan löner hoppas över, en grupp där ett kön har
- * färre än k hamnar i `dolda`, och en grupp där männens median inte är positiv hoppas över (kvoten saknas).
+ * åldersgrupp och löneöversynens grupper före och efter. Kvoten räknas med konsMedianerUrLoner (struktur.js): bara
+ * löner över 0 räknas. En grupp utan sådana löner hoppas över, och en grupp där ett kön har färre än k hamnar i `dolda`.
  * @param {Iterable<[any, number[], number[]]>} grupper  [nyckel, kvinnornas löner, männens löner], i visningsordning
  * @param {{k: number, ki?: boolean}} val  ki: med medianKvotKI (B_PER_GRUPP) i `ci`
  * @returns {{visade: Array<{nyckel: any, nKv: number, nMa: number, medKv: number, medMa: number, gap: number, ci?: null | {lo: number, hi: number}}>, dolda: any[]}}
@@ -149,11 +151,10 @@ export function medianKvotKI(kvLons, maLons, { B = B_PER_GRUPP, rng } = {}) {
 export function konskvotPerGrupp(grupper, { k, ki = false }) {
     const visade = [], dolda = [];
     for (const [nyckel, kv, ma] of grupper) {
-        if (!kv.length && !ma.length) continue;
-        if (kv.length < k || ma.length < k) { dolda.push(nyckel); continue; }
-        const medKv = median(kv), medMa = median(ma);
-        if (!(medMa > 0)) continue;
-        visade.push({ nyckel, nKv: kv.length, nMa: ma.length, medKv, medMa, gap: medKv / medMa * 100, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
+        const km = konsMedianerUrLoner(kv, ma, { k });
+        if (!km.nKv && !km.nMa) continue;
+        if (!km.konOk) { dolda.push(nyckel); continue; }
+        visade.push({ nyckel, nKv: km.nKv, nMa: km.nMa, medKv: km.medKv, medMa: km.medMa, gap: km.kvotPct, ...(ki ? { ci: medianKvotKI(kv, ma) } : {}) });
     }
     return { visade, dolda };
 }
@@ -161,15 +162,15 @@ export function konskvotPerGrupp(grupper, { k, ki = false }) {
 /**
  * Som medianKvotKI, men dragningar där männens median inte är positiv räknas inte, och intervallet ges bara när minst
  * DOSSIER_MIN_GILTIGA dragningar återstår (gruppdossiern och rapportunderlaget).
- * @param {number[]} kvLons
- * @param {number[]} maLons
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna
  * @returns {null | {lo:number, hi:number}}
  */
-export function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {}) {
-    if (kvLons.length < KVOT_MIN_N || maLons.length < KVOT_MIN_N) return null;
+export function medianKvotKIGiltiga(kvLoner, maLoner, { B = B_DOSSIER, rng } = {}) {
+    if (kvLoner.length < KVOT_MIN_N || maLoner.length < KVOT_MIN_N) return null;
     const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLons, maLons, B, rng || rngFor(kvLons, maLons));   // seedad ur datat → reproducerbart KI
+    const m = bootstrapMedianer(kvLoner, maLoner, B, rng || slumpFor(kvLoner, maLoner));   // seedad ur datat → reproducerbart KI
     for (let b = 0; b < B; b++) {
         const mMa = m.ma[b];
         ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
@@ -189,14 +190,14 @@ export function medianKvotKIGiltiga(kvLons, maLons, { B = B_DOSSIER, rng } = {})
  * @param {Array<[number, number]>} data  [x, y]-par
  * @param {number} minX
  * @param {number} maxX
- * @param {number} [steps]  antal punkter (BAND_STEG)
+ * @param {number} [steg]  antal punkter (BAND_STEG)
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>} null med färre än BAND_MIN_N punkter eller
  *   utan spridning i x
  */
-export function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
+export function regressionslinjensBand(data, minX, maxX, steg = BAND_STEG) {
     const n = data.length;
     if (n < BAND_MIN_N) return null;
-    const reg = linearRegression(data);
+    const reg = linjarRegression(data);
     if (!reg) return null;
     const meanX = data.reduce((s, p) => s + p[0], 0) / n;
     let ssX = 0, rss = 0;
@@ -208,8 +209,8 @@ export function regressionslinjensBand(data, minX, maxX, steps = BAND_STEG) {
     if (ssX <= 0) return null;
     const sigma2 = rss / Math.max(1, n - 2);
     const out = [];
-    for (let i = 0; i < steps; i++) {
-        const x = minX + (maxX - minX) * (i / (steps - 1));
+    for (let i = 0; i < steg; i++) {
+        const x = minX + (maxX - minX) * (i / (steg - 1));
         const y = reg.m * x + reg.b;
         const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
         out.push({ x, y, lo: y - Z_95 * se, hi: y + Z_95 * se });
@@ -387,7 +388,7 @@ export function extremvarden(rader, golv, troskel = EXTREMVARDE_Z) {
  *   gransHog:number, utanfor:boolean}>}} null utan grupper eller utan spridning
  */
 export function trattUnderlag(rader, k) {
-    /** @type {Map<string, {nyckel:string, yrke:any, bas:any, aid:string, kv:number[], ma:number[], medKv?:number, medMa?:number}>} */
+    /** @type {Map<string, {nyckel:string, yrke:any, bas:any, aid:string, kv:number[], ma:number[], km?:any}>} */
     const perGrupp = new Map();
     // Gruppens namn är texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
     const iGrupp = r => r.lon > 0 && r.bas && (arKvinna(r) || arMan(r));
@@ -400,12 +401,12 @@ export function trattUnderlag(rader, k) {
         if (!perGrupp.has(nyckel)) perGrupp.set(nyckel, { nyckel, yrke: namn.get(nyckel).yrke, bas: r.bas, aid, kv: [], ma: [] });
         /** @type {{kv: number[], ma: number[]}} */ (perGrupp.get(nyckel))[kv ? 'kv' : 'ma'].push(r.lon);
     }
-    const grupper = [...perGrupp.values()].filter(g => g.kv.length >= k && g.ma.length >= k);
+    const grupper = [...perGrupp.values()].filter(g => (g.km = konsMedianerUrLoner(g.kv, g.ma, { k })).konOk);
     if (!grupper.length) return null;
     /** @type {number[]} */
     const rest = [];
     for (const g of grupper) {
-        const medKv = g.medKv = median(g.kv), medMa = g.medMa = median(g.ma);
+        const { medKv, medMa } = g.km;
         for (const v of g.kv) rest.push(Math.log(v) - Math.log(medKv));
         for (const v of g.ma) rest.push(Math.log(v) - Math.log(medMa));
     }
@@ -414,8 +415,8 @@ export function trattUnderlag(rader, k) {
     /** @param {number} nKv @param {number} nMa */
     const halv = (nKv, nMa) => 100 * Z_95 * MEDIAN_SE_FAKTOR * sigma * Math.sqrt(1 / nKv + 1 / nMa) * (1 + SMA_GRUPPER_RATTNING / Math.min(nKv, nMa));
     return { sigma, halv, punkter: grupper.map(g => {
-        const medKv = /** @type {number} */ (g.medKv), medMa = /** @type {number} */ (g.medMa);
-        const kvot = medKv / medMa * 100, grans = slumpensGranser(g.kv, g.ma);
+        const { medKv, medMa, kvotPct: kvot } = g.km;
+        const grans = slumpensGranser(g.kv, g.ma);
         return { nyckel: g.nyckel, yrke: g.yrke, bas: g.bas, aid: g.aid, n: g.kv.length + g.ma.length, nKv: g.kv.length, nMa: g.ma.length, medKv, medMa, kvot, gransLag: grans.lag, gransHog: grans.hog,
                  utanfor: kvot < grans.lag || kvot > grans.hog }; }) };
 }
@@ -449,18 +450,18 @@ function _kvantilRadordning(a, b) {
  * och varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
  * Ett intervall ges när minst hälften av omsamplingarna gav en skattning. IRLS-skattningen är en approximation av
  * kvantillösningen; intervallet bootstrappar approximationen.
- * @param {any[]} raw0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
+ * @param {any[]} rader0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
  * @param {any} modell  förklaringsmodellen
  * @param {Array<{tau:number, error?:boolean, ki?:any}>} results  punktskattningarna; `ki` skrivs in i dem
  * @param {(d: any) => boolean} arKv
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna per kön
  * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
  */
-export function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
-    const rnd = rng || rngFor(raw0.filter(arKv).map(d => d.lon), raw0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
+export function kvantilBootstrap(rader0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
+    const rnd = rng || slumpFor(rader0.filter(arKv).map(d => d.lon), rader0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
     // Raderna sorteras på en fast, fullständig nyckel innan dragningen, så att omsamplingarna inte beror på
     // radordningen (ADR-86). Två rader som är lika i nyckeln är utbytbara i designen.
-    const raw = [...raw0].sort(_kvantilRadordning);
+    const raw = [...rader0].sort(_kvantilRadordning);
     const n = raw.length;
     /** @type {number[][]} */
     const prov = results.map(() => []);
@@ -471,7 +472,7 @@ export function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B
     const ageMean = modell.alder ? raw.reduce((s, d) => s + d.alder, 0) / n : undefined;
     // Varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
     const hel = kvantilDesign(raw, modell, { ageMean });
-    const helBeta = results.map(r => (r.error ? null : (quantileRegression(hel.X, hel.y, r.tau) || {}).beta || null));
+    const helBeta = results.map(r => (r.error ? null : (kvantilregression(hel.X, hel.y, r.tau) || {}).beta || null));
     for (let b = 0; b < B; b++) {
         const urval = new Array(n);
         for (let i = 0; i < n; i++) urval[i] = raw[Math.floor(rnd() * n)];
@@ -480,7 +481,7 @@ export function kvantilBootstrap(raw0, modell, results, arKv, { B = KVANTIL_KI_B
             if (r.error) return null;
             const b0 = helBeta[k];
             const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
-            const fit = quantileRegression(X, y, r.tau, undefined, undefined, start);
+            const fit = kvantilregression(X, y, r.tau, undefined, undefined, start);
             return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
         });
         konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });

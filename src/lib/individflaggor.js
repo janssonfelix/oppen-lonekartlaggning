@@ -11,12 +11,11 @@
  * per grupp: summorna för regressionen och den sorterade lönelistan räknas en gång och
  * personen dras bort.
  *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
- *
- * Bygger på: ADR-23; i övrigt verktygets egen modell. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: ADR-23; i övrigt verktygets egen modell.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B5.6 och B5.7).
  */
 
-import { groupKey, konOf } from './falt.js';
+import { gruppnyckel, konAv } from './falt.js';
 import { aidAvRad } from './aid.js';
 
 // Median av en sorterad lista där ett exemplar av värdet v tas bort.
@@ -52,7 +51,7 @@ function _grupp(g, grans) {
         }
         const avvikelsePct = (r.lon - forvantad) / forvantad * 100;
         if (avvikelsePct <= -grans) {
-            ut.push({ radnr: r.radnr ?? null, kon: konOf(r), alder: r.alder, aid: groupKey(r, 'aid'), bas: r.bas,
+            ut.push({ radnr: r.radnr ?? null, kon: konAv(r), alder: r.alder, aid: gruppnyckel(r, 'aid'), bas: r.bas,
                       lon: r.lon, forvantad, avvikelsePct, kollegor: m, metod, ansvarsgrupp: r.ansvarsgrupp ?? null });
         }
     }
@@ -65,7 +64,7 @@ export function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     const harAlder = (rader || []).some(r => r && r.alder > 0);
     for (const r of rader || []) {
         if (!(r.lon > 0) || (harAlder && !(r.alder > 0))) continue;
-        const kon = konOf(r);
+        const kon = konAv(r);
         if (kon !== 'Kvinna' && kon !== 'Man') continue;
         // Gruppen är AID-koden i BAS-intervallet (aidAvRad), inte texten i fältet: två stavningar av samma etikett
         // är samma kollegor. Posten bär personens egen text i `aid`.
@@ -78,7 +77,7 @@ export function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     const flaggade = [];
     for (const g of grupper.values()) {
         if (g.length < minGrupp) { ejProvade += g.length; continue; }
-        for (const r of g) konOf(r) === 'Kvinna' ? provade.kv++ : provade.ma++;
+        for (const r of g) konAv(r) === 'Kvinna' ? provade.kv++ : provade.ma++;
         flaggade.push(..._grupp(g, grans));
     }
     flaggade.sort((a, b) => a.avvikelsePct - b.avvikelsePct || (a.radnr ?? Infinity) - (b.radnr ?? Infinity));

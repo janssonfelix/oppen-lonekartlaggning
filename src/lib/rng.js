@@ -18,19 +18,17 @@
  * likvardighet.js och status.js, kvantilbootstrapen i osakerhet.js) sorterar
  * den först. Samma löner i en annan ordning ger samma intervall.
  *
- * Separat från app.js för Vitest; app.js får en AUTO-GENERERAD spegel (`_rng*`
- * i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra här och kör
- * `npm run build:app`, rör ej spegeln (vaktas av artefaktgrinden).
+ * Separat från appen för Vitest.
  */
 
 /**
  * FNV-1a, 32 bitar. Snabb och stabil sträng→heltal-hash.
- * @param {string} str
+ * @param {string} text
  * @returns {number} osignerat 32-bitars heltal
  */
-export function hashSeed(str) {
+export function froAvText(text) {
     let h = 2166136261;
-    const s = String(str);
+    const s = String(text);
     for (let i = 0; i < s.length; i++) {
         h ^= s.charCodeAt(i);
         h = Math.imul(h, 16777619);
@@ -60,12 +58,12 @@ export function mulberry32(seed) {
  * urval → nytt men reproducerbart intervall). Summan tas över talen sorterade
  * stigande: med decimaler (öre) kan en flyttalssumma annars skilja i sista
  * siffran mellan två ordningar och, när den slutar på ,50, avrundas olika.
- * @param {...Array<number>} arrays
+ * @param {...Array<number>} serier
  * @returns {number}
  */
-export function seedFromNumbers(...arrays) {
+export function froAvTal(...serier) {
     let s = '';
-    for (const arr of arrays) {
+    for (const arr of serier) {
         if (!Array.isArray(arr)) { s += 'x|'; continue; }
         const tal = [];
         for (let i = 0; i < arr.length; i++) {
@@ -77,14 +75,14 @@ export function seedFromNumbers(...arrays) {
         for (let i = 0; i < tal.length; i++) sum += tal[i];
         s += arr.length + ':' + Math.round(sum) + '|';
     }
-    return hashSeed(s);
+    return froAvText(s);
 }
 
 /**
  * Bekvämlighet: seedad generator direkt ur talserierna.
- * @param {...Array<number>} arrays
+ * @param {...Array<number>} serier
  * @returns {() => number}
  */
-export function rngFor(...arrays) {
-    return mulberry32(seedFromNumbers(...arrays));
+export function slumpFor(...serier) {
+    return mulberry32(froAvTal(...serier));
 }

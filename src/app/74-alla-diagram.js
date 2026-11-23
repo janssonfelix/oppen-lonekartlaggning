@@ -21,6 +21,14 @@
 // läses, så att kopian lämnar verktyget med exakt det som källan skulle lämna det med. Stämpeln om ett undantag
 // (Likvärdigt arbete) och filnamnet följer källan.
 // ====================================================================
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { _rfBehallare, _rfExportFigur, rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { chartExportTitle, exportTillaten } from './11-diagramexport.js';
+import { getData } from './12-tillstand.js';
+import { _egFlikFor, _exportDjup, _ritadVid, exportSakra, flikInaktuell, iExportLage, iForhandsvisning } from './23-exportgrind.js';
+import { renderTabContent } from './31-navigering.js';
+import { _wireTablistKeys } from './63-tangentbordsnavigering.js';
+import { sidindexBygg } from './89-sidindex.js';
 
 const UT_KOPIA_PREFIX = 'ut-diagram-';
 // Flikar som inte får någon grupp: fliken själv; dokumentationsflikarna (Rapporttext, Exportera, Spara och jämför år),
@@ -35,9 +43,9 @@ let _utUnderflik = 'egna';
 const _utKopiaExporterad = new Set();
 
 /** Är behållaren en kopia i Alla diagram? */
-function arDiagramKopia(el) { return !!el && typeof el.id === 'string' && el.id.startsWith(UT_KOPIA_PREFIX); }
+export function arDiagramKopia(el) { return !!el && typeof el.id === 'string' && el.id.startsWith(UT_KOPIA_PREFIX); }
 /** Källdiagrammet till en kopia (elementet med källans id), eller null. */
-function diagramKopiaKalla(el) {
+export function diagramKopiaKalla(el) {
     if (!arDiagramKopia(el)) return null;
     const k = document.getElementById(el.id.slice(UT_KOPIA_PREFIX.length));
     return k && k !== el ? k : null;
@@ -50,7 +58,7 @@ function diagramKopiaKalla(el) {
  * @param {any[]} behallare
  * @param {(el: any) => boolean} ritat
  */
-function diagramUrval(behallare, ritat) {
+export function diagramUrval(behallare, ritat) {
     return behallare.filter(el => el && el.id && el.isConnected && !arDiagramKopia(el) && exportTillaten(el) && ritat(el))
         .filter(el => { const u = typeof _rfExportFigur === 'function' ? _rfExportFigur(el) : null; return !u || !u.tom; });
 }
@@ -90,7 +98,7 @@ function utValjUnderflik(namn) {
     if (_utFlikVisas() && typeof sidindexBygg === 'function') sidindexBygg('utforska');
 }
 /** Visar underfliken som elementet ligger i, om den är dold (sökningen och länkar till ett avsnitt i fliken). */
-function utVisaUnderflikFor(el) {
+export function utVisaUnderflikFor(el) {
     const panel = el && el.closest ? el.closest('[data-ut-underflik-panel]') : null;
     if (panel && panel.hidden) utValjUnderflik(panel.getAttribute('data-ut-underflik-panel') || 'egna');
 }
@@ -246,7 +254,7 @@ function _utNyKopia(kalla, flik) {
 }
 
 /** Fliken Tabeller och egna vyer har ritats (renderTabContent): Alla diagram ritas om när den visas. */
-function utAllaDiagramVidRitning() {
+export function utAllaDiagramVidRitning() {
     if (_utUnderflik === 'alla' && _utFlikVisas()) utAllaDiagramRita();
 }
 
@@ -255,7 +263,7 @@ function utAllaDiagramVidRitning() {
  * källans figur på nytt, så att en export ur kopian läser exakt det som en export ur källan skulle läsa. Svarar
  * falskt när källan saknas, inte får lämna verktyget, är dold i sin flik eller inte har något ritat.
  */
-function _exportSakraKopia(kopia) {
+export function _exportSakraKopia(kopia) {
     if (!kopia.isConnected) return false;
     const id = kopia.id.slice(UT_KOPIA_PREFIX.length);
     const kalla = document.getElementById(id);
@@ -275,7 +283,7 @@ function _exportSakraKopia(kopia) {
 
 /** Efter en export (_ritaOmEfterExport): en grupp vars kopia fick källans figur i exportläget ritas om på skärmen
  *  (källans flik ritas då om i skärmläget). De andra grupperna rörs inte. */
-function utAllaDiagramEfterExport() {
+export function utAllaDiagramEfterExport() {
     const flikar = [..._utKopiaExporterad];
     _utKopiaExporterad.clear();
     for (const flik of flikar) {
@@ -284,14 +292,17 @@ function utAllaDiagramEfterExport() {
     }
 }
 
-// ---- Kopplingar ----
-document.querySelectorAll('[data-ut-underflik]').forEach(b => {
-    b.addEventListener('click', () => utValjUnderflik(/** @type {HTMLElement} */ (b).dataset.utUnderflik || 'egna'));
-});
-_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
-// En grupp som öppnas ritar sina kopior. toggle bubblar inte: lyssnaren fångar den på vägen ned. En grupp som öppnas
-// medan samlingen inte visas ritas när den visas.
-document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {
-    const g = /** @type {HTMLDetailsElement} */ (e.target);
-    if (g && g.matches && g.matches('details[data-ut-flik]') && g.open && _utAllaVisas()) utAllaGruppRita(g);
-}, true);
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartAllaDiagram() {
+    // ---- Kopplingar ----
+    document.querySelectorAll('[data-ut-underflik]').forEach(b => {
+        b.addEventListener('click', () => utValjUnderflik(/** @type {HTMLElement} */ (b).dataset.utUnderflik || 'egna'));
+    });
+    _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
+    // En grupp som öppnas ritar sina kopior. toggle bubblar inte: lyssnaren fångar den på vägen ned. En grupp som öppnas
+    // medan samlingen inte visas ritas när den visas.
+    document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {
+        const g = /** @type {HTMLDetailsElement} */ (e.target);
+        if (g && g.matches && g.matches('details[data-ut-flik]') && g.open && _utAllaVisas()) utAllaGruppRita(g);
+    }, true);
+}

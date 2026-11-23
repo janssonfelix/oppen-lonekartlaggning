@@ -1,33 +1,46 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { namnrader, sektorsnamn } from '../lib/aid.js';
+import { kronorSkillnad, kronorTipsRad, talformat } from '../lib/figur.js';
+import { arKvinna } from '../lib/kon.js';
+import { personOrd } from '../lib/namn.js';
+import { sektorAndelNot, sektorernasAndel, sektorJusteradText, sektorsTabell } from '../lib/sektor.js';
+import { skrDelText } from '../lib/skrreferens.js';
+import { fordelningsgap, kvartilfordelning, strukturMatt, tillDirektivtecken } from '../lib/struktur.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
+import { FARG } from './01-farger.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { _kronorFalt, andelAvMan, antalCaption, direktivGap, idagDatum, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _konUtelamnatNot, _kSanktNot, _parForRedovisning, kTroskel } from './06-k-troskel.js';
+import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
+import { kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
+import { APP_VERSION } from './08-version.js';
+import { T, termText } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { PALETTE, UNDERLAG, URVAL } from './10-diagramtema.js';
+import { markeringFor } from './11-markering.js';
+import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { buildActionChecklist } from './18-atgardslista.js';
+import { _appendMethodSheet, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
+import { medExportLage } from './23-exportgrind.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
+import { _direktivInline, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { explorerSattUrval } from './72-utforska-urval.js';
+import { basdossierKandidater, basdossierUtelamnade, basintervallUtkastText, buildBasdossier } from './81-basdossier.js';
+import { kTroskelLank } from './86-installningar.js';
 
 // ===================================================================
 // Struktur & EU-rapport — representation/segregation, kvartilfördelning
 // (EU 2023/970), distributionellt gap. Auto-rapportutkastet (renderStrukturUtkast) står i fliken Rapporttext.
-// De rena måtten (_st*) genereras i src/app/09-lib-speglar.js från src/lib/struktur.js.
+// De rena måtten står i src/lib/struktur.js.
 // ===================================================================
 
-/**
- * Lönestrukturens mått, räknade på ett ställe för fliken, rapportutkastet i Rapporttext och EU-exporten: andelen
- * kvinnor, representationen per BAS, percentilerna, kvartilerna och gapet i median- och medellön. Könsuppdelade
- * mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid tröskeln `k`.
- */
-function _stMatt(d, k) {
-    const konOk = _konFarRedovisasFor(d);
-    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
-    const ma = d.filter(r => arMan(r)).map(r => r.lon);
-    const totKv = kv.length;
-    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
-    return {
-        konOk, kv, ma, totKv, totAndel: d.length ? 100 * totKv / d.length : 0, meanGap,
-        rep: _stRepresentationByBas(d, { k }),
-        dist: _stDistributionalGap(d, undefined, { k }),
-        q: _stQuartileDistribution(d, { k }),
-        medGap: _stMedianGapPct(d, { k }),
-    };
-}
+// Lönestrukturens mått räknas av strukturMatt i src/lib/struktur.js, med tröskeln kTroskel() som argument.
 
-function renderStructure() {
+export function renderStructure() {
     const wrap = document.getElementById('view-struktur');
     if (!wrap) return;
     const d = getData();
@@ -44,14 +57,12 @@ function renderStructure() {
     // (1) Representations-pyramid
     // Könsuppdelade mått kräver tröskeln för varje kön (ADR-12); lib-funktionerna får alltid värdet.
     const k = kTroskel();
-    const { konOk, rep, totKv, totAndel, dist, q, medGap, ma, meanGap } = _stMatt(d, k);
+    const { konOk, totKv, totAndel, dist, q, medGap, ma, meanGap, repVisade, repUtelamnade } = strukturMatt(d, k);
     const konNot = konOk ? '' : `<p class="k-mask-note">${esc(_konUtelamnatNot())}</p>`;
-    // k-anonymitet: lönemåtten (median, gap inom BAS) får inte redovisas för
+    // Minsta gruppstorlek: lönemåtten (median, gap inom BAS) får inte redovisas för
     // BAS-intervall under tröskeln. Raden utelämnas helt i stället för att
     // fyllas med "< 10"-celler — andelen kvinnor ensam bär inte tabellen, och
     // de utelämnade BAS:en räknas upp i noten under.
-    const repVisade = rep.filter(g => !isKMasked(g.n));
-    const repUtelamnade = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
     if (repEl) repEl.innerHTML = `
         <p class="text-dampad-sm marg-0-0-10">Andel kvinnor per ${T.niva.en}, i ordning A–Ö. Sjunker andelen kvinnor mot högre ${T.niva.fl} (längre ner i tabellen) finns <strong>vertikal könssegregering</strong> (glastak). Det är en strukturell orsak till löneskillnaden.</p>
         ${repVisade.length ? `<table class="data-table st-088"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">Median</th><th class="t-hoger">Andel kvinnor</th><th class="bredd-34p">Andel kvinnor (mot ${svPct(totAndel, 0)} totalt)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead><tbody>
@@ -110,7 +121,7 @@ function renderStructure() {
     const kvEl = document.getElementById('chart-struktur-kvartiler');
     // Samma villkor som tabellen: utan könsuppdelning (ett kön under tröskeln) ritas inget diagram.
     if (kvEl && q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0)) ritaFigur(kvEl, { ..._strukturKvartilFigur(q, totAndel), underlag: underlag(_strukturKvartilFor) },
-        { exportAnteckning: `Andel kvinnor: ${_figTalformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${_figTalformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
+        { exportAnteckning: `Andel kvinnor: ${talformat(q[0].andelKv, 'pct')} i lägsta kvartilen, ${talformat(q[q.length - 1].andelKv, 'pct')} i högsta` });
 
     renderSektorer(d);
     renderStrukturTradkarta(d);
@@ -121,7 +132,7 @@ function renderStructure() {
  * Auto-rapportutkastet i fliken Rapporttext: fynden i klarspråk, ur samma mått som Lönestruktur räknar. Ett utkast
  * som användaren har redigerat skrivs inte över; "Återskapa" frågar först, tar bort markeringen och ritar om.
  */
-function renderStrukturUtkast() {
+export function renderStrukturUtkast() {
     const nb = document.getElementById('struktur-narrative');
     if (!nb) return;
     _stSynkaUtkastValjare();
@@ -129,9 +140,9 @@ function renderStrukturUtkast() {
     if (!d.length) { /** @type {HTMLInputElement} */ (nb).value = ''; return; }
     if (nb.dataset.dirty) return;
     const k = kTroskel();
-    const { konOk, rep, totAndel, dist, q, medGap, meanGap } = _stMatt(d, k);
+    const { konOk, repVisade, totAndel, dist, q, medGap, meanGap } = strukturMatt(d, k);
     const perBas = state.utkastPerBas !== false ? _stUtkastPerBas(k) : null;
-    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { rep, dist, q, medGap, meanGap, totAndel, konOk, perBas });
+    /** @type {HTMLInputElement} */ (nb).value = _buildNarrative(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
 }
 
 /** Väljaren ovanför utkastet visar valet i state (Hela organisationen, eller med ett stycke per BAS-intervall). */
@@ -151,7 +162,7 @@ function _stUtkastPerBas(k) {
     const kand = basdossierKandidater();
     if (!kand.length) return null;
     const policyDel = state.policy.length ? 'läget mot ställningstagandet, ' : '';
-    const lines = [`PER ${T.niva.en.toLocaleUpperCase('sv')}`, `Ett stycke per ${T.niva.en} med minst ${k} ${personOrd(k)}: antal och könsfördelning, ${policyDel}${T.enhet.bfl}, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. ${termStor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} står bara med namn.`];
+    const lines = [`PER ${T.niva.en.toLocaleUpperCase('sv')}`, `Ett stycke per ${T.niva.en} med minst ${k} ${personOrd(k)}: antal och könsfördelning, ${policyDel}${T.enhet.bfl}, likvärdigt arbete, ålder och förra året när ett bokslut är inläst. ${stor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} står bara med namn.`];
     const under = basdossierUtelamnade();
     if (under.length) lines.push(`BAS ${under.join(', ')} redovisas inte (färre än ${k} ${personOrd(k)}).`);
     for (const { bas } of kand) {
@@ -179,10 +190,10 @@ function _stRitaTopp(d, m) {
     if (!urval || !host) return;
     if (!m) { urval.textContent = ''; host.innerHTML = ''; ['representation', 'karta', 'fordelning', 'eu'].forEach(n => _laNyckel(`nyckel-st-${n}`, '')); return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(d.length, 0)} personer</span>${kTroskelLank()}`;
-    _laNyckel('nyckel-st-representation', `${m.basAntal} ${termForAntal(m.basAntal, T.niva)}`);
+    _laNyckel('nyckel-st-representation', `${m.basAntal} ${ordForAntal(m.basAntal, T.niva)}`);
     // Kartans ytor: en AID-etikett inom ett BAS-intervall, samma indelning som ytorna (_strukturTradkartaFigur).
     const ytor = new Set(d.filter(r => r.bas != null && r.bas !== '').map(r => `${String(r.aid || r.yrke || 'okänd')}|${r.bas}`)).size;
-    _laNyckel('nyckel-st-karta', ytor ? `${svTal(ytor, 0)} ${termForAntal(ytor, T.enhet)} i ${T.niva.en}` : '');
+    _laNyckel('nyckel-st-karta', ytor ? `${svTal(ytor, 0)} ${ordForAntal(ytor, T.enhet)} i ${T.niva.en}` : '');
     if (!m.konOk) {
         host.innerHTML = _laSlutsats('Kvinnor och män', 'Visas inte', _konUtelamnatNot());
         _laNyckel('nyckel-st-fordelning', ''); _laNyckel('nyckel-st-eu', '');
@@ -203,10 +214,10 @@ function _stRitaTopp(d, m) {
 function _sektorPunkter() {
     const ut = {};
     let punkter = [];
-    try { punkter = buildActionChecklist({ endastGrupper: true }); } catch (e) { rapporteraFel(`${termStor(T.huvudomrade.fl)}: Att göra`, e); }
+    try { punkter = buildActionChecklist({ endastGrupper: true }); } catch (e) { rapporteraFel(`${stor(T.huvudomrade.fl)}: Att göra`, e); }
     for (const it of punkter) {
         if (!it.aid) continue;
-        const s = _aidSektorsnamn(it.aid);
+        const s = sektorsnamn(it.aid);
         ut[s] = (ut[s] || 0) + 1;
     }
     return ut;
@@ -256,22 +267,22 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     // Yrkesgruppernas ytor utan läge; lägena sätts av _tradkartaLagen, för alla grupper eller för dem som syns.
     const blad = barn.flat().map(o => ({ namn: `${o.namn} · BAS ${o.bas}`, varde: o.n, etikett: o.namn, undertext: `${o.n} personer`, bas: o.bas, n: o.n,
         ...(o.ovriga ? { farg: FARG.kantStark, ovriga: true }
-            : { sektor: _aidSektorsnamn(o.aid), fargvarde: +(100 * o.nKv / o.n).toFixed(1), andelKv: 100 * o.nKv / o.n, markering: markeringFor(o.bas, o.aid) }) }));
+            : { sektor: sektorsnamn(o.aid), fargvarde: +(100 * o.nKv / o.n).toFixed(1), andelKv: 100 * o.nKv / o.n, markering: markeringFor(o.bas, o.aid) }) }));
     const { basYtor, grupper } = _tradkartaLagen(blad);
     // BAS-ytans antal är alltid hela intervallets (inget räknas om); bara läget följer de synliga grupperna.
     const basAntal = new Map(basYtor.map(b => [b.namn, b.varde]));
     const namn = 'ytornas läge och storlek';
     return { legend: false, hojd: 460,
-        beskrivning: `Organisationen som karta: varje yta är ${termArtikel(T.enhet)} ${T.enhet.en}, storleken är antalet personer och färgen andelen kvinnor, samlade per ${T.niva.en}. ${termStor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
+        beskrivning: `Organisationen som karta: varje yta är ${artikel(T.enhet)} ${T.enhet.en}, storleken är antalet personer och färgen andelen kvinnor, samlade per ${T.niva.en}. ${stor(T.enhet.fl)} med färre än ${k} ${personOrd(k)} är hopslagna till en grå yta per intervall.`,
         urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
         x: { skala: 'linjar', doman: [0, TRADKARTA_FORM], dold: true }, y: { skala: 'linjar', doman: [0, 1], dold: true },
         fargskala: { typ: 'divergerande', doman: [0, 100], mitt: 50, titel: 'Andel kvinnor (%)', farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
-        lager: [{ marke: 'yta', serie: termStor(T.niva.en), farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
+        lager: [{ marke: 'yta', serie: stor(T.niva.en), farg: FARG.kant, opacitet: 0.5, etikettLage: 'topp', data: basYtor,
                   tips: d => [[d.namn], ['Antal', String(d.varde)]],
-                  harleddAv: { lager: [termStor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).basYtor.map(b => ({ ...b, varde: basAntal.get(b.namn) })) } },
-                { marke: 'yta', serie: termStor(T.enhet.fl), data: grupper,
-                  tips: d => [[d.namn], ['Antal', String(d.n)], ...(d.ovriga ? [['Könsfördelning', 'visas inte för små grupper']] : [['Andel kvinnor', _figTalformat(d.andelKv, 'pct')]])],
-                  harleddAv: { lager: [termStor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).grupper } }] };
+                  harleddAv: { lager: [stor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).basYtor.map(b => ({ ...b, varde: basAntal.get(b.namn) })) } },
+                { marke: 'yta', serie: stor(T.enhet.fl), data: grupper,
+                  tips: d => [[d.namn], ['Antal', String(d.n)], ...(d.ovriga ? [['Könsfördelning', 'visas inte för små grupper']] : [['Andel kvinnor', talformat(d.andelKv, 'pct')]])],
+                  harleddAv: { lager: [stor(T.enhet.fl)], namn, berakna: p => _tradkartaLagen(p).grupper } }] };
 }
 function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
     const el = document.getElementById(id);
@@ -291,22 +302,22 @@ function renderStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
 // i botten (klibbigt golv). Samma tal som tabellen under; `dist` finns bara när båda könen når tröskeln.
 // Percentilerna för ett underlag (figur.underlag.rita): samma mått som fliken, eller en text när ett kön är under tröskeln.
 function _strukturPercentilFor(rader, { beskrivning }) {
-    const dist = _stDistributionalGap(rader, undefined, { k: kTroskel() });
+    const dist = fordelningsgap(rader, undefined, { k: kTroskel() });
     return dist.length && dist.every(x => x.gapPct != null) ? _strukturPercentilFigur(dist, beskrivning) : _konUtelamnatNot();
 }
 // Kvartilerna för ett underlag (figur.underlag.rita), med andelen kvinnor i urvalet som linje.
 function _strukturKvartilFor(rader, { beskrivning }) {
-    const q = _stQuartileDistribution(rader, { k: kTroskel() });
+    const q = kvartilfordelning(rader, { k: kTroskel() });
     if (!(q.length && q.every(x => x.nKv != null && x.nMa != null && x.n > 0))) return _konUtelamnatNot();
     const nKv = rader.filter(r => arKvinna(r)).length;
     return _strukturKvartilFigur(q, rader.length ? 100 * nKv / rader.length : 0, beskrivning);
 }
 // `omfang` (ett underlag, t.ex. 'sektor Skola'): beskrivningen säger att figuren är räknad för det.
 function _strukturPercentilFigur(dist, omfang) {
-    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => _figTalformat(v, 'kr');
-    const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', _figTalformat(100 + d.r.gapPct, 'pct')], ..._figKronorTipsRad(_figKronorSkillnad(d.r.kv, d.r.ma))];
+    const namn = x => `P${x.p}${x.p === 10 ? ' (lägst betalda)' : x.p === 50 ? ' (median)' : x.p === 90 ? ' (högst betalda)' : ''}`, kr = v => talformat(v, 'kr');
+    const tips = d => [[d.y], ['Kvinnor', kr(d.r.kv)], ['Män', kr(d.r.ma)], ['Kvinnors lön i % av mäns', talformat(100 + d.r.gapPct, 'pct')], ...kronorTipsRad(kronorSkillnad(d.r.kv, d.r.ma))];
     const punkt = (serie, farg, falt, extra = {}) => ({ marke: 'punkt', serie, farg, storlek: 6, ...extra,
-        data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: _figTalformat(100 + x.gapPct, 'pct') } : {}) })), tips });
+        data: dist.map(x => ({ y: namn(x), x: Math.round(x[falt]), r: x, ...(extra.etikettLage ? { etikett: talformat(100 + x.gapPct, 'pct') } : {}) })), tips });
     const hogst = x => (x.ma >= x.kv ? 'ma' : 'kv');
     return { beskrivning: `Kvinnors och mäns lön vid samma percentil i respektive köns lönefördelning (P10 till P90), som två punkter per percentil. Procenttalet är kvinnors lön i procent av mäns. ${omfang ? `Räknat för ${omfang}; tabellen under gäller hela underlaget.` : 'Samma tal står i tabellen under.'}`,
         x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: dist.map(namn) }, hojd: Math.max(220, 100 + dist.length * 34),
@@ -319,11 +330,11 @@ function _strukturPercentilFigur(dist, omfang) {
 function _strukturKvartilFigur(q, totAndel, omfang) {
     const namn = x => `Q${x.q}${x.q === 1 ? ' (lägst lön)' : x.q === 4 ? ' (högst lön)' : ''}`;
     const serie = (s, farg, andel, antal) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie: s, farg,
-        data: q.map(x => { const a = +andel(x).toFixed(1); return { y: namn(x), x: a, n: antal(x), tot: x.n, ...(a >= 8 ? { etikett: _figTalformat(a, 'pct') } : {}) }; }),
-        tips: d => [[d.y], [s, _figTalformat(d.x, 'pct')], ['Antal', `${d.n} av ${d.tot}`]] });
+        data: q.map(x => { const a = +andel(x).toFixed(1); return { y: namn(x), x: a, n: antal(x), tot: x.n, ...(a >= 8 ? { etikett: talformat(a, 'pct') } : {}) }; }),
+        tips: d => [[d.y], [s, talformat(d.x, 'pct')], ['Antal', `${d.n} av ${d.tot}`]] });
     return { beskrivning: omfang
-            ? `Andel kvinnor och män i varje lönekvartil, räknat för ${omfang} och staplat till 100 procent. Den streckade linjen är andelen kvinnor i urvalet (${_figTalformat(totAndel, 'pct')}). Tabellen nedan gäller hela underlaget.`
-            : `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${_figTalformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
+            ? `Andel kvinnor och män i varje lönekvartil, räknat för ${omfang} och staplat till 100 procent. Den streckade linjen är andelen kvinnor i urvalet (${talformat(totAndel, 'pct')}). Tabellen nedan gäller hela underlaget.`
+            : `Andel kvinnor och män i varje lönekvartil, staplat till 100 procent. Den streckade linjen är andelen kvinnor i hela organisationen (${talformat(totAndel, 'pct')}). Samma siffror finns i tabellen nedan.`,
         y: { skala: 'band', ordning: q.slice().reverse().map(namn) },
         x: { skala: 'linjar', titel: 'Andel av kvartilen (%)', doman: [0, 100] },
         hojd: 240,
@@ -337,19 +348,19 @@ function _sektorEjBasTitel() {
         + `eller raderna är för få för så många ${T.niva.fl}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.`;
 }
 
-function renderSektorer(d) {
+export function renderSektorer(d) {
     const host = document.getElementById('struktur-sektorer');
     if (!host) return;
     let tabell, andel;
     try {
-        tabell = _skSektorsTabell(d, { k: kTroskel(), punkter: _sektorPunkter(), skrDel: _skrDel() });
-        andel = _skSektorernasAndel(d, { k: kTroskel() });
-    } catch (e) { rapporteraFel(termStor(T.huvudomrade.fl), e); host.innerHTML = ''; return; }
+        tabell = sektorsTabell(d, { k: kTroskel(), punkter: _sektorPunkter(), skrDel: _skrDel() });
+        andel = sektorernasAndel(d, { k: kTroskel() });
+    } catch (e) { rapporteraFel(stor(T.huvudomrade.fl), e); host.innerHTML = ''; return; }
     const kr = n => svKr(n);
     const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')}\u00a0%`);
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
     // Justerat för ålder bara när lönefilen har ålder (ADR-64, ADR-78); rubriken säger vad som justeras för.
-    const justText = _skSektorJusteradText(tabell);
+    const justText = sektorJusteradText(tabell);
     const rader = tabell.map(r => {
         const loner = r.maskerad
             ? `<td colspan="3" class="muted">Färre än ${kTroskel()} ${personOrd(kTroskel())} — lönemått redovisas inte</td>`
@@ -370,7 +381,7 @@ function renderSektorer(d) {
             <td class="num" data-sort-value="${r.antalAid}">${r.antalAid}</td><td class="num" data-sort-value="${r.punkter}">${r.punkter}</td>${ledning}</tr>`;
     }).join('');
     // Huvudområden där ett kön är under tröskeln räknas samman (ADR-87); noten säger vilka och varför.
-    const andelNot = _skSektorAndelNot(andel, kTroskel());
+    const andelNot = sektorAndelNot(andel, kTroskel());
     const andelText = (!andel || andel.andel == null ? ''
         : Math.abs(andel.andel) < 0.01
             ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror nästan inte alls
@@ -378,9 +389,9 @@ function renderSektorer(d) {
             : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror
                ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`)
         + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : '');
-    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${termStor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${_skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
+    host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${stor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>${justText.rubrik}</th>
-        <th>${termStor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
+        <th>${stor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? '<th>Ledningsansvar kv / män</th>' : ''}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
     host.querySelectorAll('[data-sektor]').forEach(b => b.addEventListener('click', () => {
         explorerSattUrval({ lage: 'alla', villkor: [{ falt: 'sektor', op: 'enAv', varde: [/** @type {HTMLElement} */ (b).dataset.sektor] }] }, []);
@@ -400,7 +411,7 @@ function renderSektorer(d) {
 // Filtren: sektor (lista) och antal personer i sektorn, samma namn och antal som tabellens kolumner Sektor och Antal.
 // Rubriken och bisatsen är tabellens: renderSektorer skickar sektorJusteradText (sektor.js) för hela tabellen, och utan
 // den räknas samma regel ur de visade raderna.
-function _sektorFigur(visa, justText = _skSektorJusteradText(visa)) {
+function _sektorFigur(visa, justText = sektorJusteradText(visa)) {
     const { medAlder, rubrik, justeradFor } = justText;
     const falt = r => ({ sektor: r.namn, n: r.n });
     const just = r => (r.justerat ? +(100 + r.justerat.pct).toFixed(1) : null);
@@ -409,7 +420,7 @@ function _sektorFigur(visa, justText = _skSektorJusteradText(visa)) {
     const lager = (serie, farg, varde, forskjutning) => ({
         marke: 'punkt', serie, farg, storlek: 6, kant: FARG.vit,
         data: visa.filter(r => varde(r) != null).map(r => ({ y: r.namn, x: +varde(r).toFixed(1), forskjutning, ...falt(r) })),
-        tips: d => [[d.y], [serie, _figTalformat(d.x, 'pct')]]
+        tips: d => [[d.y], [serie, talformat(d.x, 'pct')]]
     });
     const forklaras = medAlder ? 'ålder och BAS' : 'BAS';
     return { beskrivning: `Kvinnors lön i procent av mäns per ${T.huvudomrade.en}, rå och justerad för ${justeradFor}. Samma värden finns i tabellen.`,
@@ -420,7 +431,7 @@ function _sektorFigur(visa, justText = _skSektorJusteradText(visa)) {
         // Strecket från rå till justerad visar hur mycket ålder (när lönefilen har den) och nivå förklarar: långt streck = mycket.
         lager: [{ marke: 'intervall', riktning: 'liggande', serie: `Förklaras av ${forklaras}`, farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
                   data: visa.filter(r => just(r) != null).map(r => ({ y: r.namn, lag: +Math.min(r.kvot ?? 0, just(r) ?? 0).toFixed(1), hog: +Math.max(r.kvot ?? 0, just(r) ?? 0).toFixed(1), ra: r.kvot, ju: just(r), ...falt(r) })),
-                  tips: d => [[d.y], ['Rå', _figTalformat(d.ra, 'pct')], ['Justerad', _figTalformat(d.ju, 'pct')]] },
+                  tips: d => [[d.y], ['Rå', talformat(d.ra, 'pct')], ['Justerad', talformat(d.ju, 'pct')]] },
                 lager('Rå', PALETTE.semantic.neutral, r => r.kvot, 0), lager(rubrik, PALETTE.serie[0], just, 0)] };
 }
 
@@ -430,7 +441,7 @@ function _buildNarrative(d, ctx) {
     const lines = [];
     lines.push('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
     lines.push('');
-    lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} ${termForAntal(getBasIntervals().length, T.niva)}.`);
+    lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
     lines.push('');
     lines.push('Löneskillnad (kvinnors lön i procent av mäns):');
     if (ctx.konOk) lines.push(`  • Kvinnors genomsnittslön är ${andelAvMan(ctx.meanGap)} av mäns, och medianlönen ${andelAvMan(ctx.medGap)} av mäns.`);
@@ -447,16 +458,16 @@ function _buildNarrative(d, ctx) {
         else if (Math.abs(p90.gapPct) > Math.abs(p10.gapPct) + 1) lines.push(`Löneskillnaden är störst bland de högst betalda (kvinnors lön vid P90: ${andelAvMan(p90.gapPct)} av mäns, vid P10: ${andelAvMan(p10.gapPct)}) — ett glastak. Granska befordran och lönesättning i toppen.`);
     }
     // Segregation
-    // Bara BAS som tabellen visar namnges (k-anonymitet).
-    // ctx.rep är sorterad BAS A–Ö (representationByBas): första är lägst värderat, sista högst.
-    const sorted = ctx.rep.filter(g => !isKMasked(g.n));
+    // Bara BAS som tabellen visar namnges (minsta gruppstorlek).
+    // ctx.repVisade är sorterad BAS A–Ö (representationPerBas): första är lägst värderat, sista högst.
+    const sorted = ctx.repVisade;
     if (sorted.length >= 2) {
         const lagsta = sorted[0], hogsta = sorted[sorted.length - 1];
         if (lagsta.andelKv - hogsta.andelKv > 15) lines.push(`Vertikal könssegregering: andelen kvinnor är högre i lägre betalda BAS (${lagsta.bas}: ${svPct(lagsta.andelKv, 0)}) än i högre betalda (${hogsta.bas}: ${svPct(hogsta.andelKv, 0)}). Det är en strukturell orsak till löneskillnaden.`);
     }
     // § 3:10
     /** @type {any} */ let lv = null; try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
-    // k-anonymitet: antalet redovisas för par där båda grupperna når tröskeln; resten nämns (som övriga utdata)
+    // Minsta gruppstorlek: antalet redovisas för par där båda grupperna når tröskeln; resten nämns (som övriga utdata)
     const lvPar = _parForRedovisning(lv && lv.pairs);
     if (lvPar.par.length || lvPar.utelamnade) {
         lines.push('');
@@ -484,13 +495,13 @@ function _exportEuReportExport() {
     if (!d.length) { alert('Ingen data.'); return; }
     const kr = n => n == null ? '' : Math.round(n);
     const k = kTroskel();
-    const { konOk, q, rep, dist, kv, ma, meanGap, medGap } = _stMatt(d, k);
+    const { konOk, q, repVisade, repUtelamnade: repUtelamnadeX, repKonLitet, dist, kv, ma, meanGap, medGap } = strukturMatt(d, k);
     // Måtten står med direktivets tecken (art. 9): (män − kvinnor) / män i procent, positivt när kvinnor ligger
     // lägre. Verktyget räknar (kvinnor − män) / män; _stTillDirektivtecken vänder tecknet, bara i den här exporten
     // och rapportens avsnitt om lönetransparens — övriga blad och flikar visar kvinnors lön i procent av mäns.
     const DIREKTIV_RUBRIK = 'Löneskillnad enligt direktivet (%), positivt tal = kvinnor lägre';
     const DIREKTIV_METOD = 'Löneskillnaden är (män − kvinnor) / män i procent, enligt direktivet: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; talet är lika stort.';
-    function direktivRound(v) { const t = _stTillDirektivtecken(v); return t == null ? '–' : +t.toFixed(1); }
+    function direktivRound(v) { const t = tillDirektivtecken(v); return t == null ? '–' : +t.toFixed(1); }
     const meta = [
         ['Lönetransparensdirektivets mått', ''],
         ['Lönebegrepp', EU_LONEBEGREPP_RESERVATION],
@@ -509,16 +520,14 @@ function _exportEuReportExport() {
         ...q.map(x => ['Q' + x.q, _kvartilSpann(x, v => Math.round(v).toLocaleString('sv-SE') + ' kr'), x.n, x.nKv ?? '', x.nMa ?? '', x.andelKv == null ? '' : +x.andelKv.toFixed(0)])];
     if (!konOk) { quart.push([]); quart.push([_konUtelamnatNot()]); }
     const repArr = [['BAS', 'n', 'Median', 'Andel kvinnor (%)', DIREKTIV_RUBRIK]]
-        // k-anonymitet: BAS under tröskeln utelämnas och summeras i en slutrad,
+        // Minsta gruppstorlek: BAS under tröskeln utelämnas och summeras i en slutrad,
         // samma princip som i vyn — en rad med enbart "< 10" bär ingen analys.
-        .concat(rep.filter(g => !isKMasked(g.n))
+        .concat(repVisade
             .map(g => [g.bas, g.n, kr(g.median), +g.andelKv.toFixed(0), g.gapPct == null ? '' : direktivRound(g.gapPct)]));
-    const repUtelamnadeX = rep.filter(g => isKMasked(g.n)).map(g => g.bas);
     if (repUtelamnadeX.length) {
         repArr.push([]);
-        repArr.push([`Utelämnat enligt k-anonymitet (n < ${kTroskel()}): ${repUtelamnadeX.join(', ')}`]);
+        repArr.push([`Utelämnat under minsta gruppstorlek (n < ${kTroskel()}): ${repUtelamnadeX.join(', ')}`]);
     }
-    const repKonLitet = rep.filter(g => !isKMasked(g.n) && g.konLitet).map(g => g.bas);
     if (repKonLitet.length) {
         repArr.push([]);
         repArr.push([`Löneskillnaden utelämnad (ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())}): ${repKonLitet.join(', ')}`]);
@@ -537,30 +546,6 @@ function _exportEuReportExport() {
     XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('EU-lönerapport exporterad.');
 }
-(function wireStructure() {
-    document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
-    document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
-        const nb = document.getElementById('struktur-narrative');
-        if (!nb) return;
-        // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
-        if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
-        delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
-    });
-    // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
-    // över; Återskapa ritar om det med valet.
-    document.getElementById('struktur-narrative-omfang')?.addEventListener('change', e => {
-        state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
-        const nb = document.getElementById('struktur-narrative');
-        if (nb && nb.dataset.dirty) { if (typeof announceToScreenReader === 'function') announceToScreenReader('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
-        medExportLage(renderStrukturUtkast);
-    });
-    document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
-        const nb = document.getElementById('struktur-narrative');
-        if (nb) { /** @type {HTMLInputElement} */ (nb).select(); try { document.execCommand('copy'); } catch (_e) { /* ignore */ } }
-    });
-    const nb = document.getElementById('struktur-narrative');
-    if (nb) nb.addEventListener('input', () => { nb.dataset.dirty = '1'; });
-})();
 
 // Kvartilens lönespann utan enskilda löner: bara gränserna mellan kvartilerna
 // (Q1 "upp till", Q4 "över").
@@ -568,4 +553,32 @@ function _kvartilSpann(x, kr) {
     if (x.undre == null) return `upp till ${kr(x.ovre)}`;
     if (x.ovre == null) return `över ${kr(x.undre)}`;
     return `${kr(x.undre)} – ${kr(x.ovre)}`;
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartStruktur() {
+    (function wireStructure() {
+        document.getElementById('struktur-eu-export')?.addEventListener('click', exportEuReport);
+        document.getElementById('struktur-narrative-regen')?.addEventListener('click', () => {
+            const nb = document.getElementById('struktur-narrative');
+            if (!nb) return;
+            // Ett redigerat utkast skrivs inte över utan fråga; avbryter användaren är texten och markeringen orörda.
+            if (nb.dataset.dirty && !confirm('Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?')) return;
+            delete nb.dataset.dirty; medExportLage(renderStrukturUtkast);
+        });
+        // Väljaren ovanför utkastet: valet ligger i state (inte i konfigurationsfilen). Ett redigerat utkast skrivs inte
+        // över; Återskapa ritar om det med valet.
+        document.getElementById('struktur-narrative-omfang')?.addEventListener('change', e => {
+            state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
+            const nb = document.getElementById('struktur-narrative');
+            if (nb && nb.dataset.dirty) { if (typeof announceToScreenReader === 'function') announceToScreenReader('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
+            medExportLage(renderStrukturUtkast);
+        });
+        document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
+            const nb = document.getElementById('struktur-narrative');
+            if (nb) { /** @type {HTMLInputElement} */ (nb).select(); try { document.execCommand('copy'); } catch (_e) { /* ignore */ } }
+        });
+        const nb = document.getElementById('struktur-narrative');
+        if (nb) nb.addEventListener('input', () => { nb.dataset.dirty = '1'; });
+    })();
 }

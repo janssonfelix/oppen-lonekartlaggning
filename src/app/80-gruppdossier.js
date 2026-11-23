@@ -7,37 +7,49 @@
 // ställe, så handläggaren slipper hoppa mellan Lika arbete, Likvärdigt arbete,
 // Prioritering och Jämförelse för att förstå en enda grupp.
 //
-// Ingen ny statistik — enbart en sammanställning av befintliga beräkningar.
+// Ingen ny statistik — enbart en sammanställning av befintliga beräkningar. Vymodellen
+// (src/lib/vymodell-gruppdossier.js, ADR-99) räknar och maskerar; här hämtas tillståndet och ritas.
 // Dossiern DOKUMENTERAR INTE sakliga skäl; det är en medveten produktgräns
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
+import { htmlTillText } from '../lib/htmltext.js';
+import { arKvinna, arMan } from '../lib/kon.js';
+import { personOrd } from '../lib/namn.js';
+import { medianKvotKIGiltiga } from '../lib/osakerhet.js';
+import { skrDelText } from '../lib/skrreferens.js';
+import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { adjektiv, stor } from '../lib/termer.js';
+import { gruppdossierGrupper, vymodellGruppdossier } from '../lib/vymodell-gruppdossier.js';
+import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _kSanktNot, _parUtelamnadeNot, kTroskel } from './06-k-troskel.js';
+import { _skrDel, skrForklaring, skrKallaKort } from './06-kvinnoandel-referens.js';
+import { T } from './09-termer.js';
+import { gapStatusKI } from './10-diagramtema.js';
+import { getData, policyFor, policyLevelLabel, referensKortnamn, state } from './12-tillstand.js';
+import { medExportLage } from './23-exportgrind.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
+import { _direktivInline } from './41-lika-arbete.js';
+import { _computePerBasGap, harAlder } from './50-regressionsmodeller.js';
+import { _selectedPrioReference, computePrioritization, generateMotivationSuggestions } from './55-prioritering.js';
+import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlingsplan.js';
+import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
 // Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
 // dragningar som översikten per BAS-intervall (_laBootstrapGapCI), med B = 2000 som computeBootstrapCI; dragningar
 // där männens median inte är positiv räknas inte.
-function _gdBootstrapGapCI(kvLons, maLons, B) {
-    return _osMedianKvotKIGiltiga(kvLons, maLons, { B });
+export function _gdBootstrapGapCI(kvLons, maLons, B) {
+    return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
 
-/** Alla grupper som får öppnas i dossier (k-anonymitet som överallt annars). */
-function gruppdossierCandidates() {
-    const map = new Map(), d = getData();
-    // Gruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
-    const namnrad = namnrader(d.filter(r => r.lon > 0 && r.bas), r => aidAvYrke(r.yrke) + '|' + r.bas);
-    d.forEach(r => {
-        if (!(r.lon > 0) || !r.bas) return;
-        const aid = aidAvYrke(r.yrke);
-        const key = aid + '|' + r.bas;
-        if (!map.has(key)) map.set(key, { key, aid, bas: r.bas, yrke: namnrad.get(key).yrke, rows: [] });
-        map.get(key).rows.push(r);
-    });
-    return [...map.values()]
-        .filter(g => !isKMasked(g.rows.length))
-        .sort((a, b) => b.rows.length - a.rows.length);
+/** Alla grupper som får öppnas i dossier (minsta gruppstorlek som överallt annars): gruppdossierGrupper i src/lib/vymodell-gruppdossier.js. */
+export function gruppdossierCandidates() {
+    return gruppdossierGrupper(getData(), kTroskel());
 }
 
 /** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
-function _gdKon(rows) {
+export function _gdKon(rows) {
     return { kv: rows.filter(r => arKvinna(r)), ma: rows.filter(r => arMan(r)) };
 }
 
@@ -48,7 +60,7 @@ function _gdKon(rows) {
  * var nästan hela bilagans kostnad).
  * @param {{text?: boolean}} [val]
  */
-function gruppdossierDelat({ text = false } = {}) {
+export function gruppdossierDelat({ text = false } = {}) {
     return { kandidater: gruppdossierCandidates(), perBas: new Map(), prio: new Map(), text };
 }
 
@@ -57,69 +69,27 @@ function gruppdossierDelat({ text = false } = {}) {
  * @param {string} key
  * @param {any} [delat] ur gruppdossierDelat(), när flera dossierer byggs i samma anrop
  */
-function buildGruppdossier(key, delat = null) {
+export function buildGruppdossier(key, delat = null) {
     const g = (delat ? delat.kandidater : gruppdossierCandidates()).find(x => x.key === key);
     if (!g) return null;
 
-    const lons = g.rows.map(r => r.lon);
-    const { kv, ma } = _gdKon(g.rows);
-    const kvLons = kv.map(r => r.lon), maLons = ma.map(r => r.lon);
-
-    // Ojusterat gap — visas bara när bägge könen når k-tröskeln
-    /** @type {any} */ let gap = null;
-    if (kvLons.length >= kTroskel() && maLons.length >= kTroskel()) {
-        const mKv = Stat.median(kvLons), mMa = Stat.median(maLons);
-        gap = {
-            pct: mMa > 0 ? (mKv / mMa) * 100 : null,
-            medKv: mKv, medMa: mMa,
-            ci: delat && delat.text ? null : _gdBootstrapGapCI(kvLons, maLons),
-            // Räkneexemplet i kronor per år, med prioriteringens kostnadsinställningar.
-            arsbelopp: _prArsbeloppMening({ medKv: mKv, medMa: mMa, nKv: kvLons.length }, state.costSettings, v => _figTalformat(v, 'kr'))
-        };
-    }
-
-    // Ansvarskod: antal per ansvarsgrupp och kön (aldrig lön per ansvarsgrupp)
-    /** @type {any} */ let ansvar = null;
-    if (g.rows.some(r => r.ansvarsgrupp)) {
-        ansvar = {};
-        for (const grupp of ['ledning', 'uppdrag']) {
-            ansvar[grupp] = { kv: kv.filter(r => r.ansvarsgrupp === grupp).length, ma: ma.filter(r => r.ansvarsgrupp === grupp).length };
-        }
-    }
-
     // Justerat (åldersrensat) gap för gruppens BAS. Utan ålder i lönefilen (ADR-64) visar dossiern inget sådant.
-    let adjusted = null;
+    let justerat = null;
     if (harAlder()) try {
         const rakna = () => _computePerBasGap(getData(), [g.bas]);
         let perBas;
         if (!delat) perBas = rakna();
         else { if (!delat.perBas.has(g.bas)) delat.perBas.set(g.bas, rakna()); perBas = delat.perBas.get(g.bas); }
-        adjusted = (perBas || []).find(p => p.bas === g.bas) || null;
-    } catch (_e) { adjusted = null; }
+        justerat = (perBas || []).find(p => p.bas === g.bas) || null;
+    } catch (_e) { justerat = null; }
 
-    // Lönepolitiskt ställningstagande
-    const pol = (typeof policyFor === 'function') ? policyFor(g.aid, g.bas) : null;
-    const band = pol ? _lpGroupBandStats(g.rows, pol) : null;
-    const compliance = pol ? _lpComplianceCounts(g.rows, pol) : null;
-
-    // § 3:10-par där gruppen ingår (som subjekt eller som jämförelseyrke)
-    // Par där den andra gruppen är under tröskeln redovisas inte här (undantaget gäller bara fliken).
-    let lvAsSubject = [], lvAsComparator = [], lvUtelamnade = 0;
-    try {
-        const res = likvardighetResultat();
-        const gruppens = ((res && res.pairs) || []).filter(p =>
-            (p.kvAid === g.aid && p.kvBas === g.bas) || (p.maAid === g.aid && p.maBas === g.bas));
-        const { par: pairs, utelamnade } = _parForRedovisning(gruppens);
-        lvUtelamnade = utelamnade;
-        lvAsSubject = pairs.filter(p => p.kvAid === g.aid && p.kvBas === g.bas);
-        lvAsComparator = pairs.filter(p => p.maAid === g.aid && p.maBas === g.bas);
-    } catch (e) { rapporteraFel('Gruppdossier: likvärdigt arbete', e); }
-
-    // Extern jämförelsestatistik
-    const bench = _jfStatistikFor(state.statistik, g.aid, g.bas)?.rad || null;
+    // § 3:10-paren; vymodellen väljer gruppens och utelämnar dem där den andra gruppen är under tröskeln.
+    let par = [];
+    try { par = (likvardighetResultat() || {}).pairs || []; }
+    catch (e) { rapporteraFel('Gruppdossier: likvärdigt arbete', e); }
 
     // Prioritering + hypoteser
-    let prio = null, suggestions = [];
+    let prio = null, forslag = [];
     try {
         const ref = (typeof _selectedPrioReference === 'function') ? _selectedPrioReference() : 'statistik';
         // computePrioritization grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
@@ -128,39 +98,34 @@ function buildGruppdossier(key, delat = null) {
         else { if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref)); alla = delat.prio.get(ref); }
         prio = (alla || []).find(i => i.aid === g.aid && i.bas === g.bas) || null;
         if (prio && typeof generateMotivationSuggestions === 'function') {
-            suggestions = generateMotivationSuggestions(prio) || [];
+            forslag = generateMotivationSuggestions(prio) || [];
         }
     } catch (e) { rapporteraFel('Gruppdossier: prioriteringen', e); }
 
-    return {
-        key: g.key, aid: g.aid, bas: g.bas, yrke: g.yrke,
-        n: g.rows.length, nKv: kv.length, nMa: ma.length,
-        median: Stat.median(lons),
-        p10: Stat.quantile(lons, 0.10), p90: Stat.quantile(lons, 0.90),
-        gap, adjusted, ansvar, skr: _skrKvinnoandel(g.aid, { del: _skrDel() }), pol, polLevel: policyLevelLabel(pol), band, compliance,
-        lvAsSubject, lvAsComparator, lvUtelamnade, bench, prio, suggestions
-    };
+    const referens = policyFor(g.aid, g.bas);
+    return vymodellGruppdossier(g, { k: kTroskel(), ki: !(delat && delat.text), kostnad: state.costSettings, referens,
+        referensNiva: policyLevelLabel(referens), par, statistik: state.statistik, skrDel: _skrDel(), justerat, prio, forslag });
 }
 
 // ---- Rendering --------------------------------------------------------------
 
 // Dossiern är en DETALJVY för en rad, inte ett eget arbetsläge — därför modal
 // som nås från tabellrader, inte en post i huvudmenyn.
-function openGruppdossier(preselectKey) {
+export function openGruppdossier(preselectKey) {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
-    renderGruppdossier(preselectKey);
+    ritaGruppdossier(preselectKey);
     modal.style.display = 'flex';
     if (typeof trapFocus === 'function') trapFocus(modal);
 }
-function closeGruppdossier() {
+export function closeGruppdossier() {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
     if (typeof releaseFocus === 'function') releaseFocus(modal);
     modal.style.display = 'none';
 }
 
-function renderGruppdossier(preselectKey) {
+export function ritaGruppdossier(preselectKey) {
     const sel = document.getElementById('dossier-select');
     const body = document.getElementById('dossier-body');
     if (!sel || !body) return;
@@ -170,7 +135,7 @@ function renderGruppdossier(preselectKey) {
         sel.innerHTML = '';
         body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon('tomLada')}</div>
             <h3>Inga grupper att visa</h3>
-            <p>${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per ${T.niva.en} i stället.</p></div>`;
+            <p>${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} når tröskeln på ${kTroskel()} ${personOrd(kTroskel())}. Läs in en större lönefil, eller analysera per ${T.niva.en} i stället.</p></div>`;
         return;
     }
     // Fyll väljaren (bevara valet om det fortfarande finns)
@@ -182,7 +147,7 @@ function renderGruppdossier(preselectKey) {
 
     const d = buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value);
     if (!d) { body.innerHTML = '<p class="f-dampad">Gruppen kunde inte läsas.</p>'; return; }
-    body.innerHTML = _gdRenderBody(d);
+    body.innerHTML = _gdRitaInnehall(d);
     // Fokusfällan cachar de fokuserbara elementen när modalen öppnas. Byter man
     // yrkesgrupp byggs innehållet om och cachen pekar på borttagna noder — fällan
     // måste därför läggas om medan modalen är öppen.
@@ -194,13 +159,13 @@ function renderGruppdossier(preselectKey) {
 }
 
 /** Gruppens namn med AID-koden en gång: yrkesetiketten börjar oftast redan med koden. */
-function gruppNamn(g) {
+export function gruppNamn(g) {
     const aid = String(g.aid ?? ''), yrke = String(g.yrke ?? '').trim();
     if (!yrke || yrke === aid) return aid;
     return yrke.startsWith(aid) ? yrke : `${aid} ${yrke}`;
 }
 
-function _gdRenderBody(d) {
+function _gdRitaInnehall(d) {
     const kr = v => svKr(v);
     const pct = (v, dec = 1) => svPct(v, dec);
     const card = (title, inner, note) => `
@@ -217,7 +182,7 @@ function _gdRenderBody(d) {
         <div class="gd-kpis">
             <div class="gd-kpi"><span>${d.n}</span><small>personer</small></div>
             <div class="gd-kpi"><span>${d.nKv} / ${d.nMa}</span><small>kvinnor / män (${svPct(kvPct, 0)} kv)${d.skr
-                ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)}</span>` : ''}</small></div>
+                ? `<br><span title="${esc(skrForklaring())}">nationellt: ${svPct(d.skr.pct, 0)} kvinnor i ${skrDelText(d.skr.del)}</span>` : ''}</small></div>
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
         </div>${basdossierKandidater().some(x => x.bas === d.bas) ? `<p class="gd-note">${basdossierKnapp(d.bas, { text: `Hela BAS ${d.bas}` })} allt om intervallet på en sida</p>` : ''}${d.ansvar ? `
@@ -241,7 +206,7 @@ function _gdRenderBody(d) {
         ? `<div class="gd-big">${d.adjusted.gapPct >= 0 ? '+' : ''}${svPct(d.adjusted.gapPct, 1)}</div>
            <p>Åldersrensad skillnad för hela BAS ${esc(d.bas)} (gruppens arbetsvärderingsnivå), 95 % KI ${svTal(d.adjusted.ciLow, 1)} – ${svPct(d.adjusted.ciHigh, 1)}.</p>
            <p class="gd-note">Avser ${T.niva.bf}, inte enbart den här gruppen.</p>`
-        : missing(`${termStor(T.niva.bf)} har inte tillräcklig könsbalans för en åldersrensad skattning.`);
+        : missing(`${stor(T.niva.bf)} har inte tillräcklig könsbalans för en åldersrensad skattning.`);
 
     // 4. Mot ställningstagandet
     const polInner = d.pol
@@ -306,12 +271,12 @@ function _gdRenderBody(d) {
  * @param {any} d
  * @param {{stampel?: boolean}} [val]
  */
-function gruppdossierAsText(d, { stampel = true } = {}) {
+export function gruppdossierAsText(d, { stampel = true } = {}) {
     const kr = v => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const L = [];
     L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
     L.push(`Antal: ${d.n} (${d.nKv} kvinnor, ${d.nMa} män) · median ${kr(d.median)} · P10–P90 ${kr(d.p10)}–${kr(d.p90)}`);
-    if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${_skrDelText(d.skr.del)} (${skrKallaKort()})`);
+    if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${skrDelText(d.skr.del)} (${skrKallaKort()})`);
     if (d.ansvar) L.push(`Ansvar: ledningsansvar ${d.ansvar.ledning.kv} kvinnor / ${d.ansvar.ledning.ma} män · särskilt uppdrag ${d.ansvar.uppdrag.kv} kvinnor / ${d.ansvar.uppdrag.ma} män`);
     if (d.gap && d.gap.pct != null) L.push(`Ojusterad löneskillnad: ${svPct(d.gap.pct, 1)} av männens median`);
     if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
@@ -321,7 +286,7 @@ function gruppdossierAsText(d, { stampel = true } = {}) {
     if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per år`);
     // Förslagen är HTML (fetstil m.m.); textkopian tar bort taggarna och avkodar tecknen
     // utan att tolka HTML.
-    const somText = h => _htmlTillText(h);
+    const somText = h => htmlTillText(h);
     if (d.suggestions.length) { L.push('Frågor att undersöka:'); d.suggestions.forEach(s => L.push('  – ' + somText(s.text))); }
     if (d.lvUtelamnade) L.push(_parUtelamnadeNot(d.lvUtelamnade));
     L.push('Obs! Dossiern dokumenterar inte sakliga skäl – den bedömningen görs separat.');
@@ -330,26 +295,29 @@ function gruppdossierAsText(d, { stampel = true } = {}) {
     return L.join('\n');
 }
 
-// ---- Wiring ----
-document.getElementById('dossier-select')?.addEventListener('change', () => renderGruppdossier());
-// Djuplänk från tabellrader i andra flikar
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-open-dossier]');
-    if (btn) { openGruppdossier(btn.getAttribute('data-open-dossier')); return; }
-    if (/** @type {HTMLElement} */ (e.target).closest('[data-dossier-close]')) closeGruppdossier();
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('dossier-modal')?.style.display === 'flex') {
-        closeGruppdossier();
-    }
-});
-document.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
-    const sel = document.getElementById('dossier-select');
-    const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
-    if (!d) return;
-    const txt = medExportLage(() => gruppdossierAsText(d));
-    const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
-    else done();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartGruppdossier() {
+    // ---- Wiring ----
+    document.getElementById('dossier-select')?.addEventListener('change', () => ritaGruppdossier());
+    // Djuplänk från tabellrader i andra flikar
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-open-dossier]');
+        if (btn) { openGruppdossier(btn.getAttribute('data-open-dossier')); return; }
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-dossier-close]')) closeGruppdossier();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('dossier-modal')?.style.display === 'flex') {
+            closeGruppdossier();
+        }
+    });
+    document.addEventListener('click', e => {
+        if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
+        const sel = document.getElementById('dossier-select');
+        const d = sel ? medExportLage(() => buildGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
+        if (!d) return;
+        const txt = medExportLage(() => gruppdossierAsText(d));
+        const done = () => { if (typeof announceToScreenReader === 'function') announceToScreenReader('Dossier kopierad.'); };
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
+        else done();
+    });
+}

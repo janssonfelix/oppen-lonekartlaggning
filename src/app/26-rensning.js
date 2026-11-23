@@ -1,5 +1,31 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { K_STANDARD } from '../lib/ktroskel.js';
+import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { visaInterntFel } from './03-hjalpfunktioner.js';
+import { navigateTo } from './05-tabeller-och-lankar.js';
+import { _kVisaFel, _synkaKTroskel } from './06-k-troskel.js';
+import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
+import { _rfRensaAlla } from './10-diagramritare.js';
+import { sattDiagramMarkering } from './11-markering.js';
+import { aterstallReferens, state } from './12-tillstand.js';
+import { ovRitaLage, ritaKravstatus, skattningarSlapp } from './13-oversikt.js';
+import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
+import { _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { visningNy } from './23-exportgrind.js';
+import { updateGdprBanner } from './25-dataskyddsinfo.js';
+import { setInactivityTimeout } from './28-vad-lagras-inaktivitet.js';
+import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, renderPaketInfo } from './29-organisationspaket.js';
+import { renderFilrutor, resetUploadCell } from './32-filinlasning.js';
+import { _fcGlomKnappresultat } from './36-loneoversyn.js';
+import { _visaJamforelseFlik, renderReferensKort } from './38-referensfiler.js';
+import { rapportGlomHopfallning } from './39-loneoversikt.js';
+import { laMinneSlapp } from './41-lika-arbete.js';
+import { jamforelseSattVal } from './42-jamforelse.js';
+import { _hpDemoNycklar, renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { _rmMinneSlapp } from './58-rapportmodell.js';
+import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
+import { explorerSlappMinne, explorerSynkaSmaLas } from './70-utforska.js';
 
 // ---- Rensa all data: lagringsminimering (art. 5.1 e, 25.2) ----
 /**
@@ -7,7 +33,7 @@
  * personuppgifter. Användaren har samma effekt om de stänger fliken — denna
  * knapp gör rensningen till en explicit, dokumenterad åtgärd. Rätten till radering utövas mot källsystemet.
  */
-function clearAllData() {
+export function clearAllData() {
     const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length
         || _fkVantar || state.forhandskontroll;   // en fil som väntar på Läs in, eller förhandskontrollens tio rader
     if (!hasAny) {
@@ -27,16 +53,16 @@ function clearAllData() {
  */
 // Behållare som fylls av JavaScript med innehåll som kan bära lönedata. Listorna används av "Rensa all data" och av
 // exportgrinden (23-exportgrind.js), som tömmer flikar som inte längre är ritade med gällande tröskel.
-const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
+export const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
     'outliers-table-wrap', 'print-report'];
-const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
-const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
+export const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
+export const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
     'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
 
-function _rensaAllData({ inbakat = true } = {}) {
+export function _rensaAllData({ inbakat = true } = {}) {
     visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
-    _rmMinne = null;   // förhandsbeskedets minne (58-rapportmodell.js)
+    _rmMinneSlapp();   // förhandsbeskedets minne (58-rapportmodell.js)
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
     //    urvalets värdelistor, diagrammets exportfunktion) — släpp dem också,
     //    annars finns hela underlaget kvar i minnet efter rensningen.
@@ -107,6 +133,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     // spår av lönefördelningar (CI-värden, MDE-mått från power-analysen).
     state.bootstrapCI = null;
     state.powerAnalysis = null;
+    if (typeof skattningarSlapp === 'function') skattningarSlapp();   // skattningarna vid andra golv (ADR-103)
     state.dataAudit = null;
     if (state.likvardighet) state.likvardighet.result = null;
 
@@ -189,7 +216,7 @@ function _rensaAllData({ inbakat = true } = {}) {
     if (typeof navigateTo === 'function') navigateTo('dashboard');
 
     updateGdprBanner();
-    if (typeof updateCompliance === 'function') updateCompliance();
+    if (typeof ritaKravstatus === 'function') ritaKravstatus();
     announceToScreenReader('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.
     if (inbakat && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();

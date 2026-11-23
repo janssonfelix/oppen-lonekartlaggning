@@ -23,14 +23,14 @@ describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
     });
 
     it('§3:10- och strukturmåtten kan beräknas på demodata', () => {
-        expect(() => win.__computeLikvardighetPairs()).not.toThrow();
-        expect(() => win.__stRepresentationByBas(win.__getData())).not.toThrow();
+        expect(() => win.__likvardighetspar()).not.toThrow();
+        expect(() => win.__stRepresentationPerBas(win.__getData())).not.toThrow();
     });
 });
 
 describe('#export röktest: BAS-grupperade tabeller blir Word-block', () => {
     it('rapport-tabellen exporteras som block: titel + upprepade rubriker + tomrad per BAS', () => {
-        // generateRapport har körts av demodata-pipelinen → rapport-table har group-headers
+        // ritaLoneoversikt har körts av demodata-pipelinen → rapport-table har group-headers
         const clone = win.__cloneTable('rapport-table');
         expect(clone).toBeTruthy();
         const g = win.__groupedAoa(clone);
@@ -546,7 +546,7 @@ describe('rapportunderlag', () => {
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const celler = [...w.document.querySelectorAll('#rapportunderlag-innehall .ru-innehall td')];
-        const tal = celler.filter(td => w.eval('_cellArTal')(td.textContent));
+        const tal = celler.filter(td => w.eval('arTal')(td.textContent));
         const intervall = tal.filter(td => /\d\s*(–|till)\s*[−+]?\d/.test(td.textContent));
         expect(intervall.length).toBeGreaterThan(0);
         expect(tal.every(td => td.classList.contains('ru-tal'))).toBe(true);
@@ -622,14 +622,14 @@ describe('rapportunderlag: kopiera diagram', () => {
 });
 
 describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
-    it('I2: kandidatparens diagram erbjuds bara när inga par uteslutits', () => {
+    it('kandidatparens diagram erbjuds bara när inga par uteslutits', () => {
         const w = createAppWindow();
         const ids = (harPar, exkl) => w._rapportDiagramLista(harPar, exkl).map(g => g.id);
         expect(ids(true, 0)).toContain('chart-likvardighet-heatmap');
         expect(ids(true, 1)).not.toContain('chart-likvardighet-heatmap');
         expect(ids(false, 0)).not.toContain('chart-likvardighet-heatmap');
     });
-    it('I4: diagrammet ritas alltid om före kopiering (aktuellt urval)', async () => {
+    it('diagrammet ritas alltid om före kopiering (aktuellt urval)', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
@@ -641,7 +641,7 @@ describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
         await w.__kopieraRapportDiagram('chart-skevhet-overview');
         expect(anrop).toContain('struktur');
     });
-    it('I5: misslyckad nedladdning ger "fel" utan att kasta', async () => {
+    it('misslyckad nedladdning ger "fel" utan att kasta', async () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();

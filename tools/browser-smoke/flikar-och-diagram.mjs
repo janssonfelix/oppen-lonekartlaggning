@@ -360,7 +360,7 @@ export async function flikarOchDiagram() {
     }
 
     console.log('\n── Diagramfilter: Minst på prioriteringsmatrisens antal ──');
-    /* global _figUrvalSpann -- körs i sidan, där den finns */
+    /* global urvalSpann -- körs i sidan, där den finns */
     {
         const punkter = () => page.evaluate(() => document.querySelectorAll('#chart-prio-matrix > svg [data-marke="punkt"]').length);
         const fore = await punkter();
@@ -369,7 +369,7 @@ export async function flikarOchDiagram() {
             return d && d.matches('div[data-urval-filter]') ? [...d.querySelectorAll(':scope > .diagram-urval')].map(r => r.getAttribute('data-urval-falt')) : []; });
         ok(['bas', 'n', 'x'].every(f => rader.includes(f)), `matrisen har filterraderna BAS, antal och avvikelse (${rader.join(', ')})`);
         // Ett Minst mitt i spannet: grupperna under döljs.
-        const minst = await page.evaluate(() => { const sp = _figUrvalSpann(document.getElementById('chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
+        const minst = await page.evaluate(() => { const sp = urvalSpann(document.getElementById('chart-prio-matrix')._figur, 'n'); return Math.ceil((sp.min + sp.max) / 2); });
         const filter = page.locator('#chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-filter][1]');
         const falt = filter.locator('div[data-urval-falt="n"] input[data-urval-grans="min"]');
         await falt.fill(String(minst));

@@ -15,12 +15,12 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
     it('en ny lönefil, ett organisationspaket, en konfigurationsfil och rensningen', async () => {
         const w = demo();
         expect(await prova(w, 'kon', w => lasInLonefil(w, lonefil())), 'ny lönefil').toEqual([]);
-        const paket = w.eval(`JSON.stringify(_opByggPaket({ organisation: 'Exempelorganisationen', skapat: '2026-10-01',
+        const paket = w.eval(`JSON.stringify(byggPaket({ organisation: 'Exempelorganisationen', skapat: '2026-10-01',
             installningar: { months: 6 },
             referens: { namn: 'Ställningstagande', rader: [{ aid: null, bas: 'A', p10: 25000, med: 30000, p90: 36000 }, { aid: null, bas: 'C', p10: 30000, med: 35000, p90: 41000 }] } }))`);
         expect(await prova(w, 'struktur', w => { expect(w.lasInPaket(paket).ok).toBe(true); }), 'paketet').toEqual([]);
         const snap = w.__buildConfigSnapshot();
-        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, costSettings: { ...snap.costSettings, months: 9 } }); }), 'konfigurationsfilen').toEqual([]);
+        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } }); }), 'konfigurationsfilen').toEqual([]);
         expect(await prova(w, 'prioritering', w => w.__autoClearOnInactivity()), 'rensningen efter en tid').toEqual([]);
     });
 
@@ -28,7 +28,8 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const w = demo();
         await ritaAlla(w);
         // Skattningarna (bootstrap-KI, styrkan) räknas i bakgrunden när golvet ändras. Flikarna ritas innan de är klara.
-        w.eval('sattKTroskel(15, { fraga: false })');
+        // På skärmen ändrar ett tröskelbyte inte golvet (ADR-103); bakgrundsräkningen startas som efter ett golvbyte.
+        w.eval('invalidateStatCaches({ recompute: false, likvardighet: false }); _skattningarIBakgrunden()');
         expect(w.eval('!!_bakgrundsrakning')).toBe(true);
         ritaAllaDirekt(w);
         await byt(w, 'filer');

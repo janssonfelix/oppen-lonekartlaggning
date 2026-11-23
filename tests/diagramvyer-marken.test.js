@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell, utanSmaGrupper } from '../src/lib/figur.js';
 import { arsbeloppMening } from '../src/lib/prioritering.js';
+import { trappaVisas } from '../src/lib/vymodell-regressionskort.js';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 import { vanliga, KALLA, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
@@ -51,15 +52,11 @@ describe('Lika arbete: trappan, gapet längs lönefördelningen och hanteln per 
         expect(w.eval('_regTrappaFigur(window.__s, window.__y)').x.ordning).toHaveLength(4);
     });
     it('trappan visas bara när alla steg får visas — aldrig när det ojusterade steget är utelämnat', () => {
-        w.__u = { steg, utelamnat: false };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(true);
-        w.__u = { steg: steg.slice(1), utelamnat: true };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(false);
-        w.__u = { steg: steg.slice(0, 1), utelamnat: false };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(false);              // ett steg är ingen trappa
-        w.__u = { steg: [{ name: 'Endast kön', status: 'too_few' }, ...steg.slice(1)], utelamnat: false };
-        expect(w.eval('_regTrappaVisas(window.__u)')).toBe(false);
-        expect(w.eval('_regTrappaVisas(null)')).toBe(false);
+        expect(trappaVisas({ steg, utelamnat: false })).toBe(true);
+        expect(trappaVisas({ steg: steg.slice(1), utelamnat: true })).toBe(false);
+        expect(trappaVisas({ steg: steg.slice(0, 1), utelamnat: false })).toBe(false);              // ett steg är ingen trappa
+        expect(trappaVisas({ steg: [{ name: 'Endast kön', status: 'too_few' }, ...steg.slice(1)], utelamnat: false })).toBe(false);
+        expect(trappaVisas(null)).toBe(false);
     });
     it('i verktyget: tre män ger ingen trappa (men noten om det utelämnade steget); med båda könen över tröskeln ritas den', () => {
         const rad = (kon, i, bas) => ({ bas, kon, lon: 28000 + i * 137 + (kon === 'man' ? 2500 : 0), alder: 25 + (i % 35), yrke: '100 X', aid: '100', yrkeLabel: 'X' });
@@ -252,7 +249,7 @@ describe('före och efter: lutningsdiagrammen', () => {
         expect(el.textContent).toMatch(/I ingen AID-etikett med minst 10 kvinnor och 10 män ändras kvinnors median i procent av mäns/);
         // Med löner som ändras olika för könen: grupperna visas, den lilla aldrig.
         w2.__sim = w2.__state.data.map(r => ({ ...r, lon: r.kon === 'kvinna' ? r.lon * 1.05 : r.lon }));
-        const rader = w2.eval('_forecastLutningRader(getData(), window.__sim, "grupp")');
+        const rader = w2.eval('_lutningRader(getData(), window.__sim, "grupp")');
         expect(rader.map(r => r.namn).sort()).toEqual(['Yrke6000 · A', 'Yrke6100 · A']);
         expect(rader[0].markering).toEqual(['bas:A', 'grupp:6000|A']);
         expect(rader.every(r => r.efter > r.fore)).toBe(true);
@@ -392,7 +389,7 @@ describe('Lönepolitik: efterlevnaden kring en mittlinje', () => {
                       ...Array.from({ length: 6 }, (_, i) => person('B', i % 2 ? 'kvinna' : 'man', 61111 + i))];
         medData(data, [{ bas: 'A', p10: 28000, med: 34000, p90: 40000 }, { bas: 'B', p10: 25000, med: 30000, p90: 40000 }], () => {
             w.__state.kLage = 'export';
-            w.__renderLonepolitik();
+            w.__ritaLonepolitik();
             const d = w.document, val = () => d.getElementById('lp-komplians-vy'), el = () => d.getElementById('chart-lp-compliance');
             expect(val().value).toBe('staplad');
             expect(el()._figur.lager).toHaveLength(3);
@@ -534,7 +531,7 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
     it('ålderspyramiden: kvinnor åt vänster, män åt höger, äldst överst, samma andelar som histogrammet', () => {
         const w2 = skapa();
         w2.__renderTabContent('kon');
-        w2.eval("renderDemografi('__ALLA__')");
+        w2.eval("ritaAldersstruktur('__ALLA__')");
         const pyr = w2.document.getElementById('chart-demo-pyramid')._figur, hist = w2.document.getElementById('chart-demo-hist')._figur;
         expect(pyr.lager.map(l => [l.serie, !!l.absolut, l.riktning])).toEqual([['Kvinna', true, 'liggande'], ['Man', false, 'liggande']]);
         expect(pyr.lager[0].data.every(d => d.x <= 0)).toBe(true);
@@ -662,10 +659,10 @@ describe('Likvärdigt arbete: krav mot lön', () => {
                         ...grupp('3200', 'B', 1, 13, 37000), ...grupp('4000', 'C', 3, 1, MARKOR)];
     it('grupperna: bara de som når tröskeln, dominans efter andel kvinnor, utan poäng efter BAS-intervall', () => {
         w.__d = data();
-        const u = w.eval('_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10 })');
+        const u = w.eval('kravGrupper(window.__d, { kvinnoThr: 60, k: 10 })');
         expect(u.medPoang).toBe(false);
         expect(u.grupper.map(g => [g.aid, g.dominans]).sort()).toEqual([['2000', 'kvinnodominerad'], ['2100', 'mansdominerad'], ['3000', 'kvinnodominerad'], ['3100', 'blandad'], ['3200', 'mansdominerad']]);
-        const f = w.eval('_lvKravFigur(_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10 }))');
+        const f = w.eval('_lvKravFigur(vymodellKravMotLon(window.__d, { k: 10 }))');
         expect(f.x).toMatchObject({ skala: 'band', ordning: ['BAS A', 'BAS B'] });
         expect(f.lager.map(l => [l.marke, l.serie, l.symbol || null])).toEqual([['linje', 'Nivå per BAS-intervall', null],
             ['punkt', 'Kvinnodominerad', 'cirkel'], ['punkt', 'Mansdominerad', 'triangelHoger'], ['punkt', 'Blandad', 'cirkel']]);
@@ -680,18 +677,18 @@ describe('Likvärdigt arbete: krav mot lön', () => {
     it('med poängtabell: poängen på x-axeln, en rät trendlinje, och en grupp utan poäng placeras efter sitt BAS-intervall', () => {
         w.__d = data();
         w.__p = new Map([['2000|A', 200], ['2100|A', 220], ['3000|B', 300], ['3200|B', 340]]);   // 3100|B saknar poäng
-        const u = w.eval('_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
+        const u = w.eval('kravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
         expect(u.medPoang).toBe(true);
         const utan = u.grupper.find(g => g.aid === '3100');
         expect(utan).toMatchObject({ uppskattad: true, krav: 320 });                     // medianen av 300 och 340 i BAS B
         expect(u.utanPlats).toEqual([]);
-        const f = w.eval('_lvKravFigur(_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p }))');
+        const f = w.eval('_lvKravFigur(vymodellKravMotLon(window.__d, { k: 10, poangByKey: window.__p }))');
         expect(f.x).toMatchObject({ skala: 'linjar', titel: 'Arbetsvärderingspoäng' });
         expect(f.lager[0]).toMatchObject({ marke: 'linje', serie: 'Nivå efter kraven (trend)' });
         expect(f.lager[0].data.map(d => d.x)).toEqual([200, 340]);
         // Ingen värderad grupp i intervallet: gruppen går inte att placera.
         w.__p = new Map([['2000|A', 200], ['2100|A', 220]]);
-        const u2 = w.eval('_lvKravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
+        const u2 = w.eval('kravGrupper(window.__d, { kvinnoThr: 60, k: 10, poangByKey: window.__p })');
         expect(u2.grupper.map(g => g.aid).sort()).toEqual(['2000', '2100']);
         expect(u2.utanPlats.map(g => g.aid).sort()).toEqual(['3000', '3100', '3200']);
     });
@@ -874,7 +871,7 @@ describe('Ålder & karriär: histogram med kön mot kön', () => {
     it('varje klass rymmer minst tröskeln, ändarna slås ihop, och andelarna summerar till 100 % per kön', () => {
         w.__kv = [...Array.from({ length: 30 }, (_, i) => 30000 + i * 300), 61000];        // en ensam kvinna högt upp
         w.__ma = [...Array.from({ length: 30 }, (_, i) => 33000 + i * 300), 21000];        // en ensam man långt ned
-        const klasser = w.eval('_konHistogramKlasser(window.__kv, window.__ma, 10)');
+        const klasser = w.eval('histogramKlasser(window.__kv, window.__ma, 10)');
         expect(klasser.length).toBeGreaterThanOrEqual(3);
         expect(klasser.every(c => c.nKv + c.nMa >= 10)).toBe(true);
         expect(klasser[0].oppenNed).toBe(true);
@@ -890,9 +887,9 @@ describe('Ålder & karriär: histogram med kön mot kön', () => {
     });
     it('ett kön under tröskeln, eller löner som inte går att dela in: inga klasser', () => {
         w.__kv = [30000, 31000, 32000]; w.__ma = Array.from({ length: 30 }, (_, i) => 33000 + i * 300);
-        expect(w.eval('_konHistogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
+        expect(w.eval('histogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
         w.__kv = Array.from({ length: 10 }, () => 30000); w.__ma = Array.from({ length: 10 }, () => 30000);
-        expect(w.eval('_konHistogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
+        expect(w.eval('histogramKlasser(window.__kv, window.__ma, 10)')).toBeNull();
     });
 });
 
@@ -907,7 +904,7 @@ describe('Ålder & karriär: lönefördelningen per kön i fliken', () => {
         const d = w2.document;
         expect(d.getElementById('chart-kon-histogram')._figur.lager.map(l => l.serie)).toEqual(['Kvinnor', 'Män']);
         w2.eval('sattKTroskel(31, { fraga: false })');
-        w2.eval("renderKon('__ALLA__')");
+        w2.eval("ritaAlderOchLon('__ALLA__')");
         expect(d.getElementById('chart-kon-histogram')._figur).toBeUndefined();
         expect(d.getElementById('chart-kon-histogram').textContent).toMatch(/färre än 31 personer/);
     });
@@ -1220,7 +1217,6 @@ describe('ett bildspråk — linjeikoner i stället för bildtecken', () => {
     it('källan har inga bildtecken kvar utanför kommentarer', () => {
         const kvar = [];
         for (const [fil, text] of [...KALLA, ['index.html', readFileSync('src/index.html', 'utf8')]]) {
-            if (/^09-lib/.test(fil)) continue;
             text.split('\n').forEach((rad, i) => { if (!/^\s*(\/\/|\*|\/\*|<!--)/.test(rad) && BILDTECKEN.test(rad)) kvar.push(`${fil}:${i + 1}`); });
         }
         expect(kvar).toEqual([]);
@@ -1412,7 +1408,7 @@ describe('kvantilpunkter: gruppen som lika stora andelar, aldrig individer', () 
         expect(prickar).toHaveLength(20);
         expect(el.querySelectorAll('[data-marke="individ"], [data-marke="avvikare"]')).toHaveLength(0);
         // Prickarnas kvantiler ligger inom min–max; skärmläget följer värdeaxeln (högre värde = högre upp).
-        const kp = w.eval('_figKvantilpunkter(window.__f.lager[0].data.map(d => d.y), 20)');
+        const kp = w.eval('kvantilpunkter(window.__f.lager[0].data.map(d => d.y), 20)');
         expect(kp.varden.every(v => v >= 20 && v <= 79)).toBe(true);
         // Ingen prick täcker en annan: två prickar i samma kolumn ligger minst en diameter isär i sidled.
         const pos = prickar.map(c => [Number(c.getAttribute('cx')), Number(c.getAttribute('cy')), Number(c.getAttribute('r'))]);

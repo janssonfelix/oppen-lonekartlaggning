@@ -1,26 +1,45 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { jamforSektor, sektorsnamn } from '../lib/aid.js';
+import { talformat } from '../lib/figur.js';
+import { avvikelseRangordning, jamforelseRader, matchningAntal, matchningEtikett, matchningSammanfattning } from '../lib/jamforelse.js';
+import { lageISpann } from '../lib/referenser.js';
+import { svTal } from '../lib/talformat.js';
+import { adjektiv, genitiv, ordForAntal, stor } from '../lib/termer.js';
+import { FARG } from './01-farger.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { buildBaseAudit, flerKolumner, setAudit } from './05-tabeller-och-lankar.js';
+import { kTroskel } from './06-k-troskel.js';
+import { jmfNamn, orgNamn, plotNamn } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { PALETTE, URVAL } from './10-diagramtema.js';
+import { markeringFor } from './11-markering.js';
+import { getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
+import { _lpForskjutning, _lpIngetDiagram, _lpKonsdominans } from './75-lonepolitik.js';
 
 // ---- Jämförelsestatistik (ADR-35) ----
 // Raderna räknas i src/lib/jamforelse.js; här finns filter, tabell och diagram. Avsnittet Mot jämförelsestatistiken i
 // fliken Löneläget: jämförelsen mot ställningstagandet är avsnittet före (75-lonepolitik.js, ADR-55).
 const _jmfVal = { bas: '', sektor: '' };
 
-function jamforelseVal() { return { ..._jmfVal }; }
+export function jamforelseVal() { return { ..._jmfVal }; }
 /** @param {{bas?: string, sektor?: string}} [val] */
-function jamforelseSattVal({ bas, sektor } = {}) {
+export function jamforelseSattVal({ bas, sektor } = {}) {
     if (bas !== undefined) _jmfVal.bas = typeof bas === 'string' ? bas : '';
     if (sektor !== undefined) _jmfVal.sektor = typeof sektor === 'string' ? sektor : '';
 }
-function jamforelseUnderlag() {
-    return _jfRader(getData(), { statistik: state.statistik, policyFor, k: kTroskel() });
+export function jamforelseUnderlag() {
+    return jamforelseRader(getData(), { statistik: state.statistik, policyFor, k: kTroskel() });
 }
-function _jmfKallaNamn(kalla) {
+export function _jmfKallaNamn(kalla) {
     return kalla === 'stallningstagande' ? referensKortnamn() : jmfNamn('jämförelsestatistiken');
 }
-function jamforelseAktivKalla() { return 'statistik'; }
+export function jamforelseAktivKalla() { return 'statistik'; }
 // "Urval: BAS C · sektor X" när ett filter är aktivt, annars tomt — för panel, Excel och utskrift.
-function jamforelseUrvalText() {
+export function jamforelseUrvalText() {
     const delar = [];
     if (_jmfVal.bas) delar.push(`BAS ${_jmfVal.bas}`);
     if (_jmfVal.sektor) delar.push(`${T.huvudomrade.en} ${_jmfVal.sektor}`);
@@ -50,7 +69,7 @@ function jamforelseMarkeraRad(aid, bas) {
 // Grundvyn visar yrke, BAS, antal och medianens tre kolumner; P10 och P90 ligger bakom *Fler kolumner* (05-tabeller-och-lankar.js),
 // så att tabellen ryms utan rullist i sidled. Kopiera, CSV, Excel och utskriften tar alltid med alla.
 const JMF_DOLDA_KOLUMNER = ['p10org', 'p10jmf', 'p10diff', 'p90org', 'p90jmf', 'p90diff'];
-function generateBenchmark() {
+export function generateBenchmark() {
     const tbody = document.querySelector('#benchmark-table tbody');
     const infoEl = document.getElementById('benchmark-metric-info');
     if (!tbody) return;
@@ -71,7 +90,7 @@ function generateBenchmark() {
 
     const { rader: alla, utelamnade } = jamforelseUnderlag();
     _jmfVal.bas = _jmfFyllVal(document.getElementById('jmf-bas'), [...new Set(alla.map(r => r.bas))].sort(), _jmfVal.bas);
-    _jmfVal.sektor = _jmfFyllVal(document.getElementById('jmf-sektor'), [...new Set(alla.map(r => r.sektor))].sort(_aidJamforSektor), _jmfVal.sektor);
+    _jmfVal.sektor = _jmfFyllVal(document.getElementById('jmf-sektor'), [...new Set(alla.map(r => r.sektor))].sort(jamforSektor), _jmfVal.sektor);
     const rader = alla.filter(r => (!_jmfVal.bas || r.bas === _jmfVal.bas) && (!_jmfVal.sektor || r.sektor === _jmfVal.sektor));
     const kalla = jamforelseAktivKalla();
 
@@ -99,7 +118,7 @@ function generateBenchmark() {
     }
     // Statistikens matchning i samma urval som tabellen (BAS- och sektorsfiltren); grupper under k finns inte i raderna.
     const matchEl = document.getElementById('benchmark-matchning-info');
-    if (matchEl) matchEl.textContent = _jfMatchningSammanfattning(rader);
+    if (matchEl) matchEl.textContent = matchningSammanfattning(rader);
 
     const fmt = new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK', maximumFractionDigits: 0 });
     const kr = v => (v == null ? '–' : fmt.format(Math.round(v)));
@@ -115,7 +134,7 @@ function generateBenchmark() {
     for (const r of rader) {
         if (r.bas !== curBas) { curBas = r.bas; html += `<tr class="group-header"><td colspan="13">BAS ${esc(r.bas)}</td></tr>`; }
         html += `<tr data-rad="${esc(r.aid)}|${esc(r.bas)}"><td>${esc(r.yrke)}</td><td>${esc(r.bas)}</td>`
-            + `<td data-sort-value="${matchSort[r.statistikMatchning] || 3}">${esc(_jfMatchningEtikett(r.statistikMatchning))}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
+            + `<td data-sort-value="${matchSort[r.statistikMatchning] || 3}">${esc(matchningEtikett(r.statistikMatchning))}</td><td class="num" data-sort-value="${r.n}">${r.n}</td>`
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
     tbody.innerHTML = html || `<tr><td colspan="13" class="farg-dampad pad-24 ta-mitt">Inga ${T.enhet.fl} i urvalet.</td></tr>`;
@@ -126,11 +145,11 @@ function generateBenchmark() {
     const utanMatch = rader.filter(r => r[kalla].median == null).length;
     const iUrval = namn => {
         const m = namn.match(/^(.*) \(BAS (.*)\)$/);
-        return !m || ((!_jmfVal.bas || m[2] === _jmfVal.bas) && (!_jmfVal.sektor || _aidSektorsnamn(m[1]) === _jmfVal.sektor));
+        return !m || ((!_jmfVal.bas || m[2] === _jmfVal.bas) && (!_jmfVal.sektor || sektorsnamn(m[1]) === _jmfVal.sektor));
     };
     const utelamnadeIUrval = utelamnade.filter(iUrval);
-    const antal = _jfMatchningAntal(rader);
-    const grupper = n => `${n} ${termForAntal(n, T.enhet)} i ${T.niva.en}`;
+    const antal = matchningAntal(rader);
+    const grupper = n => `${n} ${ordForAntal(n, T.enhet)} i ${T.niva.en}`;
     const urval = jamforelseUrvalText();
     setAudit('benchmark', {
         title: 'Jämförelsestatistik',
@@ -138,11 +157,11 @@ function generateBenchmark() {
         usedInAnalysis: rader.length,
         analysisExclusions: [
             ...(urval ? [[esc(urval), '']] : []),
-            ...(utelamnadeIUrval.length ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} för små (k-anonymitet n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : []),
-            ...(utanMatch ? [[`${termStor(T.enhet.fl)} i ${T.niva.en} utan median i ${esc(_jmfKallaNamn(kalla))}`, utanMatch]] : [])
+            ...(utelamnadeIUrval.length ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (minsta gruppstorlek, n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : []),
+            ...(utanMatch ? [[`${stor(T.enhet.fl)} i ${T.niva.en} utan median i ${esc(_jmfKallaNamn(kalla))}`, utanMatch]] : [])
         ],
         formler: [
-            [`${termStor(T.kod.en)} (matchningsnyckel)`, `Inledande sifferprefix av ${T.enhet.bf} (t.ex. "402010 Förskollärare" ger 402010)`],
+            [`${stor(T.kod.en)} (matchningsnyckel)`, `Inledande sifferprefix av ${T.enhet.bf} (t.ex. "402010 Förskollärare" ger 402010)`],
             ['Percentiler', `<code>P10 = kvantil 0,1</code>, <code>median</code>, <code>P90 = kvantil 0,9</code> av organisationens löner med samma ${T.enhet.en} i samma ${T.niva.en}`],
             ['Diff (%)', '<code>(organisationens värde / jämförelsens värde − 1) × 100</code>, per percentil'],
             ['Matchning', `Jämförelsestatistiken: först AID + BAS, annars AID utan BAS; rader för andra ${T.niva.fl} används aldrig. Ställningstagandet: AID + BAS, annars AID, annars BAS. `
@@ -155,16 +174,13 @@ function generateBenchmark() {
     });
 }
 
-document.getElementById('jmf-bas')?.addEventListener('change', e => { jamforelseSattVal({ bas: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
-document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamforelseSattVal({ sektor: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
-
 // ---- Diagrammen ----
 const _JMF_MAX = 25;
 const _jmfEtikett = r => `${r.yrke} · BAS ${r.bas}`;
 const _jmfPct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
 // Fälten som diagrammens filter läser (URVAL.bas, .yrkesgrupp, .sektor, .matchning, .antal), samma värden som tabellens
 // kolumner och dess sektorsfilter. En grupp utan statistik får ingen matchning (tabellens "–") och påverkas inte av det filtret.
-const _jmfUrvalFalt = r => ({ bas: r.bas, yrke: r.yrke, ...(r.sektor != null ? { sektor: r.sektor } : {}), n: r.n, ...(r.statistikMatchning ? { matchning: _jfMatchningEtikett(r.statistikMatchning) } : {}) });
+const _jmfUrvalFalt = r => ({ bas: r.bas, yrke: r.yrke, ...(r.sektor != null ? { sektor: r.sektor } : {}), n: r.n, ...(r.statistikMatchning ? { matchning: matchningEtikett(r.statistikMatchning) } : {}) });
 
 function ritaJamforelseDiagram(rader, kalla) {
     const host = document.getElementById('jmf-diagram');
@@ -206,7 +222,7 @@ function _ritaJmfSpann(rader, kalla, namnLitet) {
 function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
     const etikett = _jmfEtikett, ref = r => r[kalla];
     const harBand = v => v.p10 != null && v.p90 != null;
-    const kr = v => _figTalformat(v, 'kr');
+    const kr = v => talformat(v, 'kr');
     const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
     return { beskrivning: `Organisationens lönespann från P10 till P90 per ${T.enhet.en}, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal], x: { skala: 'linjar', titel: 'Månadslön (kr)', format: 'kr' }, y: { skala: 'band', ordning: visa.map(etikett), etikettMax: 48 },
@@ -214,10 +230,10 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         lager: [
             { marke: 'intervall', riktning: 'liggande', serie: `${refNamn} P10–P90`, farg: PALETTE.semantic.spann, tjocklek: 14,
               data: visa.filter(r => harBand(ref(r))).map(r => ({ y: etikett(r), lag: ref(r).p10, hog: ref(r).p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
-              tips: d => [[d.y], [`${refNamn} P10–P90`, `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
+              tips: d => [[d.y], [`${refNamn} P10–P90`, `${talformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'intervall', riktning: 'liggande', serie: `${org} P10–P90`, farg: PALETTE.serie[0], tjocklek: 7,
               data: visa.map(r => ({ y: etikett(r), lag: r.org.p10, hog: r.org.p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
-              tips: d => [[d.y], ['Organisationen', `${_figTalformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
+              tips: d => [[d.y], ['Organisationen', `${talformat(d.lag, 'kr', { enhet: false })}–${kr(d.hog)}`]] },
             { marke: 'punkt', symbol: 'streck', serie: `${refNamn} median`, farg: PALETTE.semantic.linje, storlek: 5,
               data: visa.filter(r => ref(r).median != null).map(r => ({ y: etikett(r), x: ref(r).median, ..._jmfUrvalFalt(r) })), tips: d => [[d.y], [`${refNamn} median`, kr(d.x)]] },
             { marke: 'punkt', serie: `${org} median`, farg: PALETTE.semantic.trend, storlek: 4.5,
@@ -226,7 +242,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
 }
 
 function _ritaJmfAvvikelse(rader, kalla, namn) {
-    const rang = _jfRangordning(rader, kalla);
+    const rang = avvikelseRangordning(rader, kalla);
     const not = /** @type {HTMLElement} */ (document.getElementById('jmf-avvikelse-not'));
     if (!rang.length) { not.textContent = `Inga ${T.enhet.fl} har en median i både organisationen och ${namn}.`; return; }
     // Vid stort urval: de 25 med störst avvikelse (åt båda hållen), i rangordning.
@@ -270,14 +286,14 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
 // Kortet står i avsnittet Överblick, under bandkartan (src/index.html, #jmf-statlage-kort). Samma rader som tabellen mot
 // statistiken (jamforelseUnderlag: grupper under tröskeln finns inte i raderna), men utan tabellens filter på BAS och
 // sektor: överblicken visar hela underlaget. En punkt per yrkesgrupp med P10 och P90 i statistiken.
-function renderStatistikLage() {
+export function renderStatistikLage() {
     const kort = document.getElementById('jmf-statlage-kort'), el = document.getElementById('chart-jmf-statlage');
     if (!kort || !el) return;
     if (!state.statistik.length || !getData().length) { rensaFigur(el); kort.hidden = true; return; }
     kort.hidden = false;
-    const rader = jamforelseUnderlag().rader.filter(r => _rrLage(r.org.median, r.statistik).pos != null);
+    const rader = jamforelseUnderlag().rader.filter(r => lageISpann(r.org.median, r.statistik).pos != null);
     if (!rader.length) {
-        _lpIngetDiagram(el, `Jämförelsestatistiken har inte P10 och P90 för ${termAdjektiv({ utrum: 'någon', neutrum: 'något', plural: 'några' }, T.enhet)} ${T.enhet.en} i underlaget, så läget i statistikens spann kan inte visas. Medianerna står under Mot jämförelsestatistiken.`);
+        _lpIngetDiagram(el, `Jämförelsestatistiken har inte P10 och P90 för ${adjektiv({ utrum: 'någon', neutrum: 'något', plural: 'några' }, T.enhet)} ${T.enhet.en} i underlaget, så läget i statistikens spann kan inte visas. Medianerna står under Mot jämförelsestatistiken.`);
         return;
     }
     ritaFigur(el, _jmfStatlageFigur(rader), { hojd: 460 });
@@ -288,21 +304,21 @@ function renderStatistikLage() {
 // är ett grått band 0–100 per BAS. Punkterna har bandkartans färger för könsdominans och dess förskjutning; matchningen
 // syns i punkten: fylld = AID + BAS, ofylld = Endast AID (lagrets `ofylld`). Raderna når tröskeln (jamforelseUnderlag).
 function _jmfStatlageFigur(rader) {
-    const x = r => 'BAS ' + r.bas, kr = v => _figTalformat(v, 'kr'), utanKr = v => (v == null ? '–' : _figTalformat(v, 'kr', { enhet: false }));
+    const x = r => 'BAS ' + r.bas, kr = v => talformat(v, 'kr'), utanKr = v => (v == null ? '–' : talformat(v, 'kr', { enhet: false }));
     const ordning = [...new Set(rader.map(x))];
-    const pts = rader.map(r => ({ x: x(r), y: _rrLage(r.org.median, r.statistik).pos, forskjutning: _lpForskjutning(r.aid, r.bas),
+    const pts = rader.map(r => ({ x: x(r), y: lageISpann(r.org.median, r.statistik).pos, forskjutning: _lpForskjutning(r.aid, r.bas),
         storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)), aid: r.aid, bas: r.bas, yrke: r.yrke, sektor: r.sektor, n: r.n, kvAndel: r.kvAndel,
-        median: r.org.median, stat: r.statistik, matchning: _jfMatchningEtikett(r.statistikMatchning), markering: markeringFor(r.bas, r.aid) }));
+        median: r.org.median, stat: r.statistik, matchning: matchningEtikett(r.statistikMatchning), markering: markeringFor(r.bas, r.aid) }));
     const tips = d => [[d.yrke], ['BAS', d.bas], ['Läget i spannet', `${svTal(d.y, 0)} %`], ['Organisationens median', kr(d.median)],
         ['Statistiken', `P10 ${utanKr(d.stat.p10)} · median ${utanKr(d.stat.median)} · P90 ${kr(d.stat.p90)}`],
-        ['Matchning', d.matchning], ['Kvinnor', _figTalformat(d.kvAndel, 'antal') + ' %'], ['Antal', String(d.n)]];
+        ['Matchning', d.matchning], ['Kvinnor', talformat(d.kvAndel, 'antal') + ' %'], ['Antal', String(d.n)]];
     // Sex lager: tre klasser för könsdominans, var och en fylld (AID + BAS) och ofylld (Endast AID). Serienamnet bär
     // matchningen, så att förklaringen och diagramdatan säger den med samma ord som tabellen.
     const punktlager = _lpKonsdominans().flatMap(([klass, farg, hor]) => /** @type {Array<['aid-bas'|'aid', boolean]>} */ ([['aid-bas', false], ['aid', true]])
-        .map(([matchning, ofylld]) => ({ marke: 'punkt', serie: `${klass} · ${_jfMatchningEtikett(matchning)}`, farg,
-            ...(ofylld ? { ofylld: true } : { kant: FARG.vit }), data: pts.filter(p => p.matchning === _jfMatchningEtikett(matchning) && hor(p.kvAndel)).map(p => ({ ...p, konsdom: klass })), tips })));
+        .map(([matchning, ofylld]) => ({ marke: 'punkt', serie: `${klass} · ${matchningEtikett(matchning)}`, farg,
+            ...(ofylld ? { ofylld: true } : { kant: FARG.vit }), data: pts.filter(p => p.matchning === matchningEtikett(matchning) && hor(p.kvAndel)).map(p => ({ ...p, konsdom: klass })), tips })));
     const linje = (y, etikett) => ({ typ: 'linje', y, streck: 'streckad', farg: PALETTE.semantic.referens, tjocklek: 1, etikett, textfarg: PALETTE.semantic.referens });
-    return { beskrivning: `Var varje ${termGenitiv(T.enhet.en)} medianlön ligger i jämförelsestatistikens spann per ${T.niva.en}: 0 är statistikens P10 och 100 dess P90. `
+    return { beskrivning: `Var varje ${genitiv(T.enhet.en)} medianlön ligger i jämförelsestatistikens spann per ${T.niva.en}: 0 är statistikens P10 och 100 dess P90. `
             + 'Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; '
             + 'läget räknas ur P10, median och P90 i tabellen där.',
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.konsdominans, URVAL.antal], x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Läget i statistikens spann (%)' },
@@ -322,3 +338,9 @@ function _jmfStatlageFigur(rader) {
  * @param {number} x
  * @returns {number} Φ(x) ∈ [0,1]
  */
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartJamforelse() {
+    document.getElementById('jmf-bas')?.addEventListener('change', e => { jamforelseSattVal({ bas: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
+    document.getElementById('jmf-sektor')?.addEventListener('change', e => { jamforelseSattVal({ sektor: /** @type {HTMLInputElement} */ (e.target).value }); generateBenchmark(); });
+}

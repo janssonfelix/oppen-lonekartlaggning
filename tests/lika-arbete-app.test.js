@@ -76,7 +76,7 @@ describe('Var uppstår löneskillnaden?', () => {
         w.__loadDemoData();
         w.__state.data = w.__state.data.filter((r, i) => r.kon.includes('kvinna') || i % 50 === 0).slice(0, 200);
         w.__state.kLage = 'export';
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         const t = w.document.getElementById('gap-uppdelning-innehall').textContent;
         expect(t).toContain('För få personer för att dela upp skillnaden');
         expect(w.document.querySelectorAll('#gap-uppdelning [data-gu-del]').length).toBe(0);
@@ -86,19 +86,19 @@ describe('Var uppstår löneskillnaden?', () => {
         w.__loadDemoData();
         const not = () => w.document.getElementById('gap-uppdelning-innehall').textContent.replace(/\s+/g, ' ');
         w.__state.kLage = 'skarm';
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         expect(w.eval('kTroskel()')).toBe(1);
         expect(not()).not.toMatch(/färre än 1 person/);
         expect(not()).not.toMatch(/namnges inte/);
         w.__state.kLage = 'export';
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         expect(not()).toMatch(new RegExp(`Grupper där ett kön har färre än ${w.eval('kTroskel()')} personer räknas samman med andra grupper och namnges inte\\.`));
     });
     it('AID-namn kodas', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         w.__state.data = w.__state.data.map(r => ({ ...r, aid: '<b>&"x' }));
-        w.eval('renderGapUppdelning()');
+        w.eval('ritaGapUppdelning()');
         expect(w.document.querySelector('#gap-uppdelning b')).toBeNull();
     });
 });
@@ -149,7 +149,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
     const valda = w => rutor(w).filter(r => r.checked).map(r => r.getAttribute('data-gu-var'));
     const kryssa = (w, v) => { const r = kort(w).querySelector(`input[data-gu-var="${v}"]`); r.checked = !r.checked; r.dispatchEvent(new w.Event('change', { bubbles: true })); };
     const delnamn = w => [...kort(w).querySelectorAll('[data-gu-del] .gu-rubrik strong')].map(e => e.textContent);
-    const u = w => w.eval('_guGapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+    const u = w => w.eval('gapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
     const bevaka = w => { w.eval(`window.__fel = []; { const rf = rapporteraFel; rapporteraFel = function (plats, e) { window.__fel.push(plats + ': ' + (e && e.message)); return rf(plats, e); }; }
         { const ce = console.error; console.error = function (...a) { window.__fel.push(a.join(' ')); return ce.apply(console, a); }; }`); return w; };
 
@@ -243,7 +243,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         w.__loadDemoData();
         w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
         w.__state.gapUppdelning = { variabler: ['bas', 'alder', 'aid'] };
-        w.eval('invalidateStatCaches(); renderGapUppdelning()');
+        w.eval('invalidateStatCaches(); ritaGapUppdelning()');
         expect(rutor(w).map(r => r.getAttribute('data-gu-var'))).not.toContain('alder');
         expect(valda(w)).toEqual(['bas', 'aid']);
         expect(delnamn(w)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);
@@ -359,7 +359,7 @@ describe('ansvarskod i Lika arbete', () => {
     });
     it('den sekventiella dekomponeringen får steget + Ansvar sist när raderna har ansvarsgrupp', () => {
         const w = oppna(true);
-        const steg = w.eval(`(() => { const d = getData(); return _rgComputeSequentialGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
+        const steg = w.eval(`(() => { const d = getData(); return stegvisGap(d, 40, ['B', 'C'], { golv: statGolv() }).map(s => s.name); })()`);
         expect(steg).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp', '+ Ansvar']);
     });
     it('kortet visar ansvaret på en egen rad under budgeten, inte i den', () => {
@@ -385,6 +385,28 @@ describe('Lika arbete och rapportunderlaget flaggar samma yrken', () => {
             .filter(g => g.flaggad).map(g => g.yrke).sort();
         expect(iLib.length).toBeGreaterThan(0);
         expect(iTabell).toEqual(iLib);
+    });
+});
+
+describe('protokollet för gemensam lönebedömning: kvinnors median i % av mäns', () => {
+    it('avrundas en gång: 34 059 mot 40 000 är 85,1475 % och står som 85,1, inte 85,2', async () => {
+        const w = createAppWindow();
+        const rader = [];
+        for (let i = 0; i < 15; i++) for (const [kon, mitt] of [['kvinna', 34059], ['man', 40000]])
+            rader.push({ bas: 'A', kon, lon: mitt + (i - 7) * 10, alder: 30 + i, yrke: '7100 Yrke', aid: '7100', yrkeLabel: 'Yrke', enhet: '' });
+        w.__state.data = rader;
+        w.eval('populateSelects(); unlockTabs();');
+        const { readFileSync } = await import('node:fs');
+        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
+        w.alert = () => {};
+        let wb = null;
+        w.XLSX.writeFile = b => { wb = b; };
+        w.eval('exportJPAProtocol()');
+        const blad = w.XLSX.utils.sheet_to_json(wb.Sheets['2. Lika arbete (AID)'], { header: 1, raw: true, defval: '' });
+        const rubrik = blad.find(r => r.includes('Kvinnors median i % av mäns'));
+        const rad = blad.find(r => r.includes('7100 Yrke'));
+        expect(rad, JSON.stringify(blad)).toBeTruthy();
+        expect(rad[rubrik.indexOf('Kvinnors median i % av mäns')]).toBe(85.1);
     });
 });
 

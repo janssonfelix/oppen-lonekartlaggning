@@ -114,12 +114,12 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w2.eval('referensNamn()')).toBe('Lönepolitiskt ställningstagande 2026');
         expect(w2.eval('referensKortnamn()')).toBe('ställningstagandet');
         expect(w2.eval('getData().length')).toBeGreaterThan(0);
-        w2.__renderLonepolitik();
+        w2.__ritaLonepolitik();
         expect(w2.document.getElementById('lonepolitik-rubrik').textContent).toBe('Lönerna mot Lönepolitiskt ställningstagande 2026');
         // Namnfältet på Översikt är synligt för ett paket och byter namnet
         expect(w2.document.getElementById('referens-namn-rad').hidden).toBe(false);
         expect(w2.eval("sattReferensNamn('Vårt ställningstagande').ok")).toBe(true);
-        w2.__renderLonepolitik();
+        w2.__ritaLonepolitik();
         expect(w2.document.getElementById('lonepolitik-rubrik').textContent).toBe('Lönerna mot Vårt ställningstagande');
         expect(w2.document.getElementById('btn-referens-aterga').hidden).toBe(true);   // borttagning bara för egen fil
     });
@@ -407,7 +407,7 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
         kl.value = 'Ny region'; kl.dispatchEvent(new w.Event('change'));
         expect(w.eval("orgNamn()")).toBe('Ny region');
         const cfg = w.__buildConfigSnapshot();
-        expect(cfg.orgName).toBe('Ny region');
+        expect(cfg.orgNamn).toBe('Ny region');
         expect(cfg.jmfNamn).toBe('Regionstatistiken');
         const w2 = createAppWindow();
         w2.__applyConfigSnapshot(cfg);

@@ -15,7 +15,7 @@ const siffror = t => ren(t).replace(/(\d)\s(?=\d{3}\b)/g, '$1');
 const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
 const medSkal = w => Object.entries(w.__state.handlingsplan).filter(([, v]) => v.skal && v.skal.length);
 
-describe('årsbokslutet i verktyget', () => {
+describe('[B8.2] årsbokslutet i verktyget', () => {
     it('byggs med den inställda tröskeln: grupperna om 6 finns inte i det, och skärmen är kvar i skärmläget', () => {
         const w = fonster(null);
         const b = w.eval('byggArsbokslutNu()');
@@ -148,15 +148,6 @@ describe('löneutveckling per BAS-intervall i bokslutet, i Spara och jämför å
         for (const s of SENT_SMA) expect(JSON.stringify(b.basIntervall)).not.toContain(String(s));
         expect(w.__state.kLage).toBe('skarm');
     });
-    it('ett intervall där kvinnorna är 9 får inga könsmedianer i bokslutet', () => {
-        const w = fonster(null);
-        // Ett intervall med 9 kvinnor och 21 män; kvinnornas median (39 004) får inte stå i bokslutet.
-        for (let i = 0; i < 30; i++) w.__state.data.push({ bas: 'J', kon: i < 9 ? 'kvinna' : 'man', lon: i < 9 ? 39000 + i : 40000 + i, alder: 30 + i, yrke: '7000 Nioyrke', aid: '7000', yrkeLabel: 'Nioyrke', enhet: '' });
-        w.eval('invalidateStatCaches(); populateSelects();');
-        const r = w.eval('byggArsbokslutNu()').basIntervall.find(x => x.bas === 'J');
-        expect(r).toMatchObject({ n: 30, nKv: 9, nMa: 21, medKv: null, medMa: null });
-        expect(JSON.stringify(r)).not.toContain('39004');
-    });
     it('med demodatan och ett konstruerat förra-års-bokslut visar panelen tabellen med antal och hanteln för medianen', () => {
         const a = createAppWindow(); a.__loadDemoData();
         const cfg = forraArs(JSON.parse(JSON.stringify(a.__buildConfigSnapshot())), ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; }));
@@ -217,21 +208,6 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
         return cfg;
     };
     const lasIn = (w, cfg) => { w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)'); };
-    const spridning = lon => { const s = [...lon].sort((a, b) => a - b), q = p => { const x = (s.length - 1) * p, lo = Math.floor(x), hi = Math.ceil(x); return s[lo] + (s[hi] - s[lo]) * (x - lo); };
-        return Math.round((q(0.9) - q(0.1)) / q(0.5) * 1e4) / 1e4; };
-
-    it('bokslutet har spridningen per BAS-intervall och per yrkesgrupp, räknad ur underlaget; grupper under k saknas', () => {
-        const w = createAppWindow(); w.__loadDemoData();
-        const b = w.eval('byggArsbokslutNu()');
-        const d = w.__state.data.filter(r => r.lon > 0);
-        for (const r of b.basIntervall) expect(r.spridning, r.bas).toBe(spridning(d.filter(x => x.bas === r.bas).map(x => x.lon)));
-        expect(b.grupper.length).toBeGreaterThan(0);
-        for (const g of b.grupper) expect(g.spridning, g.yrke).toBe(spridning(d.filter(x => x.yrke === g.yrke && (x.kon === 'kvinna' || x.kon === 'man')).map(x => x.lon)));
-        // Riggen: intervallen om 6 personer finns inte i bokslutet, och en grupp med en lön har spridningen 0.
-        const f = fonster(null), fb = f.eval('byggArsbokslutNu()');
-        expect(fb.basIntervall.find(r => r.bas === MELLAN[0]).spridning).toBe(0);
-        for (const s of SENT_SMA) expect(JSON.stringify(fb)).not.toContain(String(s));
-    });
 
     it('panelen har kolumnen Lönespridning förra året och i år i tabellen per BAS-intervall och i de flaggade gruppernas tabeller', () => {
         const a = createAppWindow(); a.__loadDemoData();
@@ -287,7 +263,7 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
     for (const k of [1, 5]) {
         it(`k = ${k} i filen: inga små intervall eller kön i panelen, i rapportmodellen eller i BAS-dossierns text`, () => {
             const w = lagK(k);
-            expect(w.__state.forraArsbokslut.k).toBe(Math.max(2, k));
+            expect(w.__state.forraArsbokslut.k).toBe(Math.max(3, k));   // K_MIN (ADR-102)
             w.__renderTabContent('arbetet');
             const panel = normalisera(w.document.getElementById('arsjamforelse').textContent);
             const modell = normalisera(JSON.stringify(w.eval('medExportLage(() => rapportModell())').avsnitt.find(a => a.id === 'arsjamforelse')));
@@ -347,7 +323,7 @@ describe('panelen: Sakliga skäl per kategori', () => {
         forra.bedomningar = forra.bedomningar.map(b => ({ ...b, skal: b.skal.map(s => ({ ...s, belopp: s.belopp + 100 })) }));
         forra.bedomningar.push({ ...forra.bedomningar[0], nyckel: 'prio|9999|Z', grupp: 'Bortflyttad grupp' });
         w.__forra = andra(forra);
-        w.eval('state.forraArsbokslut = _abValidera(window.__forra)');
+        w.eval('state.forraArsbokslut = valideraArsbokslut(window.__forra)');
         w.__renderTabContent('arbetet');
         return { w, nu, host: w.document.getElementById('arsjamforelse') };
     };

@@ -30,5 +30,9 @@ site/dist/
 # Programvaruförteckningen byggs av release-arbetsflödet (npm run sbom) och läggs på releasen.
 dist/sbom.cdx.json
 
+# Valideringsrapporten byggs av release-arbetsflödet (npm run valideringsrapport) och läggs på releasen.
+dist/valideringsrapport.md
+dist/valideringsrapport.json
+
 # Svaret från sårbarhetsdatabasen OSV, skrivet av tools/sarbarheter-hamta.mjs i arbetsflödet för sårbarheter.
 dist/osv-svar.json

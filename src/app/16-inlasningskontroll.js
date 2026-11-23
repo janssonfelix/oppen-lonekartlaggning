@@ -1,8 +1,22 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { sifferprefixAvYrke } from '../lib/aid.js';
+import { basVarningar } from '../lib/datakvalitet.js';
+import { namnIYrkesfaltetRadnr } from '../lib/forhandskontroll.js';
+import { svPct } from '../lib/talformat.js';
+import { ordForAntal } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { ikon } from './03-ikoner.js';
+import { kInstalld } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { getBasIntervals, referensKortnamn, state } from './12-tillstand.js';
+import { renderUnderlagetsKvalitet } from './13-oversikt.js';
+import { detectOutliers } from './15-extremvarden-basrang.js';
+import { _fkRapportrad } from './17-forhandskontroll.js';
+import { harAlder } from './50-regressionsmodeller.js';
 
 // ---- Datavalideringsrapport (efter CSV-parse) ----
-function renderDataValidationReport() {
+export function renderDataValidationReport() {
     const wrap = document.getElementById('data-validation-report');
     if (!wrap) return;
     if (!state.data.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
@@ -20,20 +34,13 @@ function renderDataValidationReport() {
     // Personnamn i fältet för AID-etikett: antal rader och de första radnumren. Hela varningen står i
     // förhandskontrollen och i Att göra; här står en kort rad, med radnumren i förhandskontrollens formulering.
     const yrkeNamn = da.yrkeNamn || 0;
-    const yrkeNamnRadnr = _fkNamnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
+    const yrkeNamnRadnr = namnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
     const used = state.data.length;
 
     // Räkna varningar
     const outliers = detectOutliers(3);
     const bas = getBasIntervals();
-    const singleSexBas = bas.filter(b => {
-        const sub = state.data.filter(r => r.bas === b);
-        if (sub.length < 3) return false;
-        const hasKv = sub.some(r => arKvinna(r));
-        const hasMa = sub.some(r => arMan(r));
-        return !hasKv || !hasMa;
-    }).length;
-    const kMaskedBas = bas.filter(b => state.data.filter(r => r.bas === b).length < kInstalld()).length;
+    const { enkonade: singleSexBas, underK: kMaskedBas } = basVarningar(state.data, bas, kInstalld());
 
     // Konsistenskontroll
     const dataBas = [...new Set(state.data.map(r => r.bas))].sort();
@@ -113,12 +120,12 @@ function renderDataValidationReport() {
 // statusen kommer från bedomningUnderlag().
 // Anropas efter renderDataValidationReport().
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
-function syncDatakvalitetPanel(val) {
+export function syncDatakvalitetPanel(val) {
     renderUnderlagetsKvalitet(val);
 }
 
 // ---- Konsistenscheck mellan filer ----
-function renderConsistencyBanner() {
+export function renderConsistencyBanner() {
     const wrap = document.getElementById('consistency-banner-container');
     if (!wrap) return;
     if (!state.data.length) { wrap.innerHTML = ''; return; }
@@ -132,9 +139,9 @@ function renderConsistencyBanner() {
         const polBas = state.policy.map(p => p.bas);
         const dataNotInPol = dataBas.filter(b => !polBas.includes(b));
         const polNotInData = polBas.filter(b => !dataBas.includes(b));
-        if (dataNotInPol.length) issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${dataNotInPol.length} ${termForAntal(dataNotInPol.length, T.niva)} saknas (<code>${dataNotInPol.map(esc).join(', ')}</code>) — analyserna kan inte jämföra dessa mot policy.`);
+        if (dataNotInPol.length) issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${dataNotInPol.length} ${ordForAntal(dataNotInPol.length, T.niva)} saknas (<code>${dataNotInPol.map(esc).join(', ')}</code>) — analyserna kan inte jämföra dessa mot policy.`);
         // Den inbyggda målbilden täcker A–K avsiktligt; att underlaget saknar några BAS är inget fynd.
-        if (polNotInData.length && state.policyKalla !== 'demo') issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${polNotInData.length} ${termForAntal(polNotInData.length, T.niva)} finns i policy men inte i lönefilen (<code>${polNotInData.map(esc).join(', ')}</code>).`);
+        if (polNotInData.length && state.policyKalla !== 'demo') issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${polNotInData.length} ${ordForAntal(polNotInData.length, T.niva)} finns i policy men inte i lönefilen (<code>${polNotInData.map(esc).join(', ')}</code>).`);
     }
 
     // Jämförelsestatistik — visa AID + yrkesetikett
@@ -152,7 +159,7 @@ function renderConsistencyBanner() {
                 .map(a => `<code>${esc(aidToYrke[a] || a)}</code>`)
                 .join(', ');
             const more = dataAidNotInStat.length > 6 ? ` … och ${dataAidNotInStat.length - 6} till` : '';
-            issues.push(`<strong>Jämförelsestatistik:</strong> ${dataAidNotInStat.length} ${termForAntal(dataAidNotInStat.length, T.kod)} i lönefilen saknar matchning i jämförelsestatistiken (${display}${more}) — de kan inte jämföras med statistiken.`);
+            issues.push(`<strong>Jämförelsestatistik:</strong> ${dataAidNotInStat.length} ${ordForAntal(dataAidNotInStat.length, T.kod)} i lönefilen saknar matchning i jämförelsestatistiken (${display}${more}) — de kan inte jämföras med statistiken.`);
         }
     }
 

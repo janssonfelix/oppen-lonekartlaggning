@@ -19,9 +19,9 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-2 | JS-minifiering avvisad | Gällande | – |
 | ADR-4 | Byggskyddsnät | Flyttad till `bygge-och-test.md` | – |
 | ADR-5 | Kodhygien | Flyttad till `CONTRIBUTING.md` | – |
-| ADR-6 | `app.js` genereras från `src/app/`-moduler | Gällande | – |
+| ADR-6 | `app.js` genereras från `src/app/`-moduler | Ändrad av ADR-98 | – |
 | ADR-7 | Två lager röktest: jsdom och den byggda filen i riktiga webbläsare | Gällande | – |
-| ADR-8 | lib-speglarna genereras från `src/lib/` | Gällande | – |
+| ADR-8 | lib-speglarna genereras från `src/lib/` | Upphävd | – |
 | ADR-9 | Hash-baserad CSP `script-src` | Gällande | – |
 | ADR-10 | Sidopanelen är navigation, inte ARIA-tabs | Gällande | – |
 | ADR-12 | K-anonymitetens redovisningsform: utelämna och namnge | Ändrad av ADR-51 | – |
@@ -34,7 +34,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-20 | Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget | Gällande | – |
 | ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Sammanförd i `mal.md` | – |
 | ADR-22 | Var uppstår löneskillnaden? Uppdelning på medellön | Ändrad av ADR-65 | – |
-| ADR-23 | Personer att granska: individlista i verktyget, aldrig i utdata | Gällande | – |
+| ADR-23 | Personer att granska: individlista i verktyget, aldrig i utdata | Ändrad av ADR-103 | – |
 | ADR-24 | Stabilitet för flaggor i Lika arbete: märkning, inte nedgradering | Ändrad av ADR-59 | – |
 | ADR-25 | Lägre krav, högre lön: jämförelse över BAS-gränserna | Gällande | – |
 | ADR-28 | Organisationspaket; ingen inbyggd organisation | Gällande | – |
@@ -46,7 +46,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-35 | Jämförelsestatistik: alla percentiler i en tabell och två diagram | Ändrad av ADR-55 | – |
 | ADR-36 | Filrutorna syns alltid; namn på organisationen och jämförelsestatistiken | Gällande | – |
 | ADR-37 | Word-utkastet som riktig .docx | Gällande | – |
-| ADR-38 | K-tröskeln är en inställning | Ändrad av ADR-51 och ADR-69 | – |
+| ADR-38 | K-tröskeln är en inställning | Ändrad av ADR-51, ADR-69 och ADR-102 | – |
 | ADR-39 | Diagramkärna på D3 med eget figurformat | Gällande | – |
 | ADR-40 | Fyra exporter med var sin uppgift, ritade ur en rapportmodell | Gällande | – |
 | ADR-41 | Flikmallen: resultatet först | Ändrad av ADR-82 | – |
@@ -101,6 +101,15 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-92 | S4 gäller en fil i taget | Gällande | 2026-11-20 |
 | ADR-93 | JPA-protokollet redovisar alla grupper i lika arbete | Gällande | 2026-11-22 |
 | ADR-94 | Diagrammens filter står alltid utfällda | Gällande | 2026-11-22 |
+| ADR-95 | Beräkningsregistret blir spårbarhetsmatrisen | Gällande | 2026-11-23 |
+| ADR-96 | Konfigurationsfilens fält har svenska namn; äldre filer läses | Gällande | 2026-11-23 |
+| ADR-97 | Funktionerna i `src/lib/` har svenska namn | Gällande | 2026-11-23 |
+| ADR-98 | Appen byggs från ES-moduler med esbuild | Gällande | 2026-11-23 |
+| ADR-99 | En vymodell per flik i `src/lib/` | Gällande | 2026-11-23 |
+| ADR-100 | Varje release har en signerad valideringsrapport | Gällande | 2026-11-23 |
+| ADR-101 | Releasen attesteras och bygget prövas reproducerbart | Gällande | 2026-11-23 |
+| ADR-102 | Minsta gruppstorlek är lägst 3 | Gällande | 2026-11-23 |
+| ADR-103 | Golvet för skattningar följer tröskeln bara i exportläget | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -120,7 +129,7 @@ för omkring 14 % mindre fil. *Gäller i dag:* `bygge-och-test.md` §2.
 samlad i `docs/dataskydd/riskanalys.md`. *Gäller i dag:* `.github/CONTRIBUTING.md` punkt 2 och princip 4 i
 `principer.md`.
 
-**ADR-6 — `app.js` genereras från `src/app/`-moduler.** Appens kod ligger i numrerade källmoduler som slås ihop byte för
+**ADR-6 — `app.js` genereras från `src/app/`-moduler.** *Ändrad av ADR-98.* Appens kod ligger i numrerade källmoduler som slås ihop byte för
 byte till `dist/app.js`, för navigerbarhet utan ES-moduler i bygget (`file://`-kravet). En modul som växer delas vid en
 sektionsgräns som ren byteskiva, så att `dist/app.js` blir bit för bit oförändrad. *Gäller i dag:* `bygge-och-test.md`
 §1–§2 och `src/app/README.md`.
@@ -130,8 +139,8 @@ inte CSP:n, `file://` eller bildexporten via canvas; webbläsarlagret kör den b
 WebKit, med en färskhetsspärr mot ett gammalt bygge. *Avvisat:* ett av lagren ensamt. *Gäller i dag:*
 `bygge-och-test.md` §5.5 och §9.
 
-**ADR-8 — lib-speglarna genereras från `src/lib/`.** `tools/gen-mirrors.mjs` inlinar varje `src/lib/`-modul ordagrant i
-en IIFE i `src/app/09-lib-speglar.js`, så att `src/lib/` är enda källan och appens moduler bara är adaptrar. Lib-moduler
+**ADR-8 — lib-speglarna genereras från `src/lib/`.** *Upphävd: ersatt av ADR-98.* `gen-mirrors.mjs` inlinar varje `src/lib/`-modul ordagrant i
+en IIFE i `09-lib-speglar.js`, så att `src/lib/` är enda källan och appens moduler bara är adaptrar. Lib-moduler
 får importera varandra; aliaset injiceras inuti den importerande modulens IIFE, så att inga nya globala namn uppstår.
 *Gäller i dag:* `bygge-och-test.md` §2.
 
@@ -500,7 +509,7 @@ kommuner och regioner, utan cirkulärets nummer. Påslaget skiljer sig mellan ar
 ett avrundat antagande och gränssnittet säger det, utan att namnge någon källa. Organisationspaketets egen not om
 påslaget (`poNot`) finns kvar; verktygets standard har ingen not. *Avvisat:* att behålla 39,15 % med hänvisningen, som
 saknar exakt källa och gäller bara en del av arbetsgivarna (S5). *Gäller i dag:* `COST_DEFAULTS` i
-`src/app/07-standardinstallningar.js`.
+`src/lib/kostnad.js`.
 
 **ADR-85 — Fältet för AID-etikett maskeras inte; inläsningen varnar för personnamn.** Beslutat av underhållaren 2026-11-20.
 Ingenting i texten i fältet för AID-etikett maskeras, och inläsningen varnar i stället när fältet ser ut att innehålla
@@ -547,7 +556,7 @@ texten och bara varna; att ersätta texten med etikettlistans namn (avvisat i AD
 räkna koden över alla intervall, som ger en status för personer på olika nivåer; att para ett äldre boksluts rad för
 koden med årets största grupp, som jämför olika grupper; att höja bokslutets formatversion, som inte behövs när
 fältet är valfritt; att låta gruppens namn vara texten på dess första rad, som beror på radordningen. *Gäller i dag:* `prioriteringsmodellen.md` §1,
-`likvardighetsmodellen.md` §3, `k-troskeln.md` avsnitt 2, `berakningsregister.md` (grupperna och §8).
+`likvardighetsmodellen.md` §3, `k-troskeln.md` avsnitt 2, `sparbarhet.md` (grupperna och §8).
 
 **ADR-90 — Lika arbete AID x BAS visar Lika arbetes status, utan egen bedömning.** Beslutat av underhållaren
 2026-11-20. Ändrar ADR-57 för tabellen *Lika arbete AID x BAS*: den räknar ingenting eget, utan visar Lika arbetes
@@ -555,7 +564,7 @@ grupper med samma k-regel och samma status. Med en egen bedömning mot gränsern
 kunde samma grupp få olika svar i de två tabellerna och stå i den ena fast den andra utelämnade den under tröskeln.
 *Avvisat:* att ta bort tabellen, som är den form en skriven lönekartläggning brukar ha; att behålla bedömningen mot
 gränserna bredvid statusen, som ger två svar på samma fråga; att behålla golvet fem för tabellen. *Gäller i dag:*
-`k-troskeln.md` avsnitt 4 och 9, `docs/dataskydd/riskanalys.md`, `berakningsregister.md` och
+`k-troskeln.md` avsnitt 4 och 9, `docs/dataskydd/riskanalys.md`, `sparbarhet.md` och
 `docs/anvandare/korguide.md` §4.
 
 **ADR-91 — Kompletterande undertryckning i JPA-protokollets blad för lika arbete mot intervallens medelvärden.**
@@ -592,3 +601,149 @@ diagram står i en inramad ruta med rubriken *Filter* och antalet aktiva filter;
 aktivt filter får den accentfärgen. Hopfällda bakom en rad *Filter: …* missades filtren. *Avvisat:* att behålla den
 hopfällda raden men fälla ut den från början, som fortfarande låter filtren gömmas och kräver ett minne per diagram.
 *Gäller i dag:* `diagramkarnan.md`, *Rutan Filter*.
+
+**ADR-95 — Beräkningsregistret blir spårbarhetsmatrisen.** Beslutat av underhållaren 2026-11-23. Beräkningsregistret
+blir projektets enda spårbarhetsmatris, `sparbarhet.md`, med upplägget för en kravspårningsmatris (jfr ISO/IEC/IEEE
+29148 och IEC 62304): varje beräkning, varje test för minsta gruppstorlek och varje skydd har ett unikt och stabilt
+ID, testerna bär ID:t i sitt namn, och vakten `tests/sparbarhet.test.js` prövar att matrisen och testsviten pekar på
+varandra åt båda hållen. Testtabellen i `k-troskeln.md` avsnitt 10 flyttar dit; regeltexten stannar i `k-troskeln.md`
+och `skydd.md`. Skälen är extern granskning, där en granskare ska kunna gå från ett påstående till regel, kod och test
+och tillbaka utan att lita på att dokumentet stämmer, och att en uppgift ska stå på ett ställe. *Avvisat:* att
+behålla registret med testfiler i stället för tester, som inte går att pröva; ett eget dokument för spårbarheten
+bredvid registret och k-tröskelns tabell, som ger tre ställen för samma uppgift; att märka testerna i kommentarer,
+som inte syns i testkörningens utdata. *Gäller i dag:* `sparbarhet.md`, `k-troskeln.md` avsnitt 10.
+
+**ADR-96 — Konfigurationsfilens fält har svenska namn; äldre filer läses.** Beslutat av underhållaren 2026-11-23.
+Konfigurationsfilen skrivs i version 3 med svenska fältnamn (`prioTrosklar`, `loneoversyn`, `kvinnoTroskelPct` och så
+vidare) i stället för de engelska och blandade i version 2. Filer i version 2 läses fortfarande: de gamla namnen byts mot
+de nya före valideringen, och tabellen över bytena står på ett ställe, `src/lib/konfiguration.js`, prövad i Node.
+Organisationspaketet (ADR-28, ADR-47) och importprofilernas fil hade redan svenska namn och är oförändrade. *Skäl:* en
+extern granskare ska känna igen samma ord i dokumenten, spårbarhetsmatrisen och filen som användaren sparar. *Avvisat:*
+att bara läsa version 3, som gör sparade filer oläsbara; att byta också värdena (`'pct'`, `'lowest'`, `'do'` och andra),
+som står kvar som nycklarna i ADR-72; att byta tillståndets fält i appen i samma ändring, som inte syns i filen.
+*Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.8, `likvardighetsmodellen.md` §8.
+
+**ADR-97 — Funktionerna i `src/lib/` har svenska namn.** Beslutat av underhållaren 2026-11-23. Koden skrivs på
+domänens språk: de engelska och blandade namnen på funktioner, konstanter och parametrar i `src/lib/` har bytts mot
+svenska, liksom spegelns alias i `gen-mirrors.mjs` (appens prefix, som `_fc` och `_st`, står kvar). Etablerade
+förkortningar (OLS, CSV, BAS, AID, KI, HC3, CDF) och ord som redan är svenska (median, regression, bootstrap) står
+kvar. Fälten i returvärdena och i tillståndets inställningsobjekt är oförändrade, eftersom de läses på många ställen i
+appen eller översätts till konfigurationsfilen (ADR-96). Bytet gjordes utan beteendeändring, en modul i taget. *Skäl:* en extern granskare ska känna igen samma ord i dokumenten, spårbarhetsmatrisen och koden (ADR-95).
+*Avvisat:* att låta lib behålla de engelska namnen och bara översätta i dokumenten, som ger två namn på samma sak.
+De äldre besluten och CHANGELOG nämner de gamla namnen; tabellen visar vad de heter nu:
+
+| Modul | Gammalt namn | Nytt namn |
+|---|---|---|
+| `stat.js` | `quantile`, `linearRegression`, `tDistCdf`, `tQuantile`, `pValue2Sided` | `kvantil`, `linjarRegression`, `tFordelningCdf`, `tKvantil`, `pVardeTvasidigt` |
+| `stat.js` | `matMul`, `transpose`, `invert`, `fitOLS`, `_regIncBeta` | `matrisprodukt`, `transponera`, `invertera`, `anpassaOLS`, `_regOfullstandigBeta` |
+| `rng.js` | `hashSeed`, `seedFromNumbers`, `rngFor` | `froAvText`, `froAvTal`, `slumpFor` |
+| `struktur.js` | `representationByBas`, `quartileDistribution`, `distributionalGap` | `representationPerBas`, `kvartilfordelning`, `fordelningsgap` |
+| `falt.js` | `groupKey`, `konOf`, `ageBucket`, `AGE_ORDER` | `gruppnyckel`, `konAv`, `aldersgrupp`, `ALDERSORDNING` |
+| `urval.js`, `utforska.js`, `figur.js` | `personFilter`, `computePivot`, `_filterNorm` | `iUrvalet`, `pivottabell`, `_normaliseratFilter` |
+| `demodata.js` | `generateTestData`, `generateDemoData`, `generateStortDemo`, `generateStortDemoStatistik` | `genereraTestdata`, `genereraDemodata`, `genereraStortDemo`, `genereraStortDemoStatistik` |
+| `lonepolitik.js` | `bandPosition`, `groupBandStats`, `complianceCounts`, `genderBandGap`, `costToFloor`, `policyCoverage` | `bandlage`, `gruppMotBand`, `antalMotBand`, `konsskillnadIBand`, `kostnadTillGolv`, `tackningsgrad` |
+| `loneoversyn.js` | `totalLonSum`, `computePott`, `rawGenderGap`, `targetRows`, `allocate`, `suggestTargets`, `closureTargets` | `lonesumma`, `beraknaPott`, `raLonegap`, `riktadeRader`, `fordela`, `foreslaRiktning`, `stangningsriktning` |
+| `loneoversyn.js` | `stagedPlan`, `summarizeGroups`, `detectLeapfrog`, `forecastOutcome`, `bandStats`, `individualRemediation`, `marketTargets`, `sensitivityCurve` | `stegvisPlan`, `sammanstallGrupper`, `hittaOmkorningar`, `prognosutfall`, `lonespannPerBas`, `individlyft`, `marknadsriktning`, `kanslighetskurva` |
+| `likvardighet.js` | `computeLikvardighetPairs`, `basRangFn`, `bootstrapMedianDiffKr`, `bootstrapMedianVsConstantKr`, `orgIckeKvByBas` | `likvardighetspar`, `basRangordning`, `bootstrapMedianskillnadKr`, `bootstrapMedianMotKonstantKr`, `orgIckeKvPerBas` |
+| `likvardighet.js` | `byggParPoäng`, `KVINNO_TROSKEL_DEFAULT`, `ALDERS_GOLV_DEFAULT` | `byggParPoang`, `KVINNO_TROSKEL_STANDARD`, `ALDERS_GOLV_STANDARD` |
+| `regression.js` | `computeSequentialGap`, `computePerBasGap`, `computeVariabelTillfor`, `computeYrkesgruppGap` | `stegvisGap`, `gapPerBas`, `variabelTillfor`, `yrkesgruppGap` |
+| `regression.js` | `diagnoseCollinearity`, `quantileRegression`, `quantileRegressionAtAllTau` | `kollinearitetsdiagnos`, `kvantilregression`, `kvantilregressionAllaTau` |
+| `inlasning.js` | `parseNumber`, `parseNumberStrict`, `detectSensitiveColumns`, `autoDetectColumnMap`, `ALLOWED_FIELDS` | `tolkaTal`, `tolkaTalStrikt`, `hittaKansligaKolumner`, `gissaKolumnmappning`, `TILLATNA_FALT` |
+| `inlasning.js` | `_normalizeNumberString`, `_cleanYrkeField`, `_stripHtmlMeta`, `_normalizeBas`, `_normalizePolicyAid`, `_normalizeKon` | `_normaliseraTaltext`, `_stadaYrkesfalt`, `_utanHtmlTecken`, `_normaliseraBas`, `_normaliseraPolicyAid`, `_normaliseraKon` |
+| `inlasning.js` | `_sniffTabularFormat`, `_decodeCsvBuffer`, `_detectDelimiter`, `_findCsvHeader` | `_gissaTabellformat`, `_avkodaCsv`, `_gissaAvgransare`, `_hittaCsvRubrik` |
+
+Spegelns alias följer samma ord: `_fitOLS` heter `_anpassaOLS`, `_rngFor` `_slumpFor`, `_fcComputePott` `_fcBeraknaPott`,
+`_lvComputePairs` `_lvLikvardighetspar`, `_toCsv` `_tillCsv` och så vidare. *Gäller i dag:* `sparbarhet.md`
+(kolumnen Funktion och fil), `gen-mirrors.mjs`.
+
+**ADR-98 — Appen byggs från ES-moduler med esbuild.** Beslutat av underhållaren 2026-11-23. Delarna i `src/app/` är
+ES-moduler med explicita `import` och `export`, och de importerar `src/lib/` under lib-namnen. `tools/build-app.mjs`
+bygger `dist/app.js` med esbuild (utvecklingsberoende; ingen esbuild-kod hamnar i filen) från `src/app/index.js`, utan
+tree shaking och utan minifiering (ADR-2 står kvar). Spegeln (`gen-mirrors.mjs`, `09-lib-speglar.js`) och
+dess alias (`_stKonsMedianer` m.fl.) är borta. *Skäl:* en extern granskare kan följa varje beroende i källan, från en
+flik till lib-funktionen som räknar och dess test, och lib-funktionen heter detsamma i appen som i Node (ADR-95, ADR-97);
+spegeln var en andra väg till samma kod. *Utfilen är platt:* format `esm` utan import och export kvar, som körs som ett
+klassiskt skript (S3: fortfarande en fil som fungerar från `file://`). Appens toppnivånamn är därmed globala, som sidan,
+testerna (`w.eval`) och röktestet (`page.evaluate`) läser dem. Ett namn som två moduler deklarerar skulle esbuild döpa
+om, så bygget fäller om ett av appens namn inte står oförändrat i utfilen; därför heter lib-funktionerna som krockade
+med appens adaptrar `statGolvVid`, `likvardighetsparUr` och så vidare, och K_STANDARD, K_MIN och K_MAX finns bara i
+`src/lib/ktroskel.js`. ES-moduler körs i importgrafens ordning, inte i sifferordning: delarna deklarerar bara, och det
+som körs vid laddning står i en uppstartsfunktion per del som `index.js` anropar i sifferordning (bygget fäller en del
+med annan kod på toppnivån; `00-sakerhet-och-uppstart.js`, som importerar inget och körs först, är undantaget). esbuild
+gör toppnivåns `const` och `let` till `var` i utfilen. *Avvisat:* att behålla hopslagningen och spegeln; en IIFE eller
+ES-modul som utfil, som döljer namnen för testerna eller kräver en server; att ersätta testernas globala namn med
+exporter i samma ändring. Ersätter ADR-8 och ändrar ADR-6 (delarna slås inte längre ihop byte för byte). *Gäller i dag:*
+`bygge-och-test.md` §2, `src/app/README.md`.
+
+**ADR-99 — En vymodell per flik i `src/lib/`.** Beslutat av underhållaren 2026-11-23. Det en flik visar räknas av en
+vymodell: en funktion i `src/lib/` (`vymodellLikaArbete(rader, { k, golv, … })`) som tar underlaget, tröskeln och de
+inställningar som behövs som argument och ger rena data: tal, rader, maskeringar, statusar och de texter som är
+beräknade (statusens förklaring, anteckningen i en exportbild). Vymodellen rör ingen DOM, läser inga globala och inget
+tillstånd, har svenska namn och innehåller ingen HTML, färg eller ikon. Appens ritfunktion (`ritaLikaArbete(vm)`) ritar
+bara det den får; en tunn adapter i samma del (`laVymodell()`) läser tillståndet och skickar det vidare, med appens
+minne för de dyra delarna (bootstrap, omkastning) som valfria argument. Vymodellen för en flik ligger i
+`src/lib/vymodell-<flik>.js`, platt bland de andra modulerna, så att vakterna för `src/lib/` (`tests/lib-beroenden.test.js`,
+modultabellen i `arkitektur.md`) gäller utan ändring. Varje vymodell prövas i Node med ID-märkta tester i
+spårbarhetsmatrisen, och k-invarianten prövas på vymodellen vid 10 och 25 (I9). Först ute är Lika arbete och
+Lönestrukturs avsnitt per BAS-intervall (`vymodell-lonestruktur.js`); flikens övriga delar och de andra flikarna följer.
+Diagrammens figurer byggs kvar i appen ur vymodellens data. *Skäl:* en extern granskare ska kunna läsa och pröva varje
+regel som styr vad en flik visar utan DOM och tillstånd (ADR-95, ADR-98). *Avvisat:* en mapp `src/lib/vymodeller/`,
+som vakterna för `src/lib/` inte läser och som skulle kräva att de skrivs om; att låta ritfunktionen läsa tillståndet
+själv, som döljer vad vyn bygger på; HTML i vymodellen, som binder den till webbläsaren. *Gäller i dag:*
+`arkitektur.md`, `src/app/README.md`.
+
+**ADR-100 — Varje release har en signerad valideringsrapport.** Beslutat av underhållaren 2026-11-23.
+Release-arbetsflödet kör hela testsviten med Vitests JSON-rapport, och `tools/valideringsrapport.mjs` bygger ur den och
+spårbarhetsmatrisen en rapport (`valideringsrapport.md` och `.json`) med byggets version och SHA-256, commit, datum,
+Node, Vitest och jsdom, och en rad per ID: påståendet, funktion och fil, testerna vars namn bär ID:t och utfallet
+(godkänd, underkänd, saknas). Steget fäller när ett ID saknar godkänt test eller något test faller, och rapporten
+signeras med cosign och läggs på releasen som de andra filerna. Matrisen läses av samma funktion i rapporten och i
+vakten `tests/sparbarhet.test.js`. *Skäl:* en extern granskare (dataskyddsombud, IT-säkerhet, revision) ska kunna se,
+för en viss fil och dess kontrollsumma, att varje krav prövades och gick igenom, som ett valideringspaket i GAMP 5- och
+IEC 62304-anda; vakten visar bara att matris och tester pekar på varandra, inte att testerna gick igenom för det som
+släpptes. *Avvisat:* att bygga rapporten i varje CI-körning, som kostar en extra testkörning eller en sammanslagning av
+CI:s fyra delar; att hämta CI:s körning av taggen till release-arbetsflödet, som kräver ett steg mellan arbetsflödena;
+en tredjepartsaction för testrapporter (repot tillåter bara GitHubs egna och cosign-installeraren); att checka in
+rapporten, som har ett datum och skulle ändras i varje körning. *Gäller i dag:* `bygge-och-test.md` §10, `SECURITY.md`,
+`sparbarhet.md`.
+
+**ADR-101 — Releasen attesteras och bygget prövas reproducerbart.** Beslutat av underhållaren 2026-11-23.
+Release-arbetsflödet låter GitHub attestera ursprunget (SLSA build provenance) för verktyget, `RELEASE.txt`,
+programvaruförteckningen och valideringsrapporten med GitHubs egen action `actions/attest-build-provenance`, låst på
+commit; jobbet får `attestations: write` utöver `contents: write` och `id-token: write`. Bygget ska vara reproducerbart:
+CI bygger varje commit en gång till i en ny katalog med annan tidszon och annat språk och kräver samma kontrollsumma,
+och release-arbetsflödet bygger om ur taggen i en ren katalog och släpper ingenting om det inte blir den fil som
+signeras. Radsluten är LF i varje utcheckning (`.gitattributes`), eftersom en utcheckning med CRLF gav en annan fil.
+*Skäl:* en extern granskare ska kunna belägga, inte bara läsa, att filen byggdes ur just den källan i just det
+arbetsflödet (`gh attestation verify`), och kunna bygga samma fil själv och jämföra kontrollsumman. Signaturen med cosign
+står kvar: den kräver inget GitHub-konto och styrker samma sak på ett oberoende sätt. *Avvisat:* att ersätta cosign med
+attesteringen, som binder verifieringen till GitHub; `SOURCE_DATE_EPOCH` eller commitens tid i bygget, som inte behövs
+eftersom bygget inte läser klockan; att normalisera radsluten i bundlern, som inte når källan esbuild läser;
+tredjepartsactions för att jämföra byggen (repot tillåter bara GitHubs egna och cosign-installeraren). *Gäller i dag:*
+`bygge-och-test.md` §2, §9 och §10, `SECURITY.md`.
+
+**ADR-102 — Minsta gruppstorlek är lägst 3.** Beslutat av underhållaren 2026-11-23. Ändrar ADR-38: det tillåtna
+intervallet för minsta gruppstorlek är 3–1000 i stället för 2–1000 (`K_MIN` i `src/lib/ktroskel.js`), också för
+organisationspaketets `kTroskel` och golvet `kTroskelLagst`, och ett årsbokslut sparat med en lägre tröskel läses med
+3. Ett värde 2 behandlas som andra ogiltiga värden: en konfigurationsfil med det avvisas, och i ett organisationspaket
+används det inte och ger en varning. *Skäl:* med tröskeln 2 kan två personer i en grupp räkna fram varandras lön ur
+gruppens medelvärde eller summa, vilket är det röjande som tröskeln finns för att stoppa. Rådet för den officiella
+statistiken, [*Handbok i statistisk röjandekontroll*](https://scb.se/contentassets/0cd92207266d40eb8829244d51d90b94/handbok-i-statistisk-rojandekontroll.pdf)
+(2015, uppdaterad 2018), avsnitt 5.1, s. 40: tröskelvärdet måste
+vara minst 3. Standardvärdet 10 och friheten att sänka det med bekräftelse (ADR-38) står kvar. *Gäller i dag:*
+`k-troskeln.md` §6.
+
+**ADR-103 — Golvet för skattningar följer tröskeln bara i exportläget.** Beslutat av underhållaren 2026-11-23. Ändrar
+ADR-23 och regeln för `statGolv()`: på skärmen är golvet för skattningar (regression per BAS-intervall, ansvarssteget,
+Blinder-Oaxaca, bootstrap-KI, styrkan, livscykelmodellen, extremvärdena, statusen *Går ej att bedöma* och Personer att
+granska) alltid `K_STANDARD`, 10; i exportläget är det som förut den inställda tröskeln när den är högre
+(`statGolvVid(kTroskel())`). En höjd tröskel hindrar alltså inte analysen på skärmen. Skattningar som sparas har
+golvet i nyckeln, så att det som räknats på skärmen aldrig följer med ut (`bootstrapCIGallande`, `styrkaGallande`,
+`laLikaGrupper`); regressionen cachas fortfarande inte (ADR-17). Där en grupp på skärmen är för liten för att prövas
+säger texten att lönerna syns under Tabeller och egna vyer och att bedömningen dokumenteras under Sakliga skäl.
+*Skäl:* golvet är ett kvalitetsgolv, inte ett skydd mot röjande. Rådet för den officiella statistiken,
+[*Handbok i statistisk röjandekontroll*](https://scb.se/contentassets/0cd92207266d40eb8829244d51d90b94/handbok-i-statistisk-rojandekontroll.pdf)
+(2015), s. 41: kvalitetsskäl kan motivera ett eget tröskelvärde. Skyddet mot röjande är tröskeln i exportläget
+(ADR-51), och den som arbetar i verktyget har redan lönefilen. *Avvisat:* att golvet följer den inställda tröskeln
+också på skärmen (som förut): en höjd tröskel tog bort skattningar för grupper som är stora nog att pröva. *Gäller i
+dag:* `k-troskeln.md` §1 och §5.

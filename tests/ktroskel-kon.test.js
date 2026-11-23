@@ -32,7 +32,7 @@ describe('fixturen för kön under tröskeln', () => {
     });
 });
 
-describe('C2: Struktur per BAS visar inget könsgap när ett kön är under tröskeln', () => {
+describe('[C2] Struktur per BAS visar inget könsgap när ett kön är under tröskeln', () => {
     const radFor = (html, bas) => { const m = html.match(new RegExp(`<tr><td>(?:<strong>)?${bas}(?:</strong>)?</td>.*?</tr>`, 's')); return m ? normalisera(m[0].replace(/&nbsp;/g, ' ').replace(/<[^>]+>/g, ' | ')) : null; };
     it('fliken Struktur på skärmen: gapet visas också mot en, två och tre män (ADR-51)', () => {
         const w = fonsterKon(null);
@@ -53,16 +53,16 @@ describe('C2: Struktur per BAS visar inget könsgap när ett kön är under trö
         }
         expect(el.textContent).toMatch(/ett av könen har färre än 10 personer/);
     });
-    it('i exportläget vid 2 visas gapet för Y2 och Y3 (2 och 3 män)', () => {
-        const w = iExport(fonsterKon(2));
+    it('i exportläget vid 3 (lägsta tillåtna, ADR-102) visas gapet för Y3 (3 män) men inte för Y1 och Y2', () => {
+        const w = iExport(fonsterKon(3));
         w.__renderTabContent('struktur');
         const t = w.document.getElementById('struktur-representation').innerHTML;
-        expect(radFor(t, 'Y2')).toContain((KON_KV[1] / KON_MA[1] * 100).toFixed(1).replace('.', ','));   // kvinnors median i % av mäns
-        expect(radFor(t, 'Y1')).toMatch(/–[\s|]*$/);   // en enda man: under tröskeln 2
+        expect(radFor(t, 'Y3')).toContain((KON_KV[2] / KON_MA[2] * 100).toFixed(1).replace('.', ','));   // kvinnors median i % av mäns
+        for (const bas of ['Y1', 'Y2']) expect(radFor(t, bas), bas).toMatch(/–[\s|]*$/);   // en och två män: under tröskeln 3
     });
 });
 
-describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln för varje kön', () => {
+describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln för varje kön', () => {
     // 60 kvinnor och 3 män: männens median är en enskild mans lön.
     const MAN = [41417, 43719, 47827];
     const fonster3 = k => {
@@ -159,7 +159,7 @@ describe('C3: könsuppdelade mått för hela organisationen kräver tröskeln f�
 
 // Bladet Lönepolitik i "Excel (alla flikar)": samma regler som fliken. Underlaget är könsfixturen (ställningstagande
 // för varje BAS): Y1–Y3 har 1–3 män, X har 4 personer, E–F 6, A–D 20, S1–S7 150.
-describe('C5: bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fliken', () => {
+describe('[C5] bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fliken', () => {
     const bladet = async k => {
         const w = fonsterKon(k);
         await laddaXlsx(w);
@@ -208,7 +208,7 @@ describe('C5: bladet Lönepolitik i Excel (alla flikar) följer tröskeln som fl
     });
 });
 
-describe('C4: allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas)', () => {
+describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den öppna fliken direkt, övriga när de öppnas)', () => {
     const fonsterPar = () => {
         const w = createAppWindow();
         w.eval('sattKTroskel(5, { fraga: false })');
@@ -255,7 +255,10 @@ describe('C4: allt som visar gruppmått följer tröskeln när den ändras (den 
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).toContain('91357');
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(maskerade()).toEqual([25, 1]);                 // D (20) är nu under den inställda tröskeln
-        // Extremvärdeslistan följer det statistiska golvet, max(inställd tröskel, 10) — samma i båda lägena (ADR-51).
+        // Extremvärdena följer golvet för skattningar: 10 på skärmen, max(inställd tröskel, 10) i exportläget (ADR-103).
+        expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).toContain('91357');
+        expect(d.getElementById('data-validation-report').textContent).not.toMatch(/Inga extremvärden/);
+        w.eval('medExportLage(() => { renderOutliers(); renderDataValidationReport(); })');
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).not.toContain('91357');
         expect(d.getElementById('data-validation-report').textContent).toMatch(/Inga extremvärden/);
     });
@@ -279,8 +282,9 @@ describe('C4: allt som visar gruppmått följer tröskeln när den ändras (den 
     });
 });
 
-describe('C6: räkneexemplet i kronor per år bara när båda könen når tröskeln', () => {
-    // G: 12 kvinnor och 12 män, kvinnorna omkring 3 000 kr lägre. H: 12 kvinnor och 4 män (under tröskeln).
+describe('[C6] räkneexemplet i kronor per år bara när båda könen når tröskeln', () => {
+    // G: 12 kvinnor och 12 män, kvinnorna omkring 3 000 kr lägre. H: 12 kvinnor och 4 män (under tröskeln). Meningen
+    // själv (ingen under 100 kr eller när kvinnorna ligger högre) prövas i tests/kostnad.test.js under [B7.11].
     const fonster = () => {
         const w = createAppWindow();
         const rad = (yrke, aid, kon, lon, i) => ({ bas: 'C', kon, lon, alder: 30 + i, yrke: `${aid} ${yrke}`, aid: String(aid), yrkeLabel: yrke, enhet: '' });
@@ -312,11 +316,5 @@ describe('C6: räkneexemplet i kronor per år bara när båda könen når trösk
         }
         expect(block.map(b => b.rubrik)).toEqual([expect.stringMatching(/Gyrke/)]);
         expect(JSON.stringify(block)).not.toMatch(/8812\d/);
-    });
-    it('ingen mening när skillnaden är under 100 kr eller kvinnorna ligger högre', () => {
-        const w = fonster(), f = w.eval('_prArsbeloppMening'), kr = v => `${v} kr`;
-        expect(f({ medKv: 30000, medMa: 30040, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toBeNull();
-        expect(f({ medKv: 31000, medMa: 30000, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toBeNull();
-        expect(f({ medKv: 30000, medMa: 31000, nKv: 10 }, { months: 12, poPct: 0 }, kr)).toMatch(/omkring 120000 kr per år/);
     });
 });

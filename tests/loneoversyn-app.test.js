@@ -3,9 +3,8 @@
 // Löneöversyn i appen: potten och förslaget, de riktade potterna, utfallets riktning, formulären, läget utan pott och
 // tröskelmålet.
 import { describe, it, expect } from 'vitest';
-import { createAppWindow, delatFonster } from './helpers/app-harness.js';
+import { createAppWindow } from './helpers/app-harness.js';
 
-const demo = delatFonster(w => w.__loadDemoData());
 // Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
 const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
 
@@ -64,16 +63,6 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
         expect(pp.filter(p => iA(p) && p.kon === 'kvinna' && p.delta > 0).length).toBe(30);
         expect(w.document.getElementById('forecast-targets').querySelector('[data-f="kon"]').value).toBe('kvinna');
     });
-    it('lönegräns: bara löner under gränsen omfattas', () => {
-        const pp = rad(fonster(), { lonCap: 25500 });
-        expect(pp.filter(p => p.delta > 0).map(p => p.lon).sort((a, b) => a - b)).toEqual([25000, 25100, 25200, 25300, 25400]);
-    });
-    it('höj till: var och en under beloppet lyfts upp till det, ingen pott att fördela', () => {
-        const pp = rad(fonster(), { kon: 'kvinna', mode: 'till', value: 26000 });
-        const lyfta = pp.filter(p => p.delta > 0);
-        expect(lyfta.length).toBe(10);
-        expect(lyfta.every(p => p.nyLon === 26000 && p.kon === 'kvinna')).toBe(true);
-    });
     it('en rad som berör färre än tröskeln får noten om enskildas löner; en som berör ingen får besked', () => {
         const w = fonster();
         rad(w, { bas: 'C', aid: '5300' });
@@ -109,8 +98,9 @@ describe('Löneöversyn utan påslag', () => {
     });
 });
 
-// Ordet och f\u00E4rgen p\u00E5 utfallets rader f\u00F6ljer talen som de visas med en decimal (_fcRiktning i 36-loneoversyn.js), inte
-// de oavrundade talen: efter ett generellt p\u00E5slag stod "\u22124,3 % till \u22124,3 % \u00F6kar" i r\u00F6tt.
+// Ordet och f\u00E4rgen p\u00E5 utfallets rader f\u00F6ljer talen som de visas med en decimal (riktning i src/lib/vymodell-loneoversyn.js), inte
+// de oavrundade talen: efter ett generellt p\u00E5slag stod "\u22124,3 % till \u22124,3 % \u00F6kar" i r\u00F6tt. Regeln pr\u00F6vas i
+// tests/vymodeller.test.js under [B7.13]; h\u00E4r pr\u00F6vas ordet och f\u00E4rgen i kortet.
 describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => {
     const utfall = w => {
         w.__renderTabContent('loneoversyn');
@@ -153,15 +143,6 @@ describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => 
         expect(a[3]).toBe(Math.abs(tal(a[2]) - 100) < Math.abs(tal(a[1]) - 100) ? 'n\u00E4rmar sig 100 %' : Math.abs(tal(a[2]) - 100) > Math.abs(tal(a[1]) - 100) ? 'l\u00E4ngre fr\u00E5n 100 %' : 'of\u00F6r\u00E4ndrat');
         const ord = [...el.querySelector('.card').querySelectorAll('span')].find(s => s.textContent === 'minskar');
         expect(ord.className).toBe('farg-ok');
-    });
-    it('_fcRiktning avg\u00F6r p\u00E5 en decimal: lika visade tal \u00E4r 0, och avst\u00E5ndet m\u00E4ts fr\u00E5n m\u00E5let', () => {
-        const w = demo();
-        expect(w.eval('_fcRiktning(-4.26, -4.34, 0)')).toBe(0);          // b\u00E5da visas som \u22124,3 %
-        expect(w.eval('_fcRiktning(-4.3, -4.0, 0)')).toBe(-1);
-        expect(w.eval('_fcRiktning(-4.0, -4.3, 0)')).toBe(1);
-        expect(w.eval('_fcRiktning(95.66, 95.74, 100)')).toBe(0);       // b\u00E5da visas som 95,7 %
-        expect(w.eval('_fcRiktning(95.7, 96.1, 100)')).toBe(-1);
-        expect(w.eval('_fcRiktning(null, 1, 0)')).toBeNull();
     });
 });
 
@@ -215,7 +196,7 @@ describe('formulären i Löneöversyn', () => {
     });
 });
 
-// Ingen budget angiven är ett eget läge (pottAngiven ur forecastOutcome): ett påslag utan pott överskrider ingen pott.
+// Ingen budget angiven är ett eget läge (pottAngiven ur prognosutfall): ett påslag utan pott överskrider ingen pott.
 // En angiven pott på 0 kr flaggas som förut.
 describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
     const rita = budget => {

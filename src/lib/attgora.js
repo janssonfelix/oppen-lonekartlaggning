@@ -6,13 +6,9 @@
  * Ren logik utan DOM och state: vilka punkter som visas under Börja här och när ett
  * analyssteg i processöversikten räknas som klart. Appen (18-atgardslista.js,
  * 13-oversikt.js) bygger punkterna och skickar in dem.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { personOrd } from './namn.js';
-import { skapaTermer, termFras } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { STANDARDTERMER as T, termFras } from './termer.js';
 
 
 /** Kategorier för fynd som gäller skillnader mellan kvinnor och män (lagkravet). */

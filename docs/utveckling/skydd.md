@@ -6,8 +6,9 @@ beslut får inte strida mot ett skydd, och ett skydd ändras bara genom ett eget
 
 Varje skydd har en vakt, och det som inte vaktas står utskrivet. Ett skydd som är juridiskt bindande (S2, S4) ska
 vaktas av *invarianter* som gäller hela utdatan, inte av stickprov på enskilda vyer: en ny vy ska ärva skyddet utan
-att någon kommer ihåg att testa den. Det här dokumentet är källan för skyddens vakter; varje sökväg det nämner prövas
-av `tests/dokumentation-struktur.test.js`.
+att någon kommer ihåg att testa den. Vakterna i testsviten står i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhet.md)
+avsnitt 12 (raderna S1–S5), och testerna bär radens ID; här står vakterna utanför testsviten (webbläsarröktestet,
+linten och CI-grindarna). Varje sökväg dokumentet nämner prövas av `tests/dokumentation-struktur.test.js`.
 
 ## S1. Inga nätverksanrop
 
@@ -18,9 +19,7 @@ webbläsaren blockerar all utgående trafik. Det är en hård teknisk barriär m
 kontrollsumma), ADR-1 (ingen arbetstråd). Hela policyn och vad den inte täcker: `docs/dataskydd/riskanalys.md` §6.1.
 *Vakt:* webbläsarröktestet, `tools/browser-smoke/sakerhet.mjs`: inga nätverksförfrågningar under hela körningen,
 inga CSP-överträdelser, och en arbetstråd, ett injicerat skript och en injicerad händelsehanterare stoppas.
-Testet *byggets CSP släpper inte nätet* i `tests/sakerhet.test.js`: `default-src` och `connect-src` är `'none'` (också i
-källans CSP, som bygget ärver dem från), `script-src` har bara kontrollsummor, och inget direktiv har `*`, `'self'`,
-ett nätschema eller ett värdnamn; stilarnas del av CSP:n prövas i samma fil. Linten (`eslint.config.js`) förbjuder
+Testsvitens vakt för byggets CSP står i matrisens rad S1. Linten (`eslint.config.js`) förbjuder
 `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `navigator.sendBeacon` och `new Worker`/`new SharedWorker` i
 `dist/app.js` och `src/lib/`.
 *Vaktas inte:* linten ser bara direkta anrop med de namnen (inte till exempel `window['fetch']` eller ett alias), och
@@ -36,8 +35,8 @@ en snubbeltråd mot misstag, inte det egentliga skyddet.
 
 *Varför:* lönedata lämnar aldrig datorn, inte heller till en lagring som finns kvar när fliken stängts.
 *Beslut:* ADR-1 (en arbetstråd skulle stå utanför spärren). Spärren i detalj: `docs/dataskydd/riskanalys.md` §6.2.
-*Vakt:* lagringsspärren i `tests/sakerhet.test.js` (varje `setItem` och varje direkt tilldelning kastar, ingenting
-lagras); `tools/browser-smoke/sakerhet.mjs` (spärren också för cookies, och lagringen är tom efter en full körning).
+*Vakt:* lagringsspärren i testsviten, matrisens rad S2; `tools/browser-smoke/sakerhet.mjs` (spärren också för cookies,
+och lagringen är tom efter en full körning).
 Linten (`eslint.config.js`) förbjuder `indexedDB` och `caches`, också som `window.indexedDB` och `window.caches`, i
 `dist/app.js` och `src/lib/`.
 *Vaktas inte:* IndexedDB och Cache API ligger utanför spärren. Linten ser bara direkta anrop med de namnen, och
@@ -50,10 +49,12 @@ Verktyget är en enda HTML-fil som körs lokalt, utan server och utan molntjäns
 inga externa resurser. Den går att öppna från `file://` och fungerar utan internet.
 
 *Varför:* utan server och nät har lönedata ingen väg ut, och filen kan köras där lönefilen redan finns.
-*Beslut:* ADR-6 och ADR-8 (`app.js` och lib-speglarna som klassiska skript, utan ES-moduler i bygget).
+*Beslut:* ADR-6 och ADR-98 (källan är ES-moduler; esbuild bygger dem till ett klassiskt skript utan `import` och
+`export`, som läggs in i filen).
 *Vakt:* webbläsarröktestet, `tools/browser-smoke.mjs`, öppnar den byggda filen från `file://` och kör alla flikar
-och exporter; artefaktgrinden i `.github/workflows/ci.yml` kräver att en färsk build ger samma `dist/` som den
-incheckade, artefakten och `RELEASE.txt`.
+och exporter; `tools/build-app.mjs` fäller bygget om `dist/app.js` har `import` eller `export` kvar; artefaktgrinden
+i `.github/workflows/ci.yml` kräver att en färsk build ger samma `dist/` som den incheckade, artefakten och
+`RELEASE.txt`.
 *Vaktas inte:* röktestet körs i CI och med `npm run test:browser`, inte i `npm test`.
 
 ## S4. Minsta gruppstorlek i allt som lämnar verktyget
@@ -68,23 +69,19 @@ utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som 
 
 *Varför:* att förhindra återidentifiering i det som sprids.
 *Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
-51, 57, 69, 70, 83, 87, 88, 91, 92.
-*Vakt:* invarianten I4, `tests/helpers/ktroskel-invariant.js`, ritar flikarna i exportläget och bygger exporterna
-vid tröskeln 10 (`tests/ktroskel-invarianter.test.js`) och 25 (`tests/ktroskel-invarianter-25.test.js`).
-Invarianten har också differensprovet (ADR-88, `differensprov` i `tests/helpers/differens.js`), på samma utdata: varje
-tabell i den (HTML-tabellerna i exportläget och i rapporterna, Excel-bladen, tabellernas CSV och diagramdatan) vars
+51, 57, 69, 70, 83, 87, 88, 91, 92, 102.
+*Vakt:* testerna i matrisens rad S4 och serierna i dess avsnitt 11. Invarianten I4 ritar flikarna i exportläget och
+bygger exporterna vid tröskeln 10 och 25. Invarianten har också differensprovet (ADR-88, `differensprov` i
+`tests/helpers/differens.js`), på samma utdata: varje tabell i den (HTML-tabellerna i exportläget och i rapporterna, Excel-bladen, tabellernas CSV och diagramdatan) vars
 rubrikrad har en kolumn med medel, summa eller kostnad ska vara deklarerad i riggen (`tests/helpers/ktroskel-rigg.js`),
 med kolumnerna för antal och mått och raden som är totalen, eller som inget att dela upp med skäl. För de deklarerade
 måtten får totalen minus de visade delarna, för alla och per kön, aldrig lämna 1 till tröskeln − 1 personer, och i en
 tabell utan totalrad får ingen rad minus andra rader lämna en av riggens små grupper. En deklaration över två blad
 (`korsblad`) prövar JPA-protokollets blad för BAS-intervall minus bladet för lika arbete, per intervall och kön
-(ADR-91). `tests/ktroskel-differens.test.js`
-prövar samma sak på lib-nivå med fler underlag, och ekvationssystemen i uppdelningen av löneskillnaden;
-differentialtesterna i `tests/diagramritare.test.js` kräver att det som lämnar verktyget är identiskt med en figur
-där de små punkterna tagits bort; `tests/ktroskel-bas-effekter.test.js` (regressionens BAS-effekter),
-`tests/ktroskel-loneoversyn-summor.test.js` (Löneöversyns summor), `tests/ktroskel-livscykel.test.js` (livscykelns
-lönekurva) och `tests/ktroskel-loneoversyn-scenarier.test.js` (scenariojämförelsen A/B) prövar lönemått som I4 inte
-ser.
+(ADR-91). Samma sak prövas på lib-nivå med fler underlag, och ekvationssystemen i uppdelningen av löneskillnaden;
+differentialtesterna kräver att det som lämnar verktyget är identiskt med en figur där de små punkterna tagits bort;
+och egna tester prövar lönemått som I4 inte ser (regressionens BAS-effekter, Löneöversyns summor, livscykelns
+lönekurva och scenariojämförelsen A/B). Testfilerna står i matrisens rad S4.
 *Vaktas inte:* kombinationer av flera filer, eftersom skyddet inte gäller dem (ADR-92): ingen vakt parar två utdata.
 Invarianten letar efter de små gruppernas lönevärden, så antal, andelar och namn vaktas inte av den (de omfattas inte
 av skyddet, ADR-70); golven i antal (ADR-57) har egna tester. Inom en fil ser differensprovet bara differenser inom en
@@ -106,6 +103,6 @@ dokumenten. Repot har inga namn på organisationer, arbetsgivare eller lönesyst
 
 *Varför:* verktyget ska kunna användas av vilken arbetsgivare som helst.
 *Beslut:* ADR-28.
-*Vakt:* *namnen: inga hårdkodade etiketter* i `tests/sakerhet.test.js` (etiketterna läser `orgNamn` och `jmfNamn`);
-*organisationsneutralt standardläge* i `tests/start-och-meny-app.test.js` (ingen inbyggd referens, neutral profil).
+*Vakt:* testerna i matrisens rad S5: inga hårdkodade etiketter (etiketterna läser `orgNamn` och `jmfNamn`) och ett
+organisationsneutralt standardläge (ingen inbyggd referens, neutral profil).
 *Vaktas inte:* att inga namn står i repot prövas inte av något test; det granskas.

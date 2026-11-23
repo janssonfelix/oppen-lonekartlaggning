@@ -15,7 +15,7 @@ import { invariantSvit } from './helpers/ktroskel-invariant.js';
 // fäller olika tester från körning till körning.
 vi.setConfig({ testTimeout: 30000 });
 
-describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', () => {
+describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', () => {
     it('individnivån: på skärmen visas jämförelsen också mot få män (skärmen maskerar inget, ADR-51)', () => {
         const w = fonsterKon(null);
         w.__renderTabContent('loneoversyn');
@@ -110,7 +110,7 @@ describe('I1: Löneöversyn visar ingen kostnad för grupper under tröskeln', (
 // Resultaten som räknas på knapptryck i Löneöversyn (kostnaden på individnivå, känslighetskurvan, målet för skillnaden)
 // ritades förr bara när knappen trycktes: skärmens omaskade tal stod kvar i förhandsvisningen "Som i exporten" och
 // efter en ändrad tröskel. Ett resultat som visas räknas nu om när fliken ritas om; en tom ruta förblir tom (ADR-51).
-describe('I1b: Löneöversyns knappresultat följer läget och tröskeln', () => {
+describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () => {
     const text = (w, id) => normalisera(w.document.getElementById(id).textContent);
     const kostnader = w => KON_KOSTNAD.filter(v => text(w, 'forecast-rem-result').includes(String(v)));
     const KNAPPRUTOR = ['forecast-rem-result', 'forecast-sensitivity', 'forecast-threshold-result'];
@@ -186,7 +186,7 @@ invariantSvit(10, []);
 // sig. Ledningens män avgör: med 9 (en under tröskeln 10) har resten 9 män och valet görs inte; med 10 görs det.
 // Utan regeln kunde hela underlaget minus urvalet röja de få männen i Ledning.
 // ===================================================================================
-describe('I6: underlaget i exportläget, precis under och precis över skyddsregeln', () => {
+describe('[I6] underlaget i exportläget, precis under och precis över skyddsregeln', () => {
     const DIAGRAM = ['chart-kon-boxplot', 'chart-kon-histogram', 'chart-kon-aldergap', 'chart-struktur-percentiler', 'chart-struktur-kvartiler'];
     const VARD = 'Vård- och omsorgsarbete med mera', HANDL = 'Handläggar- och administratörsarbete';
     const LEDNING_MAN = 41913;   // Ledningens män har en lön som inte finns någon annanstans (i Vård högst 41 700)
@@ -283,14 +283,14 @@ describe('I6: underlaget i exportläget, precis under och precis över skyddsreg
 //  - Åldersgrupp, BAS: delarna redovisas, och inga grupper under en övercell som inte klarar tröskeln namnges.
 // Rapportunderlagets block, kortet i exportläget och metodbilagan (Excel, Word) prövas mot de dolda värdena som i I4.
 // ===================================================================================
-describe.each([[10, []], [25, SENT_MELLAN]])('I7: uppdelningen med andra val av variabler vid %i', (k, extra) => {
+describe.each([[10, []], [25, SENT_MELLAN]])('[I7] uppdelningen med andra val av variabler vid %i', (k, extra) => {
     const dolda = [...KON_DOLDA, ...SENT_SMA, ...extra];
     const smaBas = k === 10 ? [...KON_BAS, 'X', ...SMA] : [...KON_BAS, 'X', ...SMA, ...MELLAN];
     const utdataFor = val => {
         const w = iExport(fonsterKon(k === 10 ? null : k));
         w.eval(`sattGapVariabler(${JSON.stringify(val)}, { rita: false })`);
         w.__renderTabContent('struktur');
-        const u = w.eval('_guGapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+        const u = w.eval('gapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
         const block = w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
         return { u, utdata: [
             ['rapportunderlag: uppdelning', normalisera(w.__ruTillWordHtml(block) + '\n' + w.__ruTillText(block))],

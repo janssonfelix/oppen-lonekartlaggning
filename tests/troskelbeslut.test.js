@@ -24,7 +24,7 @@ function fonster(k = null, rader = byggDataset()) {
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
 
 describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräver att urvalet når tröskeln', () => {
-    const rita = (w, bas) => { iExport(w); w.document.getElementById('kon-trend-alla').checked = true; w.eval(`renderKon('${bas}')`); return w.document; };
+    const rita = (w, bas) => { iExport(w); w.document.getElementById('kon-trend-alla').checked = true; w.eval(`ritaAlderOchLon('${bas}')`); return w.document; };
     const harTrend = fig => fig.lager.some(l => l.marke === 'linje' && /^Hela urvalet \(trend/.test(l.serie));
     it('ett valt BAS med 6 personer: ingen trendlinje för hela urvalet och en not under diagrammet (vid 10)', () => {
         const d = rita(fonster(), 'E');
@@ -48,13 +48,13 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
         expect(harTrend(rita(w, 'A').getElementById('chart-kon-scatter')._figur)).toBe(false);
         expect(text(w.document.getElementById('chart-kon-scatter-k-not'))).toMatch(/urvalet har 20 personer, färre än 25/);
         w.document.getElementById('kon-trend-alla').checked = false;
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         expect(harTrend(w.document.getElementById('chart-kon-scatter')._figur)).toBe(false);
         expect(text(w.document.getElementById('chart-kon-scatter-k-not'))).not.toMatch(/hela urvalet/);
     });
 });
 
-describe('R5: Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
+describe('[R5] Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
     const resultat = w => { iExport(w); w.eval("renderTabContent('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
     it('med 6 kvinnor i urvalet: streck och meningen om utelämnat könsuppdelat mått', () => {
         const alla = byggDataset();
@@ -105,9 +105,9 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag un
     const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
     it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {
         const cfg = parFonsterMedRader().eval('buildConfigSnapshot()');
-        expect(cfg.version).toBe(2);
-        expect(cfg.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
-        expect(cfg.forecast.targets.find(t => t.aid === '6000').kalla).toBeUndefined();
+        expect(cfg.version).toBe(3);
+        expect(cfg.loneoversyn.mal.find(t => t.aid === '5300').kalla).toBe('par');
+        expect(cfg.loneoversyn.mal.find(t => t.aid === '6000').kalla).toBeUndefined();
     });
     it('spara vid 5, höj till 10, läs in: förslaget rensas, också på skärmen, och den egna raden står kvar', () => {
         const w = parFonsterMedRader();
@@ -119,7 +119,7 @@ describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag un
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(aids(w)).toEqual(['6000']);
         // En egen rad på en grupp under tröskeln läses in som egen och får noten.
-        w.__cfg.forecast.targets = [{ bas: 'C', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' }];
+        w.__cfg.loneoversyn.mal = [{ bas: 'C', aid: '5300', enhet: 'kr', varde: 500, fordelning: 'lowest', malniva: 'median', pott: 'övrigt' }];
         w.eval('applyConfigSnapshot(window.__cfg)');
         expect(aids(w)).toEqual(['5300']);
         expect(w.__state.forecast.targets[0].kalla).toBeUndefined();
@@ -207,7 +207,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
         const w = fonster();
         w.eval("renderTabContent('kon')");
         w.document.getElementById('kon-color-by').value = 'aid';
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         const serier = new Set(rader(w, 'chart-kon-scatter').slice(2).map(r => r[0]));
         expect(serier.has('6000 Säkeryrke 0')).toBe(true);
     });
@@ -238,7 +238,7 @@ describe('autocomplete="off" på alla fält, också de som skapas efter start', 
         const w = fonster();
         for (const f of FLIKAR) { try { w.eval(`renderTabContent('${f}')`); } catch (_e) { /* fliken finns inte */ } }
         w.__state.forecast.targets.push({ bas: 'A', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
-        w.eval('renderForecastTargets()');
+        w.eval('ritaRiktadeRader()');
         // Fält som en knapp skapar (de riktade raderna) får attributet av observatören, strax efter.
         expect(w.document.querySelectorAll('#forecast-targets select, #forecast-targets input').length).toBeGreaterThan(3);
         await new Promise(r => setTimeout(r, 0));

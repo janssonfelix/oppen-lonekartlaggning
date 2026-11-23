@@ -1,5 +1,42 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { valideraArsbokslut } from '../lib/arsbokslut.js';
+import { gapVariablerArStandard, normaliseraGapVariabler } from '../lib/gapuppdelning.js';
+import { valideraImportprofiler } from '../lib/importprofiler.js';
+import { arInomGrans, filStorlekFel, installningsGrans } from '../lib/installningsgranser.js';
+import { konfigurationMedNyaNamn, konfigurationVersion, konfigurationVersionFel } from '../lib/konfiguration.js';
+import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
+import { perBasReceptArStandard, valideraPerBasRecept } from '../lib/perbas.js';
+import { forklaringsmodellArStandard, normaliseraForklaringsmodell } from '../lib/regression.js';
+import { ogonblicksbildMatt } from '../lib/struktur.js';
+import { valideraRecept } from '../lib/tabellrecept.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { FARG } from './01-farger.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { idagDatum } from './03-hjalpfunktioner.js';
+import { _konFarRedovisas, _kVisaFel, _renderaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
+import { _skrDel } from './06-kvinnoandel-referens.js';
+import { COST_DEFAULTS, jmfNamn, orgNamn, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS, sattJmfNamn, sattOrgNamn } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { PALETTE } from './10-diagramtema.js';
+import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { bedomningUnderlag, populateSelects, UK_ETIKETT } from './13-oversikt.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { _showExportSensitivityToast } from './22-exporthjalpare.js';
+import { medExportLage, visningNy } from './23-exportgrind.js';
+import { sattOrgTyp } from './29-organisationspaket.js';
+import { invalidateStatCaches } from './30-statistikcacher.js';
+import { refreshCurrentTab } from './31-navigering.js';
+import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversyn.js';
+import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
+import { sattLonemanad } from './45-aid-bas-tabeller.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _readCostSettings } from './55-prioritering.js';
+import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { sattRapportUrval } from './58-rapportmodell.js';
+import { _bes8Areas, bes8Uppdatera } from './61-regler-och-praxis.js';
+import { byggArsbokslutNu, renderArsjamforelse } from './73-arsbokslut.js';
 
 // ---- #17 Spara/ladda konfiguration som JSON ----
 /** Sessionens egna importprofiler för konfigurationsfilen; inget fält alls när de saknas. */
@@ -12,16 +49,20 @@ function _konfigImportprofiler() {
 /**
  * Bygger ett serialiserbart snapshot av användarens konfiguration: prio-trösklar,
  * vikter, kostnadsinställningar och bristyrkes-AID:n.
- * Set-objekt konverteras till Array (JSON.stringify hanterar inte Set).
+ * Set-objekt konverteras till Array (JSON.stringify hanterar inte Set). Fälten har svenska namn från version 3; de
+ * äldre namnen står bara i namnbytenas tabell i src/lib/konfiguration.js (ADR-96).
  * @returns {Object} JSON-säker konfigurationsstruktur.
  */
 function buildConfigSnapshot() {
     return {
-        version: 2,
-        timestamp: new Date().toISOString(),
-        prioConfig: { ...state.prioConfig },
-        prioWeights: { ...state.prioWeights },
-        costSettings: { ...state.costSettings },
+        version: konfigurationVersion(),
+        sparad: new Date().toISOString(),
+        prioTrosklar: {
+            atgardTroskel: state.prioConfig.atgardThreshold, akutMinstN: state.prioConfig.akutMinN,
+            bevakaTroskel: state.prioConfig.bevakaThreshold, analyseraTroskel: state.prioConfig.analyseraThreshold
+        },
+        prioVikter: { ...state.prioWeights },
+        kostnad: { manader: state.costSettings.months, poPct: state.costSettings.poPct },
         kTroskel: kInstalld(),  // minsta gruppstorlek för redovisning (ADR-38); paketets låsningar (ADR-47) bärs inte
         rapportUrval: state.rapportUrval ? { ordning: [...state.rapportUrval.ordning], med: [...state.rapportUrval.med], ...(state.rapportUrval.fast ? { fast: state.rapportUrval.fast } : {}) } : null,
         rapportTabeller: (state.rapportTabeller || []).map(t => JSON.parse(JSON.stringify(t))),   // egna tabeller: recept, inga tal (ADR-52)
@@ -31,22 +72,23 @@ function buildConfigSnapshot() {
         // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
-            kvinnoTrosholdPct: state.likvardighet.kvinnoTrosholdPct,
+            kvinnoTroskelPct: state.likvardighet.kvinnoTrosholdPct,
             kvDomDefinition: state.likvardighet.kvDomDefinition || 'do',
             jamforelse: state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla',
-            minGapPct: state.likvardighet.minGapPct,
-            topN: state.likvardighet.topN
+            minstaGapPct: state.likvardighet.minGapPct,
+            antalPar: state.likvardighet.topN
         } : null,
         lonemanad: state.lonemanad || null,   // lönemånaden på bladen per AID och BAS
         forhandskontrollStopp: state.forhandskontrollStopp === true,   // stoppa och visa förhandskontrollen innan inläsning
         // Löneöversyn/prognos: bara inställningar (pott + fördelningsregler), ej utfall
-        forecast: state.forecast ? {
-            budget:   { ...state.forecast.budget },
-            generell: { ...state.forecast.generell },
-            targets:  (state.forecast.targets || []).map(t => ({ ...t })),
-            minGroupN: state.forecast.minGroupN,
-            roundStep: state.forecast.roundStep,
-            years: state.forecast.years
+        loneoversyn: state.forecast ? {
+            budget:   { enhet: state.forecast.budget.mode, varde: state.forecast.budget.value },
+            generell: { enhet: state.forecast.generell.mode, varde: state.forecast.generell.value },
+            mal: (state.forecast.targets || []).map(t => ({ bas: t.bas, aid: t.aid, enhet: t.mode, varde: t.value, fordelning: t.dist,
+                malniva: t.targetLevel, pott: t.pool, ...(t.kalla ? { kalla: t.kalla } : {}) })),
+            minstaGruppN: state.forecast.minGroupN,
+            avrundning: state.forecast.roundStep,
+            ar: state.forecast.years
         } : null,
         // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
         // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
@@ -54,11 +96,11 @@ function buildConfigSnapshot() {
         // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
         // den som läser in konfigurationen kan läsa in samma paket.
         organisationspaket: state.paket ? { organisation: state.paket.organisation, skapat: state.paket.skapat } : null,
-        ui: {
-            prioRef:          /** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || null,
-            prioLabelMode:    /** @type {HTMLInputElement} */ (document.getElementById('prio-label-mode'))?.value || null,
-            konColorBy:       /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || null,
-            orgTyp:           _skrDel(),   // organisationstypen styr SKR-referensen (ADR-34)
+        visning: {
+            prioReferens:     /** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || null,
+            prioEtiketter:    /** @type {HTMLInputElement} */ (document.getElementById('prio-label-mode'))?.value || null,
+            konFargning:      /** @type {HTMLInputElement} */ (document.getElementById('kon-color-by'))?.value || null,
+            organisationstyp: _skrDel(),   // organisationstypen styr SKR-referensen (ADR-34)
             jamforelse:       jamforelseVal()   // Jämförelsestatistik: källa, BAS-intervall, sektor
         },
         // HR:s manuella arbete (användarens egna inmatningar). Ingår i den
@@ -66,15 +108,15 @@ function buildConfigSnapshot() {
         // Innehåller INGA råa individrader; kan innehålla användarförfattad text
         // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
         bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
-            .map(a => ({ n: a.n, status: a.status, note: a.note })),
+            .map(a => ({ n: a.n, status: a.status, anteckning: a.note })),
         // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
         handlingsplan: (typeof _hpForKonfiguration === 'function' ? _hpForKonfiguration() : []),
-        actionChecklistDone: Array.from(state._actionChecklistDone || []),
+        attGoraKlara: Array.from(state._actionChecklistDone || []),
         // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
         arsbokslut: (typeof byggArsbokslutNu === 'function' ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
-        orgName: orgNamn(''),
+        orgNamn: orgNamn(''),
         jmfNamn: jmfNamn(''),
-        strukturNarrative: (() => {
+        strukturNarrativ: (() => {
             const nb = document.getElementById('struktur-narrative');
             return (nb && nb.dataset.dirty === '1') ? /** @type {HTMLInputElement} */ (nb).value : null;   // null = auto-genererat, spara ej
         })()
@@ -94,7 +136,8 @@ function buildConfigSnapshot() {
  * tillstånd (vissa fält ändrade, andra kvar) — vilket annars kan leda till
  * tysta felaktiga analyser.
  *
- * @param {Object} cfg - Snapshot från buildConfigSnapshot().
+ * @param {Object} cfg - Snapshot från buildConfigSnapshot(), version 3, eller en äldre fil i version 2 (de gamla namnen
+ *   byts mot de nya före valideringen, ADR-96).
  * @returns {{varningar: string[]}} Det i filen som inte tillämpades fast filen var giltig (en tröskel under
  *   organisationspaketets golv, ADR-47).
  * @throws {Error} Med beskrivande meddelande vid valideringsfel. State opåverkat.
@@ -109,41 +152,46 @@ function _applyConfigSnapshot(cfg) {
     // ---- FAS 1: Validera + bygg upp i isolerat temp-objekt ----
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
-    if (cfg.version !== 2)
-        throw new Error(`Konfigurationsfilen är från en annan version av verktyget (version ${cfg.version}; den här läser version 2). Spara en ny konfigurationsfil i den här versionen.`);
+    const versionFel = konfigurationVersionFel(/** @type {any} */ (cfg).version);
+    if (versionFel) throw new Error(versionFel);
+    cfg = konfigurationMedNyaNamn(cfg);   // en äldre fils namn byts mot de nya; valideringen nedan känner bara de nya (ADR-96)
 
     const tmp = {};
 
-    // prioConfig: kräver numeriska tröskelvärden
-    if (cfg.prioConfig != null) {
-        if (typeof cfg.prioConfig !== 'object') throw new Error('prioConfig är inte ett objekt.');
-        ['atgardThreshold', 'akutMinN', 'bevakaThreshold', 'analyseraThreshold'].forEach(k => {
-            if (cfg.prioConfig[k] != null && typeof cfg.prioConfig[k] !== 'number')
-                throw new Error(`prioConfig.${k} måste vara ett nummer, fick ${typeof cfg.prioConfig[k]}.`);
-            if (cfg.prioConfig[k] != null && !_igInomGrans(cfg.prioConfig[k], _igGrans('prioTroskel')[k]))
-                throw new Error(`prioConfig.${k} måste vara ett tal mellan ${_igGrans('prioTroskel')[k].min} och ${_igGrans('prioTroskel')[k].max}.`);
+    // prioTrosklar: numeriska tröskelvärden; filens namn → tillståndets (state.prioConfig)
+    if (cfg.prioTrosklar != null) {
+        if (typeof cfg.prioTrosklar !== 'object') throw new Error('prioTrosklar är inte ett objekt.');
+        const pt = /** @type {any} */ ({ ...PRIO_CONFIG_DEFAULTS });
+        [['atgardTroskel', 'atgardThreshold'], ['akutMinstN', 'akutMinN'], ['bevakaTroskel', 'bevakaThreshold'], ['analyseraTroskel', 'analyseraThreshold']].forEach(([f, k]) => {
+            const v = cfg.prioTrosklar[f];
+            if (v == null) return;
+            if (typeof v !== 'number') throw new Error(`prioTrosklar.${f} måste vara ett nummer, fick ${typeof v}.`);
+            if (!arInomGrans(v, installningsGrans('prioTroskel')[k]))
+                throw new Error(`prioTrosklar.${f} måste vara ett tal mellan ${installningsGrans('prioTroskel')[k].min} och ${installningsGrans('prioTroskel')[k].max}.`);
+            pt[k] = v;
         });
-        tmp.prioConfig = { ...PRIO_CONFIG_DEFAULTS, ...cfg.prioConfig };
+        tmp.prioConfig = pt;
     }
-    // prioWeights: numeriska
-    if (cfg.prioWeights != null) {
-        if (typeof cfg.prioWeights !== 'object') throw new Error('prioWeights är inte ett objekt.');
+    // prioVikter: numeriska
+    if (cfg.prioVikter != null) {
+        if (typeof cfg.prioVikter !== 'object') throw new Error('prioVikter är inte ett objekt.');
         ['avvikelse', 'volym', 'jamstalldhet'].forEach(k => {
-            if (cfg.prioWeights[k] != null && typeof cfg.prioWeights[k] !== 'number')
-                throw new Error(`prioWeights.${k} måste vara ett nummer.`);
-            if (cfg.prioWeights[k] != null && !_igInomGrans(cfg.prioWeights[k], _igGrans('prioVikt')[k]))
-                throw new Error(`prioWeights.${k} måste vara ett tal mellan ${_igGrans('prioVikt')[k].min} och ${_igGrans('prioVikt')[k].max}.`);
+            if (cfg.prioVikter[k] != null && typeof cfg.prioVikter[k] !== 'number')
+                throw new Error(`prioVikter.${k} måste vara ett nummer.`);
+            if (cfg.prioVikter[k] != null && !arInomGrans(cfg.prioVikter[k], installningsGrans('prioVikt')[k]))
+                throw new Error(`prioVikter.${k} måste vara ett tal mellan ${installningsGrans('prioVikt')[k].min} och ${installningsGrans('prioVikt')[k].max}.`);
         });
-        tmp.prioWeights = { ...PRIO_WEIGHTS_DEFAULTS, ...cfg.prioWeights };
+        tmp.prioWeights = { ...PRIO_WEIGHTS_DEFAULTS, ...cfg.prioVikter };
     }
-    // costSettings: numeriska + bounds
-    if (cfg.costSettings != null) {
-        if (typeof cfg.costSettings !== 'object') throw new Error('costSettings är inte ett objekt.');
-        if (cfg.costSettings.poPct != null && !_igInomGrans(cfg.costSettings.poPct, _igGrans('poPct')))
-            throw new Error(`costSettings.poPct måste vara ett tal mellan ${_igGrans('poPct').min} och ${_igGrans('poPct').max}.`);
-        if (cfg.costSettings.months != null && !_igInomGrans(cfg.costSettings.months, _igGrans('manader')))
-            throw new Error(`costSettings.months måste vara ett tal mellan ${_igGrans('manader').min} och ${_igGrans('manader').max}.`);
-        tmp.costSettings = { ...COST_DEFAULTS, ...cfg.costSettings };
+    // kostnad: numeriska + gränser; filens manader är tillståndets months
+    if (cfg.kostnad != null) {
+        const ko = cfg.kostnad;
+        if (typeof ko !== 'object') throw new Error('kostnad är inte ett objekt.');
+        if (ko.poPct != null && !arInomGrans(ko.poPct, installningsGrans('poPct')))
+            throw new Error(`kostnad.poPct måste vara ett tal mellan ${installningsGrans('poPct').min} och ${installningsGrans('poPct').max}.`);
+        if (ko.manader != null && !arInomGrans(ko.manader, installningsGrans('manader')))
+            throw new Error(`kostnad.manader måste vara ett tal mellan ${installningsGrans('manader').min} och ${installningsGrans('manader').max}.`);
+        tmp.costSettings = { ...COST_DEFAULTS, ...(ko.manader != null ? { months: ko.manader } : {}), ...(ko.poPct != null ? { poPct: ko.poPct } : {}) };
     }
     // bristAids: array av strängar
     if (cfg.rapportUrval != null) {
@@ -167,16 +215,17 @@ function _applyConfigSnapshot(cfg) {
         // Gränserna är fältens i Likvärdigt arbetes inställningar. Antalet par har ingen övre gräns: Visa alla sätter det
         // till hela listan, som kan vara längre än fältets 500. Den nedre är 1, inte fältets 10: en fil får kapa listan
         // kortare än fältet (testerna av den kapade listan i Löneöversyn läser in sådana filer).
-        /** @type {Array<[string, number, number, string]>} */
+        // Filens namn och tillståndets (state.likvardighet).
+        /** @type {Array<[string, string, number, number, string]>} */
         const lvGranser = [
-            ['kvinnoTrosholdPct', 50, 70, 'ett tal mellan 50 och 70'],
-            ['minGapPct', 0, 50, 'ett tal mellan 0 och 50'],
-            ['topN', 1, Infinity, 'ett tal som är minst 1']
+            ['kvinnoTroskelPct', 'kvinnoTrosholdPct', 50, 70, 'ett tal mellan 50 och 70'],
+            ['minstaGapPct', 'minGapPct', 0, 50, 'ett tal mellan 0 och 50'],
+            ['antalPar', 'topN', 1, Infinity, 'ett tal som är minst 1']
         ];
-        for (const [k, min, max, text] of lvGranser) {
-            const v = cfg.likvardighet[k];
+        for (const [f, k, min, max, text] of lvGranser) {
+            const v = cfg.likvardighet[f];
             if (v != null) {
-                if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) throw new Error(`likvardighet.${k} måste vara ${text}.`);
+                if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) throw new Error(`likvardighet.${f} måste vara ${text}.`);
                 lv[k] = v;
             }
         }
@@ -202,39 +251,40 @@ function _applyConfigSnapshot(cfg) {
         if (typeof cfg.forhandskontrollStopp !== 'boolean') throw new Error('forhandskontrollStopp måste vara true eller false.');
         tmp.forhandskontrollStopp = cfg.forhandskontrollStopp;
     }
-    // forecast: löneöversynsinställningar (inga råa rader)
-    if (cfg.forecast != null) {
-        if (typeof cfg.forecast !== 'object') throw new Error('forecast måste vara ett objekt.');
+    // loneoversyn: löneöversynsinställningar (inga råa rader); filens namn → tillståndets (state.forecast)
+    if (cfg.loneoversyn != null) {
+        const lo = cfg.loneoversyn;
+        if (typeof lo !== 'object') throw new Error('loneoversyn måste vara ett objekt.');
         const fc = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
-        if (cfg.forecast.minGroupN != null) {
-            if (typeof cfg.forecast.minGroupN !== 'number' || cfg.forecast.minGroupN < 0) throw new Error('forecast.minGroupN måste vara ett icke-negativt tal.');
-            fc.minGroupN = cfg.forecast.minGroupN;
+        if (lo.minstaGruppN != null) {
+            if (typeof lo.minstaGruppN !== 'number' || lo.minstaGruppN < 0) throw new Error('loneoversyn.minstaGruppN måste vara ett icke-negativt tal.');
+            fc.minGroupN = lo.minstaGruppN;
         }
-        if (cfg.forecast.roundStep != null) {
-            if (typeof cfg.forecast.roundStep !== 'number' || cfg.forecast.roundStep < 0) throw new Error('forecast.roundStep måste vara ett icke-negativt tal.');
-            fc.roundStep = cfg.forecast.roundStep;
+        if (lo.avrundning != null) {
+            if (typeof lo.avrundning !== 'number' || lo.avrundning < 0) throw new Error('loneoversyn.avrundning måste vara ett icke-negativt tal.');
+            fc.roundStep = lo.avrundning;
         }
-        if (cfg.forecast.years != null) {
-            if (typeof cfg.forecast.years !== 'number' || cfg.forecast.years < 1 || cfg.forecast.years > 5) throw new Error('forecast.years måste vara 1–5.');
-            fc.years = Math.round(cfg.forecast.years);
+        if (lo.ar != null) {
+            if (typeof lo.ar !== 'number' || lo.ar < 1 || lo.ar > 5) throw new Error('loneoversyn.ar måste vara 1–5.');
+            fc.years = Math.round(lo.ar);
         }
         const valMode = (o, name) => {
             if (!o) return { mode: 'pct', value: null };
-            if (o.mode != null && o.mode !== 'pct' && o.mode !== 'kr') throw new Error(`forecast.${name}.mode måste vara "pct" eller "kr".`);
-            if (o.value != null && typeof o.value !== 'number') throw new Error(`forecast.${name}.value måste vara ett nummer eller null.`);
-            return { mode: o.mode || 'pct', value: o.value == null ? null : o.value };
+            if (o.enhet != null && o.enhet !== 'pct' && o.enhet !== 'kr') throw new Error(`loneoversyn.${name}.enhet måste vara "pct" eller "kr".`);
+            if (o.varde != null && typeof o.varde !== 'number') throw new Error(`loneoversyn.${name}.varde måste vara ett nummer eller null.`);
+            return { mode: o.enhet || 'pct', value: o.varde == null ? null : o.varde };
         };
-        fc.budget = valMode(cfg.forecast.budget, 'budget');
-        fc.generell = valMode(cfg.forecast.generell, 'generell');
-        if (cfg.forecast.targets != null) {
-            if (!Array.isArray(cfg.forecast.targets)) throw new Error('forecast.targets måste vara en array.');
-            fc.targets = cfg.forecast.targets.filter(t => t && typeof t === 'object').map(t => ({
+        fc.budget = valMode(lo.budget, 'budget');
+        fc.generell = valMode(lo.generell, 'generell');
+        if (lo.mal != null) {
+            if (!Array.isArray(lo.mal)) throw new Error('loneoversyn.mal måste vara en array.');
+            fc.targets = lo.mal.filter(t => t && typeof t === 'object').map(t => ({
                 bas: String(t.bas || ''), aid: String(t.aid || ''),
-                mode: t.mode === 'kr' ? 'kr' : 'pct',
-                value: (t.value == null || typeof t.value !== 'number') ? null : t.value,
-                dist: ['flat', 'lowest', 'target'].includes(t.dist) ? t.dist : 'lowest',
-                targetLevel: t.targetLevel === 'p25' ? 'p25' : 'median',
-                pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pool) ? t.pool : 'övrigt',
+                mode: t.enhet === 'kr' ? 'kr' : 'pct',
+                value: (t.varde == null || typeof t.varde !== 'number') ? null : t.varde,
+                dist: ['flat', 'lowest', 'target'].includes(t.fordelning) ? t.fordelning : 'lowest',
+                targetLevel: t.malniva === 'p25' ? 'p25' : 'median',
+                pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pott) ? t.pott : 'övrigt',
                 // Valfritt och bakåtkompatibelt (filer utan fältet läses som förut): en rad verktyget själv
                 // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
                 // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
@@ -244,16 +294,16 @@ function _applyConfigSnapshot(cfg) {
         }
         tmp.forecast = fc;
     }
-    // ui: optional objekt
-    if (cfg.ui != null && typeof cfg.ui !== 'object')
-        throw new Error('ui-blocket måste vara ett objekt.');
+    // visning: valfritt objekt
+    if (cfg.visning != null && typeof cfg.visning !== 'object')
+        throw new Error('visning måste vara ett objekt.');
     // organisationspaket: bara en påminnelse; värdena visas som text och vitlistas.
     if (cfg.organisationspaket && typeof cfg.organisationspaket === 'object') {
         const org = typeof cfg.organisationspaket.organisation === 'string' ? cfg.organisationspaket.organisation.substring(0, 200) : null;
         const skapat = typeof cfg.organisationspaket.skapat === 'string' ? cfg.organisationspaket.skapat.substring(0, 20) : null;
         if (org) tmp.organisationspaket = { organisation: org, skapat };
     }
-    tmp.ui = cfg.ui || null;
+    tmp.ui = cfg.visning || null;
 
     // HR:s manuella arbete. Saknas fälten hoppar vi över dem.
     if (cfg.bes8 != null) {
@@ -263,22 +313,22 @@ function _applyConfigSnapshot(cfg) {
             const n = Number(a.n);
             if (!Number.isInteger(n) || n < 1 || n > 6) throw new Error(`bes8[${i}].n måste vara ett heltal 1–6.`);
             if (a.status != null && typeof a.status !== 'string') throw new Error(`bes8[${i}].status måste vara en sträng.`);
-            if (a.note != null && typeof a.note !== 'string') throw new Error(`bes8[${i}].note måste vara en sträng.`);
-            return { n, status: a.status || '', note: a.note || '' };
+            if (a.anteckning != null && typeof a.anteckning !== 'string') throw new Error(`bes8[${i}].anteckning måste vara en sträng.`);
+            return { n, status: a.status || '', note: a.anteckning || '' };
         });
     }
     // Sakliga skäl som inte går att läsa faller bort med en varning (läggs till varningarna nedan).
     tmp.hpVarningar = [];
     if (cfg.handlingsplan != null) tmp.handlingsplan = _hpValideraKonfiguration(cfg.handlingsplan, tmp.hpVarningar);
-    if (cfg.actionChecklistDone != null) {
-        if (!Array.isArray(cfg.actionChecklistDone)) throw new Error('actionChecklistDone måste vara en array.');
-        if (!cfg.actionChecklistDone.every(id => typeof id === 'string')) throw new Error('actionChecklistDone får endast innehålla strängar.');
-        tmp.actionChecklistDone = cfg.actionChecklistDone.slice();
+    if (cfg.attGoraKlara != null) {
+        if (!Array.isArray(cfg.attGoraKlara)) throw new Error('attGoraKlara måste vara en array.');
+        if (!cfg.attGoraKlara.every(id => typeof id === 'string')) throw new Error('attGoraKlara får endast innehålla strängar.');
+        tmp.actionChecklistDone = cfg.attGoraKlara.slice();
     }
-    if (cfg.orgName != null) {
-        if (typeof cfg.orgName !== 'string') throw new Error('orgName måste vara en sträng.');
-        if (cfg.orgName.length > 200) throw new Error('orgName är för långt (max 200 tecken).');
-        tmp.orgName = cfg.orgName;
+    if (cfg.orgNamn != null) {
+        if (typeof cfg.orgNamn !== 'string') throw new Error('orgNamn måste vara en sträng.');
+        if (cfg.orgNamn.length > 200) throw new Error('orgNamn är för långt (max 200 tecken).');
+        tmp.orgName = cfg.orgNamn;
     }
     if (cfg.jmfNamn != null) {
         if (typeof cfg.jmfNamn !== 'string') throw new Error('jmfNamn måste vara en sträng.');
@@ -288,13 +338,13 @@ function _applyConfigSnapshot(cfg) {
     // Minsta gruppstorlek (ADR-38). En fil utan fältet lämnar gällande värde orört, som ett
     // organisationspaket utan fältet: den ska inte tyst sänka ett strängare värde till standard.
     if (cfg.kTroskel != null) {
-        if (typeof cfg.kTroskel !== 'number' || _kTolka(cfg.kTroskel) == null)
+        if (typeof cfg.kTroskel !== 'number' || kTolka(cfg.kTroskel) == null)
             throw new Error(`kTroskel måste vara ett heltal mellan ${K_MIN} och ${K_MAX}.`);
         tmp.kTroskel = cfg.kTroskel;
     }
-    if (cfg.strukturNarrative != null) {
-        if (typeof cfg.strukturNarrative !== 'string') throw new Error('strukturNarrative måste vara en sträng eller null.');
-        tmp.strukturNarrative = cfg.strukturNarrative;
+    if (cfg.strukturNarrativ != null) {
+        if (typeof cfg.strukturNarrativ !== 'string') throw new Error('strukturNarrativ måste vara en sträng eller null.');
+        tmp.strukturNarrative = cfg.strukturNarrativ;
     }
 
     // ---- FAS 2: Atomär applicering — state nu garanterat reparerbart ----
@@ -306,19 +356,19 @@ function _applyConfigSnapshot(cfg) {
     const varningar = [...tmp.hpVarningar];
     if (cfg.rapportTabeller != null) {
         if (!Array.isArray(cfg.rapportTabeller)) throw new Error('rapportTabeller måste vara en array.');
-        const giltiga = cfg.rapportTabeller.map(t => _trValidera(t)).filter(Boolean);
+        const giltiga = cfg.rapportTabeller.map(t => valideraRecept(t)).filter(Boolean);
         if (giltiga.length < cfg.rapportTabeller.length) varningar.push(`${cfg.rapportTabeller.length - giltiga.length} egna tabeller i filen gick inte att läsa och hoppas över.`);
         tmp.rapportTabeller = giltiga;
     }
     if (cfg.arsbokslut != null) {
-        const a = typeof _abValidera === 'function' ? _abValidera(cfg.arsbokslut) : null;
+        const a = typeof valideraArsbokslut === 'function' ? valideraArsbokslut(cfg.arsbokslut) : null;
         if (!a) varningar.push('Filens årsbokslut gick inte att läsa och hoppas över.');
         else tmp.arsbokslut = a;
     }
     // Importprofilerna valideras som i ett organisationspaket (bara rubriknamn); en ogiltig profil hoppas över med en
     // varning, som årsbokslutet. Utan fältet står sessionens egna profiler kvar.
     if (cfg.importprofiler != null) {
-        const ip = _ipValideraLista(cfg.importprofiler, { kalla: 'konfiguration' });
+        const ip = valideraImportprofiler(cfg.importprofiler, { kalla: 'konfiguration' });
         if (ip.fel) varningar.push(`Filens importprofiler läses inte in: ${ip.fel}`);
         else {
             if (ip.bort) varningar.push(`${ip.bort} ${ip.bort === 1 ? 'importprofil' : 'importprofiler'} i filen gick inte att läsa och hoppas över.`);
@@ -327,17 +377,17 @@ function _applyConfigSnapshot(cfg) {
     }
     if (cfg.perBasRecept != null) {
         if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
-        tmp.perBasRecept = _pbValideraRecept(cfg.perBasRecept);
+        tmp.perBasRecept = valideraPerBasRecept(cfg.perBasRecept);
     }
     // Förklaringsmodellen (ADR-56): ett ogiltigt värde ger standard med varning, aldrig fel; utan fältet gäller standard.
     // Utan inläst lönefil prövas inte yrkesgrupp mot datat (det görs av forklaringsmodell() när filen finns).
     const rader = getData();
-    const fm = _rgNormaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
+    const fm = normaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
     varningar.push(...fm.varningar);
     // Uppdelningens variabler (ADR-65): samma mönster. En äldre fil utan fältet ger standard (BAS, AID); ett ogiltigt
     // värde ger standard med varning, aldrig fel. Åldersgrupp prövas inte mot datat här (det görs av gapVariabler()).
     const guRa = cfg.gapUppdelning;
-    const gu = _guNormaliseraVariabler(guRa == null ? null : (typeof guRa === 'object' && !Array.isArray(guRa) ? (guRa.variabler ?? null) : guRa));
+    const gu = normaliseraGapVariabler(guRa == null ? null : (typeof guRa === 'object' && !Array.isArray(guRa) ? (guRa.variabler ?? null) : guRa));
     varningar.push(...gu.varningar);
     let kAndrad = false;
     if (tmp.kTroskel != null) {
@@ -349,9 +399,9 @@ function _applyConfigSnapshot(cfg) {
     state.bristAids        = tmp.bristAids || new Set();
     sattRapportUrval(tmp.rapportUrval || null);   // okända avsnitt i filen hoppas över; utan fältet gäller hela dokumentationen
     if (tmp.rapportTabeller) state.rapportTabeller = tmp.rapportTabeller;
-    if (tmp.perBasRecept) state.perBasRecept = _pbReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
-    state.forklaringsmodell = _rgForklaringsmodellArStandard(fm.modell) ? null : fm.modell;
-    state.gapUppdelning = _guVariablerArStandard(gu.variabler) ? null : { variabler: gu.variabler };
+    if (tmp.perBasRecept) state.perBasRecept = perBasReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
+    state.forklaringsmodell = forklaringsmodellArStandard(fm.modell) ? null : fm.modell;
+    state.gapUppdelning = gapVariablerArStandard(gu.variabler) ? null : { variabler: gu.variabler };
     if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
     if (tmp.forhandskontrollStopp != null) state.forhandskontrollStopp = tmp.forhandskontrollStopp;
     if (tmp.likvardighet) {
@@ -362,8 +412,8 @@ function _applyConfigSnapshot(cfg) {
         // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den inställda tröskeln, också på skärmen — filen
         // kan vara sparad vid en lägre — som när tröskeln höjs i gränssnittet (ADR-69). Utan lönefil prövas de när den läses in.
         if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
-        if (typeof renderForecast === 'function' && document.getElementById('view-loneoversyn')) {
-            try { renderForecast(); } catch (_e) { /* renderas vid nästa flikbyte */ }
+        if (typeof ritaLoneoversyn === 'function' && document.getElementById('view-loneoversyn')) {
+            try { ritaLoneoversyn(); } catch (_e) { /* renderas vid nästa flikbyte */ }
         }
     }
 
@@ -407,17 +457,17 @@ function _applyConfigSnapshot(cfg) {
     if (tmp.ui) {
         ['prio-label-mode','kon-color-by'].forEach(id => {
             const el = document.getElementById(id);
-            const map = { 'prio-label-mode':'prioLabelMode','kon-color-by':'konColorBy' };
+            const map = { 'prio-label-mode':'prioEtiketter','kon-color-by':'konFargning' };
             const val = tmp.ui[map[id]];
             if (el && val != null) /** @type {HTMLInputElement} */ (el).value = val;
         });
         // Vitlista (värdet kommer ur filen).
-        const prioRef = tmp.ui.prioRef;
+        const prioRef = tmp.ui.prioReferens;
         if (prioRef === 'stallningstagande' || prioRef === 'statistik') {
             const r = document.querySelector(`input[name="prio-ref"][value="${prioRef}"]`);
             if (r) /** @type {HTMLInputElement} */ (r).checked = true;
         }
-        sattOrgTyp(tmp.ui.orgTyp);   // vitlistas i sattOrgTyp
+        sattOrgTyp(tmp.ui.organisationstyp);   // vitlistas i sattOrgTyp
         if (tmp.ui.jamforelse && typeof tmp.ui.jamforelse === 'object') jamforelseSattVal(tmp.ui.jamforelse);
     }
     invalidateStatCaches({ recompute: false });
@@ -436,88 +486,35 @@ function _applyConfigSnapshot(cfg) {
     return { varningar };
 }
 
-document.getElementById('btn-config-save')?.addEventListener('click', () => {
-    const cfg = buildConfigSnapshot();
-    const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `lonekartlaggning_config_${idagDatum()}.json`;
-    a.click();
-    const status = document.getElementById('config-status');
-    if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
-    // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,
-    // inte bara inställningar. Påminn om förvaringsdisciplinen (ingen rå lönedata).
-    _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
-        Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
-        (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
-        disk och skicka den inte via okrypterad e-post.`);
-});
-
-document.getElementById('btn-config-load')?.addEventListener('change', e => {
-    const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
-    if (!file) return;
-    const status = document.getElementById('config-status');
-    // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
-    const storlekFel = _igFilFel(file.size, 'konfiguration');
-    if (storlekFel) {
-        if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
-        /** @type {HTMLInputElement} */ (e.target).value = '';
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = ev => {
-        try {
-            const cfg = JSON.parse(String(/** @type {FileReader} */ (ev.target).result));
-            const { varningar } = applyConfigSnapshot(cfg);
-            const status = document.getElementById('config-status');
-            if (status) {
-                status.textContent = 'Konfiguration laddad' + (varningar.length ? '. ' + varningar.join(' ') : '');
-                status.style.color = FARG.ok;
-                setTimeout(() => status.textContent = '', varningar.length ? 10000 : 3000);
-            }
-        } catch (err) {
-            const status = document.getElementById('config-status');
-            if (status) { status.textContent = 'Fel: ' + err.message; status.style.color = 'var(--danger)'; }
-        }
-        /** @type {HTMLInputElement} */ (e.target).value = '';
-    };
-    reader.readAsText(file);
-});
-
 // ---- #18 A/B-jämförelse via snapshot ----
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
+export function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
 function _buildAnalysisSnapshotExport() {
     const d = getData();
     if (!d.length) return null;
-    const kv = d.filter(r => arKvinna(r));
-    const ma = d.filter(r => arMan(r));
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
-    const konOk = _konFarRedovisas(kv.length, ma.length);
-    const medKv = konOk ? Stat.median(kv.map(r => r.lon)) : null;
-    const medMa = konOk ? Stat.median(ma.map(r => r.lon)) : null;
+    const m = ogonblicksbildMatt(d, kTroskel());
     const reg = runOLSRegression();
     const dq = bedomningUnderlag();
-    const ages = d.map(r => r.alder).filter(a => a > 0);
     return {
         timestamp: new Date().toISOString(),
         label: 'Hela organisationen',
-        n: d.length,
-        nKv: kv.length,
-        nMa: ma.length,
-        medianKv: medKv,
-        medianMa: medMa,
-        rawGapPct: konOk && medKv != null && medMa != null && medMa > 0 ? (medKv / medMa - 1) * 100 : null,
+        n: m.n,
+        nKv: m.nKv,
+        nMa: m.nMa,
+        medianKv: m.medianKv,
+        medianMa: m.medianMa,
+        rawGapPct: m.rawGapPct,
         unexplainedGapPct: reg.error ? null : reg.konPct,
         unexplainedPValue: reg.error ? null : reg.pValue,
         underlag: dq ? UK_ETIKETT[dq.status] : null,
-        avgAge: ages.length ? ages.reduce((s, a) => s + a, 0) / ages.length : null,
+        avgAge: m.avgAge,
         nBas: getBasIntervals().length
     };
 }
 
-function renderSnapshotComparison() {
+export function renderSnapshotComparison() {
     const wrap = document.getElementById('snapshot-comparison');
     if (!wrap) return;
     const snap = state.snapshot;
@@ -580,27 +577,76 @@ function _snapshotLutning(snap, cur) {
         beskrivning: 'Kvinnors och mäns medianlön i ögonblicksbilden och i den nuvarande analysen, en rad per kön: strecket är värdet i ögonblicksbilden, punkten det nuvarande. Samma tal som i tabellen ovanför.' }));
 }
 
-document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
-    const snap = buildAnalysisSnapshot();
-    if (!snap) { alert('Läs in lönefilen först.'); return; }
-    // I: möjlighet att namnge scenariot
-    const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
-    snap.label = name;
-    state.snapshot = snap;
-    // I: Spara även i state.scenarios (max 5)
-    state.scenarios = (state.scenarios || []);
-    state.scenarios.unshift({ ...snap });
-    if (state.scenarios.length > 5) state.scenarios.length = 5;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = false;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = false;
-    const status = document.getElementById('snapshot-status');
-    if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length>1?'n':''} totalt)`;
-});
-document.getElementById('btn-snapshot-compare')?.addEventListener('click', renderSnapshotComparison);
-document.getElementById('btn-snapshot-clear')?.addEventListener('click', () => {
-    state.snapshot = null;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = true;
-    /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = true;
-    /** @type {HTMLElement} */ (document.getElementById('snapshot-status')).textContent = '';
-    /** @type {HTMLElement} */ (document.getElementById('snapshot-comparison')).style.display = 'none';
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartKonfiguration() {
+    document.getElementById('btn-config-save')?.addEventListener('click', () => {
+        const cfg = buildConfigSnapshot();
+        const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `lonekartlaggning_config_${idagDatum()}.json`;
+        a.click();
+        const status = document.getElementById('config-status');
+        if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
+        // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,
+        // inte bara inställningar. Påminn om förvaringsdisciplinen (ingen rå lönedata).
+        _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
+        Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
+        (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
+        disk och skicka den inte via okrypterad e-post.`);
+    });
+    document.getElementById('btn-config-load')?.addEventListener('change', e => {
+        const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
+        if (!file) return;
+        const status = document.getElementById('config-status');
+        // Storleken prövas innan filen läses: en för stor fil tolkas inte alls.
+        const storlekFel = filStorlekFel(file.size, 'konfiguration');
+        if (storlekFel) {
+            if (status) { status.textContent = storlekFel; status.style.color = 'var(--danger)'; }
+            /** @type {HTMLInputElement} */ (e.target).value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const cfg = JSON.parse(String(/** @type {FileReader} */ (ev.target).result));
+                const { varningar } = applyConfigSnapshot(cfg);
+                const status = document.getElementById('config-status');
+                if (status) {
+                    status.textContent = 'Konfiguration laddad' + (varningar.length ? '. ' + varningar.join(' ') : '');
+                    status.style.color = FARG.ok;
+                    setTimeout(() => status.textContent = '', varningar.length ? 10000 : 3000);
+                }
+            } catch (err) {
+                const status = document.getElementById('config-status');
+                if (status) { status.textContent = 'Fel: ' + err.message; status.style.color = 'var(--danger)'; }
+            }
+            /** @type {HTMLInputElement} */ (e.target).value = '';
+        };
+        reader.readAsText(file);
+    });
+    document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
+        const snap = buildAnalysisSnapshot();
+        if (!snap) { alert('Läs in lönefilen först.'); return; }
+        // I: möjlighet att namnge scenariot
+        const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
+        snap.label = name;
+        state.snapshot = snap;
+        // I: Spara även i state.scenarios (max 5)
+        state.scenarios = (state.scenarios || []);
+        state.scenarios.unshift({ ...snap });
+        if (state.scenarios.length > 5) state.scenarios.length = 5;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = false;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = false;
+        const status = document.getElementById('snapshot-status');
+        if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length>1?'n':''} totalt)`;
+    });
+    document.getElementById('btn-snapshot-compare')?.addEventListener('click', renderSnapshotComparison);
+    document.getElementById('btn-snapshot-clear')?.addEventListener('click', () => {
+        state.snapshot = null;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = true;
+        /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-clear')).disabled = true;
+        /** @type {HTMLElement} */ (document.getElementById('snapshot-status')).textContent = '';
+        /** @type {HTMLElement} */ (document.getElementById('snapshot-comparison')).style.display = 'none';
+    });
+}

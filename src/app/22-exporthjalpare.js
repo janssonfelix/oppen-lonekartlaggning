@@ -1,21 +1,37 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-
-// #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
-// respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
-document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
-document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
+import { tillCsv } from '../lib/csv.js';
+import { gapVariablerArStandard, gapVariablerIText } from '../lib/gapuppdelning.js';
+import { K_STANDARD, kUndantagNot } from '../lib/ktroskel.js';
+import { personOrd } from '../lib/namn.js';
+import { modellBeskrivning, stegEtikett } from '../lib/regression.js';
+import { lonebegreppReservation } from '../lib/struktur.js';
+import { adjektiv } from '../lib/termer.js';
+import { FARG } from './01-farger.js';
+import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
+import { _flerKolumnerAlla } from './05-tabeller-och-lankar.js';
+import { _csvMedStampel, kInstalld } from './06-k-troskel.js';
+import { skrForklaring } from './06-kvinnoandel-referens.js';
+import { APP_VERSION } from './08-version.js';
+import { T } from './09-termer.js';
+import { _exportText, getData, referensKalla, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
+import { exportElement, medExportLage } from './23-exportgrind.js';
+import { exportJPAProtocol } from './24-excelexport.js';
+import { _RG_STEG_YRKE, forklaringsmodell, harAlder } from './50-regressionsmodeller.js';
+import { exportHandlingsplan } from './56-handlingsplan.js';
+import { gapVariabler } from './68-var-uppstar-gapet.js';
 
 // Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
 // bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
-const EU_LONEBEGREPP_RESERVATION = _stLonebegreppReservation();
+export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 
 // ============================================================
 // #8 Reproducerbarhets-appendix — identiska metod- och parameteruppgifter i
 // ALLA exporter, så varje flaggat resultat går att återskapa och försvara i
 // samverkan/tvist. Två format: aoa-rader (Excel) och HTML (print/rapport).
 // ============================================================
-function _methodAppendixData() {
+export function _methodAppendixData() {
     const total = (state.data && state.data.length) || 0;
     const used  = (typeof getData === 'function' ? getData().length : total);
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
@@ -24,14 +40,14 @@ function _methodAppendixData() {
     // indikatorer säger modellen referensen ("indikatorvariabler, första BAS som referens"), som förut; med yrkesgrupp
     // vald ingår BAS i gruppnivåerna och modellen skattas med inomtransformation (regressionsmodellen.md §4).
     const modell = forklaringsmodell();
-    const beskrivning = _rgModellBeskrivning(modell);
+    const beskrivning = modellBeskrivning(modell);
     const modellText = (medAlder && !modell.yrkesgrupp
         ? beskrivning.replace(`${T.niva.en} (indikatorer)`, `${T.niva.en} (indikatorvariabler, första BAS som referens)`)
         : beskrivning) + (modell.yrkesgrupp ? ', skattat med inomtransformation' : '');
-    // Steget + Yrkesgrupp räknas på modellens ålder och bara när BAS är med (computeSequentialGap).
+    // Steget + Yrkesgrupp räknas på modellens ålder och bara när BAS är med (stegvisGap).
     const stegAlder = medAlder ? (modell.alder ? ' utöver ålder' : ', utan ålder (bortvald i förklaringsmodellen)') : ', utan ålder (lönefilen saknar ålder)';
     const stegText = !modell.bas
-        ? `Räknas inte: steget förutsätter ${T.niva.en}, som är ${termAdjektiv('bortvald', T.niva)} i förklaringsmodellen`
+        ? `Räknas inte: steget förutsätter ${T.niva.en}, som är ${adjektiv('bortvald', T.niva)} i förklaringsmodellen`
         : `Löneskillnad mellan könen med fasta effekter för ${T.enhet.en} inom BAS (AID×BAS)${stegAlder}, skattat med inomtransformation; `
             + (modell.yrkesgrupp ? `${T.enhet.en} inom BAS är vald i förklaringsmodellen, så steget är huvudtalet` : 'visas som sista steg, ingår inte i huvudtalet');
     return [
@@ -48,12 +64,12 @@ function _methodAppendixData() {
         ['Modell — oförklarad skillnad', medAlder
             ? `OLS på log(månadslön) ~ ${modellText}; HC3-robusta standardfel (Long & Ervin 2000)`
             : `OLS på log(månadslön) ~ ${modellText}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
-        [`Steg ${_rgStegEtikett(_RG_STEG_YRKE)} (dekomponeringen)`, stegText],
+        [`Steg ${stegEtikett(_RG_STEG_YRKE)} (dekomponeringen)`, stegText],
         // Var uppstår löneskillnaden (ADR-65): raden finns bara när variablerna inte är standardvalet BAS och AID.
-        ...(typeof gapVariabler === 'function' && !_guVariablerArStandard(gapVariabler())
+        ...(typeof gapVariabler === 'function' && !gapVariablerArStandard(gapVariabler())
             ? [['Var uppstår löneskillnaden (variabler)', gapVariabler().length > 1
-                ? `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())}, i den ordningen (standard: BAS och AID). Ordningen påverkar delarna.`
-                : `Skillnaden i medellön delas med ${_guVariablerIText(gapVariabler())} (standard: BAS och AID).`]] : []),
+                ? `Skillnaden i medellön delas med ${gapVariablerIText(gapVariabler())}, i den ordningen (standard: BAS och AID). Ordningen påverkar delarna.`
+                : `Skillnaden i medellön delas med ${gapVariablerIText(gapVariabler())} (standard: BAS och AID).`]] : []),
         ['Ålder & karriär (tvärsnitt)', 'Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)'],
         ['Trattdiagrammet', `Med färre än tio ${T.enhet.fl} i ${T.niva.en} säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen`],
         ['p-värden', 't-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest'],
@@ -74,7 +90,7 @@ function _methodAppendixData() {
  * bli för långt eller få ett sådant tecken (termerna får ha 40 tecken); då används reservnamnet, som är fast text.
  * @param {string} namn @param {string} reserv
  */
-function _excelBladnamn(namn, reserv) {
+export function _excelBladnamn(namn, reserv) {
     return namn.length <= 31 && namn.trim() && !/[:\\/?*[\]]/.test(namn) ? namn : reserv;
 }
 // Lägger till ett "Metod & parametrar"-blad sist i en XLSX-arbetsbok.
@@ -84,7 +100,7 @@ function _excelBladnamn(namn, reserv) {
  * @param {any} wb
  * @param {{undantag?: string, extra?: any[][]}} [val]
  */
-function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
+export function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
     if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
     const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_methodAppendixData()), ...extra];
     // Ansvarsförbehållet (beslut 8c) står under Rättslig ram i varje Excel-export.
@@ -92,7 +108,7 @@ function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
     rows.splice(ram < 0 ? rows.length : ram + 1, 0, ['Ansvar', ANSVARSFORBEHALL]);
     if (undantag) {
         const i = rows.findIndex(r => r[0] === 'Minsta gruppstorlek för redovisning');
-        rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', _kUndantagNot(undantag)]);
+        rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', kUndantagNot(undantag)]);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
     // Kolumn A så bred som den längsta etiketten (rubriken på rad 1 räknas inte), högst 70 tecken (F6 i punkt 26).
@@ -120,7 +136,7 @@ function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
  * En hopfälld grupp, en rad som en sökning gömt eller en hopfälld underrad är fortfarande en del av tabellen: i en
  * export (arbetsboken, PDF-rapportens bilaga) är alla rader synliga. Görs på en kopia, aldrig på skärmens tabell.
  */
-function _exportVisaAllaRader(klon) {
+export function _exportVisaAllaRader(klon) {
     klon.querySelectorAll('tbody tr').forEach(tr => {
         tr.style.removeProperty('display');
         if (!tr.getAttribute('style')) tr.removeAttribute('style');   // ett tomt style="" i markeringen räknas som överträdelse av CSP:n (style-src-attr 'none') när raden sätts in i PDF-rapporten
@@ -190,7 +206,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
  * tabellen. Kolumnindex räknas i tabellens logiska kolumner: en cell med colspan täcker flera, så en rad med en
  * sammanslagen cell har färre barn än rubrikraden (notrader, "Gruppens median"). Görs på en kopia, aldrig på skärmens tabell.
  */
-function _exportUtanSkarmkolumner(klon) {
+export function _exportUtanSkarmkolumner(klon) {
     const skipCols = [];
     klon.querySelectorAll('thead th').forEach((th, i) => {
         if (th.hasAttribute('data-export-skip')) skipCols.push(i);
@@ -270,7 +286,7 @@ function _exportMarkCell(td) {
 }
 
 /** Standard-format-map för svenska användare. Triggas av nyckelord i kolumnrubriken. */
-const SV_NUM_FORMATS = Object.freeze({
+export const SV_NUM_FORMATS = Object.freeze({
     // Ordningen avgör: första träffen gäller. Rubriker som "Kvinnors median i % av männens", "P10 skillnad mot …
     // (%)" och "Avvikelse per person (kr/mån)" innehåller flera nyckelord, så enheten i parentesen prövas först.
     '(%)':      '0.00\\ "%"',
@@ -369,7 +385,7 @@ function _autoColWidths(sheet) {
 /** Klonar+rensar och returnerar XLSX-worksheet. Tillämpar svenska number-format.
  *  BAS-grupperade tabeller (tr.group-header) exporteras som Word-vänliga block
  *  med upprepade kolumnrubriker per grupp (se _groupedCloneToAoa). */
-function tableToCleanSheet(tableId) {
+export function tableToCleanSheet(tableId) {
     const clone = _cloneAndCleanTableForExport(tableId);
     if (!clone) return null;
     if (/** @type {HTMLElement} */ (clone).querySelector('tbody tr.group-header')) {
@@ -407,7 +423,7 @@ function tableToCleanSheet(tableId) {
  * @param {Object} formatMap - { kolumnsubstring: formatString }
  * @param {number} [headerRowIdx=0] - vilken rad är headern (0-indexerad)
  */
-function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
+export function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
     if (!sheet || !sheet['!ref']) return;
     const range = XLSX.utils.decode_range(sheet['!ref']);
     for (let c = range.s.c; c <= range.e.c; c++) {
@@ -431,7 +447,7 @@ function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
 /** Klonar+rensar och returnerar XLSX-workbook (för en-flik-export).
  *  Delegerar till tableToCleanSheet så BAS-grupperade tabeller får samma
  *  Word-vänliga blockformat i alla exportvägar. */
-function tableToCleanBook(tableId, sheetName) {
+export function tableToCleanBook(tableId, sheetName) {
     const sheet = tableToCleanSheet(tableId);
     if (!sheet) return null;
     const wb = XLSX.utils.book_new();
@@ -451,21 +467,21 @@ function tableToCleanBook(tableId, sheetName) {
 // semikolon-separerade filer med UTF-8 BOM (svenska Excel-default), CRLF-
 // radslut och korrekta citerade fält. Garanterat fungerande i alla webbläsare:
 // blob-URL + anchor-klick + revokeObjectURL.
-// Formelskyddet (_neutraliseraCell) och CSV-texten (_toCsv) ligger i src/lib/csv.js (ADR-15).
+// Formelskyddet (_neutraliseraCell) och CSV-texten (_tillCsv) ligger i src/lib/csv.js (ADR-15).
 // Demoläget märks i filnamnet, som diagram- och Word-exporterna (bara en gång).
 function _csvFilnamn(namn) {
     const n = namn || 'export';
     return state.isDemo && !n.startsWith('DEMO_') ? 'DEMO_' + n : n;
 }
 // `undantag`: se _kUndantagNot (06) — exporten kan innehålla grupper under tröskeln och säger det.
-function _downloadCSV(rows, filename, { undantag = '' } = {}) {
+export function _downloadCSV(rows, filename, { undantag = '' } = {}) {
     if (!Array.isArray(rows) || !rows.length) {
         alert('Ingen data att exportera.');
         return;
     }
     try {
         const BOM = '﻿';  // UTF-8 BOM så Excel öppnar med korrekt teckenkodning
-        const csv = BOM + _toCsv(_csvMedStampel(rows, undantag));
+        const csv = BOM + tillCsv(_csvMedStampel(rows, undantag));
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -483,7 +499,7 @@ function _downloadCSV(rows, filename, { undantag = '' } = {}) {
     }
 }
 
-function _showExportSensitivityToast(bodyHtml) {
+export function _showExportSensitivityToast(bodyHtml) {
     const existing = document.getElementById('export-sensitivity-toast');
     if (existing) existing.remove();
     const toast = document.createElement('div');
@@ -503,3 +519,11 @@ function _showExportSensitivityToast(bodyHtml) {
 }
 
 // ---- Multi-flik Excel-export ----
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExporthjalpare() {
+    // #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
+    // respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
+    document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
+    document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
+}

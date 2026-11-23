@@ -11,7 +11,7 @@ inte vad som är rätt lön eller vad organisationen måste göra.
 
 Varför Prioriteringen och Löneöversynen är två flikar står i ADR-50, orden för lägena i ADR-62, och att
 könsskillnaden här inte prövas mot uppmärksamhetstrappan i ADR-71 ([`arkitekturbeslut.md`](arkitekturbeslut.md)). Minsta gruppstorlek står i [`k-troskeln.md`](k-troskeln.md).
-Varje beräkning har sin rad i [`berakningsregister.md`](berakningsregister.md).
+Varje beräkning har sin rad i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhet.md).
 
 | Del | Fil |
 |---|---|
@@ -19,7 +19,7 @@ Varje beräkning har sin rad i [`berakningsregister.md`](berakningsregister.md).
 | Kostnadsformeln | `src/lib/kostnad.js` (`kostnadPerAr`) |
 | Adaptern: väljer referensen och läser inställningarna | `src/app/55-prioritering.js` (`computePrioritization`) |
 | Orden för lägena | `src/app/55-prioritering.js` (`PRIO_STATUS_INFO`) |
-| Standardvärdena för trösklar, vikter och kostnad | `src/app/07-standardinstallningar.js` |
+| Standardvärdena för trösklar, vikter och kostnad | `src/lib/prioritering.js` (`PRIO_CONFIG_DEFAULTS`, `PRIO_WEIGHTS_DEFAULTS`), `src/lib/kostnad.js` (`COST_DEFAULTS`) |
 | Inställningarnas gränser | `src/lib/installningsgranser.js` (`PRIO_TROSKEL_GRANS`, `PRIO_VIKT_GRANS`) |
 
 ## 1. Grupperna
@@ -33,8 +33,9 @@ analyser, så samma grupp heter samma sak i prioriteringen, Lika arbete, jämfö
 texterna syns inte i prioriteringen. Radernas fält `yrke`, `aid` och `bas` behåller sin betydelse (texten i fältet,
 koden och intervallet), och vyer som visar texterna som de står i filen, Löneöversikten, sökningen och
 punktdiagrammets färger per AID-etikett, grupperar inte på koden. En grupp med färre än k
-personer tas inte med. Könens medianer räknas bara för ett kön med minst k personer; annars är könsmedianen och
-könsskillnaden null och gruppen finns kvar med sin samlade median.
+personer tas inte med. Könens medianer och könsskillnaden räknas bara när båda könen har minst k personer
+(`konsMedianer` i `src/lib/struktur.js`, bara lön över 0); annars är de null och gruppen finns kvar med sin samlade
+median.
 
 Referensen hämtas per AID-kod och BAS-intervall:
 
@@ -48,7 +49,7 @@ En grupp utan referens, eller med referensmedianen 0, tas inte med.
     diffKr  = gruppens median − referensens median
     diffPct = diffKr × 100 / referensens median
 
-Könsskillnaden skrivs på samma sätt:
+Könsskillnaden skrivs på samma sätt, i `konsMedianer`:
 
     gapPct = (kvinnornas median − männens median) × 100 / männens median
 
@@ -114,6 +115,11 @@ beloppet perioden, inte ett år.
     kostnad per person > 0  och  kostnad per person < 1 500 kr  och  |diffPct| > 3  och  n ≥ 5
 
 Antalet har bara en nedre gräns (`SNABB_VINST_MIN_N`); en stor grupp kan vara en snabb vinst.
+
+**Kostnadskurvan** (`kostnadskurva`) tar grupperna med en kostnad över 0, störst först, och räknar den kumulativa
+andelen av den sammanlagda kostnaden för de 40 första. Fliken säger hur många grupper som tillsammans når 50 % och
+80 %; når de 40 första inte dit är svaret alla grupper. Diagrammet ritar de 15 första, och en mening under det säger
+vad resten står för. Nyckeltalen överst (`prioNyckeltal`) räknar grupperna per läge och den sammanlagda kostnaden.
 
 ## 6. Räkneexemplet per år
 

@@ -9,17 +9,12 @@
  * DÖLJER INGENTING. Små grupper (n < k) räknas och markeras med `liten`, och
  * grupper där ena könet är under k med `konLiten`. Vyn tonar dem och exporten
  * utelämnar dem som standard (ADR-14). Regeln bor här, på ett ställe.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js
- * (tools/gen-mirrors.mjs). Ändra här och kör `npm run build:app`.
  */
-import { median, quantile } from './stat.js';
-import { gruppnycklar, konOf, jamforAldersgrupp, jamforLonespann } from './falt.js';
+import { median, kvantil } from './stat.js';
+import { gruppnycklar, konAv, jamforAldersgrupp, jamforLonespann } from './falt.js';
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
-import { personFilter, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
-import { skapaTermer, ordForAntal } from './termer.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { iUrvalet, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
+import { STANDARDTERMER as T, ordForAntal } from './termer.js';
 
 
 export const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
@@ -30,7 +25,7 @@ const UTAN_KONSUPPDELNING = new Set(['andelKv', 'gap']);
 function _hink() { return { lons: [], kv: [], ma: [] }; }
 function _lagg(h, r) {
     h.lons.push(r.lon);
-    const k = konOf(r);
+    const k = konAv(r);
     if (k === 'Kvinna') h.kv.push(r.lon);
     else if (k === 'Man') h.ma.push(r.lon);
 }
@@ -40,13 +35,13 @@ function _matt(lons, matt) {
     switch (matt) {
         case 'n': return lons.length;
         case 'medel': return lons.reduce((s, v) => s + v, 0) / lons.length;
-        case 'p10': return quantile(lons, 0.10);
-        case 'p25': return quantile(lons, 0.25);
-        case 'p75': return quantile(lons, 0.75);
-        case 'p90': return quantile(lons, 0.90);
+        case 'p10': return kvantil(lons, 0.10);
+        case 'p25': return kvantil(lons, 0.25);
+        case 'p75': return kvantil(lons, 0.75);
+        case 'p90': return kvantil(lons, 0.90);
         case 'spridning': {
-            const p10 = quantile(lons, 0.10);
-            return p10 > 0 ? quantile(lons, 0.90) / p10 : null;
+            const p10 = kvantil(lons, 0.10);
+            return p10 > 0 ? kvantil(lons, 0.90) / p10 : null;
         }
         default: return median(lons);
     }
@@ -78,14 +73,14 @@ function _sortera(dim, etiketter, varden, matt) {
  * Hopslagning av små AID-grupper (bara i Utforska, ADR-33): grupper under k slås
  * ihop per AID-mellannivå; räcker inte summan, per sektor. Grupper som fortfarande är under k
  * behåller sin nyckel (och visas som små). Nyckel = AID-etiketten, grupperad på koden (gruppnycklar i falt.js).
- * @param {any[]} rows
+ * @param {any[]} rader
  * @param {number} k
  * @param {(row: any, dim: string) => (string|null)} [nyckel] gruppnycklarna för underlaget; standard gruppnycklar(rows)
  * @returns {Map<string, string>} aid-nyckel → ersättningsnyckel ("Övriga i AID 2070xx (2 yrken)")
  */
-export function slaIhopSmaAid(rows, k, nyckel = gruppnycklar(rows)) {
+export function slaIhopSmaAid(rader, k, nyckel = gruppnycklar(rader)) {
     const n = new Map(), aidAv = new Map();
-    for (const r of rows || []) {
+    for (const r of rader || []) {
         const key = nyckel(r, 'aid');
         n.set(key, (n.get(key) || 0) + 1);
         aidAv.set(key, r.aid);
@@ -114,11 +109,11 @@ export function slaIhopSmaAid(rows, k, nyckel = gruppnycklar(rows)) {
 
 /**
  * Pivot över lönerader.
- * @param {any[]} rows - lönerader ({ bas, aid, yrke, yrkeLabel, lon, alder, kon })
+ * @param {any[]} rader - lönerader ({ bas, aid, yrke, yrkeLabel, lon, alder, kon })
  * @param {{rad:string, kolumn?:string|null, matt?:string, delaKon?:boolean, urval?:any, gruppVillkor?:any[], slaIhop?:boolean}} spec
  * @param {{k?:number}} [opts]
  */
-export function computePivot(rows, spec, { k = 10 } = {}) {
+export function pivottabell(rader, spec, { k = 10 } = {}) {
     const rad = spec.rad;
     const kol = spec.kolumn && spec.kolumn !== rad ? spec.kolumn : null;
     const matt = spec.matt && MATT.includes(spec.matt) ? spec.matt : 'median';
@@ -128,16 +123,16 @@ export function computePivot(rows, spec, { k = 10 } = {}) {
     const aktivaGrupp = gruppVillkor.filter(g => gruppVillkorAktivt(g) && MATT.includes(g.matt));
     // AID-etiketten grupperas på koden, med namnet från texten på flest av kodens rader i hela underlaget (inte bara urvalet), så
     // att pivoten, villkoren och värdelistorna i appen har samma namn på samma grupp.
-    const gruppnyckel = gruppnycklar(rows);
-    const person = personFilter(urvalSpec, gruppnyckel);
+    const gruppnyckel = gruppnycklar(rader);
+    const person = iUrvalet(urvalSpec, gruppnyckel);
 
-    const urvalRader = (rows || []).filter(r => r.lon > 0 && person(r));
+    const urvalRader = (rader || []).filter(r => r.lon > 0 && person(r));
     // Hopslagning av små AID-grupper, bara när raderna är AID (ADR-33).
     const ersatt = spec.slaIhop && rad === 'aid' ? slaIhopSmaAid(urvalRader, k, gruppnyckel) : null;
     const urval = { n: urvalRader.length, nKv: 0, nMa: 0 };
     const cellHinkar = new Map(), radHinkar = new Map(), kolHinkar = new Map();
     for (const r of urvalRader) {
-        const ko = konOf(r);
+        const ko = konAv(r);
         if (ko === 'Kvinna') urval.nKv++;
         else if (ko === 'Man') urval.nMa++;
         const rk0 = gruppnyckel(r, rad);

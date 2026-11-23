@@ -1,5 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { etikettlistaInfo } from '../lib/aid.js';
+import { K_STANDARD } from '../lib/ktroskel.js';
+import { personOrd } from '../lib/namn.js';
+import { skrReferensInfo } from '../lib/skrreferens.js';
+import { adjektiv, artikel, stor, termFras } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
+import { AID_METODTEXT } from './04-ordlista.js';
+import { kInstalld, statGolv } from './06-k-troskel.js';
+import { applyProfileLabels } from './07-standardinstallningar.js';
+import { APP_BUILD_DATE, APP_VERSION } from './08-version.js';
+import { T, termText } from './09-termer.js';
+import { state } from './12-tillstand.js';
+import { EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
+import { _wireTablistKeys } from './63-tangentbordsnavigering.js';
 
 // ---- Om verktyget-flik: render-funktion ----
 // APP_VERSION och APP_BUILD_DATE kommer från src/app/08-version.js, som
@@ -73,9 +88,9 @@ const INFO_SECTIONS = {
 
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
-            <li><code>detectSensitiveColumns()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
+            <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
             <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
-            <li><code>_cleanYrkeField()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
+            <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
         <h4>Lager 3 — Allt ligger i arbetsminnet</h4>
@@ -102,7 +117,7 @@ const INFO_SECTIONS = {
             Verktyget krypterar inte data i vila. Detta är ett medvetet arkitekturval. Den motsvarande kontrollen är <strong>RAM-only architecture med automatisk radering</strong>. Eftersom datan aldrig skrivs till disk finns ingen "rest" att kryptera. Detta är en starkare position än krypterad lagring eftersom det inte finns någon nyckel att läcka och ingen tidslucka mellan användning och radering.
         </p>
 
-        <h3>k-anonymitet</h3>
+        <h3>Minsta gruppstorlek</h3>
         <p><strong>På skärmen visas allt.</strong> Den som arbetar i verktyget har redan lönefilen, så vyerna maskerar inga grupper: varje ${T.enhet.en}, varje ${T.niva.en} och varje könsuppdelat mått visas oavsett storlek (beslut 2026-10-29).</p>
         <p><strong>Det som lämnar verktyget följer minsta gruppstorlek.</strong> Tröskeln gäller:</p>
         <ul>
@@ -176,12 +191,12 @@ const INFO_SECTIONS = {
         <p>${esc(termText(AID_METODTEXT))}</p>
         <p>Verktyget känner till AID:s 13 ${T.huvudomrade.fl} — till exempel vård och omsorg, skola och förskola
         och teknik — och använder dem i avsnittet <strong>Per ${T.huvudomrade.en}</strong> i Lönestruktur
-        och som gruppering i Tabeller och egna vyer. Koder som inte finns i etikettlistan ingår i analyserna men får ${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.huvudomrade)} ${T.huvudomrade.en}.</p>
+        och som gruppering i Tabeller och egna vyer. Koder som inte finns i etikettlistan ingår i analyserna men får ${adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.huvudomrade)} ${T.huvudomrade.en}.</p>
         <p>AID:s <strong>ansvarskod</strong> är valfri. Finns den i lönefilen grupperas den i tre ansvarsgrupper:
         <strong>Ledningsansvar</strong> (A, B, C, L), <strong>Särskilt uppdrag</strong> (F, M, 1001, 1002) och
         <strong>Inget särskilt ansvar</strong>. Ansvaret redovisas bredvid huvudresultaten, aldrig inbakat i dem —
         om det är ett sakligt skäl avgör du.</p>
-        <p class="gd-note">Etikettlista: ${esc((() => { const i = _aidEtikettlistaInfo(); return `${i.kalla} (${i.antal} etiketter)`; })())}.</p>
+        <p class="gd-note">Etikettlista: ${esc((() => { const i = etikettlistaInfo(); return `${i.kalla} (${i.antal} etiketter)`; })())}.</p>
         </section>
 
         <h3>Vad verktyget INTE gör</h3>
@@ -202,7 +217,7 @@ const INFO_SECTIONS = {
             <tr><td>1 · Underlag</td><td>Regler &amp; praxis</td><td>Kvalitativ granskning av regler och praxis för löner och villkor: status och anteckning per område. Kräver ingen data; följer med i Word-utkastet.</td></tr>
             <tr><td>2 · Kartläggning</td><td>Löneläget</td><td>Fördjupning, inget lagkrav. Löneläget och jämförelsestatistiken mot ställningstagandet per ${T.enhet.en}, avsnittet mot ställningstagandet (bandkarta, könsposition i bandet, täckningsgrad) och avsnittet mot statistiken. Går att öppna när en referens är inläst.</td></tr>
             <tr><td>2 · Kartläggning</td><td>Lika arbete</td><td>Kvinnor och män med samma ${T.enhet.en} med trattdiagrammet, personer att granska, Lika arbete AID x BAS och analys på individnivå</td></tr>
-            <tr><td>2 · Kartläggning</td><td>Likvärdigt arbete</td><td>${termStor(termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' }))} mot ${T.jamforelse.fl} som inte är kvinnodominerade, bootstrap-KI per par</td></tr>
+            <tr><td>2 · Kartläggning</td><td>Likvärdigt arbete</td><td>${stor(termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' }))} mot ${T.jamforelse.fl} som inte är kvinnodominerade, bootstrap-KI per par</td></tr>
             <tr><td>2 · Kartläggning</td><td>Lönestruktur</td><td>Organisationen som karta, representation per ${T.niva.en}, skillnaden i lönefördelningen, per ${T.huvudomrade.en}, Var uppstår löneskillnaden?, direktivets mått, löneskillnad och könsfördelning per ${T.niva.en}, och vad som blir kvar av löneskillnaden: förklaringsmodell, multivariat regression, vattenfallsdiagram och Blinder-Oaxaca</td></tr>
             <tr><td>2 · Kartläggning</td><td>Ålder &amp; karriär</td><td>Fördjupning, inget lagkrav. Lön mot ålder per kön, demografi (åldersfördelning, pensionsavgångar) och livscykel: växer eller krymper skillnaden över karriären</td></tr>
             <tr><td>3 · Åtgärder</td><td>Prioritering</td><td>Bubbeldiagram och sorterad lista med kostnad och förslag på möjliga förklaringar att pröva. Trösklarna och viktningen ställs in under Inställningar</td></tr>
@@ -226,7 +241,7 @@ const INFO_SECTIONS = {
             <li><strong>Förhandskontroll av lönefilen:</strong> direkt efter inläsningen visar Filer och kvalitet hur filen tolkades. Du ser de tio första raderna med filens värde och verktygets tolkning, till exempel födelseår som räknats om till ålder. Du ser också hur många rader som används och varför andra faller bort, och värdena per kolumn. Varningar visas när lönen ser ut som årslön eller timlön, när åldern ligger utanför 16–75 år eller när BAS eller kön har okända värden. Varningarna står också i Att göra. Med inställningen <em>Stoppa och visa förhandskontrollen innan inläsning</em> läses filen in först när du väljer <em>Läs in</em>. Raderna visas bara på skärmen.</li>
             <li><strong>Importprofiler:</strong> en kolumnmappning som du gör för hand sparas. Den känns igen nästa gång samma uttag läses in (<em>Känd uppsättning</em>). Profilen innehåller bara rubrikernas namn. Den följer med i konfigurationsfilen och kan läggas i organisationspaketet. Listan, <em>Ta bort</em> och <em>Exportera JSON</em> står i Inställningar.</li>
             <li><strong>Sök:</strong> fältet i sidhuvudet (snedstreck eller Ctrl+K) hittar ${T.enhet.fl} och ${T.niva.fl} och markerar dem i alla diagram och tabeller. Det hittar också flikarnas avsnitt, exporterna och fälten i Inställningar, även utan lönefil. Ett avsnitt i en låst flik säger <em>kräver lönefil</em></li>
-            <li><strong>Dossierer:</strong> gruppdossiern samlar ${termArtikel(T.enhet)} ${T.enhet.en} i ${termArtikel(T.niva)} ${T.niva.en} på en sida. BAS-dossiern samlar ${termArtikel(T.niva)} ${T.niva.en} i rapportens ordning: nyckeltal och läget mot ställningstagandet, ${T.enhet.bfl}, likvärdigt arbete, ålder och förra året. Den kopieras som text utan lönemått för grupper under tröskeln. BAS-dossiern öppnas från Löneöversikten, Lönestrukturs tabell per ${T.niva.en}, gruppdossiern, markeringen och sökrutan</li>
+            <li><strong>Dossierer:</strong> gruppdossiern samlar ${artikel(T.enhet)} ${T.enhet.en} i ${artikel(T.niva)} ${T.niva.en} på en sida. BAS-dossiern samlar ${artikel(T.niva)} ${T.niva.en} i rapportens ordning: nyckeltal och läget mot ställningstagandet, ${T.enhet.bfl}, likvärdigt arbete, ålder och förra året. Den kopieras som text utan lönemått för grupper under tröskeln. BAS-dossiern öppnas från Löneöversikten, Lönestrukturs tabell per ${T.niva.en}, gruppdossiern, markeringen och sökrutan</li>
             <li><strong>På den här sidan:</strong> flikens synliga avsnitt i en lista som följer med när sidan rullas; ett klick fäller ut avsnittet och flyttar fokus dit</li>
             <li><strong>Självdiagnostik:</strong> ladda 200 syntetiska poster med kända egenskaper och kör sju kontroller</li>
             <li><strong>Tangentbordsnavigation:</strong> Tab/Shift+Tab mellan kontroller, piltangenter och Home/End i menyn och i flikraderna, Esc stänger modaler och menyer</li>
@@ -302,7 +317,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         <ul>
             <li><strong>SKR</strong> är Sveriges Kommuner och Regioner, arbetsgivarorganisationen för kommuner och regioner. Verktyget använder två saker därifrån:</li>
             <li>AID — indelningen av arbetsuppgifter (Arbetsidentifikation kommuner och regioner), som ${T.kod.bfl} i lönefilen följer</li>
-            <li>${esc(_skrReferensInfo().kalla)} — andel kvinnor per ${T.kod.en} i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
+            <li>${esc(skrReferensInfo().kalla)} — andel kvinnor per ${T.kod.en} i kommuner och regioner. I verktyget kallad <em>Kvinnor nationellt</em>: ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete</li>
             <li>SCB, Arbetskraftsundersökningarna (AKU), årsmedeltal 2023, avrundade — åldersfördelningen som referens i Ålder &amp; karriär</li>
         </ul>
 
@@ -331,7 +346,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
     `
 };
 
-function renderInfoTab(section = 'overview') {
+export function renderInfoTab(section = 'overview') {
     const wrap = document.getElementById('info-tab-content');
     if (!wrap) return;
     const renderer = INFO_SECTIONS[section] || INFO_SECTIONS.overview;
@@ -353,8 +368,11 @@ function renderInfoTab(section = 'overview') {
     applyProfileLabels();
 }
 
-// Underflikarna i Tabeller och egna vyer har samma klasser (74-alla-diagram.js): väljarna gäller bara Om verktyget.
-document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
-    btn.addEventListener('click', () => renderInfoTab(/** @type {HTMLElement} */ (btn).dataset.section));
-});
-_wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('#view-info .info-section-btn')]));
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartOmVerktyget() {
+    // Underflikarna i Tabeller och egna vyer har samma klasser (74-alla-diagram.js): väljarna gäller bara Om verktyget.
+    document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
+        btn.addEventListener('click', () => renderInfoTab(/** @type {HTMLElement} */ (btn).dataset.section));
+    });
+    _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('#view-info .info-section-btn')]));
+}

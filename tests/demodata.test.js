@@ -7,38 +7,39 @@
  * självdiagnostiken i appens tester.
  */
 import { describe, it, expect } from 'vitest';
-import { generateTestData, generateDemoData, generateStortDemo, generateStortDemoStatistik, _sdStallningstagande,
+import { genereraTestdata, genereraDemodata, genereraStortDemo, genereraStortDemoStatistik, _sdStallningstagande, demodiagnostik,
     _SD_GAP, _SD_LIKVARDIGT } from '../src/lib/demodata.js';
 import { aidKriterier } from '../src/lib/aidkontroll.js';
 import { arKvinna, arMan } from '../src/lib/kon.js';
+import { huvudregression } from '../src/lib/regression.js';
 
 const BAS_AK = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
 const median = l => { const s = [...l].sort((a, b) => a - b); return (s[(s.length - 1) >> 1] + s[s.length >> 1]) / 2; };
 
 describe('det lilla demot', () => {
     it('testdatan har 200 rader och demodatan 260, samma vid ett andra anrop', () => {
-        expect(generateTestData()).toHaveLength(200);
-        expect(generateDemoData()).toHaveLength(260);
-        expect(JSON.stringify(generateTestData())).toBe(JSON.stringify(generateTestData()));
-        expect(JSON.stringify(generateDemoData())).toBe(JSON.stringify(generateDemoData()));
+        expect(genereraTestdata()).toHaveLength(200);
+        expect(genereraDemodata()).toHaveLength(260);
+        expect(JSON.stringify(genereraTestdata())).toBe(JSON.stringify(genereraTestdata()));
+        expect(JSON.stringify(genereraDemodata())).toBe(JSON.stringify(genereraDemodata()));
     });
 });
 
 describe('stort demo: statistiken och ställningstagandet', () => {
     it('samma statistik och samma ställningstagande vid ett andra anrop', () => {
-        expect(JSON.stringify(generateStortDemoStatistik())).toBe(JSON.stringify(generateStortDemoStatistik()));
-        const data = generateStortDemo();
+        expect(JSON.stringify(genereraStortDemoStatistik())).toBe(JSON.stringify(genereraStortDemoStatistik()));
+        const data = genereraStortDemo();
         expect(_sdStallningstagande(data, 10).map(r => r.bas)).toEqual(BAS_AK);
-        expect(_sdStallningstagande(data, 10)).toEqual(_sdStallningstagande(generateStortDemo(), 10));
+        expect(_sdStallningstagande(data, 10)).toEqual(_sdStallningstagande(genereraStortDemo(), 10));
     });
 });
 
 describe('stort demo: generatorn', () => {
-    const data = generateStortDemo();
+    const data = genereraStortDemo();
 
     it('5 000 rader, och samma rader vid ett andra anrop', () => {
         expect(data).toHaveLength(5000);
-        const igen = generateStortDemo();
+        const igen = genereraStortDemo();
         expect(igen[0]).toEqual(data[0]);
         expect(JSON.stringify(igen)).toBe(JSON.stringify(data));
     });
@@ -53,7 +54,7 @@ describe('stort demo: generatorn', () => {
             if (!ok) fel.push(i);
         });
         expect(fel.slice(0, 5)).toEqual([]);
-        const falt = Object.keys(generateDemoData()[0]).concat('radnr').sort();
+        const falt = Object.keys(genereraDemodata()[0]).concat('radnr').sort();
         expect(Object.keys(data[0]).sort()).toEqual(falt);
     });
 
@@ -76,7 +77,7 @@ describe('stort demo: generatorn', () => {
     });
 
     it('kontrollen av AID-kodningen är grön: koderna finns i etikettlistan och ansvarskoderna är tillåtna', () => {
-        const kriterier = aidKriterier(generateStortDemo(), { k: 10, harAnsvar: true });
+        const kriterier = aidKriterier(genereraStortDemo(), { k: 10, harAnsvar: true });
         expect(kriterier.filter(k => k.status !== 'ok').map(k => `${k.id}: ${k.text}`)).toEqual([]);
     });
 
@@ -107,5 +108,20 @@ describe('stort demo: generatorn', () => {
         }
         const utanGap = alla.filter(g => !(g.aid in gap) && g.kv.length >= 10 && g.ma.length >= 10);
         expect(utanGap.some(g => median(g.kv) >= 0.99 * median(g.ma))).toBe(true);
+    });
+});
+
+describe('demodiagnostik: självdiagnostiken på demot', () => {
+    const ord = { nivaFl: 'BAS-intervall', underlagEtikett: s => s, pText: p => String(p) };
+    it.each([['demot', genereraDemodata], ['testdatan', genereraTestdata]])('%s klarar varje prov när regressionen skattas på det', (_namn, generera) => {
+        const rader = generera();
+        const reg = huvudregression(rader, { kInstalld: 10, golv: 10 });
+        const t = demodiagnostik({ rader, reg, underlag: { status: 'ok' }, antalBas: 5 }, ord);
+        expect(t.map(x => x.name)).toHaveLength(7);
+        expect(t.filter(x => !x.pass).map(x => `${x.name}: ${x.actual}`)).toEqual([]);
+    });
+    it('en regression som inte kunde skattas, ett kritiskt underlag och fel antal BAS fäller sina prov', () => {
+        const t = demodiagnostik({ rader: genereraTestdata(), reg: { error: 'x' }, underlag: { status: 'kritisk' }, antalBas: 4 }, ord);
+        expect(t.filter(x => !x.pass).map(x => x.name)).toEqual(['Regression kunde estimeras', 'Underlagets kvalitet är inte kritisk (testdata)', 'Antal unika BAS-intervall = 5 (testdatan har A–E)']);
     });
 });

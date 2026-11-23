@@ -8,30 +8,24 @@
  * ett yrke, och block med faktastycke, tabell och frågor som kopieras in i en egen
  * Word-mall. Bedömningen (sakliga skäl) skrivs inte här — den kräver kunskap som
  * bara verksamheten har.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { median, quantile, fitOLS } from './stat.js';
+import { median, kvantil, anpassaOLS } from './stat.js';
 import { skrDelText } from './skrreferens.js';
 import { matchningEtikett } from './jamforelse.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
-import { lonebegreppReservation } from './struktur.js';
+import { lonebegreppReservation, konsMedianerUrLoner } from './struktur.js';
 import { personOrd } from './namn.js';
 import { sektorJusteradText, sektorAndelNot } from './sektor.js';
 import { kvDefinitionText } from './aidbas.js';
-import { basRangFn } from './likvardighet.js';
+import { basRangordning } from './likvardighet.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
-import { skapaTermer, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
-import { arKvinna } from './kon.js';
+import { STANDARDTERMER as T, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
+import { arKvinna, arMan } from './kon.js';
 import { svTal as formatTal } from './talformat.js';
 import { aidAvRad, namnrader } from './aid.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
-
-const _arMan = r => typeof r.kon === 'string' && !r.kon.includes('kvinna') && (r.kon.includes('man') || r.kon.includes('män'));
 
 /**
  * Noteringen om en variabel som valts bort ur förklaringsmodellen (ADR-56), som den står i rapporten och i panelen.
@@ -59,6 +53,9 @@ export function gruppMedBas(g) {
  * rads etikett (yrkeLabel när den finns, annars texten), som tabellerna per AID-kod och BAS-intervall visar bredvid koden. `lag` och `hog`
  * är slumpens gränser som prövningen använde (null när gruppen inte prövades). Grupperna står med samma kod intill varandra: koderna
  * ordnade efter den största skillnaden bland kodens grupper, och inom koden intervallen i BAS-ordning.
+ * En grupp som redovisas per kön bär konsMedianerUrLoner:s tal: `kvotPct` (kvinnors median i procent av mäns) och
+ * `skillnadPct` (kvoten minus 100, med tecken), räknade med en avrundning; `gapPct` är skillnaden utan tecken och `kvot`
+ * förhållandet medKv / medMa. Texterna och bokslutet läser `kvotPct` och `skillnadPct`, inte `kvot`.
  * `utelamnade` och `ejJamforbara` bär namnen med intervallet (gruppMedBas); `utelamnadeGrupper` och
  * `ejJamforbaraGrupper` samma grupper som { yrke, aid, bas }.
  * @param {any[]} rader
@@ -68,12 +65,12 @@ export function gruppMedBas(g) {
 export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     const perGrupp = new Map();
     const nyckelAv = r => `${aidAvRad(r)}\u0000${r.bas == null ? '' : String(r.bas)}`;
-    const namn = namnrader((rader || []).filter(r => arKvinna(r) || _arMan(r)), nyckelAv);
+    const namn = namnrader((rader || []).filter(r => arKvinna(r) || arMan(r)), nyckelAv);
     for (const r of rader || []) {
         const aid = aidAvRad(r), bas = r.bas == null ? '' : String(r.bas), nyckel = nyckelAv(r);
         if (!perGrupp.has(nyckel)) { const nr = namn.get(nyckel) ?? r; perGrupp.set(nyckel, { yrke: nr.yrke, etikett: String(nr.yrkeLabel || nr.yrke || aid), aid, bas, kv: [], ma: [] }); }
         if (arKvinna(r)) perGrupp.get(nyckel).kv.push(r.lon);
-        else if (_arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
+        else if (arMan(r)) perGrupp.get(nyckel).ma.push(r.lon);
     }
     const grupper = [], utelamnadeGrupper = [], ejJamforbaraGrupper = [];
     for (const { yrke, etikett, aid, bas, kv, ma } of perGrupp.values()) {
@@ -86,16 +83,17 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
                 gapPct: 0, medTot: median(kv.concat(ma)), lag: null, hog: null });
             continue;
         }
-        const medKv = median(kv), medMa = median(ma);
+        // Båda könen har minst två löner här (över 0 efter inläsningen), så konOk är sant och talen finns.
+        const km = /** @type {{medKv:number, medMa:number, kvotPct:number, gapPct:number}} */ (konsMedianerUrLoner(kv, ma)), { medKv, medMa } = km;
         // Medelvärdet på samma löner som medianen; protokollet redovisar båda (ADR-79), statusen följer medianen.
         const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
         const kvot = medKv / medMa;
-        const gapPct = Math.abs(kvot * 100 - 100);
+        const gapPct = Math.abs(km.kvotPct - 100);
         const b = bedomSkillnad(kv, ma, { golv });
         const g = { yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
-            medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
+            medKv, medMa, medelKv, medelMa, kvot, kvotPct: km.kvotPct, skillnadPct: km.gapPct, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             lag: b.granser ? b.granser.lag : null, hog: b.granser ? b.granser.hog : null,
-            p10Kv: quantile(kv, 0.1), p90Kv: quantile(kv, 0.9), p10Ma: quantile(ma, 0.1), p90Ma: quantile(ma, 0.9) };
+            p10Kv: kvantil(kv, 0.1), p90Kv: kvantil(kv, 0.9), p10Ma: kvantil(ma, 0.1), p90Ma: kvantil(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
         // varje grupp på minst 3 % och visas för grupperna Värt att granska.
         if (gapPct >= STORLEKSGRANS) g.stabilitet = _stabilitet(kv, ma, { k, troskel: STORLEKSGRANS });
@@ -103,7 +101,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
     }
     // Koderna efter den största skillnaden bland kodens grupper (störst först), inom koden intervallen i BAS-ordning.
     // Med en grupp per kod är ordningen densamma som förut: skillnaden, störst först.
-    const rang = basRangFn(grupper.map(g => g.bas));
+    const rang = basRangordning(grupper.map(g => g.bas));
     const storst = new Map();
     for (const g of grupper) storst.set(g.aid, Math.max(storst.get(g.aid) ?? -Infinity, g.gapPct));
     const forsta = new Map();
@@ -122,7 +120,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
  */
 export function justeratGapInomYrke(rader, { k }) {
     if ((rader || []).length && !(rader || []).some(r => r && r.alder > 0)) return { utanAlder: true };
-    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || _arMan(r)));
+    const d = (rader || []).filter(r => r.lon > 0 && r.alder > 0 && (arKvinna(r) || arMan(r)));
     const nKv = d.filter(arKvinna).length, nMa = d.length - nKv;
     if (nKv < k || nMa < k) return { forFa: true };
     const basLista = [...new Set(d.map(r => r.bas))].sort();
@@ -131,7 +129,7 @@ export function justeratGapInomYrke(rader, { k }) {
     if (d.length < p + 5) return { forFa: true };
     const X = d.map(r => [1, arKvinna(r) ? 1 : 0, r.alder, ...dummies.map(b => (r.bas === b ? 1 : 0))]);
     const y = d.map(r => Math.log(r.lon));
-    const fit = fitOLS(X, y);
+    const fit = anpassaOLS(X, y);
     // Singulär modell: kön och BAS sammanfaller inom yrket (t.ex. alla kvinnor i ett BAS).
     if (!fit || !isFinite(fit.beta[1])) return { ejSkattbar: true };
     return { gapPct: (Math.exp(fit.beta[1]) - 1) * 100, n: d.length };
@@ -234,7 +232,7 @@ export function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNo
     // intervall (koden över flera intervall) justeras för ålder och BAS.
     const vad = g.bas != null && g.bas !== '' ? 'ålder' : 'ålder och BAS', Vad = stor(vad);
     let fakta = `Inom ${gruppMedBas(g)} (n = ${g.tot}, varav ${g.nKv} kvinnor och ${g.nMa} män) är kvinnornas medianlön `
-        + `${_pct(g.kvot * 100)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : '') + '.'
+        + `${_pct(g.kvotPct)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : '') + '.'
         + (g.niva === 'granska' ? ' Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns).' : '')
         + (g.direktiv ? ' Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '');
     let provat;
@@ -244,7 +242,7 @@ export function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNo
         provat = [`${Vad} kunde inte prövas eftersom kön och BAS sammanfaller i ${T.enhet.bf} (kvinnor och män finns i olika BAS).`];
     } else if (justerat && !justerat.forFa) {
         fakta += ` Efter hänsyn till ${vad} inom ${T.enhet.bf} återstår en skillnad på ${_pct(justerat.gapPct)}.`;
-        const ra = (g.kvot - 1) * 100, ju = justerat.gapPct;
+        const ra = g.skillnadPct, ju = justerat.gapPct;
         const siffror = `(${_pct(ra)} före justering, ${_pct(ju)} efter)`;
         if (ra !== 0 && ju !== 0 && Math.sign(ra) !== Math.sign(ju)) {
             provat = [`Efter hänsyn till ${vad} inom ${T.enhet.bf} byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
@@ -314,9 +312,9 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     const blk = (rubrik, stycken, tabell) => ({ id: typ, rubrik, stycken: [...fore, ...stycken, ...efter], tabell, provat: null, fragor: null });
     if (typ === 'sammanfattning') {
-        // k-anonymitet: med ett kön under k i urvalet redovisas inga könsuppdelade lönemått.
+        // Minsta gruppstorlek: med ett kön under k i urvalet redovisas inga könsuppdelade lönemått.
         const litet = u.nKv < k || u.nMa < k;
-        const kvot = !litet && u.medMa > 0 ? u.medKv / u.medMa * 100 : null;
+        const kvot = litet ? null : u.kvotPct ?? null;   // ur konsMedianer (struktur.js), som anroparen räknat
         const st = [`Underlaget omfattar ${formatTal(u.n)} anställda, varav ${formatTal(u.nKv)} kvinnor och ${formatTal(u.nMa)} män.`
             + (litet ? ` Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än ${k} ${personOrd(k)} i urvalet.`
                      : ` Kvinnornas medianlön är ${_kr(u.medKv)} och männens ${_kr(u.medMa)}, vilket motsvarar ${_pct(kvot)} av männens.`)];
@@ -376,7 +374,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (!flagg.length) return blk('Lika arbete', [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${adjektiv({ utrum: 'värd', neutrum: 'värt', plural: 'värda' }, T.enhet)} att granska.`], null);
         return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
             { rubriker: [stor(T.enhet.en), stor(T.niva.en), 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
-            rader: flagg.map(x => [x.yrke, x.bas == null ? '' : String(x.bas), String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT : '']) });
+            rader: flagg.map(x => [x.yrke, x.bas == null ? '' : String(x.bas), String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvotPct), x.direktiv ? DIREKTIV_ETIKETT : '']) });
     }
     if (typ === 'likvardigt') {
         const par = u.par || [];
@@ -594,7 +592,7 @@ export function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskel
  * Lönerna mot referenserna (ADR-55): överblickens tal i ord och listan. Ställningstagandet är referenspunkten: orden
  * säger var löneläget och statistiken ligger mot det, aldrig tvärtom. Med statistik har listan kolumnen Matchning
  * (samma ord som tabellen mot jämförelsestatistiken och detaljlistan).
- * @param {any} overblick resultatet av referensOverblick (grupper under minsta gruppstorlek är redan borta)
+ * @param {any} overblick resultatet av referensOverblickUr (grupper under minsta gruppstorlek är redan borta)
  * @param {{id?:string, urval?:any, demo?:any, troskelNot?:any, harStatistik?:boolean}} opt
  */
 export function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot, harStatistik = false }) {

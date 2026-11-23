@@ -8,19 +8,16 @@
  * Designmatrisen, OLS-skattningen med HC3-robusta standardfel, testen på kön-
  * relaterade koefficienter, prediktionerna 25–65 år med 95 % KI, gapet per ålder
  * och AIC. Modellen tar raderna och golvet som parametrar och läser inget globalt
- * tillstånd. Tolkningstexten och presentationen ligger kvar i appen.
+ * tillstånd. Det analysen visar räknas i vymodellen (src/lib/vymodell-livscykel.js); orden och ritningen ligger i appen.
  *
  * Appen får modellen genom lib-speglarna (ADR-8); runLifecycleRegression() i
  * src/app/52-livscykel.js är den tunna adaptern som läser getData() och statGolv().
  */
 
-import { fitOLS, pValue2Sided, tQuantile } from './stat.js';
+import { anpassaOLS, pVardeTvasidigt, tKvantil } from './stat.js';
 import { statusNiva } from './status.js';
-import { skapaTermer } from './termer.js';
+import { STANDARDTERMER as T } from './termer.js';
 import { arKvinna, arMan } from './kon.js';
-
-/** Standardtermerna (ADR-74). */
-const T = skapaTermer();
 
 /**
  * Trappans nivå för skillnaden vid en ålder (ADR-59, ADR-71): avståndet från lika lön är |gapPct|, och skillnaden är
@@ -103,7 +100,7 @@ export function livscykelRegression(rader, { fixBas, golv }) {
         y.push(Math.log(d.lon));
     });
 
-    const fit = fitOLS(X, y);
+    const fit = anpassaOLS(X, y);
     if (!fit) return { error: 'Modellen kunde inte estimeras — möjlig multikollinearitet bland BAS-dummies.', errorCode: 'singular' };
 
     // Adj-R² och AIC för modelljämförelse
@@ -119,20 +116,20 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     const aic = n * Math.log(rss / n) + 2 * k;
 
     // Tester på kön-relaterade koefficienter (huvudeffekt + interaktioner)
-    const Z = tQuantile(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
+    const Z = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
     const idxKv      = 1;
     const idxKvAge   = 4;
     const idxKvAge2  = 5;
     const kvCoef     = fit.beta[idxKv];
     const kvSE       = Math.sqrt(fit.vcovHC3[idxKv][idxKv]);
     const kvT        = kvSE > 0 ? kvCoef / kvSE : 0;
-    const kvPValue   = pValue2Sided(kvT, fit.n, fit.k);
+    const kvPValue   = pVardeTvasidigt(kvT, fit.n, fit.k);
     const kvAgeSE    = Math.sqrt(fit.vcovHC3[idxKvAge][idxKvAge]);
     const kvAgeT     = kvAgeSE > 0 ? fit.beta[idxKvAge] / kvAgeSE : 0;
-    const kvAgePVal  = pValue2Sided(kvAgeT, fit.n, fit.k);
+    const kvAgePVal  = pVardeTvasidigt(kvAgeT, fit.n, fit.k);
     const kvAge2SE   = Math.sqrt(fit.vcovHC3[idxKvAge2][idxKvAge2]);
     const kvAge2T    = kvAge2SE > 0 ? fit.beta[idxKvAge2] / kvAge2SE : 0;
-    const kvAge2PVal = pValue2Sided(kvAge2T, fit.n, fit.k);
+    const kvAge2PVal = pVardeTvasidigt(kvAge2T, fit.n, fit.k);
 
     // Prediktioner för ålder 25..65 vid fixerad BAS, för båda könen
     // SE för prediktion: x' · vcovHC3 · x  → 95 % KI = exp(logLon ± Z · SE)

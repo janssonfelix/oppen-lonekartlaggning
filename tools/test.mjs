@@ -17,8 +17,11 @@ const extra = process.argv.slice(2);
 // En omkörning namnger sina filer, så delningen (--shard, som CI använder) tas bort där: annars kunde den namngivna
 // filen hamna i en annan del, och omkörningen körde ingenting.
 const utanDelning = extra.filter(a => !a.startsWith('--shard'));
-const kor = filer => {
-    const r = spawnSync('npx', ['vitest', 'run', ...(filer.length ? utanDelning : extra), ...filer], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+// En JSON-rapport (--outputFile.json, som tools/valideringsrapport.mjs använder) skrivs vid omkörning till en egen fil,
+// <namn>.omkorning<n>.json, så att den inte skriver över rapporten för hela sviten.
+const omkorning = (args, n) => args.map(a => a.replace(/^(--outputFile\.json=.+?)(?:\.json)?$/, `$1.omkorning${n}.json`));
+const kor = (filer, forsok = 0) => {
+    const r = spawnSync('npx', ['vitest', 'run', ...(filer.length ? omkorning(utanDelning, forsok) : extra), ...filer], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
     const ut = (r.stdout || '') + (r.stderr || '');
     process.stdout.write(ut);
     // Vitest färgar utdata i GitHub Actions; färgkoderna tas bort innan raderna läses.
@@ -37,7 +40,7 @@ const korSviten = () => {
     let fallna = svar.fallna;
     for (let forsok = 1; svar.kraschade.length && forsok <= 2; forsok++) {
         console.log(`\n[test] Arbetaren kraschade i ${svar.kraschade.length} fil(er); kör om (försök ${forsok} av 2):\n  ${svar.kraschade.join('\n  ')}\n`);
-        svar = kor(svar.kraschade);
+        svar = kor(svar.kraschade, forsok);
         fallna = fallna || svar.fallna;
     }
     if (svar.kraschade.length) { console.error('\n[test] Arbetaren kraschade också vid omkörning — sviten är ofullständig.'); return 1; }

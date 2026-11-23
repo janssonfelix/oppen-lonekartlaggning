@@ -30,33 +30,34 @@
 // chartExportRun, och lämnas vidare till innehållet och stämpeln: de kan då aldrig komma ur olika svar.
 // Rensas eller ritas diagrammet om medan bilden görs laddas ingenting ner.
 // ====================================================================
+import { EXPORT_SKAL, exportSkal, figurTillTabell, harleddaLager, harlettNot, urvalBeskrivning, utanSmaGrupper } from '../lib/figur.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { idagDatum } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _kUndantagFor, kIndividRad, kStampelFor } from './06-k-troskel.js';
+import { APP_VERSION } from './08-version.js';
+import { _rfExportFigur, _rfHarRitat, figurTillBild } from './10-diagramritare.js';
+import { _copyMatrixToClipboard, state } from './12-tillstand.js';
+import { _downloadCSV, _showExportSensitivityToast } from './22-exporthjalpare.js';
+import { exportSakra, medExportLage } from './23-exportgrind.js';
+import { diagramKopiaKalla } from './74-alla-diagram.js';
 
 // ---- När ett diagram inte får lämna verktyget ----
-// Regeln står här och bara här. Ett diagram får inte lämna verktyget — ingen exportmeny, ingen bild till ZIP-filen,
-// rapportunderlaget eller utskriften (diagramTillBild), ingen diagramdata — när det står i en behållare som vyn har
-// märkt med markeraUtanExport. Skälen är få och uppräknade; ett diagram utan registrerat skäl kan inte märkas, så
-// det syns i koden varför varje spärr finns, och användaren ser det i behållarens verktygstips.
-const EXPORT_SKAL = {
-    // Personer att granska (ADR-23): panelen visar enskilda personer med filens radnummer. Diagrammet namnger ingen
-    // och bär ingen lön, men hör till panelen, och inget ur den lämnar verktyget.
-    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)'
-};
+// Regeln och skälen står i src/lib/figur.js (exportSkal, EXPORT_SKAL). Här märks behållaren och läses märkningen.
 /** Märker en behållare: inget diagram i den lämnar verktyget. `skal` måste vara en nyckel i EXPORT_SKAL. */
-function markeraUtanExport(el, skal) {
+export function markeraUtanExport(el, skal) {
     if (!el) return;
     if (!Object.prototype.hasOwnProperty.call(EXPORT_SKAL, skal)) throw new Error(`markeraUtanExport: okänt skäl "${skal}"`);
     el.setAttribute('data-no-export', skal);
     el.title = `Lämnar inte verktyget: ${EXPORT_SKAL[skal]}.`;
 }
 /** Skälet till att diagrammet i behållaren inte får lämna verktyget, eller null när det får det. */
-function exportSkal(behallare) {
+function _exportSkalFor(behallare) {
     const m = behallare && behallare.closest ? behallare.closest('[data-no-export]') : null;
-    if (!m) return null;
-    // En märkning utan registrerat skäl spärrar ändå: hellre ett diagram för lite i en export än ett för mycket.
-    return EXPORT_SKAL[m.getAttribute('data-no-export')] || 'är märkt utan export';
+    return exportSkal(m ? m.getAttribute('data-no-export') : null);
 }
 /** Får diagrammet i behållaren lämna verktyget (meny, bild, diagramdata, ZIP, utskrift)? */
-function exportTillaten(behallare) { return exportSkal(behallare) == null; }
+export function exportTillaten(behallare) { return _exportSkalFor(behallare) == null; }
 
 const CHART_EXPORT_STORLEKAR = {
     'png-presentation': [1920, 1080],
@@ -73,7 +74,7 @@ function _chartExportSlug(s) {
 }
 
 /** Diagrammets rubrik: närmaste h2/h3 i samma kort, annars elementets id. En kopia i Alla diagram har källans rubrik. */
-function chartExportTitle(gd) {
+export function chartExportTitle(gd) {
     const egen = gd.closest ? gd.closest('.ut-kopia')?.querySelector(':scope > .ut-kopia-rubrik') : null;
     if (egen && egen.textContent.trim()) return egen.textContent.replace(/\s+/g, ' ').trim();
     const kort = gd.closest ? gd.closest('.card') : null;
@@ -131,14 +132,14 @@ function _chartExportUnderlagExport(gd) {
 /** Urvalet i diagrammet som text, en del per aktiv dimension (t.ex. ['utan BAS A, BAS N', '10–50 personer i
  *  gruppen']), samma text som noten under diagrammet; [] utan urval. */
 function _chartExportDolt(ut) {
-    return ut && ut.filter ? _figUrvalBeskrivning(ut.figur, ut.filter, { visaSma: !!ut.visaSma }) : [];
+    return ut && ut.filter ? urvalBeskrivning(ut.figur, ut.filter, { visaSma: !!ut.visaSma }) : [];
 }
 
 /** Meningarna om härledda lager (harleddAv) som inte ritas i exportmenyns bild: med urvalet har källagren färre än
  *  minN synliga punkter. Samma text som noten under diagrammet; [] utan urval eller utan sådana lager. */
 function _chartExportHarlett(ut) {
     if (!ut || !ut.filter) return [];
-    return _figHarlettNot(_figHarleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
+    return harlettNot(harleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
 }
 
 /** Diagramdata med en spårbarhetsrad överst (ADR-13). Diagram ritade med diagramkärnan (ADR-39) går genom
@@ -153,7 +154,7 @@ function chartExportRows(gd, underlag) {
     const medSma = ut.visaSma;
     // Med ett underlag är diagramdatan figuren för valet (det som visas), och raden "Räknat för" säger vilket.
     const kalla = ut.underlag && ut.underlag.figur ? ut.underlag.figur : ut.figur;
-    const rader = _figTillTabell(medSma ? kalla : _figUtanSma(kalla)).map(r => r.map(_chartExportCell));
+    const rader = figurTillTabell(medSma ? kalla : utanSmaGrupper(kalla)).map(r => r.map(_chartExportCell));
     const beskrivning = typeof gd._exportBeskrivning === 'string' ? gd._exportBeskrivning : '';
     // En figur med en punkt per person (figurens `individer`) ger en rad per person: filen säger det på rad 2.
     const individer = ut.figur && ut.figur.individer === true;
@@ -187,7 +188,7 @@ function _chartExportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], 
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
-function diagramRitat(el) {
+export function diagramRitat(el) {
     return !!el && !!_chartExportUnderlag(el);
 }
 
@@ -195,10 +196,10 @@ function diagramRitat(el) {
  *  och prioriteringsmatrisen (ADR-39): originalfiguren utan små grupper (om inte vyn sagt annat) och med de serier
  *  användaren dolt. `utanRubrik`: bilden får ingen rubrik och fotrad (utskriften sätter egna rubriker). */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function diagramTillBild(...a) { return medExportLage(() => _diagramTillBildExport.apply(null, /** @type {any} */ (a))); }
+export function diagramTillBild(...a) { return medExportLage(() => _diagramTillBildExport.apply(null, /** @type {any} */ (a))); }
 async function _diagramTillBildExport(el, val) {
     const { bredd, hojd, utanRubrik = false } = val || {};
-    const skal = exportSkal(el);
+    const skal = _exportSkalFor(el);
     if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
     const ut = _chartExportUnderlag(el);
     el = _chartExportAktuell(el);
@@ -211,7 +212,7 @@ async function _diagramTillBildExport(el, val) {
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function _chartExportImage(...a) { return medExportLage(() => __chartExportImageExport.apply(null, /** @type {any} */ (a))); }
+export function _chartExportImage(...a) { return medExportLage(() => __chartExportImageExport.apply(null, /** @type {any} */ (a))); }
 async function __chartExportImageExport(gd, val, underlag) {
     const [width, height] = CHART_EXPORT_STORLEKAR[val];
     const format = val === 'svg' ? 'svg' : 'png';
@@ -254,7 +255,7 @@ function _chartExportRunExport(gd, val) {
 }
 
 /** Lägger exportknappen i diagrammets övre högra hörn. Idempotent. */
-function _attachChartExport(graphDiv) {
+export function _attachChartExport(graphDiv) {
     const gd = _chartExportEl(graphDiv);
     if (!gd || gd._chartExportAttached || !gd.parentElement) return;
     if (!exportTillaten(gd)) return;
@@ -288,48 +289,51 @@ function _chartExportStang(utom) {
     });
 }
 
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('.chart-export-btn');
-    if (btn) {
-        const meny = /** @type {HTMLElement} */ (/** @type {HTMLElement} */ (btn.parentElement).querySelector('.chart-export-meny'));
-        const oppna = /** @type {HTMLElement} */ (meny).hidden;
-        _chartExportStang(meny);
-        /** @type {HTMLElement} */ (meny).hidden = !oppna;
-        btn.setAttribute('aria-expanded', String(oppna));
-        if (oppna) meny.querySelector('button')?.focus();
-        return;
-    }
-    const val = /** @type {HTMLElement} */ (e.target).closest('[data-chart-export]');
-    if (val) {
-        const wrap = /** @type {HTMLElement} */ (val.closest('.chart-export'));
-        const fel = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-fel'));
-        /** @type {HTMLElement} */ (fel).hidden = true;
-        chartExportRun(wrap._gd, val.getAttribute('data-chart-export'))
-            .then(() => {
-                _chartExportStang();
-                /** @type {HTMLInputElement} */ (wrap.querySelector('.chart-export-btn'))?.focus();   // fokus tillbaka dit man var
-            })
-            .catch(err => {
-                fel.textContent = 'Exporten misslyckades: ' + ((err && err.message) || String(err));
-                /** @type {HTMLElement} */ (fel).hidden = false;
-            });
-        return;
-    }
-    // En tabells exportmeny (.tabell-export) har egna knappar med egna lyssnare: menyn stängs när ett val gjorts.
-    if (!/** @type {HTMLElement} */ (e.target).closest('.chart-export') || /** @type {HTMLElement} */ (e.target).closest('.tabell-export .chart-export-meny button')) _chartExportStang();
-});
-// Stäng menyn när tangentbordsfokus lämnar den (Tab ut).
-document.addEventListener('focusout', e => {
-    const wrap = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('.chart-export');
-    if (!wrap) return;
-    if (e.relatedTarget && wrap.contains(/** @type {Node} */ (e.relatedTarget))) return;
-    const meny = wrap.querySelector('.chart-export-meny');
-    if (meny && !/** @type {HTMLElement} */ (meny).hidden) _chartExportStang();
-});
-document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    const oppen = document.querySelector('.chart-export-meny:not([hidden])');
-    if (!oppen) return;
-    _chartExportStang();
-    /** @type {HTMLElement} */ (/** @type {HTMLInputElement} */ (oppen.parentElement).querySelector('.chart-export-btn'))?.focus();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartDiagramexport() {
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('.chart-export-btn');
+        if (btn) {
+            const meny = /** @type {HTMLElement} */ (/** @type {HTMLElement} */ (btn.parentElement).querySelector('.chart-export-meny'));
+            const oppna = /** @type {HTMLElement} */ (meny).hidden;
+            _chartExportStang(meny);
+            /** @type {HTMLElement} */ (meny).hidden = !oppna;
+            btn.setAttribute('aria-expanded', String(oppna));
+            if (oppna) meny.querySelector('button')?.focus();
+            return;
+        }
+        const val = /** @type {HTMLElement} */ (e.target).closest('[data-chart-export]');
+        if (val) {
+            const wrap = /** @type {HTMLElement} */ (val.closest('.chart-export'));
+            const fel = /** @type {HTMLElement} */ (wrap.querySelector('.chart-export-fel'));
+            /** @type {HTMLElement} */ (fel).hidden = true;
+            chartExportRun(wrap._gd, val.getAttribute('data-chart-export'))
+                .then(() => {
+                    _chartExportStang();
+                    /** @type {HTMLInputElement} */ (wrap.querySelector('.chart-export-btn'))?.focus();   // fokus tillbaka dit man var
+                })
+                .catch(err => {
+                    fel.textContent = 'Exporten misslyckades: ' + ((err && err.message) || String(err));
+                    /** @type {HTMLElement} */ (fel).hidden = false;
+                });
+            return;
+        }
+        // En tabells exportmeny (.tabell-export) har egna knappar med egna lyssnare: menyn stängs när ett val gjorts.
+        if (!/** @type {HTMLElement} */ (e.target).closest('.chart-export') || /** @type {HTMLElement} */ (e.target).closest('.tabell-export .chart-export-meny button')) _chartExportStang();
+    });
+    // Stäng menyn när tangentbordsfokus lämnar den (Tab ut).
+    document.addEventListener('focusout', e => {
+        const wrap = /** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('.chart-export');
+        if (!wrap) return;
+        if (e.relatedTarget && wrap.contains(/** @type {Node} */ (e.relatedTarget))) return;
+        const meny = wrap.querySelector('.chart-export-meny');
+        if (meny && !/** @type {HTMLElement} */ (meny).hidden) _chartExportStang();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const oppen = document.querySelector('.chart-export-meny:not([hidden])');
+        if (!oppen) return;
+        _chartExportStang();
+        /** @type {HTMLElement} */ (/** @type {HTMLInputElement} */ (oppen.parentElement).querySelector('.chart-export-btn'))?.focus();
+    });
+}

@@ -14,12 +14,28 @@
 //
 // Robusthetskörningarna ändrar inte state: kvinnotröskeln och referensen skickas som argument.
 // ====================================================================
+import { sifferprefixAvYrke } from '../lib/aid.js';
+import { svPct } from '../lib/talformat.js';
+import { ordForAntal, stor, termFras } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { smaGrupperVid } from '../lib/ktroskel.js';
+import { _parForRedovisning, _parOverTroskel, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { getBasIntervals, getData, policyFor, state } from './12-tillstand.js';
+import { bedomningUnderlag, statusMarke, UK_ETIKETT } from './13-oversikt.js';
+import { medExportLage, visningNy } from './23-exportgrind.js';
+import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
+import { _laNyckel, _laSlutsats } from './41-lika-arbete.js';
+import { _prioGrans, _selectedPrioReference, computePrioritization } from './55-prioritering.js';
+import { _bes8Areas } from './61-regler-och-praxis.js';
 
 // ---- Rang 3: Robusthetspanel ------------------------------------------------
 
 /**
  * Kör om § 3:10-kandidatlistan för flera kvinnotrösklar och mäter hur stabil
- * varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till computeLikvardighetPairs.
+ * varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till likvardighetspar.
  *
  * Panelen ligger utanför fliken Likvärdigt arbete och följer därför tröskeln som allt annat
  * (`_parForRedovisning`, ADR-38): ett par där någon grupp är under tröskeln namnges inte, och
@@ -27,14 +43,14 @@
  * @returns {null|{trösklar:number[], rows:Array<{key:string, label:string, hits:number, of:number}>, utelamnade:number, not:string}}
  */
 function robusthetLikvardighet(trösklar = [55, 60, 65]) {
-    if (typeof computeLikvardighetPairs !== 'function') return null;
+    if (typeof likvardighetspar !== 'function') return null;
     const original = (state.likvardighet || {}).kvinnoTrosholdPct;
     const seen = new Map();
     const utelamnadePar = new Set();
     trösklar.forEach(t => {
         // Vid den inställda kvinnotröskeln är paren flikens (samma val); de andra trösklarna räknas för sig och sparas inte.
         let alla = [];
-        try { alla = ((t === original ? likvardighetResultat() : computeLikvardighetPairs({ kvinnoTrosholdPct: t })) || {}).pairs || []; } catch (_e) { alla = []; }
+        try { alla = ((t === original ? likvardighetResultat() : likvardighetspar({ kvinnoTrosholdPct: t })) || {}).pairs || []; } catch (_e) { alla = []; }
         const { par: pairs } = _parForRedovisning(alla);
         alla.forEach(p => { if (!_parOverTroskel(p)) utelamnadePar.add(`${p.kvAid}|${p.kvBas}|${p.maAid}|${p.maBas}`); });
         const inThisRun = new Set();
@@ -103,7 +119,7 @@ function robusthetPrioritering(topN = 10) {
  */
 /** @type {{fardig: any[]|null, robust: any, block: any}} */
 const _dkLage = { fardig: null, robust: null, block: null };
-function _dkRitaTopp(del) {
+export function _dkRitaTopp(del) {
     Object.assign(_dkLage, del);
     const host = document.getElementById('dk-slutsatser');
     if (!host) return;
@@ -152,7 +168,7 @@ function __renderRobusthetResultExport(host) {
     const lvNot = lv && lv.not ? `<p class="gd-missing">${esc(lv.not)}</p>` : '';
     const lvHtml = (lv && lv.rows.length
         ? `<table class="data-table st-088"><thead><tr>
-             <th>${termStor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' }))}</th><th class="t-mitt">Med i körningar</th><th>Bedömning</th></tr></thead>
+             <th>${stor(termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' }))}</th><th class="t-mitt">Med i körningar</th><th>Bedömning</th></tr></thead>
            <tbody>${lv.rows.map(r => `<tr><td>${esc(r.label)}</td>
              <td class="t-mitt" data-sort-value="${r.hits}">${r.hits} av ${r.of}</td>
              <td>${stabilBadge(r.hits, r.of)}</td></tr>`).join('')}</tbody></table>`
@@ -162,7 +178,7 @@ function __renderRobusthetResultExport(host) {
         ? '<p class="gd-missing">Kräver två referenser (lönepolitiskt ställningstagande och extern statistik) för att kunna jämföras.</p>'
         : prio && prio.rows.length
             ? `<table class="data-table st-088"><thead><tr>
-                 <th>${termStor(T.enhet.en)}</th><th class="t-mitt">I topplistan</th><th>Bedömning</th></tr></thead>
+                 <th>${stor(T.enhet.en)}</th><th class="t-mitt">I topplistan</th><th>Bedömning</th></tr></thead>
                <tbody>${prio.rows.map(r => `<tr><td>${esc(r.label)}</td>
                  <td class="t-mitt" data-sort-value="${r.hits}">${r.hits} av ${r.of}</td>
                  <td>${stabilBadge(r.hits, r.of)}</td></tr>`).join('')}</tbody></table>`
@@ -217,21 +233,15 @@ function buildFardigcheck() {
         if (utan.length) {
             out.push({
                 id: 'bas-utan-policy', level: 'warn', tab: 'benchmark',
-                title: `${utan.length} ${termForAntal(utan.length, T.niva)} saknar lönepolitisk referens`,
+                title: `${utan.length} ${ordForAntal(utan.length, T.niva)} saknar lönepolitisk referens`,
                 detail: `Saknas: ${utan.join(', ')}. Grupper utan referens kan inte avvika — "inga avvikelser" kan betyda "ingen referens".`
             });
         }
     }
 
-    // 3. Maskerade grupper som tillsammans är många
+    // 3. Grupper under den inställda tröskeln (de redovisas inte i det som lämnar verktyget) som tillsammans är många
     try {
-        const groups = new Map();
-        d.forEach(r => {
-            const key = (sifferprefixAvYrke(r.yrke) ?? r.yrke) + '|' + r.bas;
-            groups.set(key, (groups.get(key) || 0) + 1);
-        });
-        let maskerade = 0, personer = 0;
-        groups.forEach(n => { if (isKMasked(n)) { maskerade++; personer += n; } });
+        const { grupper: maskerade, personer } = smaGrupperVid(d, kInstalld());
         if (personer > 0) {
             const andel = (personer / d.length) * 100;
             out.push({
@@ -262,7 +272,7 @@ function buildFardigcheck() {
         if (utan.length) {
             out.push({
                 id: 'utan-benchmark', level: 'info', tab: 'benchmark',
-                title: `${utan.length} ${termForAntal(utan.length, T.enhet)} i ${T.niva.en} saknar motsvarighet i jämförelsestatistiken`,
+                title: `${utan.length} ${ordForAntal(utan.length, T.enhet)} i ${T.niva.en} saknar motsvarighet i jämförelsestatistiken`,
                 detail: `De kan inte jämföras externt. Kontrollera att ${T.kod.bfl} stämmer om antalet är oväntat högt.`
             });
         }
@@ -305,11 +315,14 @@ function renderFardigcheck() {
             </li>`).join('')}</ul>`;
 }
 
-function renderKvalitetssakring() {
+export function renderKvalitetssakring() {
     renderRobusthet();      // visar bara startknappen — analysen är dyr
     renderFardigcheck();    // billig, körs direkt
 }
 
-document.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).closest('#btn-run-robusthet')) runRobusthet();
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartRobusthetFardigcheck() {
+    document.addEventListener('click', e => {
+        if (/** @type {HTMLElement} */ (e.target).closest('#btn-run-robusthet')) runRobusthet();
+    });
+}

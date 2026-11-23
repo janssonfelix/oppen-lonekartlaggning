@@ -7,8 +7,9 @@
  * inläst fil, ett organisationspaket, en konfigurationsfil, ett filnamn, en kolumnrubrik eller fritext går genom
  * esc() (src/app/01-html-och-tillganglighet.js). CSP:n stoppar skript och händelsehanterare, så en miss ger
  * förfalskat innehåll, inte kodkörning (docs/dataskydd/riskanalys.md §7, A3). Vakten läser källtexten i src/app/
- * (utom den genererade spegeln 09-lib-speglar.js, som bara läses för att slå upp funktioner) med en liten
- * tokeniserare, utan att ladda appen. Motorn står i tests/helpers/htmlmallar.js.
+ * med en liten tokeniserare, utan att ladda appen; src/lib/ läses för att slå upp funktionerna som appen importerar
+ * (libSomKalla). Importer och exporter läses med acorn, och ett namn slås upp via filens egen import, så att
+ * utslaget inte beror på filordningen. Motorn står i tests/helpers/htmlmallar.js.
  *
  * Vad som prövas:
  *   - varje ${…} i en mallsträng vars fasta text har en HTML-tagg (<td, </p, <!--),
@@ -47,10 +48,10 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { granska } from './helpers/htmlmallar.js';
+import { granska, libSomKalla } from './helpers/htmlmallar.js';
 
 const APP = join(import.meta.dirname, '..', 'src/app');
-const SPEGEL = '09-lib-speglar.js';
+const LIB = 'src/lib';
 
 // ---- Undantagen: säkra uttryck som vakten inte kan bevisa ----
 // Varje post: filen, uttrycket som det står i källan (blanktecken spelar ingen roll) och varför det är säkert.
@@ -70,14 +71,19 @@ const UNDANTAG = [
     { fil: '19-konfiguration.js', uttryck: 'formatter(a)', skal: 'Formaterarna i jämförelsetabellen ger tal eller ögonblicksbildens fasta texter (UK_ETIKETT); bilden räknas i sessionen.' },
     { fil: '19-konfiguration.js', uttryck: 'formatter(b)', skal: 'Som formatter(a).' },
     { fil: '19-konfiguration.js', uttryck: 'formatter', skal: 'Som formatter(a): skickas till diff och anropas med en skillnad mellan två tal.' },
-    { fil: '19-konfiguration.js', uttryck: 'cfg.likvardighet[k]', skal: 'Varje värde prövas på raden nedanför som ett ändligt tal inom fältets gränser innan det sparas; annars kastas fel.' },
-    { fil: SPEGEL, uttryck: '_forandring(f && f[m], n && n[m])', skal: 'm löper över ARSBOKSLUT_BAS_MATT (fasta måttnamn); vakten kan inte skilja dessa nycklar från radens bas.' },
+    { fil: '19-konfiguration.js', uttryck: 'cfg.likvardighet[f]', skal: 'Varje värde prövas på raden nedanför som ett ändligt tal inom fältets gränser innan det sparas; annars kastas fel.' },
+    { fil: LIB, uttryck: '_forandring(f && f[m], n && n[m])', skal: 'm löper över ARSBOKSLUT_BAS_MATT (fasta måttnamn); vakten kan inte skilja dessa nycklar från radens bas.' },
 ];
 
 // ---- Testerna ----
 
-const appKallor = () => readdirSync(APP).filter(f => f.endsWith('.js')).sort()
-    .map(f => ({ namn: f, src: readFileSync(join(APP, f), 'utf8'), prova: f !== SPEGEL }));
+const appKallor = () => {
+    const app = readdirSync(APP).filter(f => /^\d\d-.*\.js$/.test(f)).sort()
+        .map(f => ({ namn: f, text: readFileSync(join(APP, f), 'utf8') }));
+    // Importerna läses med acorn i granska (namnen slås upp via filens import) och i libSomKalla.
+    return [...app.map(a => ({ namn: a.namn, src: a.text, prova: true })),
+        { namn: LIB, src: libSomKalla(join(APP, '..', 'lib'), app.map(a => a.text)), prova: false }];
+};
 
 describe('escaping-vakten: värden i appens HTML går genom esc() eller är bevisat säkra', () => {
     const { resultat, fynd, oanvanda } = granska(appKallor(), UNDANTAG);
@@ -102,6 +108,21 @@ rita(document.body, JSON.parse(text));`;
         expect(granska([{ namn: 'prov.js', src: prov('${r.yrke}') }]).fynd.map(f => f.uttryck)).toEqual(['JSON.parse(text)']);
         expect(granska([{ namn: 'prov.js', src: prov('${esc(r.yrke)}') }]).fynd).toEqual([]);
         expect(granska([{ namn: 'prov.js', src: prov('${r.yrke.length}') }]).fynd).toEqual([]);
+    });
+    it('följer en flerradig import och ger samma utslag i båda filordningarna', () => {
+        // Två filer deklarerar etikett; b.js importerar den osäkra ur a.js över flera rader.
+        const filer = [
+            { namn: 'a.js', src: 'export function etikett(r) { return r.yrke; }' },
+            { namn: 'c.js', src: 'const esc = s => String(s);\nexport function etikett(r) { return esc(r.yrke); }' },
+            { namn: 'b.js', src: `import {
+    etikett,
+} from './a.js';
+const rader = JSON.parse(text);
+document.body.innerHTML = rader.map(r => \`<td>\${etikett(r)}</td>\`).join('');` },
+        ];
+        const utslag = kallor => granska(kallor).fynd.map(f => `${f.fil}:${f.rad} ${f.uttryck}`).sort();
+        expect(utslag(filer)).toEqual(['b.js:4 JSON.parse(text)']);
+        expect(utslag([...filer].reverse())).toEqual(utslag(filer));
     });
     it('fäller en undantagspost som inte träffar något', () => {
         const { fynd, oanvanda } = granska([{ namn: 'prov.js', src: prov('${esc(r.yrke)}') }], [{ fil: 'prov.js', uttryck: 'r.ort', skal: 'prov' }]);

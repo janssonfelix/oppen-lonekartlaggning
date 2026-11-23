@@ -13,9 +13,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fitOLS, tQuantile } from '../src/lib/stat.js';
+import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
 import { huvudregression, HUVUDREGRESSION_MIN_N, HUVUDREGRESSION_MIN_PER_KON, FORKLARINGSMODELL_STANDARD,
-    STEG_YRKE } from '../src/lib/regression.js';
+    STEG_YRKE, blinderOaxaca, kvantilregressionAllaTau } from '../src/lib/regression.js';
 
 const las = f => JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', f), 'utf8'));
 const pct = b => (Math.exp(b) - 1) * 100;
@@ -40,7 +40,7 @@ const STD = { ...FORKLARINGSMODELL_STANDARD };
 const ENDAST_KON = { bas: false, alder: false, yrkesgrupp: false, skal: '' };
 const opts = (extra = {}) => ({ modell: STD, kInstalld: 10, golv: 10, ...extra });
 
-describe('huvudregression: påhittat underlag', () => {
+describe('[B3.1] huvudregression: påhittat underlag', () => {
     const rader = underlag();
 
     it('könskoefficienten är OLS på [1, kön, ålder − medel, en indikator per BAS utom A] med HC3 och t-kvantil', () => {
@@ -48,9 +48,9 @@ describe('huvudregression: påhittat underlag', () => {
         expect(r.error).toBeUndefined();
         const ageMean = rader.reduce((s, d) => s + d.alder, 0) / rader.length;
         const X = rader.map(d => [1, d.kon === 'kvinna' ? 1 : 0, d.alder - ageMean, ...['B', 'C', 'D'].map(b => (d.bas === b ? 1 : 0))]);
-        const fit = fitOLS(X, rader.map(d => Math.log(d.lon)));
+        const fit = anpassaOLS(X, rader.map(d => Math.log(d.lon)));
         const se = Math.sqrt(fit.vcovHC3[1][1]);
-        const tq = tQuantile(0.975, fit.n - fit.k);
+        const tq = tKvantil(0.975, fit.n - fit.k);
         expect(r.konPct).toBe(pct(fit.beta[1]));
         expect(r.konPctLow).toBe(pct(fit.beta[1] - tq * se));
         expect(r.konPctHigh).toBe(pct(fit.beta[1] + tq * se));
@@ -181,5 +181,116 @@ describe('huvudregression: fixturen stat-referens.json', () => {
         expect(r.basList).toEqual(['A', 'B', 'C', 'D', 'E', 'F']);
         expect(r.k).toBe(8);
         expect(r.ageMean).toBeCloseTo(fx.ageMean, 12);
+    });
+});
+
+describe('huvudregression: steget + Yrkesgrupp, fasta effekter för AID×BAS med inomtransformation (ADR-46)', () => {
+    // Två yrken i samma BAS med olika lönenivå: kvinnorna finns mest i det lägre betalda yrket. Inom varje yrke är lönen
+    // identisk för kvinnor och män (bara ålder skiljer), så gapet efter yrkesgrupp är noll — medan gapet efter BAS och
+    // ålder är klart negativt.
+    const rader = (() => {
+        const ut = [];
+        const lägg = (aid, bas, niva, kon, n) => { for (let i = 0; i < n; i++) { const alder = 28 + ((i * 5) % 30); ut.push({ aid, yrke: 'Yrke ' + aid, bas, kon, alder, lon: Math.round(niva * Math.exp(0.004 * (alder - 40))) }); } };
+        lägg('101', 'C', 28000, 'kvinna', 24); lägg('101', 'C', 28000, 'man', 6);
+        lägg('102', 'C', 34000, 'kvinna', 6);  lägg('102', 'C', 34000, 'man', 24);
+        lägg('201', 'E', 38000, 'kvinna', 15); lägg('201', 'E', 38000, 'man', 15);
+        lägg('202', 'E', 44000, 'kvinna', 12); lägg('202', 'E', 44000, 'man', 12);
+        lägg('301', 'F', 50000, 'man', 8);   // enkönad grupp: bidrar inte
+        return ut;
+    })();
+    const r = huvudregression(rader, opts());
+    it('gapet efter yrkesgrupp är noll medan huvudtalet och steget + Ålder är kvar', () => {
+        expect(r.error).toBeUndefined();
+        const alder = r.sequential.find(s => s.name === '+ Ålder');
+        expect(r.sequential.at(-1).name).toBe(STEG_YRKE);
+        expect(r.yrkesSteg.status).toBe('ok');
+        expect(Math.abs(r.yrkesSteg.gapPct)).toBeLessThan(0.05);
+        expect(alder.gapPct).toBeLessThan(-3);
+        expect(r.konPct).toBeCloseTo(alder.gapPct, 6);   // huvudtalet är oförändrat: steget + Ålder
+        expect(r.yrkesSteg.R2).toBeGreaterThan(alder.R2);
+    });
+    it('inomtransformationen ger samma könskoefficient som en indikator per grupp', () => {
+        const am = rader.reduce((s, x) => s + x.alder, 0) / rader.length;
+        const g = [...new Set(rader.map(x => x.aid + '|' + x.bas))].sort();
+        const X = rader.map(x => [x.kon === 'kvinna' ? 1 : 0, x.alder - am, ...g.map(k => (x.aid + '|' + x.bas === k ? 1 : 0))]);
+        expect(r.yrkesSteg.gapPct).toBeCloseTo(pct(anpassaOLS(X, rader.map(x => Math.log(x.lon))).beta[0]), 8);
+    });
+    it('redovisar grupper och personer: enkönade grupper räknas men bidrar inte', () => {
+        expect(r.yrkesSteg).toMatchObject({ nGrupper: 5, nGrupperBada: 4, nEnkonade: 1, nPersoner: 114 });
+    });
+});
+
+describe('BAS-steg räknas i bokstäver i huvudregressionen, Blinder-Oaxaca och kvantilregressionen (regressionsmodellen.md §3)', () => {
+    // Lönen beror bara på bokstaven: +5 % per BAS-intervall. C saknas, så B → D är två intervall. Kvinnorna finns mest
+    // i B, männen mest i D. Med rätt numrering förklarar BAS hela skillnaden.
+    const PLATS = { A: 1, B: 2, D: 4, E: 5 };
+    // brus: ±1 % i ett mönster med medelvärde noll per grupp (alla gruppstorlekar är delbara med 3)
+    const rader = (brus = 0) => {
+        const ut = [];
+        const lägg = (bas, kon, n) => { for (let i = 0; i < n; i++) ut.push({ bas, kon, alder: 30 + ((i * 7) % 25), lon: Math.round(30000 * Math.exp(0.05 * PLATS[bas] + brus * ((i % 3) - 1))), aid: '100', yrke: '100 Yrke', yrkeLabel: 'Yrke' }); };
+        lägg('A', 'kvinna', 12); lägg('A', 'man', 12);
+        lägg('B', 'kvinna', 30); lägg('B', 'man', 3);
+        lägg('D', 'kvinna', 3);  lägg('D', 'man', 30);
+        lägg('E', 'kvinna', 12); lägg('E', 'man', 12);
+        return ut;
+    };
+    it('huvudregressionen: inget oförklarat gap och varje BAS-indikator ger 5 % per bokstavssteg mot referensen A', () => {
+        const r = huvudregression(rader(), opts());
+        expect(r.error).toBeUndefined();
+        expect(Math.abs(r.konPct)).toBeLessThan(0.05);
+        expect(r.basRef).toBe('A');
+        expect(r.basEffekter.map(e => e.bas)).toEqual(['B', 'D', 'E']);
+        for (const e of r.basEffekter) expect(e.pct).toBeCloseTo((Math.exp(0.05 * (PLATS[e.bas] - 1)) - 1) * 100, 1);
+    });
+    it('Blinder-Oaxaca: den oförklarade delen är noll', () => {
+        expect(Math.abs(blinderOaxaca(rader(), { golv: 10, modell: STD }).coefficientPct)).toBeLessThan(0.05);
+    });
+    it('kvantilregressionen: inget gap i någon kvantil', () => {
+        const r = kvantilregressionAllaTau(rader(0.01), { modell: STD });
+        expect(r.results).toHaveLength(3);
+        for (const q of r.results) { expect(q.error).toBeUndefined(); expect(Math.abs(q.konPct)).toBeLessThan(0.5); }
+    });
+});
+
+describe('huvudregression: den valda förklaringsmodellen i returvärdet (ADR-56)', () => {
+    const rader = underlag();
+    const kor = modell => huvudregression(rader, opts({ modell }));
+    const std = kor(STD);
+    it('standard: modelDesc, frasen "ålder och BAS-intervall", inget bortvalt, tillför-tabellen med tre rader', () => {
+        expect(std.error).toBeUndefined();
+        expect(std.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer)');
+        expect(std.fras).toBe('ålder och BAS-intervall');
+        expect(std.bortvalt).toEqual([]);
+        expect(std.modell).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
+        expect(std.tillfor.rader.map(x => x.variabel)).toEqual(['bas', 'alder', 'yrkesgrupp']);
+        expect(std.modellVarning).toBeNull();
+    });
+    it('utan ålder: en kolumn färre, ingen ålderseffekt, ålder bortvald med skälet, inget steg + Ålder', () => {
+        const r = kor({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
+        expect(r.k).toBe(std.k - 1);
+        expect(r.ageEffect).toBeNull();
+        expect(r.ageP).toBeNull();
+        expect(r.bortvalt).toHaveLength(1);
+        expect(r.bortvalt[0]).toMatchObject({ variabel: 'alder', etikett: 'Ålder', skal: 'ingen lön efter ålder' });
+        expect(typeof r.bortvalt[0].deltaR2pp).toBe('number');
+        expect(r.sequential.map(x => x.name)).not.toContain('+ Ålder');
+        expect(r.fras).toBe('BAS-intervall');
+        expect(r.konPct).toBeCloseTo(r.sequential.find(x => x.name === '+ BAS-intervall').gapPct, 8);
+    });
+    it('utan BAS: inga BAS-effekter, frasen "ålder"', () => {
+        const r = kor({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
+        expect(r.basEffekter).toBeNull();
+        expect(r.basRef).toBeNull();
+        expect(r.fras).toBe('ålder');
+        expect(r.modelDesc).toBe('kön + ålder');
+        expect(r.bortvalt.map(b => b.variabel)).toEqual(['bas']);
+    });
+    it('yrkesgrupp vald: frasen, modelDesc och steget + Yrkesgrupp sist; inget bortvalt', () => {
+        const r = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
+        expect(r.konPct).toBeCloseTo(std.yrkesSteg.gapPct, 6);
+        expect(r.fras).toBe('ålder, BAS-intervall och AID-etikett');
+        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + AID-etikett inom BAS (fasta effekter)');
+        expect(r.sequential.at(-1).name).toBe(STEG_YRKE);
+        expect(r.bortvalt).toEqual([]);
     });
 });

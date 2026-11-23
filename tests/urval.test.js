@@ -2,13 +2,13 @@
  * Vitest-tester för src/lib/urval.js — villkor i Utforska.
  */
 import { describe, it, expect } from 'vitest';
-import { villkorAktivt, personFilter, gruppVillkorAktivt, uppfyllerGrupp, beskrivUrval, faltInfo, gruppMattInfo }
+import { villkorAktivt, iUrvalet, gruppVillkorAktivt, uppfyllerGrupp, beskrivUrval, faltInfo, gruppMattInfo }
     from '../src/lib/urval.js';
 
 const rad = over => ({ bas: 'B', aid: '207', yrkeLabel: 'Förskollärare', yrke: '207 Förskollärare',
     lon: 32000, alder: 45, kon: 'kvinna', ...over });
 const v = (falt, op, varde, inte = false) => ({ falt, op, varde, inte });
-const filt = (villkor, lage = 'alla') => personFilter({ lage, villkor });
+const filt = (villkor, lage = 'alla') => iUrvalet({ lage, villkor });
 const nbsp = s => s.replace(/ /g, ' ');
 
 describe('villkorAktivt', () => {
@@ -30,11 +30,11 @@ describe('villkorAktivt', () => {
     });
 });
 
-describe('personFilter', () => {
+describe('iUrvalet', () => {
     it('tom lista släpper igenom alla, oavsett läge', () => {
         expect(filt([])(rad())).toBe(true);
         expect(filt([], 'nagot')(rad())).toBe(true);
-        expect(personFilter(undefined)(rad())).toBe(true);
+        expect(iUrvalet(undefined)(rad())).toBe(true);
     });
     it('kategorifält jämförs mot gruppnycklarna', () => {
         expect(filt([v('aid', 'enAv', ['207 Förskollärare'])])(rad())).toBe(true);

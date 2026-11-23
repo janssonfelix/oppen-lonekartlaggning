@@ -8,16 +8,14 @@
  * referenserna) och räknar läget i spannet, mönstret, förslaget på referens, båda i ord (`lageOchForslag`), och
  * överblickens tal. Grupper under minsta gruppstorlek är redan borta ur raderna; modulen vet inget om tröskeln.
  * Förslaget är ett förslag, ingen regel som verktyget tillämpar någon annanstans.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { bandPosition } from './lonepolitik.js';
+import { bandlage } from './lonepolitik.js';
 
 const _NAMN = { stallningstagande: 'ställningstagandet', statistik: 'statistiken' };
 const _inom = pos => pos >= 0 && pos <= 100;
 const _riktning = (pos, under, over) => (pos == null ? null : pos < 0 ? under : pos > 100 ? over : 'inom');
 const _pos = (median, ref) => {
-    const p = bandPosition(median, ref?.p10, ref?.p90);
+    const p = bandlage(median, ref?.p10, ref?.p90);
     return p == null ? null : p * 100;
 };
 const _skillnad = (varde, ref) => (varde != null && ref != null ? (varde / ref - 1) * 100 : null);
@@ -120,7 +118,7 @@ const _utanforMitten = g => {
  * @param {Array<any>} rader raderna ur jamforelseRader
  * @param {{harStatistik?:boolean, harStallningstagande?:boolean, statistikHarSpann?:boolean}} opt
  */
-export function referensOverblick(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
+export function referensOverblickUr(rader, { harStatistik = true, harStallningstagande = true, statistikHarSpann = true } = {}) {
     const tom = { p10: null, median: null, p90: null };
     const grupper = (rader || []).map(r => {
         const rad = { ...r, statistik: harStatistik ? r.statistik : tom, statistikMatchning: harStatistik ? r.statistikMatchning ?? null : null,

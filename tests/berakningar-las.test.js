@@ -40,7 +40,7 @@ describe('beräkningar på demodatan (låsta tal)', () => {
     const w = createAppWindow();
     beforeAll(() => { w.__loadDemoData(); });
 
-    it('regressionen (runOLSRegression) ger samma tal', () => {
+    it('[B3.1] regressionen (runOLSRegression) ger samma tal', () => {
         expect(stabil(w.__runOLS())).toMatchSnapshot('runOLSRegression');
     });
 

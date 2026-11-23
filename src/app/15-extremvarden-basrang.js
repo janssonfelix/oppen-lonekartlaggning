@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { extremvarden } from '../lib/osakerhet.js';
+import { svPct, svTal } from '../lib/talformat.js';
+import { stor } from '../lib/termer.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { statGolv } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { getData, state } from './12-tillstand.js';
 
 // ---- Outliers-detektor (rad-nivå) ----
 /**
@@ -8,11 +15,11 @@
  * @param {number} [threshold=3] - Z-tröskel.
  * @returns {Array<Object>} Outlier-rader sorterade på |Z| desc.
  */
-function detectOutliers(threshold) {
-    return _osExtremvarden(getData(), statGolv(), threshold);
+export function detectOutliers(threshold) {
+    return extremvarden(getData(), statGolv(), threshold);
 }
 
-function renderOutliers() {
+export function renderOutliers() {
     const container = document.getElementById('outliers-container');
     const wrap = document.getElementById('outliers-table-wrap');
     const countEl = document.getElementById('outliers-count');
@@ -29,7 +36,7 @@ function renderOutliers() {
     const fmt = new Intl.NumberFormat('sv-SE');
     wrap.innerHTML = `<div class="rulla-x"><table class="data-table st-088">
         <thead><tr>
-            <th>Rad</th><th>BAS</th><th>${termStor(T.enhet.en)}</th><th>Kön</th><th class="t-hoger">Ålder</th>
+            <th>Rad</th><th>BAS</th><th>${stor(T.enhet.en)}</th><th>Kön</th><th class="t-hoger">Ålder</th>
             <th class="t-hoger">Lön</th><th class="t-hoger">BAS-median</th>
             <th class="t-hoger">Diff %</th><th class="t-hoger">Avvikelse (sd)</th><th>Bedömning</th>
         </tr></thead>
@@ -61,4 +68,7 @@ function renderOutliers() {
     </p>`;
 }
 
-document.getElementById('outliers-threshold')?.addEventListener('input', renderOutliers);
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExtremvardenBasrang() {
+    document.getElementById('outliers-threshold')?.addEventListener('input', renderOutliers);
+}

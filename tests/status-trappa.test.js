@@ -17,14 +17,14 @@ import { fileURLToPath } from 'node:url';
 import { statusNiva, direktivMarkering, slumpensGranser, omkastningsGranser, bedomSkillnad, perBasSignal, STORLEKSGRANS, DIREKTIVNIVA,
     STATUS_ORD, DIREKTIV_TIPS, DIREKTIV_KOLUMN } from '../src/lib/status.js';
 import { likaArbeteGrupper, stabilitetKort, avsnittBlock } from '../src/lib/rapportunderlag.js';
-import { rngFor } from '../src/lib/rng.js';
+import { slumpFor } from '../src/lib/rng.js';
 
 const person = (yrke, kon, lon) => ({ yrke, kon, lon, alder: 40, bas: 'C' });
 /** n löner jämnt fördelade kring `mitt` med relativ halvbredd `spann` (deterministiskt). */
 const loner = (n, mitt, spann) => Array.from({ length: n }, (_, i) => Math.round(mitt * (1 + spann * (2 * i / (n - 1) - 1))));
 const yrke = (namn, kv, ma) => [...kv.map(l => person(namn, 'kvinna', l)), ...ma.map(l => person(namn, 'man', l))];
 
-describe('statusNiva: trappan', () => {
+describe('[B4.10] statusNiva: trappan', () => {
     it('säkerställd och minst 3 % är Värt att granska', () => {
         expect(statusNiva(4, true)).toBe('granska');
         expect(statusNiva(3, true)).toBe('granska');
@@ -89,7 +89,7 @@ function refMedian(a) {
     return n & 1 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 function refOmkastningsGranser(kv, ma, B = 1000) {
-    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, rnd = slumpFor(kv, ma), kvoter = new Array(B);
     for (let b = 0; b < B; b++) {
         for (let i = 0; i < nKv; i++) { const j = i + ((rnd() * (n - i)) | 0), t = alla[i]; alla[i] = alla[j]; alla[j] = t; }
         const mKv = refMedian(alla.slice(0, nKv)), mMa = refMedian(alla.slice(nKv));
@@ -100,7 +100,7 @@ function refOmkastningsGranser(kv, ma, B = 1000) {
     return { lag: kvoter[svans], hog: kvoter[B - 1 - svans] };
 }
 
-describe('omkastningsGranser ur rangordning ger samma gränser som omkastade löner', () => {
+describe('[B4.9] omkastningsGranser ur rangordning ger samma gränser som omkastade löner', () => {
     const fall = [
         ['2 mot 2', loner(2, 30000, 0.1), loner(2, 31000, 0.1)],
         ['udda mot jämnt', loner(11, 97000, 0.1), loner(8, 100000, 0.1)],
@@ -194,8 +194,8 @@ describe('ingen färg på storleken ensam i appen', () => {
     // jämförelse med 5 % som direkt väljer en färgklass (fg-, farg-, ar-, bricka-, bg-, f-) är samma fel.
     const MONSTER = /Math\.abs\([^)]*\)\s*>=?\s*5(?:\.0+)?\s*\?\s*['"`](?:fg|farg|ar|bricka|bg|f)-[\w-]+/;
     const appDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'app');
-    it('ingen fil under src/app/ (utom spegeln) sätter en färgklass på |skillnad| > 5', () => {
-        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+    it('ingen fil under src/app/ sätter en färgklass på |skillnad| > 5', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js'))
             .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
                 .map((rad, i) => (MONSTER.test(rad) ? `${f}:${i + 1}: ${rad.trim()}` : null)).filter(Boolean));
         expect(traffar).toEqual([]);
@@ -213,8 +213,8 @@ describe('ingen färg på storleken ensam i appen', () => {
     // Undantag: rader som får jämföra en skillnad med en storleksgräns och välja klass, som "fil:rad-text" med motiv.
     // Listan är tom: inget ställe under src/app/ har i dag ett beslut som tillåter det.
     const STORLEK_UNDANTAG = /** @type {Set<string>} */ (new Set([]));
-    it('ingen fil under src/app/ (utom spegeln) sätter färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
-        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js')
+    it('ingen fil under src/app/ sätter färg eller fetstil på en skillnad jämförd med en storleksgräns', () => {
+        const traffar = readdirSync(appDir).filter(f => f.endsWith('.js'))
             .flatMap(f => readFileSync(join(appDir, f), 'utf8').split('\n')
                 .map((rad, i) => (STORLEK.test(rad) && !STORLEK_UNDANTAG.has(`${f}:${rad.trim()}`) ? `${f}:${i + 1}: ${rad.trim()}` : null))
                 .filter(Boolean));

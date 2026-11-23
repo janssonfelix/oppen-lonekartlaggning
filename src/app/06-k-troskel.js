@@ -1,7 +1,30 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_SKARM, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, LITET_UNDERLAG, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
+import { personOrd } from '../lib/namn.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { _kMaskNoteText } from './06-maskeringsnoter.js';
+import { T } from './09-termer.js';
+import { _rfExportFigur } from './10-diagramritare.js';
+import { state } from './12-tillstand.js';
+import { computeBootstrapCI, computePowerAnalysis, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { renderOutliers } from './15-extremvarden-basrang.js';
+import { renderDataValidationReport } from './16-inlasningskontroll.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { renderSnapshotComparison } from './19-konfiguration.js';
+import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
+import { invalidateStatCaches } from './30-statistikcacher.js';
+import { renderTabContent } from './31-navigering.js';
+import { _fcRensaParMal } from './36-loneoversyn.js';
+import { forklaringsmodell } from './50-regressionsmodeller.js';
+import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { explorerSmaIExport } from './70-utforska.js';
+import { diagramKopiaKalla } from './74-alla-diagram.js';
+import { ritaGruppdossier } from './80-gruppdossier.js';
+import { oppnaInstallningar } from './86-installningar.js';
 
-// ---- k-anonymitet (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
+// ---- Minsta gruppstorlek (uppgiftsminimering och inbyggt dataskydd, art. 5.1 c och 25) ----
 // Grupper med färre än kTroskel() personer redovisas inte i det som lämnar verktyget, så att enskildas
 // löner inte kan räknas fram via t.ex. känd åldersstruktur.
 //
@@ -14,16 +37,13 @@
 // Standardvärdet 10 är verktygets eget (docs/utveckling/k-troskeln.md). Användaren kan ändra värdet (ADR-38): ett värde under standard kräver bekräftelse och visas med stående varning. Värdet
 // står i metodbilagan, i exporterad diagramdata och i tabell-CSV; under standard står meningen
 // om sänkt tröskel dessutom på det som kan spridas för sig (se kStampel och _kSanktNot).
-const K_STANDARD = 10;
-const K_MIN = 2;
-const K_MAX = 1000;
-
-/** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
-const K_SKARM = 1;
+// K_STANDARD, K_MIN, K_MAX, K_SKARM (tröskeln på skärmen, ADR-51) och LITET_UNDERLAG står i src/lib/ktroskel.js;
+// appen läser de två sista härifrån.
+export { K_SKARM, LITET_UNDERLAG };
 /** Tröskeln som gäller just nu: den inställda i exportläget, annars 1. Enda vägen att läsa det som ska tillämpas. */
-function kTroskel() { return state.kLage === 'export' ? state.kTroskel : K_SKARM; }
+export function kTroskel() { return state.kLage === 'export' ? state.kTroskel : K_SKARM; }
 /** Den inställda minsta gruppstorleken (gäller det som lämnar verktyget), oavsett läge. */
-function kInstalld() { return state.kTroskel; }
+export function kInstalld() { return state.kTroskel; }
 
 /** Organisationspaketets golv för tröskeln (ADR-47), eller null när inget paket satt något. */
 function kTroskelLagst() { return state.paketLas.kTroskelLagst; }
@@ -32,48 +52,51 @@ function kTroskelLagst() { return state.paketLas.kTroskelLagst; }
 function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_MIN); }
 
 /**
- * Golv för skattningar (regression per BAS, bootstrap, förväntad lön): aldrig under
- * standardvärdet, eftersom gränsen där gäller skattningens tillförlitlighet och inte
- * redovisningen. Följer med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden.
- * Räknas på den inställda tröskeln i båda lägena (ADR-51), så att skattningarna — och deras cacher — är desamma.
+ * Golv för skattningar (regression per BAS, bootstrap, förväntad lön): aldrig under standardvärdet, eftersom gränsen
+ * där gäller skattningens tillförlitlighet och inte redovisningen. På skärmen är det K_STANDARD, ett kvalitetsgolv; i
+ * exportläget följer det med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden i det som lämnar
+ * verktyget (ADR-103). En höjd tröskel hindrar alltså inte analysen på skärmen. Skattningar som sparas har golvet i
+ * nyckeln (bootstrapCIGallande och styrkaGallande i 13-oversikt.js, laLikaGrupper i 41-lika-arbete.js).
  */
-function statGolv() { return _ktStatGolv(kInstalld()); }   // oberoende av läget: skattningarna är desamma på skärmen och i exporten
+export function statGolv() { return statGolvVid(kTroskel()); }   // kTroskel() är 1 på skärmen: golvet blir K_STANDARD
+
+/**
+ * Meningen där en analys på skärmen säger att en grupp är för liten för att prövas (ADR-103): vad användaren kan göra
+ * i stället. Med inledande mellanslag; tom i exportläget, där den inte hör hemma.
+ */
+export function provaEnskiltText() {
+    return state.kLage === 'export' ? '' : ' Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan.';
+}
 
 /**
  * Avgör om en gruppstorlek är under k-tröskeln.
  * @param {number} n - Antal personer i gruppen.
  * @returns {boolean}
  */
-function isKMasked(n) { return n < kTroskel(); }
+export function isKMasked(n) { return n < kTroskel(); }
 
-/**
- * Gränsen för "litet underlag" i ett diagram: en stapel eller ett segment som gäller färre personer än så ritas
- * med mönster och sägs vara osäkert. Det är inte en maskeringsgräns — gruppen som stapeln räknas i når redan
- * minsta gruppstorlek — utan en varning för att några få personer kan se ut som ett mönster. Fem är den gräns
- * som är vanlig för små tal i tabeller, och samma som könsskevhetstabellen använder.
- */
-const LITET_UNDERLAG = 5;
-function litetUnderlag() { return LITET_UNDERLAG; }
+/** Gränsen för "litet underlag" i ett diagram (LITET_UNDERLAG, src/lib/ktroskel.js). */
+export function litetUnderlag() { return LITET_UNDERLAG; }
 
 // Reglerna för vad som får redovisas vid k bor i src/lib/ktroskel.js med tröskeln som argument. Adaptrarna nedan
 // behåller appens namn och lägger till tröskeln som gäller: kTroskel() för det som redovisas, kInstalld() för stämpeln
-// och texterna om regeln. _kTolka, _konAntal, _parNarK och _kUndantagNot läser ingen tröskel och kommer direkt ur spegeln.
-function _konFarRedovisas(nKv, nMa) { return _ktKonFarRedovisas(nKv, nMa, kTroskel()); }
+// och texterna om regeln. _kTolka, _konAntal, _parNarK och _kUndantagNot läser ingen tröskel och importeras direkt ur lib.
+export function _konFarRedovisas(nKv, nMa) { return konFarRedovisas(nKv, nMa, kTroskel()); }
 /** Får könsuppdelade lönemått för hela radmängden redovisas? */
-function _konFarRedovisasFor(rader) { return _ktKonFarRedovisasFor(rader, kTroskel()); }
+export function _konFarRedovisasFor(rader) { return konFarRedovisasFor(rader, kTroskel()); }
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
-function _konUtelamnatNot() { return _ktKonUtelamnatNot(kTroskel()); }
+export function _konUtelamnatNot() { return konUtelamnatNot(kTroskel()); }
 
 /** Regressionens råa mediangap som text (ktroskel.js: raGapText). */
-function _raGapText(reg, fmt) { return _ktRaGapText(reg, fmt, kTroskel()); }
+export function _raGapText(reg, fmt) { return raGapText(reg, fmt, kTroskel()); }
 
-/** Regressionens stegvisa uppdelning så som den får redovisas (ktroskel.js: regStegForRedovisning). */
-function _regStegForRedovisning(reg) { return _ktRegSteg(reg, kTroskel()); }
-
-/** Regressionens BAS-effekter så som de får redovisas (ktroskel.js: basEffekterForRedovisning); noten med appens termer. */
-function _basEffekterForRedovisning(reg) {
-    const k = kTroskel();
-    return _ktBasEffekter(reg, k, utelamnade => _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen'));
+/**
+ * Noten om regressionens BAS-effekter som utelämnats under tröskeln k, med appens termer: basEffektNot till
+ * basEffekterForRedovisning i src/lib/ktroskel.js (genom vymodellerna för regressionskortet och rapportmodellen).
+ * @param {string[]} utelamnade @param {number} k
+ */
+export function _basEffektNot(utelamnade, k) {
+    return _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen');
 }
 
 /**
@@ -81,7 +104,7 @@ function _basEffekterForRedovisning(reg) {
  * noter). Tom text tar bort noten. Noten läggs efter diagrammets behållare, så att den inte tränger
  * ihop ritytan.
  */
-function _setDiagramKNot(chartId, text) {
+export function _setDiagramKNot(chartId, text) {
     const chart = document.getElementById(chartId);
     if (!chart) return;
     const noteId = chartId + '-k-not';
@@ -102,7 +125,7 @@ function _setDiagramKNot(chartId, text) {
  * skriver över den andra. Tom text tar bort noten. Läggs efter k-noten om den finns, annars efter behållaren. Id:t
  * börjar med diagrammets (chart-…), så *Rensa all data* tömmer den med diagrammen.
  */
-function _setDiagramMetodNot(chartId, text) {
+export function _setDiagramMetodNot(chartId, text) {
     const chart = document.getElementById(chartId);
     if (!chart) return;
     const noteId = chartId + '-metod-not';
@@ -124,10 +147,10 @@ function _setDiagramMetodNot(chartId, text) {
  * — Rapportunderlaget, Word-utkastet, utskriften, protokollet, Att göra, handlingsplanen och
  * gruppdossiern — använder denna regel (via _parForRedovisning).
  */
-function _parOverTroskel(p) { return _parNarK(p, kTroskel()); }
+export function _parOverTroskel(p) { return parNarK(p, kTroskel()); }
 
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
-function _parUtelamnadeNot(antal, k = kTroskel()) { return _ktParUtelamnadeNot(antal, k); }
+export function _parUtelamnadeNot(antal, k = kTroskel()) { return parUtelamnadeNot(antal, k); }
 
 /**
  * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
@@ -137,10 +160,10 @@ function _parUtelamnadeNot(antal, k = kTroskel()) { return _ktParUtelamnadeNot(a
  * @param {any[]} [pairs]
  * @param {number} [k]
  */
-function _parForRedovisning(pairs, k = kTroskel()) { return _ktParForRedovisning(pairs, k); }
+export function _parForRedovisning(pairs, k = kTroskel()) { return parForRedovisning(pairs, k); }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
-function kStampel() { return _ktStampel(kInstalld()); }
+export function kStampel() { return kStampelVid(kInstalld()); }
 
 /**
  * Raden i diagramdata från ett diagram med en punkt per person (figurens `individer`, ADR-39): filen bär en rad
@@ -149,67 +172,60 @@ function kStampel() { return _ktStampel(kInstalld()); }
  * och i raden om urvalet följer den med som den står i lönefilen. Punkterna följer tröskeln som på skärmen
  * (individLitenFor).
  */
-function kIndividRad() {
+export function kIndividRad() {
     return `Filen innehåller en rad per person (lön, kön, ålder eller grupp) och ska hanteras som personuppgifter. Text ur fältet för ${T.enhet.en} kan följa med som den står i lönefilen.`;
 }
 
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
-function kStampelFor(undantag) { return _ktStampelFor(undantag, kInstalld()); }
+export function kStampelFor(undantag) { return kStampelForVid(undantag, kInstalld()); }
 
 /**
- * Vilket dokumenterat undantag en tabell eller ett diagram hör till, om något: allt i fliken
- * Likvärdigt arbete, och Utforskas tabell och diagram när rutan "Ta med grupper under k i
- * exporten" är ikryssad.
- *
- * Fliken Likvärdigt arbete går först och gäller ALLT i den, vilket bibliotek som än har ritat: fliken
- * redovisar grupper under tröskeln utan att märka dem, så stämpeln kan inte bero på vad figuren säger om
- * sig själv. En stämpel som varnar i onödan är ofarlig; en som inte varnar när den borde är det inte.
+ * Vilket dokumenterat undantag en tabell eller ett diagram hör till, om något. Regeln är `kUndantag` i
+ * src/lib/ktroskel.js; här läses det den behöver ur sidan: fliken, figuren och Utforskas ruta.
  * @param {Element|null} el
  * @param {boolean} [medSma]  bara för diagram ritade med diagramkärnan (ADR-39): bär exporten små grupper?
  *   Exportmenyn skickar det svar den själv exporterar efter, så att stämpel och innehåll följer samma svar.
  *   Utelämnat frågas vyn här (en gång).
  * @returns {string} Undantagets namn, eller tom sträng.
  */
-function _kUndantagFor(el, medSma) {
+export function _kUndantagFor(el, medSma) {
     if (!el || typeof el.closest !== 'function') return '';
     // En kopia i Alla diagram (74-alla-diagram.js) bär samma figur som källan, och stämpeln följer källans flik.
     const kalla = typeof diagramKopiaKalla === 'function' ? diagramKopiaKalla(el) : null;
-    if (el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))) return 'Likvärdigt arbete';
-    // Ett diagram ritat med diagramkärnan exporteras annars utan små grupper om inte vyn uttryckligen begär
-    // dem (exportMedSma): undantaget gäller bara när exporten faktiskt bär dem.
-    if (el._figur) {
-        const bar = typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma;
-        return bar ? 'valt i Tabeller och egna vyer' : '';
-    }
-    if ((el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && explorerSmaIExport()) return 'valt i Tabeller och egna vyer';
-    return '';
+    const arFigur = !!el._figur;
+    return kUndantag({
+        iLikvardighet: !!(el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))),
+        arFigur,
+        figurMedSma: arFigur && !!(typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma),
+        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && !!explorerSmaIExport(),
+    });
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-function _kSanktNot() { return _ktSanktNot(kInstalld()); }
+export function _kSanktNot() { return kSanktNot(kInstalld()); }
 
 /** Stycket med stämpeln för utskrifter när tröskeln är sänkt (escapat), annars tom sträng. */
-function _kSanktStycke() {
+export function _kSanktStycke() {
     const not = _kSanktNot();
     return not ? `<p class="farg-kritisk fw-600">${esc(not)}</p>` : '';
 }
 
 /** En punkt per person är liten när gruppen eller personens kön i gruppen är under tröskeln (ktroskel.js: individLitenFor). */
-function individLitenFor(rader) { return _ktIndividLitenFor(rader, kTroskel()); }
+export function individLitenFor(rader) { return individLitenForVid(rader, kTroskel()); }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
-function _kSidfot(text) { return _ktSidfot(text, kInstalld()); }
+export function _kSidfot(text) { return kSidfot(text, kInstalld()); }
 
 /** Tabell-CSV: stämpeln som sista rad, om den inte redan står i raderna (diagramdata). */
-function _csvMedStampel(rows, undantag) { return _ktCsvMedStampel(rows, undantag, kInstalld()); }
+export function _csvMedStampel(rows, undantag) { return csvMedStampel(rows, undantag, kInstalld()); }
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
-function _tsvMedStampel(rows, undantag) { return _ktTsvMedStampel(rows, undantag, kInstalld()); }
+export function _tsvMedStampel(rows, undantag) { return tsvMedStampel(rows, undantag, kInstalld()); }
 
-/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
-function _kText(s) { return _ktText(s, kInstalld()); }
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet som gäller i läget (statGolv). */
+export function _kText(s) { return kText(s, kInstalld(), statGolv()); }
 
 /** Fyller de fasta texterna i index.html som nämner talet. */
-function _fyllKTexter() {
+export function _fyllKTexter() {
     document.querySelectorAll('[data-k-troskel]').forEach(el => { el.textContent = String(kInstalld()); });
     document.querySelectorAll('[data-k-golv]').forEach(el => { el.textContent = String(statGolv()); });
     document.querySelectorAll('[data-k-tooltip]').forEach(el => { el.setAttribute('data-tooltip', _kText(el.getAttribute('data-k-tooltip'))); });
@@ -218,7 +234,7 @@ function _fyllKTexter() {
 }
 
 // Fält, varning och texter som visar värdet.
-function _synkaKTroskel() {
+export function _synkaKTroskel() {
     _fyllKTexter();
     const k = kInstalld();
     const falt = document.getElementById('k-troskel');
@@ -245,27 +261,12 @@ function _synkaKTroskel() {
     }
 }
 
-function _kVisaFel(meddelande) {
+export function _kVisaFel(meddelande) {
     const fel = document.getElementById('k-troskel-fel');
     if (!fel) return;
     fel.textContent = meddelande || '';
     fel.hidden = !meddelande;
 }
-document.getElementById('k-troskel')?.addEventListener('change', e => {
-    const r = sattKTroskel(/** @type {HTMLInputElement} */ (e.target).value, { stegvis: true });
-    _kVisaFel(r.ok || r.nekad ? '' : r.fel);
-    const sag = () => { if (r.ok && typeof announceToScreenReader === 'function') announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`); };
-    if (r.klar) r.klar.then(sag); else sag();
-});
-document.getElementById('btn-k-aterstall')?.addEventListener('click', () => {
-    sattKTroskel(_kAterstallVarde(), { fraga: false, stegvis: true });
-    _kVisaFel('');
-});
-// Länken i varningen: öppna inställningarna med fokus i fältet.
-document.getElementById('k-troskel-varning-lank')?.addEventListener('click', e => {
-    e.preventDefault();
-    if (typeof oppnaInstallningar === 'function') oppnaInstallningar({ fokus: 'k-troskel' });
-});
 
 /**
  * Sätter tröskeln. Sänkning till ett värde under standard kräver bekräftelse (fraga: false
@@ -280,8 +281,8 @@ document.getElementById('k-troskel-varning-lank')?.addEventListener('click', e =
  * @returns {{ok: boolean, varde?: number, andrad?: boolean, fel?: string, nekad?: boolean, klar?: Promise<void>}}
  *   ok: true → varde och andrad (och klar, omritningens löfte, när något ritades om); ok: false → fel (ogiltigt värde) eller nekad (användaren avböjde).
  */
-function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
-    const n = _kTolka(v);
+export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
+    const n = kTolka(v);
     if (n == null) { _synkaKTroskel(); return { ok: false, fel: `Ange ett heltal mellan ${K_MIN} och ${K_MAX}.` }; }
     const lagst = kTroskelLagst();
     if (lagst != null && n < lagst) { _synkaKTroskel(); return { ok: false, fel: `Lägst ${lagst} enligt organisationspaketet.` }; }
@@ -297,7 +298,8 @@ function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } = {}) {
     state.kTroskel = n;
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
-    // bootstrapen sekunder. § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // bootstrapen sekunder. På skärmen är golvet alltid K_STANDARD (ADR-103), så det händer bara i förhandsvisningen;
+    // exportens golv räknas när en export läser det (bootstrapCIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
     // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
     if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
@@ -333,7 +335,7 @@ function _skattningarIBakgrunden() {
             if (state.data.length) {
                 try { computeBootstrapCI(); } catch (_e) { state.bootstrapCI = null; }
                 try { state.powerAnalysis = computePowerAnalysis(); } catch (_e) { state.powerAnalysis = null; }
-                if (typeof updateDashboardStats === 'function') updateDashboardStats();
+                if (typeof ritaNyckeltal === 'function') ritaNyckeltal();
                 if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet();
                 const oppen = document.querySelector('.nav-item.active[data-tab]');
                 const flik = oppen ? oppen.getAttribute('data-tab') : null;
@@ -356,14 +358,14 @@ function _skattningarIBakgrunden() {
  * visar aldrig en flik som ritades före en ändring (ADR-81) — och exporterna går genom exportgrinden (23-exportgrind.js), som ritar om en flik som inte
  * är aktuell innan något läses ur den.
  */
-function _renderaOmAllaFlikar() {
+export function _renderaOmAllaFlikar() {
     for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
     visningNy();   // omritningen rör flera flikar: ingen visas igen som den var (ADR-81)
 }
-function _omritningForsok(namn, fn) { try { fn(); } catch (e) { rapporteraFel(`omritning efter ändrad k-tröskel (${namn})`, e); } }
+export function _omritningForsok(namn, fn) { try { fn(); } catch (e) { rapporteraFel(`omritning efter ändrad k-tröskel (${namn})`, e); } }
 
 // Stegen i omritningen efter ändrad tröskel, i ordning: [namn, funktion].
-function _omritningssteg() {
+export function _omritningssteg() {
     if (!state.data.length || typeof renderTabContent !== 'function') return [];
     const steg = [];
     // Först töms de flikar som inte syns: de bär tal från den gamla tröskeln tills de ritas om (exportgrinden).
@@ -373,8 +375,8 @@ function _omritningssteg() {
     }]);
     // Översikt och Filer och kvalitet: nyckeltal, kompliansöversikt, underlagets kvalitet, processöversikten, Att göra,
     // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
-    steg.push(['nyckeltal', () => { if (typeof updateDashboardStats === 'function') updateDashboardStats(); }]);
-    steg.push(['kompliansöversikt', () => { if (typeof updateCompliance === 'function') updateCompliance(); }]);
+    steg.push(['nyckeltal', () => { if (typeof ritaNyckeltal === 'function') ritaNyckeltal(); }]);
+    steg.push(['kompliansöversikt', () => { if (typeof ritaKravstatus === 'function') ritaKravstatus(); }]);
     // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
     // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
     // med en egen körning. Mellan stegen kan en tidtagare byta underlaget (en fil som läses klart, rensningen vid
@@ -416,7 +418,7 @@ function _omritningssteg() {
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', () => {
         const dossier = document.getElementById('dossier-body');
-        if (dossier && dossier.innerHTML.trim() && typeof renderGruppdossier === 'function') renderGruppdossier();
+        if (dossier && dossier.innerHTML.trim() && typeof ritaGruppdossier === 'function') ritaGruppdossier();
     }]);
     return steg;
 }
@@ -429,7 +431,7 @@ function _omritningssteg() {
  */
 /** @type {Promise<void>|null} */
 let _omritningPagar = null;
-function _renderaOmAllaFlikarStegvis() {
+export function _renderaOmAllaFlikarStegvis() {
     if (_omritningPagar) return _omritningPagar;
     const steg = _omritningssteg();
     if (!steg.length) return Promise.resolve();
@@ -465,3 +467,21 @@ function _renderaOmAllaFlikarStegvis() {
     return _omritningPagar;
 }
 
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartKTroskel() {
+    document.getElementById('k-troskel')?.addEventListener('change', e => {
+        const r = sattKTroskel(/** @type {HTMLInputElement} */ (e.target).value, { stegvis: true });
+        _kVisaFel(r.ok || r.nekad ? '' : r.fel);
+        const sag = () => { if (r.ok && typeof announceToScreenReader === 'function') announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`); };
+        if (r.klar) r.klar.then(sag); else sag();
+    });
+    document.getElementById('btn-k-aterstall')?.addEventListener('click', () => {
+        sattKTroskel(_kAterstallVarde(), { fraga: false, stegvis: true });
+        _kVisaFel('');
+    });
+    // Länken i varningen: öppna inställningarna med fokus i fältet.
+    document.getElementById('k-troskel-varning-lank')?.addEventListener('click', e => {
+        e.preventDefault();
+        if (typeof oppnaInstallningar === 'function') oppnaInstallningar({ fokus: 'k-troskel' });
+    });
+}

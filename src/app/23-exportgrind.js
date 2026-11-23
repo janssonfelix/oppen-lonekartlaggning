@@ -22,15 +22,24 @@
 // grinden ritar om varje flik som läses, och efteråt ritas skärmen tillbaka. De två funktioner all export av
 // tabeller och diagram går genom (_cloneAndCleanTableForExport, _chartExportUnderlag) går själva in i
 // exportläget om anroparen inte redan gjort det, så ingen väg kan läsa skärmens omaskade tal.
-function iExportLage() { return state.kLage === 'export'; }
+import { flikInaktuellVid, skaRitasForeExport } from '../lib/exportgrind.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { _omritningForsok, _omritningssteg, _renderaOmAllaFlikar, _renderaOmAllaFlikarStegvis } from './06-k-troskel.js';
+import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
+import { state } from './12-tillstand.js';
+import { RENSA_BEHALLARE, RENSA_OVRIGT, RENSA_TABELLER } from './26-rensning.js';
+import { PANEL_GROUPS, renderTabContent } from './31-navigering.js';
+import { _exportSakraKopia, arDiagramKopia, utAllaDiagramEfterExport } from './74-alla-diagram.js';
+export function iExportLage() { return state.kLage === 'export'; }
 function _bytKLage(lage, { tur = false } = {}) {
     state.kLage = lage;
     // Allt som är ritat bär det andra läget. En exports tur och retur (tur) ändrar inget som visas när den är klar:
     // visningsversionen står kvar, och en flik som ritades om under exporten känns igen på sin generation (31-navigering.js).
     ritGenerationNy({ tur });
-    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), och skattningarna
-    // (statGolv, bootstrap, styrka, § 3:10-paren) är desamma i båda lägena. Livscykelns bevisunderlag hör till det
-    // som är ritat.
+    // Inget räknat släpps: Lika arbetes minne har ett rum per tröskel (skärmens och exportens), bootstrap-KI:t och
+    // styrkan läses per golv (statGolv är K_STANDARD på skärmen och kan vara högre i exportläget, ADR-103;
+    // bootstrapCIGallande och styrkaGallande i 13-oversikt.js), och § 3:10-paren läser ingen tröskel. Livscykelns
+    // bevisunderlag hör till det som är ritat.
     state._lifecycleCache = null;
 }
 const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
@@ -62,8 +71,8 @@ function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ri
  * @param {() => T} fn
  * @returns {T}
  */
-let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i tid): skärmen ritas tillbaka när den sista är klar
-function medExportLage(fn) {
+export let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i tid): skärmen ritas tillbaka när den sista är klar
+export function medExportLage(fn) {
     // Den yttersta exporten byter läge och ritar tillbaka; ett läge som satts utifrån (state.kLage = 'export') rörs inte.
     const yttre = _exportDjup === 0 && !iExportLage();
     if (yttre) _bytKLage('export', { tur: true });
@@ -100,34 +109,32 @@ function sattForhandsvisning(pa, { stegvis = false } = {}) {
     }
     return true;
 }
-function iForhandsvisning() { return document.body.classList.contains('forhandsvisning'); }
-document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
-document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
+export function iForhandsvisning() { return document.body.classList.contains('forhandsvisning'); }
 
 let _ritGeneration = 1;
-const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
+export const _ritadVid = new Map();     // flik → generationen då den senast ritades klart
 // Visningsversionen (ADR-81) ökar vid allt som kan ändra något som visas: varje inmatning i sidan utom ren navigering
 // (31-navigering.js), varje ny generation utom en exports tur och retur, inläsning, rensning, en konfigurationsfil, ett
 // paket och varje bakgrundsberäkning som blir klar. En färdigritad flik visas igen utan omritning bara när
 // visningsversionen är densamma som när den ritades. Hellre en ökning för mycket än en för lite.
 let _visningsversion = 0;
 /** Något som kan ändra det som visas har hänt: ingen ritad flik visas igen som den är. */
-function visningNy() { _visningsversion++; }
-function visningsversion() { return _visningsversion; }
-const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
+export function visningNy() { _visningsversion++; }
+export function visningsversion() { return _visningsversion; }
+export const _ritasNu = new Set();      // flikar som ritas just nu (ritningen får läsa sina egna diagram)
 
 /**
  * Något som styr vad som får visas har ändrats: allt som är ritat hittills är inaktuellt. Visningsversionen ökar
  * också, utom när det är en exports tur och retur (`tur`, se _bytKLage).
  * @param {{tur?: boolean}} [val]
  */
-function ritGenerationNy({ tur = false } = {}) { _ritGeneration++; if (!tur) visningNy(); }
-function ritGeneration() { return _ritGeneration; }
+export function ritGenerationNy({ tur = false } = {}) { _ritGeneration++; if (!tur) visningNy(); }
+export function ritGeneration() { return _ritGeneration; }
 /** Ritades fliken före den senaste ändringen, utan att ha ritats om sedan dess? */
-function flikInaktuell(flik) { return _ritadVid.has(flik) && _ritadVid.get(flik) !== _ritGeneration; }
+export function flikInaktuell(flik) { return flikInaktuellVid(_ritadVid.get(flik), _ritGeneration); }
 
 /** Fliken som äger ett element, eller null för det som ligger utanför flikarna (dialoger, sidhuvud). */
-function _egFlikFor(el) {
+export function _egFlikFor(el) {
     const panel = el && el.closest ? el.closest('.view-panel') : null;
     if (!panel) return null;
     const id = panel.id.replace(/^view-/, '');
@@ -140,15 +147,15 @@ function _egFlikFor(el) {
  * fliken är aktuell (eller ritas just nu) och elementet sitter kvar i sidan. En omritning kan ha ersatt
  * elementet — då är det gamla inte längre i sidan, och svaret är falskt.
  */
-function exportSakra(el) {
+export function exportSakra(el) {
     if (!el) return false;
     // En kopia i Alla diagram (74-alla-diagram.js) går till sin källa: källans flik säkras och kopian får dess figur.
     if (typeof arDiagramKopia === 'function' && arDiagramKopia(el)) return _exportSakraKopia(el);
     const flik = _egFlikFor(el);
     if (!flik) return el.isConnected !== false;   // utanför flikarna (en dialog) — eller ett element som inte sitter kvar i sidan
-    // En flik som aldrig ritats genom navigeringen (eller är inaktuell) ritas i det läge som gäller nu — i exportläget
-    // också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
-    if (!_ritasNu.has(flik) && (flikInaktuell(flik) || (iExportLage() && !_ritadVid.has(flik)))) {
+    // Regeln (skaRitasForeExport, src/lib/exportgrind.js): en inaktuell flik ritas i det läge som gäller nu — i
+    // exportläget också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
+    if (skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik), exportLage: iExportLage() })) {
         try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
         if (flikInaktuell(flik)) return false;                      // fliken gick inte att rita om: ingenting exporteras ur den
     }
@@ -156,7 +163,7 @@ function exportSakra(el) {
 }
 
 /** Elementet med det id:t, efter att dess flik har säkrats. Null om det saknas eller inte får läsas. */
-function exportElement(id) {
+export function exportElement(id) {
     const el = document.getElementById(id);
     if (!el) return null;
     if (!exportSakra(el)) { const ny = document.getElementById(id); return ny && ny !== el && exportSakra(ny) ? ny : null; }
@@ -164,9 +171,9 @@ function exportElement(id) {
 }
 
 /** Ritar om varje flik som har ritats någon gång men inte är aktuell — före en export som tar "allt som är ritat" (ZIP). */
-function exportSakraAlla() {
+export function exportSakraAlla() {
     for (const flik of [..._ritadVid.keys()]) {
-        if (!flikInaktuell(flik) || _ritasNu.has(flik)) continue;
+        if (!skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik) })) continue;
         try { renderTabContent(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
     }
 }
@@ -177,7 +184,7 @@ function exportSakraAlla() {
  * varken i tabeller, i diagrammens figurer eller i flikens topp. Fliken ritas på nytt när den öppnas eller när en
  * export behöver den. Samma behållare som "Rensa all data" tömmer (26-rensning.js); sidans fasta texter rörs inte.
  */
-function tomFlikarUtom(utom = new Set()) {
+export function tomFlikarUtom(utom = new Set()) {
     visningNy();   // det som töms visas inte igen som det var (31-navigering.js)
     const ska = el => { const flik = _egFlikFor(el); return !!flik && !utom.has(flik); };
     for (const id of [...RENSA_BEHALLARE, ...RENSA_OVRIGT]) { const el = document.getElementById(id); if (el && ska(el)) el.innerHTML = ''; }
@@ -189,4 +196,10 @@ function tomFlikarUtom(utom = new Set()) {
     document.querySelectorAll('.view-panel .avsnitt-nyckel').forEach(el => { if (ska(el)) { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); } });
     const tryck = document.getElementById('print-report');
     if (tryck) tryck.innerHTML = '';     // en färdig utskrift bär kopior av tabellerna
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartExportgrind() {
+    document.getElementById('btn-forhandsvisa')?.addEventListener('click', () => sattForhandsvisning(!iForhandsvisning(), { stegvis: true }));
+    document.getElementById('btn-forhandsvisa-av')?.addEventListener('click', () => sattForhandsvisning(false, { stegvis: true }));
 }

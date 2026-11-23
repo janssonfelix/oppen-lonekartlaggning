@@ -3,7 +3,8 @@
  * med skäl, sammanställningen för en rad och summan per kategori över raderna. Konstruerade indata.
  */
 import { describe, it, expect } from 'vitest';
-import { SKAL_KATEGORIER, skalKategorier, valideraSkal, skalSammanstallning, skalPerKategori, SKAL_GRANSER } from '../src/lib/sakligaskal.js';
+import { SKAL_KATEGORIER, skalKategorier, valideraSkal, skalSammanstallning, skalPerKategori, SKAL_GRANSER, SKAL_UTAN_BELOPP, gruppSkillnadKr,
+    skalUtanBelopp, skalBaraKategorier, skalForRad, skalUnderlag } from '../src/lib/sakligaskal.js';
 
 const s = (kategori, belopp, kommentar = '') => ({ kategori, belopp, kommentar });
 
@@ -71,7 +72,7 @@ describe('sakliga skäl: valideraSkal', () => {
     });
 });
 
-describe('sakliga skäl: skalSammanstallning för en rad', () => {
+describe('[B8.3] sakliga skäl: skalSammanstallning för en rad', () => {
     it('andel per skäl, summa, förklarad andel och återstår', () => {
         const r = skalSammanstallning([s('marknad', 800), s('erfarenhet', 400)], 1800);
         expect(r.skal.map(x => [x.namn, x.andel])).toEqual([['Marknad', 800 / 1800], ['Erfarenhet', 400 / 1800]]);
@@ -150,5 +151,48 @@ describe('sakliga skäl: skalPerKategori över raderna', () => {
         expect(skalPerKategori([])).toEqual(tom);
         expect(skalPerKategori(undefined)).toEqual(tom);
         expect(skalPerKategori([null, { skal: null, skillnadKr: 100 }, { skillnadKr: 100 }])).toEqual(tom);
+    });
+});
+
+// Skälen på en rad där ett kön är under tröskeln: bara kategorin lämnar verktyget. Att en grupp under tröskeln inte
+// alls är med (förifyllningen i exportläget) och att exporterna följer regeln prövas i appen (ktroskel-invarianter-25).
+describe.each([5, 10])('[I8] sakliga skäl vid k = %i: belopp och kommentar bara när varje kön når tröskeln', k => {
+    const skal = [s('marknad', 800, 'Kommentar 123'), s('erfarenhet', 400)];
+    it('gruppSkillnadKr: medianskillnaden bara när båda könen når k (k − 1, k)', () => {
+        const g = (kvN, maN) => ({ medKv: 30000, medMa: 31234.4, kvN, maN });
+        expect(gruppSkillnadKr(g(k, k), k)).toBe(1234);
+        expect(gruppSkillnadKr(g(k - 1, k + 5), k)).toBeNull();
+        expect(gruppSkillnadKr(g(k + 5, k - 1), k)).toBeNull();
+        expect(gruppSkillnadKr({ ...g(k, k), medKv: 0 }, k)).toBeNull();
+        expect(gruppSkillnadKr(null, k)).toBeNull();
+    });
+    it('skalUtanBelopp: en förifylld rad med minsta gruppen k − 1 eller okänd står utan belopp; vid k och för en egen rad med', () => {
+        expect(skalUtanBelopp({ egen: false, nMin: k - 1 }, k)).toBe(true);
+        expect(skalUtanBelopp({ egen: false, nMin: null }, k)).toBe(true);
+        expect(skalUtanBelopp({ egen: false, nMin: k }, k)).toBe(false);
+        expect(skalUtanBelopp({ egen: true, nMin: null }, k)).toBe(false);
+    });
+    it('skalForRad: utan belopp står bara kategorierna, utan skillnad, belopp, andel och kommentar', () => {
+        const ut = skalForRad(skal, { egen: false, nMin: k - 1, skillnadKr: 2000 }, k);
+        expect(ut.utanBelopp).toBe(true);
+        expect(ut.skillnadKr).toBeNull();
+        expect(ut.sammanstallning).toEqual(skalBaraKategorier(skal));
+        expect(JSON.stringify(ut)).not.toMatch(/800|400|2000|Kommentar/);
+        expect(ut.sammanstallning.skal.map(x => x.namn)).toEqual(['Marknad', 'Erfarenhet']);
+        const med = skalForRad(skal, { egen: false, nMin: k, skillnadKr: 2000 }, k);
+        expect(med).toEqual({ utanBelopp: false, skillnadKr: 2000, sammanstallning: skalSammanstallning(skal, 2000) });
+    });
+    it('skalUnderlag: rader utan skäl faller bort, och summan per kategori tar bara rader med belopp', () => {
+        const rader = [
+            { nyckel: 'a', nMin: k, skillnadKr: 2000, egen: false, skal },
+            { nyckel: 'b', nMin: k - 1, skillnadKr: 5000, egen: false, skal: [s('marknad', 4000, 'Dold')] },
+            { nyckel: 'c', nMin: k, skillnadKr: 1000, egen: false, skal: [] },
+        ];
+        const u = skalUnderlag(rader, k);
+        expect(u.grupper.map(g => [g.nyckel, g.utanBelopp])).toEqual([['a', false], ['b', true]]);
+        expect(Object.keys(u.grupper[0])).toEqual(['nyckel', 'nMin', 'skillnadKr', 'utanBelopp', 'sammanstallning']);
+        expect(u.perKategori).toEqual(skalPerKategori([{ skal: skalSammanstallning(skal, 2000).skal, skillnadKr: 2000 }]));
+        expect(JSON.stringify(u)).not.toMatch(/4000|5000|Dold/);
+        expect(SKAL_UTAN_BELOPP).toMatch(/minsta gruppstorlek/);
     });
 });

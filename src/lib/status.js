@@ -18,10 +18,11 @@
  * Slumpens gränser för en grupp är trattdiagrammets: omkastning av könen inom gruppen (1 000 gånger, seedad ur
  * datat), och för en grupp över 300 personer en normalapproximation med gruppens egen spridning.
  *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js. Inga DOM-/state-beroenden.
+ * Inga DOM-/state-beroenden.
  */
 import { median, percentilintervall } from './stat.js';
-import { rngFor } from './rng.js';
+import { slumpFor } from './rng.js';
+import { konsMedianerUrLoner } from './struktur.js';
 
 /** Verktygets egen storleksgräns för statusen, i procent av mäns lön. */
 export const STORLEKSGRANS = 3;
@@ -96,7 +97,7 @@ export function kiUtesluterLika(ci) {
  * @returns {{lag:number, hog:number}}
  */
 export function omkastningsGranser(kv, ma, B = OMKASTNINGAR) {
-    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = rngFor(kv, ma), kvoter = new Array(B);
+    const alla = [...kv].sort((x, y) => x - y).concat([...ma].sort((x, y) => x - y)), n = alla.length, nKv = kv.length, nMa = n - nKv, rnd = slumpFor(kv, ma), kvoter = new Array(B);
     // rang[i]: platsen i den sorterade listan för personen på plats i; sorterad[r]: lönen med rang r.
     const ordning = Array.from({ length: n }, (_, i) => i).sort((x, y) => alla[x] - alla[y]);
     const rang = new Int32Array(n), sorterad = new Float64Array(n), arKv = new Uint8Array(n);
@@ -146,8 +147,7 @@ export function slumpensGranser(kv, ma) {
  * @param {{golv?: number, granser?: {lag:number, hog:number}|null}} [val]  `granser` om de redan är räknade
  */
 export function bedomSkillnad(kv, ma, { golv = 10, granser } = {}) {
-    const medKv = median(kv), medMa = median(ma);
-    const kvot = medMa > 0 ? medKv / medMa * 100 : NaN, avstand = Math.abs(100 - kvot);
+    const kvot = konsMedianerUrLoner(kv, ma).kvotPct ?? NaN, avstand = Math.abs(100 - kvot);
     const direktiv = direktivMarkering(kvot);
     if (kv.length < golv || ma.length < golv || kv.length < 2 || ma.length < 2 || !isFinite(kvot))
         return { kvot, avstand, sakerstalld: null, niva: /** @type {'ejbedomd'} */ ('ejbedomd'), direktiv, granser: null };

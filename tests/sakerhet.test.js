@@ -52,7 +52,7 @@ describe('säkerhet: CSP för stilar i bygget', () => {
     });
 });
 
-describe('säkerhet: byggets CSP släpper inte nätet (S1)', () => {
+describe('[S1] säkerhet: byggets CSP släpper inte nätet', () => {
     const csp = cspIHtml(läs('dist/oppen-lonekartlaggning.html'));
     const direktiv = delaCsp(csp);
     it('default-src och connect-src är \'none\' och inget annat', () => {
@@ -88,6 +88,16 @@ describe('säkerhet: byggets CSP släpper inte nätet (S1)', () => {
     });
 });
 
+describe('[S3] en fil, utan server: bygget hämtar inget utifrån', () => {
+    const html = läs('dist/oppen-lonekartlaggning.html');
+    it('inga skript med src och inga modulskript, inga länkade stilmallar eller resurser', () => {
+        const skripttaggar = [...html.matchAll(/<script\b([^>]*)>/gi)].map(m => m[1]);
+        expect(skripttaggar.length).toBeGreaterThan(0);
+        expect(skripttaggar.filter(a => /\bsrc\s*=|type\s*=\s*["']?module/i.test(a))).toEqual([]);
+        expect(utanSkript(html, { medAttribut: true })).not.toMatch(/<link\b/i);
+    });
+});
+
 describe('säkerhet: tredjepartsbiblioteken är låsta med kontrollsummor', () => {
     it('varje fil i vendor/ har en kontrollsumma, och den stämmer', () => {
         const summor = Object.fromEntries(läs('vendor/SHA256SUMS').trim().split('\n').map(r => {
@@ -105,14 +115,14 @@ describe('säkerhet: tredjepartsbiblioteken är låsta med kontrollsummor', () =
 
 describe('säkerhet: en enda escaping-funktion', () => {
     it('src/app definierar esc() på ett ställe', () => {
-        const def = readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && !f.startsWith('09-'))
+        const def = readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js'))
             .flatMap(f => (läs(`src/app/${f}`).match(/\bconst esc\s*=/g) || []).map(() => f));
         expect(def).toEqual(['01-html-och-tillganglighet.js']);
     });
     // Citattecken måste escapas så att data-bas="${esc(x)}" inte kan brytas ut. esc är en enradig pilfunktion vars
     // stränglitteraler innehåller ';' ("&amp;"), så hela raden tas.
     it('esc escapear < > & samt citattecken (säker i attributkontext)', () => {
-        const rad = läs('src/app/01-html-och-tillganglighet.js').split('\n').find(r => /^const esc\s*=/.test(r));
+        const rad = läs('src/app/01-html-och-tillganglighet.js').split('\n').find(r => /^export const esc\s*=/.test(r)).replace(/^export /, '');
         const esc = new Function(`${rad}; return esc;`)();
         expect(esc('<b>')).toBe('&lt;b&gt;');
         expect(esc('a & b')).toBe('a &amp; b');
@@ -163,22 +173,36 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
             }
         });
     }
-    it('release.yml: grinden körs före bygget, förteckningen efter, och signeringen är keyless med minsta behörighet', () => {
+    it('release.yml: grinden körs före bygget, förteckningen och valideringsrapporten efter, och signeringen är keyless med minsta behörighet', () => {
         const rel = läs('.github/workflows/release.yml');
         expect(rel).toMatch(/^permissions: \{\}$/m);
         expect(rel).toMatch(/id-token: write/);
         expect(rel).toMatch(/fetch-depth: 0/);
-        const steg = ['npm ci', 'npm run release:kontroll', 'npm run bundle', 'npm run sbom', 'cosign sign-blob', 'cosign verify-blob', 'gh release create'];
+        expect(rel).toMatch(/attestations: write/);
+        const steg = ['npm ci', 'npm run release:kontroll', 'npm run bundle', 'npm run sbom', 'npm run valideringsrapport',
+            'git worktree add --detach "$RUNNER_TEMP/ombygge" "$GITHUB_REF_NAME"', 'cosign sign-blob', 'cosign verify-blob',
+            'uses: actions/attest-build-provenance@', 'gh release create'];
         const jobb = rel.slice(rel.indexOf('\njobs:'));   // kommentaren överst nämner stegen i annan ordning
         const plats = steg.map(s => jobb.indexOf(s));
         expect(plats.every(p => p > 0), steg.join(', ')).toBe(true);
         expect([...plats].sort((a, b) => a - b)).toEqual(plats);
         expect(rel).not.toMatch(/--key\b|COSIGN_PRIVATE_KEY/);
-        // Artefakten, RELEASE.txt och programvaruförteckningen signeras och publiceras med sina Sigstore-paket.
-        for (const f of ['oppen-lonekartlaggning.html', 'RELEASE.txt', 'sbom.cdx.json']) {
+        // Artefakten, RELEASE.txt, programvaruförteckningen och valideringsrapporten signeras och publiceras med sina
+        // Sigstore-paket.
+        for (const f of ['oppen-lonekartlaggning.html', 'RELEASE.txt', 'sbom.cdx.json', 'valideringsrapport.md', 'valideringsrapport.json']) {
             expect(jobb, f).toContain(`cosign sign-blob --yes --bundle ${f}.sigstore.json ${f}`);
             expect(jobb, f).toContain(`dist/${f}.sigstore.json`);
+            // ... och får en attestering av ursprunget (ADR-101).
+            expect(jobb.slice(jobb.indexOf('actions/attest-build-provenance@')), f).toMatch(new RegExp(`^ {12}dist/${f.replace(/\./g, '\\.')}$`, 'm'));
         }
+    });
+    it('ci.yml och release.yml: ett andra bygge i en ny katalog jämförs med filen (reproducerbart bygge, ADR-101)', () => {
+        const ci = läs('.github/workflows/ci.yml');
+        expect(ci).toMatch(/git worktree add --detach "\$RUNNER_TEMP\/andra-bygget" HEAD/);
+        expect(ci).toMatch(/cd "\$RUNNER_TEMP\/andra-bygget" && TZ=\S+ LC_ALL=C npm run bundle/);
+        const rel = läs('.github/workflows/release.yml');
+        expect(rel).toMatch(/cd "\$RUNNER_TEMP\/ombygge" && npm run bundle/);
+        expect(rel).toContain('if [ "$signeras" != "$ombyggd" ]');
     });
     it('dependabot uppdaterar npm och arbetsflödenas steg', () => {
         const d = läs('.github/dependabot.yml');
@@ -299,7 +323,7 @@ describe('säkerhet: bibliotekens versioner stämmer i dokumentationen', () => {
     });
 });
 
-describe('lagringsspärren', () => {
+describe('[S2] lagringsspärren', () => {
     it('lagringsspärren har inget undantag: varje skrivning till localStorage och sessionStorage kastar', () => {
         const w = createAppWindow();
         for (const nyckel of ['x', 'd3']) {
@@ -327,7 +351,7 @@ describe('för ljusa statusnyanser används inte som text', () => {
     it('för ljusa statusnyanser (under 4,5:1 som text) står inte i vyerna, sidan eller stilmallen', async () => {
         const { readdirSync } = await import('node:fs');
         // Diagrammens palett (10-diagram*.js) har egna färger för serier, prövade för sig (3:1 för grafik).
-        const filer = [...readdirSync('src/app').filter(f => /^\d\d-.*\.js$/.test(f) && !/^(09-lib-speglar|10-diagram)/.test(f)).map(f => `src/app/${f}`), 'src/index.html', 'src/style.css'];
+        const filer = [...readdirSync('src/app').filter(f => /^\d\d-.*\.js$/.test(f) && !/^10-diagram/.test(f)).map(f => `src/app/${f}`), 'src/index.html', 'src/style.css'];
         const forLjusa = /#(ef4444|f59e0b|10b981|059669|d97706|dc2626)\b/i;
         expect(filer.filter(f => forLjusa.test(läs(f)))).toEqual([]);
         // Word-utkastets egna ramar (src/lib/docx.js skriver färger utan #): bärnsten som duger som kant mot vitt.
@@ -370,14 +394,14 @@ describe('diagram: beskrivning för skärmläsare, svenska talformat och Pareto'
     });
 });
 
-describe('namnen: inga hårdkodade etiketter', () => {
+describe('[S5] namnen: inga hårdkodade etiketter', () => {
     it('etiketterna läser orgNamn/jmfNamn', async () => {
         const { readFileSync, readdirSync } = await import('node:fs');
         const dir = new URL('../src/app/', import.meta.url);
         const forbjudna = [/name:\s*'Organisationen/, />Median org\.</, />Kvinnodom\. yrke \(org\.\)</, /'Median i jämförelsestatistiken'/,
             /label:\s*'— Jämförelsestatistik'/, /label:\s*'jämförelsestatistiken'/];
         const traffar = [];
-        for (const f of readdirSync(dir).filter(f => /^\d\d-.*\.js$/.test(f) && f !== '09-lib-speglar.js')) {
+        for (const f of readdirSync(dir).filter(f => /^\d\d-.*\.js$/.test(f))) {
             const src = readFileSync(new URL(f, dir), 'utf8');
             for (const re of forbjudna) if (re.test(src)) traffar.push(`${f}: ${re}`);
         }

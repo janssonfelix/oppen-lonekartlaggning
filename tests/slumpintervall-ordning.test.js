@@ -8,11 +8,11 @@
  * Påhittade, uppenbart syntetiska löner.
  */
 import { describe, it, expect } from 'vitest';
-import { mulberry32, rngFor } from '../src/lib/rng.js';
+import { mulberry32, slumpFor } from '../src/lib/rng.js';
 import { omkastningsGranser, slumpensGranser, bedomSkillnad } from '../src/lib/status.js';
-import { bootstrapMedianer, bootstrapMedianDiffKr, bootstrapMedianVsConstantKr } from '../src/lib/likvardighet.js';
+import { bootstrapMedianer, bootstrapMedianskillnadKr, bootstrapMedianMotKonstantKr } from '../src/lib/likvardighet.js';
 import { organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, trattUnderlag, kvantilBootstrap } from '../src/lib/osakerhet.js';
-import { quantileRegressionAtAllTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
+import { kvantilregressionAllaTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } from '../src/lib/regression.js';
 
 // Påhittade löner i steg om 250 kr, så att många löner är lika, också mellan könen. Kvinnornas ligger lite lägre.
 const loner = (n, s, forskjutning = 0) => Array.from({ length: n }, (_, i) => 30000 + forskjutning + 250 * ((i * 7919 + s) % 23));
@@ -37,7 +37,7 @@ function identiska(a, b, vag = '') {
 
 const STORLEKAR = [[12, 12], [30, 20], [300, 200]];
 
-describe.each(STORLEKAR)('%i kvinnor och %i män i två ordningar', (nKv, nMa) => {
+describe.each(STORLEKAR)('[B4.3] %i kvinnor och %i män i två ordningar', (nKv, nMa) => {
     const kv = loner(nKv, 3, -500), ma = loner(nMa, 11);
     const kv2 = omkastad(kv, 101), ma2 = omkastad(ma, 202);
 
@@ -47,9 +47,9 @@ describe.each(STORLEKAR)('%i kvinnor och %i män i två ordningar', (nKv, nMa) =
         expect([...kv2].sort()).toEqual([...kv].sort());
     });
     it('bootstrapens medianer per dragning', () => {
-        identiska(bootstrapMedianer(kv, ma, 200, rngFor(kv, ma)), bootstrapMedianer(kv2, ma2, 200, rngFor(kv2, ma2)));
+        identiska(bootstrapMedianer(kv, ma, 200, slumpFor(kv, ma)), bootstrapMedianer(kv2, ma2, 200, slumpFor(kv2, ma2)));
     });
-    it('mediankvotens intervall (organisationen, per grupp, giltiga dragningar)', () => {
+    it('[B1.7] mediankvotens intervall (organisationen, per grupp, giltiga dragningar)', () => {
         const rader = l => [...l.kv.map(lon => ({ kon: 'kvinna', lon })), ...l.ma.map(lon => ({ kon: 'man', lon }))];
         // Raderna blandas också mellan könen: en kvinna och en man byter plats i filen.
         identiska(organisationensKvotKI(rader({ kv, ma }), 3), organisationensKvotKI(omkastad(rader({ kv: kv2, ma: ma2 }), 7), 3));
@@ -57,11 +57,11 @@ describe.each(STORLEKAR)('%i kvinnor och %i män i två ordningar', (nKv, nMa) =
         identiska(medianKvotKIGiltiga(kv, ma), medianKvotKIGiltiga(kv2, ma2));
     });
     it('medianskillnadens intervall i kronor, mot en annan grupp och mot en konstant', () => {
-        identiska(bootstrapMedianDiffKr(kv, ma, 1000, rngFor(kv, ma)), bootstrapMedianDiffKr(kv2, ma2, 1000, rngFor(kv2, ma2)));
-        identiska(bootstrapMedianVsConstantKr(kv, 32000, 1000, rngFor(kv, [32000])),
-            bootstrapMedianVsConstantKr(kv2, 32000, 1000, rngFor(kv2, [32000])));
+        identiska(bootstrapMedianskillnadKr(kv, ma, 1000, slumpFor(kv, ma)), bootstrapMedianskillnadKr(kv2, ma2, 1000, slumpFor(kv2, ma2)));
+        identiska(bootstrapMedianMotKonstantKr(kv, 32000, 1000, slumpFor(kv, [32000])),
+            bootstrapMedianMotKonstantKr(kv2, 32000, 1000, slumpFor(kv2, [32000])));
     });
-    it('omkastningens gränser, slumpens gränser och trappans nivå', () => {
+    it('[B4.9] omkastningens gränser, slumpens gränser och trappans nivå', () => {
         identiska(omkastningsGranser(kv, ma), omkastningsGranser(kv2, ma2));
         identiska(slumpensGranser(kv, ma), slumpensGranser(kv2, ma2));
         identiska(bedomSkillnad(kv, ma), bedomSkillnad(kv2, ma2));
@@ -103,7 +103,7 @@ describe('kvantilregressionens intervall i två ordningar', () => {
     const modell = FORKLARINGSMODELL_STANDARD;
     const arKv = d => d.kon.includes('kvinna');
     const kor = rr => {
-        const qr = quantileRegressionAtAllTau(rr, { modell });
+        const qr = kvantilregressionAllaTau(rr, { modell });
         return kvantilBootstrap(kvantilDesign(rr, modell).rader, modell, qr.results.map(r => ({ ...r, ki: null })), arKv, { B: 40 });
     };
     it('ger samma intervall per τ och för P90 − P10', () => {

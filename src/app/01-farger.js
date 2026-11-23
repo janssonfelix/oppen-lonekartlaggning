@@ -13,7 +13,7 @@
 // minst 4,5:1 mot vitt, mot sin Bg och mot sin Yta (WCAG 1.4.3) — utom info, som därför har en mörkare textnyans
 // (infoMork) för text på färgad botten. Varje betydelse har en enda nyans.
 // ====================================================================
-const FARG = Object.freeze({
+export const FARG = Object.freeze({
     kritisk: '#b91c1c', kritiskBg: '#fee2e2', kritiskYta: '#fef2f2',     // avvikelse över gränsen, fel
     varning: '#b45309', varningBg: '#fef3c7', varningYta: '#fffbeb',     // håll uppsikt
     ok: '#0f766e', okBg: '#ecfdf5', okYta: '#f0fdf4',                    // inom gränsen, klart

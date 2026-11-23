@@ -171,7 +171,7 @@ describe('organisationspaket: minsta gruppstorlek', () => {
         expect(p.installningar.kTroskel).toBe(15);
         expect(tolkaPaket(JSON.stringify(p)).delar.installningar.kTroskel).toBe(15);
     });
-    it.each([1, 2.5, 1001, '12'])('ogiltigt värde %p tas inte med och ger en varning vid tolkning', v => {
+    it.each([1, 2, 2.5, 1001, '12'])('ogiltigt värde %p tas inte med och ger en varning vid tolkning', v => {
         expect(byggPaket({ ...bas, installningar: { kTroskel: v } }).installningar.kTroskel).toBeUndefined();
         const p = byggPaket(bas);
         p.installningar = { kTroskel: v };
@@ -224,7 +224,7 @@ describe('organisationspaket: låsningar (ADR-47)', () => {
         expect(medInst({}).delar.installningar).toEqual({});
         expect(medInst({ smaGrupperIExport: true, inaktivitetLast: false }).delar.installningar).toEqual({ smaGrupperIExport: true });
     });
-    it.each([1, 1001, 2.5, '8', null])('ogiltigt golv %p utelämnas (med varning vid tolkning)', v => {
+    it.each([1, 2, 1001, 2.5, '8', null])('ogiltigt golv %p utelämnas (med varning vid tolkning)', v => {
         expect(byggPaket({ ...bas, installningar: { kTroskelLagst: v } }).installningar.kTroskelLagst).toBeUndefined();
         const r = medInst({ kTroskelLagst: v });
         expect(r.ok).toBe(true);

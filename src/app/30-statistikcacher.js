@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Statistiska cacher ----
+import { state } from './12-tillstand.js';
+import { computeBootstrapCI, computePowerAnalysis, skattningarSlapp } from './13-oversikt.js';
+import { ritGenerationNy } from './23-exportgrind.js';
+import { laMinneSlapp } from './41-lika-arbete.js';
 /**
  * Ogiltigförklarar härledda statistiska cacher när
  * underliggande dataset ändras (ny inläsning, konfiguration, rensning).
  * Återskapar dem direkt — billigt nog att göra synkront, undviker att
  * UI:t visar inaktuella CI/MDE-värden för felaktigt urval.
  */
-function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
+export function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
     if (typeof ritGenerationNy === 'function') ritGenerationNy();   // det som är ritat bygger på det som nu räknas om (exportgrinden)
     state.bootstrapCI = null;
     state.powerAnalysis = null;
+    if (typeof skattningarSlapp === 'function') skattningarSlapp();   // skattningarna vid andra golv (ADR-103)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // översiktens och trattdiagrammets minne följer underlaget
     // Rensa även § 3:10-cachen så att JPA-export
     // inte plockar resultat beräknat på ett tidigare dataset.

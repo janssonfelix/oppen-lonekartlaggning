@@ -100,7 +100,7 @@ describe('justeratGapInomYrke', () => {
 const norm = t => t.replace(/\u00a0/g, ' ').replace(/\u2212/g, '-');
 const yrkesgrupp = {
     yrke: 'Undersköterska', nKv: 62, nMa: 22, tot: 84, samladMedian: false, medKv: 28830, medMa: 30000,
-    kvot: 0.961, gapPct: 3.9, flaggad: true, p10Kv: 26000, p90Kv: 31000, p10Ma: 27000, p90Ma: 33500
+    kvot: 0.961, kvotPct: 96.1, skillnadPct: -3.9, gapPct: 3.9, flaggad: true, p10Kv: 26000, p90Kv: 31000, p10Ma: 27000, p90Ma: 33500
 };
 
 describe('gruppBlock', () => {
@@ -150,6 +150,23 @@ describe('parBlock', () => {
     });
 });
 
+describe('kvinnors median i procent av mäns: gruppens tal ur konsMedianerUrLoner, en avrundning', () => {
+    // Medianer där kvoten ligger exakt på en halv tiondel. Den gamla vägen genom förhållandet (kvot × 100, (kvot − 1) × 100)
+    // hamnade strax under halvan och visade fel tiondel: 87,6 i stället för 87,7 och −17,8 i stället för −17,9.
+    const lg = (kv, ma) => likaArbeteGrupper(grupp('G', 10, kv, 10, ma), { k: K }).grupper[0];
+    it('kvoten i gruppens block och i avsnittets tabell', () => {
+        const g = lg(26295, 30000);
+        expect(norm(formatTal(g.kvot * 100, 1))).toBe('87,6');   // den gamla vägen
+        expect(norm(gruppBlock(g, { id: 'yrke:0' }).stycken.join(' '))).toContain('är kvinnornas medianlön 87,7 % av männens');
+        expect(norm(avsnittBlock('lika', { grupper: [{ ...g, flaggad: true }], utelamnade: [] }, { k: K }).tabell.rader[0][6])).toBe('87,7 %');
+    });
+    it('skillnaden före justering', () => {
+        const g = lg(24645, 30000);
+        expect(norm(formatTal((g.kvot - 1) * 100, 1))).toBe('-17,8');   // den gamla vägen
+        expect(norm(gruppBlock(g, { id: 'yrke:0', justerat: { gapPct: -10, n: 20 } }).provat[0])).toContain('(-17,9 % före justering, -10,0 % efter)');
+    });
+});
+
 describe('avsnittBlock', () => {
     it('lika arbete: räknar flaggade, samlade och utelämnade, tabell över flaggade', () => {
         const grupper = [yrkesgrupp, { ...yrkesgrupp, yrke: 'Kock', flaggad: false, gapPct: 2 },
@@ -182,7 +199,7 @@ describe('avsnittBlock', () => {
         expect(t.length).toBe(2);
     });
     it('sammanfattning med oförklarat gap och kvalitet', () => {
-        const b = avsnittBlock('sammanfattning', { n: 200, nKv: 100, nMa: 100, medKv: 36000, medMa: 40000,
+        const b = avsnittBlock('sammanfattning', { n: 200, nKv: 100, nMa: 100, medKv: 36000, medMa: 40000, kvotPct: 90,
             oforklarat: { pct: -2.44, lo: -3.5, hi: -1.4 }, kvalitet: { status: 'varning', brister: ['Jämförbarhet'] } }, {});
         const t = norm(b.stycken.join(' '));
         expect(t).toContain('200 anställda, varav 100 kvinnor och 100 män');
@@ -244,7 +261,7 @@ describe('rapportunderlag: små kön, modeller och texter', () => {
         expect(kon).toContain('Löneskillnad (inget räknat bort)');
     });
     it('skillnad som byter tecken efter justering beskrivs som det', () => {
-        const b = gruppBlock({ ...yrkesgrupp, kvot: 0.92 }, { id: 'yrke:0', justerat: { gapPct: 3, n: 84 } });
+        const b = gruppBlock({ ...yrkesgrupp, kvot: 0.92, kvotPct: 92, skillnadPct: -8 }, { id: 'yrke:0', justerat: { gapPct: 3, n: 84 } });
         expect(b.provat[0]).not.toContain('förklarar 5');
         expect(b.provat[0]).toContain('byter skillnaden tecken');
     });

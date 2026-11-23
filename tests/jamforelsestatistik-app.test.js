@@ -24,7 +24,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
             `P90 ${org}`, 'P90 statistik', 'P90 skillnad']);
         expect(w.document.querySelectorAll('.benchmark-metric-btn[data-metric]').length).toBe(0);
     });
-    it('värdena stämmer med modulen för ett demoyrke', () => {
+    it('[B6.5] värdena stämmer med modulen för ett demoyrke', () => {
         const w = oppna();
         const u = w.eval('jamforelseUnderlag()').rader[0];
         const tr = rad(w, u.aid, u.bas);
@@ -91,9 +91,9 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const w = oppna();
         w.eval("jamforelseSattVal({ bas: 'C', sektor: 'Teknikarbete' })");
         const cfg = w.__buildConfigSnapshot();
-        expect(cfg.ui.jamforelse).toEqual({ bas: 'C', sektor: 'Teknikarbete' });
+        expect(cfg.visning.jamforelse).toEqual({ bas: 'C', sektor: 'Teknikarbete' });
         const w2 = oppna();
-        w2.__applyConfigSnapshot({ ...cfg, ui: { ...cfg.ui, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
+        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: 'C', sektor: '' });
         w2.eval('_rensaAllData()');
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: '', sektor: '' });
@@ -324,7 +324,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('rättelse, Ålder & karriär i hela urvalet: ett uppslag per AID×BAS och medianen av de matchade', () => {
         const w = medMatchning();
         w.__state.statistik = [{ aid: '402010', bas: 'Z', median: 99999 }, { aid: '207024', bas: '', median: 40000 }, { aid: '502010', bas: 'C', median: 50000 }];
-        w.eval("populateSelects(); renderKon('__ALLA__')");
+        w.eval("populateSelects(); ritaAlderOchLon('__ALLA__')");
         const linje = w.document.getElementById('chart-kon-scatter')._figur.lager.find(l => /^Median i /.test(l.serie));
         expect(linje.data.map(p => p.y)).toEqual([45000, 45000]);   // inte 50000 (med BAS Z:s 99999)
     });

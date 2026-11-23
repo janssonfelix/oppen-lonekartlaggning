@@ -26,6 +26,19 @@
 // referenserna) och den här (vad som ritas, panelen, förklaringen, _rfByggSvg). Alla tre sorteras före
 // 10-diagramtema.js: PALETTE och CHART_FONT läses först vid anrop.
 // ====================================================================
+import { antalPunkter, arBortvald, harleddaLager, harlettNot, kvantilpunkter, ladstatistik, namnIMening, panelerMedLager, skalDoman, talformat, underlagBeskrivning, underlagProva, underlagVarden, urvalBeskrivning, urvalEtikett, urvalLista, urvalSomLista, urvalSpann, urvalVarden, utanSmaGrupper, valideraFigur } from '../lib/figur.js';
+import { tolkaTalStrikt } from '../lib/inlasning.js';
+import { FARG } from './01-farger.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { _hideChartTip, _setScatterSampleNote, _showChartTip } from './02-verktygstips.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { _kSanktNot } from './06-k-troskel.js';
+import { _RF, _rfBredvid, _rfEtikettBeslut, _rfEtikettRum, _rfIPanel, _rfKorta, _rfLitenPx, _rfLodratLayout, _rfPunktEtikettRum, _rfSkala, _rfStapelEtikettRum, _rfTal, _rfText, _rfVagratLayout, _rfXEtiketter, _rfXOmfang, _rfYAxlar } from './10-diagramlayout.js';
+import { _RF_MARKEN, _rfEtikettKrockar, _rfFargskala, _rfFargstapel, _rfLadIndivider, _rfLadKategori, _rfMonster, _rfOfylld, _rfReferenser, _rfSymbol, _rfUndvikEtiketter } from './10-diagrammarken.js';
+import { CHART_FONT, PALETTE } from './10-diagramtema.js';
+import { _attachChartExport } from './11-diagramexport.js';
+import { _mkTillampa, sattDiagramMarkering } from './11-markering.js';
+import { Stat } from './12-tillstand.js';
 
 // _rfByggSvg arbetar i steg; varje steg läser bara det tidigare steg gav (steg 2–4 ligger i 10-diagramlayout.js).
 // Steg 1: vad som ritas. Lager med minst en synlig punkt (med sitt index i figurIn.lager), figuren för domäner
@@ -34,7 +47,7 @@
 function _rfSynligt(figurIn, val) {
     const visa = !!val.visaSma;
     const bortvalda = _rfBortvalda(val);
-    const bort = d => _figArBortvald(figurIn, bortvalda, d);
+    const bort = d => arBortvald(figurIn, bortvalda, d);
     const dold = d => (!visa && !!(d && d.liten)) || bort(d);   // en liten punkt som inte får synas, eller en bortvald
     const dolda = val.dolda || new Set();
     const lagerAlla = figurIn.lager.map((l, li) => ({ l, li, vd: l.data.filter(d => d && !dold(d)) })).filter(o => o.vd.length);
@@ -44,13 +57,13 @@ function _rfSynligt(figurIn, val) {
     // serier (S5, T4). skalDoman begränsar `ordning` till kategorier som finns i de synliga lagren. Bortvalda
     // punkter räknas inte till originalet: deras första förekomst får inte flytta en synlig kategori.
     const original = { ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d && !bort(d)) })) };
-    const bandOrdning = a => (figurIn[a].skala === 'band' ? { ...figurIn[a], ordning: _figSkalDoman(original, a) } : figurIn[a]);
+    const bandOrdning = a => (figurIn[a].skala === 'band' ? { ...figurIn[a], ordning: skalDoman(original, a) } : figurIn[a]);
     const domFigur = { ...figurIn, x: bandOrdning('x'), y: bandOrdning('y'), lager: synliga.map(({ l, vd }) => ({ ...l, data: vd })) };
     const panelLista = Array.isArray(figurIn.paneler) && figurIn.paneler.length ? figurIn.paneler : null;
     // En panel utan något synligt lager ritas inte (varken titel eller yta). Regeln är figurformatets
     // (_figPanelerMedLager, samma som utanSmaGrupper använder); ritaren avgör bara VILKA lager som syns.
-    const paneler = panelLista ? _figPanelerMedLager(panelLista, lagerAlla.map(({ l }) => l)) : [null];
-    const doms = { x: _figSkalDoman(domFigur, 'x'), y: _figSkalDoman(domFigur, 'y'), y2: figurIn.y2 ? _figSkalDoman(domFigur, 'y2') : null };
+    const paneler = panelLista ? panelerMedLager(panelLista, lagerAlla.map(({ l }) => l)) : [null];
+    const doms = { x: skalDoman(domFigur, 'x'), y: skalDoman(domFigur, 'y'), y2: figurIn.y2 ? skalDoman(domFigur, 'y2') : null };
     return { visa, dold, dolda, bortvalda, lagerAlla, synliga, paneler, antalP: Math.max(1, paneler.length), doms };
 }
 
@@ -230,7 +243,7 @@ const RF_RADPANEL_MAX = 15;
  */
 function _rfRadpanelDelar(figurIn, bortvalda) {
     if (!figurIn.y || figurIn.y.skala !== 'band' || figurIn.x.skala === 'band' || !figurIn.lager.every(l => l.riktning === 'liggande' || l.marke === 'punkt')) return null;
-    const kat = _figSkalDoman({ ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d && !_figArBortvald(figurIn, bortvalda, d)) })) }, 'y');
+    const kat = skalDoman({ ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d && !arBortvald(figurIn, bortvalda, d)) })) }, 'y');
     if (kat.length <= RF_RADPANEL_MAX) return null;
     const delar = [];
     for (let i = 0; i < kat.length; i += RF_RADPANEL_MAX) delar.push(kat.slice(i, i + RF_RADPANEL_MAX));
@@ -315,7 +328,7 @@ let _rfTipsAgare = null;   // behållaren vars verktygstips visas just nu (porta
 // Registret över behållare som ritaFigur har ritat i och rensaFigur inte har rensat — också sådana som saknar id
 // eller har lämnat dokumentet. Rensningen av sidan (_rfRensaAlla) går igenom det; en väljare kan inte hitta en
 // egenskap. _rfSedda minns vilka som har suttit i dokumentet (se _rfStadaBehallare). Läses bara inne i funktioner.
-const _rfBehallare = new Set();
+export const _rfBehallare = new Set();
 const _rfSedda = new WeakSet();
 // Behållare som ritaFigur någon gång har ritat i (också efter rensning; bär ingen data och håller ingen kvar i
 // minnet). Exportmenyn frågar _rfHarRitat: en meny som står kvar vid en behållare utan figur hör till kärnan.
@@ -346,7 +359,7 @@ function _rfTipsHtml(rader) {
  * inte längre i dokumentet (vyn har bytt ut sin behållare utan rensaFigur) rensas den också, så att figuren,
  * lyssnarna, storleksbevakningen och en väntande omritning släpps.
  */
-function _rfTipsDolt() {
+export function _rfTipsDolt() {
     const agare = _rfTipsAgare;
     _rfTipsAgare = null;
     if (agare && !agare.isConnected) rensaFigur(agare);
@@ -372,7 +385,7 @@ function _rfDoljTips(el) {
 }
 
 /** Har ritaFigur ritat i behållaren (också om den sedan rensats eller hamnat i felläge)? */
-function _rfHarRitat(el) { return !!el && _rfRitade.has(el); }
+export function _rfHarRitat(el) { return !!el && _rfRitade.has(el); }
 
 /**
  * Släpper behållare som har suttit i dokumentet men inte gör det längre (vyn har byggt om sin HTML utan
@@ -391,7 +404,7 @@ function _rfStadaBehallare(utom) {
  * Rensar VARJE diagram som ritats med ritaFigur — oavsett id, också behållare i tomt läge och sådana som har
  * lämnat dokumentet — och nollställer verktygstipset. Anropas av _rensaAllData (26-rensning.js).
  */
-function _rfRensaAlla() {
+export function _rfRensaAlla() {
     for (const el of [..._rfBehallare]) rensaFigur(el);
     _rfBehallare.clear();
     _rfUrvalGlom();   // urvalet i diagrammen hör till underlaget som rensas
@@ -402,7 +415,7 @@ function _rfRensaAlla() {
 function _rfIndex(s) { return typeof s === 'string' && /^\d+$/.test(s) ? Number(s) : -1; }
 // Figuren som bilden i behållaren är ritad ur: originalet, eller (med ett aktivt filter) originalet med de härledda
 // lagren omräknade (_figHarleddaLager). Samma lager och index; data-l/data-i slås upp här, aldrig i el._figur rakt av.
-function _rfVisad(el) { return (el && (el._rfVisadFigur || el._rfUnderlagFigur || el._figur)) || null; }
+export function _rfVisad(el) { return (el && (el._rfVisadFigur || el._rfUnderlagFigur || el._figur)) || null; }
 // Figuren som gäller för behållarens underlag: vyns figur räknad för det valda underlaget (figur.underlag, se
 // _rfUnderlagRakna), annars originalet. Härledda lager och filtret läggs på den.
 function _rfGrundfigur(el) { return (el && (el._rfUnderlagFigur || el._figur)) || null; }
@@ -421,13 +434,13 @@ function _rfLagerBeskrivning(figur, lager, index) {
 function _rfLadTraff(figur, lager, d, dold, m) {
     const kategori = _rfLadKategori(d);
     const individer = _rfLadIndivider(figur, lager, dold).filter(o => _rfLadKategori(o.d) === kategori);
-    const s = _figLadstatistik(individer.map(o => o.d.y));
+    const s = ladstatistik(individer.map(o => o.d.y));
     const punkt = { x: d.x };
     const nyckel = individer.length ? individer[0].d.nyckel : undefined;
     if (nyckel != null && individer.every(o => o.d.nyckel === nyckel)) punkt.nyckel = nyckel;
     // En prick i ett kvantilpunktdiagram: sammanfattningen får prickens kvantil, räknad om ur individerna (inte ur DOM:en).
     const j = m ? _rfIndex(m.getAttribute('data-kvantil')) : -1;
-    const kp = j >= 0 && lager.form === 'kvantiler' ? _figKvantilpunkter(individer.map(o => o.d.y), lager.antal || 20) : null;
+    const kp = j >= 0 && lager.form === 'kvantiler' ? kvantilpunkter(individer.map(o => o.d.y), lager.antal || 20) : null;
     const kvantil = kp && j < kp.antal ? { nr: j + 1, antal: kp.antal, varde: kp.varden[j] } : undefined;
     return { d: punkt, sammanfattning: s ? { q1: s.q1, median: s.median, q3: s.q3, lag: s.lag, hog: s.hog, n: individer.length, ...(kvantil ? { kvantil } : {}) } : undefined };
 }
@@ -450,7 +463,7 @@ function _rfTraff(el, mal) {
     const visaSma = !!(el._figurVal && el._figurVal.visaSma);
     // Samma regel som ritaren (_rfSynligt): en liten punkt utan visaSma, eller en bortvald (el._figurFilter).
     const filter = el._figurFilter;
-    const dold = p => (!visaSma && !!p.liten) || _figArBortvald(figur, filter, p);
+    const dold = p => (!visaSma && !!p.liten) || arBortvald(figur, filter, p);
     if (dold(d)) {
         // Kan inte hända: ritaren ritar inga dolda punkter. Vakten finns för att en dold punkt aldrig ska nå en hanterare.
         rapporteraFel(_rfPlats('diagramträff', el), new Error('träff på en dold punkt'));
@@ -607,14 +620,14 @@ function _rfRitaOm(el, { overgang = true } = {}) {
     }
     // Tomt läge: ingen datapunkt återstår när de små är borta. Då visas bara texten — inga axlar, ingen
     // förklaring (den kunde namnge en serie som bara finns i små grupper) och ingen notis.
-    if (_figAntalPunkter(val.visaSma ? figur : _figUtanSma(figur)) === 0) {
+    if (antalPunkter(val.visaSma ? figur : utanSmaGrupper(figur)) === 0) {
         _rfMeddelande(el, 'tom', typeof val.tomtext === 'string' && val.tomtext ? val.tomtext : 'Inget att visa');
         _rfNotis(el, null);
         return;
     }
     // Härledda lager (harleddAv) räknas om ur de synliga punkterna när ett filter är aktivt; annars är `visad`
     // figuren själv. Uppslagen på data-l/data-i går mot den (_rfVisad).
-    const harlett = _figHarleddaLager(figur, el._figurFilter, { visaSma: !!val.visaSma });
+    const harlett = harleddaLager(figur, el._figurFilter, { visaSma: !!val.visaSma });
     if (harlett.figur !== figur) el._rfVisadFigur = harlett.figur;
     // Filtret döljer allt (ett intervall får göra det: det går att ändra i samma fält). Raderna och noten står kvar.
     if (_rfUrvalDoljerAllt(el)) {
@@ -647,7 +660,7 @@ function _rfRitaOm(el, { overgang = true } = {}) {
 }
 
 // Markeringen har ändrats: varje ritat diagram framhäver (eller återställer) sina märken, utan omritning.
-function _rfMarkeraAlla() {
+export function _rfMarkeraAlla() {
     for (const el of _rfBehallare) { try { _mkTillampa(el); } catch (e) { rapporteraFel(_rfPlats('diagrammarkering', el), e); } }
 }
 
@@ -920,7 +933,7 @@ function _rfKoppla(el) {
  *   lagerbeskrivning = fryst { serie, marke, panel, axel, index }; aldrig lagret självt.
  * @returns {HTMLElement|null}  behållaren, eller null om den inte finns
  */
-function ritaFigur(id, figur, val) {
+export function ritaFigur(id, figur, val) {
     const el = _rfEl(id);
     if (!el) return null;
     _rfStadaBehallare(el);
@@ -928,7 +941,7 @@ function ritaFigur(id, figur, val) {
     if (el.isConnected) _rfSedda.add(el);
     _rfRitade.add(el);
     try {
-        _figValidera(figur, el.id || 'diagram');
+        valideraFigur(figur, el.id || 'diagram');
         el._figur = figur;
         el._figurVal = val && typeof val === 'object' ? val : {};
         el._figurDolda = new Set();
@@ -950,7 +963,7 @@ function ritaFigur(id, figur, val) {
  * Tar bort diagrammet och allt ritaFigur kopplade: lyssnare, storleksbevakning, sparad figur, notisen under
  * diagrammet — och tömmer behållaren. Exportmenyn (bredvid behållaren) rörs inte.
  */
-function rensaFigur(id) {
+export function rensaFigur(id) {
     const el = _rfEl(id);
     if (!el) return;
     _rfBehallare.delete(el);
@@ -1104,7 +1117,7 @@ function _rfPenselNot(el, ut) {
         el._rfPenselNotEl = not;
     }
     const format = _rfGrundfigur(el).y.format;
-    const delar = ut.serier.map(s => `${s.serie} ${s.antal}${s.antal && typeof s.median === 'number' ? ` (median ${_figTalformat(s.median, format)})` : ''}`);
+    const delar = ut.serier.map(s => `${s.serie} ${s.antal}${s.antal && typeof s.median === 'number' ? ` (median ${talformat(s.median, format)})` : ''}`);
     not.textContent = ut.antal
         ? `Penslat område: ${ut.antal} ${ut.antal === 1 ? 'punkt' : 'punkter'} — ${delar.join(' · ')}. Klicka i diagrammet eller tryck Escape för att ta bort området.`
         : 'Penslat område: inga punkter. Klicka i diagrammet eller tryck Escape för att ta bort området.';
@@ -1191,7 +1204,7 @@ function _rfZoomGlom(el) { delete el._rfZoom; _rfZoomNot(el, false); }
 /** @type {Map<string, Set<string>|{min: number|null, max: number|null}>} */
 const _rfUrvalMinne = new Map();
 /** Glömmer urvalet i alla diagram (ny lönefil, Rensa all data). Diagram som redan är ritade behåller sitt tills de ritas igen. */
-function _rfUrvalGlom() { _rfUrvalMinne.clear(); }
+export function _rfUrvalGlom() { _rfUrvalMinne.clear(); }
 function _rfUrvalNyckel(el, u) { return `${el.id}|${u.falt}`; }
 /** Ett tomt filter. */
 function _rfUrvalTomtFilter() { return { kategori: new Map(), intervall: new Map() }; }
@@ -1211,13 +1224,13 @@ function _rfUrvalDoljerAllt(el) {
     const f = el._figurFilter, figur = _rfVisad(el);
     if (!_rfUrvalAktivt(f)) return false;
     const visaSma = !!(el._figurVal && el._figurVal.visaSma);
-    for (const l of figur.lager) for (const d of l.data) if (d && (visaSma || !d.liten) && !_figArBortvald(figur, f, d)) return false;
+    for (const l of figur.lager) for (const d of l.data) if (d && (visaSma || !d.liten) && !arBortvald(figur, f, d)) return false;
     return true;
 }
 // Ett tal ur ett intervallfält med verktygets talinläsning ("1,5", "1 500", "−5"): null när fältet är tomt, NaN
 // när det inte går att läsa.
 function _rfUrvalLasTal(text) {
-    const r = parseNumberStrict(String(text == null ? '' : text).replace(/−/g, '-'));
+    const r = tolkaTalStrikt(String(text == null ? '' : text).replace(/−/g, '-'));
     if (r.status === 'empty') return null;
     return r.status === 'ok' && isFinite(r.value) ? r.value : NaN;
 }
@@ -1229,18 +1242,18 @@ function _rfUrvalSatt(el) {
     const figur = el._figur, visaSma = !!el._figurVal.visaSma;
     const filter = _rfUrvalTomtFilter(), dims = [];
     if (el.id) {
-        for (const u of _figUrvalLista(figur)) {
+        for (const u of urvalLista(figur)) {
             const minne = _rfUrvalMinne.get(_rfUrvalNyckel(el, u));
             if (u.typ === 'intervall') {
-                const spann = _figUrvalSpann(figur, u, { visaSma });
+                const spann = urvalSpann(figur, u, { visaSma });
                 if (!spann) continue;
                 dims.push({ u, spann });
                 const g = minne && !(minne instanceof Set) ? minne : null;
                 if (g && (g.min != null || g.max != null)) filter.intervall.set(u.falt, { min: g.min, max: g.max });
             } else {
-                const varden = _figUrvalVarden(figur, u, { visaSma });
+                const varden = urvalVarden(figur, u, { visaSma });
                 if (varden.length < 2) continue;
-                dims.push({ u, varden, lista: _figUrvalSomLista(u, varden.length) });
+                dims.push({ u, varden, lista: urvalSomLista(u, varden.length) });
                 const bort = minne instanceof Set ? varden.filter(v => minne.has(v)) : [];
                 filter.kategori.set(u.falt, new Set(bort.length < varden.length ? bort : []));
             }
@@ -1292,7 +1305,7 @@ function _rfUrvalRadBas(o) {
     const rad = document.createElement('div');
     rad.className = 'diagram-urval';
     rad.setAttribute('role', 'group');
-    rad.setAttribute('aria-label', o.underlag ? `Räkna för ${_figNamnIMening(o.u.namn)}` : `Visa ${o.u.namn}`);
+    rad.setAttribute('aria-label', o.underlag ? `Räkna för ${namnIMening(o.u.namn)}` : `Visa ${o.u.namn}`);
     rad.setAttribute('data-urval-falt', _rfUrvalRadNyckel(o));
     if (o.underlag) rad.setAttribute('data-underlag', o.u.falt);
     return rad;
@@ -1300,7 +1313,7 @@ function _rfUrvalRadBas(o) {
 function _rfUrvalRadNyckel(o) { return o.underlag ? `underlag:${o.u.falt}` : o.u.falt; }
 // Knappens eller kryssrutans text för värdet: figurens urval (_figUrvalEtikett), eller underlagets dimensions mall.
 function _rfUrvalEtikett(el, o, v) {
-    if (!o.underlag) return _figUrvalEtikett(el._figur, o.u, v);
+    if (!o.underlag) return urvalEtikett(el._figur, o.u, v);
     return typeof o.u.etikett === 'string' ? o.u.etikett.split('{v}').join(String(v)) : String(v);
 }
 // De bortvalda värdena i dimensionen: filtret (el._figurFilter) eller underlagets val (el._rfUnderlagFilter).
@@ -1314,7 +1327,7 @@ function _rfUrvalKategoriRad(el, o) {
         const rubrik = document.createElement('span');
         rubrik.className = 'diagram-urval-namn';
         rubrik.setAttribute('aria-hidden', 'true');   // gruppens namn läses redan upp
-        rubrik.textContent = `Räkna för ${_figNamnIMening(o.u.namn)}`;
+        rubrik.textContent = `Räkna för ${namnIMening(o.u.namn)}`;
         rad.appendChild(rubrik);
     }
     for (const v of o.varden) {
@@ -1396,7 +1409,7 @@ function _rfUrvalSok(rad) {
     if (av) av.textContent = q ? 'Avmarkera träffarna' : 'Avmarkera alla';
     for (const b of [ma, av]) if (b) /** @type {HTMLButtonElement} */ (b).disabled = !traff;
     const t = rad.querySelector('.diagram-urval-traffar');
-    if (t) t.textContent = q ? `${_figTalformat(traff, 'antal')} av ${_figTalformat(alla, 'antal')} träffar` : '';
+    if (t) t.textContent = q ? `${talformat(traff, 'antal')} av ${talformat(alla, 'antal')} träffar` : '';
 }
 // Markera alla / Avmarkera alla: gäller posterna som syns efter sökningen.
 function _rfUrvalMarkera(el, o, rad, visa) {
@@ -1449,7 +1462,7 @@ function _rfUrvalIntervallRad(el, o) {
         falt.className = 'form-select';
         falt.setAttribute('data-urval-grans', grans);
         falt.setAttribute('aria-label', `${o.u.namn}, ${text.toLowerCase()}`);
-        falt.placeholder = _figTalformat(o.spann[grans], o.u.format, { enhet: false });
+        falt.placeholder = talformat(o.spann[grans], o.u.format, { enhet: false });
         falt.value = g ? _rfUrvalTalText(g[grans]) : '';
         falt.addEventListener('change', () => _rfUrvalAndraIntervall(el, o, rad, falt));
         etikett.appendChild(falt);
@@ -1474,7 +1487,7 @@ function _rfUrvalAntalAktiva(el) {
 function _rfUrvalFilterRubrik(rubrik, n) {
     const ord = document.createElement('strong');
     ord.textContent = 'Filter';
-    rubrik.replaceChildren(ord, `: ${n === 0 ? 'inga' : n === 1 ? '1 aktivt' : `${_figTalformat(n, 'antal')} aktiva`}`);
+    rubrik.replaceChildren(ord, `: ${n === 0 ? 'inga' : n === 1 ? '1 aktivt' : `${talformat(n, 'antal')} aktiva`}`);
 }
 // Bygger filterraderna (eller tar bort dem) och visar noten. Raderna står i rutan "Filter" (data-urval-filter) direkt
 // före behållaren, alltid utfälld så att filtren inte missas. Fokus på en knapp eller ett fält följer med till de nya raderna.
@@ -1548,8 +1561,8 @@ function _rfUrvalUppdatera(el) {
         if (o.lista) {
             for (const ruta of rad.querySelectorAll('input[data-urval]')) /** @type {HTMLInputElement} */ (ruta).checked = !bort.has(ruta.getAttribute('data-urval'));
             const sum = rad.querySelector('[data-urval-summering]');
-            const namn = o.underlag ? `Räkna för ${_figNamnIMening(o.u.namn)}` : o.u.namn;
-            if (sum) sum.textContent = `${namn}: ${synliga === o.varden.length ? `alla ${_figTalformat(synliga, 'antal')}` : `${_figTalformat(synliga, 'antal')} av ${_figTalformat(o.varden.length, 'antal')}`}`;
+            const namn = o.underlag ? `Räkna för ${namnIMening(o.u.namn)}` : o.u.namn;
+            if (sum) sum.textContent = `${namn}: ${synliga === o.varden.length ? `alla ${talformat(synliga, 'antal')}` : `${talformat(synliga, 'antal')} av ${talformat(o.varden.length, 'antal')}`}`;
             continue;
         }
         for (const b of rad.querySelectorAll('[data-urval]')) {
@@ -1570,8 +1583,8 @@ function _rfUrvalUppdatera(el) {
         _rfUrvalFilterRubrik(filterSum, n);
         el._rfUrvalFilterEl.toggleAttribute('data-aktivt', n > 0);
     }
-    const harlett = _figHarlettNot(el._rfHarlett);
-    _rfUrvalNot(el, el._figur ? _figUrvalBeskrivning(el._figur, f, { visaSma: !!(el._figurVal && el._figurVal.visaSma) }) : [], [...fel.values()], [...harlett.omraknade, ...harlett.utelamnade], _rfUnderlagNot(el));
+    const harlett = harlettNot(el._rfHarlett);
+    _rfUrvalNot(el, el._figur ? urvalBeskrivning(el._figur, f, { visaSma: !!(el._figurVal && el._figurVal.visaSma) }) : [], [...fel.values()], [...harlett.omraknade, ...harlett.utelamnade], _rfUnderlagNot(el));
 }
 function _rfUrvalVaxla(el, o, v) {
     if (o.underlag) {
@@ -1633,7 +1646,7 @@ function _rfUrvalVisaAlla(el) {
     el._figurFilter = _rfUrvalTomtFilter();
     for (const o of el._rfUrvalDim || []) if (o.u.typ === 'kategori') el._figurFilter.kategori.set(o.u.falt, new Set());
     el._rfUrvalFel = new Map();
-    if (el.id) for (const u of _figUrvalLista(el._figur)) _rfUrvalMinne.delete(_rfUrvalNyckel(el, u));
+    if (el.id) for (const u of urvalLista(el._figur)) _rfUrvalMinne.delete(_rfUrvalNyckel(el, u));
     for (const falt of (el._rfUrvalRader || []).flatMap(r => [...r.querySelectorAll('input[data-urval-grans]')])) {
         /** @type {HTMLInputElement} */ (falt).value = '';
         falt.removeAttribute('aria-invalid');
@@ -1690,7 +1703,7 @@ function _rfUrvalTaBort(el) {
 // glöms med dem (_rfUrvalGlom). En kopia i Alla diagram har sitt eget val (sitt eget id).
 function _rfUnderlagNyckel(el, u) { return `${el.id}|underlag:${u.falt}`; }
 // Meningen när skyddsregeln stoppar ett val.
-function _rfUnderlagRegelText(k) { return `Urvalet eller resten har färre än ${_figTalformat(k, 'antal')} kvinnor eller män.`; }
+function _rfUnderlagRegelText(k) { return `Urvalet eller resten har färre än ${talformat(k, 'antal')} kvinnor eller män.`; }
 
 // Vid ritaFigur: underlagets dimensioner (de med minst två valbara värden), valet ur minnet och figuren för valet.
 function _rfUnderlagSatt(el) {
@@ -1701,13 +1714,13 @@ function _rfUnderlagSatt(el) {
     const filter = new Map();
     /** @type {any} */ let vald = null;
     for (const dim of u.dimensioner) {
-        const { varden, utelamnade } = _figUnderlagVarden(u, dim);
+        const { varden, utelamnade } = underlagVarden(u, dim);
         if (varden.length < 2) continue;
-        dims.push({ u: dim, varden, utelamnade, k: u.k, lista: _figUrvalSomLista(dim, varden.length), underlag: true });
+        dims.push({ u: dim, varden, utelamnade, k: u.k, lista: urvalSomLista(dim, varden.length), underlag: true });
         const minne = _rfUrvalMinne.get(_rfUnderlagNyckel(el, dim));
         const bort = minne instanceof Set ? varden.filter(v => minne.has(v)) : [];
         // En dimension i taget: den första med ett minne gäller. Alla bortvalda i en knapprad: hela underlaget.
-        const giltig = bort.length && !vald && (bort.length < varden.length || _figUrvalSomLista(dim, varden.length));
+        const giltig = bort.length && !vald && (bort.length < varden.length || urvalSomLista(dim, varden.length));
         filter.set(dim.falt, new Set(giltig ? bort : []));
         if (giltig) vald = dim;
     }
@@ -1715,9 +1728,9 @@ function _rfUnderlagSatt(el) {
     el._rfUnderlagDim = dims;
     el._rfUnderlagFilter = filter;
     // Ett val ur minnet som inte klarar regeln nu (en ny fil, en annan tröskel, ett annat BAS) gäller inte.
-    if (vald && !_figUnderlagProva(u, filter).ok) {
+    if (vald && !underlagProva(u, filter).ok) {
         filter.set(vald.falt, new Set());
-        el._rfUnderlagFel = `${_rfUnderlagRegelText(u.k)} Det tidigare valet för ${_figNamnIMening(vald.namn)} gäller inte, och diagrammet visar hela underlaget.`;
+        el._rfUnderlagFel = `${_rfUnderlagRegelText(u.k)} Det tidigare valet för ${namnIMening(vald.namn)} gäller inte, och diagrammet visar hela underlaget.`;
     }
     _rfUnderlagRakna(el);
 }
@@ -1728,16 +1741,16 @@ function _rfUnderlagRakna(el) {
     delete el._rfUnderlagFigur; delete el._rfUnderlagTom; delete el._rfUnderlagText; delete el._rfUnderlagAntal;
     const u = el._figur && el._figur.underlag;
     if (!u || !el._rfUnderlagFilter) return;
-    const prov = _figUnderlagProva(u, el._rfUnderlagFilter);
+    const prov = underlagProva(u, el._rfUnderlagFilter);
     if (!prov.valet) return;
-    const beskrivning = _figUnderlagBeskrivning(u, el._rfUnderlagFilter);
+    const beskrivning = underlagBeskrivning(u, el._rfUnderlagFilter);
     el._rfUnderlagAntal = prov.valda.length;
-    el._rfUnderlagText = `${beskrivning} (${_figTalformat(prov.valda.length, 'antal')} ${prov.valda.length === 1 ? 'person' : 'personer'})`;
+    el._rfUnderlagText = `${beskrivning} (${talformat(prov.valda.length, 'antal')} ${prov.valda.length === 1 ? 'person' : 'personer'})`;
     if (!prov.valda.length) { el._rfUnderlagTom = 'Inga personer i urvalet'; return; }
     const ny = u.rita(prov.valda, { beskrivning });
     if (typeof ny === 'string' || ny == null) { el._rfUnderlagTom = ny || 'Inget att visa för urvalet'; return; }
     const { underlag: _bort, ...figur } = ny;   // underlaget hör till originalet
-    _figValidera(figur, `${el.id || 'diagram'}, underlag`);
+    valideraFigur(figur, `${el.id || 'diagram'}, underlag`);
     el._rfUnderlagFigur = figur;
 }
 
@@ -1759,7 +1772,7 @@ function _rfUnderlagAndra(el, o, andra, kalla) {
         const s = ny.get(d.u.falt);
         if (s && s.size) { borttagna.push(d.u); ny.set(d.u.falt, new Set()); }
     }
-    if (!_figUnderlagProva(u, ny).ok) {
+    if (!underlagProva(u, ny).ok) {
         el._rfUnderlagAvvisad = { falt: o.u.falt, ...kalla };
         el._rfUnderlagFel = `${_rfUnderlagRegelText(u.k)} Valet är inte gjort, och diagrammet är oförändrat.`;
         _rfUrvalUppdatera(el);
@@ -1767,7 +1780,7 @@ function _rfUnderlagAndra(el, o, andra, kalla) {
     }
     delete el._rfUnderlagAvvisad; delete el._rfUnderlagFel;
     el._rfUnderlagInfo = borttagna.length
-        ? `Valet för ${borttagna.map(d => _figNamnIMening(d.namn)).join(' och ')} togs bort: diagrammet räknas för en sak i taget.` : '';
+        ? `Valet för ${borttagna.map(d => namnIMening(d.namn)).join(' och ')} togs bort: diagrammet räknas för en sak i taget.` : '';
     el._rfUnderlagFilter = ny;
     _rfUnderlagMinnas(el);
     _rfZoomGlom(el);
@@ -1811,7 +1824,7 @@ function _rfUnderlagUtelamnade(rad, o) {
     const t = document.createElement('span');
     t.className = 'diagram-urval-traffar';
     t.setAttribute('data-underlag-utelamnade', '');
-    t.textContent = `${_figTalformat(o.utelamnade, 'antal')} till går inte att välja för sig: färre än ${_figTalformat(o.k, 'antal')} kvinnor eller män`;
+    t.textContent = `${talformat(o.utelamnade, 'antal')} till går inte att välja för sig: färre än ${talformat(o.k, 'antal')} kvinnor eller män`;
     rad.appendChild(t);
 }
 // Tar bort allt om underlaget från behållaren (rensaFigur, ny figur). Minnet står kvar.
@@ -1835,7 +1848,7 @@ function _rfPenselRensa(el) {
     if (ruta) ruta.remove();
     if (typeof _mkTillampa === 'function') _mkTillampa(el);
 }
-function _rfPenselRensaAlla() { for (const el of _rfBehallare) _rfPenselRensa(el); }
+export function _rfPenselRensaAlla() { for (const el of _rfBehallare) _rfPenselRensa(el); }
 
 // ====================================================================
 // Export: SVG och PNG ur en figur
@@ -1887,10 +1900,10 @@ function figurTillSvg(figur, bredd, hojd, val = {}) {
     const [B, H] = _rfBildmatt(bredd, hojd);
     const logB = 800, logH = logB * H / B;
     const o = val && typeof val === 'object' ? val : {};
-    _figValidera(figur, 'export');
+    valideraFigur(figur, 'export');
     // Härledda lager räknas om för filtret, som på skärmen (exportmenyn). Utan filter (diagramTillBild) är figuren
     // oförändrad: lagrens egna data.
-    figur = _figHarleddaLager(figur, o.filter && typeof o.filter === 'object' ? o.filter : o.bortvalda, { visaSma: !!o.visaSma }).figur;
+    figur = harleddaLager(figur, o.filter && typeof o.filter === 'object' ? o.filter : o.bortvalda, { visaSma: !!o.visaSma }).figur;
     const bas = { hojd: logH, radpanelBredvid: true, visaSma: !!o.visaSma, dolda: o.dolda && typeof o.dolda.has === 'function' ? o.dolda : undefined,
                   ...(o.filter && typeof o.filter === 'object' ? { filter: o.filter } : {}),
                   ...(o.bortvalda && typeof o.bortvalda.has === 'function' ? { bortvalda: o.bortvalda } : {}), bakgrund: FARG.vit,
@@ -1901,7 +1914,7 @@ function figurTillSvg(figur, bredd, hojd, val = {}) {
     // gång till med meningen i noten — två ritningar, samma resultat varje gång.
     const m = /^(\d+)\/(\d+)$/.exec(svg.getAttribute('data-nedsamplat') || '');
     if (m) {
-        const urval = `Visar ett urval (${_figTalformat(Number(m[1]), 'antal')} av ${_figTalformat(Number(m[2]), 'antal')} punkter).`;
+        const urval = `Visar ett urval (${talformat(Number(m[1]), 'antal')} av ${talformat(Number(m[2]), 'antal')} punkter).`;
         svg = _rfByggSvg(figur, logB, { ...bas, not: sankt ? `${urval} ${sankt}` : urval });
     }
     svg.setAttribute('width', String(B));
@@ -1920,7 +1933,7 @@ function figurTillSvg(figur, bredd, hojd, val = {}) {
  * @param {'svg'|'png'} format
  * @returns {Promise<string>} data-URL
  */
-function figurTillBild(figur, format, bredd, hojd, val = {}) {
+export function figurTillBild(figur, format, bredd, hojd, val = {}) {
     if (format !== 'svg' && format !== 'png') return Promise.reject(new Error(`Okänt format för diagrambild: ${format}`));
     let url;
     const [B, H] = _rfBildmatt(bredd, hojd);
@@ -1962,7 +1975,7 @@ function figurTillBild(figur, format, bredd, hojd, val = {}) {
  * @returns {{figur: any, bild: any, hel: any, utsnitt: boolean, visaSma: boolean, dolda: Set<string>, filter: any, tom: boolean,
  *            underlag: {figur: any, text: string, tom: boolean}|null} | null}
  */
-function _rfExportFigur(gd) {
+export function _rfExportFigur(gd) {
     if (!gd || !gd._figur) return null;
     const fn = gd._figurVal ? gd._figurVal.exportMedSma : null;
     let visaSma = false;
@@ -1974,7 +1987,7 @@ function _rfExportFigur(gd) {
     // (samma lager, andra domäner). `hel` är originalet, oavsett underlag.
     const und = gd._rfUnderlagText ? gd._rfUnderlagFigur || null : null;
     const underlag = gd._rfUnderlagText
-        ? { figur: und, text: gd._rfUnderlagText, tom: !und || _figAntalPunkter(visaSma ? und : _figUtanSma(und)) === 0 } : null;
+        ? { figur: und, text: gd._rfUnderlagText, tom: !und || antalPunkter(visaSma ? und : utanSmaGrupper(und)) === 0 } : null;
     return { figur, bild: underlag ? (und ? _rfZoomad(gd, und) : null) : _rfZoomad(gd, figur), hel: _rfZoomad(gd, figur), utsnitt: !!gd._rfZoom, visaSma,
-             dolda: new Set(gd._figurDolda || []), filter: _rfUrvalKopia(gd._figurFilter), tom: _figAntalPunkter(visaSma ? figur : _figUtanSma(figur)) === 0, underlag };
+             dolda: new Set(gd._figurDolda || []), filter: _rfUrvalKopia(gd._figurFilter), tom: antalPunkter(visaSma ? figur : utanSmaGrupper(figur)) === 0, underlag };
 }

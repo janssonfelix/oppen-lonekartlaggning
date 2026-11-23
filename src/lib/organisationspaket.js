@@ -8,17 +8,14 @@
  * läser in i ett steg. Modulen bygger paketet ur appens delar och tolkar ett paket
  * tillbaka till dem. Bara vitlistade fält följer med; allt annat ignoreras, så att en
  * manipulerad fil inte kan föra in något annat än aggregat i verktyget.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 import { valideraRecept } from './tabellrecept.js';
 import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
 import { valideraImportprofiler } from './importprofiler.js';
-import { skapaTermer } from './termer.js';
+import { STANDARDTERMER as T } from './termer.js';
 import { installningsGrans } from './installningsgranser.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
+import { K_MAX, K_MIN } from './ktroskel.js';
 
 
 export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
@@ -46,8 +43,8 @@ const _text = v => {
 const _tal = (v, min, max) => (typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : undefined);
 const _talEllerNull = v => (v == null ? null : (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : NaN));
 const _utanTomma = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
-// Minsta gruppstorlek för redovisning (ADR-38): heltal 2–1000, annars utelämnat.
-const _kTroskel = v => (Number.isInteger(v) && v >= 2 && v <= 1000 ? v : undefined);
+// Minsta gruppstorlek för redovisning (ADR-38, ADR-102): heltal K_MIN–K_MAX, annars utelämnat.
+const _kTroskel = v => (Number.isInteger(v) && v >= K_MIN && v <= K_MAX ? v : undefined);
 // Beräkningsperioden väljs bland verktygets värden (Prioriteringens rullista).
 const PERIODER = [3, 6, 9, 12];
 const _period = v => (PERIODER.includes(v) ? v : undefined);

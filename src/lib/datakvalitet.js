@@ -8,13 +8,12 @@
  * kan inte spädas ut av andra delar. Könsfördelningen i organisationen är inget
  * kvalitetskriterium — den är ett fynd (könsskevhet).
  */
-import { konOf } from './falt.js';
+import { konAv } from './falt.js';
+import { arKvinna, arMan } from './kon.js';
 import { avrundaSymmetriskt } from './stat.js';
 import { personOrd } from './namn.js';
-import { skapaTermer, ordForAntal } from './termer.js';
+import { STANDARDTERMER as T, ordForAntal } from './termer.js';
 import { forhandskontrollGranser } from './forhandskontroll.js';
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 
 const RANG = { ok: 0, varning: 1, kritisk: 2 };
@@ -32,7 +31,7 @@ const _pct = v => (v == null || !isFinite(v)) ? '–' : `${avrundaSymmetriskt(v,
 export function jamforbaraBas(rader, k) {
     const perBas = new Map();
     for (const r of rader || []) {
-        const kon = konOf(r);
+        const kon = konAv(r);
         if (kon === 'Övrig/okänd' || !r.bas) continue;
         const g = perBas.get(r.bas) || { kv: 0, ma: 0 };
         if (kon === 'Kvinna') g.kv++; else g.ma++;
@@ -47,6 +46,36 @@ export function jamforbaraBas(rader, k) {
         else maskerade.push(bas);
     }
     return { jamforbara, maskerade, andelPersoner: totalt ? iJamforbara / totalt : null };
+}
+
+/**
+ * Inläsningsrapportens räkning per BAS-intervall: hur många intervall med minst tre personer som har bara ett kön, och
+ * hur många som har färre än k personer och därför inte redovisas i exporterna.
+ * @param {any[]} rader
+ * @param {string[]} basLista
+ * @param {number} k
+ */
+export function basVarningar(rader, basLista, k) {
+    let enkonade = 0, underK = 0;
+    for (const b of basLista) {
+        const sub = rader.filter(r => r.bas === b);
+        if (sub.length >= 3 && (!sub.some(r => arKvinna(r)) || !sub.some(r => arMan(r)))) enkonade++;
+        if (sub.length < k) underK++;
+    }
+    return { enkonade, underK };
+}
+
+/**
+ * Bedömningen med fler kriterier (till exempel AID-kodningens, aidkontroll.js): svagaste länken avgör, så statusen är
+ * den sämsta av bedömningens och de tillagdas (ADR-19).
+ * @template {{status: string, kriterier: {status: string}[]}} B
+ * @param {B} bedomning
+ * @param {{status: string}[]} fler
+ * @returns {B}
+ */
+export function medFlerKriterier(bedomning, fler) {
+    const kriterier = [...bedomning.kriterier, ...fler];
+    return { ...bedomning, status: kriterier.reduce((s, c) => (RANG[c.status] > RANG[s] ? c.status : s), bedomning.status), kriterier };
 }
 
 /** Minsta upptäckbara skillnad i % (80 % styrka, α = 0,05) ur könskoefficientens SE (log-skala). */

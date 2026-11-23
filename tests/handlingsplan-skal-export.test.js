@@ -107,7 +107,7 @@ describe('Excel: bladet Sakliga skäl och handlingsplanens kolumner', () => {
         const [rubrik] = bok.split('\n').slice(1);
         expect(rubrik).toMatch(/Sakliga skäl \(kategori och belopp\).*Förklarad andel av skillnaden \(%\)/);
         const [n, v] = medSkal(w)[0];
-        const namn = w.eval('_sakKategorier()').find(k => k.id === v.skal[0].kategori).namn;
+        const namn = w.eval('skalKategorier()').find(k => k.id === v.skal[0].kategori).namn;
         expect(ren(bok).replace(/(\d)\s(?=\d{3}\b)/g, '$1')).toContain(`${namn} ${v.skal[0].belopp} kr`);   // fångsten skriver tal utan tusentalsavgränsare
         expect(n).toBeTruthy();
     });

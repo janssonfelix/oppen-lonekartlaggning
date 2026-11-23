@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _kText } from './06-k-troskel.js';
+import { termText } from './09-termer.js';
 
 // Metodtexten om AID (ADR-33, ADR-74) — samma text i Om verktyget, Lika arbete och Word-utkastet. Den är en mall med
 // termerna ({enhet.en} med flera, src/lib/termer.js) och fylls med termText där den visas; index.html har samma mall
 // i data-term-template, och tests/termer.test.js håller de två lika.
-const AID_METODTEXT = 'AID är ett klassificeringssystem för att gruppera arbetsuppgifter, som SKR och de fackliga organisationerna använder gemensamt för lönestatistik. {Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en} och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga; för det behöver AID kompletteras. {Enhet.bfl} är därför en utgångspunkt för lika arbete, som arbetsgivaren bekräftar; för likvärdigt arbete kompletterar {niva.bfl} eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).';
+export const AID_METODTEXT = 'AID är ett klassificeringssystem för att gruppera arbetsuppgifter, som SKR och de fackliga organisationerna använder gemensamt för lönestatistik. {Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en} och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga; för det behöver AID kompletteras. {Enhet.bfl} är därför en utgångspunkt för lika arbete, som arbetsgivaren bekräftar; för likvärdigt arbete kompletterar {niva.bfl} eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).';
 
 // ---- Ordlista (Glossary) ----
 // Texterna är mallar: {k} och {golv} fylls med tröskeln (_kText), {enhet.en} och de andra termerna med termText
@@ -78,10 +81,10 @@ const GLOSSARY = [
     { cat:'Verktyget', term:'Oförklarad skillnad per {niva.en}', short:'Separata regressioner inom varje {niva.en}', long:'För varje {niva.en} med minst {golv} personer av varje kön körs en separat regression: log(lön) ~ kön + ålder. Visar var inom organisationen den oförklarade löneskillnaden är som störst.' },
 
     // GDPR
-    { cat:'GDPR', term:'K-anonymitet', short:'Skydd mot återidentifiering i det som lämnar verktyget', long:'Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen. På skärmen visas alla grupper. Det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget — redovisar inte lönemått för grupper med färre än {k} personer (minsta gruppstorlek, standard 10), och könsuppdelade mått bara när varje kön når den. Värdet ställs in under Inställningar och står i metodbilagan.' },
+    { cat:'GDPR', term:'Minsta gruppstorlek', sok:'k-anonymitet', short:'Skydd mot återidentifiering i det som lämnar verktyget', long:'Verktygets eget skydd mot återidentifiering, som uttryck för uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen. På skärmen visas alla grupper. Det som lämnar verktyget — Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget — redovisar inte lönemått för grupper med färre än {k} personer (standard 10), och könsuppdelade mått bara när varje kön når den. Värdet ställs in under Inställningar och står i metodbilagan.' },
     { cat:'GDPR', term:'Uppgiftsminimering', short:'Behandla bara nödvändiga uppgifter (enligt dataskyddsförordningen)', long:'Personuppgifter ska vara adekvata, relevanta och begränsade till vad som är nödvändigt. Verktyget läser bara in godkända fält (BAS, {enhet.en}, lön och kön samt tre valfria: ålder, arbetsvärderingspoäng och AID:s kod för ledning och särskilda uppdrag) — anställningsnummer, namn, e-post och personnummer plockas inte upp ens om de finns i filen. Ålder behövs bara för åldersjusteringen och fliken Ålder & karriär; utan ålder körs analysen ändå.' },
     { cat:'GDPR', term:'Pseudonymisering', short:'Ersätt direkta identifierare med koder', long:'Direkta personidentifierare ersätts med löpnummer eller koder. Återmappning hålls separat. Möjliggör analys utan direkt återidentifiering. Rekommenderas innan lönefilen läses in.' },
-    { cat:'GDPR', term:'Inbyggt dataskydd', short:'Dataskydd inbyggt från början (eng. privacy by design)', long:'Tekniska och organisatoriska åtgärder som standard. Verktyget har inbyggt dataskydd genom att allt körs bara lokalt (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, k-anonymitet, att bara godkända fält läses och att filer med personidentifierare avvisas automatiskt.' },
+    { cat:'GDPR', term:'Inbyggt dataskydd', short:'Dataskydd inbyggt från början (eng. privacy by design)', long:'Tekniska och organisatoriska åtgärder som standard. Verktyget har inbyggt dataskydd genom att allt körs bara lokalt (data lämnar aldrig enheten), CSP-spärrar mot nätverksanrop, minsta gruppstorlek i det som lämnar verktyget, att bara godkända fält läses och att filer med personidentifierare avvisas automatiskt.' },
     { cat:'GDPR', term:'Content Security Policy (CSP)', short:'Webbläsar-policy som blockerar nätverksanrop', long:'En meta-tagg i HTML-filen som instruerar webbläsaren att förbjuda alla utgående nätverksanslutningar (connect-src \'none\'). Hård teknisk spärr mot att data förs ut: även om en framtida bug skulle försöka göra fetch/XHR/WebSocket blockeras anropet.' },
     { cat:'GDPR', term:'Beräkning och urval', short:'Spårbarhet från lönefil till analys', long:'I flera analysflikar finns en panel "Beräkning och urval" som redovisar exakt hur många rader som ingår, vilka som exkluderats och varför. Möjliggör kvalitetssäkring och svar på frågan "Stämmer denna siffra?".' }
 ];
@@ -162,7 +165,7 @@ function renderGlossary(filterText = '') {
     wrap.innerHTML = html;
 }
 
-function openGlossary() {
+export function openGlossary() {
     const m = document.getElementById('glossary-modal');
     if (!m) return;
     m.style.display = 'flex';
@@ -177,29 +180,31 @@ function closeGlossary() {
     }
 }
 
-document.getElementById('btn-open-glossary')?.addEventListener('click', openGlossary);
-document.getElementById('glossary-close')?.addEventListener('click', closeGlossary);
-document.querySelector('#glossary-modal .glossary-backdrop')?.addEventListener('click', closeGlossary);
-document.getElementById('glossary-search')?.addEventListener('input', e => renderGlossary(/** @type {HTMLInputElement} */ (e.target).value));
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && /** @type {HTMLElement} */ (document.getElementById('glossary-modal')).style.display === 'flex') closeGlossary();
-});
-
-// Symbol/färgförklaring-modal
-document.getElementById('btn-open-symbols')?.addEventListener('click', () => {
-    const m = document.getElementById('symbols-modal');
-    if (m) { m.style.display = 'flex'; trapFocus(m); }
-});
-document.getElementById('symbols-close')?.addEventListener('click', () => {
-    const m = document.getElementById('symbols-modal');
-    if (m) { releaseFocus(m); m.style.display = 'none'; }
-});
-document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', () => {
-    const m = document.getElementById('symbols-modal');
-    if (m) { releaseFocus(m); m.style.display = 'none'; }
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') {
-        /** @type {HTMLElement} */ (document.getElementById('symbols-modal')).style.display = 'none';
-    }
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartOrdlista() {
+    document.getElementById('btn-open-glossary')?.addEventListener('click', openGlossary);
+    document.getElementById('glossary-close')?.addEventListener('click', closeGlossary);
+    document.querySelector('#glossary-modal .glossary-backdrop')?.addEventListener('click', closeGlossary);
+    document.getElementById('glossary-search')?.addEventListener('input', e => renderGlossary(/** @type {HTMLInputElement} */ (e.target).value));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && /** @type {HTMLElement} */ (document.getElementById('glossary-modal')).style.display === 'flex') closeGlossary();
+    });
+    // Symbol/färgförklaring-modal
+    document.getElementById('btn-open-symbols')?.addEventListener('click', () => {
+        const m = document.getElementById('symbols-modal');
+        if (m) { m.style.display = 'flex'; trapFocus(m); }
+    });
+    document.getElementById('symbols-close')?.addEventListener('click', () => {
+        const m = document.getElementById('symbols-modal');
+        if (m) { releaseFocus(m); m.style.display = 'none'; }
+    });
+    document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', () => {
+        const m = document.getElementById('symbols-modal');
+        if (m) { releaseFocus(m); m.style.display = 'none'; }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') {
+            /** @type {HTMLElement} */ (document.getElementById('symbols-modal')).style.display = 'none';
+        }
+    });
+}

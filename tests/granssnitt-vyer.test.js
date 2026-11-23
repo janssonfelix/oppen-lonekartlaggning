@@ -77,7 +77,7 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
     const PIL_SIST = /[\u2190-\u21FF]/;   // inga pilar alls: riktning och följd skrivs med ord
     // Text som går ut i exporterna oförändrad (Excel-celler, rapportens utkastruta, demomärkningen).
     const UNDANTAG = [['22-exporthjalpare.js', 'DEMODATA — syntetisk'], ['41-lika-arbete.js', "bara('✓')"], ['58-rapportmodell.js', 'UTKAST att färdigställa']];
-    const filer = [...readdirSync(join(rot, 'src/app')).filter(f => f.endsWith('.js') && f !== '09-lib-speglar.js').map(f => 'src/app/' + f), 'src/index.html', 'src/style.css'];
+    const filer = [...readdirSync(join(rot, 'src/app')).filter(f => f.endsWith('.js')).map(f => 'src/app/' + f), 'src/index.html', 'src/style.css'];
     it('källan har inga bildtecken utanför kommentarer', () => {
         const fynd = [];
         for (const fil of filer) {
@@ -289,7 +289,7 @@ describe('kantränderna', () => {
         expect(fel).toEqual([]);
     });
     it('mallarna sätter randen med hjälpklasserna på 3 px', () => {
-        const filer = readdirSync(join(rot, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f) && f !== '09-lib-speglar.js');
+        const filer = readdirSync(join(rot, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f));
         const fel = [];
         for (const f of [...filer.map(f => `src/app/${f}`), 'src/index.html']) {
             const text = las(f);

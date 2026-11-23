@@ -1775,8 +1775,8 @@ tr.row-highlighted td { animation: rowHighlight 3s ease-out; }
     line-height: 1;
 }
 
-/* ----- k-anonymitet: maskerade celler ----- */
-/* Not under en tabell om grupper som utelämnats av k-anonymiteten, i stället för
+/* ----- Minsta gruppstorlek: maskerade celler ----- */
+/* Not under en tabell om grupper som utelämnats under minsta gruppstorlek, i stället för
    rader där varje cell är maskerad — sådana bär ingen information. */
 .k-mask-note {
     margin: 8px 0 0;

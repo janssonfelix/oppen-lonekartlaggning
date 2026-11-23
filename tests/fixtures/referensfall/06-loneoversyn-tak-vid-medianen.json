@@ -1,7 +1,7 @@
 {
   "id": "loneoversyn-tak-vid-medianen",
   "titel": "Löneöversyn: samma pott lägst först, men med tak vid gruppens median",
-  "funktion": "src/lib/loneoversyn.js#allocate",
+  "funktion": "src/lib/loneoversyn.js#fordela",
   "indata": [
     [
       { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 28000 },
@@ -26,7 +26,7 @@
   },
   "tolerans": 1e-9,
   "harledning": [
-    "Samma rader och pott (6 000 kr) som i fallet loneoversyn-lagst-forst, men dist \"target\" med targetLevel \"median\": nivån L får inte gå över gruppens median (kommentaren till _waterLevelDeltas: pengar som inte får plats under taket lämnas oanvända).",
+    "Samma rader och pott (6 000 kr) som i fallet loneoversyn-lagst-forst, men dist \"target\" med targetLevel \"median\": nivån L får inte gå över gruppens median (kommentaren till _lyftLagstForst: pengar som inte får plats under taket lämnas oanvända).",
     "Taket: lönerna sorterade 25 000, 26 000, 28 000, 31 000, 35 000; medianen är den tredje, 28 000.",
     "Steg 1: lyft 25 000 till 26 000. Kostar 1 000. Använt 1 000.",
     "Steg 2: lyft de två lägsta från 26 000 till 28 000. Kostar 2 × 2 000 = 4 000. Använt 5 000. Nu är L = 28 000, lika med taket, och fördelningen stannar.",

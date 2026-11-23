@@ -13,10 +13,8 @@
  *
  * Formatet som det är byggt — alla val, vad vyn själv måste göra för att små grupper ska vara skyddade, och
  * kända luckor — står i docs/utveckling/diagramkarnan.md.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { quantile, avrundaSymmetriskt } from './stat.js';
+import { kvantil, avrundaSymmetriskt } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
 import { svTal } from './talformat.js';
 
@@ -46,7 +44,7 @@ export function talformat(v, namn, val) {
 /**
  * Kvantilpunkterna i ett kvantilpunktdiagram (lada med form: 'kvantiler'): `antal` lika
  * stora andelar av gruppen, var och en företrädd av kvantilen i sin mitt, (i + 0,5) / antal, med samma
- * interpolation som stat.quantile. Antalet är högst `antalMax` och högst halva gruppen, så att en prick aldrig
+ * interpolation som stat.kvantil. Antalet är högst `antalMax` och högst halva gruppen, så att en prick aldrig
  * står för färre än två personer. null när gruppen har färre än två värden.
  * @param {number[]} varden
  * @param {number} [antalMax]
@@ -214,14 +212,14 @@ export function antalPunkter(figur) {
 }
 
 /**
- * Lådans mått: kvartiler med samma metod som verktygets tabeller (stat.js quantile), morrhår
+ * Lådans mått: kvartiler med samma metod som verktygets tabeller (stat.js kvantil), morrhår
  * till yttersta värdet inom 1,5 kvartilavstånd, övriga som avvikare.
  * @returns {{q1:number, median:number, q3:number, lag:number, hog:number, avvikare:number[]} | null}
  */
 export function ladstatistik(varden) {
     const v = (varden || []).filter(x => typeof x === 'number' && isFinite(x)).sort((a, b) => a - b);
     if (!v.length) return null;
-    const q1 = quantile(v, 0.25), median = quantile(v, 0.5), q3 = quantile(v, 0.75);
+    const q1 = kvantil(v, 0.25), median = kvantil(v, 0.5), q3 = kvantil(v, 0.75);
     const kant = 1.5 * (q3 - q1);
     const inom = v.filter(x => x >= q1 - kant && x <= q3 + kant);
     return { q1, median, q3, lag: inom[0], hog: inom[inom.length - 1], avvikare: v.filter(x => x < q1 - kant || x > q3 + kant) };
@@ -357,7 +355,7 @@ export function urvalSpann(figur, dim, { visaSma = false } = {}) {
 
 // Filtret som { kategori: Map, intervall: Map }. En mängd (det äldre formatet) är de bortvalda värdena i figurens
 // första kategoridimension. Annat än ett objekt: inget filter.
-function _filterNorm(figur, filter) {
+function _normaliseratFilter(figur, filter) {
     if (!filter || typeof filter !== 'object') return null;
     if (typeof filter.has === 'function') {
         const k = _urvalRa(figur).find(u => u && _urvalTyp(u) === 'kategori');
@@ -435,7 +433,7 @@ export function urvalIntervallText(dim, g) {
  * @returns {string[]}
  */
 export function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
-    const f = _filterNorm(figur, filter);
+    const f = _normaliseratFilter(figur, filter);
     if (!f) return [];
     const ut = [];
     for (const u of urvalLista(figur)) {
@@ -564,7 +562,7 @@ export function harlettNot(h) {
 // (det ingår bara i hela underlaget), och underlaget räknas för en dimension i taget. Då är skillnaden mellan två val
 // alltid en förening av valbara värden — själva skyddade — och "alla" minus ett val är resten, som regeln prövar.
 
-// Radens kön som 'kv' eller 'ma' (samma regel som konOf i falt.js), eller null.
+// Radens kön som 'kv' eller 'ma' (samma regel som konAv i falt.js), eller null.
 function _underlagKon(underlag, r) {
     if (underlag && typeof underlag.kon === 'function') { const k = underlag.kon(r); return k === 'kv' || k === 'ma' ? k : null; }
     if (arKvinna(r)) return 'kv';
@@ -924,4 +922,26 @@ export function figurTillTabell(figur) {
     const ut = [];
     block.forEach((b, i) => { if (i) ut.push([]); ut.push(...b); });
     return ut;
+}
+
+// ---- När ett diagram inte får lämna verktyget ----
+// Ett diagram får inte lämna verktyget (ingen exportmeny, ingen bild till ZIP-filen, rapportunderlaget eller
+// utskriften, ingen diagramdata) när det står i en behållare som vyn har märkt utan export. Skälen är få och
+// uppräknade, så att det syns varför varje spärr finns.
+export const EXPORT_SKAL = Object.freeze({
+    // Personer att granska (ADR-23): panelen visar enskilda personer med filens radnummer. Diagrammet namnger ingen
+    // och bär ingen lön, men hör till panelen, och inget ur den lämnar verktyget.
+    individer: 'hör till Personer att granska, som visar enskilda personer (ADR-23)'
+});
+
+/**
+ * Skälet till att ett diagram inte får lämna verktyget, eller null när det får det. `markering` är skälet som
+ * behållaren är märkt med (null när ingen behållare är märkt). En märkning utan registrerat skäl spärrar ändå:
+ * hellre ett diagram för lite i en export än ett för mycket.
+ * @param {string|null|undefined} markering
+ * @returns {string|null}
+ */
+export function exportSkal(markering) {
+    if (markering == null) return null;
+    return Object.prototype.hasOwnProperty.call(EXPORT_SKAL, markering) ? EXPORT_SKAL[markering] : 'är märkt utan export';
 }

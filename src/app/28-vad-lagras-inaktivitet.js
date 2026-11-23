@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { FARG } from './01-farger.js';
+import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { ikon } from './03-ikoner.js';
+import { INAKTIVITET_STANDARD_MIN } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { referensKalla, referensNamn, state } from './12-tillstand.js';
+import { _fkVantar } from './17-forhandskontroll.js';
+import { _rensaAllData, clearAllData } from './26-rensning.js';
+import { stangInstallningar } from './86-installningar.js';
 
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
 /**
@@ -8,7 +17,7 @@
  * konkret insyn i exakt vad verktyget håller i RAM.
  */
 
-function openDataResidency() {
+export function openDataResidency() {
     const modal = document.getElementById('data-residency-modal');
     const content = document.getElementById('data-residency-content');
     if (!modal || !content) return;
@@ -82,22 +91,6 @@ function openDataResidency() {
     modal.style.display = 'flex';   // som övriga modaler: .glossary-modal centrerar sin panel
     if (typeof trapFocus === 'function') trapFocus(modal);
 }
-
-// Knappen står i panelen Inställningar. Har rensningen gjorts stängs panelen, och Översikt visas som uppladdningssida.
-document.getElementById('btn-clear-all-data')?.addEventListener('click', () => {
-    clearAllData();
-    if (!state.data.length && typeof stangInstallningar === 'function') stangInstallningar();
-});
-document.getElementById('btn-data-residency')?.addEventListener('click', openDataResidency);
-// Tidsväljaren ritas om vid varje öppning; lyssnaren sitter på innehållet en gång och gäller hur dialogen än öppnas (även från sökningen).
-document.getElementById('data-residency-content')?.addEventListener('change', e => {
-    const sel = /** @type {HTMLSelectElement} */ (e.target);
-    if (sel.id !== 'inactivity-timeout-select') return;
-    const min = parseInt(sel.value, 10) || 0;
-    setInactivityTimeout(min);
-    const status = document.getElementById('inactivity-status');
-    if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
-});
 
 // ---- Inaktivitetstimer med tvåfas-varning ----
 //
@@ -186,7 +179,7 @@ function _autoClearOnInactivity() {
     }
 }
 
-function _resetInactivityTimer() {
+export function _resetInactivityTimer() {
     if (_inactivityIdleTimer) {
         clearTimeout(_inactivityIdleTimer);
         _inactivityIdleTimer = null;
@@ -199,27 +192,45 @@ function _resetInactivityTimer() {
 }
 
 // Ett värde låst av organisationspaketet (ADR-47) gäller oavsett vad som begärs.
-function setInactivityTimeout(minutes) {
+export function setInactivityTimeout(minutes) {
     const last = state.paketLas.inaktivitetMin;
     state.inactivityTimeoutMin = last != null ? last : Math.max(0, parseInt(minutes, 10) || 0);
     _hideInactivityWarning();
     _resetInactivityTimer();
 }
 
-// Registrera aktivitets-lyssnare en gång — billiga (passive)
-['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
-    window.addEventListener(evt, () => {
-        // Bara reset om timern är igång (annars onödig CPU)
-        if (state.inactivityTimeoutMin > 0 && !_inactivityWarnEl) _resetInactivityTimer();
-    }, { passive: true });
-});
-document.getElementById('data-residency-close')?.addEventListener('click', () => {
-    const m = document.getElementById('data-residency-modal');
-    if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; }
-});
-document.getElementById('data-residency-modal')?.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) {
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartVadLagrasInaktivitet() {
+    // Knappen står i panelen Inställningar. Har rensningen gjorts stängs panelen, och Översikt visas som uppladdningssida.
+    document.getElementById('btn-clear-all-data')?.addEventListener('click', () => {
+        clearAllData();
+        if (!state.data.length && typeof stangInstallningar === 'function') stangInstallningar();
+    });
+    document.getElementById('btn-data-residency')?.addEventListener('click', openDataResidency);
+    // Tidsväljaren ritas om vid varje öppning; lyssnaren sitter på innehållet en gång och gäller hur dialogen än öppnas (även från sökningen).
+    document.getElementById('data-residency-content')?.addEventListener('change', e => {
+        const sel = /** @type {HTMLSelectElement} */ (e.target);
+        if (sel.id !== 'inactivity-timeout-select') return;
+        const min = parseInt(sel.value, 10) || 0;
+        setInactivityTimeout(min);
+        const status = document.getElementById('inactivity-status');
+        if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
+    });
+    // Registrera aktivitets-lyssnare en gång — billiga (passive)
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            // Bara reset om timern är igång (annars onödig CPU)
+            if (state.inactivityTimeoutMin > 0 && !_inactivityWarnEl) _resetInactivityTimer();
+        }, { passive: true });
+    });
+    document.getElementById('data-residency-close')?.addEventListener('click', () => {
         const m = document.getElementById('data-residency-modal');
         if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; }
-    }
-});
+    });
+    document.getElementById('data-residency-modal')?.addEventListener('click', e => {
+        if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) {
+            const m = document.getElementById('data-residency-modal');
+            if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; }
+        }
+    });
+}

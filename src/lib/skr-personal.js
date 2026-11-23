@@ -3,8 +3,6 @@
 // AUTO-GENERERAD av tools/gen-skr-personal.mjs ur SKR, personalstatistik november 2025 (Tabell 4 KP, Tabell 5 RP). Ändra inte för hand.
 // Per AID-etikett: antal anställningar och andel kvinnor (%) i kommuner respektive regioner.
 // null = SKR redovisar inte andelen (små tal).
-//
-// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
 
 const STATISTIK = Object.freeze({
     period: '2025-11',

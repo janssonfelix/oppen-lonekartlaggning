@@ -59,8 +59,6 @@ function main() {
 // AUTO-GENERERAD av tools/gen-skr-personal.mjs ur ${kalla}. Ändra inte för hand.
 // Per AID-etikett: antal anställningar och andel kvinnor (%) i kommuner respektive regioner.
 // null = SKR redovisar inte andelen (små tal).
-//
-// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
 
 const STATISTIK = Object.freeze({
     period: '${period}',

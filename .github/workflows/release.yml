@@ -3,9 +3,14 @@ name: Release
 # Släpper en version när en tagg v<VERSION> pushas:
 #   1. release-grinden (npm run release:kontroll; vad den prövar står i huvudet i tools/release.mjs);
 #   2. bygget görs om och måste bli byte-identiskt med den incheckade artefakten;
-#   3. artefakten, RELEASE.txt och programvaruförteckningen (SBOM) signeras med Sigstore cosign utan nyckel (keyless): certifikatet utfärdas för
+#   3. hela testsviten körs och valideringsrapporten byggs: varje ID i spårbarhetsmatrisen prövat mot bygget;
+#   4. artefakten byggs om ur taggen i en ren katalog och måste bli samma fil som den som signeras (ADR-101);
+#   5. artefakten, RELEASE.txt, programvaruförteckningen (SBOM) och valideringsrapporten signeras med Sigstore cosign utan nyckel (keyless): certifikatet utfärdas för
 #      det här arbetsflödet genom GitHub Actions OIDC-token, så signaturen styrker att filen byggdes här ur taggen;
-#   4. signaturen verifieras med samma kommando som SECURITY.md anger, och allt publiceras som en GitHub Release.
+#   6. signaturen verifieras med samma kommando som SECURITY.md anger;
+#   7. GitHub attesterar ursprunget (SLSA build provenance): ett signerat intyg om repo, tagg, commit och arbetsflöde
+#      för varje fil, som en granskare prövar med `gh attestation verify` (ADR-101);
+#   8. allt publiceras som en GitHub Release.
 #
 # Kontrollsumman i RELEASE.txt skyddar bara mot en skadad fil; det är signaturen som styrker äktheten.
 on:
@@ -22,7 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # skapa releasen och ladda upp filerna
-      id-token: write   # OIDC-token till Sigstore (keyless signering)
+      id-token: write   # OIDC-token till Sigstore (keyless signering och attesteringen)
+      attestations: write   # spara attesteringen av ursprunget hos GitHub
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -62,25 +68,57 @@ jobs:
       - name: Programvaruförteckning (SBOM)
         run: npm run sbom
 
+      # Hela testsviten mot bygget och en rad per ID i spårbarhetsmatrisen (tools/valideringsrapport.mjs, ADR-100).
+      # Faller när ett ID saknar godkänt test eller något test faller; då släpps ingenting.
+      - name: Valideringsrapport
+        run: npm run valideringsrapport
+
+      # Reproducerbart bygge (ADR-101): taggen utcheckad i en ny katalog och byggd där ska ge exakt den fil som
+      # signeras nedan, så att vem som helst kan bygga om filen ur taggen och få samma kontrollsumma.
+      - name: Ombygge ur taggen ger filen som signeras
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/ombygge" "$GITHUB_REF_NAME"
+          ln -s "$PWD/node_modules" "$RUNNER_TEMP/ombygge/node_modules"
+          (cd "$RUNNER_TEMP/ombygge" && npm run bundle)
+          signeras=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
+          ombyggd=$(sha256sum "$RUNNER_TEMP/ombygge/dist/oppen-lonekartlaggning.html" | cut -d' ' -f1)
+          if [ "$signeras" != "$ombyggd" ]; then
+            echo "::error::Ombygget ur $GITHUB_REF_NAME ($ombyggd) är inte filen som signeras ($signeras)."
+            exit 1
+          fi
+          echo "Ombygget ur $GITHUB_REF_NAME är filen som signeras ($signeras)."
+
       - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
 
       # Varje fil får ett Sigstore-paket (.sigstore.json) med signaturen, certifikatet och posten i
       # transparensloggen Rekor.
-      - name: Signera artefakten, RELEASE.txt och programvaruförteckningen
+      - name: Signera artefakten, RELEASE.txt, programvaruförteckningen och valideringsrapporten
         working-directory: dist
         run: |
           cosign sign-blob --yes --bundle oppen-lonekartlaggning.html.sigstore.json oppen-lonekartlaggning.html
           cosign sign-blob --yes --bundle RELEASE.txt.sigstore.json RELEASE.txt
           cosign sign-blob --yes --bundle sbom.cdx.json.sigstore.json sbom.cdx.json
+          cosign sign-blob --yes --bundle valideringsrapport.md.sigstore.json valideringsrapport.md
+          cosign sign-blob --yes --bundle valideringsrapport.json.sigstore.json valideringsrapport.json
 
       - name: Verifiera signaturerna
         working-directory: dist
         run: |
-          for f in oppen-lonekartlaggning.html RELEASE.txt sbom.cdx.json; do
+          for f in oppen-lonekartlaggning.html RELEASE.txt sbom.cdx.json valideringsrapport.md valideringsrapport.json; do
             cosign verify-blob "$f" --bundle "$f.sigstore.json" \
               --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${GITHUB_REF}" \
               --certificate-oidc-issuer https://token.actions.githubusercontent.com
           done
+
+      # Attesteringen av ursprunget: GitHubs egen action, signerad genom Sigstore med samma OIDC-token.
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/oppen-lonekartlaggning.html
+            dist/RELEASE.txt
+            dist/sbom.cdx.json
+            dist/valideringsrapport.md
+            dist/valideringsrapport.json
 
       - name: Publicera som GitHub Release
         env:
@@ -95,6 +133,10 @@ jobs:
             dist/oppen-lonekartlaggning.html \
             dist/RELEASE.txt \
             dist/sbom.cdx.json \
+            dist/valideringsrapport.md \
+            dist/valideringsrapport.json \
             dist/oppen-lonekartlaggning.html.sigstore.json \
             dist/RELEASE.txt.sigstore.json \
-            dist/sbom.cdx.json.sigstore.json
+            dist/sbom.cdx.json.sigstore.json \
+            dist/valideringsrapport.md.sigstore.json \
+            dist/valideringsrapport.json.sigstore.json

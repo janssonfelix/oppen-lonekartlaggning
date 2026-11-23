@@ -60,7 +60,7 @@ import { differensprov, tabellerIUtdata } from './differens.js';
 //    ojusterade steg prövas av R1, som också kör samlaUtdata mot ett underlag med 7 män.
 // ===================================================================================
 export function invariantSvit(k, extra) {
-    describe(`I4: invarianten över flikar och exporter vid ${k}`, () => {
+    describe(`[I4] [S4] invarianten över flikar och exporter vid ${k}`, () => {
         let utdata;
         const dolda = [...KON_DOLDA, ...SENT_SMA, ...extra];
         // Gränsen fångar ett test som hänger sig, den mäter inte fart: förberedelsen tar omkring en minut ensam och ungefär

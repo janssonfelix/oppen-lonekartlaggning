@@ -27,13 +27,18 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    Provat 2026-11-22: `tests/ktroskel-invarianter.test.js` 40 gånger på Node 22 och 40 gånger på Node 24, sex åt
    gången, gav ingen krasch i någon, och hela sviten är grön på Node 24. Kraschen gick inte att framkalla, så ett
    byte av Node-version har inget mätbart att vinna; omkörningen står kvar.
-8. **Ett gemensamt globalt scope** på omkring 30 000 rader, utan den genererade spegeln. Logik flyttas till `src/lib/` när en del ändå ändras.
+8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Logik flyttas till `src/lib/` när en del ändå ändras.
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
     2026-11-22: omkring 2 050 s sammanlagt på tolv arbetare). Väntetiden för en pull request sätts av röktestet i
     webbläsarna (4,5–5,5 min), inte av sviten. Filerna som ritar verktyget i jsdom står för nästan hela tiden, och
     k-tröskelns filer för en fjärdedel. Delade fönster provades 2026-11-22 och kastades: i de fem filer som skapade
     flest fönster gick bara 39 av 330 att dela, eftersom de flesta apptester ändrar fönstret. Tas upp igen om sviten
     blir det som sätter väntetiden i CI.
+    *Framtida utveckling (mätt 2026-11-23):* när flikarnas regler flyttade till vymodeller (ADR-99) och 31 dubbletter
+    i jsdom ersattes av tester i Node gick sviten från 201 till 199 s, omkring 1 %. Tiden går till tre filer som ritar
+    och exporterar: k-invarianten (100 s), start och meny (79 s) och diagramritaren (68 s). De har inga dubbletter
+    att ta bort; tiden kortas bara om de görs om, till exempel så att invarianten prövar vymodellerna i Node och
+    bara ett urval av utdatavägarna i jsdom.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
 9e. *Avslutad 2026-11-21:* att Utforska och kolumnen *Skillnad kön* i Prioriteringen visar storleken utan prövning
@@ -88,6 +93,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning
     för facklig samverkan. (Textförslaget till information till de anställda, tillgänglighetsredogörelsen och
     säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`; textförslaget är inte juridiskt granskat.)
+33. **Före release: systemförvaltarens väg för organisationspaketet.** Hur systemförvaltaren lägger in
+    organisationens paket och sprider det till handläggarna ska bli enklare (noterat 2026-11-23). I dag läser varje
+    handläggare in paketet själv (`docs/anvandare/organisationspaket.md`).
 
 **Juridiska frågor.** Hänvisningarna gicks igenom 2026-10-19 (status *Förslag* i [`lagrum.md`](lagrum.md): inte
 juridiskt granskade). Beslut som följde: verktyget hänvisar övergripande
@@ -95,6 +103,6 @@ och lagrummen står bara i [`lagrum.md`](lagrum.md) (ADR-16); kvinnodominerat ar
 direktivet beskrivs som inte infört i Sverige, med möjlig direkt verkan mot kommun och region. Genomfört
 och kvar att pröva juridiskt: 5 %-gränsen används bara för gemensam lönebedömning, aldrig för att flagga lika eller
 likvärdigt arbete (ADR-59); inläsningen avvisar kolumner vars rubrik antyder fackmedlemskap, hälsa eller andra
-särskilda kategorier (`detectSensitiveColumns`). Fliken *Handlingsplan* behåller namnet, som är neutralt (beslut
+särskilda kategorier (`hittaKansligaKolumner`). Fliken *Handlingsplan* behåller namnet, som är neutralt (beslut
 2026-11-15). Protokollet för gemensam lönebedömning är kartlagt led för led mot art. 10.2 a–g i [`lagrum.md`](lagrum.md).
 Ingen juridisk granskning har gjorts; varje arbetsgivare stämmer av mot sin egen rådgivning.

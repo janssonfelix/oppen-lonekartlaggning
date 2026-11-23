@@ -9,7 +9,7 @@ Alla diagram i verktyget ritas av kärnan. Den som lägger till ett diagram läs
 
 | Del | Fil |
 |---|---|
-| Figurformatet: validering, små grupper, domäner, lådstatistik, talformat, diagramdata | `src/lib/figur.js` (speglad i `src/app/09-lib-speglar.js` med namn som börjar på `_fig`) |
+| Figurformatet: validering, små grupper, domäner, lådstatistik, talformat, diagramdata | `src/lib/figur.js` (appen importerar funktionerna under samma namn) |
 | Mått och layout | `src/app/10-diagramlayout.js` |
 | Märkena, färgskalan, referenserna | `src/app/10-diagrammarken.js` |
 | `_rfByggSvg`, sidans API (`ritaFigur`, `rensaFigur`), registret, exporten (`figurTillSvg`, `figurTillBild`) | `src/app/10-diagramritare.js` |
@@ -148,7 +148,7 @@ och finns till för `tips`.
   ritas. Etiketter i staplade staplar ligger i sitt segment och ritas bara där de ryms.
 - En `linje` får träffytor för verktygstips bara när lagret har `tips`.
 - `ruta`: `text` ritas bara med `visaText`, och bara om varje ritad cells text ryms — alla eller inga.
-- `lada`: måtten räknas med `ladstatistik` (kvartiler med `quantile` ur `src/lib/stat.js`, morrhår till
+- `lada`: måtten räknas med `ladstatistik` (kvartiler med `kvantil` ur `src/lib/stat.js`, morrhår till
   yttersta värdet inom 1,5 kvartilavstånd) ur de individer som ritas i kategorin. Flera lådlager i samma
   panel delar kategorins band sida vid sida. Har lådans alla ritade individer samma `farg` får lådan den färgen
   (ett lager med en färg per kategori); annars lagrets.
@@ -272,7 +272,7 @@ aktivt och inget fält är fel); den nollställer alla dimensioner, tömmer fäl
 - Intervall (`aria-label="<namn>"`): namnet och två fält, Minst och Högst (`<label>` med `<input type="text"
   inputmode="decimal" data-urval-grans="min|max" aria-label="<namn>, minst|högst">`). Platshållarna är figurens minsta
   och största tal i dimensionens format. Fälten verkställs vid `change` och läses med verktygets talinläsning
-  (`parseNumberStrict`: "1,5", "1 500", "−5"); ett textfält och inte `type="number"`, eftersom en webbläsare med annat
+  (`tolkaTalStrikt`: "1,5", "1 500", "−5"); ett textfält och inte `type="number"`, eftersom en webbläsare med annat
   språk annars lämnar ett tomt värde för "1,5". Tomt fält är ingen gräns. Ett tal som inte går att läsa, eller Minst
   större än Högst, markerar fältet (`aria-invalid="true"`), ändrar inget och står först i noten ("<namn>: Minst är
   större än högst. Filtret är oförändrat."). Ett intervall får dölja allt: då står "Inga grupper i urvalet" i
@@ -337,7 +337,7 @@ skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde)
 - Lön mot ålder (`_konScatterFigur`): BAS (bara när hela urvalet visas), AID-etikett, ålder och lön. Punkterna bär `alder`
   och `lon` (samma tal som tipset) i stället för att filtren läser `x` och `y`: trendlinjerna och statistikens median har
   också `x` och `y` men ska inte döljas av dem. Trendlinjerna per kön, deras konfidensband och trenden för hela urvalet
-  är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linearRegression`,
+  är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linjarRegression`,
   `linearRegressionCI`, med bandet ur `src/lib/osakerhet.js`, `_konScatterTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
   AID-etikett är källan alla punktlager och `villkor` väljer könet. Hela urvalets trend byter R² i namnet. Utan filter
   är bilden byte för byte densamma som förut. Lön mot ålder per BAS-intervall har samma filter, men trendlinjen i en
@@ -390,8 +390,8 @@ huvudområde Teknikarbete" (vyns `exportBeskrivning` lämnas då bort, eftersom 
 raden "Räknat för: huvudområde Teknikarbete". Ger valet tomt läge exporteras inget. `diagramTillBild` (rapport, utskrift, ZIP,
 rapportunderlag) ritar alltid hela underlaget.
 
-`UNDERLAG` (`10-diagramtema.js`) har `sektor` (huvudområdet, `groupKey(r, 'sektor')`, lista), `aldersgrupp`
-(`groupKey(r, 'alder')`, lista, i åldersordning), `yrkesgrupp` (AID-etiketten, `r.yrke`, lista) och `bas` (`r.bas`,
+`UNDERLAG` (`10-diagramtema.js`) har `sektor` (huvudområdet, `gruppnyckel(r, 'sektor')`, lista), `aldersgrupp`
+(`gruppnyckel(r, 'alder')`, lista, i åldersordning), `yrkesgrupp` (AID-etiketten, `r.yrke`, lista) och `bas` (`r.bas`,
 etikett `'BAS {v}'`). Lådorna och histogrammet i Ålder & karriär har huvudområde och åldersgrupp, löneskillnaden per
 åldersgrupp huvudområde och AID-etikett, percentilerna och kvartilerna i Lönestruktur huvudområde och BAS. Testerna står i `tests/figur.test.js`, `tests/diagramurval.test.js`
 (*underlag: Räkna för*) och `tests/ktroskel-invarianter.test.js` (I6: precis under och precis över regeln i exportläget).
@@ -592,7 +592,7 @@ ett trasigt diagram.
 
 - **Ett vakttest per vy:** ingen cell under tröskeln når SVG:n, verktygstipset eller tabellen
   (diagramdatan). Testet bygger vyns figur ur data med en cell under tröskeln och prövar alla tre.
-  Kärnans differentialtester (`S1: …` för skärmen och `export: det som lämnar verktyget …` i
+  Kärnans differentialtester (`DS1: …` för skärmen och `export: det som lämnar verktyget …` i
   `tests/diagramritare.test.js`) vaktar att kärnan respekterar `liten`; de vaktar inte att vyn sätter den.
 - **Inget ritas förbi kärnan:** ett test håller andra ritande och exporterande anrop borta från källan.
 - **En gemensam väg från diagram till bild.** ZIP-exporten (`66`), "Kopiera diagram" i

@@ -194,10 +194,10 @@ describe('överblicken i exporterna', () => {
         const b = w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser');
         expect(b.tabell.rubriker.slice(0, 3)).toEqual(['AID-etikett', 'Matchning', 'n']);
         const grupper = w.eval('medExportLage(() => referensOverblick())').grupper;
-        expect(b.tabell.rader.map(r => r[1])).toEqual(grupper.map(g => w.eval('_jfMatchningEtikett')(g.statistikMatchning)));
+        expect(b.tabell.rader.map(r => r[1])).toEqual(grupper.map(g => w.eval('matchningEtikett')(g.statistikMatchning)));
         expect(new Set(b.tabell.rader.map(r => r[1]))).toEqual(new Set(['AID + BAS', 'Endast AID']));
         for (const r of b.tabell.rader) expect(r).toHaveLength(b.tabell.rubriker.length);
-        expect(w.eval('_ruTillWordHtml')(b)).toContain('<th>Matchning</th>');
+        expect(w.eval('tillWordHtml')(b)).toContain('<th>Matchning</th>');
     });
     it('utskriften tar med listan ur överblicken före avsnittet mot statistiken', () => {
         const w = fonster(); medStatistik(w);
@@ -262,10 +262,10 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         const sok = w.eval('SOK_FUNKTIONER').filter(s => s.flik === 'benchmark').map(s => s.avsnitt);
         expect(sok).toEqual(expect.arrayContaining(['avsnitt-jmf-bandkartor', 'avsnitt-jmf-overblick']));
     });
-    it('en punkt per yrkesgrupp med P10 och P90: läget 0 = P10, 100 = P90; fylld = AID + BAS, ofylld = Endast AID', () => {
+    it('[B6.6] en punkt per yrkesgrupp med P10 och P90: läget 0 = P10, 100 = P90; fylld = AID + BAS, ofylld = Endast AID', () => {
         const w = medBlandad();
         const rader = w.eval('jamforelseUnderlag()').rader, f = el(w, 'chart-jmf-statlage')._figur;
-        expect(() => w.eval('_figValidera')(f, 't')).not.toThrow();
+        expect(() => w.eval('valideraFigur')(f, 't')).not.toThrow();
         const pts = punkter(f);
         const medSpann = rader.filter(r => r.statistik.p10 !== null && r.statistik.p90 !== null);
         expect(pts).toHaveLength(medSpann.length);
@@ -415,9 +415,9 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
 
     it('tom policy → modellen flaggar hasPolicy=false och fliken visar tomstatus', () => {
         setPolicy([]);
-        const m = win.__buildLonepolitikModel();
+        const m = win.__lonepolitikVymodell().modell;
         expect(m.hasPolicy).toBe(false);
-        expect(() => win.__renderLonepolitik()).not.toThrow();
+        expect(() => win.__ritaLonepolitik()).not.toThrow();
         expect(win.document.getElementById('lonepolitik-empty').style.display).toBe('block');
     });
 
@@ -425,7 +425,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
         win.__loadDemoData();
         const bas = [...new Set(win.__getData().map(r => r.bas))];
         setPolicy(bas.map(b => ({ bas: b, p10: 25000, med: 32000, p90: 45000 })));
-        const m = win.__buildLonepolitikModel();
+        const m = win.__lonepolitikVymodell().modell;
         expect(m.hasPolicy).toBe(true);
         expect(m.byBas.length).toBeGreaterThan(0);
         expect(m.coverage.personsPct).toBeGreaterThan(0);
@@ -437,7 +437,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
             if (g.tier === 'full') expect(g.n).toBeGreaterThanOrEqual(10);
             if (g.tier === 'masked') expect(g.n).toBeLessThan(5);
         }));
-        expect(() => win.__renderLonepolitik()).not.toThrow();
+        expect(() => win.__ritaLonepolitik()).not.toThrow();
         expect(win.document.getElementById('lonepolitik-table')).not.toBeNull();
         setPolicy([]);   // städa så senare test inte påverkas
     });

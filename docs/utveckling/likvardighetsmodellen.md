@@ -16,7 +16,8 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 | Del | Fil |
 |---|---|
 | Modellen: definitionen, de tre stegen, bootstrappen, åldersjusteringen, poängläget, *Lägre krav*, BAS-rangen | `src/lib/likvardighet.js` |
-| Adaptern som läser appens tillstånd, fliken, diagrammen och flikens CSV- och Excel-export | `src/app/34-likvardigt-arbete.js` |
+| Vymodellen för fliken (ADR-99): felresultatet och flikens diagnostik, antalet små grupper vid k, om jämförelsen kan genomföras, antalen och det största paret, parets säkerhet, varför den åldersjusterade skillnaden saknas, diagrammet *Krav mot lön* och raderna i diagrammet över kandidatparen | `src/lib/vymodell-likvardigt-arbete.js` |
+| Adaptern som läser appens tillstånd, och det som ritar fliken, diagrammen och flikens CSV- och Excel-export | `src/app/34-likvardigt-arbete.js` |
 | Inställningarna och deras standardvärden | `state.likvardighet` i `src/app/12-tillstand.js` |
 | Definitionen i appen (`kvDomNu`, `konsklassNu`, `aidbasDefinition`, `lvJamforelse`) | `src/app/45-aid-bas-tabeller.js` |
 | Reserven för kvinnoandel (`nationellAidKlass`) och regeln för paren utanför fliken (`_parForRedovisning`) | `src/app/06-kvinnoandel-referens.js` (`nationellAidKlass`), `src/app/06-k-troskel.js` (`_parForRedovisning`), `src/lib/skrreferens.js` |
@@ -26,26 +27,28 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 ## 1. Vad modellen gör och var den bor
 
 Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kärnmoduler (ADR-8).
-`src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern och gränssnittet: rendering, diagram och export.
-Att adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
+Det fliken räknar och bedömer utöver paren står i vymodellen `src/lib/vymodell-likvardigt-arbete.js` (ADR-99), prövad i
+Node i `tests/vymodeller.test.js` (B5.11, B5.12). `src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern
+och det som ritar: fliken (`ritaLikvardigtArbete`), diagrammen (`ritaKravMotLon`, `ritaKandidatparen`) och exporten. Att
+adaptern verkligen delegerar vaktas av `tests/drift.test.js`.
 
-**Orkestratorn** `computeLikvardighetPairs({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
+**Orkestratorn** `likvardighetsparUr({ data, statistik, nationellKlass, opts })` i lib kör stegen i ordning:
 `aggregeraOrgKvDom` (steg 1, och organisationens jämförelseetiketter), `klassificeraStatistik` (jämförelsestatistikens
-jämförelseetiketter), filtret för jämförelsemängden (avsnitt 4), `byggPar` eller `byggParPoäng` (steg 3) och
+jämförelseetiketter), filtret för jämförelsemängden (avsnitt 4), `byggPar` eller `byggParPoang` (steg 3) och
 `byggParLagreKrav` (avsnitt 6). Den returnerar `orgKvDom`, `orgIckeKv`, `statIckeKv`, `pairs`, `parAntal`,
 `lagreKrav`, `diagnostik` och `opts`.
 
-**Adaptern** `computeLikvardighetPairs()` i appen läser `state.likvardighet`, `state.data`, `state.statistik` och
-`state.arbetsvardering`, anropar spegeln (`_lvComputePairs`) med `nationellAidKlass` som reserv för kvinnoandel och
+**Adaptern** `likvardighetspar()` i appen läser `state.likvardighet`, `state.data`, `state.statistik` och
+`state.arbetsvardering`, anropar `likvardighetsparUr` i lib med `nationellAidKlass` som reserv för kvinnoandel och
 `kInstalld()` som `k`, och fyller på med diagnostik som bara gränssnittet behöver (exempelrader, om statistiken har
-egen könsfördelning). Kastar spegeln returneras ändå ett strukturerat resultat, med tomma listor och felet i
-`diagnostik.fel`, så att fliken kan visa vad som gick fel. `likvardighetResultat()` sparar resultatet i
+egen könsfördelning; `kompletteraDiagnostik` i vymodellen). Kastar lib-funktionen returneras ändå ett strukturerat
+resultat (`likvardighetFelresultat`), med tomma listor och felet i `diagnostik.fel`, så att fliken kan visa vad som gick fel. `likvardighetResultat()` sparar resultatet i
 `state.likvardighet.result`; fliken, Översikt, exporterna och allt annat som läser paren går via den, så att paren
 räknas en gång per underlag och val. Varje ändring av något som beräkningen läser nollställer resultatet: underlaget,
 jämförelsestatistiken, arbetsvärderingen, organisationstypen (reserven för kvinnoandel) och valen i fliken. Bara
 robusthetsprövningen räknar med andra kvinnotrösklar, och de resultaten sparas inte. Ett byte av k-tröskeln nollställer
 inte: paren läser ingen tröskel, och antalet små kvinnodominerade grupper (`kvDomMedNLessThanK`) räknas med gällande
-tröskel varje gång resultatet läses.
+tröskel varje gång resultatet läses (`kvDomUnderK` i vymodellen).
 
 ## 2. En definition av kvinnodominerat
 
@@ -63,7 +66,7 @@ Valen heter efter lydelsen, inte efter en avsändare (ADR-72): namnen och texter
 - **Övriga** är blandade. `konsklass` ger `'kvinnodominerad'`, `'mansdominerad'`, `'blandad'`, eller `''` när
   andelen är okänd; `arKvinnodominerad` ger `false` för en okänd andel.
 
-**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_DEFAULT`; beslut 2026-10-19, källan i `lagrum.md`). Konstanten `KV_DOM_STAT` (60) står kvar i modulen
+**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_STANDARD`; beslut 2026-10-19, källan i `lagrum.md`). Konstanten `KV_DOM_STAT` (60) står kvar i modulen
 och är bara standardvärdet i `klassificeraStatistik` när den anropas utan gräns.
 
 **Valet** görs i Likvärdigt arbetes inställningar och gäller hela verktyget: kvinnotröskeln
@@ -83,8 +86,8 @@ kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsför
 - I modellen: `aggregeraOrgKvDom` och `klassificeraStatistik`, som följer kvinnotröskeln (orkestratorn skickar
   den som gräns) i stället för fasta 60 %.
 - `dominans` i `src/lib/aidbas.js` (tabellerna per AID-kod och BAS-intervall, ADR-57, och Lika arbetes kolumn
-  Dominans genom spegeln `_aidbasDominans`), med `arJamforelseKlass` för jämförelsemängden (avsnitt 4).
-- `forecastOutcome` i `src/lib/loneoversyn.js`: Löneöversynens *Varav till kvinnodominerade grupper*.
+  Dominans genom `dominans` i `src/lib/aidbas.js`, importerad som `_aidbasDominans`), med `arJamforelseKlass` för jämförelsemängden (avsnitt 4).
+- `prognosutfall` i `src/lib/loneoversyn.js`: Löneöversynens *Varav till kvinnodominerade grupper*.
 - I appen genom `kvDomNu`/`konsklassNu`: Löneöversynens massregel (`36-loneoversyn.js`), diagrammet Krav mot lön
   (`34-likvardigt-arbete.js`), Lönepolitikens diagram (`75-lonepolitik.js`) och uppslaget i den nationella statistiken
   (`nationellAidKlass`, avsnitt 4; likvärdighetsanalysen läser bara andelen därifrån).
@@ -126,7 +129,7 @@ urvalet före ADR-60.
 **Samma mängd** används i kandidatparen, *Lägre krav, högre lön*, *Hierarkisk jämförelse* och sammanfattningen per
 BAS-intervall i tabellerna per AID-kod och BAS-intervall (`arJamforelseKlass` i `src/lib/aidbas.js`).
 
-**Organisationens jämförelseetiketter** är `orgIckeKv` ur steg 1, grupperade per BAS av `orgIckeKvByBas`.
+**Organisationens jämförelseetiketter** är `orgIckeKv` ur steg 1, grupperade per BAS av `orgIckeKvPerBas`.
 
 **Jämförelsestatistikens jämförelseetiketter.** `klassificeraStatistik(statistik, nationellKlass, { definition, grans })`
 tar rader med AID, BAS och median över 0; en rad vars AID inte bara är siffror är en rubrik för en grupp av etiketter
@@ -150,7 +153,7 @@ kvinnodominerad AID-etikett används i första hand organisationens **egna** jä
 räknar det i `basMedExternFallback`. Saknas båda bildas inga par för AID-etiketten.
 
 **Poängläget.** Har lönefilen kolumnen Poäng bygger `_deriveArbetsvarderingFromData` en tabell `aid|bas` → poäng
-(det första värdet per grupp) i `state.arbetsvardering.byKey`, och `byggParPoäng` ersätter `byggPar`. En
+(det första värdet per grupp) i `state.arbetsvardering.byKey`, och `byggParPoang` ersätter `byggPar`. En
 jämförelseetikett kvalificerar när dess poäng är högst den kvinnodominerade AID-etikettens poäng × (1 + band / 100) — lika eller
 lägre krav — **även över BAS-gränserna**. Bandet är standard 5 % (`state.likvardighet.poangBandPct`, fältet *Räkna som
 lika krav inom ± … %* i avsnittet *Arbetsvärdering med poäng*, 0–50). Bara organisationens egna jämförelseetiketter jämförs:
@@ -180,7 +183,7 @@ skillnaderna av M par* och knappen *Visa alla M par*, som sätter `topN` till an
 standardvärden, 0 % och 100 par, gäller bara när den anropas utan inställningar, som i enhetstesterna; adaptern faller
 också tillbaka på 100 om `topN` saknas i tillståndet. Allt som läser paren utanför fliken läser samma urval (`pairs`).
 
-**Före urvalet räknas** i `byggPar` och `byggParPoäng` (`parAntal`, `_parAntal` i lib): `totalt` (alla par som klarat
+**Före urvalet räknas** i `byggPar` och `byggParPoang` (`parAntal`, `_parAntal` i lib): `totalt` (alla par som klarat
 minsta skillnaden), `overDirektiv` (par där den kvinnodominerade AID-etikettens median i procent av jämförelseetikettens får
 direktivmarkeringen, `direktivMarkering` ur `src/lib/status.js`, det vill säga en ojusterad löneskillnad på minst 5 %)
 och `sakra` (par vars hela konfidensintervall ligger över 0). Nyckeltalet *Par att titta närmare på* visar `totalt` med
@@ -192,11 +195,11 @@ jämförelseetikettens.
 `percentilintervall` i `src/lib/stat.js`, med lika många dragningar under den nedre gränsen som över den övre (25 på
 var sida, ADR-86).
 
-- Interna par (`bootstrapMedianDiffKr`): båda gruppernas löner dras om. Kräver minst 3 löner på varje sida, annars
+- Interna par (`bootstrapMedianskillnadKr`): båda gruppernas löner dras om. Kräver minst 3 löner på varje sida, annars
   `null`.
-- Externa par (`bootstrapMedianVsConstantKr`): den kvinnodominerade AID-etikettens löner dras om mot statistikens median som
+- Externa par (`bootstrapMedianMotKonstantKr`): den kvinnodominerade AID-etikettens löner dras om mot statistikens median som
   konstant, eftersom statistiken saknar individdata. Kräver minst 3 löner och en median över 0.
-- **Reproducerbart:** utan en injicerad slumpgenerator seedas bootstrappen per par ur parets egna löner (`rngFor` ur
+- **Reproducerbart:** utan en injicerad slumpgenerator seedas bootstrappen per par ur parets egna löner (`slumpFor` ur
   `src/lib/rng.js`; för externa par lönerna och statistikens median). Dragningarna görs ur lönerna sorterade stigande,
   så att intervallet inte beror på radordningen i filen (ADR-86). Två körningar på samma underlag ger samma
   intervall, också med raderna i en annan ordning, så att ett exporterat underlag går att återskapa. Orkestratorn skickar `opts.rng` vidare orört; bara
@@ -207,7 +210,7 @@ var sida, ADR-86).
 **Huvudmåttet** är den råa medianskillnaden: lagen prövar lönenivån som sådan.
 
 **Den åldersjusterade skillnaden** (`aldersjusteradSkillnad`) räknas bara för interna par. I jämförelseetiketten skattas
-log(lön) = a + b · ålder med OLS. Kraven är minst 10 personer med ålder (`ALDERS_GOLV_DEFAULT`, opts `aldersGolv`) och
+log(lön) = a + b · ålder med OLS. Kraven är minst 10 personer med ålder (`ALDERS_GOLV_STANDARD`, opts `aldersGolv`) och
 minst 5 års åldersspridning (`ALDERS_SPRIDNING_MIN`), och att den kvinnodominerade AID-etiketten har någon med ålder;
 annars `null`. Lönen prediceras vid varje person i den kvinnodominerade AID-etiketten med dennes ålder, och medianen av prediktionerna
 är den åldersjusterade jämförelsemedianen (`medianJusterad`). Skillnaden räknas i kronor och procent mot den
@@ -218,8 +221,8 @@ justerad skillnad finns kvar.
 
 Den justerade skillnaden står i flikens kolumn *Justerad för ålder* (verktygstipset säger varför den saknas),
 bevis-popupen (med medelålder per sida), flikens CSV- och Excel-export (med en metodrad) och rapportunderlagets
-parblock. Utanför fliken lyder den samma regel som paret (`k-troskeln.md` §2). Kraven 10 och 5 speglas i adaptern
-(`ALDERS_GOLV`, `ALDERS_SPRIDNING`) för texterna.
+parblock. Utanför fliken lyder den samma regel som paret (`k-troskeln.md` §2). Texterna läser kraven 10 och 5 ur lib
+(`ALDERS_GOLV_STANDARD`, `ALDERS_SPRIDNING_MIN`), och varför skillnaden saknas är `justeradSaknas` i vymodellen.
 
 ## 6. Lägre krav, högre lön
 
@@ -238,7 +241,7 @@ BAS-intervall.
 - **Poängläget räknar inte listan** (`lagreKrav` är tom): där jämför kandidatparen redan över BAS-gränserna, och
   fliken säger det.
 
-**BAS-rangen.** `basRangFn(allaBas)` ger bokstavens plats i alfabetet: A = 1, B = 2 och så vidare genom hela
+**BAS-rangen.** `basRangordning(allaBas)` ger bokstavens plats i alfabetet: A = 1, B = 2 och så vidare genom hela
 alfabetet, så att alla BAS-intervall ingår (ADR-21). Ett BAS-värde som inte är en enda bokstav läggs efter bokstäverna,
 i alfabetisk ordning sinsemellan. Ordningen är fast och går inte att ändra i verktyget: ingen panel, inget tillstånd och
 inget fält i konfigurationsfilen; ett `basRang` i anropet ignoreras.
@@ -252,9 +255,9 @@ befattningsbeskrivningarna. Regressionerna räknar inte BAS som ett tal; var ran
 ## 7. Var resultatet visas och vad som följer med ut
 
 **Fliken Likvärdigt arbete** visar överst nyckeltalen (kvinnodominerade AID-etiketter, jämförelseetiketter, par att
-titta närmare på, största skillnaden) och diagrammet *Krav mot lön* (en punkt per AID-etikett som når `kTroskel()`, krav mot medianlön,
+titta närmare på, största skillnaden; `vymodellLikvardigtArbete`) och diagrammet *Krav mot lön* (`vymodellKravMotLon`: en punkt per AID-etikett som når `kTroskel()`, krav mot medianlön,
 form och färg efter `konsklassNu`; med poäng placeras en grupp utan poäng efter sitt BAS-intervall). Avsnittet *Par att
-titta närmare på* har kandidatparen som bild (de 14 paren med störst `allvarsindex`), partabellen (jämförelseetikettens
+titta närmare på* har kandidatparen som bild (de 14 paren med störst `allvarsindex`, `kandidatparRader`), partabellen (jämförelseetikettens
 andel kvinnor och klass i kolumnen *Könsandel*) med bevis-popup och listan *Lägre krav, högre lön*. Avsnittet
 *AID-etiketterna bakom jämförelsen* visar Steg 1, Steg 2a (organisationens jämförelseetiketter) och Steg 2b
 (statistikens), med klass och den
@@ -297,8 +300,9 @@ dess export är undantagna från tröskeln och märks med undantaget (`k-troskel
 Avsnittet *Inställningar* i fliken säger *Standardvärden* eller *Anpassade värden* efter kvinnotröskeln, minsta
 skillnaden, antalet par, definitionen och jämförelsemängden.
 
-**Konfigurationsfilen** bär `likvardighet` med `kvinnoTrosholdPct`, `kvDomDefinition`, `jamforelse`, `minGapPct` och
-`topN`. Vid inläsning prövas att talen ligger inom fältens gränser (kvinnotröskeln 50–70, minsta skillnaden 0–50, antalet
+**Konfigurationsfilen** bär `likvardighet` med `kvinnoTroskelPct`, `kvDomDefinition`, `jamforelse`, `minstaGapPct` och
+`antalPar` (tillståndets `kvinnoTrosholdPct`, `minGapPct` och `topN`; en fil i version 2 med de namnen läses också,
+ADR-96). Vid inläsning prövas att talen ligger inom fältens gränser (kvinnotröskeln 50–70, minsta skillnaden 0–50, antalet
 par minst 1, utan övre gräns eftersom *Visa alla* sätter det till hela listan), att `likvardighet.kvDomDefinition` är
 `do` eller `scb` och att `likvardighet.jamforelse` är `alla` eller `mansdominerade`; ett ogiltigt värde avvisar filen.
 Fältet `source` i äldre filer hoppas över. Värdena läggs över tillståndet och resultatet nollställs. Bandet för poäng
@@ -311,8 +315,9 @@ bär inte minsta skillnaden (ADR-61), antalet par, kvinnotröskeln eller definit
 
 | Fil | Prövar |
 |---|---|
-| `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget (inga par mot statistiken), *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangFn`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
-| `tests/drift.test.js` | Att adaptern delegerar till spegeln och översätter tillståndet till anropet, att den ger ett strukturerat resultat när spegeln kastar, och att spegeln ger reproducerbara konfidensintervall |
+| `tests/likvardighet.test.js` | Modulen direkt: klassningen i steg 1 och 2 med båda definitionerna vid gränsen, reserven för kvinnoandel, parbygget (intern före extern, reserven per BAS, minsta skillnad, sortering och `topN`, `parAntal` före urvalet, `allvarsindex`, intervallen), orkestratorn, bootstrappen, poängläget (inga par mot statistiken), *Lägre krav* (BAS-ordningen fast, sorteringen, tom i poängläget, intervallen bara för paren som behålls), `basRangordning`, åldersjusteringen, den enda definitionen (också `dominans`) och jämförelsemängden med filtret |
+| `tests/vymodeller.test.js` | Vymodellen (B5.11, B5.12, I9): om jämförelsen kan genomföras, antalen, det största paret, anpassade val, poängläget, parets säkerhet, den åldersjusterade skillnaden, felresultatet och diagnostiken, diagrammet över kandidatparen och *Krav mot lön* (grupperna med minst k vid 10 och 25, nivån, avståndet, namnen) |
+| `tests/drift.test.js` | Att adaptern delegerar till lib och översätter tillståndet till anropet, att den ger ett strukturerat resultat när lib kastar, och att lib ger reproducerbara konfidensintervall |
 | `tests/aidbas.test.js`, `tests/aidbas-app.test.js` | Definitionen och jämförelsemängden i tabellerna per AID-kod och BAS-intervall; definitionen och jämförelsemängden i konfigurationsfilen; att definitionernas namn säger lydelsen och inte en avsändare (ADR-72) |
 | `tests/likvardigt-arbete-app.test.js` | Demot: ett par där båda grupperna når tröskeln, Systemutvecklare (blandad) som jämförelseetikett i BAS C, standardvärdet 0 % och filtret 5 %, filtret *bara mansdominerade*, nyckeltalet och *Visa alla*, rapportunderlagets parblock; att paren räknas en gång vid inläsning, flikbyten och protokollet, och att fliken och valen nollställer resultatet; partabellens intervall och märke, att ett par under 5 % syns utan att något ändrats och fältets text; poängläget i fliken och att resultatet nollställs; att BAS-ordningen inte har panel, tillstånd eller fält i konfigurationsfilen, och att robusthetspanelen prövar Likvärdigt arbete |
 | `tests/ktroskel-exporter.test.js` | Antalet små kvinnodominerade grupper med gällande tröskel, och att ett tröskelbyte inte räknar om paren |

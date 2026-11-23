@@ -7,10 +7,17 @@
 // teckensnitt. Diagramkärnan (10-diagramritare.js, ADR-39) och vyernas figurer läser härifrån — ingen vy har en
 // egen hexkod.
 // ====================================================================
+import { gruppnyckel, jamforAldersgrupp } from '../lib/falt.js';
+import { statusKonstanter, statusNiva } from '../lib/status.js';
+import { stor } from '../lib/termer.js';
+import { oversiktNiva } from '../lib/vymodell-lonestruktur.js';
+import { FARG } from './01-farger.js';
+import { statGolv } from './06-k-troskel.js';
+import { T } from './09-termer.js';
 
 // Kanonisk färgpalett. All könsfärgning och alla semantiska färger härleds
 // härifrån (se `const colors` i 12-tillstand.js, som speglar PALETTE.kon).
-const PALETTE = {
+export const PALETTE = {
     // Kön — genomgående i hela verktyget. Plommon för kvinnor och olivgrönt för män (beslut 2026-10-17):
     // inte rosa och blått, som kopplar färgen till en stereotyp. Båda har minst 4,5:1 mot vit yta (7,1 och
     // 4,6), skiljer sig mer än det tidigare paret vid simulerad protanopi och deuteranopi, och ligger tydligt ifrån
@@ -78,17 +85,17 @@ const PALETTE = {
 // Ålder & karriär, Utforska och Förklaringen. «Börja här» och «Över referens» hör bara till Prioritering
 // (55-prioritering.js): det första är rangordningens översta nivå, det andra ett läge och ingen allvarlighetsgrad.
 // Trappans konstanter ur src/lib/status.js: storleksgränsen (3 %), direktivnivån (5 %), orden och markeringens texter.
-const { STORLEKSGRANS: _STS_STORLEK, STATUS_ORD: _STS_ORD, DIREKTIV_ETIKETT: _STS_DIR_ETIKETT, DIREKTIV_KOLUMN: _STS_DIR_KOLUMN,
-        DIREKTIV_TIPS: _STS_DIR_TIPS } = _stsKonstanter();
-const GAP_STATUS = Object.freeze([
+export const { STORLEKSGRANS: _STS_STORLEK, STATUS_ORD: _STS_ORD, DIREKTIV_ETIKETT: _STS_DIR_ETIKETT, DIREKTIV_KOLUMN: _STS_DIR_KOLUMN,
+        DIREKTIV_TIPS: _STS_DIR_TIPS } = statusKonstanter();
+export const GAP_STATUS = Object.freeze([
     { ..._STS_ORD.granska, niva: 'granska', farg: 'granska', ikon: 'sok', symbol: 'romb' },
     { ..._STS_ORD.folj, niva: 'folj', farg: 'varning', ikon: 'oga', symbol: 'kvadrat' },
     { ..._STS_ORD.balanserat, niva: 'balanserat', farg: 'ok', ikon: 'bock', symbol: 'cirkel' }
 ]);
 /** Statusen när skillnaden inte kan prövas (ett kön under golvet): grå, ingen allvarlighetsgrad. */
-const GAP_STATUS_EJ = Object.freeze({ ..._STS_ORD.ejbedomd, niva: 'ejbedomd', farg: 'neutral', ikon: 'streck', symbol: 'cirkel' });
+export const GAP_STATUS_EJ = Object.freeze({ ..._STS_ORD.ejbedomd, niva: 'ejbedomd', farg: 'neutral', ikon: 'streck', symbol: 'cirkel' });
 /** Alla fyra, i diagrammens ordning (förklaringen namnger bara de som förekommer). */
-const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
+export const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
 /**
  * Dimensionerna i figurens urval (figur.urval, se docs/utveckling/diagramkarnan.md): filtren ovanför diagrammet
  * döljer märken, inget räknas om. En dimension ges bara där varje märke hör till ett enda värde (punkten, stapeln,
@@ -106,14 +113,14 @@ const GAP_STATUS_ALLA = Object.freeze([...GAP_STATUS, GAP_STATUS_EJ]);
  *   minstaKon     intervall på `nMin`: antalet av det minst företrädda könet i gruppen (det mindre av antalen i tipset)
  *   lonegap       intervall på `gap`: löneskillnaden i procent, samma tal som i tipset
  */
-const URVAL = Object.freeze({
-    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: termStor(T.niva.en), etikett: 'BAS {v}' }),
+export const URVAL = Object.freeze({
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: stor(T.niva.en), etikett: 'BAS {v}' }),
     antal: Object.freeze({ typ: 'intervall', falt: 'n', namn: 'Antal personer i gruppen', format: 'antal', etikett: '{v} personer i gruppen' }),
     konsdominans: Object.freeze({ typ: 'kategori', falt: 'konsdom', namn: 'Könsdominans', etikett: '{v}' }),
     matchning: Object.freeze({ typ: 'kategori', falt: 'matchning', namn: 'Matchning', etikett: '{v}' }),
     avvikelse: Object.freeze({ typ: 'intervall', falt: 'x', namn: 'Avvikelse (%)', format: 'pct', etikett: 'avvikelse {v}' }),
-    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: termStor(T.enhet.en), etikett: '{v}', visning: 'lista' }),
-    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: termStor(T.huvudomrade.en), etikett: '{v}', visning: 'lista' }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: stor(T.enhet.en), etikett: '{v}', visning: 'lista' }),
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: stor(T.huvudomrade.en), etikett: '{v}', visning: 'lista' }),
     alder: Object.freeze({ typ: 'intervall', falt: 'alder', namn: 'Ålder', format: 'ar', etikett: 'ålder {v} år' }),
     lon: Object.freeze({ typ: 'intervall', falt: 'lon', namn: 'Månadslön (kr)', format: 'kr', etikett: 'lön {v}' }),
     aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', etikett: '{v}' }),
@@ -121,13 +128,13 @@ const URVAL = Object.freeze({
     lonegap: Object.freeze({ typ: 'intervall', falt: 'gap', namn: 'Löneskillnad (%)', format: 'pct', etikett: 'löneskillnad {v}' }),
 });
 // Dimensionerna i ett underlag (figur.underlag.dimensioner): vad ett sammanfattande diagram kan räknas om för. Värdet
-// läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (groupKey i src/lib/falt.js); personerna har
+// läses ur personraden med samma gruppnycklar som Tabeller och egna vyer (gruppnyckel i src/lib/falt.js); personerna har
 // inget färdigt sektorsfält.
-const UNDERLAG = Object.freeze({
-    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: termStor(T.huvudomrade.en), visning: 'lista', varde: r => _utGroupKey(r, 'sektor') }),
-    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => _utGroupKey(r, 'alder'), ordning: (a, b) => _faltJamforAlder(a, b) }),
-    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: termStor(T.enhet.en), visning: 'lista', varde: r => r.yrke }),
-    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: termStor(T.niva.en), etikett: 'BAS {v}', varde: r => r.bas }),
+export const UNDERLAG = Object.freeze({
+    sektor: Object.freeze({ typ: 'kategori', falt: 'sektor', namn: stor(T.huvudomrade.en), visning: 'lista', varde: r => gruppnyckel(r, 'sektor') }),
+    aldersgrupp: Object.freeze({ typ: 'kategori', falt: 'aldersgrupp', namn: 'Åldersgrupp', visning: 'lista', varde: r => gruppnyckel(r, 'alder'), ordning: (a, b) => jamforAldersgrupp(a, b) }),
+    yrkesgrupp: Object.freeze({ typ: 'kategori', falt: 'yrke', namn: stor(T.enhet.en), visning: 'lista', varde: r => r.yrke }),
+    bas: Object.freeze({ typ: 'kategori', falt: 'bas', namn: stor(T.niva.en), etikett: 'BAS {v}', varde: r => r.bas }),
 });
 /**
  * Statusen för ett avstånd från lika lön i procent (|100 − kvoten|) och en prövning av skillnaden (true/false; null
@@ -135,20 +142,17 @@ const UNDERLAG = Object.freeze({
  * @param {number} avstand
  * @param {boolean|null|undefined} sakerstalld
  */
-function gapStatus(avstand, sakerstalld) {
-    const niva = _stsNiva(avstand, sakerstalld);
+export function gapStatus(avstand, sakerstalld) {
+    const niva = statusNiva(avstand, sakerstalld);
     return GAP_STATUS_ALLA.find(s => s.niva === niva) || GAP_STATUS_EJ;
 }
 /** Statusen för en nivå ('granska', 'folj', 'balanserat', 'ejbedomd'). */
-function gapStatusNiva(niva) { return GAP_STATUS_ALLA.find(s => s.niva === niva) || GAP_STATUS_EJ; }
+export function gapStatusNiva(niva) { return GAP_STATUS_ALLA.find(s => s.niva === niva) || GAP_STATUS_EJ; }
 /** Statusen för en rad med kvot (i %), 95 % KI och antal per kön: KI:t mot 100 % prövar, golvet är statGolv(). */
-function gapStatusKI(o) {
-    if (!(o.nKv >= statGolv() && o.nMa >= statGolv())) return GAP_STATUS_EJ;
-    return gapStatus(Math.abs(100 - o.gap), _stsKiUtesluter(o.ci));
-}
+export function gapStatusKI(o) { return gapStatusNiva(oversiktNiva(o, statGolv())); }
 
 // Gemensamt teckensnitt/typografi för diagram (matchar appens sans-stack).
-const CHART_FONT = {
+export const CHART_FONT = {
     family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     size: 12,
     minsta: 11,            // golvet för de minsta rollerna (punkt- och linjeetiketter, ytans andra rad, fotraden): _rfLitenPx

@@ -1,6 +1,26 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- PDF-rapporten (utskrift): rapportmodellen som låst kopia, med flikarnas tabeller som bilagor ----
+import { arTal, htmlTillText } from '../lib/htmltext.js';
+import { stor } from '../lib/termer.js';
+import { arHelaDokumentationen } from '../lib/vymodell-rapport.js';
+import { FARG } from './01-farger.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { hideLoading, rapporteraFel, showLoading, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { auditPoster } from './05-tabeller-och-lankar.js';
+import { _kSanktStycke, kStampel } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { _STS_DIR_ETIKETT, _STS_DIR_TIPS } from './10-diagramtema.js';
+import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
+import { getData, state } from './12-tillstand.js';
+import { _exportUtanSkarmkolumner, _exportVisaAllaRader } from './22-exporthjalpare.js';
+import { exportElement, medExportLage } from './23-exportgrind.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
+import { ritaAlderOchLon } from './40-alder-karriar.js';
+import { laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
+import { _jmfKallaNamn, generateBenchmark, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
+import { _utskriftReferenserHtml } from './44-referensoverblick.js';
+import { rapportModellBada, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 /**
  * Hjälpklasserna (src/style.css, "Hjälpklasser") för utskriftsfönstret, som inte har verktygets stilmall: utan dem
  * tappar en utskriven flik sin högerjustering och sin dämpade text. tests/farger.test.js håller listan lika med stilmallens.
@@ -67,17 +87,17 @@ async function _buildPrintReportExport() {
             const b = await rmDiagramBild(del, ritade);
             if (b) bilder.set(del.id, b);
         }
-        const helaDokumentationen = rmArHelaDokumentationen(modell, bada.alla);
+        const helaDokumentationen = arHelaDokumentationen(modell, bada.alla);
         let bilagor = '';
         if (helaDokumentationen) {
             // Bilagor med flikarnas egna tabeller och diagram — underlaget bakom avsnitten. De följer bara med när hela
             // dokumentationen är vald; ett kortare urval (ledningsbrief, facklig dialog) är just avsnitten.
-            generateRapport();
-            generateSkevhet();
-            generateEUDirectiveMatrix();
+            ritaLoneoversikt();
+            ritaLoneskillnadPerBas(lsBasVymodell());
+            ritaLikaArbete(laVymodell());
             if (state.statistik.length) generateBenchmark();
             const imgs = {};
-            renderKon('__ALLA__');
+            ritaAlderOchLon('__ALLA__');
             await new Promise(r => setTimeout(r, 250));
             for (const [nyckel, id, hojd] of [['kon', 'chart-kon-scatter', 600], ['box', 'chart-kon-boxplot', 500], ['lador', 'chart-skevhet-lador', 560]]) {
                 const elD = document.getElementById(String(id));
@@ -94,7 +114,7 @@ async function _buildPrintReportExport() {
                 klon.querySelectorAll('thead .ingen-radbrytning').forEach(s => s.replaceWith(...s.childNodes));
                 return klon.outerHTML;
             };
-        const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en} och ${T.niva.en}</h2><p>${termStor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
+        const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en} och ${T.niva.en}</h2><p>${stor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
         const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');
         const rapportSection  = `<section class="page-break"><h2>Löneöversikt (organisation · kön · ${T.enhet.en})</h2>${cloneTable('rapport-table')}</section>`;
@@ -108,10 +128,10 @@ async function _buildPrintReportExport() {
                     const exclRows = [...(a.parseExcl||[]), ...(a.analysisExclusions||[])]
                         // Texten kan innehålla referensens namn (ur fil eller organisationspaket):
                         // taggar tas bort och resten escapas, så att en halv tagg inte kan leva kvar.
-                        .map(([r,c]) => `<tr><th>− ${esc(_htmlTillText(r))}</th><td>${fmtN(c)}</td></tr>`).join('');
+                        .map(([r,c]) => `<tr><th>− ${esc(htmlTillText(r))}</th><td>${fmtN(c)}</td></tr>`).join('');
                     const used = a.usedInAnalysis !== undefined ? a.usedInAnalysis : a.afterFilter;
-                    const formler = (a.formler||[]).map(([n,d]) => `<li><strong>${n}:</strong> ${esc(_htmlTillText(d))}</li>`).join('');
-                    const notes = (a.notes||[]).map(n => `<li>${esc(_htmlTillText(n))}</li>`).join('');
+                    const formler = (a.formler||[]).map(([n,d]) => `<li><strong>${n}:</strong> ${esc(htmlTillText(d))}</li>`).join('');
+                    const notes = (a.notes||[]).map(n => `<li>${esc(htmlTillText(n))}</li>`).join('');
                     return `
                         <h3 class="pr-ned-14">${a.title}</h3>
                         <table class="kpi pr-under">
@@ -141,7 +161,7 @@ async function _buildPrintReportExport() {
         // Avstavar inte webbläsaren svenska, får rubriker och textceller brytas var som helst (stilmallen), men inte talen.
         const utanAvstavning = !_utskriftAvstavar();
         root.classList.toggle('pr-utan-avstavning', utanAvstavning);
-        if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (_cellArTal(td.textContent)) td.classList.add('pr-tal'); });
+        if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (arTal(td.textContent)) td.classList.add('pr-tal'); });
 
         document.body.classList.add('print-mode');
         hideLoading();
@@ -156,8 +176,6 @@ async function _buildPrintReportExport() {
     }
 }
 
-document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintReport);
-
 // ====================================================================
 // Word-utkast: redigerbar §§ 8–14-dokumentation ("sista milen")
 // --------------------------------------------------------------------
@@ -168,8 +186,6 @@ document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintR
 // kompletterar och äger slutdokumentet — inget lagras, inget skickas (samma
 // lokal-only-princip som övriga exporter; .doc byggs som en lokal Blob).
 // ====================================================================
-
-
 
 // Skriv ut en scaffold-flik (§ 8-checklista / handlingsplansmall) i ett rent
 // fönster med alla <details> expanderade. Offlinesäkert: inga nätverksanrop,
@@ -230,12 +246,6 @@ function printScaffoldView(viewId, heading) {
     w.focus();
     setTimeout(() => { try { w.print(); } catch (_e) {} }, 250);
 }
-// Generisk koppling: knappar med data-print-view="<viewId>" data-print-title="..."
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-print-view]');
-    if (!btn) return;
-    printScaffoldView(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
-});
 
 // Webbläsarens egen utskrift (Ctrl+P) skriver ut den aktiva fliken. Hopfällda avsnitt går inte att fälla ut i
 // stilmallen, så de öppnas före utskriften och fälls tillbaka efteråt. PDF-rapporten (body.print-mode) berörs inte.
@@ -254,5 +264,16 @@ function _utskriftEfter() {
         d.removeAttribute('data-oppnad-for-utskrift');
     });
 }
-window.addEventListener('beforeprint', _utskriftFore);
-window.addEventListener('afterprint', _utskriftEfter);
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartUtskrift() {
+    document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintReport);
+    // Generisk koppling: knappar med data-print-view="<viewId>" data-print-title="..."
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-print-view]');
+        if (!btn) return;
+        printScaffoldView(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
+    });
+    window.addEventListener('beforeprint', _utskriftFore);
+    window.addEventListener('afterprint', _utskriftEfter);
+}

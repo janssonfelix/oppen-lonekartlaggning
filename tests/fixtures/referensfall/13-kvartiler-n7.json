@@ -1,7 +1,7 @@
 {
   "id": "kvartiler-n7",
   "titel": "Kvartilfördelning med sju personer: vem hamnar i vilken kvartil, och gränserna",
-  "funktion": "src/lib/struktur.js#quartileDistribution",
+  "funktion": "src/lib/struktur.js#kvartilfordelning",
   "indata": [
     [
       { "kon": "man", "lon": 33000 },

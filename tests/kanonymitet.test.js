@@ -375,7 +375,7 @@ describe('k-anonymitet: kön under tröskeln inuti en större grupp (Per kön)',
 
 describe('k-anonymitet: kompliansöversikten', () => {
     it('gap-räkningen bygger bara på BAS där båda könen har minst k', () => {
-        win.__updateCompliance();
+        win.__ritaKravstatus();
         const t = win.document.getElementById('comp-gap-val').textContent;
         const m = t.match(/(\d+) av (\d+)/);
         const j = win.__dqJamforbaraBas(win.__getData(), win.__K);
@@ -405,7 +405,7 @@ describe('k-anonymitet: utskriften ur rapportmodellen mot referensen', () => {
 
 describe('k-anonymitet: var uppstår löneskillnaden', () => {
     it('inget sentinelvärde i kortet', () => {
-        win.eval('renderGapUppdelning()');
+        win.eval('ritaGapUppdelning()');
         const t = normalisera(win.document.getElementById('gap-uppdelning').innerHTML);
         expect(SENTINEL.filter(s => t.includes(String(s)))).toEqual([]);
     });

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { fyllTermer, skapaTermer } from '../lib/termer.js';
 
 // ---- Termerna (ADR-74) ----
-// Orden för AID:s begrepp står i src/lib/termer.js, speglad i 09-lib-speglar.js. Den här delen kommer efter
-// spegeln, så att T finns när flikarna ritas. Texter byggs med T och hjälparna, aldrig med orden själva:
+// Orden för AID:s begrepp står i src/lib/termer.js. Texter byggs med T och hjälparna, aldrig med orden själva:
 //   `${T.enhet.fl} i samma ${T.niva.en}`                         → "AID-etiketter i samma BAS-intervall"
 //   `${termArtikel(T.enhet)} ${termFras(T.enhet, 'en', { adjektiv: 'kvinnodominerad' })}`
 //                                                                → "en kvinnodominerad AID-etikett"
@@ -14,10 +14,10 @@
 // exempel data-tip); applyProfileLabels fyller dem, och standardtexten står kvar i elementet för sidan utan skript.
 
 /** Den gällande uppsättningen termer. */
-const T = _tmSkapa();
+export const T = skapaTermer();
 
 /** Fyller en mall med de gällande termerna; andra klamrar ({k}, {golv}) står kvar. */
-function termText(mall) {
-    return _tmFyll(mall, T);
+export function termText(mall) {
+    return fyllTermer(mall, T);
 }
 

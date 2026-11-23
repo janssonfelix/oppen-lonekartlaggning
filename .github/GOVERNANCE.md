@@ -36,8 +36,9 @@ Ett designval ändras i en och samma ändring:
 
 En version är en tagg `v<VERSION>` (CalVer). Grinden `npm run release:kontroll` prövar det som bara gäller vid en
 release (huvudet i `tools/release.mjs`). Arbetsflödet bygger om, kräver att `dist/` är byte-identisk med det
-incheckade, signerar med Sigstore och publicerar. Signaturen styrker att filen byggdes ur taggen, och ingen nyckel
-finns att förlora eller lämna över (se [`SECURITY.md`](../SECURITY.md)).
+incheckade och med ett ombygge ur taggen i en ren katalog, signerar med Sigstore, låter GitHub attestera ursprunget och
+publicerar. Signaturen och attesteringen styrker att filen byggdes ur taggen, och ingen nyckel finns att förlora eller
+lämna över (se [`SECURITY.md`](../SECURITY.md)).
 
 ## Kontinuitet — om projektet slutar underhållas
 

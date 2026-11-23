@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Excel-export av jämförelsen mot jämförelsestatistiken ----
+import { jamforelseRader, matchningEtikett } from '../lib/jamforelse.js';
+import { personOrd } from '../lib/namn.js';
+import { stor } from '../lib/termer.js';
+import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { idagDatum } from './03-hjalpfunktioner.js';
+import { kTroskel } from './06-k-troskel.js';
+import { orgNamn } from './07-standardinstallningar.js';
+import { APP_VERSION } from './08-version.js';
+import { T } from './09-termer.js';
+import { getData, policyFor, referensKalla, referensNamn, state } from './12-tillstand.js';
+import { _appendMethodSheet, _applyColumnNumFormats, _showExportSensitivityToast, SV_NUM_FORMATS } from './22-exporthjalpare.js';
+import { medExportLage } from './23-exportgrind.js';
 
 /**
  * Exporterar samlad benchmark-jämförelse till Excel-fil.
@@ -44,7 +56,7 @@ function _exportBenchmarkExcelExport() {
         referensNamn(), '', '', '', '', '', '', ''
     ];
     const headerRow2 = [
-        termStor(T.enhet.en), 'BAS', 'Matchning', 'N (organisationen)',
+        stor(T.enhet.en), 'BAS', 'Matchning', 'N (organisationen)',
         'P10', 'Median', 'P90', 'Bredd P90/P10',
         'P10', 'Diff P10 (kr)', 'Diff P10 (%)',
         'Median', 'Diff Median (kr)', 'Diff Median (%)',
@@ -55,11 +67,11 @@ function _exportBenchmarkExcelExport() {
     ];
 
     // Raderna kommer ur src/lib/jamforelse.js — samma som tabellen och diagrammen.
-    const { rader, utelamnade: maskedGroups } = _jfRader(d, { statistik: state.statistik, policyFor, k: kTroskel() });
+    const { rader, utelamnade: maskedGroups } = jamforelseRader(d, { statistik: state.statistik, policyFor, k: kTroskel() });
     const dataRows = rader.map(r => {
         const s = r.statistik, p = r.stallningstagande, o = r.org;
         return [
-            r.yrke, r.bas, _jfMatchningEtikett(r.statistikMatchning), r.n,
+            r.yrke, r.bas, matchningEtikett(r.statistikMatchning), r.n,
             rOrNull(o.p10), rOrNull(o.median), rOrNull(o.p90), breddOrNull(o.p10, o.p90),
             rOrNull(s.p10),    diffOrNull(o.p10, s.p10),       pctOrNull(o.p10, s.p10),
             rOrNull(s.median), diffOrNull(o.median, s.median), pctOrNull(o.median, s.median),
@@ -109,7 +121,7 @@ function _exportBenchmarkExcelExport() {
         ['', ''],
         ['Antal grupper i export', nGroups],
         ['Antal personer (totalt)', nPersoner],
-        [`Antal grupper utelämnade, k-anonymitet (n<${kTroskel()})`, maskedGroups.length],
+        [`Antal grupper utelämnade, minsta gruppstorlek (n<${kTroskel()})`, maskedGroups.length],
         ...(maskedGroups.length ? [['  - vilka', maskedGroups.join(', ')]] : []),
         ['', ''],
         ['Jämförelsestatistik laddat', hasStat ? 'Ja' : 'Nej'],
@@ -121,7 +133,7 @@ function _exportBenchmarkExcelExport() {
         ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],
         ['Negativa värden (röd) = organisationen ligger under referens.', ''],
         ['Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.', ''],
-        [`k-anonymitet (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
+        [`Minsta gruppstorlek (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
     ];
     const metaSheet = XLSX.utils.aoa_to_sheet(meta);
     metaSheet['!cols'] = [{ wch: 48 }, { wch: 32 }];
@@ -151,4 +163,7 @@ function _exportBenchmarkExcelExport() {
     announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
 }
 
-document.getElementById('btn-export-benchmark')?.addEventListener('click', exportBenchmarkExcel);
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartJamforelseExport() {
+    document.getElementById('btn-export-benchmark')?.addEventListener('click', exportBenchmarkExcel);
+}

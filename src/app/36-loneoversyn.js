@@ -2,9 +2,38 @@
 // Copyright 2026 Felix Jansson
 // Löneöversyn & prognos (budget-först-fördelning)
 // -------------------------------------------------------------------
-// De rena funktionerna (_fc*) genereras i src/app/09-lib-speglar.js från src/lib/loneoversyn.js.
+// De rena funktionerna står i src/lib/loneoversyn.js.
 // Endast UI/state-koden ligger här.
 // ===================================================================
+import { namnrader } from '../lib/aid.js';
+import { talformat } from '../lib/figur.js';
+import { statistikMarknad } from '../lib/jamforelse.js';
+import { kostnadsfaktor, periodkostnad } from '../lib/kostnad.js';
+import { konAntal } from '../lib/ktroskel.js';
+import { ettParPerYrke, marknadsriktning, prognosutfall, sammanstallGrupper, stangningsriktning, troskelmalKonstanter } from '../lib/loneoversyn.js';
+import { personOrd } from '../lib/namn.js';
+import { avrundaSymmetriskt } from '../lib/stat.js';
+import { svKr, svPct, svPoPct, svTal } from '../lib/talformat.js';
+import { adjektiv, stor } from '../lib/termer.js';
+import { forslagskandidater, forslagUrPotten, individlyftGrupper, kvDomAv, LUTNING_MAX, lutningRader, lutningUrval, oforklaratForeEfter, rensaForeslagnaRader, riktadRadInfo, riktning, scenariojamforelse, scenarioUr, simuleradeRader, utfallsvy, vymodellIndividlyft, vymodellKanslighet, vymodellPrognos, vymodellTroskelmal, villkorsgrupper } from '../lib/vymodell-loneoversyn.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { andelAvMan, idagDatum, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { _konFarRedovisasFor, _konUtelamnatNot, kInstalld, kTroskel } from './06-k-troskel.js';
+import { K_NOTE_MAX_NAMN, kMaskNote } from './06-maskeringsnoter.js';
+import { jmfNamnGenitiv } from './07-standardinstallningar.js';
+import { APP_VERSION } from './08-version.js';
+import { T } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { PALETTE, URVAL } from './10-diagramtema.js';
+import { markeringFor } from './11-markering.js';
+import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { _appendMethodSheet } from './22-exporthjalpare.js';
+import { medExportLage } from './23-exportgrind.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
+import { _laNyckel, _laSlutsats } from './41-lika-arbete.js';
+import { aidbasDefinition, aidbasGrans, kvDomGransText } from './45-aid-bas-tabeller.js';
+import { regressionsval } from './51-lika-arbete-regressionskort.js';
 
 // ---- UI: Löneöversyn-fliken ----
 function _forecastReadControls() {
@@ -35,7 +64,7 @@ function _forecastAidsForBas(bas) {
     });
     return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label, 'sv'));
 }
-function renderForecastTargets() {
+function ritaRiktadeRader() {
     const host = document.getElementById('forecast-targets');
     if (!host) return;
     const basList = getBasIntervals();
@@ -47,12 +76,10 @@ function renderForecastTargets() {
     const dAll = getData();
     // Radens urval ("*" = hela BAS-intervallet; kön och lönegräns snävar in). En rad som användaren själv
     // lägger på färre personer än tröskeln är tillåten (egen simulering, ADR-38 R2): beloppet räknas som
-    // för andra rader, och noten under raden säger vad det bygger på.
-    const gruppN = tg => _fcTargetRows(dAll, tg).length;
+    // för andra rader, och noten under raden säger vad det bygger på (riktadRadInfo i src/lib/vymodell-loneoversyn.js).
     host.innerHTML = t.map((tg, i) => {
-        // #13 Isolerad kostnad för raden (vad den äter av potten)
-        let rowCost = 0;
-        try { rowCost = _fcAllocate(dAll, { mode: 'pct', value: 0 }, [tg], state.forecast.roundStep).totals.riktadCost; } catch (_e) { rowCost = 0; }
+        // #13 Isolerad kostnad för raden (vad den äter av potten) och antalet den berör
+        const info = riktadRadInfo(dAll, tg, { roundStep: state.forecast.roundStep, k: kInstalld() });
         const basOpts = basList.map(b => `<option value="${esc(b)}"${tg.bas === b ? ' selected' : ''}>${esc(b)}</option>`).join('');
         const aids = _forecastAidsForBas(tg.bas || basList[0]);
         const aidOpts = `<option value="*"${tg.aid === '*' ? ' selected' : ''}>Hela BAS (alla ${T.enhet.fl})</option>`
@@ -65,8 +92,8 @@ function renderForecastTargets() {
             .map(([v, l]) => `<option value="${v}"${(tg.kon || 'alla') === v ? ' selected' : ''}>${l}</option>`).join('');
         const till = tg.mode === 'till';
         return `<div class="forecast-target-row" data-idx="${i}">
-            <select data-f="bas" aria-label="${termStor(T.niva.en)}">${basOpts}</select>
-            <select data-f="aid" aria-label="${termStor(T.enhet.en)}">${aidOpts}</select>
+            <select data-f="bas" aria-label="${stor(T.niva.en)}">${basOpts}</select>
+            <select data-f="aid" aria-label="${stor(T.enhet.en)}">${aidOpts}</select>
             <select data-f="kon" aria-label="Kön som omfattas" title="Begränsa raden till ett kön">${konOpts}</select>
             <label class="ft-cap" title="Bara löner under gränsen omfattas; tomt = alla">under <input type="number" data-f="lonCap" min="0" step="500" value="${tg.lonCap == null ? '' : tg.lonCap}" aria-label="Bara löner under (kr/mån)" placeholder="alla löner"> kr</label>
             <select data-f="mode" aria-label="Beloppstyp"><option value="kr"${tg.mode === 'kr' ? ' selected' : ''}>kr/mån att fördela</option><option value="pct"${tg.mode === 'pct' ? ' selected' : ''}>% av grupplön</option><option value="till"${till ? ' selected' : ''}>höj till (kr/mån)</option></select>
@@ -74,16 +101,16 @@ function renderForecastTargets() {
             <select data-f="dist" aria-label="Fördelning inom gruppen"${till ? ' class="dold"' : ''}>${distOpts}</select>
             <select data-f="targetLevel" aria-label="Målnivå"${tg.dist === 'target' ? '' : ' class="dold"'}>${lvlOpts}</select>
             <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
-            <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(rowCost).toLocaleString('sv-SE')} kr</span>
+            <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(info.kostnad).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
-        </div>${gruppN(tg) > 0 && gruppN(tg) < kInstalld() ? `<p class="k-mask-note">Raden berör ${gruppN(tg)} ${gruppN(tg) === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} ${personOrd(kInstalld())} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (gruppN(tg) === 0 ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
+        </div>${info.upplysning === 'underK' ? `<p class="k-mask-note">Raden berör ${info.n} ${info.n === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} ${personOrd(kInstalld())} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (info.upplysning === 'ingen' ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
     }).join('');
     host.querySelectorAll('.forecast-target-row').forEach(rowEl => {
         const i = parseInt(rowEl.getAttribute('data-idx') || '', 10);
         rowEl.querySelectorAll('[data-f]').forEach(ctrl => {
             const field = ctrl.getAttribute('data-f') || '';
             if (field === 'remove') {
-                ctrl.addEventListener('click', () => { state.forecast.targets.splice(i, 1); renderForecastTargets(); updateForecast(); });
+                ctrl.addEventListener('click', () => { state.forecast.targets.splice(i, 1); ritaRiktadeRader(); ritaPrognos(); });
                 return;
             }
             ctrl.addEventListener('change', () => {
@@ -91,75 +118,22 @@ function renderForecastTargets() {
                 if (field === 'value') tg.value = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 else if (field === 'lonCap') tg.lonCap = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
                 else tg[field] = /** @type {HTMLInputElement} */ (ctrl).value;
-                if (field === 'bas') { tg.aid = (_forecastAidsForBas(tg.bas)[0] || {}).aid || ''; renderForecastTargets(); }
-                if (field === 'dist' || field === 'mode' || field === 'kon' || field === 'lonCap') renderForecastTargets();
-                updateForecast();
+                if (field === 'bas') { tg.aid = (_forecastAidsForBas(tg.bas)[0] || {}).aid || ''; ritaRiktadeRader(); }
+                if (field === 'dist' || field === 'mode' || field === 'kon' || field === 'lonCap') ritaRiktadeRader();
+                ritaPrognos();
             });
             if (field === 'value' || field === 'lonCap') ctrl.addEventListener('input', () => {
                 state.forecast.targets[i][field] = /** @type {HTMLInputElement} */ (ctrl).value === '' ? null : parseFloat(/** @type {HTMLInputElement} */ (ctrl).value);
-                updateForecast();
+                ritaPrognos();
             });
         });
     });
 }
-// OLS oförklarat gap (β_kön i %) före/efter via data-swap. Returnerar {fore, efter}.
-function _forecastOlsGap(origRows, simRows) {
-    const savedData = state.data;
-    let fore = null, efter = null;
-    try {
-        state.data = origRows; const rb = runOLSRegression(); if (rb && !rb.error) fore = rb.konPct;
-        state.data = simRows;  const ra = runOLSRegression(); if (ra && !ra.error) efter = ra.konPct;
-    } finally {
-        state.data = savedData;
-    }
-    return { fore, efter };
-}
 // Kostnadsinställningarna som prognosen räknas med.
 function _fcKostnadsval() {
-    const { months, poPct } = _kostFaktor(state.costSettings);
+    const { months, poPct } = kostnadsfaktor(state.costSettings);
     return { months, poPct, roundStep: state.forecast.roundStep || 0,
              kvThreshold: aidbasGrans(), kvDefinition: aidbasDefinition() };   // samma definition av kvinnodominerat som Likvärdigt arbete (ADR-60)
-}
-// Riktningen för ett mått före och efter, avgjord på talen som de visas (en decimal): när före och efter visas lika
-// står "oförändrat" i neutral färg, i stället för att ordet och färgen följer de oavrundade talen ("−4,3 % till
-// −4,3 % ökar"). Utfallets två rader, stapeln under dem, diagrammet och tabellen per grupp avgör alla här. `mal` är
-// värdet där skillnaden är borta: 0 för den oförklarade skillnaden, 100 för kvinnors median i procent av mäns.
-// −1: närmare målet; 1: längre ifrån; 0: oförändrat; null när ett tal saknas.
-/** @param {number|null|undefined} fore @param {number|null|undefined} efter @param {number} [mal] @returns {-1|0|1|null} */
-function _fcRiktning(fore, efter, mal = 0) {
-    if (typeof fore !== 'number' || typeof efter !== 'number' || !isFinite(fore) || !isFinite(efter)) return null;
-    const avstand = v => Math.abs(_avrundaSymmetriskt(v, 1) - mal);
-    const a = avstand(fore), b = avstand(efter);
-    return b < a ? -1 : b > a ? 1 : 0;
-}
-
-/**
- * Utfallets rader per grupp, för tabellen och bladet Fördelning (ADR-70). En grupp under tröskeln `K` har sin rad med
- * antal och andel kvinnor, men medianerna och kostnaden maskeras (`sma`). Kostnaden för de maskerade raderna står
- * samlad på en rad, så att radernas kostnader summerar till det använda; annars vore det använda minus de visade
- * raderna de små gruppernas kostnad, och med ett påslag i procent deras lönesumma. Den samlade kostnaden står bara när
- * den omfattar minst `K` personer. Gör den inte det viks den minsta visade gruppens kostnad in, en grupp i taget
- * (`invikta`; minst betyder färst personer, vid lika antal först efter BAS och sedan AID). Den gruppens medianer
- * maskeras också: antalet gånger skillnaden mellan gammal och ny median ligger så nära gruppens kostnad att
- * differensen annars gav de små gruppernas. Når inte ens alla grupper tillsammans `K` personer står ingen kostnad per
- * grupp (`samlad.kostnad` är null), bara summorna. De visade raderna står först, i kostnadsordning; de maskerade efter
- * dem, i BAS- och AID-ordning, så att platsen inte säger något om kostnaden. På skärmen (K = 1) maskeras inget.
- * @param {any[]} rows  grupperna med påslag, i kostnadsordning
- * @param {number} K
- */
-function _fcUtfallsrader(rows, K) {
-    const ordning = (a, b) => String(a.bas).localeCompare(String(b.bas), 'sv') || String(a.aid).localeCompare(String(b.aid), 'sv');
-    const antal = gs => gs.reduce((s, g) => s + g.n, 0);
-    const sma = rows.filter(g => g.n < K);
-    const invikta = [];
-    if (sma.length) {
-        const kandidater = rows.filter(g => g.n >= K).sort((a, b) => a.n - b.n || ordning(a, b));
-        while (antal(sma) + antal(invikta) < K && kandidater.length) invikta.push(/** @type {any} */ (kandidater.shift()));
-    }
-    const maskerade = [...sma, ...invikta].sort(ordning);
-    const n = antal(maskerade);
-    return { visade: rows.filter(g => !maskerade.includes(g)), maskerade, sma, invikta,
-        samlad: maskerade.length ? { antalGrupper: maskerade.length, n, kostnad: n >= K ? maskerade.reduce((s, g) => s + g.kostnad, 0) : null } : null };
 }
 // Gruppens namn i noten under utfallet.
 const _fcGruppnamn = g => `BAS ${g.bas} · ${g.aid}`;
@@ -179,26 +153,29 @@ function _fcUtfallsNot(utfall, K) {
     return t;
 }
 /**
- * Hur mycket av påslaget som går till kvinnodominerade grupper, så som det får redovisas bredvid utfallets rader
- * (ADR-70). Talet minus de visade kvinnodominerade raderna är kostnaden för de maskerade kvinnodominerade grupperna, och
- * den samlade kostnaden minus den är de övrigas. Talet står när båda delarna är tomma eller omfattar minst `K`
- * personer, eller när den ena är tom (då är den andra hela den samlade kostnaden, som redan står); annars null (visas
- * som –). Utan maskerade grupper är det utfallets equityCost.
- */
-function _fcVaravKvDom(utfall, equityCost, K) {
-    if (!utfall.maskerade.length) return equityCost;
-    const nKv = utfall.maskerade.filter(g => kvDomNu(g.andelKv)).reduce((s, g) => s + g.n, 0), nOvr = utfall.samlad.n - nKv;
-    return (nKv === 0 || nOvr === 0 || (nKv >= K && nOvr >= K)) ? equityCost : null;
-}
-/**
  * Prognosens utfall ur raderna och inställningarna som de står i state.forecast. Exporten och scenarierna räknar det
  * här i stället för att läsa ett sparat utfall, så att de aldrig skriver ett utfall som räknades med en rad som
  * sedan har tagits bort (ADR-69).
  */
 function _fcBeraknaUtfall(d) {
-    return _fcForecastOutcome(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, _fcKostnadsval());
+    return prognosutfall(d, state.forecast.budget, state.forecast.generell, state.forecast.targets, _fcKostnadsval());
 }
-function updateForecast() {
+// Kontrollernas ord (kontrollvarningar i src/lib/vymodell-loneoversyn.js).
+const _FC_VARNINGAR = {
+    negativBudget: 'Budgeten är negativ.',
+    hogBudget: 'Budgeten är ovanligt hög (> 50 % av lönesumman) — kontrollera.',
+    negativtGenerellt: 'Det generella påslaget är negativt.',
+    hogtGenerellt: 'Det generella påslaget är ovanligt högt (> 25 %).',
+    radUtanBelopp: 'En eller flera riktade rader saknar belopp.',
+    radUtanTraff: 'En riktad rad matchar ingen person (kön eller lönegräns).'
+};
+// Pottypernas namn (POTTYPER i src/lib/vymodell-loneoversyn.js).
+const _FC_POTTER = { equity: 'Likalön', marknad: 'Marknad', befordran: 'Befordran', 'övrigt': 'Övrigt' };
+/**
+ * Ritar prognosen: nyckeltalen i flikens topp, mätaren och utfallet. Det som räknas, maskeras och bedöms står i
+ * vymodellen (vymodellPrognos i src/lib/vymodell-loneoversyn.js, ADR-99); här skrivs orden och ritas.
+ */
+function ritaPrognos() {
     const meterEl = document.getElementById('forecast-meter');
     const outEl = document.getElementById('forecast-outcome');
     if (!meterEl && !outEl) return;
@@ -210,40 +187,32 @@ function updateForecast() {
         { const topp = document.getElementById('lo-slutsatser'); if (topp) topp.innerHTML = ''; }
         if (outEl) outEl.innerHTML = '<p class="farg-dampad pad-18 ta-mitt">Läs in lönefilen för att göra en prognos.</p>';
         document.getElementById('view-loneoversyn')?.classList.remove('lo-tomt');
-        _renderForecastLutning(null, null);
+        _ritaPrognosLutning(null, null);
         return;
     }
-    // #10 Indata-validering: fånga orimliga värden innan beräkning
-    const valWarn = [];
-    const bv = state.forecast.budget.value, gv = state.forecast.generell.value;
-    if (bv != null && bv < 0) valWarn.push('Budgeten är negativ.');
-    if (state.forecast.budget.mode === 'pct' && bv != null && bv > 50) valWarn.push('Budgeten är ovanligt hög (> 50 % av lönesumman) — kontrollera.');
-    if (gv != null && gv < 0) valWarn.push('Det generella påslaget är negativt.');
-    if (state.forecast.generell.mode === 'pct' && gv != null && gv > 25) valWarn.push('Det generella påslaget är ovanligt högt (> 25 %).');
-    if (state.forecast.targets.some(t => t.value == null || !(t.value > 0))) valWarn.push('En eller flera riktade rader saknar belopp.');
-    if (state.forecast.targets.some(t => _fcTargetRows(d, t).length === 0)) valWarn.push('En riktad rad matchar ingen person (kön eller lönegräns).');
     const cost = _fcKostnadsval();
-    const out = _fcBeraknaUtfall(d);
+    const K = kTroskel();
+    // Huvudregressionen före och efter räknas i vymodellen på raderna, varje gång (ADR-17).
+    const vm = vymodellPrognos(d, { forecast: state.forecast, kostnadsval: cost, k: K, regval: regressionsval() });
+    const out = vm.out;
     const riktade = state.forecast.targets.length;
     _laNyckel('nyckel-lo-riktade', riktade ? `${riktade} ${riktade === 1 ? 'riktad pott' : 'riktade potter'}` : 'Inga riktade potter');
     _laNyckel('nyckel-lo-planering', state.forecast.roundStep > 0 || (state.forecast.years || 1) > 1 ? 'Anpassade värden' : 'Standardvärden');
     state.forecast.result = out;
-    const simRows = d.map((r, i) => ({ ...r, lon: out.alloc.perPerson[i].nyLon }));
-    const ols = _forecastOlsGap(d, simRows);
-    _renderForecastLutning(d, simRows);
+    _ritaPrognosLutning(d, vm.sim);
 
     const kr = n => svKr(n);
     const pct = n => (n == null ? '–' : (n >= 0 ? '+' : '') + svPct(n, 1));
     // Budgetmätare
-    const anvPct = out.pott > 0 ? Math.min(100, 100 * out.använt / out.pott) : 0;
-    const meterKlass = out.overBudget ? 'bg-kritisk' : (anvPct > 95 ? 'bg-varning' : 'bg-ok');
+    const anvPct = vm.anvandPct;
+    const meterKlass = { over: 'bg-kritisk', nara: 'bg-varning', ok: 'bg-ok' }[vm.matare];
     // Nyckeltalen står i flikens topp, som på övriga flikar (potten, vad som gått åt och vad det kostar); mätaren under
     // formuläret visar bara förloppet och varningarna.
     { const topp = document.getElementById('lo-slutsatser');
       if (topp) topp.innerHTML = [
           _laSlutsats('Pott', out.pottAngiven ? kr(out.pott) : '–', out.pottAngiven ? 'kr per månad att fördela' : 'ingen pott angiven'),
           _laSlutsats('Använt', kr(out.använt), out.pott > 0 ? `${svTal(100 * out.använt / out.pott, 0)} % av potten` : 'av påslagen hittills'),
-          // Utan angiven pott finns inget kvar att räkna och ingen pott att överskrida (pottAngiven ur forecastOutcome).
+          // Utan angiven pott finns inget kvar att räkna och ingen pott att överskrida (pottAngiven ur prognosutfall).
           out.kvar != null
               ? _laSlutsats('Kvar att fördela', kr(out.kvar), out.kvar < -0.5 ? 'fördelningen överskrider potten' : 'av potten', out.kvar < -0.5)
               : _laSlutsats('Kvar att fördela', '–', 'ingen pott angiven'),
@@ -256,100 +225,84 @@ function updateForecast() {
             <div class="hojd-100p ${meterKlass}" data-stil-bredd="${anvPct.toFixed(1)}%"></div>
         </div>
         ${out.overBudget ? `<p class="farg-danger fs-sm fw-600 marg-8-0-0">${ikon('statusVarning')} Fördelningen överskrider potten.</p>` : ''}
-        ${valWarn.length ? `<p class="farg-varning fs-sm marg-8-0-0">${ikon('statusVarning')} ${valWarn.map(esc).join(' ')}</p>` : ''}
+        ${vm.varningar.length ? `<p class="farg-varning fs-sm marg-8-0-0">${ikon('statusVarning')} ${vm.varningar.map(v => esc(_FC_VARNINGAR[v])).join(' ')}</p>` : ''}
         ${state.forecast.roundStep > 0 ? `<p class="text-dampad-xs marg-6-0-0">Nya löner avrundas till närmaste ${state.forecast.roundStep} kr.</p>` : ''}`; if (meterEl) tillampaDataStil(meterEl);
 
     // (A) Lönespann per BAS + compa-ratio
-    const bands = _fcBandStats(d);
-    const bandByBas = {}; bands.forEach(b => { bandByBas[b.bas] = b; });
-    // k-anonymitet: ett BAS under tröskeln får inte röja sitt lönespann —
+    // Minsta gruppstorlek: ett BAS under tröskeln får inte röja sitt lönespann —
     // P25/median/P75 pekar då ut enskilda löner. Raden utelämnas i stället för
-    // att fyllas med "< 10"-celler, och BAS:et räknas upp i noten under.
-    const bandVisade = bands.filter(b => !isKMasked(b.n));
-    const bandUtelamnade = bands.filter(b => isKMasked(b.n)).map(b => b.bas);
-    const bandPanelHtml = bands.length ? `<div class="card marg-0-0-14">
+    // att fyllas med "< 10"-celler, och BAS:et räknas upp i noten under (vm.band).
+    const bandVisade = vm.band.visade;
+    const bandPanelHtml = vm.band.alla.length ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Lönespann per BAS (P25 / median / P75)</strong>
         ${bandVisade.length ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">P25</th><th class="t-hoger">Median</th><th class="t-hoger">P75</th></tr></thead>
         <tbody>${bandVisade.map(b => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr(b.p25)}</td><td class="t-hoger">${kr(b.median)}</td><td class="t-hoger">${kr(b.p75)}</td></tr>`).join('')}</tbody></table>` : ''}
-        ${kMaskNote(bandUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kMaskNote(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
         <p class="text-dampad-xs marg-6-0-0">Läget mot BAS-medianen i tabellen nedan är gruppens nya median delad med BAS-medianen: över 1,10 märks «över», under 0,90 märks «under».</p>
     </div>` : '';
     // (D) Kostnad per pott (ring-fenced)
-    const poolLabels = { equity: 'Likalön', marknad: 'Marknad', befordran: 'Befordran', 'övrigt': 'Övrigt' };
-    const poolCost = {};
-    state.forecast.targets.forEach(t => {
-        let c = 0;
-        try { c = _fcAllocate(d, { mode: 'pct', value: 0 }, [t], state.forecast.roundStep).totals.riktadCost; } catch (_e) { c = 0; }
-        const p = poolLabels[t.pool] ? t.pool : 'övrigt';
-        poolCost[p] = (poolCost[p] || 0) + c;
-    });
-    const poolRows = Object.keys(poolLabels).filter(p => poolCost[p] > 0.5);
+    const { perPott: poolCost, potter: poolRows } = vm.potter;
     const poolHtml = (poolRows.length || out.generellCost > 0.5) ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Kostnad per pott (kr/mån)</strong>
         <table class="data-table st-085"><tbody>
             ${out.generellCost > 0.5 ? `<tr><td>Generellt påslag</td><td class="t-hoger">${kr(out.generellCost)}</td></tr>` : ''}
-            ${poolRows.map(p => `<tr><td>${poolLabels[p]}</td><td class="t-hoger">${kr(poolCost[p])}</td></tr>`).join('')}
+            ${poolRows.map(p => `<tr><td>${_FC_POTTER[p]}</td><td class="t-hoger">${kr(poolCost[p])}</td></tr>`).join('')}
         </tbody></table>
         <p class="text-dampad-xs marg-6-0-0">Ring-fenced pottar — tagga varje riktad rad med en pott-typ för att se vart utrymmet går.</p>
     </div>` : '';
-    // Utfall: nyckeltal + gap + per-grupp-tabell (k-anonymitet på medianer)
-    const rows = out.alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5).sort((a, b) => b.kostnad - a.kostnad);
-    const K = kTroskel();
+    // Utfall: nyckeltal + gap + per-grupp-tabell (minsta gruppstorlek på medianer)
     // Där medianerna maskeras maskeras också kostnaden: i en grupp med en person är ett påslag i
     // procent personens lön gånger procentsatsen. Kostnaden för de maskerade raderna står samlad, så att
-    // summorna minus de visade raderna inte ger en liten grupps kostnad (ADR-70, _fcUtfallsrader).
-    const utfall = _fcUtfallsrader(rows, K);
+    // summorna minus de visade raderna inte ger en liten grupps kostnad (ADR-70, utfallsrader i vymodellen).
+    const { rader: rows, utfall } = vm;
     const utfallsNot = _fcUtfallsNot(utfall, K);
     const maskNot = utfallsNot ? `<p class="k-mask-note">${esc(utfallsNot)}</p>` : '';
-    // Könsuppdelade mått för hela urvalet kräver tröskeln för varje kön (ADR-12).
-    const konOk = _konFarRedovisasFor(d);
-    const tableRows = [...utfall.visade, ...utfall.maskerade].map(g => {
-        const masked = utfall.maskerade.includes(g);
+    // Könsuppdelade mått för hela urvalet kräver tröskeln för varje kön (ADR-12): vm.ra är null annars.
+    const konOk = vm.konOk;
+    const tableRows = vm.tabell.map(({ g, maskerad: masked, underK, lage: l }) => {
         const medCells = masked
-            ? `<td colspan="3" class="farg-dampad kursiv">${g.n < K ? `n &lt; ${K} (maskerad)` : 'visas inte (se noten)'}</td>`
+            ? `<td colspan="3" class="farg-dampad kursiv">${underK ? `n &lt; ${K} (maskerad)` : 'visas inte (se noten)'}</td>`
             : `<td class="t-hoger">${kr(g.gammalMedian)}</td><td class="fw-600 ta-hoger">${kr(g.nyMedian)}</td><td class="farg-ok ta-hoger">+${svPct((100 * (g.nyMedian / g.gammalMedian - 1)), 1)}</td>`;
-        const bm = bandByBas[g.bas] ? bandByBas[g.bas].median : null;
-        const compa = (!masked && bm > 0) ? g.nyMedian / bm : null;
-        const compaCell = compa == null
+        const compaCell = l.kvot == null
             ? '<td class="farg-dampad ta-hoger">–</td>'
-            : `<td class="t-hoger${compa > 1.1 ? ' fg-varning' : compa < 0.9 ? ' fg-info-mork' : ''}">${svTal(compa, 2)}${compa > 1.1 ? ' över' : compa < 0.9 ? ' under' : ''}</td>`;
+            : `<td class="t-hoger${l.lage === 'over' ? ' fg-varning' : l.lage === 'under' ? ' fg-info-mork' : ''}">${svTal(l.kvot, 2)}${l.lage === 'over' ? ' över' : l.lage === 'under' ? ' under' : ''}</td>`;
         return `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.n}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>${medCells}<td class="t-hoger">${masked ? '–' : kr(g.kostnad) + '/mån'}</td>${compaCell}</tr>`;
     }).join('') + (utfall.samlad && utfall.samlad.kostnad != null
         ? `<tr><td>Kostnad för grupper under tröskeln</td><td>${utfall.samlad.antalGrupper} ${utfall.samlad.antalGrupper === 1 ? 'grupp' : 'grupper'}, ${utfall.samlad.n} ${personOrd(utfall.samlad.n)}</td><td colspan="5"></td><td class="t-hoger">${kr(utfall.samlad.kostnad)}/mån</td><td></td></tr>`
         : '');
-    // Ordet och färgen följer talen som de visas (_fcRiktning): lika på en decimal är oförändrat.
+    // Ordet och färgen följer talen som de visas (riktning i vymodellen): lika på en decimal är oförändrat.
     const riktningsord = (r, narmare, langre) => (r == null ? '' : r < 0 ? ` <span class="farg-ok">${narmare}</span>`
         : r > 0 ? ` <span class="f-kritisk">${langre}</span>` : ' <span class="f-dampad">oförändrat</span>');
-    const gapCell = (before, after) => `${pct(before)} till <strong>${pct(after)}</strong>${riktningsord(_fcRiktning(before, after, 0), 'minskar', 'ökar')}`;
+    const ols = vm.oforklarat;
+    const gapCell = `${pct(ols.fore)} till <strong>${pct(ols.efter)}</strong>${riktningsord(ols.riktning, 'minskar', 'ökar')}`;
     // Det råa gapet visas som kvinnors medianlön i procent av mäns (andelAvMan); pilen säger om den närmar sig 100.
-    const andelRiktning = (before, after) => (before == null || after == null ? null : _fcRiktning(100 + before, 100 + after, 100));
-    const andelCell = (before, after) => `${andelAvMan(before)} till <strong>${andelAvMan(after)}</strong>${riktningsord(andelRiktning(before, after), 'närmar sig 100 %', 'längre från 100 %')}`;
+    const ra = vm.ra;
+    const andelCell = ra ? `${andelAvMan(ra.fore)} till <strong>${andelAvMan(ra.efter)}</strong>${riktningsord(ra.riktning, 'närmar sig 100 %', 'längre från 100 %')}` : '';
     // #12 Enkel före/efter-stapel på |rågap| (mindre = bättre)
-    const gapBar = (before, after) => {
-        if (before == null || after == null) return '';
-        const scale = Math.max(Math.abs(before), Math.abs(after), 0.01);
+    const gapBar = () => {
+        if (!ra || ra.fore == null || ra.efter == null) return '';
+        const scale = Math.max(Math.abs(ra.fore), Math.abs(ra.efter), 0.01);
         const w = v => (Math.abs(v) / scale * 100).toFixed(1);
         return `<div class="marg-t-6 max-bredd-360">
-            <div class="rad-mitt gap-6 marg-b-3"><span class="text-dampad-xs bredd-42">Före</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p bg-blek" data-stil-bredd="${w(before)}%"></div></div></div>
-            <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${{ '-1': 'bg-ok', 0: 'bg-dampad', 1: 'bg-kritisk' }[andelRiktning(before, after)]}" data-stil-bredd="${w(after)}%"></div></div></div>
+            <div class="rad-mitt gap-6 marg-b-3"><span class="text-dampad-xs bredd-42">Före</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p bg-blek" data-stil-bredd="${w(ra.fore)}%"></div></div></div>
+            <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${{ '-1': 'bg-ok', 0: 'bg-dampad', 1: 'bg-kritisk' }[ra.riktning]}" data-stil-bredd="${w(ra.efter)}%"></div></div></div>
         </div>`;
     };
     // #8 Stegvis plan över N år (DiskrL 3:11)
     const years = state.forecast.years || 1;
     let stagedHtml = '';
-    if (years > 1 && out.använt > 0.5) {
-        const plan = _fcStagedPlan(d, out.alloc.perPerson, years, cost);
+    if (vm.plan) {
         stagedHtml = `<div class="card marg-0-0-14">
             <strong class="block-mb6">Stegvis plan över ${years} år (senast inom tre år)</strong>
             <table class="data-table fs-sm"><thead><tr><th>År</th><th class="t-hoger">Andel infört</th><th class="t-hoger">Ack. kostnad (inkl. PO)</th><th class="t-hoger">Kvinnors median i % av mäns</th></tr></thead>
-            <tbody>${plan.map(p => `<tr><td>${p.year}</td><td class="t-hoger">${svPct(p.andelPct, 0)}</td><td class="t-hoger">${kr(p.kumKostnad)}</td><td class="t-hoger">${!konOk || p.rawGap == null ? '–' : andelAvMan(p.rawGap)}</td></tr>`).join('')}</tbody></table>
+            <tbody>${vm.plan.map(p => `<tr><td>${p.year}</td><td class="t-hoger">${svPct(p.andelPct, 0)}</td><td class="t-hoger">${kr(p.kumKostnad)}</td><td class="t-hoger">${p.rawGap == null ? '–' : andelAvMan(p.rawGap)}</td></tr>`).join('')}</tbody></table>
             <p class="text-dampad-xs marg-8-0-0">Linjär infasning (1/${years} per år). Skillnaden visar läget när varje års andel är införd.</p>
         </div>`;
     }
     // Fördelning av påslaget: generellt / riktat, samt andel till kvinnodom. grupper
-    // Bredvid utfallets rader står andelen bara när den inte ger en del av den samlade kostnaden (ADR-70).
-    const varavKvDom = _fcVaravKvDom(utfall, out.equityCost, K);
-    const equityPctOfPott = out.pott > 0 && varavKvDom != null ? 100 * varavKvDom / out.pott : null;
+    // Bredvid utfallets rader står andelen bara när den inte ger en del av den samlade kostnaden (ADR-70, varavKvDom).
+    const varavKvDom = vm.varavKvDom;
+    const equityPctOfPott = vm.andelAvPott;
     const splitHtml = out.använt > 0.5 ? `
         <div class="card marg-0-0-14">
             <strong class="block-mb6">Hur potten används</strong>
@@ -361,8 +314,8 @@ function updateForecast() {
         </div>` : '';
     // Spillover-/leapfrog-varning
     // Jämförelsen visar gruppmedianer: bara grupper som når tröskeln tas med, och inte en grupp vars medianer
-    // maskeras i utfallet för att dess kostnad står på den samlade raden (ADR-70).
-    const leaps = _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n) && !utfall.invikta.includes(g)));
+    // maskeras i utfallet för att dess kostnad står på den samlade raden (ADR-70, utfallsvy).
+    const leaps = vm.omkorningar;
     const leapHtml = leaps.length ? `
         <div class="card bak-varning-yta ram-v-3-varning marg-0-0-14">
             <strong class="block-mb6">${ikon('statusVarning')} Spillover: ${leaps.length} grupp${leaps.length > 1 ? 'er' : ''} går om en tidigare högre grupp</strong>
@@ -376,9 +329,9 @@ function updateForecast() {
         <div class="card marg-0-0-14">
             <strong class="block-mb6">Löneskillnad före och efter</strong>
             <div class="fs-md lh-1_8">
-                Kvinnors medianlön i % av mäns: ${konOk ? andelCell(out.rawGapFore, out.rawGapEfter) : esc(_konUtelamnatNot()) + '<br>'}
-                ${konOk ? gapBar(out.rawGapFore, out.rawGapEfter) : ''}
-                Oförklarad skillnad (regressionen): ${ols.fore == null && ols.efter == null ? '<span class="f-dampad">— (för få obs för regression)</span>' : gapCell(ols.fore, ols.efter)}
+                Kvinnors medianlön i % av mäns: ${konOk ? andelCell : esc(_konUtelamnatNot()) + '<br>'}
+                ${konOk ? gapBar() : ''}
+                Oförklarad skillnad (regressionen): ${ols.fore == null && ols.efter == null ? '<span class="f-dampad">— (för få obs för regression)</span>' : gapCell}
             </div>
             <p class="text-dampad-xs marg-8-0-0">Under 100 % betyder att kvinnors medianlön är lägre än mäns. Den oförklarade skillnaden anges i procent (negativt = kvinnor lägre; "minskar" = närmare noll) och räknas om med regressionen på de simulerade lönerna.</p>
         </div>
@@ -388,12 +341,12 @@ function updateForecast() {
         ${leapHtml}
         ${bandPanelHtml}
         ${rows.length ? `<div class="table-wrap"><table class="data-table st-088">
-            <thead><tr><th>BAS</th><th>${termStor(T.kod.en)}</th><th class="t-hoger">n</th><th class="t-hoger">Andel kv</th><th class="t-hoger">Gammal median</th><th class="t-hoger">Ny median</th><th class="t-hoger">Δ</th><th class="t-hoger">Kostnad</th><th class="t-hoger">Läge mot BAS-medianen (ny)</th></tr></thead>
+            <thead><tr><th>BAS</th><th>${stor(T.kod.en)}</th><th class="t-hoger">n</th><th class="t-hoger">Andel kv</th><th class="t-hoger">Gammal median</th><th class="t-hoger">Ny median</th><th class="t-hoger">Δ</th><th class="t-hoger">Kostnad</th><th class="t-hoger">Läge mot BAS-medianen (ny)</th></tr></thead>
             <tbody>${tableRows}</tbody></table></div>${maskNot}`
         : '<p class="text-dampad-sm">Ingen grupp har fått påslag ännu — ange ett generellt påslag eller lägg till riktade potter.</p>'}`; if (outEl) tillampaDataStil(outEl);
     // Utan pott och utan påslag finns inget utfall: en tom mätare och tabeller där före är lika med efter ser ut som
     // ett resultat. Då står en rad som säger vad som behövs, och mätaren, diagrammet och exporten visas inte.
-    const tomt = !(out.pott > 0) && !(out.använt > 0.5);
+    const tomt = vm.tomt;
     document.getElementById('view-loneoversyn')?.classList.toggle('lo-tomt', tomt);
     if (tomt && outEl) outEl.innerHTML = '<p class="tomt-lage">Ange en pott ovan så visas utfallet här.</p>';
 }
@@ -405,8 +358,8 @@ function updateForecast() {
 // ut. För en kvot (format 'pct') når axeln alltid 100 %, lika lön, som är utsatt som linje; för belopp ('kr') följer
 // axeln värdena med luft omkring. `kolumner` namnger de två lägena (Före/Efter, Ögonblicksbild/Nuvarande).
 /** @param {{rader: any[], titel: string, beskrivning: string, format?: 'pct'|'kr', kolumner?: string[]}} val */
-function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = ['Före', 'Efter'] }) {
-    const alla = rader.flatMap(r => [r.fore, r.efter]), p = v => _figTalformat(v, format), [a, b] = kolumner, kvot = format === 'pct';
+export function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = ['Före', 'Efter'] }) {
+    const alla = rader.flatMap(r => [r.fore, r.efter]), p = v => talformat(v, format), [a, b] = kolumner, kvot = format === 'pct';
     // bas, yrke, n: radens BAS-intervall, yrkesgrupp och antal (figur.urval)
     const m = r => ({ ...(r.markering ? { markering: r.markering } : {}), ...(r.bas != null ? { bas: r.bas } : {}), ...(r.yrke != null ? { yrke: r.yrke } : {}), ...(r.n != null ? { n: r.n } : {}) });
     const tips = d => [[d.y], [a, p(d.r.fore)], [b, p(d.r.efter)]];
@@ -423,72 +376,42 @@ function foreEfterFigur({ rader, titel, beskrivning, format = 'pct', kolumner = 
 }
 
 // Lönegapet (kvinnors median mot mäns, i procent — negativt när kvinnor ligger lägre) per BAS-intervall eller
-// yrkesgrupp, före och efter påslagen. Bara grupper där både kvinnor och män når tröskeln: löneöversynens
-// riktade rader för små grupper kommer aldrig hit.
-/** @returns {Array<{namn: string, fore: number|null, efter: number|null, [k: string]: any}>} */
-function _forecastLutningRader(d, sim, niva) {
-    const k = kTroskel(), grupper = new Map();
-    const nyckelAv = r => (niva === 'bas' ? String(r.bas) : `${r.aid}|${r.bas}`);
-    // Yrkesgruppens namn ur texten på flest av dess rader (namnrader), som i resten av verktyget (ADR-89).
-    const namnrad = namnrader(d.filter((r, i) => (arKvinna(r) || arMan(r)) && sim[i]), nyckelAv);
-    d.forEach((r, i) => {
-        const kv = arKvinna(r), ma = arMan(r);
-        if (!(kv || ma) || !sim[i]) return;
-        const nyckel = nyckelAv(r);
-        let g = grupper.get(nyckel);
-        if (!g) {
-            const nr = namnrad.get(nyckel);
-            g = { namn: niva === 'bas' ? `BAS ${r.bas}` : `${nr.yrkeLabel || nr.yrke || nr.aid} · ${r.bas}`,
-                  // Filtrens fält: BAS-intervallet på den nivån, yrkesgruppen (som i namnet) på gruppnivån.
-                  ...(niva === 'bas' ? { bas: String(r.bas) } : { yrke: String(nr.yrkeLabel || nr.yrke || nr.aid) }),
-                  markering: markeringFor(r.bas, niva === 'bas' ? null : r.aid), kv: [[], []], ma: [[], []] };
-            grupper.set(nyckel, g);
-        }
-        const h = kv ? g.kv : g.ma;
-        h[0].push(r.lon); h[1].push(sim[i].lon);
-    });
-    // Kvinnors median i % av mäns och prövningen mot k: konskvotPerGrupp i src/lib/osakerhet.js, före och efter.
-    const fore = _osKonskvotPerGrupp([...grupper.values()].map(g => [g, g.kv[0], g.ma[0]]), { k }).visade;
-    const efter = new Map(_osKonskvotPerGrupp(fore.map(v => [v.nyckel, v.nyckel.kv[1], v.nyckel.ma[1]]), { k }).visade.map(v => [v.nyckel, v.gap]));
-    // Färgen följer talen som de visas med en decimal (_fcRiktning), som utfallets rad för hela urvalet.
-    const farg = (fore, efter) => ({ '-1': PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[_fcRiktning(fore, efter, 100)];
-    return fore.filter(v => efter.has(v.nyckel))
-        .map(({ nyckel: g, nKv, nMa, gap }) => ({ namn: g.namn, markering: g.markering, ...(g.bas != null ? { bas: g.bas } : { yrke: g.yrke }), nKv, nMa,
-                     n: nKv + nMa, fore: gap, efter: /** @type {number} */ (efter.get(g)) }))
-        .map(g => ({ ...g, farg: farg(g.fore, g.efter) }));
+// yrkesgrupp, före och efter påslagen: lutningRader i src/lib/vymodell-loneoversyn.js, bara grupper där både kvinnor
+// och män når tröskeln. Här läggs markeringen och färgen till; färgen följer talen som de visas med en decimal
+// (riktning), som utfallets rad för hela urvalet.
+/** @returns {Array<{namn: string, fore: number, efter: number, [k: string]: any}>} */
+function _lutningRader(d, sim, niva) {
+    const farg = r => ({ '-1': PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[riktning(r.fore, r.efter, 100)];
+    return lutningRader(d, sim, niva, { k: kTroskel(), markering: markeringFor }).map(r => ({ ...r, farg: farg(r) }));
 }
-const FORECAST_LUTNING_MAX = 15;
 // Samma tal som diagrammet, som tabell: gapet per grupp före och efter påslagen står inte någon annanstans.
-function _forecastLutningTabell(rader, niva) {
+function _ritaLutningTabell(rader, niva) {
     const host = document.getElementById('forecast-lutning-tabell');
     if (!host) return;
     if (!rader.length) { host.innerHTML = ''; return; }
-    const p = v => _figTalformat(v, 'pct'), diff = v => (v > 0 ? '+' : '') + _figTalformat(v, undefined) + ' procentenheter';
+    const p = v => talformat(v, 'pct'), diff = v => (v > 0 ? '+' : '') + talformat(v, undefined) + ' procentenheter';
     host.innerHTML = `<table id="forecast-lutning-table" class="data-table fs-sm marg-t-10">
-        <thead><tr><th>${niva === 'bas' ? termStor(T.niva.en) : termStor(T.enhet.en)}</th><th class="t-hoger">Kvinnor / män</th><th class="t-hoger">Kvinnors median i % av mäns, före</th><th class="t-hoger">Efter</th><th class="t-hoger">Förändring</th></tr></thead>
-        <tbody>${rader.map(r => `<tr><td>${esc(r.namn)}</td><td class="t-hoger">${r.nKv}/${r.nMa}</td><td class="t-hoger">${p(r.fore)}</td><td class="fw-600 ta-hoger">${p(r.efter)}</td><td class="t-hoger">${diff(_avrundaSymmetriskt(r.efter, 1) - _avrundaSymmetriskt(r.fore, 1))}</td></tr>`).join('')}</tbody></table>`;
+        <thead><tr><th>${niva === 'bas' ? stor(T.niva.en) : stor(T.enhet.en)}</th><th class="t-hoger">Kvinnor / män</th><th class="t-hoger">Kvinnors median i % av mäns, före</th><th class="t-hoger">Efter</th><th class="t-hoger">Förändring</th></tr></thead>
+        <tbody>${rader.map(r => `<tr><td>${esc(r.namn)}</td><td class="t-hoger">${r.nKv}/${r.nMa}</td><td class="t-hoger">${p(r.fore)}</td><td class="fw-600 ta-hoger">${p(r.efter)}</td><td class="t-hoger">${diff(avrundaSymmetriskt(r.efter, 1) - avrundaSymmetriskt(r.fore, 1))}</td></tr>`).join('')}</tbody></table>`;
     for (const [i, tr] of [...host.querySelectorAll('tbody tr')].entries()) if (rader[i].markering) tr._markering = rader[i].markering;
 }
-function _renderForecastLutning(d, sim) {
+function _ritaPrognosLutning(d, sim) {
     const el = document.getElementById('chart-forecast-lutning');
     if (!el) return;
     const not = document.getElementById('forecast-lutning-not');
     const niva = /** @type {HTMLInputElement} */ ((document.getElementById('forecast-lutning-niva') || {})).value === 'grupp' ? 'grupp' : 'bas';
     const k = kTroskel();
-    let rader = d && sim ? _forecastLutningRader(d, sim, niva) : [], fler = 0;
-    if (niva === 'grupp') {
-        // Yrkesgrupperna är många: bara de där gapet ändras, störst ändring först.
-        const andrade = rader.filter(r => r.efter != null && r.fore != null && _avrundaSymmetriskt(r.efter, 1) !== _avrundaSymmetriskt(r.fore, 1)).sort((x, y) => Math.abs((y.efter ?? 0) - (y.fore ?? 0)) - Math.abs((x.efter ?? 0) - (x.fore ?? 0)));
-        fler = Math.max(0, andrade.length - FORECAST_LUTNING_MAX);
-        rader = andrade.slice(0, FORECAST_LUTNING_MAX);
-        _forecastLutningTabell(andrade, niva);   // tabellen bär alla ändrade grupper, också dem diagrammet inte ryms
-    } else _forecastLutningTabell(rader, niva);
+    // Yrkesgrupperna är många: bara de där gapet ändras, störst ändring först; tabellen bär alla ändrade grupper,
+    // också dem diagrammet inte ryms (lutningUrval).
+    const urval = lutningUrval(d && sim ? _lutningRader(d, sim, niva) : [], niva);
+    const rader = urval.diagram, fler = urval.fler;
+    _ritaLutningTabell(urval.tabell, niva);
     if (not) not.textContent = !rader.length ? '' : `Det lodräta strecket är värdet före, punkten värdet efter. Grönt: närmar sig 100 % (lika lön). Rött: längre från 100 %. Grått: oförändrat. Bara ${niva === 'bas' ? T.niva.fl : T.enhet.fl} med minst ${k} kvinnor och ${k} män visas.`
-        + (fler ? ` Visar de ${FORECAST_LUTNING_MAX} ${T.enhet.fl} där skillnaden ändras mest; ${fler} till ändras mindre.` : '');
+        + (fler ? ` Visar de ${LUTNING_MAX} ${T.enhet.fl} där skillnaden ändras mest; ${fler} till ändras mindre.` : '');
     if (!rader.length) {
         rensaFigur(el);
-        const text = !d ? '' : niva === 'bas' ? `${termStor(termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${k} kvinnor och ${k} män, så kvinnors median i procent av mäns visas inte per ${T.niva.en}.`
-            : `I ${termAdjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en} med minst ${k} kvinnor och ${k} män ändras kvinnors median i procent av mäns av påslagen.`;
+        const text = !d ? '' : niva === 'bas' ? `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${k} kvinnor och ${k} män, så kvinnors median i procent av mäns visas inte per ${T.niva.en}.`
+            : `I ${adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en} med minst ${k} kvinnor och ${k} män ändras kvinnors median i procent av mäns av påslagen.`;
         el.innerHTML = text ? `<p class="text-dampad-sm marg-8-0">${esc(text)}</p>` : '';
         return;
     }
@@ -497,9 +420,9 @@ function _renderForecastLutning(d, sim) {
         beskrivning: `Kvinnors medianlön i procent av mäns per ${niva === 'bas' ? T.niva.en : T.enhet.en} före och efter påslagen i prognosen: strecket är värdet före, punkten värdet efter. Linjen vid 100 procent är lika lön. Samma tal står i tabellen under.` }),
         urval: [niva === 'bas' ? URVAL.bas : URVAL.yrkesgrupp, URVAL.antal] });
 }
-document.getElementById('forecast-lutning-niva')?.addEventListener('change', () => updateForecast());
 
-function renderForecast() {
+/** Ritar fliken Löneöversyn: kontrollerna ur tillståndet, de riktade raderna, prognosen, scenarierna och knappresultaten. */
+export function ritaLoneoversyn() {
     // Spegla state → statiska kontroller (för config-load)
     const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) /** @type {HTMLInputElement} */ (el).value = v; };
     setVal('forecast-budget-mode', state.forecast.budget.mode);
@@ -509,9 +432,9 @@ function renderForecast() {
     setVal('forecast-min-n', state.forecast.minGroupN);
     setVal('forecast-round', state.forecast.roundStep);
     setVal('forecast-years', state.forecast.years);
-    renderForecastTargets();
-    updateForecast();
-    _renderScenarioCompare();
+    ritaRiktadeRader();
+    ritaPrognos();
+    _ritaScenariojamforelse();
     _fcRitaOmKnappresultat();
 }
 // Resultaten som räknas på knapptryck: målet för skillnaden, känslighetskurvan och kostnaden på individnivå. Ett resultat
@@ -524,7 +447,7 @@ function _fcRitaOmKnappresultat() {
     if (_fcKnappresultat.has('forecast-sensitivity')) _forecastSensitivity();
     if (_fcKnappresultat.has('forecast-rem-result')) _forecastRemediation();
 }
-function _fcGlomKnappresultat() {
+export function _fcGlomKnappresultat() {
     for (const id of _fcKnappresultat) { const el = document.getElementById(id); if (el) el.innerHTML = ''; }
     _fcKnappresultat.clear();
     if (state.forecast) delete state.forecast._remediation;
@@ -537,7 +460,8 @@ function _fcGlomKnappresultat() {
 // i Excel-exporten och i konfigurationsfilen. Undantaget gäller bara fliken Likvärdigt arbete. Minsta
 // antal personer i gruppen för riktning är en ytterligare gräns. Meningen om utelämnade par visas vid
 // förslagen (#forecast-par-not) och står i Excel-exporten. Bland paren som är kvar tar förslagen ett par per
-// kvinnodominerat yrke, det med störst skillnad (_fcEttParPerYrke i src/lib/loneoversyn.js, ADR-69).
+// kvinnodominerat yrke, det med störst skillnad (ettParPerYrke i src/lib/loneoversyn.js, ADR-69). Urvalet är
+// forslagskandidater i src/lib/vymodell-loneoversyn.js (regel R2).
 let _fcParNot = '';
 // Meningen om föreslagna rader som togs bort (_fcRensaParMal). Står kvar tills ett nytt förslag görs.
 let _fcBorttagnaNot = '';
@@ -564,18 +488,18 @@ function _fcVisaParNot() {
     if (el) el.textContent = [_fcParNot, _fcBorttagnaNot].filter(Boolean).join(' ');
 }
 function _fcKandidater() {
-    const r = _parForRedovisning(_fcAllaPar(), kInstalld());
+    const r = forslagskandidater(_fcAllaPar(), kInstalld());
     _fcParNot = r.not;
     _fcVisaParNot();
-    return r.par.map(p => ({ bas: p.kvBas, aid: p.kvAid, gapKr: p.gapKr, n: p.kvN, maN: p.maN }));
+    return r.kandidater;
 }
 /**
  * Gör förslagen till riktade rader (kalla: 'par') och minns, för varje rad, storleken på grupperna i paret den räknades
- * ur, så att _fcRensaParMal kan avgöra raden säkert när tröskeln ändras. Paret är det som _fcSuggestTargets och
- * _fcClosureTargets valde: ett per yrke, ur samma _fcEttParPerYrke.
+ * ur, så att _fcRensaParMal kan avgöra raden säkert när tröskeln ändras. Paret är det som _fcForeslaRiktning och
+ * _fcStangningsriktning valde: ett per yrke, ur samma _fcEttParPerYrke.
  */
 function _fcForslagTillRader(targets, cand) {
-    const valda = new Map(_fcEttParPerYrke(cand).map(c => [c.bas + '|' + c.aid, c]));
+    const valda = new Map(ettParPerYrke(cand).map(c => [c.bas + '|' + c.aid, c]));
     _fcBorttagnaNot = '';
     _fcVisaParNot();
     return targets.map(t => {
@@ -604,18 +528,15 @@ function _forecastOptimize() {
     const d = getData();
     if (!d.length) return;
     _forecastReadControls();
-    const pott = _fcComputePott(d, state.forecast.budget);
-    const gen = _fcAllocate(d, state.forecast.generell, []);
-    const riktadPott = Math.max(0, pott - gen.totals.generellCost);
     const cand = _fcKandidater();
-    const targets = _fcSuggestTargets(cand, riktadPott, state.forecast.minGroupN || 0);
+    const targets = forslagUrPotten(d, { budget: state.forecast.budget, generell: state.forecast.generell, kandidater: cand, minN: state.forecast.minGroupN || 0 });
     if (!targets.length) {
         alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer, eller så har det generella påslaget tagit hela potten. Sänk minsta antal personer i gruppen eller lägg till riktade rader själv.');
         return;
     }
     state.forecast.targets = _fcForslagTillRader(targets, cand);
-    renderForecastTargets();
-    updateForecast();
+    ritaRiktadeRader();
+    ritaPrognos();
 }
 /**
  * Efter ändrad tröskel, inläst konfigurationsfil och inläst lönefil: tar bort de riktade rader som verktyget föreslog
@@ -629,7 +550,7 @@ function _forecastOptimize() {
  * max), yrket har par och alla når tröskeln, annars tas den bort. Meningen vid förslagen säger hur många rader som togs bort och varför.
  * @returns {number} Antal borttagna rader.
  */
-function _fcRensaParMal() {
+export function _fcRensaParMal() {
     if (!state.data.length || !state.forecast || !Array.isArray(state.forecast.targets)) return 0;
     // Utan förslag ur par och utan visad mening finns inget att rensa eller uppdatera — och då
     // ska analysen inte heller köras här (den cachas, och underlaget kan vara på väg in).
@@ -639,36 +560,17 @@ function _fcRensaParMal() {
     if (!_fcParNot && !harPar(state.forecast.targets) && !harPar(scenarioRader(sc.A)) && !harPar(scenarioRader(sc.B))) return 0;
     _fcKandidater();   // meningen om utelämnade par efter den inställda tröskeln
     const k = kInstalld();
-    /** @type {Map<string, any[]>} */
-    const perYrke = new Map();
     const allaPar = _fcAllaPar();
-    // Listan är kapad vid Visa max (topN); den räcker för den försiktiga prövningen bara när den har alla par
-    // (parAntal.totalt räknas före urvalet, ADR-61). Lägre krav, högre lön är en egen lista och räknas inte.
-    const fullstandig = _fcParListanFullstandig(allaPar);
-    for (const p of allaPar) {
-        const nyckel = p.kvBas + '|' + p.kvAid;
-        if (!perYrke.has(nyckel)) perYrke.set(nyckel, []);
-        /** @type {any[]} */ (perYrke.get(nyckel)).push(p);
-    }
-    // 'ok', 'sakert' (paret har en grupp under tröskeln) eller 'forsiktigt' (paret går inte att avgöra).
-    const prova = t => {
-        if (t.kalla !== 'par') return 'ok';
-        const u = _fcParUrsprung.get(t);
-        if (u) return _parNarK(u, k) ? 'ok' : 'sakert';
-        const par = perYrke.get(t.bas + '|' + t.aid) || [];
-        return fullstandig && par.length && par.every(p => _parNarK(p, k)) ? 'ok' : 'forsiktigt';
-    };
-    let sakert = 0, forsiktigt = 0;
-    state.forecast.targets = state.forecast.targets.filter(t => {
-        const svar = prova(t);
-        if (svar === 'sakert') sakert++; else if (svar === 'forsiktigt') forsiktigt++;
-        return svar === 'ok';
-    });
+    // Prövningen är rensaForeslagnaRader i src/lib/vymodell-loneoversyn.js. Listan är kapad vid Visa max (topN); den
+    // räcker för den försiktiga prövningen bara när den har alla par (parAntal.totalt räknas före urvalet, ADR-61).
+    // Lägre krav, högre lön är en egen lista och räknas inte.
+    const svar = rensaForeslagnaRader({ rader: state.forecast.targets, allaPar, fullstandig: _fcParListanFullstandig(allaPar), k,
+        ursprung: t => _fcParUrsprung.get(t),
+        scenarioRader: { A: sc.A ? scenarioRader(sc.A) : null, B: sc.B ? scenarioRader(sc.B) : null } });
+    const { sakert, forsiktigt, bortScenarier } = svar;
+    state.forecast.targets = svar.kvar;
     // Ett sparat scenario som räknades med en rad som inte står sig tas bort: dess summor räknades ur raden.
-    const bortScenarier = /** @type {string[]} */ ([]);
-    for (const slot of ['A', 'B']) {
-        if (sc[slot] && scenarioRader(sc[slot]).some(t => prova(t) !== 'ok')) { sc[slot] = null; bortScenarier.push(slot); }
-    }
+    for (const slot of bortScenarier) sc[slot] = null;
     if (sakert + forsiktigt || bortScenarier.length) {
         const rader = n => `${n} ${n === 1 ? 'föreslagen rad' : 'föreslagna rader'}`;
         const skal = [];
@@ -679,7 +581,7 @@ function _fcRensaParMal() {
         // Utfallet räknades med de borttagna raderna: det räknas om ur raderna som står kvar, också när Löneöversyn inte
         // är den öppna fliken. Exporten och scenarierna räknar dessutom alltid om (_fcBeraknaUtfall).
         state.forecast.result = null;
-        try { renderForecast(); } catch (_e) { /* ritas vid nästa flikbyte; exporten räknar om */ }
+        try { ritaLoneoversyn(); } catch (_e) { /* ritas vid nästa flikbyte; exporten räknar om */ }
         _fcVisaParNot();
     }
     return sakert + forsiktigt;
@@ -695,19 +597,9 @@ function _forecastAddByCriteria() {
     const value = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-rule-value'))?.value);
     const minN = state.forecast.minGroupN || 0;
     if (!isFinite(value) || value <= 0) { alert('Skriv ett belopp i kronor eller procent.'); return; }
-    const groups = _fcSummarizeGroups(d);
-    const basMed = {}, basP25 = {};
-    getBasIntervals().forEach(b => { basMed[b] = _fcMedian(d.filter(r => r.bas === b).map(r => r.lon)); });
-    _fcBandStats(d).forEach(bb => { basP25[bb.bas] = bb.p25; });
-    const match = g => {
-        if (g.n < minN) return false;
-        if (matcher === 'kvdom') return kvDomNu(g.andelKv);
-        if (matcher === 'underbas') return g.median < basMed[g.bas];
-        if (matcher === 'underp25') return g.median < basP25[g.bas];   // grön-cirklade (under spann)
-        return true; // 'all'
-    };
+    // Urvalet: villkorsgrupper i src/lib/vymodell-loneoversyn.js.
     const pool = matcher === 'kvdom' ? 'equity' : 'övrigt';
-    const picked = groups.filter(match);
+    const picked = villkorsgrupper(d, { villkor: matcher, minN, arKvDom: kvDomAv(_fcKostnadsval()) });
     if (!picked.length) { alert('Ingen grupp passar villkoret. Sänk minsta antal personer i gruppen (nu ' + minN + ').'); return; }
     let added = 0;
     picked.forEach(g => {
@@ -716,8 +608,8 @@ function _forecastAddByCriteria() {
             added++;
         }
     });
-    renderForecastTargets();
-    updateForecast();
+    ritaRiktadeRader();
+    ritaPrognos();
     if (added === 0) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // Mål-läge: bygg riktade rader som stänger en andel av de osakliga gapen (§ 3:10).
@@ -728,74 +620,48 @@ function _forecastClosure() {
     const fracPct = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-closure-pct'))?.value);
     if (!isFinite(fracPct) || fracPct <= 0) { alert('Ange med hur många procent skillnaderna i likvärdigt arbete ska minska.'); return; }
     const cand = _fcKandidater();
-    const targets = _fcClosureTargets(cand, fracPct / 100, state.forecast.minGroupN || 0);
+    const targets = stangningsriktning(cand, fracPct / 100, state.forecast.minGroupN || 0);
     if (!targets.length) { alert('Verktyget hittade inga skillnader i likvärdigt arbete i grupper med minst ' + (state.forecast.minGroupN || 0) + ' personer.'); return; }
     state.forecast.targets = _fcForslagTillRader(targets, cand);
-    renderForecastTargets();
-    updateForecast();
+    ritaRiktadeRader();
+    ritaPrognos();
 }
 // Scenario A/B: spara nuläget som ett scenario och jämför.
 function _forecastSaveScenario(slot) {
     const d = getData();
     if (!state.forecast.result || !d.length) { alert('Det finns ingen prognos att spara. Ange en pott först.'); return; }
     const o = _fcBeraknaUtfall(d);
-    const sim = d.map((r, i) => ({ ...r, lon: o.alloc.perPerson[i].nyLon }));
-    const ols = _forecastOlsGap(d, sim);
-    const { nKv, nMa } = _konAntal(d);
-    const konOk = _konFarRedovisas(nKv, nMa);   // det råa gapet sparas bara när varje kön når tröskeln
+    // Det som scenariot bär räknas i scenarioUr (src/lib/vymodell-loneoversyn.js, regel R4): det råa gapet bara när
+    // varje kön når tröskeln, antalen och grupperna med påslag, så att jämförelsen prövar dem mot den tröskel som gäller
+    // när den visas. Huvudregressionen före och efter körs här, på raderna (ADR-17).
+    const ols = oforklaratForeEfter(d, simuleradeRader(d, o), regressionsval());
     state.forecast.scenarios[slot] = {
         budgetTxt: o.pottAngiven ? state.forecast.budget.value + (state.forecast.budget.mode === 'kr' ? ' kr' : ' %') : 'ingen pott angiven',
         targetsCount: state.forecast.targets.length,
-        // Antalen följer med, så att jämförelsen kan pröva rågapet mot den tröskel som gäller när den visas.
-        nKv, nMa,
-        // Grupperna med påslag (som utfallets rader), så att Till kv-dom kan prövas med samma regel som Varav till
-        // kvinnodominerade grupper mot den tröskel som gäller när jämförelsen visas (ADR-70, _renderScenarioCompare).
-        grupper: o.alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5).map(g => ({ bas: g.bas, aid: g.aid, n: g.n, andelKv: g.andelKv, kostnad: g.kostnad })),
-        summary: {
-            använt: o.använt, totalKostnad: o.totalKostnad,
-            rawGapFore: konOk ? o.rawGapFore : null, rawGapEfter: konOk ? o.rawGapEfter : null,
-            oforklaratEfter: ols.efter, equityCost: o.equityCost,
-            // Samma urval som spillover-kortet i utfallet: bara grupper som når tröskeln.
-            leapfrog: _fcDetectLeapfrog(o.alloc.perGroup.filter(g => !isKMasked(g.n))).length
-        }
+        ...scenarioUr(d, o, ols, kTroskel())
     };
     _fcScenarioRader.set(state.forecast.scenarios[slot], state.forecast.targets.slice());
-    _renderScenarioCompare();
+    _ritaScenariojamforelse();
 }
-function _renderScenarioCompare() {
+function _ritaScenariojamforelse() {
     const host = document.getElementById('forecast-scenarios');
     if (!host) return;
     const sc = state.forecast.scenarios || {};
     if (!sc.A && !sc.B) { host.innerHTML = '<p class="text-dampad-sm marg-0">Spara två scenarier (A/B) för att jämföra utfall sida vid sida.</p>'; return; }
     const kr = n => svKr(n);
     const pc = n => n == null ? '–' : (n >= 0 ? '+' : '') + svPct(n, 1);
-    // Ett scenario sparat vid en lägre tröskel kan bära ett rågap som inte längre får visas (som
-    // A/B-bilden i 19-konfiguration.js). Saknas antalen prövas det mot underlaget som det är nu.
-    const nu = _konAntal(getData());
-    const konOk = s => _konFarRedovisas(s.nKv ?? nu.nKv, s.nMa ?? nu.nMa);
-    const maskerat = [sc.A, sc.B].some(s => s && s.summary.rawGapEfter != null && !konOk(s));
-    // Till kv-dom följer regeln för Varav till kvinnodominerade grupper i utfallet, med samma funktion: i exportläget
-    // står talet bara när det inte ger en del av den samlade kostnaden för grupperna under tröskeln (ADR-70).
-    const K = kTroskel();
-    const tillKvDom = s => Array.isArray(s.grupper) ? _fcVaravKvDom(_fcUtfallsrader(s.grupper, K), s.summary.equityCost, K) : null;
-    const col = (s) => s ? `<td class="t-hoger">${kr(s.summary.använt)}</td><td class="t-hoger">${kr(s.summary.totalKostnad)}</td><td class="t-hoger">${andelAvMan(konOk(s) ? s.summary.rawGapEfter : null)}</td><td class="t-hoger">${pc(s.summary.oforklaratEfter)}</td><td class="t-hoger">${kr(tillKvDom(s))}</td><td class="t-hoger">${s.summary.leapfrog}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
+    // Ett scenario sparat vid en lägre tröskel kan bära ett rågap som inte längre får visas (som A/B-bilden i
+    // 19-konfiguration.js); Till kv-dom följer regeln för Varav till kvinnodominerade grupper i utfallet, med samma
+    // funktion (ADR-70). Båda prövas i scenariojamforelse (src/lib/vymodell-loneoversyn.js) mot den tröskel som gäller nu.
+    const vm = scenariojamforelse(sc, { nu: konAntal(getData()), k: kTroskel(), arKvDom: kvDomAv(_fcKostnadsval()) });
+    const maskerat = vm.maskerat;
+    const col = (r) => r ? `<td class="t-hoger">${kr(r.anvant)}</td><td class="t-hoger">${kr(r.totalKostnad)}</td><td class="t-hoger">${andelAvMan(r.raEfter)}</td><td class="t-hoger">${pc(r.oforklaratEfter)}</td><td class="t-hoger">${kr(r.tillKvDom)}</td><td class="t-hoger">${r.omkorningar}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
     host.innerHTML = `<table class="data-table fs-sm">
         <thead><tr><th>Scenario</th><th class="t-hoger">Använt/mån</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kv. median i % av mäns, efter</th><th class="t-hoger">Oförkl. efter</th><th class="t-hoger">Till kv-dom</th><th class="t-hoger">Spillover</th></tr></thead>
         <tbody>
-            <tr><td><strong>A</strong> ${sc.A ? `<span class="f-dampad">(${esc(sc.A.budgetTxt)}, ${sc.A.targetsCount} riktade)</span>` : ''}</td>${col(sc.A)}</tr>
-            <tr><td><strong>B</strong> ${sc.B ? `<span class="f-dampad">(${esc(sc.B.budgetTxt)}, ${sc.B.targetsCount} riktade)</span>` : ''}</td>${col(sc.B)}</tr>
+            <tr><td><strong>A</strong> ${sc.A ? `<span class="f-dampad">(${esc(sc.A.budgetTxt)}, ${sc.A.targetsCount} riktade)</span>` : ''}</td>${col(vm.A)}</tr>
+            <tr><td><strong>B</strong> ${sc.B ? `<span class="f-dampad">(${esc(sc.B.budgetTxt)}, ${sc.B.targetsCount} riktade)</span>` : ''}</td>${col(vm.B)}</tr>
         </tbody></table>${maskerat ? `<p class="k-mask-note">Kvinnors median i procent av mäns visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>` : ''}`;
-}
-// Kör OLS på en given radmängd via data-swap. Returnerar {konPct, pValue}.
-function _forecastOlsOn(rows) {
-    const sd = state.data;
-    let res = { konPct: null, pValue: null };
-    try {
-        state.data = rows;
-        const r = runOLSRegression();
-        if (r && !r.error) res = { konPct: r.konPct, pValue: r.pValue };
-    } finally { state.data = sd; }
-    return res;
 }
 // Målet i fältet för tröskelmålet: 0 är ett giltigt mål (ingen oförklarad skillnad), ett tomt fält eller text som inte
 // är ett tal ger standardmålet, och ett tal utanför fältets min och max avvisas (ok: false) i stället för att tyst ändras.
@@ -818,15 +684,16 @@ function _forecastThreshold() {
     if (!d.length) { host.innerHTML = ''; return; }
     // Lyftet i procent och dess kostnad är kvinnornas lönesumma gånger procentsatsen — ett könsuppdelat
     // lönemått. Det visas bara när varje kön når tröskeln (regressionen jämför mot män); annars ett streck
-    // med förklaring (beslut av produktägaren 2026-10-16).
-    if (!_konFarRedovisasFor(d)) { host.innerHTML = `<span class="f-dampad">– ${esc(_konUtelamnatNot())}</span>`; return; }
-    const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = _fcTroskelmalKonstanter();
+    // med förklaring (beslut av produktägaren 2026-10-16). Prövningen och sökningen: vymodellTroskelmal i
+    // src/lib/vymodell-loneoversyn.js (regel R5), med huvudregressionen på raderna (ADR-17).
+    const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = troskelmalKonstanter();
     const useSig = !!/** @type {HTMLInputElement} */ (document.getElementById('forecast-threshold-sig'))?.checked;
     const mal = _forecastLasMal(/** @type {HTMLInputElement|null} */ (document.getElementById('forecast-threshold-pct')), STANDARD_PCT);
-    // Målet räknas bara i läget högst X %; i läget inte signifikant spelar fältet ingen roll.
-    if (!useSig && !mal.ok) { host.innerHTML = `<span class="f-kritisk">Ange ett mål mellan ${svTal(mal.min)} och ${svPoPct(mal.max)}.</span>`; return; }
     const tgt = mal.ok ? mal.pct : STANDARD_PCT;
-    const svar = _fcLyftForMal(d, { malPct: tgt, signifikans: useSig, skatta: _forecastOlsOn });
+    const svar = vymodellTroskelmal(d, { k: kTroskel(), malPct: tgt, malOk: mal.ok, signifikans: useSig, regval: regressionsval() });
+    if (svar.status === 'konUnderK') { host.innerHTML = `<span class="f-dampad">– ${esc(_konUtelamnatNot())}</span>`; return; }
+    // Målet räknas bara i läget högst X %; i läget inte signifikant spelar fältet ingen roll.
+    if (svar.status === 'ogiltigtMal') { host.innerHTML = `<span class="f-kritisk">Ange ett mål mellan ${svTal(mal.min)} och ${svPoPct(mal.max)}.</span>`; return; }
     const base = svar.utgangslage;
     if (svar.status === 'ingenSkattning') { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
     if (svar.status === 'redan') { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
@@ -835,7 +702,7 @@ function _forecastThreshold() {
     const efter = /** @type {{konPct: number|null}} */ (svar.resultat);
     host.innerHTML = `<div class="fs-sm lh-1_6">
         För att nå <strong>${useSig ? `en oförklarad skillnad som inte är signifikant (p över ${svTal(SIGNIFIKANS_P, 2)})` : 'en oförklarad skillnad på högst ' + svPoPct(tgt)}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
-        <br>Kostnad: <strong>≈ ${Math.round(kostnad).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(_kostPeriod(kostnad, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${efter.konPct == null ? '–' : svPct(efter.konPct, 2)}.
+        <br>Kostnad: <strong>≈ ${Math.round(kostnad).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(periodkostnad(kostnad, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${efter.konPct == null ? '–' : svPct(efter.konPct, 2)}.
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
 }
@@ -846,15 +713,15 @@ function _forecastMarket() {
     _forecastReadControls();
     const f = (parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-market-factor'))?.value) || 95) / 100;
     if (!(state.statistik || []).some(s => s.median > 0)) { alert('Jämförelsestatistiken är inte inläst. Läs in den under Filer och kvalitet.'); return; }
-    const groups = _fcSummarizeGroups(d);
+    const groups = sammanstallGrupper(d);
     // Statistikens gemensamma uppslag per grupp: samma AID och BAS, annars samma AID utan BAS, aldrig ett annat BAS.
-    const market = _jfStatistikMarknad(state.statistik, groups);
-    const t = _fcMarketTargets(groups, market, f, state.forecast.minGroupN || 0);
+    const market = statistikMarknad(state.statistik, groups);
+    const t = marknadsriktning(groups, market, f, state.forecast.minGroupN || 0);
     if (!t.length) { alert('Ingen grupp med minst ' + (state.forecast.minGroupN || 0) + ' personer ligger under ' + svTal(f * 100, 0) + ' procent av ' + jmfNamnGenitiv() + ' median.'); return; }
     let added = 0;
     t.forEach(x => { if (!state.forecast.targets.some(y => y.bas === x.bas && y.aid === x.aid)) { state.forecast.targets.push({ bas: x.bas, aid: x.aid, mode: 'kr', value: x.value, dist: 'lowest', targetLevel: 'median', pool: 'marknad' }); added++; } });
-    renderForecastTargets();
-    updateForecast();
+    ritaRiktadeRader();
+    ritaPrognos();
     if (!added) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // (F) Budgetkänslighetskurva (§3:10-stängning 0→100 %).
@@ -868,9 +735,8 @@ function _forecastSensitivity() {
     const cand = _fcKandidater();
     if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>'; return; }
     const cost = _fcKostnadsval();   // samma kostnadsinställningar och definition av kvinnodominerat som prognosen
-    const curve = _fcSensitivityCurve(d, cand, cost, 10);
-    if (!_konFarRedovisasFor(d)) curve.forEach(c => { c.rawGap = null; });   // k: det råa gapet följer tröskeln
-    const maxGap = Math.max(...curve.map(c => Math.abs(c.rawGap || 0)), 0.01);
+    // k: det råa gapet följer tröskeln (vymodellKanslighet i src/lib/vymodell-loneoversyn.js).
+    const { kurva: curve, storsta: maxGap } = vymodellKanslighet(d, cand, cost, kTroskel());
     const kr = n => svKr(n);
     host.innerHTML = `<table class="data-table fs-sm"><thead><tr><th>Minskning av skillnaderna</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kvinnors median i % av mäns</th><th>　</th></tr></thead><tbody>
         ${curve.map(c => `<tr><td>${svPct((c.fraction * 100), 0)}</td><td class="t-hoger">${kr(c.kostnad)}</td><td class="t-hoger">${c.rawGap == null ? '–' : andelAvMan(c.rawGap)}</td><td><div class="rund-4 hojd-9 min-bredd-2 bg-info" data-stil-bredd="${(Math.abs(c.rawGap || 0) / maxGap * 100).toFixed(0)}%"></div></td></tr>`).join('')}
@@ -884,25 +750,26 @@ function _forecastRemediation() {
     _fcKnappresultat.add('forecast-rem-result');
     if (!d.length) { host.innerHTML = ''; return; }
     const gp = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('forecast-rem-pct'))?.value);
-    // k-anonymitet: jämförelsen kräver tröskeln i antal män (mot en enda mans lön vore kostnaden
-    // hans lön minus hennes), och en grupp får egen rad först när tröskeln i antal kvinnor berörs.
-    const rem = _fcIndividualRemediation(d, { gapPct: isFinite(gp) ? gp : 5, minMen: kTroskel() });
+    // Minsta gruppstorlek: jämförelsen kräver tröskeln i antal män (mot en enda mans lön vore kostnaden
+    // hans lön minus hennes), och en grupp får egen rad först när tröskeln i antal kvinnor berörs
+    // (vymodellIndividlyft i src/lib/vymodell-loneoversyn.js).
+    const K = kTroskel();
+    const vm = vymodellIndividlyft(d, { gapPct: gp, k: K });
+    const rem = vm.rem;
     state.forecast._remediation = rem;
     const kr = n => svKr(n);
     if (!rem.count) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Inga kvinnor ligger mer än tröskeln under sitt jämförelsevärde.</span>`; return; }
-    const K = kTroskel();
-    const visade = rem.perGroup.filter(g => g.count >= K);
-    const dolda = rem.perGroup.length - visade.length;
+    const { visade, dolda } = vm;
     const rowsHtml = visade.slice(0, 12).map(g => `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.count}</td><td class="t-hoger">${kr(g.cost)}/mån</td></tr>`).join('');
     // Summan är ett lönemått över de berörda: den visas först när de är minst K.
-    const summa = rem.count >= K
-        ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(_kostPeriod(rem.totalCost, state.costSettings))} inkl. PO/period).`
+    const summa = vm.summaVisas
+        ? `Kostnad att lyfta alla till jämförelsevärdet: <strong>${kr(rem.totalCost)}/mån</strong> (≈ ${kr(periodkostnad(rem.totalCost, state.costSettings))} inkl. PO/period).`
         : `Kostnaden visas inte, eftersom färre än ${K} ${personOrd(K)} berörs.`;
     const doldaNot = dolda
-        ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? 'grupp' : 'grupper'} där färre än ${K} kvinnor berörs ${rem.count >= K ? 'ingår i summan men ' : ''}redovisas inte per grupp och blir inga riktade rader.</p>`
+        ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? 'grupp' : 'grupper'} där färre än ${K} kvinnor berörs ${vm.summaVisas ? 'ingår i summan men ' : ''}redovisas inte per grupp och blir inga riktade rader.</p>`
         : '';
     host.innerHTML = `<div class="fs-sm marg-b-8"><strong>${rem.count}</strong> individer (kvinnor) ligger mer än tröskeln under sitt jämförelsevärde. ${summa}</div>
-        ${rowsHtml ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th>${termStor(T.kod.en)}</th><th class="t-hoger">Antal</th><th class="t-hoger">Kostnad</th></tr></thead><tbody>${rowsHtml}</tbody></table>` : ''}${doldaNot}
+        ${rowsHtml ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th>${stor(T.kod.en)}</th><th class="t-hoger">Antal</th><th class="t-hoger">Kostnad</th></tr></thead><tbody>${rowsHtml}</tbody></table>` : ''}${doldaNot}
         <p class="text-dampad-xs marg-6-0-0">Jämförelsevärdet är mäns median med samma ${T.enhet.en} i samma ${T.niva.en} när minst ${K} män finns där, annars mäns median i BAS (också minst ${K} män). Endast aggregat visas. Den slutliga bedömningen av sakliga skäl görs manuellt.</p>`;
 }
 function _forecastRemediationSeed() {
@@ -910,7 +777,7 @@ function _forecastRemediationSeed() {
     if (!rem || !rem.perGroup.length) { alert('Klicka på Analysera först.'); return; }
     let added = 0;
     // Bara grupper som fått egen rad blir riktade rader (beloppet står i raden).
-    const visade = rem.perGroup.filter(g => g.count >= kTroskel());
+    const visade = individlyftGrupper(rem, kTroskel());
     if (!visade.length) { alert(`Ingen grupp har minst ${kTroskel()} berörda — inga riktade rader läggs till.`); return; }
     visade.forEach(g => {
         if (!state.forecast.targets.some(t => t.bas === g.bas && t.aid === g.aid)) {
@@ -918,8 +785,8 @@ function _forecastRemediationSeed() {
             added++;
         }
     });
-    renderForecastTargets();
-    updateForecast();
+    ritaRiktadeRader();
+    ritaPrognos();
     if (!added) alert('Grupperna finns redan bland de riktade raderna.');
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -932,11 +799,10 @@ function _exportForecastExport() {
     const kr = n => Math.round(n);
     const K = kTroskel();
     const konOk = _konFarRedovisasFor(getData());
-    const exportGrupper = out.alloc.perGroup.filter(g => Math.abs(g.kostnad) > 0.5).sort((a, b) => b.kostnad - a.kostnad);
     // Kostnaden för de maskerade raderna står samlad, och andelen till kvinnodominerade grupper bara när den inte ger
-    // en del av den (ADR-70, _fcUtfallsrader och _fcVaravKvDom).
-    const utfall = _fcUtfallsrader(exportGrupper, K);
-    const varavKvDom = _fcVaravKvDom(utfall, out.equityCost, K);
+    // en del av den (ADR-70, utfallsvy i src/lib/vymodell-loneoversyn.js: samma som fliken).
+    const vy = utfallsvy(out, K, kvDomAv(_fcKostnadsval()));
+    const { utfall, varavKvDom } = vy;
     const meta = [
         ['Löneöversyn — prognosunderlag', ''],
         ['Genererad', new Date().toLocaleString('sv-SE')],
@@ -956,7 +822,7 @@ function _exportForecastExport() {
         ['Generellt (kr/mån)', kr(out.generellCost || 0)],
         ['Riktat (kr/mån)', kr(out.riktadCost || 0)],
         ['Varav till kvinnodominerade grupper (kr/mån)', varavKvDom == null ? '–' : kr(varavKvDom || 0)],
-        ['Spillover-varningar (grupper som går om en högre grupp)', _fcDetectLeapfrog(out.alloc.perGroup.filter(g => !isKMasked(g.n) && !utfall.invikta.includes(g))).length],
+        ['Spillover-varningar (grupper som går om en högre grupp)', vy.omkorningar.length],
         ['Total kostnad (inkl. PO + period)', kr(out.totalKostnad)],
         ['Lönesumma före (kr/mån)', kr(out.lonsummaFore)],
         ['Lönesumma efter (kr/mån)', kr(out.lonsummaEfter)],
@@ -967,7 +833,7 @@ function _exportForecastExport() {
         ['', ''],
         ['OBS', 'Bara summor. Enskildas löner ingår inte (inbyggt dataskydd). Den slutliga löneöversynen dokumenteras i Word-utkastet och Handlingsplan.']
     ];
-    const header = ['BAS', termStor(T.kod.en), 'n', 'Andel kvinnor (%)', 'Gammal median', 'Ny median', 'Förändring (%)', 'Kostnad (kr/mån)'];
+    const header = ['BAS', stor(T.kod.en), 'n', 'Andel kvinnor (%)', 'Gammal median', 'Ny median', 'Förändring (%)', 'Kostnad (kr/mån)'];
     const body = [...utfall.visade, ...utfall.maskerade].map(g => {
         const masked = utfall.maskerade.includes(g), dold = g.n < K ? 'n<' + K : 'se noten';
         return [g.bas, g.aid, g.n, +g.andelKv.toFixed(0),
@@ -986,39 +852,44 @@ function _exportForecastExport() {
     XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
     if (typeof announceToScreenReader === 'function') announceToScreenReader('Löneöversynens prognosunderlag exporterat.');
 }
-(function wireForecast() {
-    ['forecast-budget-mode', 'forecast-budget-value', 'forecast-generell-mode', 'forecast-generell-value', 'forecast-min-n', 'forecast-round', 'forecast-years'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) { el.addEventListener('input', updateForecast); el.addEventListener('change', updateForecast); }
-    });
-    document.getElementById('forecast-closure')?.addEventListener('click', _forecastClosure);
-    document.getElementById('forecast-market-btn')?.addEventListener('click', _forecastMarket);
-    document.getElementById('forecast-threshold-btn')?.addEventListener('click', _forecastThreshold);
-    document.getElementById('forecast-sensitivity-btn')?.addEventListener('click', _forecastSensitivity);
-    document.getElementById('forecast-rem-btn')?.addEventListener('click', _forecastRemediation);
-    document.getElementById('forecast-rem-seed')?.addEventListener('click', _forecastRemediationSeed);
-    document.getElementById('forecast-save-a')?.addEventListener('click', () => _forecastSaveScenario('A'));
-    document.getElementById('forecast-save-b')?.addEventListener('click', () => _forecastSaveScenario('B'));
-    document.getElementById('forecast-add-target')?.addEventListener('click', () => {
-        const basList = getBasIntervals();
-        const bas = basList[0] || '';
-        const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
-        state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
-        renderForecastTargets();
-        updateForecast();
-    });
-    document.getElementById('forecast-add-criteria')?.addEventListener('click', _forecastAddByCriteria);
-    document.getElementById('forecast-optimize')?.addEventListener('click', _forecastOptimize);
-    document.getElementById('forecast-optimize-pott')?.addEventListener('click', _forecastOptimizeFranPott);
-    _fcUppdateraForslagPott();
-    document.getElementById('forecast-export')?.addEventListener('click', exportForecast);
-    document.getElementById('forecast-reset')?.addEventListener('click', () => {
-        state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
-        ['forecast-budget-value', 'forecast-generell-value'].forEach(id => { const el = document.getElementById(id); if (el) /** @type {HTMLInputElement} */ (el).value = ''; });
-        const mn = document.getElementById('forecast-min-n'); if (mn) /** @type {HTMLInputElement} */ (mn).value = '10';
-        const rs = document.getElementById('forecast-round'); if (rs) /** @type {HTMLInputElement} */ (rs).value = '0';
-        const yr = document.getElementById('forecast-years'); if (yr) /** @type {HTMLInputElement} */ (yr).value = '1';
-        _fcGlomKnappresultat();
-        renderForecast();
-    });
-})();
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartLoneoversyn() {
+    document.getElementById('forecast-lutning-niva')?.addEventListener('change', () => ritaPrognos());
+    (function wireForecast() {
+        ['forecast-budget-mode', 'forecast-budget-value', 'forecast-generell-mode', 'forecast-generell-value', 'forecast-min-n', 'forecast-round', 'forecast-years'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.addEventListener('input', ritaPrognos); el.addEventListener('change', ritaPrognos); }
+        });
+        document.getElementById('forecast-closure')?.addEventListener('click', _forecastClosure);
+        document.getElementById('forecast-market-btn')?.addEventListener('click', _forecastMarket);
+        document.getElementById('forecast-threshold-btn')?.addEventListener('click', _forecastThreshold);
+        document.getElementById('forecast-sensitivity-btn')?.addEventListener('click', _forecastSensitivity);
+        document.getElementById('forecast-rem-btn')?.addEventListener('click', _forecastRemediation);
+        document.getElementById('forecast-rem-seed')?.addEventListener('click', _forecastRemediationSeed);
+        document.getElementById('forecast-save-a')?.addEventListener('click', () => _forecastSaveScenario('A'));
+        document.getElementById('forecast-save-b')?.addEventListener('click', () => _forecastSaveScenario('B'));
+        document.getElementById('forecast-add-target')?.addEventListener('click', () => {
+            const basList = getBasIntervals();
+            const bas = basList[0] || '';
+            const aid = (_forecastAidsForBas(bas)[0] || {}).aid || '';
+            state.forecast.targets.push({ bas, aid, kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+            ritaRiktadeRader();
+            ritaPrognos();
+        });
+        document.getElementById('forecast-add-criteria')?.addEventListener('click', _forecastAddByCriteria);
+        document.getElementById('forecast-optimize')?.addEventListener('click', _forecastOptimize);
+        document.getElementById('forecast-optimize-pott')?.addEventListener('click', _forecastOptimizeFranPott);
+        _fcUppdateraForslagPott();
+        document.getElementById('forecast-export')?.addEventListener('click', exportForecast);
+        document.getElementById('forecast-reset')?.addEventListener('click', () => {
+            state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
+            ['forecast-budget-value', 'forecast-generell-value'].forEach(id => { const el = document.getElementById(id); if (el) /** @type {HTMLInputElement} */ (el).value = ''; });
+            const mn = document.getElementById('forecast-min-n'); if (mn) /** @type {HTMLInputElement} */ (mn).value = '10';
+            const rs = document.getElementById('forecast-round'); if (rs) /** @type {HTMLInputElement} */ (rs).value = '0';
+            const yr = document.getElementById('forecast-years'); if (yr) /** @type {HTMLInputElement} */ (yr).value = '1';
+            _fcGlomKnappresultat();
+            ritaLoneoversyn();
+        });
+    })();
+}

@@ -84,7 +84,7 @@ describe('dokumentation: CLAUDE.md är en kort ingång', () => {
     });
 });
 
-// skydd.md är källan för skyddens vakter: varje fil och mapp det pekar ut ska finnas. En sökväg med snedstreck
+// skydd.md är källan för skyddens vakter utanför testsviten (testerna står i spårbarhetsmatrisen): varje fil och mapp det pekar ut ska finnas. En sökväg med snedstreck
 // läses från roten; ett bart filnamn (`app.js`, `k-troskeln.md`) ska finnas någonstans i repot. Adresser som
 // file:// prövas inte.
 describe('dokumentation: skydd.md pekar bara på det som finns', () => {
@@ -118,7 +118,7 @@ describe('dokumentation: CHANGELOG är kronologisk', () => {
 describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
     // Källan är K_STANDARD i koden. Användaren kan ändra tröskeln (ADR-38): appens texter fylls i ur kTroskel()
     // (vaktas i ktroskel.test.js), och dokumenten nedan anger standardvärdet. Det här är den enda kontrollen av talet.
-    const K = Number(/const K_STANDARD = (\d+);/.exec(läs('src/app/06-k-troskel.js'))[1]);
+    const K = Number(/export const K_STANDARD = (\d+);/.exec(läs('src/lib/ktroskel.js'))[1]);
     const filer = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
                    'docs/anvandare/sammanfattning-hr-chefer.md', 'docs/anvandare/korguide.md', MAL, ADR];
 
@@ -135,6 +135,47 @@ describe('dokumentation: k-tröskelns standardvärde står rätt', () => {
         for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md'])
             expect(läs(fil), fil).toMatch(new RegExp(`[Ss]tandardvärdet (är )?${K}\\b`));
     });
+});
+
+
+describe('dokumentation: talen för intervallet och golven står rätt', () => {
+    // Samma slags vakt som för K_STANDARD ovan: talet läses ur konstanten i koden, och varje dokument som anges måste
+    // nämna det minst en gång med mönstret (en vakt som inte hittar något faller) och aldrig med ett annat tal. Ett tal
+    // får stå med siffror eller i ord ("fem"). Arkitekturbesluten är en logg och tas inte med: ett äldre beslut får
+    // ange det tal som gällde då.
+    const konstant = (fil, namn) => Number(new RegExp(`export const ${namn} = (\\d+);`).exec(läs(fil))[1]);
+    const ORD = ['noll', 'ett', 'två', 'tre', 'fyra', 'fem', 'sex', 'sju', 'åtta', 'nio', 'tio'];
+    const tal = s => (ORD.includes(s) ? ORD.indexOf(s) : Number(s.replace(/\s/g, '')));
+    const KT = 'docs/utveckling/k-troskeln.md', DS = 'docs/dataskydd/dataskydd.md', RA = 'docs/dataskydd/riskanalys.md';
+    const SP = 'docs/utveckling/sparbarhet.md', RM = 'docs/utveckling/regressionsmodellen.md';
+    const vakter = [
+        { namn: 'K_MIN', kalla: 'src/lib/ktroskel.js', filer: [DS, RA, KT, SP, 'docs/anvandare/organisationspaket.md'],
+          // "heltal 3–1000", "heltal mellan 3 och 1000", "Inställning (3–1000)", "till lägst 3"
+          monster: /heltal (?:mellan )?(\d+)(?:–| och )\d|Inställning \((\d+)–\d|(?:till|är) lägst (\d+)\b/g },
+        { namn: 'K_MAX', kalla: 'src/lib/ktroskel.js', filer: [RA, KT, SP, 'docs/anvandare/organisationspaket.md'],
+          monster: /heltal (?:mellan )?\d+(?:–| och )(\d(?:[\d ]*\d)?)\b|Inställning \(\d+–(\d+)\)/g },
+        { namn: 'LITET_UNDERLAG', kalla: 'src/lib/ktroskel.js', filer: [DS, RA, KT, SP],
+          // Könsfördelningens och tabellernas egen rad "från fem personer", mönstret och asterisken "färre än fem
+          // personer med/sägs"; inte Löneöversiktens golv per AID-etikett, som också är 5 men är en annan konstant.
+          monster: /färre än ([\p{L}\d]+) personer (?:med|sägs)|från ([\p{L}\d]+) personer|minst ([\p{L}\d]+) personer i exportläget|`LITET_UNDERLAG` \(([\p{L}\d]+)\)/gu },
+        { namn: 'HUVUDREGRESSION_MIN_PER_KON', kalla: 'src/lib/regression.js',
+          filer: [DS, RA, KT, SP, RM, 'docs/anvandare/korguide.md', 'docs/anvandare/sammanfattning-hr-chefer.md'],
+          // "regressionens eget fasta golv, 5 av varje kön", "kräver 5 kvinnor och 5 män", "golven 30 och 5"
+          monster: /golv(?:\*\*)?,? (?:är )?(\d+) (?:av varje kön|per kön)|kräver (\d+) kvinnor och (\d+) män|golven \d+ och (\d+)|och med färre än (\d+)\s+av något kön/g },
+        { namn: 'HUVUDREGRESSION_MIN_N', kalla: 'src/lib/regression.js', filer: [RM, SP],
+          // Inte översikten per huvudområde ("minst 30 sådana rader"), som har en egen konstant i sektor.js.
+          monster: /färre än (\d+) sådana rader|minst (\d+) rader|golven (\d+) och \d+/g }
+    ];
+    for (const { namn, kalla, filer, monster } of vakter) {
+        const varde = konstant(kalla, namn);
+        for (const fil of filer) {
+            it(`${namn} = ${varde} (${kalla}) står rätt i ${fil}`, () => {
+                const traffar = [...läs(fil).matchAll(monster)].flatMap(m => m.slice(1).filter(x => x !== undefined).map(tal));
+                expect(traffar.length, `${fil} nämner inte ${namn}`).toBeGreaterThan(0);
+                expect(traffar.filter(n => n !== varde), `${fil} anger fel tal för ${namn}`).toEqual([]);
+            });
+        }
+    }
 });
 
 
@@ -173,6 +214,26 @@ describe('dokumentation: k-tröskeln är en inställning (ADR-38)', () => {
             expect(t, fil).not.toMatch(/alltid bär tröskeln|bär alltid\s+tröskeln/);
             expect(t, fil).not.toMatch(/lämnar ut par/);   // "lämnar ut" betyder röjer; "utelämnar" avses
         }
+    });
+});
+
+describe('dokumentation: undantagen till S4 har samma namn i de tre dokumenten', () => {
+    // k-troskeln.md §4 bär listan och hur varje undantag är byggt; dataskydd.md §3 och riskanalysen §6.5 har en rad per
+    // undantag om risken, under samma namn i fetstil. Namnen läses ur tabellen i §4.
+    const avsnitt = (fil, fran, till) => { const t = läs(fil); return t.slice(t.indexOf(fran), t.indexOf(till, t.indexOf(fran))); };
+    const namn = [...avsnitt('docs/utveckling/k-troskeln.md', '## 4. ', '## 5. ').matchAll(/^\| \*\*(.+?)\*\* \|/gm)].map(m => m[1]);
+    it('tabellen i k-troskeln.md §4 har undantag', () => expect(namn.length).toBeGreaterThanOrEqual(5));
+    const fetstil = t => [...t.matchAll(/\*\*([^*]+)\*\*/g)].map(m => m[1]);
+    for (const [fil, fran, till] of [['docs/dataskydd/dataskydd.md', '## 3. ', '## 4. '], ['docs/dataskydd/riskanalys.md', '### 6.5 ', '### 6.6 ']]) {
+        it(`${fil} nämner varje undantag i fetstil under samma namn`, () => {
+            const fet = fetstil(avsnitt(fil, fran, till));
+            expect(namn.filter(n => !fet.some(f => f.includes(n))), fil).toEqual([]);
+        });
+    }
+    it('de numrerade undantagen i dataskydd.md §3 finns i tabellen', () => {
+        const numrerade = [...avsnitt('docs/dataskydd/dataskydd.md', '## 3. ', '## 4. ').matchAll(/^\d+\. \*\*([^*]+?)(?: \(ADR-\d+\))?:\*\*/gm)].map(m => m[1]);
+        expect(numrerade).toHaveLength(4);
+        expect(numrerade.filter(n => !namn.includes(n))).toEqual([]);
     });
 });
 
@@ -249,7 +310,7 @@ describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisninga
         const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
             e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
         const filer = [...gå('src'), ...gå('tools'), ...gå('tests'), ...gå('docs')]
-            .filter(f => /\.(js|mjs|html|css|md)$/.test(f) && !f.endsWith('09-lib-speglar.js'));
+            .filter(f => /\.(js|mjs|html|css|md)$/.test(f));
         const saknas = filer.flatMap(f => [...läs(f).matchAll(/ADR-(\d+)\b/g)].map(m => Number(m[1])).filter(n => !finns.has(n)).map(n => `${f}: ADR-${n}`));
         expect([...new Set(saknas)]).toEqual([]);
     });
@@ -403,7 +464,7 @@ describe('dokumentation: licens MIT', () => {
     });
     it('varje källfil bär licensraden (SPDX)', () => {
         const filer = [...gå('src/app'), ...gå('src/lib'), ...gå('tools'), 'src/index.html', 'src/style.css']
-            .filter(f => /\.(js|mjs|html|css)$/.test(f) && !f.endsWith('09-lib-speglar.js'));
+            .filter(f => /\.(js|mjs|html|css)$/.test(f));
         expect(filer.filter(f => !läs(f).slice(0, 400).includes('SPDX-License-Identifier: MIT'))).toEqual([]);
     });
     it('den byggda filen bär verktygets MIT-text och upphovspersonen', () => {

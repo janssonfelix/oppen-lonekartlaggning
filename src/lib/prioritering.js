@@ -14,17 +14,32 @@
  * Appen får modellen genom lib-speglarna (ADR-8); computePrioritization() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  *
- * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.10–B7.12).
  */
-import { median, quantile, avrundaSymmetriskt } from './stat.js';
+import { median, kvantil, avrundaSymmetriskt } from './stat.js';
 import { aidAvYrke, namnrader } from './aid.js';
 import { kostnadsfaktor, kostnadPerAr } from './kostnad.js';
 import { arKvinna, arMan } from './kon.js';
 import { svPoPct } from './talformat.js';
+import { konsMedianer } from './struktur.js';
 
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
 // Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
 /** Avvikelsen i procent som ger full avvikelsepoäng (sev): över detta tas poängen upp till 100. */
+/** Standardvärdena för statusarnas trösklar (ändras i Inställningar). */
+export const PRIO_CONFIG_DEFAULTS = Object.freeze({
+    atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
+    akutMinN:           10,   // minst antal personer för att klassas som AKUT
+    bevakaThreshold:    -2,   // %, gränsvärde för Bevaka
+    analyseraThreshold:  5    // %, gränsvärde för Analysera
+});
+/** Standardvärdena för indexets vikter (ändras i Inställningar). */
+export const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
+    avvikelse:    50,   // viktning av avvikelsens storlek
+    volym:        30,   // viktning av gruppens volym
+    jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
+});
 export const AVVIKELSE_TAK = 30;
 /** Antalet personer i gruppen som ger full volympoäng (vol). */
 export const VOLYM_TAK = 50;
@@ -43,7 +58,7 @@ export const SNABB_VINST_AVVIKELSE = 3;
 /** Snabb vinst: gruppen ska ha minst detta antal personer (en nedre gräns, ingen övre). */
 export const SNABB_VINST_MIN_N = 5;
 
-/** Konstanterna ovan i ett objekt, för appen (spegelns alias måste vara funktioner). */
+/** Konstanterna ovan i ett objekt, för appen. */
 export function prioKonstanter() {
     return Object.freeze({ AVVIKELSE_TAK, VOLYM_TAK, GAP_TAK, RIKTNING_UNDER, RIKTNING_OVER, BRIST_MULTIPLIKATOR,
         SNABB_VINST_KR, SNABB_VINST_AVVIKELSE, SNABB_VINST_MIN_N });
@@ -55,16 +70,16 @@ export function prioKonstanter() {
  * hundratal, som i diagrammens verktygstips) eller en median saknas. Anroparen skickar bara medianer som får
  * redovisas (båda könen når tröskeln).
  * @param {{medKv: number, medMa: number, nKv: number}} g
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  * @param {(v: number) => string} kr  beloppsformat
  * @returns {string|null}
  */
-export function arsbeloppMening(g, costSettings, kr) {
+export function arsbeloppMening(g, kostnadsval, kr) {
     if (!g || !(g.medKv > 0) || !(g.medMa > 0) || !(g.nKv > 0)) return null;
     const diff = avrundaSymmetriskt((g.medMa - g.medKv) / 100) * 100;   // som kronorSkillnad i src/lib/figur.js
     if (diff < 100) return null;
-    const { months, poPct: po } = kostnadsfaktor(costSettings);
-    const belopp = Math.round(kostnadPerAr(diff, g.nKv, costSettings) / 1000) * 1000;
+    const { months, poPct: po } = kostnadsfaktor(kostnadsval);
+    const belopp = Math.round(kostnadPerAr(diff, g.nKv, kostnadsval) / 1000) * 1000;
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
         + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
@@ -80,21 +95,21 @@ export function arsbeloppMening(g, costSettings, kr) {
  * (inom ±naraGrans % av referensen, minst 10 personer).
  *
  * @param {{_rows?: Array<{kon:string, lon:number, alder?:number}>, kvN:number, maN:number, n:number, diffPct:number,
- *          isBrist?:boolean, isQuickWin?:boolean}} item
+ *          isBrist?:boolean, isQuickWin?:boolean}} post
  * @param {{kInstalld:number, kTroskel:number, mdePct?:number|null, naraGrans:number}} opt
  *        kInstalld: den inställda minsta gruppstorleken; kTroskel: den gällande tröskeln; mdePct: detektionströskeln
  *        i procent (saknas den prövas inte regeln); naraGrans: uppföljningsgränsen i procent (tecknet spelar ingen roll)
  * @returns {Array<{kod:string, type:'warn'|'info'|'ok'|'flag'} & Object>}
  */
-export function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGrans }) {
+export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGrans }) {
     const out = [];
-    const rows = item._rows || [];
+    const rows = post._rows || [];
     if (!rows.length) return out;
 
     // Varningen gäller skattningens säkerhet, inte läget (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
-    if (item.kvN < kInstalld || item.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: item.kvN, maN: item.maN, k: kInstalld });
+    if (post.kvN < kInstalld || post.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: post.kvN, maN: post.maN, k: kInstalld });
 
-    if (mdePct != null && Math.abs(item.diffPct) < mdePct && item.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: item.diffPct, mdePct });
+    if (mdePct != null && Math.abs(post.diffPct) < mdePct && post.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: post.diffPct, mdePct });
 
     const kvAges = rows.filter(r => arKvinna(r)).map(r => r.alder || 0).filter(a => a > 0);
     const maAges = rows.filter(r => arMan(r)).map(r => r.alder || 0).filter(a => a > 0);
@@ -105,20 +120,20 @@ export function motiveringsgrunder(item, { kInstalld, kTroskel, mdePct, naraGran
     }
 
     // Lönepositionsmått per kön: kräver tröskeln för båda könen (ADR-12)
-    if (item.kvN >= kTroskel && item.maN >= kTroskel) {
-        const q1 = quantile(rows.map(r => r.lon), 0.2);
-        const andelKv = item.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / item.kvN : 0;
-        const andelMa = item.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / item.maN : 0;
+    if (post.kvN >= kTroskel && post.maN >= kTroskel) {
+        const q1 = kvantil(rows.map(r => r.lon), 0.2);
+        const andelKv = post.kvN > 0 ? rows.filter(r => arKvinna(r) && r.lon <= q1).length / post.kvN : 0;
+        const andelMa = post.maN > 0 ? rows.filter(r => arMan(r) && r.lon <= q1).length / post.maN : 0;
         if (andelKv >= 0.4 && andelKv - andelMa >= 0.2) out.push({ kod: 'kvintil', type: 'flag', andelKv, andelMa });
     }
 
-    if (item.isBrist) out.push({ kod: 'brist', type: 'info' });
-    if (item.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: item.n });
-    if (item.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: item.diffPct });
+    if (post.isBrist) out.push({ kod: 'brist', type: 'info' });
+    if (post.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: post.n });
+    if (post.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: post.diffPct });
 
     // Ett läge mot referensen, ingen bedömning (A5)
     const nara = Math.abs(naraGrans);
-    if (Math.abs(item.diffPct) < nara && item.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
+    if (Math.abs(post.diffPct) < nara && post.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
     return out;
 }
 
@@ -176,18 +191,13 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
     const items = [];
     Object.values(groups).forEach(g => {
-        // GDPR k-anonymitet: kräver minst kTroskel personer per grupp
+        // Minsta gruppstorlek (S4): kräver minst kTroskel personer per grupp
         if (g.rows.length < kTroskel) return;
 
         const lons     = g.rows.map(r => r.lon);
         const med      = median(lons);
-        const kvLons   = g.rows.filter(r => arKvinna(r)).map(r => r.lon);
-        const maLons   = g.rows.filter(r => arMan(r)).map(r => r.lon);
         // ADR-12: könsjämförelsen kräver kTroskel personer av vartdera könet; annars bara gruppens samlade median.
-        const medKv    = kvLons.length >= kTroskel ? median(kvLons) : null;
-        const medMa    = maLons.length >= kTroskel ? median(maLons) : null;
-        // Skillnaden gånger 100 delat med jämförelsevärdet: en enda avrundning (se diffPct nedan).
-        const gapPct   = (medKv && medMa) ? (medKv - medMa) * 100 / medMa : null;
+        const { nKv: kvN, nMa: maN, medKv, medMa, gapPct } = konsMedianer(g.rows, { k: kTroskel });
 
         // Referensvärde (levereras av anroparen)
         const ref = referensFor(g.aid, g.bas);
@@ -235,7 +245,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
         items.push({
             yrke: g.yrke, aid: g.aid, bas: g.bas,
-            n: g.rows.length, kvN: kvLons.length, maN: maLons.length,
+            n: g.rows.length, kvN, maN,
             median: med, refMedian, refSource,
             diffPct, diffKr, annualGapTotal, annualOverTotal,
             costPerPerson, isQuickWin, isBrist,
@@ -251,4 +261,34 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
 
     items.sort((a, b) => b.priorityIndex - a.priorityIndex);
     return items;
+}
+
+/**
+ * Nyckeltalen över prioriteringens grupper: antalet i statusarna Börja här (akut), Under referens (atgard) och Över
+ * referens (analysera), och den sammanlagda årskostnaden att lyfta grupperna till referensen.
+ * @param {{status: string, annualGapTotal: number}[]} items
+ */
+export function prioNyckeltal(items) {
+    const antal = s => items.filter(i => i.status === s).length;
+    return { akut: antal('akut'), atgard: antal('atgard'), analysera: antal('analysera'), totalKostnad: items.reduce((s, i) => s + i.annualGapTotal, 0) };
+}
+
+/**
+ * Kostnadskurvan: grupperna med en kostnad över 0, störst först, deras summa, den kumulativa andelen i procent för de
+ * `max` första och hur många grupper som tillsammans når 50 % och 80 % (räknat bland de `max` första; når de inte
+ * dit är svaret alla grupper). `ovriga` och `ovrigaSumma` är grupperna efter de `visas` första, som diagrammet inte
+ * ritar.
+ * @template {{annualGapTotal: number}} G
+ * @param {G[]} items
+ * @param {{max: number, visas: number}} gransen
+ */
+export function kostnadskurva(items, { max, visas }) {
+    const grupper = items.filter(i => i.annualGapTotal > 0).sort((a, b) => b.annualGapTotal - a.annualGapTotal);
+    const total = grupper.reduce((s, i) => s + i.annualGapTotal, 0);
+    const visade = grupper.slice(0, Math.min(max, grupper.length));
+    let acc = 0;
+    const kumPct = visade.map(i => { acc += i.annualGapTotal; return (acc / total) * 100; });
+    const nar = p => kumPct.findIndex(x => x >= p) + 1 || grupper.length;
+    const ovriga = grupper.slice(visas);
+    return { grupper, total, visade, kumPct, n50: nar(50), n80: nar(80), ovriga: ovriga.length, ovrigaSumma: ovriga.reduce((s, i) => s + i.annualGapTotal, 0) };
 }

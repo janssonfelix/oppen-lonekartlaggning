@@ -222,7 +222,7 @@ describe('Inställningar: stoppa och visa förhandskontrollen innan inläsning',
         expect(w.__state.forhandskontroll).toBeNull();
         expect(avsnitt(w).hidden).toBe(true);
         w.eval('_rensaAllData()');
-        const paket = w.eval(`JSON.stringify(_opByggPaket({ organisation: 'Exempelorganisationen', skapat: '2026-10-01',
+        const paket = w.eval(`JSON.stringify(byggPaket({ organisation: 'Exempelorganisationen', skapat: '2026-10-01',
             referens: { namn: 'Ställningstagande', rader: [{ aid: null, bas: 'A', p10: 25000, med: 28000, p90: 31000 }] } }))`);
         expect(w.lasInPaket(paket).ok).toBe(true);
         expect(w.__state.paket).toBeTruthy();

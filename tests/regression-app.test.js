@@ -27,35 +27,9 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         return rader;
     };
     const kör = () => { const w = createAppWindow(); w.__state.data = underlag(); return { w, r: w.eval('runOLSRegression()') }; };
-    it('gapet efter yrkesgrupp är noll medan huvudtalet och steget + Ålder är kvar', () => {
-        const { r } = kör();
-        expect(r.error).toBeUndefined();
-        const alder = r.sequential.find(s => s.name === '+ Ålder');
-        expect(r.sequential.at(-1).name).toBe('+ Yrkesgrupp');
-        expect(r.yrkesSteg.status).toBe('ok');
-        expect(Math.abs(r.yrkesSteg.gapPct)).toBeLessThan(0.05);
-        expect(alder.gapPct).toBeLessThan(-3);
-        expect(r.konPct).toBeCloseTo(alder.gapPct, 6);   // huvudtalet är oförändrat: steget + Ålder
-        expect(r.yrkesSteg.R2).toBeGreaterThan(alder.R2);
-    });
-    it('inomtransformationen ger samma könskoefficient som en indikator per grupp', () => {
-        const { w, r } = kör();
-        const ref = w.eval(`(() => {
-            const d = getData(); const am = d.reduce((s, x) => s + x.alder, 0) / d.length;
-            const g = [...new Set(d.map(x => x.aid + '|' + x.bas))].sort();
-            const X = d.map(x => [x.kon === 'kvinna' ? 1 : 0, x.alder - am, ...g.map(k => (x.aid + '|' + x.bas === k ? 1 : 0))]);
-            const fit = _fitOLS(X, d.map(x => Math.log(x.lon)));
-            return (Math.exp(fit.beta[0]) - 1) * 100;
-        })()`);
-        expect(r.yrkesSteg.gapPct).toBeCloseTo(ref, 8);
-    });
-    it('redovisar grupper och personer: enkönade grupper räknas men bidrar inte', () => {
-        const { r } = kör();
-        expect(r.yrkesSteg).toMatchObject({ nGrupper: 5, nGrupperBada: 4, nEnkonade: 1, nPersoner: 114 });
-    });
     it('kortet visar steget med sin mening och budgeten en del för yrkesgrupp; huvudtalet är steget + Ålder', () => {
         const { w, r } = kör();
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         const kort = w.document.getElementById('regression-card');
         const t = kort.textContent.replace(/\s+/g, ' ');
         expect(t).toMatch(/löneskillnaden mellan kvinnor och män med samma AID-etikett, BAS-intervall och ålder/);
@@ -70,7 +44,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         const w = createAppWindow(); w.__state.data = underlag().map(x => ({ ...x, aid: undefined, yrke: undefined }));
         const r = w.eval('runOLSRegression()');
         expect(r.yrkesSteg.status).toBe('too_few');
-        expect(w.eval('renderRegressionCard(); document.getElementById("regression-card").textContent')).not.toMatch(/yrkesgrupp, BAS-intervall och ålder/);
+        expect(w.eval('ritaRegressionskort(); document.getElementById("regression-card").textContent')).not.toMatch(/yrkesgrupp, BAS-intervall och ålder/);
     });
 });
 
@@ -89,23 +63,6 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         return rader;
     };
     const med = (brus = 0) => { const w = createAppWindow(); w.__state.data = underlag(brus); return w; };
-    it('regressionen: inget oförklarat gap och varje BAS-indikator ger 5 % per bokstavssteg mot referensen A', () => {
-        const r = med().__runOLS();
-        expect(r.error).toBeUndefined();
-        expect(Math.abs(r.konPct)).toBeLessThan(0.05);
-        expect(r.basRef).toBe('A');
-        expect(r.basEffekter.map(e => e.bas)).toEqual(['B', 'D', 'E']);
-        for (const e of r.basEffekter) expect(e.pct).toBeCloseTo((Math.exp(0.05 * (PLATS[e.bas] - 1)) - 1) * 100, 1);
-    });
-    it('Blinder-Oaxaca: den oförklarade delen är noll', () => {
-        const r = med().eval('runBlinderOaxaca()');
-        expect(Math.abs(r.coefficientPct)).toBeLessThan(0.05);
-    });
-    it('kvantilregressionen: inget gap i någon kvantil', () => {
-        const r = med(0.01).eval('runQuantileRegressionAtAllTau()');
-        expect(r.results).toHaveLength(3);
-        for (const q of r.results) { expect(q.error).toBeUndefined(); expect(Math.abs(q.konPct)).toBeLessThan(0.5); }
-    });
     it('kvantilregressionen: bootstrap-KI omsluter punktskattningen, är reproducerbart och visas i tabell och diagram', async () => {
         const a = med(0.01).eval('_regKvantilBerakna({ direkt: true })');
         expect(a.kiB).toBe(200);
@@ -119,7 +76,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         const b = med(0.01).eval('_regKvantilBerakna({ direkt: true })');   // nytt fönster: samma data → samma intervall
         expect(b.results).toEqual(a.results);
         const w = med(0.01);
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         // På skärmen räknas intervallet i bakgrunden efter att kortet ritats: först står raden om det, sedan ritas kortet om.
         const tabellFore = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klibbigt golv'));
         expect(tabellFore.querySelectorAll('tbody tr')[0].children[2].textContent).toBe('räknas i bakgrunden…');
@@ -156,7 +113,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         }
         w.__state.data = rader;
         const r = w.eval('_regKvantilBerakna({ direkt: true })');
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         return { r, text: w.document.getElementById('regression-card').textContent };
     };
     it('kvantilregressionen: skillnaden P90 − P10 med KI, och "väger tyngre än" när KI:t utesluter noll', () => {
@@ -180,7 +137,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
     });
     it('regressionskortet visar referensintervallet och en rad per BAS-indikator', () => {
         const w = med();
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         const html = w.document.body.innerHTML;
         expect(html).toContain('<code>A</code>, är referens');
         expect(html).toMatch(/<td>D<\/td><td>\+16,2(?:\s|&nbsp;)%/);
@@ -215,15 +172,6 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
         expect(ny.mdePct).toBeLessThan(gammal.mdePct / 5);
         expect(ny.level).toBe('good');
         expect(gammal.level).toBe('poor');
-    });
-    it('reserv: når ingen grupp golvet för båda könen används hela urvalets σ', () => {
-        // Varje kön får en egen AID-kod (en grupp är koden, inte texten, ADR-89), så att ingen grupp har båda könen.
-        const egenKod = d => `${d.kon === 'man' ? '11' : '12'}${d.bas}`;
-        const w = createAppWindow(); w.__state.data = rader().map(d => ({ ...d, yrke: `${egenKod(d)} Y${d.bas}`, aid: egenKod(d) }));
-        const p = w.eval('computePowerAnalysis()');
-        expect(p.sigmaKalla).toBe('helaUrvalet');
-        expect(p.sigma).toBe(p.sigmaHela);
-        expect(p.sigmaGrupper).toBe(0);
     });
     it('metodtexten i Om verktyget beskriver σ inom grupp och reserven', () => {
         const w = createAppWindow(); w.__state.data = rader();
@@ -268,12 +216,12 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         const w = fonster();
         const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
         const las = ändring => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, ...ändring }) + ')');
-        expect(las({ costSettings: { poPct: 100, months: 12 } })).not.toThrow();
-        expect(las({ costSettings: { poPct: 150, months: 12 } })).toThrow('costSettings.poPct måste vara ett tal mellan 0 och 100.');
-        expect(las({ costSettings: { poPct: 39.15, months: 61 } })).toThrow('costSettings.months måste vara ett tal mellan 1 och 60.');
-        expect(las({ prioConfig: { ...cfg.prioConfig, atgardThreshold: 5 } })).toThrow('prioConfig.atgardThreshold måste vara ett tal mellan -50 och 0.');
-        expect(las({ prioConfig: { ...cfg.prioConfig, akutMinN: 0 } })).toThrow('prioConfig.akutMinN måste vara ett tal mellan 1 och 500.');
-        expect(las({ prioWeights: { ...cfg.prioWeights, volym: 101 } })).toThrow('prioWeights.volym måste vara ett tal mellan 0 och 100.');
+        expect(las({ kostnad: { poPct: 100, manader: 12 } })).not.toThrow();
+        expect(las({ kostnad: { poPct: 150, manader: 12 } })).toThrow('kostnad.poPct måste vara ett tal mellan 0 och 100.');
+        expect(las({ kostnad: { poPct: 39.15, manader: 61 } })).toThrow('kostnad.manader måste vara ett tal mellan 1 och 60.');
+        expect(las({ prioTrosklar: { ...cfg.prioTrosklar, atgardTroskel: 5 } })).toThrow('prioTrosklar.atgardTroskel måste vara ett tal mellan -50 och 0.');
+        expect(las({ prioTrosklar: { ...cfg.prioTrosklar, akutMinstN: 0 } })).toThrow('prioTrosklar.akutMinstN måste vara ett tal mellan 1 och 500.');
+        expect(las({ prioVikter: { ...cfg.prioVikter, volym: 101 } })).toThrow('prioVikter.volym måste vara ett tal mellan 0 och 100.');
     });
     it('en konfigurationsfil som läses in före lönefilen behåller yrkesgrupp (valet prövas mot datat när det finns)', () => {
         const w = createAppWindow();
@@ -295,83 +243,6 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
         const r = w2.eval('sattForklaringsmodell({ bas: true, alder: true, yrkesgrupp: true, skal: "" }, { rita: false })');
         expect(r.modell.yrkesgrupp).toBe(false);
         expect(r.varningar.join(' ')).toMatch(/AID-kod och etikettnamn/);
-    });
-});
-
-describe('runOLSRegression på vald modell (ADR-56)', () => {
-    const kor = modell => { const w = createAppWindow(); w.__loadDemoData(); w.__state.forklaringsmodell = modell; return { w, r: w.eval('runOLSRegression()') }; };
-    it('standard: modelDesc som i dag, frasen "ålder och BAS-intervall", inget bortvalt, tillför-tabellen med tre rader', () => {
-        const { r } = kor(null);
-        expect(r.error).toBeUndefined();
-        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer)');
-        expect(r.fras).toBe('ålder och BAS-intervall');
-        expect(r.bortvalt).toEqual([]);
-        expect(r.modell).toEqual({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
-        expect(r.tillfor.rader.map(x => x.variabel)).toEqual(['bas', 'alder', 'yrkesgrupp']);
-        expect(r.modellVarning).toBeNull();
-    });
-    it('utan ålder: en kolumn färre, ingen ålderseffekt, ålder bortvald, inget steg + Ålder', () => {
-        const std = kor(null).r;
-        const { r } = kor({ bas: true, alder: false, yrkesgrupp: false, skal: 'ingen lön efter ålder' });
-        expect(r.k).toBe(std.k - 1);
-        expect(r.ageEffect).toBeNull();
-        expect(r.ageP).toBeNull();
-        expect(r.bortvalt).toHaveLength(1);
-        expect(r.bortvalt[0]).toMatchObject({ variabel: 'alder', etikett: 'Ålder', skal: 'ingen lön efter ålder' });
-        expect(typeof r.bortvalt[0].deltaR2pp).toBe('number');
-        expect(r.sequential.map(x => x.name)).not.toContain('+ Ålder');
-        expect(r.fras).toBe('BAS-intervall');
-        expect(r.konPct).toBeCloseTo(r.sequential.find(x => x.name === '+ BAS-intervall').gapPct, 8);
-    });
-    it('utan BAS: inga BAS-effekter, frasen "ålder"', () => {
-        const { r } = kor({ bas: false, alder: true, yrkesgrupp: false, skal: '' });
-        expect(r.basEffekter).toBeNull();
-        expect(r.basRef).toBeNull();
-        expect(r.fras).toBe('ålder');
-        expect(r.modelDesc).toBe('kön + ålder');
-        expect(r.bortvalt.map(b => b.variabel)).toEqual(['bas']);
-    });
-    it('endast kön: huvudtalet är steget Endast kön, frasen är tom', () => {
-        const { r } = kor({ bas: false, alder: false, yrkesgrupp: false, skal: '' });
-        expect(r.fras).toBe('');
-        expect(r.konPct).toBeCloseTo(r.sequential[0].gapPct, 8);
-        expect(r.sequential.map(x => x.name)).toEqual(['Endast kön']);
-    });
-    it('yrkesgrupp vald: huvudtalet är yrkesgruppssteget och ingår i stegen', () => {
-        const std = kor(null).r;
-        const { r } = kor({ bas: true, alder: true, yrkesgrupp: true, skal: '' });
-        expect(r.konPct).toBeCloseTo(std.yrkesSteg.gapPct, 6);
-        expect(r.fras).toBe('ålder, BAS-intervall och AID-etikett');
-        expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + AID-etikett inom BAS (fasta effekter)');
-        expect(r.sequential.at(-1).name).toBe('+ Yrkesgrupp');
-        expect(r.yrkesSteg.status).toBe('ok');
-        expect(r.bortvalt).toEqual([]);
-    });
-    it('singulär vald modell (ett enda BAS) faller tillbaka och säger det', () => {
-        const w = createAppWindow();
-        // Kvinnorna i BAS A, männen i BAS B: könsindikatorn och BAS-indikatorn är identiska, så kön + BAS är singulär.
-        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: i % 2 ? 'A' : 'B', kon: i % 2 ? 'kvinna' : 'man', alder: 25 + (i % 30), lon: 30000 + (i % 9) * 500 }));
-        w.__state.forklaringsmodell = { bas: true, alder: false, yrkesgrupp: false, skal: '' };
-        const r = w.eval('runOLSRegression()');
-        expect(r.error).toBeUndefined();
-        expect(r.fellBackFromFull).toBe(true);
-        expect(r.modelDesc).toBe('kön');
-    });
-    it('ett kön under tröskeln: endast kön spärras, modellen blir BAS + ålder med en varning', () => {
-        const w = createAppWindow();
-        w.__state.data = Array.from({ length: 80 }, (_, i) => ({ bas: ['A', 'B', 'C'][i % 3], kon: i < 7 ? 'man' : 'kvinna', alder: 25 + (i % 30), lon: 30000 + (i % 3) * 2000 + (i % 9) * 100 }));
-        w.__state.forklaringsmodell = { bas: false, alder: false, yrkesgrupp: false, skal: '' };
-        const r = w.eval('runOLSRegression()');
-        expect(r.error).toBeUndefined();
-        expect(r.modell).toMatchObject({ bas: true, alder: true });
-        expect(r.modellVarning).toMatch(/under tröskeln|färre än/);
-    });
-    it('_explanationBudget bygger delarna ur stegen som de kommer', () => {
-        const w = createAppWindow();
-        const b = w.eval(`_explanationBudget([{ name: 'Endast kön', status: 'ok', gapPct: -6 }, { name: '+ Ålder', status: 'ok', gapPct: -4 }])`);
-        expect(b.parts.map(p => p.key)).toEqual(['alder']);
-        expect(b.parts[0].val).toBeCloseTo(2, 10);
-        expect(b.remaining).toBe(4);
     });
 });
 
@@ -627,8 +498,8 @@ describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-5
     });
 });
 
-describe('regressionskortets tekniska specifikation (B4)', () => {
-    it('visar antalet observationer med hävstång > 0,99, som fitOLS räknar', () => {
+describe('regressionskortets tekniska specifikation', () => {
+    it('visar antalet observationer med hävstång > 0,99, som anpassaOLS räknar', () => {
         const w = createAppWindow();
         w.__loadDemoData();
         const r = w.eval('runOLSRegression()');
@@ -639,54 +510,10 @@ describe('regressionskortets tekniska specifikation (B4)', () => {
     });
 });
 
-describe('multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () => {
-    it('_regressionKronor översätter kön-effekten till kronor konsekvent', () => {
-        // Modellen är multiplikativ: kvinna = man × (1 + konPct/100).
-        const kr = win.__regressionKronor({ konPct: -5, medianMa: 40000, nKvAnalysed: 10 });
-        expect(kr.refMan).toBe(40000);
-        expect(kr.refKvinna).toBeCloseTo(38000, 6);      // 40000 × 0,95
-        expect(kr.krMonth).toBeCloseTo(2000, 6);
-        expect(kr.krYear).toBeCloseTo(24000, 6);
-        expect(kr.krTotalYear).toBeCloseTo(240000, 6);   // × 10 kvinnor
-    });
-
-    it('_regressionKronor returnerar null utan användbart underlag', () => {
-        expect(win.__regressionKronor(null)).toBeNull();
-        expect(win.__regressionKronor({ konPct: -5, medianMa: 0 })).toBeNull();
-        expect(win.__regressionKronor({ konPct: NaN, medianMa: 40000 })).toBeNull();
-    });
-
-    it('_explanationBudget delar upp gapet i förklarat + kvarstående', () => {
-        const b = win.__explanationBudget([
-            { name: 'Endast kön', gapPct: -10, status: 'ok' },
-            { name: '+ BAS-intervall', gapPct: -6, status: 'ok' },
-            { name: '+ Ålder', gapPct: -4, status: 'ok' }
-        ]);
-        expect(b.g0).toBe(10);
-        expect(b.remaining).toBe(4);
-        expect(b.parts.map(p => p.key)).toEqual(['bas', 'alder']);
-        expect(b.parts[0].val).toBeCloseTo(4, 6);   // 10 → 6
-        expect(b.parts[1].val).toBeCloseTo(2, 6);   // 6 → 4
-        expect(b.anyNegative).toBe(false);
-        // andelarna summerar till 100 % av det ursprungliga gapet
-        const sum = b.parts.reduce((s, p) => s + p.share, 0) + b.remainingShare;
-        expect(sum).toBeCloseTo(100, 6);
-    });
-
-    it('_explanationBudget flaggar när en kontroll ÖKAR gapet', () => {
-        const b = win.__explanationBudget([
-            { name: 'Endast kön', gapPct: -4, status: 'ok' },
-            { name: '+ BAS-intervall', gapPct: -7, status: 'ok' },
-            { name: '+ Ålder', gapPct: -6, status: 'ok' }
-        ]);
-        expect(b.anyNegative).toBe(true);
-        expect(b.parts[0].val).toBeLessThan(0);   // BAS dolde en del av gapet
-        expect(b.parts[0].share).toBe(0);         // negativa bidrag ritas inte som stapel
-    });
-
+describe('[B3.12] multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () => {
     it('regressionskortet renderar kronor, signalkolumn och per-BAS-container', () => {
         win.__loadDemoData();
-        expect(() => win.__renderRegressionCard()).not.toThrow();
+        expect(() => win.__ritaRegressionskort()).not.toThrow();
         const card = win.document.getElementById('regression-card');
         const r = win.__runOLS();
         if (r.error) return;                       // demodata gav ingen modell — hoppa
@@ -711,7 +538,7 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
     it('inläsningen (lönefil och demo) kör regressionen en gång och ritar samma sak som en egen körning per del', () => {
         const w = createAppWindow();
         raknaRegressioner(w);
-        w.eval('_lasInDemounderlag(generateDemoData)');   // demots inläsning; diagnostiken efteråt kör en egen
+        w.eval('_lasInDemounderlag(genereraDemodata)');   // demots inläsning; diagnostiken efteråt kör en egen
         expect(w.__regKorningar).toBe(1);
         w.__regKorningar = 0;
         w.eval('_afterDataLoaded()');

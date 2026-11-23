@@ -17,6 +17,15 @@
 //
 // Varje datapunkt bär `rad` och `kol` (etiketterna): klick-till-dossier (70-utforska.js) läser dem.
 // ====================================================================
+import { konAv } from '../lib/falt.js';
+import { talformat } from '../lib/figur.js';
+import { iUrvalet } from '../lib/urval.js';
+import { FARG } from './01-farger.js';
+import { _kvantilTipsRader } from './03-hjalpfunktioner.js';
+import { kTroskel } from './06-k-troskel.js';
+import { GAP_STATUS, gapStatus, PALETTE } from './10-diagramtema.js';
+import { markeringFor } from './11-markering.js';
+import { _exploreFmt, _explorerAidBas, _utNycklar, EXPLORE_MATT_LABEL } from './70-utforska.js';
 
 function _exploreAxisTitle(matt) {
     if (matt === 'gap') return 'Kvinnors median (% av männens)';
@@ -53,7 +62,7 @@ function _exploreMarkering(model, rad) {
 }
 const _exploreBeskrivning = (model, form) => `${form}: ${EXPLORE_MATT_LABEL[model.spec.matt] || 'valt mått'} per vald grupp. Samma värden finns i tabellen nedan.`;
 
-function explorerFigure(model, typ, rows) {
+export function explorerFigure(model, typ, rows) {
     switch (typ) {
         case 'liggande':   return _figStaplar(model, true);
         case 'hantel':     return _figHantel(model);
@@ -189,7 +198,7 @@ function _figStaplade(model, somAndel) {
             const andel = +(100 * c.n / summa.get(c.rad)).toFixed(1);
             return { x: c.rad, y: somAndel ? andel : c.n, rad: c.rad, kol: kl, n: c.n, andel, ...(c.liten ? { liten: true } : {}), ..._exploreMarkering(model, c.rad) };
         }),
-        tips: d => [[`${d.rad} · ${kl}`], ['Antal', String(d.n)], ['Andel av raden', _figTalformat(d.andel, 'pct')]]
+        tips: d => [[`${d.rad} · ${kl}`], ['Antal', String(d.n)], ['Andel av raden', talformat(d.andel, 'pct')]]
     })).filter(l => l.data.length);
     return { beskrivning: `Staplade staplar: ${somAndel ? 'andel av varje rad' : 'antal personer'} per kolumnvärde. Samma antal finns i tabellen nedan.`,
         x: { skala: 'band', ordning: rader },
@@ -218,7 +227,7 @@ function _figHantel(model) {
 function _figBubbla(model) {
     const pts = model.celler.filter(c => (c.nKv + c.nMa) > 0 && _exploreHar(c.value));
     const maxN = Math.max(1, ...pts.map(c => c.n));
-    const kr = v => _figTalformat(v, 'kr');
+    const kr = v => talformat(v, 'kr');
     return { beskrivning: 'Bubbeldiagram: varje grupps andel kvinnor mot dess medianlön, med gruppens storlek som bubblans storlek. Samma värden finns i tabellen nedan.',
         legend: false,
         x: { skala: 'linjar', titel: 'Andel kvinnor (%) — bubblans storlek visar antal personer', doman: [0, 100] }, y: { skala: 'linjar', titel: 'Median, kronor/månad', format: 'kr' },
@@ -228,7 +237,7 @@ function _figBubbla(model) {
         lager: [{ marke: 'punkt', serie: 'Grupper', farg: PALETTE.serie[0], opacitet: 0.8, kant: FARG.vit,
             data: pts.map(c => ({ x: (c.nKv / (c.nKv + c.nMa)) * 100, y: c.value, storlek: Math.max(4, 22 * Math.sqrt(c.n / maxN)),
                                   rad: c.rad, kol: null, n: c.n, ..._exploreMarkering(model, c.rad), ...(c.liten ? { liten: true } : {}) })),
-            tips: d => [[d.rad], ['Andel kvinnor', _figTalformat(d.x, 'pct')], ['Median', kr(d.y)], ['Antal', String(d.n)]] }] };
+            tips: d => [[d.rad], ['Andel kvinnor', talformat(d.x, 'pct')], ['Median', kr(d.y)], ['Antal', String(d.n)]] }] };
 }
 
 // Lådagram (allaPunkter = false), individpunkter ('alla') eller punktsvärm ('svarm'), en serie per kön eller en för alla.
@@ -236,7 +245,7 @@ function _figBubbla(model) {
 // en låda över en handfull personer röjer deras löner (docs/utveckling/diagramkarnan.md, vyns skyldigheter).
 function _figFordelning(model, rows, allaPunkter) {
     const { rad, urval, delaKon } = model.spec, k = kTroskel();
-    const nyckel = _utNycklar(rows), person = _urPersonFilter(urval, nyckel);
+    const nyckel = _utNycklar(rows), person = iUrvalet(urval, nyckel);
     const gruppLiten = new Map(model.celler.map(c => [c.rad, !!c.liten]));
     const farg = { Alla: PALETTE.serie[0], Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, 'Övrig/okänd': PALETTE.semantic.neutral };
     const hinkar = new Map();   // kön → [{ g, lon }]
@@ -245,7 +254,7 @@ function _figFordelning(model, rows, allaPunkter) {
         if (!(r.lon > 0) || !person(r)) continue;
         const g = nyckel(r, rad);
         if (g == null || !gruppLiten.has(g)) continue;
-        const kon = delaKon ? _utKonOf(r) : 'Alla';
+        const kon = delaKon ? konAv(r) : 'Alla';
         if (!hinkar.has(kon)) hinkar.set(kon, []);
         hinkar.get(kon).push({ g, lon: r.lon });
         antal.set(`${g}|${kon}`, (antal.get(`${g}|${kon}`) || 0) + 1);
@@ -255,9 +264,9 @@ function _figFordelning(model, rows, allaPunkter) {
         marke: 'lada', serie: kon, farg: farg[kon], ...(allaPunkter === 'regnmoln' ? { form: 'regnmoln' } : allaPunkter === 'kvantiler' ? { form: 'kvantiler', antal: 20 } : allaPunkter ? { punkter: allaPunkter } : {}),
         // nyckel = gruppens etikett (aldrig en person): ett klick på en låda öppnar gruppens dossier.
         data: personer.map(p => ({ x: p.g, y: p.lon, nyckel: p.g, ...(gruppLiten.get(p.g) || antal.get(`${p.g}|${kon}`) < k ? { liten: true } : {}) })),
-        tips: (d, s) => (s ? [[d.x], ..._kvantilTipsRader(s), [kon === 'Alla' ? 'Median' : `${kon}, median`, _figTalformat(s.median, 'kr')],
-                               ['Kvartiler', `${_figTalformat(s.q1, 'kr', { enhet: false })}–${_figTalformat(s.q3, 'kr')}`], ['Antal', String(s.n)]]
-                            : [[d.x], [kon === 'Alla' ? 'Lön' : kon, _figTalformat(d.y, 'kr')]])
+        tips: (d, s) => (s ? [[d.x], ..._kvantilTipsRader(s), [kon === 'Alla' ? 'Median' : `${kon}, median`, talformat(s.median, 'kr')],
+                               ['Kvartiler', `${talformat(s.q1, 'kr', { enhet: false })}–${talformat(s.q3, 'kr')}`], ['Antal', String(s.n)]]
+                            : [[d.x], [kon === 'Alla' ? 'Lön' : kon, talformat(d.y, 'kr')]])
     }));
     return { beskrivning: allaPunkter === 'kvantiler' ? 'Kvantilpunkter: tjugo prickar per vald grupp. Varje prick står för en tjugondel av gruppen och ligger vid den lönen. I små grupper står en prick för en större andel, men aldrig för färre än två personer. Inga enskilda löner visas. Samma grupper finns i tabellen nedan.'
         : allaPunkter === 'regnmoln' ? 'Regnmoln: per vald grupp en täthetskurva över lönerna, median och kvartiler som streck, och varje persons lön som en punkt bredvid. Samma grupper finns i tabellen nedan.'

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Sidindex ("På den här sidan") ----
+import { esc } from './01-html-och-tillganglighet.js';
+import { oppnaHopfallda, PANEL_GROUPS } from './31-navigering.js';
 /**
  * En lista över flikens avsnitt som följer med när sidan rullas: rubriken i varje utfällbart avsnitt
  * (details.avsnitt > summary h2|h3) och varje kort (.card-header > h2) som syns. Ett avsnitt som är dolt (hidden,
@@ -89,7 +91,7 @@ function _sidindexHojd(nav) {
 }
 
 /** Fyller #sidindex med flikens synliga avsnitt, eller döljer det när de är färre än tre. */
-function sidindexBygg(flik) {
+export function sidindexBygg(flik) {
     const nav = document.getElementById('sidindex');
     if (!nav) return;
     if (_sidindexBevakare) { _sidindexBevakare.disconnect(); _sidindexBevakare = null; }
@@ -125,7 +127,7 @@ function sidindexBygg(flik) {
 }
 
 /** Leder till ett avsnitt: fäller ut det (och det det ligger i), rullar fram det och ger summaryn fokus. */
-function sidindexGaTill(id) {
+export function sidindexGaTill(id) {
     const mal = document.getElementById(id);
     if (!mal) return;
     oppnaHopfallda(mal);
@@ -143,27 +145,31 @@ function sidindexGaTill(id) {
     _sidindexValt = id;
 }
 
-// Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.
-document.addEventListener('click', e => {
-    const a = /** @type {HTMLElement} */ (e.target).closest('[data-sidindex]');
-    if (!a) return;
-    e.preventDefault();
-    sidindexGaTill(/** @type {HTMLElement} */ (a).dataset.sidindex || '');
-});
-// Läsarens egen rullning släpper valet. Klicket på en post kommer efter musknappen och Retur-tangenten, så valet sätts
-// efter att de har släppt det förra.
-for (const typ of ['wheel', 'touchstart', 'keydown', 'mousedown']) window.addEventListener(typ, () => { _sidindexValt = null; }, { passive: true, capture: true });
 let _sidindexRam = 0;
-window.addEventListener('scroll', () => {
-    if (!_sidindexBevakare || _sidindexRam) return;
-    _sidindexRam = requestAnimationFrame(() => { _sidindexRam = 0; _sidindexFolj(); });
-}, { passive: true });
-// Breddas fönstret förbi brytpunkten står listan i spalten och är alltid utfälld; smalnas det av blir den den
-// hopfällda raden överst, som annars skulle täcka innehållet när den följer med.
-if (typeof window.matchMedia === 'function') {
-    const bred = window.matchMedia(SIDINDEX_BRED);
-    bred.addEventListener?.('change', () => {
-        const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
-        if (ram) ram.open = bred.matches;
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartSidindex() {
+    // Delegerad klick, som hopplänkarna i 33-sidans-innehall.js: adressen ändras inte.
+    document.addEventListener('click', e => {
+        const a = /** @type {HTMLElement} */ (e.target).closest('[data-sidindex]');
+        if (!a) return;
+        e.preventDefault();
+        sidindexGaTill(/** @type {HTMLElement} */ (a).dataset.sidindex || '');
     });
+    // Läsarens egen rullning släpper valet. Klicket på en post kommer efter musknappen och Retur-tangenten, så valet sätts
+    // efter att de har släppt det förra.
+    for (const typ of ['wheel', 'touchstart', 'keydown', 'mousedown']) window.addEventListener(typ, () => { _sidindexValt = null; }, { passive: true, capture: true });
+    window.addEventListener('scroll', () => {
+        if (!_sidindexBevakare || _sidindexRam) return;
+        _sidindexRam = requestAnimationFrame(() => { _sidindexRam = 0; _sidindexFolj(); });
+    }, { passive: true });
+    // Breddas fönstret förbi brytpunkten står listan i spalten och är alltid utfälld; smalnas det av blir den den
+    // hopfällda raden överst, som annars skulle täcka innehållet när den följer med.
+    if (typeof window.matchMedia === 'function') {
+        const bred = window.matchMedia(SIDINDEX_BRED);
+        bred.addEventListener?.('change', () => {
+            const ram = /** @type {HTMLDetailsElement|null} */ (document.querySelector('#sidindex .sidindex-ram'));
+            if (ram) ram.open = bred.matches;
+        });
+    }
 }

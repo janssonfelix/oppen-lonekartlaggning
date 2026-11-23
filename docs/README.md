@@ -32,7 +32,7 @@ Verktyget är ett proof of concept; vad det betyder står i README:s [*Status*](
 | Dokument | Vad det är |
 |---|---|
 | [`kom-igang.md`](utveckling/kom-igang.md) | Första timmen; granskarens väg kör en beräkning i Node. |
-| [`berakningsregister.md`](utveckling/berakningsregister.md) | En rad per beräkning med funktion, indata, vad den bygger på, tester och referensfall, och modellparametrarna med värde och vem som kan ändra dem. |
+| [`sparbarhet.md`](utveckling/sparbarhet.md) | Spårbarhetsmatrisen: varje beräkning, test för minsta gruppstorlek och skydd med ett ID, regeln det bygger på, funktionen och testerna som bär ID:t, och modellparametrarna med värde och vem som kan ändra dem. |
 | [`regressionsmodellen.md`](utveckling/regressionsmodellen.md) | Regressionen och uppdelningen av löneskillnaden som de räknas: huvudtalet, förklaringsmodellen, BAS-kodningen, Blinder-Oaxaca, kvantilregressionen, konfidensintervallen, *Var uppstår löneskillnaden?* och referensvärdena. |
 | [`likvardighetsmodellen.md`](utveckling/likvardighetsmodellen.md) | Analysen av likvärdigt arbete som den räknas: definitionen av kvinnodominerat, jämförelseetiketterna, kandidatparen med konfidensintervall och åldersjustering, *Lägre krav, högre lön*, inställningarna och vakterna. |
 | [`prioriteringsmodellen.md`](utveckling/prioriteringsmodellen.md) | Prioriteringen som den räknas: grupperna, avvikelsen mot referensen, lägena, delpoängen och indexet, snabb vinst, kostnaden, inställningarna och vakterna. |

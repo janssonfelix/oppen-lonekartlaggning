@@ -391,10 +391,10 @@
                                     <label for="paket-manader">Beräkningsperiod (månader)</label>
                                     <input type="number" id="paket-manader" class="form-select" min="1" max="12" step="1">
                                     <label for="paket-k">Minsta gruppstorlek för redovisning</label>
-                                    <input type="number" id="paket-k" class="form-select" min="2" max="1000" step="1">
+                                    <input type="number" id="paket-k" class="form-select" min="3" max="1000" step="1">
                                     <!-- Låsningar (ADR-47): det handläggaren inte får ändra. Tomt fält = paketet anger inget. -->
                                     <label for="paket-k-lagst">Lägsta tillåtna minsta gruppstorlek</label>
-                                    <input type="number" id="paket-k-lagst" class="form-select" min="2" max="1000" step="1" placeholder="tomt = ingen gräns">
+                                    <input type="number" id="paket-k-lagst" class="form-select" min="3" max="1000" step="1" placeholder="tomt = ingen gräns">
                                     <label for="paket-inaktivitet">Rensning vid inaktivitet (minuter)</label>
                                     <input type="number" id="paket-inaktivitet" class="form-select" min="0" max="120" step="1" placeholder="0 = av, tomt = anger inget">
                                     <label for="paket-inaktivitet-last">Lås rensningstiden</label>
@@ -719,7 +719,7 @@
                                 <thead>
                                     <tr>
                                         <th scope="col" data-export-label="BAS-intervall" data-term-template="{Niva.en}" data-term-attr="data-export-label"><span data-term-template="{Niva.en}">BAS-intervall</span></th>
-                                        <th scope="col" data-export-label="Antal personer (kvinnor/män)">Kvinnor / män <span class="info-tip" data-k-tooltip="Antal personer som löneberäkningen för denna BAS baseras på, uppdelat per kön. Är ett kön färre än {k} visas intervallets samlade median i stället; är hela intervallet under {k} utelämnas raden och namnges i noten under tabellen (k-anonymitet)."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
+                                        <th scope="col" data-export-label="Antal personer (kvinnor/män)">Kvinnor / män <span class="info-tip" data-k-tooltip="Antal personer som löneberäkningen för denna BAS baseras på, uppdelat per kön. Är ett kön färre än {k} visas intervallets samlade median i stället; är hela intervallet under {k} utelämnas raden och namnges i noten under tabellen (minsta gruppstorlek)."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span></th>
                                         <th scope="col" data-export-label="Kvinnors median i % av männens (100 % = lika lön)">Kvinnors lön i % av mäns</th>
                                         <th scope="col" data-export-label="Median kvinnor (kr/mån)">Median kvinnor</th>
                                         <th scope="col" data-export-label="Median män (kr/mån)">Median män</th>
@@ -2454,7 +2454,7 @@
                     <div class="inst-rad">
                             <div class="paket-rad">
                                 <label for="k-troskel">Minsta gruppstorlek för redovisning</label>
-                                <input type="number" id="k-troskel" class="form-select bredd-6em" min="2" max="1000" step="1" value="10" inputmode="numeric" aria-describedby="k-troskel-hjalp k-troskel-fel">
+                                <input type="number" id="k-troskel" class="form-select bredd-6em" min="3" max="1000" step="1" value="10" inputmode="numeric" aria-describedby="k-troskel-hjalp k-troskel-fel">
                                 <button type="button" id="btn-k-aterstall" class="btn btn-secondary btn-sm" hidden>Återställ till 10</button>
                                 <span class="info-tip" data-tooltip="Grupper med färre personer än så visas inte med lönemått i det som lämnar verktyget. På skärmen visas alla. Standard är 10. Ett lägre värde kan peka ut enskilda; därför står värdet i metodbilagan och på exporten. Följer med i konfigurationsfilen och kan sättas i organisationspaketet, som också kan ange ett lägsta tillåtet värde."><svg class="ikon ikon-info" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
                             </div>
@@ -2614,7 +2614,7 @@
                 <button id="glossary-close" class="btn btn-secondary btn-sm" aria-label="Stäng ordlistan" type="button"><svg class="ikon ikon-kryss" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg></button>
             </header>
             <div class="glossary-search-row">
-                <input type="text" id="glossary-search" placeholder="Sök term, t.ex. 'BAS', 'lönebedömning' eller 'k-anonymitet'..." aria-label="Sök i ordlistan">
+                <input type="text" id="glossary-search" placeholder="Sök term, t.ex. 'BAS', 'lönebedömning' eller 'minsta gruppstorlek'..." aria-label="Sök i ordlistan">
             </div>
             <div id="glossary-content" class="glossary-content"></div>
             <footer class="glossary-footer">

@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { svPct } from '../lib/talformat.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { T } from './09-termer.js';
+import { getData, referensKalla, referensNamn, state } from './12-tillstand.js';
+import { klickaFlik, tabMal } from './31-navigering.js';
 
 // ---- Audit / spårbarhet av beräkningar ("Beräkning & urval") ----
 // Varje analysfunktion fyller i sitt audit-objekt så användaren kan kvalitetssäkra.
@@ -7,12 +12,12 @@ const auditRegistry = {};
 // Metodbilagans ordning i Excel och utskrift: fast, oberoende av i vilken ordning flikarna råkade ritas
 // (strukturomläggningen 2026-11-06 flyttade regressionen till Lönestruktur utan att bilagan ska byta ordning).
 const AUDIT_ORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
-function auditPoster() {
+export function auditPoster() {
     const ids = [...AUDIT_ORDNING.filter(id => id in auditRegistry), ...Object.keys(auditRegistry).filter(id => !AUDIT_ORDNING.includes(id))];
     return ids.map(id => /** @type {[string, any]} */ ([id, auditRegistry[id]]));
 }
 
-function buildBaseAudit() {
+export function buildBaseAudit() {
     const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
     const totalRaw   = da.totalRaw;
     const afterParse = state.data.length;
@@ -23,7 +28,7 @@ function buildBaseAudit() {
     return { totalRaw, afterParse, afterFilter, parseExcl };
 }
 
-function setAudit(id, audit) {
+export function setAudit(id, audit) {
     auditRegistry[id] = audit;
     const panel = document.querySelector(`details.audit-panel[data-audit-id="${id}"] .audit-content`);
     if (panel) panel.innerHTML = renderAuditHtml(audit);
@@ -61,7 +66,6 @@ function renderAuditHtml(a) {
     `;
 }
 
-
 // ---- Generisk tabell-sortering ----
 function _parseSwedishNumber(str) {
     if (str == null) return NaN;
@@ -83,7 +87,7 @@ function _compareCells(a, b, idx, dir) {
     else cmp = va.toString().trim().localeCompare(vb.toString().trim(), 'sv');
     return dir === 'asc' ? cmp : -cmp;
 }
-function enableTableSort(tableId) {
+export function enableTableSort(tableId) {
     const table = document.getElementById(tableId);
     if (!table || table._sortInit) return;
     table._sortInit = true;
@@ -137,7 +141,7 @@ function enableTableSort(tableId) {
 /** @type {{[tableId: string]: {dolda: string[], nyckel: string}}} */
 const _flerKolumnerTabeller = {};
 /** Cellens bredd i tabellens kolumner, också när växeln har minskat den. */
-function _cellSpann(cell) {
+export function _cellSpann(cell) {
     return Math.max(1, parseInt(cell.getAttribute('data-hel-colspan') || cell.getAttribute('colspan') || '', 10) || 1);
 }
 /**
@@ -147,7 +151,7 @@ function _cellSpann(cell) {
  * @param {string[]} dolda  data-kol för kolumnerna som grundvyn gömmer
  * @param {string} nyckel   nyckeln i state.flerKolumner
  */
-function flerKolumner(tableId, dolda, nyckel) {
+export function flerKolumner(tableId, dolda, nyckel) {
     const table = document.getElementById(tableId);
     if (!table) return;
     _flerKolumnerTabeller[tableId] = { dolda, nyckel };
@@ -165,7 +169,7 @@ function flerKolumner(tableId, dolda, nyckel) {
     tillampaFlerKolumner(tableId);
 }
 /** Gömmer eller visar kolumnerna efter state.flerKolumner; körs efter varje omritning och när en rad läggs till. */
-function tillampaFlerKolumner(tableId) {
+export function tillampaFlerKolumner(tableId) {
     const table = document.getElementById(tableId);
     const cfg = _flerKolumnerTabeller[tableId];
     if (!table || !cfg) return;
@@ -203,26 +207,14 @@ function tillampaFlerKolumner(tableId) {
     if (btn) btn.setAttribute('aria-pressed', String(full));
 }
 /** Tar tillbaka det växeln har gömt, i en kopia av tabellen som ska lämna skärmen (export, utskrift). */
-function _flerKolumnerAlla(rot) {
+export function _flerKolumnerAlla(rot) {
     rot.querySelectorAll('[data-fler-dold]').forEach(c => { c.hidden = false; c.removeAttribute('data-fler-dold'); });
     rot.querySelectorAll('[data-hel-colspan]').forEach(c => { c.setAttribute('colspan', c.getAttribute('data-hel-colspan')); c.removeAttribute('data-hel-colspan'); });
     return rot;
 }
-document.addEventListener('click', e => {
-    const btn = /** @type {HTMLElement} */ (e.target).closest('[data-fler-kolumner]');
-    if (!btn) return;
-    const tableId = btn.getAttribute('data-fler-kolumner') || '';
-    const cfg = _flerKolumnerTabeller[tableId];
-    if (!cfg) return;
-    if (!state.flerKolumner) state.flerKolumner = {};
-    state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
-    tillampaFlerKolumner(tableId);
-    if (typeof announceToScreenReader === 'function')
-        announceToScreenReader(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
-});
 
 // ---- Collapsible BAS-grupper ----
-function setupCollapsibleGroups(tableId) {
+export function setupCollapsibleGroups(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);
     if (!tbody || tbody._collapseInit) return;
     tbody._collapseInit = true;
@@ -237,7 +229,7 @@ function setupCollapsibleGroups(tableId) {
         }
     });
 }
-function toggleAllGroups(tableId, collapse) {
+export function toggleAllGroups(tableId, collapse) {
     const tbody = document.querySelector(`#${tableId} tbody`);
     if (!tbody) return;
     tbody.querySelectorAll('tr.group-header').forEach(row => {
@@ -255,7 +247,7 @@ function toggleAllGroups(tableId, collapse) {
  * @param {{uppskjut?: boolean, efter?: (() => void)|null, search?: string, searchInputId?: string,
  *   highlightMatch?: {tableId: string, contains: string[]}}} [opts]
  */
-function navigateTo(tabName, opts = {}) {
+export function navigateTo(tabName, opts = {}) {
     tabName = tabMal(tabName);
     const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
     if (!btn || /** @type {HTMLInputElement} */ (btn).disabled) return false;
@@ -292,34 +284,10 @@ function _navigeratTill(opts) {
         }, 200);
     }
 }
-// Global delegation för cross-link-knappar
-document.addEventListener('click', e => {
-    const link = /** @type {HTMLElement} */ (e.target).closest('.row-cross-link');
-    if (!link) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const target = /** @type {HTMLElement} */ (link).dataset.target;
-    const yrke = /** @type {HTMLElement} */ (link).dataset.yrke || '';
-    const bas  = /** @type {HTMLElement} */ (link).dataset.bas  || '';
-    if (target === 'rapport') {
-        navigateTo('rapport', { search: yrke, searchInputId: 'search-rapport' });
-    } else if (target === 'matrix') {
-        navigateTo('matrix', { highlightMatch: { tableId: 'matrix-table', contains: [yrke] } });
-    } else if (target === 'demografi') {
-        navigateTo('demografi');
-        setTimeout(() => {
-            const sel = document.getElementById('bas-select-demo');
-            if (sel) {
-                /** @type {HTMLInputElement} */ (sel).value = bas;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }, 150);
-    }
-});
 
 // ---- Mini-bar för procentkolumn (bidirektionell) ----
 // percent: signerat procentvärde, scaleMax: max abs-värde som motsvarar full bar
-function buildBarCell(percent, scaleMax = 25, options = {}) {
+export function buildBarCell(percent, scaleMax = 25, options = {}) {
     const fmt = options.format || (p => (p >= 0 ? '+' : '') + svPct(p, 1));
     // En decimal på skärmen; exporten bär två (data-export-text, se _exportText).
     const exportText = options.format ? '' : ` data-export-text="${(percent >= 0 ? '+' : '') + svPct(percent, 2)}"`;
@@ -337,4 +305,44 @@ function buildBarCell(percent, scaleMax = 25, options = {}) {
         </span>
         <span class="cell-bar-value ${isNeg ? 'f-kritisk' : 'fg-ok'} halvfet"${exportText}>${fmt(percent)}</span>
     </div>`;
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartTabellerOchLankar() {
+    document.addEventListener('click', e => {
+        const btn = /** @type {HTMLElement} */ (e.target).closest('[data-fler-kolumner]');
+        if (!btn) return;
+        const tableId = btn.getAttribute('data-fler-kolumner') || '';
+        const cfg = _flerKolumnerTabeller[tableId];
+        if (!cfg) return;
+        if (!state.flerKolumner) state.flerKolumner = {};
+        state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
+        tillampaFlerKolumner(tableId);
+        if (typeof announceToScreenReader === 'function')
+            announceToScreenReader(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
+    });
+    // Global delegation för cross-link-knappar
+    document.addEventListener('click', e => {
+        const link = /** @type {HTMLElement} */ (e.target).closest('.row-cross-link');
+        if (!link) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const target = /** @type {HTMLElement} */ (link).dataset.target;
+        const yrke = /** @type {HTMLElement} */ (link).dataset.yrke || '';
+        const bas  = /** @type {HTMLElement} */ (link).dataset.bas  || '';
+        if (target === 'rapport') {
+            navigateTo('rapport', { search: yrke, searchInputId: 'search-rapport' });
+        } else if (target === 'matrix') {
+            navigateTo('matrix', { highlightMatch: { tableId: 'matrix-table', contains: [yrke] } });
+        } else if (target === 'demografi') {
+            navigateTo('demografi');
+            setTimeout(() => {
+                const sel = document.getElementById('bas-select-demo');
+                if (sel) {
+                    /** @type {HTMLInputElement} */ (sel).value = bas;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }, 150);
+        }
+    });
 }

@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { forstaSkillnad } from './helpers/forsta-skillnad.js';
-import { kvantilDesign, quantileRegressionAtAllTau } from '../src/lib/regression.js';
+import { kvantilDesign, kvantilregressionAllaTau } from '../src/lib/regression.js';
 import {
     organisationensKvotKI, styrkeanalys, gruppMde, regressionslinjensBand, extremvarden, medianKvotKI, medianKvotKIGiltiga,
     trattUnderlag, kvantilBootstrap
@@ -22,7 +22,7 @@ const lika = (app, lib) => expect(forstaSkillnad(app, lib)).toBeNull();
 const utanHalv = u => (u ? { sigma: u.sigma, punkter: u.punkter, halvar: [[3, 3], [5, 8], [10, 10], [40, 60]].map(([a, b]) => u.halv(a, b)) } : u);
 const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
 
-describe('osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js', () => {
+describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js', () => {
     const w = createAppWindow();
     let demo;
     beforeAll(() => { w.__loadDemoData(); demo = w.__state.data.map(r => ({ ...r })); });
@@ -33,14 +33,16 @@ describe('osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js'
     };
 
     for (const [namn, data] of Object.entries(underlag)) {
-        for (const k of [3, 10, 25]) {
-            describe(`${namn}, k = ${k}`, () => {
+        // Golvet är K_STANDARD på skärmen och följer den inställda tröskeln i exportläget (ADR-103).
+        for (const [k, lage] of [[3, 'skarm'], [10, 'skarm'], [25, 'skarm'], [25, 'export']]) {
+            describe(`${namn}, k = ${k}${lage === 'export' ? ' i exportläget' : ''}`, () => {
                 let d, golv;
                 beforeAll(() => {
                     w.__state.data = data().map(r => ({ ...r }));
                     w.__state.kTroskel = k;
+                    w.__state.kLage = lage;
                     d = w.__state.data;
-                    golv = Math.max(k, w.__K);
+                    golv = lage === 'export' ? Math.max(k, w.__K) : w.__K;
                 });
 
                 it('computeBootstrapCI', () => {
@@ -84,7 +86,7 @@ describe('osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js'
                     it('_regKvantilBootstrap', () => {
                         const modell = w.eval('forklaringsmodell()');
                         const raw = kvantilDesign(d, modell).rader;
-                        const results = quantileRegressionAtAllTau(d, { modell }).results;
+                        const results = kvantilregressionAllaTau(d, { modell }).results;
                         w.__arg = { raw, modell, results: results.map(r => ({ ...r, ki: null })) };
                         const app = w.eval(`_regKvantilBootstrap(window.__arg.raw, window.__arg.modell, window.__arg.results, d => d.kon.includes('kvinna'))`);
                         delete w.__arg;

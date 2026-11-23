@@ -4,8 +4,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
-    histogramKlasser, omfang,
-    medianGapPct, representationByBas, quartileDistribution, distributionalGap, tillDirektivtecken
+    histogramKlasser, omfang, strukturMatt, ogonblicksbildMatt,
+    konsMedianer, konsMedianerUrLoner, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken
 } from '../src/lib/struktur.js';
 
 const rows = () => [
@@ -28,7 +28,46 @@ describe('structure: mediangap', () => {
     });
 });
 
-describe('structure: direktivets tecken (EU 2023/970 art. 9)', () => {
+describe('[B2.1] structure: konsMedianer', () => {
+    const tom = { nKv: 0, nMa: 0, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk: false };
+    it('tom lista och saknad lista: inga tal', () => {
+        expect(konsMedianer([])).toEqual(tom);
+        expect(konsMedianer(undefined)).toEqual(tom);
+    });
+    it('ett kön saknas: antalen står kvar, inga medianer', () => {
+        expect(konsMedianer([{ kon: 'man', lon: 30000 }])).toEqual({ ...tom, nMa: 1 });
+    });
+    it('under k: konOk falskt och inga medianer; precis vid k räknas de', () => {
+        const r = [{ kon: 'kvinna', lon: 30000 }, { kon: 'kvinna', lon: 32000 }, { kon: 'man', lon: 40000 }, { kon: 'man', lon: 42000 }, { kon: 'man', lon: 44000 }];
+        expect(konsMedianer(r, { k: 3 })).toEqual({ ...tom, nKv: 2, nMa: 3 });
+        expect(konsMedianer(r, { k: 2 })).toMatchObject({ konOk: true, medKv: 31000, medMa: 42000 });
+    });
+    it('lön 0 eller lägre och rader utan kön räknas inte', () => {
+        const r = [{ kon: 'kvinna', lon: 0 }, { kon: 'kvinna', lon: -5 }, { kon: 'kvinna', lon: 30000 }, { kon: 'man', lon: 40000 }, { kon: 'annat', lon: 1 }];
+        expect(konsMedianer(r)).toMatchObject({ nKv: 1, nMa: 1, medKv: 30000, medMa: 40000 });
+    });
+    it('jämnt antal: medianen är medelvärdet av de två mittersta; kvot och gap', () => {
+        const m = konsMedianer(rows());
+        expect(m).toMatchObject({ nKv: 4, nMa: 4, medKv: 34000, medMa: 41000, konOk: true });
+        expect(m.kvotPct).toBeCloseTo(34000 / 41000 * 100, 9);
+        expect(m.gapPct).toBeCloseTo(m.kvotPct - 100, 9);
+        expect(medianGapPct(rows())).toBe(m.gapPct);
+    });
+    it('konsMedianerUrLoner: samma tal ur lönerna delade efter kön, med samma regel för lön och k', () => {
+        expect(konsMedianerUrLoner([0, -5, 30000], [40000])).toEqual(konsMedianer([{ kon: 'kvinna', lon: 0 }, { kon: 'kvinna', lon: -5 }, { kon: 'kvinna', lon: 30000 }, { kon: 'man', lon: 40000 }]));
+        const kv = rows().filter(r => r.kon === 'kvinna').map(r => r.lon), ma = rows().filter(r => r.kon === 'man').map(r => r.lon);
+        expect(konsMedianerUrLoner(kv, ma)).toEqual(konsMedianer(rows()));
+        expect(konsMedianerUrLoner(kv, ma, { k: 5 })).toEqual(konsMedianer(rows(), { k: 5 }));
+        expect(konsMedianerUrLoner(undefined, null).konOk).toBe(false);
+    });
+    it('en kvot som är exakt en procentsats blir exakt den: en enda avrundning', () => {
+        expect(konsMedianerUrLoner([38000], [40000])).toMatchObject({ kvotPct: 95, gapPct: -5 });
+        expect(konsMedianerUrLoner([39200], [40000])).toMatchObject({ kvotPct: 98, gapPct: -2 });
+        expect(konsMedianerUrLoner([42000], [40000])).toMatchObject({ kvotPct: 105, gapPct: 5 });
+    });
+});
+
+describe('[B2.2] structure: direktivets tecken (EU 2023/970 art. 9)', () => {
     it('verktygets −8 % (kvinnor lägre) blir +8 %; beloppet är detsamma', () => {
         expect(tillDirektivtecken(-8)).toBe(8);
         expect(tillDirektivtecken(3.25)).toBe(-3.25);
@@ -43,9 +82,9 @@ describe('structure: direktivets tecken (EU 2023/970 art. 9)', () => {
     });
 });
 
-describe('structure: representation per BAS (pyramid)', () => {
+describe('[B2.3] structure: representation per BAS (pyramid)', () => {
     it('sorterar BAS A–Ö med andel kvinnor', () => {
-        const r = representationByBas(rows());
+        const r = representationPerBas(rows());
         expect(r.map(x => x.bas)).toEqual(['A', 'B', 'C']);
         expect(r.find(x => x.bas === 'A').andelKv).toBeCloseTo(66.67, 1);
         expect(r.find(x => x.bas === 'B').andelKv).toBeCloseTo(33.33, 1);
@@ -53,9 +92,9 @@ describe('structure: representation per BAS (pyramid)', () => {
     });
 });
 
-describe('structure: kvartilfördelning (EU 2023/970)', () => {
+describe('[B2.4] structure: kvartilfördelning (EU 2023/970)', () => {
     it('fyra lika stora lönekvartiler med andel kvinnor', () => {
-        const q = quartileDistribution(rows());
+        const q = kvartilfordelning(rows());
         expect(q).toHaveLength(4);
         expect(q.map(x => x.n)).toEqual([2, 2, 2, 2]);
         expect(q[0]).toMatchObject({ q: 1, nKv: 2, nMa: 0, andelKv: 100, undre: null, ovre: 30500 });
@@ -64,25 +103,30 @@ describe('structure: kvartilfördelning (EU 2023/970)', () => {
         expect(q[2]).toMatchObject({ q: 3, nKv: 0, nMa: 2 });    // 40000,42000 = män
     });
     it('redovisar inga enskilda löner: varken lägsta, högsta eller kvartilens ytterlöner', () => {
-        const q = quartileDistribution(rows());
+        const q = kvartilfordelning(rows());
         const tal = q.flatMap(x => [x.undre, x.ovre]).filter(v => v !== null);
         for (const v of tal) expect(rows().map(r => r.lon)).not.toContain(v);
         for (const x of q) { expect(x).not.toHaveProperty('loLon'); expect(x).not.toHaveProperty('hiLon'); }
     });
     it('tom vid < 4 individer', () => {
-        expect(quartileDistribution(rows().slice(0, 3))).toEqual([]);
+        expect(kvartilfordelning(rows().slice(0, 3))).toEqual([]);
     });
 });
 
-describe('structure: distributionellt gap (sticky floor vs glastak)', () => {
+describe('[B2.5] structure: distributionellt gap (sticky floor vs glastak)', () => {
     it('gap per percentil', () => {
-        const d = distributionalGap(rows());
+        const d = fordelningsgap(rows());
         expect(d.map(x => x.p)).toEqual([10, 25, 50, 75, 90]);
         const p10 = d.find(x => x.p === 10).gapPct;
         const p90 = d.find(x => x.p === 90).gapPct;
         // gapet är mer negativt i botten än i toppen → sticky floor
         expect(p10).toBeLessThan(p90);
         expect(d.find(x => x.p === 50).gapPct).toBeCloseTo((34000 / 41000 - 1) * 100, 4);
+    });
+    it('en kvot som är exakt en procentsats blir exakt den: en enda avrundning', () => {
+        const lika = (lon, kon) => Array.from({ length: 3 }, () => ({ kon, lon }));
+        const d = fordelningsgap([...lika(38000, 'kvinna'), ...lika(40000, 'man')]);
+        expect(d.map(x => x.gapPct)).toEqual([-5, -5, -5, -5, -5]);
     });
 });
 
@@ -95,8 +139,8 @@ describe('structure: k per kön', () => {
         ...Array.from({ length: 12 }, (_, i) => ({ bas: 'Z', kon: i % 2 ? 'man' : 'kvinna', lon: 40000 + i * 10 })),
         ...Array.from({ length: 12 }, (_, i) => ({ bas: 'E', kon: 'kvinna', lon: 35000 + i })),
     ];
-    it('representationByBas: gap och könsmedianer blir null när ett kön är under k; samlad median står kvar', () => {
-        const r = representationByBas(skev(), { k: 10 });
+    it('representationPerBas: gap och könsmedianer blir null när ett kön är under k; samlad median står kvar', () => {
+        const r = representationPerBas(skev(), { k: 10 });
         const y = r.find(g => g.bas === 'Y');
         expect(y).toMatchObject({ n: 21, nKv: 20, nMa: 1, gapPct: null, medianKv: null, medianMa: null, konLitet: true });
         expect(y.median).toBe(30010);
@@ -106,13 +150,13 @@ describe('structure: k per kön', () => {
         expect(r.find(g => g.bas === 'E')).toMatchObject({ gapPct: null, konLitet: false, medianMa: null });
         expect(r.find(g => g.bas === 'E').medianKv).toBe(35005.5);
     });
-    it('representationByBas: vid k = 6 redovisas Z men inte Y', () => {
-        const r = representationByBas(skev(), { k: 6 });
+    it('representationPerBas: vid k = 6 redovisas Z men inte Y', () => {
+        const r = representationPerBas(skev(), { k: 6 });
         expect(r.find(g => g.bas === 'Z').gapPct).not.toBeNull();
         expect(r.find(g => g.bas === 'Y').gapPct).toBeNull();
     });
     it('utan k får varje grupp ett gap så snart båda könen finns', () => {
-        const y = representationByBas(skev()).find(g => g.bas === 'Y');
+        const y = representationPerBas(skev()).find(g => g.bas === 'Y');
         expect(y.gapPct).toBeCloseTo((30009.5 / 45000 - 1) * 100, 6);
         expect(y.konLitet).toBe(false);
     });
@@ -120,23 +164,23 @@ describe('structure: k per kön', () => {
         ...Array.from({ length: 60 }, (_, i) => ({ bas: 'A', kon: 'kvinna', lon: 25000 + i * 10 })),
         ...[41417, 43719, 47827].map(lon => ({ bas: 'A', kon: 'man', lon })),
     ];
-    it('medianGapPct och distributionalGap: null respektive tom lista när ett kön är under k', () => {
+    it('medianGapPct och fordelningsgap: null respektive tom lista när ett kön är under k', () => {
         expect(medianGapPct(treMan(), { k: 10 })).toBeNull();
-        expect(distributionalGap(treMan(), undefined, { k: 10 })).toEqual([]);
+        expect(fordelningsgap(treMan(), undefined, { k: 10 })).toEqual([]);
         expect(medianGapPct(treMan(), { k: 3 })).toBeCloseTo((25295 / 43719 - 1) * 100, 6);
-        expect(distributionalGap(treMan(), undefined, { k: 3 })).toHaveLength(5);
-        expect(distributionalGap(treMan())).toHaveLength(5);   // standardgolvet 2
-        expect(distributionalGap(treMan(), undefined, { k: 1 })).toHaveLength(5);
-        expect(distributionalGap([{ kon: 'kvinna', lon: 1 }, { kon: 'kvinna', lon: 2 }, { kon: 'man', lon: 3 }], undefined, { k: 1 })).toEqual([]);   // aldrig under 2
+        expect(fordelningsgap(treMan(), undefined, { k: 3 })).toHaveLength(5);
+        expect(fordelningsgap(treMan())).toHaveLength(5);   // standardgolvet 2
+        expect(fordelningsgap(treMan(), undefined, { k: 1 })).toHaveLength(5);
+        expect(fordelningsgap([{ kon: 'kvinna', lon: 1 }, { kon: 'kvinna', lon: 2 }, { kon: 'man', lon: 3 }], undefined, { k: 1 })).toEqual([]);   // aldrig under 2
     });
-    it('quartileDistribution: könsfördelningen per kvartil lämnas inte ut när ett kön är under k', () => {
-        const q = quartileDistribution(treMan(), { k: 10 });
+    it('kvartilfordelning: könsfördelningen per kvartil lämnas inte ut när ett kön är under k', () => {
+        const q = kvartilfordelning(treMan(), { k: 10 });
         expect(q.map(x => x.n)).toEqual([16, 16, 16, 15]);
         for (const x of q) expect(x).toMatchObject({ nKv: null, nMa: null, andelKv: null, konDolt: true });
         expect(q[1].undre).not.toBeNull();
-        const oppen = quartileDistribution(treMan(), { k: 3 });
+        const oppen = kvartilfordelning(treMan(), { k: 3 });
         expect(oppen[3]).toMatchObject({ nMa: 3, konDolt: false });
-        expect(quartileDistribution(treMan())[3]).toMatchObject({ nMa: 3, konDolt: false });
+        expect(kvartilfordelning(treMan())[3]).toMatchObject({ nMa: 3, konDolt: false });
     });
 });
 
@@ -156,5 +200,38 @@ describe('histogramKlasser: lönefördelningens klasser (k-tröskeln)', () => {
     });
     it('omfang klarar fler värden än Math.min tar som argument', () => {
         expect(omfang(loner(1, 1, 300000))).toEqual([1, 300000]);
+    });
+});
+
+describe('[B2.14] strukturMatt: Lönestrukturs mått, med gapet i medellön och BAS-intervallen som får redovisas', () => {
+    const rad = (bas, kon, lon) => ({ bas, kon, lon });
+    const grupp = (bas, nKv, nMa, lonKv, lonMa) => [...Array.from({ length: nKv }, () => rad(bas, 'kvinna', lonKv)), ...Array.from({ length: nMa }, () => rad(bas, 'man', lonMa))];
+    it('medellönegapet är kvinnors medellön i procent av mäns minus 100, bara när båda könen når k', () => {
+        const d = [...grupp('A', 5, 5, 30000, 40000), ...grupp('B', 5, 5, 34000, 40000)];
+        const m = strukturMatt(d, 10);
+        expect(m.konOk).toBe(true);
+        expect(m.meanGap).toBeCloseTo((32000 / 40000 - 1) * 100, 10);
+        expect(m.totAndel).toBe(50);
+        expect(strukturMatt(d, 11).meanGap).toBeNull();
+        expect(strukturMatt(d, 11).konOk).toBe(false);
+    });
+    it('BAS-intervall med färre än k personer utelämnas och räknas upp; ett kön under k ger konLitet (k − 1, k)', () => {
+        const d = [...grupp('A', 6, 4, 30000, 31000), ...grupp('B', 4, 5, 30000, 31000), ...grupp('C', 20, 20, 30000, 31000)];
+        const m = strukturMatt(d, 10);
+        expect(m.repVisade.map(g => g.bas)).toEqual(['A', 'C']);
+        expect(m.repUtelamnade).toEqual(['B']);
+        expect(m.repKonLitet).toEqual(['A']);
+        expect(m.rep).toEqual(representationPerBas(d, { k: 10 }));
+        expect(m.medGap).toBe(medianGapPct(d, { k: 10 }));
+    });
+});
+
+describe('[B2.15] ogonblicksbildMatt: ögonblicksbildens mått för hela organisationen', () => {
+    const rader = [{ kon: 'kvinna', lon: 30000, alder: 40 }, { kon: 'kvinna', lon: 32000, alder: 0 }, { kon: 'man', lon: 33000, alder: 50 }, { kon: 'man', lon: 35000 }];
+    it('medianerna och gapet bara när båda könen når k; medelåldern bland åldrar över 0', () => {
+        expect(ogonblicksbildMatt(rader, 2)).toEqual({ n: 4, nKv: 2, nMa: 2, medianKv: 31000, medianMa: 34000, rawGapPct: konsMedianer(rader, { k: 2 }).gapPct, avgAge: 45 });
+        const under = ogonblicksbildMatt(rader, 3);
+        expect([under.medianKv, under.medianMa, under.rawGapPct]).toEqual([null, null, null]);
+        expect(ogonblicksbildMatt([{ kon: 'man', lon: 1 }], 1).avgAge).toBeNull();
     });
 });

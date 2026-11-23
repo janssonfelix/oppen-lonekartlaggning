@@ -13,8 +13,6 @@
  *
  * Ren modul: bara strängar in och ut. Appen (29-organisationspaket.js) läser filen med FileReader,
  * laddar ner resultatet som Blob och läser vid start blocket ur DOM:en.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 export const MALL_ID = 'inbakat-organisationspaket';
@@ -25,7 +23,8 @@ const MALL_RE = new RegExp(MALL_START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '
 // Blocket ligger alltid efter sista skriptet; bara den delen av filen söks och ändras, så att ett skript som
 // råkar innehålla liknande text aldrig rörs.
 const _delad = html => { const s = String(html ?? ''); const i = s.lastIndexOf('</script>'); return i < 0 ? ['', s] : [s.slice(0, i + 9), s.slice(i + 9)]; };
-const VERSION_RE = /const APP_VERSION = '([0-9]{4}\.[0-9]{2}\.[0-9]{2})'/;
+// Bygget med esbuild skriver `var APP_VERSION = "…"`; filer från före ADR-98 har `const APP_VERSION = '…'`.
+const VERSION_RE = /(?:const|var) APP_VERSION = (['"])([0-9]{4}\.[0-9]{2}\.[0-9]{2})\1/;
 const CSP_RE = /<meta http-equiv="Content-Security-Policy"/;
 
 const _attr = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -56,7 +55,7 @@ export function kannIgenVerktyget(html) {
     if (!CSP_RE.test(s)) return { ok: false, version: null, fel: 'Filen är inte verktyget: innehållssäkerhetspolicyn saknas.' };
     if (s.lastIndexOf('</body>') < 0) return { ok: false, version: null, fel: 'Filen är inte verktyget: dokumentet är ofullständigt.' };
     const m = VERSION_RE.exec(s);
-    return { ok: true, version: m ? m[1] : null };
+    return { ok: true, version: m ? m[2] : null };
 }
 
 /**

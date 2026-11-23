@@ -36,11 +36,11 @@
  */
 import { describe, it, expect } from 'vitest';
 import { perBasTabeller } from '../src/lib/perbas.js';
-import { computePivot } from '../src/lib/utforska.js';
+import { pivottabell } from '../src/lib/utforska.js';
 import { sektorernasAndel, sektorsTabell } from '../src/lib/sektor.js';
 import { gapUppdelning, gapPoster } from '../src/lib/gapuppdelning.js';
 import { sektorsnamn } from '../src/lib/aid.js';
-import { groupKey, konOf } from '../src/lib/falt.js';
+import { gruppnyckel, konAv } from '../src/lib/falt.js';
 import { byggArsbokslut, bokslutMedGrans, jamforBasIntervall, ARSBOKSLUT_NYCKELTAL, ARSBOKSLUT_BAS_MATT } from '../src/lib/arsbokslut.js';
 import { kompletterandeUndertryckning } from '../src/lib/undertryckning.js';
 import { rest, heltal, avvikelse, GRANS, underlagMedEnLitenGrupp, harledLinjart, differensprov, tabellerUrText, tabellerUrHtml, tal } from './helpers/differens.js';
@@ -94,7 +94,7 @@ describe('hjälparen', () => {
 
 // Självtest för differensprovet i invarianten (differensprov i tests/helpers/differens.js): en påhittad tabell med en
 // total och delar, skriven som exporterna skriver den.
-describe('differensprovet i invarianten (självtest)', () => {
+describe('[S4] differensprovet i invarianten (självtest)', () => {
     // A–C når tröskeln och visas; D (4 personer) utelämnas. Raden Alla räknas på alla 71.
     const GRUPPER = [['A', 30, 30000], ['B', 25, 32000], ['C', 12, 28000], ['D', 4, 41000]];
     const N = GRUPPER.reduce((s, g) => s + g[1], 0);
@@ -364,7 +364,7 @@ describe('per BAS-intervall: Löneskillnader i åldersgrupper', () => {
 
 // ---- b. Egna vyers pivot (src/lib/utforska.js) ----
 describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () => {
-    // computePivot räknar summor per rad och per kolumn (radHinkar, kolHinkar), men bara för att sortera etiketterna;
+    // pivottabell räknar summor per rad och per kolumn (radHinkar, kolHinkar), men bara för att sortera etiketterna;
     // resultatet bär inga totaler, bara cellerna, och urvalets antal. Tabellen i src/app/70-utforska.js skriver en
     // kolumn per kolumnvärde utan totalrad eller totalkolumn; en cell under tröskeln blir tom i exporten och rader och
     // kolumner med bara sådana celler utelämnas (data-export-tom, data-export-utelamna), om inte användaren kryssar i
@@ -374,7 +374,7 @@ describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () =
         it(`${fall.namn}: resultatet har inga totaler, och cellerna utan den lilla räcker inte till en differens`, () => {
             const { rader } = underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B' }, { bas: 'C' }], liten: { bas: 'C', kon: 'man' } });
             for (const r of rader) if (r.bas === 'C' && r.lon < 90000) r.kon = 'kvinna';   // C: bara kvinnor utom den lilla gruppen
-            const p = computePivot(rader, { rad: 'bas', kolumn: 'kon', matt: 'medel' }, { k: K });
+            const p = pivottabell(rader, { rad: 'bas', kolumn: 'kon', matt: 'medel' }, { k: K });
             expect(Object.keys(p).sort()).toEqual(['celler', 'dolda', 'kolumnEtiketter', 'radEtiketter', 'spec', 'urval']);
             expect(Object.keys(p.urval).sort()).toEqual(['n', 'nKv', 'nMa']);
             const liten = p.celler.find(c => c.liten);
@@ -389,8 +389,8 @@ describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () =
     // vy, BAS i en annan). Skyddet gäller summorna i samma export; differenser mellan två exporter står som ovaktade.
     it('två exporter: vyn Hela urvalet och vyn BAS ger tillsammans ett utelämnat intervalls medellön (utanför S4)', () => {
         const { rader, liten } = underlag(FALL[0], { stora: [{ bas: 'A' }, { bas: 'B' }], liten: { bas: 'C' } });
-        const hela = computePivot(rader, { rad: 'alla', matt: 'medel' }, { k: K }).celler[0];
-        const bas = computePivot(rader, { rad: 'bas', matt: 'medel' }, { k: K }).celler.filter(c => !c.liten);
+        const hela = pivottabell(rader, { rad: 'alla', matt: 'medel' }, { k: K }).celler[0];
+        const bas = pivottabell(rader, { rad: 'bas', matt: 'medel' }, { k: K }).celler.filter(c => !c.liten);
         const r = rest(skriven(hela.n, hela.value, true), bas.map(c => skriven(c.n, c.value, true)));
         expect(avvikelse(r.medel, liten.medel)).toBeLessThan(GRANS);
     });
@@ -529,7 +529,7 @@ describe('Var uppstår löneskillnaden: delarna och de största posterna', () =>
     // Samma underlag som ett ekvationssystem: allt som står samtidigt (medellönerna, varje del och de namngivna
     // posterna) mot medellönen i varje cell. Det prövar också delarna, som ensamma kan ge en liten grupps medellön (se
     // valet med en variabel nedan).
-    const cellFor = variabler => r => [...variabler.map(v => String(groupKey(r, v) ?? '—')), konOf(r)].join('|');
+    const cellFor = variabler => r => [...variabler.map(v => String(gruppnyckel(r, v) ?? '—')), konAv(r)].join('|');
     const ekvationer = (rader, variabler) => {
         const gu = gapUppdelning(rader, { k: K, variabler });
         const namn = gu.delar ? Object.entries(gu.topp).flatMap(([d, l]) => l.map(p => [d, p.namn])) : [];
@@ -603,7 +603,7 @@ describe('Årsbokslutet: nyckeltal för hela organisationen mot raderna per grup
     // organisationen är inte summor av gruppernas, så raderna per grupp och intervall ger ingen differens mot nyckeltalen;
     // de enda talen som summerar är antalen, och antal omfattas inte av skyddet (ADR-70). De sakliga skälens belopp är
     // organisationens bedömning, inte löner, och en grupp under tröskeln bär inga belopp (_valideraBedomningar).
-    // Golvet ARSBOKSLUT_K_MIN = 2 gäller ett bokslut sparat med en lägre tröskel; bokslutMedGrans tillämpar årets
+    // Golvet ARSBOKSLUT_K_MIN = 3 gäller ett bokslut sparat med en lägre tröskel; bokslutMedGrans tillämpar årets
     // tröskel på det som jämförelsen visar.
     it('bokslutets fält och jämförelsens mått har inget medel och ingen summa av löner', () => {
         const b = byggArsbokslut({ ar: 2026, skapat: '2026-11-19', k: 2, verktyg: 'prov',

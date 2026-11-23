@@ -4,13 +4,13 @@
 import { describe, it, expect } from 'vitest';
 import { jamforelseRader, avvikelseRangordning, aidAvYrke, statistikFor, matchningEtikett, matchningAntal, matchningSammanfattning,
     statistikMarknad, statistikensMedianFor } from '../src/lib/jamforelse.js';
-import { marketTargets } from '../src/lib/loneoversyn.js';
+import { marknadsriktning } from '../src/lib/loneoversyn.js';
 
 const grupp = (yrke, bas, loner) => loner.map(lon => ({ yrke, bas, lon }));
 const tio = (_bas = 'C', start = 30000) => Array.from({ length: 10 }, (_, i) => start + i * 1000);   // 30 000 … 39 000
 
-describe('jamforelse: organisationens percentiler och skillnader', () => {
-    it('räknar P10, median och P90 som quantile och skillnaden mot statistiken', () => {
+describe('[B6.5] jamforelse: organisationens percentiler och skillnader', () => {
+    it('räknar P10, median och P90 som kvantil och skillnaden mot statistiken', () => {
         const { rader } = jamforelseRader(grupp('402010 Förskollärare', 'C', tio()),
             { statistik: [{ aid: '402010', bas: 'C', p10: 31000, median: 35000, p90: 40000 }], policyFor: () => null, k: 10 });
         expect(rader).toHaveLength(1);
@@ -61,7 +61,7 @@ describe('jamforelse: matchning mot jämförelsestatistiken', () => {
     });
 });
 
-describe('jamforelse: statistikFor, det gemensamma uppslaget', () => {
+describe('[B6.4] jamforelse: statistikFor, det gemensamma uppslaget', () => {
     const utanBas = { aid: '207011', bas: '', median: 33000 }, medC = { aid: '207011', bas: 'C', median: 36000 };
     it('samma AID och BAS först', () => {
         expect(statistikFor([utanBas, medC], '207011', 'C')).toEqual({ rad: medC, matchning: 'aid-bas' });
@@ -107,7 +107,7 @@ describe('jamforelse: statistikMarknad (Löneöversyns marknadspositionering)', 
         const marknad = statistikMarknad(statistik, grupper);
         expect([...marknad.entries()]).toEqual([['2|3', 35000], ['2|4', 41000]]);
         // AID 1 har bara en rad för BAS 5: gruppen i BAS 3 får ingen marknadsnivå och inget lyft.
-        const t = marketTargets(grupper, marknad, 1, 0);
+        const t = marknadsriktning(grupper, marknad, 1, 0);
         expect(t.map(x => [x.aid, x.bas, x.value])).toEqual([['2', '3', 25000], ['2', '4', 55000]]);
     });
     it('rader utan positiv median räknas inte', () => {

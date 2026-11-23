@@ -2,8 +2,10 @@
 // Copyright 2026 Felix Jansson
 // Årsbokslutet (ADR-54): validering, k-skydd och jämförelsen mellan två år — den rena modulen.
 import { describe, it, expect } from 'vitest';
-import { byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
-import { arsjamforelseBlock, tillWordHtml } from '../src/lib/rapportunderlag.js';
+import { bokslutBasRad, bokslutGrupper, byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
+import { arsjamforelseBlock, likaArbeteGrupper, tillWordHtml } from '../src/lib/rapportunderlag.js';
+import { konsMedianerUrLoner } from '../src/lib/struktur.js';
+import { svPct } from '../src/lib/talformat.js';
 
 const bokslut = (ar, over = {}) => byggArsbokslut({
     ar, skapat: `${ar}-11-01`, k: 10, verktyg: 'v2026.10.19',
@@ -44,7 +46,7 @@ describe('årsbokslut: validering och k-skydd', () => {
     });
 });
 
-describe('årsbokslut: jämförelsen mellan två år', () => {
+describe('[B8.2] årsbokslut: jämförelsen mellan två år', () => {
     it('nyckeltal rad för rad, flaggade grupper som kvar, nya och borta, och förra årets öppna punkter', () => {
         const forra = bokslut(2025);
         const nu = bokslut(2026, {
@@ -166,8 +168,9 @@ describe('årsbokslut: löneutveckling per BAS-intervall (basIntervall)', () => 
 });
 
 describe('årsbokslut: förra årets fil kan ha sparats med en lägre tröskel', () => {
-    it('k under 2 i filen höjs till 2, och jämförelsen tillämpar den högre av årens gränser på förra årets rader', () => {
-        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 1 }).k).toBe(2);
+    it('k under 3 i filen höjs till 3 (ADR-102), och jämförelsen tillämpar den högre av årens gränser på förra årets rader', () => {
+        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 1 }).k).toBe(3);
+        expect(valideraArsbokslut({ ar: 2025, skapat: '2025-01-01', k: 2 }).k).toBe(3);
         const forra = bokslut(2025, { k: 5,
             grupper: [{ yrke: 'Liten (BAS A)', nKv: 6, nMa: 7, medKv: 66661, medMa: 66663, gapPct: -3, flaggad: true }],
             basIntervall: [
@@ -231,7 +234,7 @@ describe('årsbokslut: grupperna är AID-koden i BAS-intervallet (ADR-89)', () =
     });
 });
 
-describe('årsbokslut: lönespridningen (P90 − P10) / median', () => {
+describe('[B8.1] årsbokslut: lönespridningen (P90 − P10) / median', () => {
     it('räknas för en lönelista med minst k personer, avrundad till fyra decimaler; under k, tom eller median 0 ger null', () => {
         const lon = [20000, 22000, 24000, 26000, 28000, 30000, 32000, 34000, 36000, 38000];
         // P10 = 21 800, P90 = 36 200 (linjär interpolation), median 29 000.
@@ -355,5 +358,39 @@ describe('årsbokslut: jämförelsen av de sakliga skälen', () => {
     it('null när ett av åren saknar fältet (ett bokslut från version 1)', () => {
         const v1 = { ...forra(), version: 1 }; delete v1.bedomningar;
         expect(jamforArsbokslut(valideraArsbokslut(v1), nu()).bedomningar).toBeNull();
+    });
+});
+
+describe('[B8.2] årsbokslut: raden per BAS-intervall', () => {
+    const rad = (kon, lon) => ({ bas: 'B', kon, lon });
+    const rader = [...[30000, 31000, 32000, 33000].map(l => rad('kvinna', l)), ...[34000, 35000].map(l => rad('man', l)), rad('man', 0), { bas: 'C', kon: 'man', lon: 1 }];
+    it('antal och kvantiler från k personer med lön, könens medianer bara när båda könen når k', () => {
+        expect(bokslutBasRad(rader, 'B', 2)).toMatchObject({ bas: 'B', n: 6, nKv: 4, nMa: 2, med: 32500, medKv: 31500, medMa: 34500 });
+        expect(bokslutBasRad(rader, 'B', 3)).toMatchObject({ n: 6, medKv: null, medMa: null });
+        expect(bokslutBasRad(rader, 'B', 7)).toBeNull();
+        expect(bokslutBasRad(rader, 'B', 2).spridning).toBe(lonespridning([30000, 31000, 32000, 33000, 34000, 35000], 2));
+    });
+});
+
+describe('[B8.2] årsbokslut: grupperna ur Lika arbetes grupper', () => {
+    it('bokslutGrupper: en samlad median följer inte med; gapet är gruppens skillnadPct och spridningen ur gruppens löner', () => {
+        const rader = [30000, 31000, 32000, 33000].flatMap((lon, i) => [{ yrke: '5100 Vård', aid: '5100', bas: 'A', kon: i % 2 ? 'man' : 'kvinna', lon }]);
+        const grupper = [
+            { aid: '5100', yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, kvot: 0.96875, kvotPct: 96.875, skillnadPct: -3.125, flaggad: false },
+            { aid: '6100', yrke: 'Annat', bas: 'B', nKv: 1, nMa: 9, medKv: null, medMa: null, kvot: null, flaggad: false, samladMedian: true },
+        ];
+        const ut = bokslutGrupper(grupper, rader, 2);
+        expect(ut).toHaveLength(1);
+        expect(ut[0]).toEqual({ yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, gapPct: -3.125, flaggad: false,
+            spridning: lonespridning([30000, 31000, 32000, 33000], 2) });
+    });
+    it('bokslutGrupper: gapet är konsMedianerUrLoner:s, inte räknat om ur kvoten', () => {
+        // 24 045 mot 30 000 är exakt −19,85; ur kvoten (kvot × 100 − 100) blev det strax under och visades som −19,8.
+        const rader = [24045, 24045, 30000, 30000].map((lon, i) => ({ yrke: '5100 Vård', aid: '5100', bas: 'A', kon: i < 2 ? 'kvinna' : 'man', lon }));
+        const g = likaArbeteGrupper(rader, { k: 2, golv: 2 }).grupper[0];
+        expect(svPct(g.kvot * 100 - 100, 1)).toBe(svPct(-19.8, 1));   // den gamla vägen
+        const ut = bokslutGrupper([g], rader, 2)[0];
+        expect(ut.gapPct).toBe(konsMedianerUrLoner([24045, 24045], [30000, 30000]).gapPct);
+        expect(ut.gapPct).toBe(-19.85);
     });
 });

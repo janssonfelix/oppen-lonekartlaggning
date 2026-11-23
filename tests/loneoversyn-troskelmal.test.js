@@ -41,7 +41,7 @@ describe('likalonslyftForMal: konstanterna', () => {
     });
 });
 
-describe('likalonslyftForMal: målet högst X %', () => {
+describe('[B7.9] likalonslyftForMal: målet högst X %', () => {
     it('kvinnor 100, män 110 och målet 5 %: lyftet 4,5 % (110 · 0,95 / 100 − 1), inom toleransen och aldrig under', () => {
         const { skatta } = stubbe();
         const svar = likalonslyftForMal(underlag(100, 110), { malPct: 5, skatta });

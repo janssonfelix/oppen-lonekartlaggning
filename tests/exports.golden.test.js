@@ -65,7 +65,7 @@ beforeAll(() => {
         __appVersion: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''),
         __XLSX: XLSX,
         __docDraftHtml: _buildDocumentationDraftHtml,
-        __docxDocumentXml: () => _docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
+        __docxDocumentXml: () => docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
         __buildPrintReport: buildPrintReport,
         __excelBlad: () => ({ besked: excelAlltBlad(), bok: _excelAlltBok().SheetNames }),
         __loadFixture: function(utanAlder) {
@@ -103,9 +103,9 @@ beforeAll(() => {
             if (state.likvardighet) state.likvardighet.result = null;
             _deriveArbetsvarderingFromData();
             // Rendera vyerna som exporterna plockar tabeller ur
-            generateRapport();
-            generateSkevhet();
-            generateEUDirectiveMatrix();
+            ritaLoneoversikt();
+            ritaLoneskillnadPerBas(lsBasVymodell());
+            ritaLikaArbete(laVymodell());
             renderPrioritering();
             generateBenchmark();
             renderStructure();
@@ -316,7 +316,7 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
             rows.push({ bas: 'B', yrke: '5301 Undersköterska', aid: '5301', yrkeLabel: 'Undersköterska', lon, alder: 30 + i * 2, kon, poang: null, enhet: '1234' });
         win.__state.data = rows;
         win.__state.dataAudit = { totalRaw: rows.length, excludedNoBas: 0, excludedZeroLon: 0 };
-        win.eval('_deriveArbetsvarderingFromData(); generateRapport(); generateSkevhet(); generateEUDirectiveMatrix(); renderStructure(); window.__captured = {}; exportEuReport(); exportAllToExcel();');
+        win.eval('_deriveArbetsvarderingFromData(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell()); ritaLikaArbete(laVymodell()); renderStructure(); window.__captured = {}; exportEuReport(); exportAllToExcel();');
         eu = win.__captured[Object.keys(win.__captured).find(f => /eu_lonerapport/.test(f))];
         alla = win.__captured[Object.keys(win.__captured).find(f => /lonekartlaggning_komplett/.test(f))];
         expect(eu && alla).toBeTruthy();
@@ -410,7 +410,7 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
 
     it('determinism: två utkast i rad är identiska (bortsett från exporttidsstämpel)', () => {
         // Reset per anrop: draften konsumerar Math.random via bootstrap-CI:t i
-        // computeLikvardighetPairs, och cachar INTE resultatet tillbaka.
+        // likvardighetspar, och cachar INTE resultatet tillbaka.
         // Jämför NORMALISERAT: metodbilagans "Exporttidpunkt" är väggklockstid (sekund-
         // upplöst) och får skilja om anropen råkar korsa en sekundgräns — det är inte en
         // determinismbrist. Allt annat (inkl. slumpberoende CI) måste vara identiskt.
@@ -594,7 +594,7 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
             bocker = { ...win.__captured };
             // Arbetsböckerna utanför de sex ovan: Löneöversikten, prioriteringslistan, löneöversynen och ZIP-filens bok.
             win.document.getElementById('forecast-budget-value').value = '2';   // utan pott finns ingen prognos att exportera
-            win.eval('updateForecast(); exportForecast()');
+            win.eval('ritaPrognos(); exportForecast()');
             win.document.getElementById('btn-export-excel').click();
             win.document.getElementById('btn-export-prio-excel').click();
             Object.assign(bocker, win.__captured, { 'ZIP-filens Excel-fil': win.eval('_excelAlltBok()') });

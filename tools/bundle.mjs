@@ -16,9 +16,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { buildAppBuffer } from './build-app.mjs';
-import { writeMirrors } from './gen-mirrors.mjs';
-import { writeVersionModule } from './gen-version.mjs';
+import { skrivApp } from './build-app.mjs';
 import { minifyCss } from './lib/minify-css.mjs';
 import { minifyHtml } from './lib/minify-html.mjs';
 import { VERIFIERING } from './release.mjs';
@@ -100,18 +98,14 @@ const xlsxFile = 'vendor/xlsx.mini.min.js';
 console.log(`Bundling Oppen lonekartlaggning v${version}...`);
 console.log(`  xlsx   variant: ${xlsxFile}`);
 
-// #6 app.js ar ett genererat hopslaget bygge av src/app/-modulerna. Regenerera
-// det har sa att bygget alltid speglar kallan.
-// Regenerera app.js fran src/app/ sa bygget alltid speglar kallan. Kan hoppas
+// dist/app.js byggs ur src/app/ (tools/build-app.mjs), sa att bygget alltid motsvarar kallan. Kan hoppas
 // over med BUNDLE_SKIP_APP_BUILD=1 (t.ex. for reproducerbar verifiering mot en
 // befintlig app.js).
 if (process.env.BUNDLE_SKIP_APP_BUILD) {
     console.log('  (BUNDLE_SKIP_APP_BUILD - anvander befintlig app.js)');
 } else {
-    writeVersionModule(); // src/app/08-version.js fran VERSION (single source of truth)
-    writeMirrors();       // src/app/09-lib-speglar.js fran src/lib/ (single source of truth)
-    writeFileSync(join(root, 'dist', 'app.js'), buildAppBuffer().buffer);
-    console.log('  + app.js regenererad fran src/app/');
+    skrivApp(); // src/app/08-version.js fran VERSION, dist/app.js fran src/app/
+    console.log('  + app.js byggd fran src/app/');
 }
 
 let html = readText('src/index.html');

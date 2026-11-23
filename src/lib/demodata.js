@@ -4,20 +4,21 @@
  * Öppen lönekartläggning — demodatan: de påhittade underlagen i demoläget och självdiagnostiken.
  *
  * Rena generatorer med en egen deterministisk slump (LCG med fast frö): samma rader, i samma ordning, vid varje
- * anrop. Det lilla demot (generateTestData, generateDemoData) är självdiagnostikens och testsvitens kända underlag;
- * det stora (generateStortDemo m.fl.) visar verktyget i verklig storlek. Allt är påhittat: inga personer, inga namn,
+ * anrop. Det lilla demot (genereraTestdata, genereraDemodata) är självdiagnostikens och testsvitens kända underlag;
+ * det stora (genereraStortDemo m.fl.) visar verktyget i verklig storlek. Allt är påhittat: inga personer, inga namn,
  * ingen verklig organisation. Inläsningen i demoläget (state, DOM) står i src/app/20-demodata-diagnostik.js och
  * src/app/21-stort-demo.js.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js, under samma namn.
  */
 import { arKvinna, arMan } from './kon.js';
 import { ansvarsgrupp as _anGrupp } from './ansvar.js';
-import { _normalizePolicyAid } from './inlasning.js';
-import { median, quantile } from './stat.js';
+import { _normaliseraPolicyAid } from './inlasning.js';
+import { median, kvantil } from './stat.js';
+import { basRangordning } from './likvardighet.js';
+import { konsMedianer } from './struktur.js';
+import { svPct } from './talformat.js';
 
 // ---- Det lilla demot ----
-export function generateTestData() {
+export function genereraTestdata() {
     // Syntetisk dataset: 200 personer, 5 BAS (A-E), känd struktur:
     // - Lön = 30000 + BAS_rank*5000 + age_centered*200 + random_noise
     // - Kön-effekt: kvinnor får -3% justerad lön (oförklarat gap = ~3%)
@@ -60,9 +61,9 @@ export function generateTestData() {
 // yrkesnamn, plus tre yrken i BAS C som ger kandidatpar i likvärdigt arbete — två
 // kvinnodominerade yrken med lägre lön än ett mansdominerat på samma nivå. Systemutvecklare i BAS C (23 kvinnor av
 // 45) är blandad och därmed också jämförelseyrke (ADR-60).
-// generateTestData() lämnas orörd: självdiagnostiken bygger på dess kända egenskaper.
-export function generateDemoData() {
-    const data = generateTestData().map(r => ({
+// genereraTestdata() lämnas orörd: självdiagnostiken bygger på dess kända egenskaper.
+export function genereraDemodata() {
+    const data = genereraTestdata().map(r => ({
         ...r, aid: r.yrke.split(' ')[0], yrkeLabel: r.yrke.replace(/^\d+\s*/, '')
     }));
     const lagg = (yrke, n, kvinnor, grundlon) => {
@@ -108,8 +109,8 @@ export function generateDemoData() {
 //   - likvärdigt arbete: ett mansdominerat tekniskt yrke med högre lön än ett kvinnodominerat vårdyrke i samma
 //     intervall (_SD_LIKVARDIGT);
 //   - män något oftare och äldre oftare i det högre av yrkets två intervall (struktur, inte lön för lika arbete);
-//   - små grupper: yrken under tio personer och yrken där ett kön är färre än tio, så att k-anonymitetens
-//     maskering syns i exporterna.
+//   - små grupper: yrken under tio personer och yrken där ett kön är färre än tio, så att maskeringen vid
+//     minsta gruppstorlek syns i exporterna.
 // Ansvarskoderna följer det lilla demots regel (ledningsansvar, särskilt uppdrag, förstelärare); cheferna (AID som
 // börjar med 10) har ledningsansvar. Ansvarskoderna påverkar inte lönerna.
 
@@ -228,8 +229,8 @@ export const _SD_GAP = Object.freeze({ '401011': -0.025, '401012': -0.04, '20709
 // samma BAS-intervall.
 export const _SD_LIKVARDIGT = Object.freeze({ hog: '503090', lag: '207011', bas: 'D' });
 
-export function generateStortDemo() {
-    // Samma slags seedade slump som generateTestData, med ett eget frö: samma underlag vid varje anrop.
+export function genereraStortDemo() {
+    // Samma slags seedade slump som genereraTestdata, med ett eget frö: samma underlag vid varje anrop.
     let seed = 5000;
     const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
     const rndNorm = () => { let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -287,7 +288,7 @@ export function generateStortDemo() {
 // påslag kring noll, så att ungefär en fjärdedel av grupperna ligger över statistiken och inte alla ser underbetalda ut. Ingen verklig källa efterliknas.
 const _sdAvrunda = (x, steg) => Math.round(x / steg) * steg;
 
-export function generateStortDemoStatistik() {
+export function genereraStortDemoStatistik() {
     // Eget frö: samma statistik vid varje anrop, oberoende av lönerna.
     let seed = 126;
     const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
@@ -298,7 +299,7 @@ export function generateStortDemoStatistik() {
             const median = _sdAvrunda(niva * (1 + paslag), 100);
             const forskjutning = Math.floor(rnd() * 11) - 5;   // −5 … +5 procentenheter
             rader.push({
-                aid: _normalizePolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
+                aid: _normaliseraPolicyAid(aid), aidFull: `${aid} ${namn}`, bas,
                 median, p10: _sdAvrunda(median * (1 - 0.45 * spridning), 100), p90: _sdAvrunda(median * (1 + 0.55 * spridning), 100),
                 nKv: null, nMa: null, andelKv: Math.max(0, Math.min(100, Math.round(andelKv * 100) + forskjutning)),
             });
@@ -324,10 +325,47 @@ export function _sdStallningstagande(data, k = 10) {
             med: _sdAvrunda(senast.med * 1.1, 500), p90: _sdAvrunda(senast.p90 * 1.1, 100) }] : [];
         senast = {
             aid: null, bas,
-            p10: _sdAvrunda(quantile(loner, 0.1), 100),
+            p10: _sdAvrunda(kvantil(loner, 0.1), 100),
             med: _sdAvrunda(median(loner) * (_SD_POLICYLYFT[bas] || 1), 500),
-            p90: _sdAvrunda(quantile(loner, 0.9), 100),
+            p90: _sdAvrunda(kvantil(loner, 0.9), 100),
         };
         return [senast];
     });
+}
+
+/**
+ * Självdiagnostiken på demot (genereraDemodata, som genereraTestdata): räknar verktyget fram det som lagts in? Den råa skillnaden ska
+ * vara negativ, den oförklarade nära −3 % och säkerställd, BAS-effekten 5–25 % per bokstavssteg, R² över 0,30,
+ * underlagets kvalitet inte kritisk och fem BAS-intervall. Utan tröskel (k = 1): det är verktygets egen testdata.
+ * @param {{rader: any[], reg: any, underlag: {status: string}|null, antalBas: number}} m
+ *   reg: huvudregressionen på raderna (med `error` när den inte kunde skattas)
+ * @param {{nivaFl: string, underlagEtikett: (status: string) => string, pText: (p: number) => string}} ord
+ * @returns {{name: string, expected: string, actual: string, pass: boolean}[]}
+ */
+export function demodiagnostik({ rader, reg, underlag, antalBas }, ord) {
+    const tests = [];
+    // Den råa skillnaden ska vara märkbart negativ (kvinnor yngre + lägre BAS = lägre lön)
+    const rawGap = konsMedianer(rader).gapPct;
+    tests.push({ name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)', expected: '< -3%', actual: svPct(rawGap, 2), pass: rawGap != null && rawGap < -3 });
+    // Den oförklarade skillnaden (efter ålder + BAS) ska vara nära den inlagda effekten −3 %
+    if (!reg.error) {
+        tests.push({ name: 'Oförklarad skillnad nära −3 % (inlagd könseffekt)', expected: '-1% till -5%', actual: svPct(reg.konPct, 2), pass: reg.konPct > -5 && reg.konPct < -1 });
+        tests.push({ name: 'Oförklarad skillnad är statistiskt signifikant (p < 0,05)', expected: 'p < 0,05', actual: ord.pText(reg.pValue), pass: reg.pValue < 0.05 });
+        // BAS-effekten: nivån i högsta BAS mot referensen, utslagen per bokstavssteg
+        if (reg.basEffekter && reg.basEffekter.length) {
+            const sista = reg.basEffekter[reg.basEffekter.length - 1];
+            const rang = basRangordning(reg.basList);
+            const steg = rang(sista.bas) - rang(reg.basRef);
+            const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
+            tests.push({ name: 'BAS-effekt är signifikant positiv (~10-15% per steg)', expected: '+5% till +25% per steg',
+                actual: svPct(perSteg, 2) + ` (BAS ${sista.bas} mot ${reg.basRef}: ${svPct(sista.pct, 1)})`, pass: perSteg > 5 && perSteg < 25 });
+        }
+        tests.push({ name: 'R² > 30% (modellen förklarar betydande andel av lönerna)', expected: 'R² > 0.30', actual: svPct(reg.R2 * 100, 2), pass: reg.R2 > 0.30 });
+    } else {
+        tests.push({ name: 'Regression kunde estimeras', expected: 'OK', actual: 'Fel: ' + reg.error, pass: false });
+    }
+    // Underlagets kvalitet får inte vara kritisk för testdatan
+    if (underlag) tests.push({ name: 'Underlagets kvalitet är inte kritisk (testdata)', expected: 'OK eller Varning', actual: ord.underlagEtikett(underlag.status), pass: underlag.status !== 'kritisk' });
+    tests.push({ name: `Antal unika ${ord.nivaFl} = 5 (testdatan har A–E)`, expected: '5', actual: antalBas.toString(), pass: antalBas === 5 });
+    return tests;
 }

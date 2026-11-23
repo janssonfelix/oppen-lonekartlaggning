@@ -7,13 +7,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { utanTaggar } from '../src/lib/htmltext.js';
-import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_KV, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
 vi.setConfig({ testTimeout: 30000 });
 
-describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln för varje kön', () => {
+describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln för varje kön', () => {
     const NOT = /ojusterade steget[^.]*visas inte[^.]*färre än 10 personer/;
     const tal = w => {
         const r = w.eval('runOLSRegression()');
@@ -99,7 +99,7 @@ describe('R1: regressionens ojusterade steg ("Endast kön") kräver tröskeln f�
     });
 });
 
-describe('R4: Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel', () => {
+describe('[R4] Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel', () => {
     it('i exportläget: sparat vid 5 med 7 män, rågapet visas vid 5 och döljs när tröskeln höjs till 10', () => {
         const w = iExport(fonsterMan(5, SJU_MAN));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
@@ -131,7 +131,7 @@ describe('R4: Löneöversynens scenariojämförelse maskerar ett rågap som spar
     });
 });
 
-describe('R2: en egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning', () => {
+describe('[R2] en egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning', () => {
     it('raden på en grupp om en person får noten; raden på en stor grupp får den inte', () => {
         const w = fonsterKon(null);
         w.__state.forecast.targets = [
@@ -166,7 +166,7 @@ describe('R2: en egen riktad rad på en grupp under tröskeln är tillåten och 
     });
 });
 
-describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () => {
+describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () => {
     const TRE_MAN = [41417, 43719, 47827];
     // Serierna i ett diagram ritat av diagramkärnan (ADR-39); för lådagrammet de kön som har en låda.
     const namn = (w, id) => {
@@ -212,7 +212,7 @@ describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () =>
     it('ett valt BAS med 30 kvinnor och en man: samma regel som för hela urvalet (exportläget)', () => {
         const w = iExport(fonsterKon(null));
         w.__renderTabContent('kon');
-        w.eval("renderKon('Y1')");
+        w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
         expect(d.getElementById('kon-kpi-gap').textContent.trim()).toBe('–');
         expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
@@ -220,14 +220,14 @@ describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         expect(namn(w, 'chart-kon-scatter')).not.toContain('Man (trend)');
         expect(harNagon(normalisera(d.getElementById('view-kon').textContent), [KON_MA[0], ...KON_GAP.slice(0, 4)])).toEqual([]);
         // Tillbaka till hela urvalet, där båda könen är många: noterna försvinner.
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         expect(d.getElementById('chart-kon-boxplot-k-not')).toBeNull();
         expect(namn(w, 'chart-kon-boxplot')).toEqual(['Kvinna', 'Man']);
     });
     it('på skärmen, ett valt BAS med en man: ingen lutning, ingen åldersjustering och ingen insikt för män', () => {
         const w = fonsterKon(null);
         w.__renderTabContent('kon');
-        w.eval("renderKon('Y1')");
+        w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
         expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
         expect(d.getElementById('kon-kpi-agegap').textContent.trim()).toBe('–');
@@ -235,11 +235,23 @@ describe('R3: Ålder & karriär följer regeln för könsuppdelade mått', () =>
         expect(d.getElementById('view-kon').textContent).not.toMatch(/NaN/);
         expect(namn(w, 'chart-kon-scatter')).not.toContain('Man (trend)');
     });
+    it('kvoten räknas om för det valda BAS-intervallet (konsMedianer) och maskeras där i exportläget', () => {
+        const w = fonsterKon(null);
+        w.__renderTabContent('kon');
+        const d = w.document, gap = () => d.getElementById('kon-kpi-gap').textContent.replace(/[\u00a0\u202f]/g, ' ');
+        const alla = gap();
+        w.eval("ritaAlderOchLon('Y1')");
+        expect(gap()).toBe(w.eval(`svPct(${KON_KV[0] / KON_MA[0] * 100}, 1)`).replace(/[\u00a0\u202f]/g, ' '));   // 30 kvinnor och en man
+        expect(gap()).not.toBe(alla);
+        iExport(w);
+        w.eval("ritaAlderOchLon('Y1')");
+        expect(gap().trim()).toBe('–');
+    });
     it('färgläggning efter BAS: könens trendlinjer följer samma regel (exportläget)', () => {
         const w = iExport(fonsterMan(null, TRE_MAN));
         w.__renderTabContent('kon');
         w.document.getElementById('kon-color-by').value = 'bas';
-        w.eval("renderKon('__ALLA__')");
+        w.eval("ritaAlderOchLon('__ALLA__')");
         const spridning = namn(w, 'chart-kon-scatter');
         expect(spridning).toContain('Kvinna (trend)');
         expect(spridning).not.toContain('Man (trend)');
@@ -364,7 +376,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         const a = createAppWindow();
         a.eval('sattKTroskel(5, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
-        cfg.orgName = 'Ur filen';
+        cfg.orgNamn = 'Ur filen';
         expect('kTroskelLagst' in cfg).toBe(false);   // konfigurationsfilen bär inte låsningarna
         const b = medGolv(8, 12);
         let fragor = 0;
@@ -434,7 +446,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(w.eval('kTroskelLagst()')).toBeNull();
         expect(w.eval('kInstalld()')).toBe(10);
         expect(w.document.getElementById('k-troskel-hjalp').textContent).toBe('Standard 10. Ändringen räknar om alla flikar.');
-        expect(w.document.getElementById('k-troskel').min).toBe('2');
+        expect(w.document.getElementById('k-troskel').min).toBe('3');
         expect(w.document.getElementById('btn-k-aterstall').textContent).toBe('Återställ till 10');
         expect(w.eval('sattKTroskel(5, { fraga: false })').ok).toBe(true);
     });
@@ -449,7 +461,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(w.document.getElementById('paket-status').textContent).toMatch(/sparades inte.*5 är lägre än lägsta tillåtna 8/);
         w.document.getElementById('paket-k-lagst').value = '1';
         w.document.getElementById('btn-paket-spara').click();
-        expect(w.document.getElementById('paket-status').textContent).toMatch(/sparades inte.*Lägsta tillåtna minsta gruppstorlek: Ange ett heltal mellan 2 och 1000/);
+        expect(w.document.getElementById('paket-status').textContent).toMatch(/sparades inte.*Lägsta tillåtna minsta gruppstorlek: Ange ett heltal mellan 3 och 1000/);
     });
 });
 

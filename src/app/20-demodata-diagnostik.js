@@ -1,81 +1,43 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { _sdStallningstagande, demodiagnostik, genereraDemodata, genereraStortDemoStatistik } from '../lib/demodata.js';
+import { svTal } from '../lib/talformat.js';
+import { esc } from './01-html-och-tillganglighet.js';
+import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { ikon } from './03-ikoner.js';
+import { kInstalld } from './06-k-troskel.js';
+import { applyProfileLabels, synkaNamnFalt } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { _rfUrvalGlom } from './10-diagramritare.js';
+import { getBasIntervals, state } from './12-tillstand.js';
+import { bedomningUnderlag, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { renderOutliers } from './15-extremvarden-basrang.js';
+import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
+import { _fkSlapp } from './17-forhandskontroll.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { STORT_DEMO_STATISTIKNAMN } from './21-stort-demo.js';
+import { visningNy } from './23-exportgrind.js';
+import { updateGdprBanner } from './25-dataskyddsinfo.js';
+import { _rensaAllData, clearAllData } from './26-rensning.js';
+import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
+import { unlockTabs } from './31-navigering.js';
+import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasning.js';
+import { _fcGlomKnappresultat } from './36-loneoversyn.js';
+import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
+import { ritaLoneoversikt } from './39-loneoversikt.js';
+import { ritaAlderOchLon } from './40-alder-karriar.js';
+import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
+import { _formatPValue, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _hpDemoSkal } from './56-handlingsplan.js';
 
 // ---- #16 Testdata + självdiagnostik ----
-// generateTestData och generateDemoData står i src/lib/demodata.js; appen når dem genom spegeln.
+// genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen importerar dem.
 
+// Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
 function runDiagnostics() {
-    const tests = [];
-
-    // Test 1: råa gapet ska vara märkbart negativt (kvinnor yngre + lägre BAS = lägre lön)
-    const kv = state.data.filter(r => arKvinna(r));
-    const ma = state.data.filter(r => arMan(r));
-    const rawGap = (Stat.median(kv.map(r=>r.lon)) / Stat.median(ma.map(r=>r.lon)) - 1) * 100;
-    tests.push({
-        name: 'Den råa löneskillnaden är negativ (kvinnor lägre lön)',
-        expected: '< -3%',
-        actual: svPct(rawGap, 2),
-        pass: rawGap < -3
-    });
-
-    // Test 2: oförklarat gap (efter ålder + BAS) ska vara nära den injicerade -3%-effekten
     const reg = runOLSRegression();
-    if (!reg.error) {
-        tests.push({
-            name: 'Oförklarad skillnad nära −3 % (inlagd könseffekt)',
-            expected: '-1% till -5%',
-            actual: svPct(reg.konPct, 2),
-            pass: reg.konPct > -5 && reg.konPct < -1
-        });
-        tests.push({
-            name: 'Oförklarad skillnad är statistiskt signifikant (p < 0,05)',
-            expected: 'p < 0,05',
-            actual: _formatPValue(reg.pValue),
-            pass: reg.pValue < 0.05
-        });
-        // BAS-effekt ska finnas: nivån i högsta BAS mot referensen, utslagen per bokstavssteg
-        if (reg.basEffekter && reg.basEffekter.length) {
-            const sista = reg.basEffekter[reg.basEffekter.length - 1];
-            const rang = _lvBasRangFn(reg.basList);
-            const steg = rang(sista.bas) - rang(reg.basRef);
-            const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
-            tests.push({
-                name: 'BAS-effekt är signifikant positiv (~10-15% per steg)',
-                expected: '+5% till +25% per steg',
-                actual: svPct(perSteg, 2) + ` (BAS ${sista.bas} mot ${reg.basRef}: ${svPct(sista.pct, 1)})`,
-                pass: perSteg > 5 && perSteg < 25
-            });
-        }
-        tests.push({
-            name: 'R² > 30% (modellen förklarar betydande andel av lönerna)',
-            expected: 'R² > 0.30',
-            actual: svPct(reg.R2 * 100, 2),
-            pass: reg.R2 > 0.30
-        });
-    } else {
-        tests.push({ name: 'Regression kunde estimeras', expected: 'OK', actual: 'Fel: ' + reg.error, pass: false });
-    }
-
-    // Test 3: Underlagets kvalitet får inte vara kritisk för testdatan
-    const dq = bedomningUnderlag({ reg });   // regressionen ovan skickas vidare (ADR-17)
-    if (dq) {
-        tests.push({
-            name: 'Underlagets kvalitet är inte kritisk (testdata)',
-            expected: 'OK eller Varning',
-            actual: UK_ETIKETT[dq.status],
-            pass: dq.status !== 'kritisk'
-        });
-    }
-
-    // Test 4: BAS-intervall korrekt antal
-    tests.push({
-        name: `Antal unika ${T.niva.fl} = 5 (testdatan har A–E)`,
-        expected: '5',
-        actual: getBasIntervals().length.toString(),
-        pass: getBasIntervals().length === 5
-    });
-
-    return tests;
+    return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: getBasIntervals().length },   // regressionen skickas vidare (ADR-17)
+        { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formatPValue });
 }
 
 // Demolägets påhittade organisation och ställningstagande (ADR-28). Bara i demoläget;
@@ -108,7 +70,7 @@ function _lasInDemoReferens({ stort = false } = {}) {
 // det stora tas bort.
 function _lasInDemoStatistik({ stort = false } = {}) {
     if (stort) {
-        state.statistik = generateStortDemoStatistik();
+        state.statistik = genereraStortDemoStatistik();
         state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
         state.statistikKalla = 'demo';
         state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
@@ -123,7 +85,7 @@ function _lasInDemoStatistik({ stort = false } = {}) {
 // Det som det lilla och det stora demot (21-stort-demo.js) gör lika: frågan om befintlig data, rensningen av verkliga
 // delar, underlaget, demoläget, referensen och ritningen av Översikt och Filer och kvalitet. Bannern ritar anroparen sist.
 // Ger false om användaren avbröt.
-function _lasInDemounderlag(skapa, { stort = false } = {}) {
+export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     if ((state.data.length || state.paket) && !confirm('Lönefilen du har läst in ersätts. Vill du fortsätta?')) return false;
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     // Demots egen statistik (statistikKalla 'demo') är ingen verklig del: den ersätts eller tas bort nedan.
@@ -143,12 +105,12 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     unlockTabs();
-    updateDashboardStats();
+    ritaNyckeltal();
     populateSelects();
-    generateRapport();
-    generateSkevhet();
-    renderKon('__ALLA__');
-    updateCompliance();
+    ritaLoneoversikt();
+    ritaLoneskillnadPerBas(lsBasVymodell());
+    ritaAlderOchLon('__ALLA__');
+    ritaKravstatus();
     const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
     renderUnderlagetsKvalitet({ reg });
     updateGdprBanner();
@@ -168,8 +130,8 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
     return true;
 }
 
-function loadDemoData() {
-    if (!_lasInDemounderlag(generateDemoData)) return;
+export function loadDemoData() {
+    if (!_lasInDemounderlag(genereraDemodata)) return;
 
     // Kör diagnostik
     const tests = runDiagnostics();
@@ -200,17 +162,11 @@ function loadDemoData() {
     `;
     _renderDemoBanner();
 }
-// #9: samma demoladdning nås från självdiagnostiken, den synliga "Prova"-knappen
-// OCH länken i första-intryck-hinten.
-// Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
-['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
-    document.getElementById(id)?.addEventListener('click', loadDemoData));
-document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData);
 
 // #9 Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata
 // aldrig förväxlas med verklig analys. Banner-elementet finns i index.html.
 // Döljer även första-intryck-hinten när data finns (anropas i alla data-lägesbyten).
-function _renderDemoBanner() {
+export function _renderDemoBanner() {
     const b = document.getElementById('demo-mode-banner');
     if (b) b.style.display = state.isDemo ? 'flex' : 'none';
     // Det stora demot säger det i bannern; det lilla har kvar sin text.
@@ -224,4 +180,14 @@ function _renderDemoBanner() {
     // #5 Export-hubben är bara meningsfull när det finns data att exportera
     const hub = document.getElementById('export-hub');
     if (hub) hub.style.display = state.data.length ? 'block' : 'none';   // 'block', inte '': klassen .dold i markeringen döljer annars kortet
+}
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartDemodataDiagnostik() {
+    // #9: samma demoladdning nås från självdiagnostiken, den synliga "Prova"-knappen
+    // OCH länken i första-intryck-hinten.
+    // Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
+    ['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
+        document.getElementById(id)?.addEventListener('click', loadDemoData));
+    document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData);
 }

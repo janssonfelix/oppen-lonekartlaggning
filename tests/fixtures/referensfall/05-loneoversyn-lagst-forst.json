@@ -1,7 +1,7 @@
 {
   "id": "loneoversyn-lagst-forst",
   "titel": "Löneöversyn: en riktad pott fördelas lägst först (vattenfyllnad), utan tak",
-  "funktion": "src/lib/loneoversyn.js#allocate",
+  "funktion": "src/lib/loneoversyn.js#fordela",
   "indata": [
     [
       { "bas": "C", "aid": "X", "kon": "kvinna", "lon": 28000 },
@@ -26,7 +26,7 @@
   },
   "tolerans": 1e-6,
   "harledning": [
-    "Regeln (kommentaren till _waterLevelDeltas i loneoversyn.js): hitta en gemensam nivå L och lyft alla under L upp till L, så långt potten räcker. Inget tak här (dist \"lowest\"). Generellt påslag 0 %, ingen avrundning.",
+    "Regeln (kommentaren till _lyftLagstForst i loneoversyn.js): hitta en gemensam nivå L och lyft alla under L upp till L, så långt potten räcker. Inget tak här (dist \"lowest\"). Generellt påslag 0 %, ingen avrundning.",
     "Potten är 6 000 kr per månad (mode \"kr\"). Gruppen är alla fem i BAS C, AID X.",
     "Lönerna sorterade: 25 000, 26 000, 28 000, 31 000, 35 000.",
     "Steg 1: lyft den lägsta från 25 000 till nästa lön 26 000. Kostar 1 × 1 000 = 1 000. Använt 1 000, kvar 5 000.",

@@ -9,18 +9,17 @@
 // Version 2: handlingsplanens sakliga skäl per grupp (bedomningar: kategori och belopp, aldrig kommentarerna), så att
 // jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses som förut, utan skäl.
 
-import { median, quantile } from './stat.js';
-import { skapaTermer } from './termer.js';
+import { median, kvantil } from './stat.js';
+import { STANDARDTERMER as T } from './termer.js';
 import { valideraSkal, skalPerKategori, skalSammanstallning, skalKategorier } from './sakligaskal.js';
-import { aidAvYrke } from './aid.js';
+import { aidAvRad, aidAvYrke } from './aid.js';
+import { arKvinna, arMan } from './kon.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 export const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;
 /** Den lägsta tröskel ett bokslut kan bära (samma som verktygets K_MIN): ett lägre k i filen höjs hit. */
-export const ARSBOKSLUT_K_MIN = 2;
+export const ARSBOKSLUT_K_MIN = 3;
 
 const _tal = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const _heltal = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);
@@ -38,7 +37,44 @@ export function lonespridning(lon, k) {
     if (!Array.isArray(lon) || !lon.length || lon.length < k) return null;
     const med = median(lon);
     if (!(med > 0)) return null;
-    return Math.round((quantile(lon, 0.9) - quantile(lon, 0.1)) / med * 1e4) / 1e4;
+    return Math.round((kvantil(lon, 0.9) - kvantil(lon, 0.1)) / med * 1e4) / 1e4;
+}
+
+/**
+ * Bokslutets grupper ur Lika arbetes grupper (AID-koden i BAS-intervallet): de som redovisas per kön (inte med en
+ * samlad median), med kvinnors median i procent av mäns minus 100 och lönespridningen ur gruppens löner (lönerna för
+ * kvinnor och män med lön över 0, som Lika arbete räknar dem).
+ * @param {{aid: string, yrke: string, bas: string, nKv: number, nMa: number, medKv: number, medMa: number, skillnadPct: number, flaggad: boolean, samladMedian?: boolean}[]} grupper
+ * @param {any[]} rader
+ * @param {number} k
+ */
+export function bokslutGrupper(grupper, rader, k) {
+    /** @type {Map<string, number[]>} */ const lonPerGrupp = new Map();
+    for (const r of rader) if (r.lon > 0 && r.kon && (arKvinna(r) || arMan(r))) {
+        const kod = `${aidAvRad(r)}|${r.bas}`;
+        if (!lonPerGrupp.has(kod)) lonPerGrupp.set(kod, []);
+        /** @type {number[]} */ (lonPerGrupp.get(kod)).push(r.lon);
+    }
+    return grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.skillnadPct, flaggad: g.flaggad,
+        spridning: lonespridning(lonPerGrupp.get(`${g.aid}|${g.bas}`) || [], k) }));
+}
+
+/**
+ * Bokslutets rad för ett BAS-intervall: antal, P10, median, P90 och lönespridningen när intervallet har minst k
+ * personer, och kvinnors och mäns median bara när båda könen når k (samma regel som Lönestruktur). null under k.
+ * Bara rader med lön över 0 räknas. Också BAS-dossierns jämförelse med förra året (vymodell-basdossier.js).
+ * @param {any[]} rader
+ * @param {string} bas
+ * @param {number} k
+ */
+export function bokslutBasRad(rader, bas, k) {
+    const df = rader.filter(r => r.bas === bas && r.lon > 0);
+    if (df.length < k) return null;
+    const kv = df.filter(r => arKvinna(r)), ma = df.filter(r => arMan(r));
+    const lon = df.map(r => r.lon), konOk = kv.length >= k && ma.length >= k;
+    return { bas, n: df.length, nKv: kv.length, nMa: ma.length, p10: kvantil(lon, 0.10), med: median(lon), p90: kvantil(lon, 0.90),
+        medKv: konOk ? median(kv.map(r => r.lon)) : null, medMa: konOk ? median(ma.map(r => r.lon)) : null,
+        spridning: lonespridning(lon, k) };
 }
 
 /**

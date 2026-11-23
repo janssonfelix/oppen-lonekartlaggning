@@ -5,8 +5,35 @@
 // ställningstagande och jämförelsestatistik i en fil (skapaPaket); handläggarna läser in
 // den i ett steg (lasInPaket). Tolkning och validering bor i src/lib/organisationspaket.js
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
+import { installningsGrans } from '../lib/installningsgranser.js';
+import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
+import { bakaIn, filnamnForslag, normaliseraFilnamn } from '../lib/organisationsfil.js';
+import { byggPaket, tolkaPaket } from '../lib/organisationspaket.js';
+import { perBasReceptArStandard } from '../lib/perbas.js';
+import { stor } from '../lib/termer.js';
+import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { idagDatum } from './03-hjalpfunktioner.js';
+import { _renderaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
+import { _skrDel } from './06-kvinnoandel-referens.js';
+import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
+import { APP_VERSION } from './08-version.js';
+import { T } from './09-termer.js';
+import { aterstallReferens, harReferens, referensNamn, state } from './12-tillstand.js';
+import { populateSelects, renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
+import { renderConsistencyBanner } from './16-inlasningskontroll.js';
+import { renderActionChecklist } from './18-atgardslista.js';
+import { visningNy } from './23-exportgrind.js';
+import { _rensaAllData } from './26-rensning.js';
+import { setInactivityTimeout } from './28-vad-lagras-inaktivitet.js';
+import { invalidateStatCaches } from './30-statistikcacher.js';
+import { refreshCurrentTab } from './31-navigering.js';
+import { markUploadLoaded, resetUploadCell } from './32-filinlasning.js';
+import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
+import { lvJamforelse } from './45-aid-bas-tabeller.js';
+import { _readCostSettings } from './55-prioritering.js';
+import { explorerSynkaSmaLas } from './70-utforska.js';
 
-const PAKET_MAX_FILSTORLEK = _igGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
+const PAKET_MAX_FILSTORLEK = installningsGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 // Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
 const PAKET_INAKTIVITET_MIN = 5;
 const PAKET_INAKTIVITET_MAX = 120;
@@ -25,7 +52,7 @@ function _paketLasText(las) {
 
 // Prioriteringens fält för PO-påslag och period speglar state.costSettings; annars skriver
 // nästa ändring i fälten tillbaka de gamla värdena.
-function _synkaKostnadsfalt() {
+export function _synkaKostnadsfalt() {
     const po = document.getElementById('prio-po-pct');
     const man = document.getElementById('prio-cost-months');
     if (po) /** @type {HTMLInputElement} */ (po).value = state.costSettings.poPct;
@@ -34,7 +61,7 @@ function _synkaKostnadsfalt() {
 }
 
 // Tar bort jämförelsestatistiken (när ett nytt paket saknar den eller vid rensning).
-function _tomStatistik() {
+export function _tomStatistik() {
     state.statistik = [];
     state.statistikNamn = null;
     state.statistikKalla = null;
@@ -47,7 +74,7 @@ function _tomStatistik() {
     if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
 }
 
-function _paketStatus(text, ok) {
+export function _paketStatus(text, ok) {
     const el = document.getElementById('paket-status');
     if (!el) return;
     el.textContent = text;
@@ -55,7 +82,7 @@ function _paketStatus(text, ok) {
 }
 
 // Faktarutan under knappen: vilket paket som är inläst och vad det innehöll.
-function renderPaketInfo() {
+export function renderPaketInfo() {
     const el = document.getElementById('paket-info');
     if (!el) return;
     const p = state.paket;
@@ -90,7 +117,7 @@ function lasInPaket(...a) { try { return _lasInPaket.apply(null, /** @type {any}
  * @returns {{ok:boolean, meddelande:string}}
  */
 function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
-    const r = _opTolkaPaket(text);
+    const r = tolkaPaket(text);
     if (!r.ok) {
         _paketStatus('' + r.fel, false);
         return { ok: false, meddelande: r.fel };
@@ -195,7 +222,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     renderConsistencyBanner();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
     if (kAndrad && state.data.length) { populateSelects(); _renderaOmAllaFlikar(); }
-    else { updateCompliance(); renderActionChecklist(); renderProcessTracker(); refreshCurrentTab(); }
+    else { ritaKravstatus(); renderActionChecklist(); renderProcessTracker(); refreshCurrentTab(); }
 
     const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.`
         + (varningar.length ? ' ' + varningar.join(' ') : '');
@@ -211,7 +238,7 @@ const _paketText = id => (/** @type {HTMLInputElement} */ (_paketFalt(id))?.valu
 const _paketTal = id => { const v = parseFloat(String(/** @type {HTMLInputElement} */ (_paketFalt(id))?.value ?? '').replace(',', '.')); return Number.isFinite(v) ? v : undefined; };
 
 // Formuläret förifylls med det som gäller nu (ett inläst paket eller verktygets standard).
-function _fyllPaketFormular() {
+export function _fyllPaketFormular() {
     const satt = (id, v) => { const el = _paketFalt(id); if (el && document.activeElement !== el) /** @type {HTMLInputElement} */ (el).value = v ?? ''; };
     const p = state.paket;
     satt('paket-org', p ? p.organisation : '');
@@ -243,7 +270,7 @@ function _fyllPaketFormular() {
 
 /** Finns egna tabeller eller ett eget recept per BAS att ta med i paketet? */
 function _paketHarRecept() {
-    return (state.rapportTabeller || []).length > 0 || (state.perBasRecept != null && typeof _pbReceptArStandard === 'function' && !_pbReceptArStandard(state.perBasRecept));
+    return (state.rapportTabeller || []).length > 0 || (state.perBasRecept != null && typeof perBasReceptArStandard === 'function' && !perBasReceptArStandard(state.perBasRecept));
 }
 /** Rapportens recept ur formuläret: null när rutan inte är ikryssad eller inget finns. */
 function _paketRapportUrFormular() {
@@ -257,7 +284,7 @@ function _paketLasUrFormular() {
     const lagstText = _paketText('paket-k-lagst');
     const inaktText = _paketText('paket-inaktivitet');
     return {
-        kTroskelLagst: lagstText === '' ? undefined : _kTolka(lagstText) ?? undefined,
+        kTroskelLagst: lagstText === '' ? undefined : kTolka(lagstText) ?? undefined,
         inaktivitetMin: /^\d+$/.test(inaktText) ? Number(inaktText) : undefined,
         inaktivitetLast: !!/** @type {HTMLInputElement} */ (_paketFalt('paket-inaktivitet-last'))?.checked,
         smaGrupperIExport: _paketFalt('paket-sma-export') ? !!/** @type {HTMLInputElement} */ (_paketFalt('paket-sma-export')).checked : true,
@@ -267,7 +294,7 @@ function _paketLasUrFormular() {
 /** Felet i formulärets låsningar, eller null. Ett ogiltigt värde får inte tyst falla bort ur paketet. */
 function _paketLasFel() {
     const lagstText = _paketText('paket-k-lagst'), kText = _paketText('paket-k'), inaktText = _paketText('paket-inaktivitet');
-    const lagst = _kTolka(lagstText), k = _kTolka(kText);
+    const lagst = kTolka(lagstText), k = kTolka(kText);
     if (lagstText !== '' && lagst == null) return `Lägsta tillåtna minsta gruppstorlek: ${_paketKFel()}`;
     if (lagstText !== '' && kText !== '' && k != null && lagst != null && k < lagst) {
         return `Minsta gruppstorlek ${k} är lägre än lägsta tillåtna ${lagst}.`;
@@ -283,7 +310,7 @@ function _paketLasFel() {
 }
 
 /** Knappen kräver organisationens namn och minst ett ställningstagande eller statistik. */
-function uppdateraPaketKnapp() {
+export function uppdateraPaketKnapp() {
     const knapp = _paketFalt('btn-paket-spara');
     const harData = harReferens() || state.statistik.length > 0;
     if (knapp) /** @type {HTMLInputElement} */ (knapp).disabled = !_paketText('paket-org') || !harData;
@@ -292,8 +319,8 @@ function uppdateraPaketKnapp() {
         // Tröskeln paketet kommer att bära: fältets värde, inget alls om fältet är tomt, eller ett fel.
         const kText = _paketText('paket-k');
         const kDel = kText === '' ? ' Paketet anger ingen minsta gruppstorlek.'
-            : _kTolka(kText) == null ? ` Minsta gruppstorlek: ${_paketKFel()}`
-            : ` Minsta gruppstorlek för redovisning: ${_kTolka(kText)}.`;
+            : kTolka(kText) == null ? ` Minsta gruppstorlek: ${_paketKFel()}`
+            : ` Minsta gruppstorlek för redovisning: ${kTolka(kText)}.`;
         // Låsningarna (ADR-47): felet, annars vad paketet låser.
         const lasFel = _paketLasFel();
         const f = _paketLasUrFormular();
@@ -316,7 +343,7 @@ function _paketKFel() { return `Ange ett heltal mellan ${K_MIN} och ${K_MAX}.`; 
 function skapaPaket() {
     const jamfNamn = _paketText('paket-jamf-namn');
     const profiler = (state.importprofiler || []).filter(p => p.kalla === 'organisationspaket');
-    return _opByggPaket({
+    return byggPaket({
         organisation: _paketText('paket-org'),
         utgivare: _paketText('paket-utgivare'),
         skapat: idagDatum(),
@@ -329,7 +356,7 @@ function skapaPaket() {
             orgTyp: state.profile.orgTyp,
         },
         installningar: { poPct: _paketTal('paket-po'), poNot: state.profile.poPctNote, months: _paketTal('paket-manader'),
-                         kTroskel: _kTolka(_paketText('paket-k')) ?? undefined, ..._paketLasUrFormular(),
+                         kTroskel: kTolka(_paketText('paket-k')) ?? undefined, ..._paketLasUrFormular(),
                          jamforelse: lvJamforelse() },   // jämförelseetiketterna i likvärdigt arbete, som i fliken (ADR-60)
         referens: harReferens() ? { namn: _paketText('paket-ref-namn') || state.policyNamn || undefined,
                                     kortnamn: _paketText('paket-ref-kortnamn') || _paketText('paket-ref-namn') || state.policyKortnamn || undefined,
@@ -340,7 +367,7 @@ function skapaPaket() {
     });
 }
 
-function _paketFilnamn(org) {
+export function _paketFilnamn(org) {
     const slug = String(org).toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o')
         .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     return `${slug || 'organisation'}.lonepaket.json`;
@@ -354,7 +381,7 @@ function _paketFilnamn(org) {
 function _paketFormularFel() {
     // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
     const kText = _paketText('paket-k');
-    if (kText !== '' && _kTolka(kText) == null) return 'Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel();
+    if (kText !== '' && kTolka(kText) == null) return 'Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel();
     const lasFel = _paketLasFel();
     return lasFel ? 'Paketet sparades inte. ' + lasFel : null;
 }
@@ -364,34 +391,16 @@ function _paketFormularFel() {
  * (k, PO-påslag, ställningstagandet) och formuläret används inte: bara profilen läggs till, och datumet blir dagens.
  * @param {any} profil
  */
-function skapaPaketMedImportprofil(profil) {
+export function skapaPaketMedImportprofil(profil) {
     const p = state.paket, d = p.delar || {};
     // Paketets profiler som de står i sessionen (en som tagits bort i Inställningar följer inte med).
     const ovriga = (state.importprofiler || []).filter(x => x.kalla === 'organisationspaket' && x.id !== profil.id);
-    return _opByggPaket({
+    return byggPaket({
         organisation: p.organisation, utgivare: p.utgivare, skapat: idagDatum(), avserAr: p.avserAr,
         profil: d.profil, installningar: d.installningar, referens: d.referens, statistik: d.statistik, rapport: d.rapport,
         importprofiler: [...ovriga, profil],
     });
 }
-
-document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
-document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
-document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
-    const formFel = _paketFormularFel();
-    if (formFel) { _paketStatus(formFel, false); return; }
-    const paket = skapaPaket();
-    // Samma kontroll som vid inläsning — ett paket som inte går att läsa in sparas inte.
-    const kontroll = _opTolkaPaket(JSON.stringify(paket));
-    if (!kontroll.ok) { _paketStatus('Paketet kan inte sparas: ' + kontroll.fel, false); return; }
-    const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = _paketFilnamn(paket.organisation.namn);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
-});
 
 // ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil.md) ----
 const INBAKAT_PAKET_ID = 'inbakat-organisationspaket';   // = MALL_ID i src/lib/organisationsfil.js
@@ -403,7 +412,7 @@ function uppdateraOrganisationsfilKnapp() {
     const harPaket = !!state.paket || harReferens() || state.statistik.length > 0;
     if (knapp) /** @type {HTMLInputElement} */ (knapp).disabled = !_verktygsfil || !harPaket || !_paketText('paket-org');
     const namn = /** @type {HTMLInputElement|null} */ (_paketFalt('organisationsfil-namn'));
-    if (namn && !namn.value && document.activeElement !== namn) namn.placeholder = _ofFilnamnForslag(_paketText('paket-org'));
+    if (namn && !namn.value && document.activeElement !== namn) namn.placeholder = filnamnForslag(_paketText('paket-org'));
 }
 function _organisationsfilStatus(text, ok) {
     const el = _paketFalt('organisationsfil-status');
@@ -426,18 +435,18 @@ async function _sha256Hex(buf) {
 async function skapaOrganisationsfil() {
     if (!_verktygsfil) return { ok: false, meddelande: 'Peka ut verktygsfilen du öppnade.' };
     const kText = _paketText('paket-k');
-    if (kText !== '' && _kTolka(kText) == null) { const m = 'Organisationsfilen skapades inte. Minsta gruppstorlek: ' + _paketKFel(); _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
+    if (kText !== '' && kTolka(kText) == null) { const m = 'Organisationsfilen skapades inte. Minsta gruppstorlek: ' + _paketKFel(); _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
     const lasFel = _paketLasFel();
     if (lasFel) { const m = 'Organisationsfilen skapades inte. ' + lasFel; _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
     const paket = skapaPaket();
-    const kontroll = _opTolkaPaket(JSON.stringify(paket));
+    const kontroll = tolkaPaket(JSON.stringify(paket));
     if (!kontroll.ok) { const m = 'Paketet kan inte bakas in: ' + kontroll.fel; _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
     const buf = await _verktygsfil.arrayBuffer();
     const html = new TextDecoder('utf-8').decode(buf);
     const skapad = idagDatum();
-    const r = _ofBakaIn(html, JSON.stringify(paket), { skapad, organisation: paket.organisation.namn, verktygssha: await _sha256Hex(buf) });
+    const r = bakaIn(html, JSON.stringify(paket), { skapad, organisation: paket.organisation.namn, verktygssha: await _sha256Hex(buf) });
     if (!r.ok) { _organisationsfilStatus(r.fel, false); return { ok: false, meddelande: r.fel }; }
-    const filnamn = _ofNormaliseraFilnamn(_paketText('organisationsfil-namn'), paket.organisation.namn);
+    const filnamn = normaliseraFilnamn(_paketText('organisationsfil-namn'), paket.organisation.namn);
     const blob = new Blob([r.html], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -452,20 +461,13 @@ async function skapaOrganisationsfil() {
     announceToScreenReader(meddelande);
     return { ok: true, meddelande };
 }
-document.getElementById('file-input-verktygsfil')?.addEventListener('change', e => {
-    const inp = /** @type {HTMLInputElement} */ (e.target);
-    _verktygsfil = inp.files && inp.files[0] ? inp.files[0] : null;
-    uppdateraOrganisationsfilKnapp();
-});
-document.getElementById('paket-skapa')?.addEventListener('input', uppdateraOrganisationsfilKnapp);
-document.getElementById('btn-organisationsfil-spara')?.addEventListener('click', () => { skapaOrganisationsfil(); });
 
 /**
  * Läser det paket som ligger inbakat i den här filen (mallen med id inbakat-organisationspaket, lagd dit av
  * skapaOrganisationsfil i systemägarens verktyg). Körs vid start och efter Rensa all data. Demoläget går före.
  * @returns {{ok:boolean, meddelande:string}|null} null när inget paket är inbakat
  */
-function lasInInbakatPaket() {
+export function lasInInbakatPaket() {
     const mall = document.getElementById(INBAKAT_PAKET_ID);
     if (!mall) return null;
     // Ett <template> håller sitt innehåll i ett eget fragment: textContent på elementet är tomt.
@@ -490,7 +492,7 @@ function visaInbakatPaket() {
         + `${rad('Inbakat', inb.skapad)}${rad('Verktygets version', inb.verktygsversion)}${rad('Verktygsfilens kontrollsumma (SHA-256)', inb.verktygssha)}`
         + `${rad('Benämning på jämförelsestatistiken', obj?.profil?.jamforelseNamn)}${rad('Minsta gruppstorlek', inst.kTroskel)}${rad('Lägsta tillåtna minsta gruppstorlek', inst.kTroskelLagst)}`
         + `${rad('Rensning vid inaktivitet (min)', inst.inaktivitetMin)}${rad('Rensningstiden låst', inst.inaktivitetLast ? 'ja' : null)}${rad('Små grupper i exporten från Tabeller och egna vyer', inst.smaGrupperIExport === false ? 'inte tillåtet' : null)}`
-        + `${rad(`${termStor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === 'mansdominerade' ? 'bara mansdominerade' : inst.jamforelse === 'alla' ? 'alla som inte är kvinnodominerade' : null)}</dl>`
+        + `${rad(`${stor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === 'mansdominerade' ? 'bara mansdominerade' : inst.jamforelse === 'alla' ? 'alla som inte är kvinnodominerade' : null)}</dl>`
         + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? 'eget' : null)}`
         + tabell(obj?.referens?.namn || 'Ställningstagandet', obj?.referens?.rader, ['aid', 'bas', 'p10', 'med', 'p90'])
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
@@ -511,51 +513,77 @@ function laddaNerInbakatPaket() {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     announceToScreenReader(`Paketet sparat: ${a.download}`);
 }
-document.getElementById('paket-info')?.addEventListener('click', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (t.closest('#btn-paket-visa')) visaInbakatPaket();
-    else if (t.closest('#btn-paket-ladda-ner')) laddaNerInbakatPaket();
-});
 const _stangPaketModal = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; } };
-document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketModal);
-document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketModal(); });
-
-document.getElementById('file-input-paket')?.addEventListener('change', e => {
-    const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
-    if (!file) return;
-    /** @type {HTMLInputElement} */ (e.target).value = '';   // samma fil ska kunna läsas in igen
-    if (file.size > PAKET_MAX_FILSTORLEK) {
-        _paketStatus('Filen är för stor för att vara ett organisationspaket (högst 5 MB).', false);
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = ev => lasInPaket(String(/** @type {FileReader} */ (ev.target).result), file.name);
-    reader.onerror = () => _paketStatus('Filen kunde inte läsas.', false);
-    reader.readAsText(file);
-});
 
 // Organisationstypen (kommun, region eller båda) styr vilken del av SKR:s personalstatistik som
 // är referens för kvinnoandel (ADR-34). Värdet bor i profilen och följer med paket och konfiguration.
-function _synkaOrgTyp() {
+export function _synkaOrgTyp() {
     const sel = document.getElementById('org-typ');
     if (sel) /** @type {HTMLInputElement} */ (sel).value = _skrDel();
     // Paketraden är ihopfälld; sammanfattningen visar valet (ADR-36).
     const txt = document.getElementById('paket-orgtyp');
     if (txt) txt.textContent = `· Organisationen är: ${{ kommun: 'en kommun', region: 'en region' }[_skrDel()] || 'en kommun eller region'}`;
 }
-function sattOrgTyp(v) {
+export function sattOrgTyp(v) {
     if (v !== 'alla' && v !== 'kommun' && v !== 'region') return;
     state.profile = { ...state.profile, orgTyp: v };
     _synkaOrgTyp();
 }
-document.getElementById('org-typ')?.addEventListener('change', e => {
-    sattOrgTyp(/** @type {HTMLInputElement} */ (e.target).value);
-    if (!state.data.length) return;
-    invalidateStatCaches();
-    updateCompliance();
-    renderActionChecklist();
-    refreshCurrentTab();
-});
 
-_fyllPaketFormular();
-_synkaOrgTyp();
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartOrganisationspaket() {
+    document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
+    document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
+    document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
+        const formFel = _paketFormularFel();
+        if (formFel) { _paketStatus(formFel, false); return; }
+        const paket = skapaPaket();
+        // Samma kontroll som vid inläsning — ett paket som inte går att läsa in sparas inte.
+        const kontroll = tolkaPaket(JSON.stringify(paket));
+        if (!kontroll.ok) { _paketStatus('Paketet kan inte sparas: ' + kontroll.fel, false); return; }
+        const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = _paketFilnamn(paket.organisation.namn);
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
+    });
+    document.getElementById('file-input-verktygsfil')?.addEventListener('change', e => {
+        const inp = /** @type {HTMLInputElement} */ (e.target);
+        _verktygsfil = inp.files && inp.files[0] ? inp.files[0] : null;
+        uppdateraOrganisationsfilKnapp();
+    });
+    document.getElementById('paket-skapa')?.addEventListener('input', uppdateraOrganisationsfilKnapp);
+    document.getElementById('btn-organisationsfil-spara')?.addEventListener('click', () => { skapaOrganisationsfil(); });
+    document.getElementById('paket-info')?.addEventListener('click', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (t.closest('#btn-paket-visa')) visaInbakatPaket();
+        else if (t.closest('#btn-paket-ladda-ner')) laddaNerInbakatPaket();
+    });
+    document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketModal);
+    document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketModal(); });
+    document.getElementById('file-input-paket')?.addEventListener('change', e => {
+        const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
+        if (!file) return;
+        /** @type {HTMLInputElement} */ (e.target).value = '';   // samma fil ska kunna läsas in igen
+        if (file.size > PAKET_MAX_FILSTORLEK) {
+            _paketStatus('Filen är för stor för att vara ett organisationspaket (högst 5 MB).', false);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => lasInPaket(String(/** @type {FileReader} */ (ev.target).result), file.name);
+        reader.onerror = () => _paketStatus('Filen kunde inte läsas.', false);
+        reader.readAsText(file);
+    });
+    document.getElementById('org-typ')?.addEventListener('change', e => {
+        sattOrgTyp(/** @type {HTMLInputElement} */ (e.target).value);
+        if (!state.data.length) return;
+        invalidateStatCaches();
+        ritaKravstatus();
+        renderActionChecklist();
+        refreshCurrentTab();
+    });
+    _fyllPaketFormular();
+    _synkaOrgTyp();
+}

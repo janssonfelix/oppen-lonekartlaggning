@@ -13,9 +13,9 @@ import { trattUnderlag, sigmaInomGrupp } from '../src/lib/osakerhet.js';
 import { flaggaIndivider } from '../src/lib/individflaggor.js';
 import { inomYrkesgrupp } from '../src/lib/regression.js';
 import { gapPoster } from '../src/lib/gapuppdelning.js';
-import { groupKey, gruppnycklar } from '../src/lib/falt.js';
-import { computePivot } from '../src/lib/utforska.js';
-import { personFilter } from '../src/lib/urval.js';
+import { gruppnyckel, gruppnycklar } from '../src/lib/falt.js';
+import { pivottabell } from '../src/lib/utforska.js';
+import { iUrvalet } from '../src/lib/urval.js';
 import { aidAvRad, namnrader } from '../src/lib/aid.js';
 import { byggArsbokslut, jamforArsbokslut } from '../src/lib/arsbokslut.js';
 import { prioritera } from '../src/lib/prioritering.js';
@@ -37,15 +37,15 @@ const delB = () => [...flera(TEXT_B, 'C', 'kvinna', 4, 31000), ...flera(TEXT_B, 
 const delNamn = () => [rad(TEXT_NAMN, 'C', 'man', 33000, 45)];
 const underlag = () => [...delA(), ...delB(), ...delNamn()];
 
-describe('aidAvRad och gruppnycklarna', () => {
+describe('[B5.1] aidAvRad och gruppnycklarna', () => {
     it('koden är sifferprefixet i texten; utan text radens aid; utan kod hela texten', () => {
         expect(aidAvRad(rad(TEXT_B, 'C', 'man', 1, 30))).toBe('207011');
         expect(aidAvRad({ aid: '1', bas: 'A' })).toBe('1');
         expect(aidAvRad({ yrke: 'Ingen kod', aid: '' })).toBe('Ingen kod');
     });
-    it('groupKey följer texten (tre grupper); gruppnycklar följer koden (en grupp, med namnet på flest rader)', () => {
+    it('gruppnyckel följer texten (tre grupper); gruppnycklar följer koden (en grupp, med namnet på flest rader)', () => {
         const r = underlag();
-        expect(new Set(r.map(x => groupKey(x, 'aid'))).size).toBe(3);
+        expect(new Set(r.map(x => gruppnyckel(x, 'aid'))).size).toBe(3);
         const nyckel = gruppnycklar(r);
         expect([...new Set(r.map(x => nyckel(x, 'aid')))]).toEqual([TEXT_A]);
         expect([...new Set(r.map(x => nyckel(x, 'aidbas')))]).toEqual([`${TEXT_A} · BAS C`]);
@@ -125,7 +125,7 @@ describe('likaArbeteGrupper: en grupp är AID-koden', () => {
 });
 
 describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och Utforska följer koden', () => {
-    it('trattUnderlag: en punkt 207011 i BAS C med 16 personer; per text ingen (ett kön under 5)', () => {
+    it('[B4.7] trattUnderlag: en punkt 207011 i BAS C med 16 personer; per text ingen (ett kön under 5)', () => {
         const u = trattUnderlag(underlag(), 5);
         expect(u.punkter.map(p => [p.nyckel, p.n, p.nKv, p.nMa, p.yrke])).toEqual([['207011|C', 16, 8, 8, TEXT_A]]);
         expect(trattUnderlag(delA(), 5)).toBeNull();
@@ -136,7 +136,7 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
         const r = [...underlag(), ...flera('503012 Drifttekniker', 'C', 'kvinna', 5, 35000, 400), ...flera('503012 Drifttekniker', 'C', 'man', 5, 36000, 400)];
         expect(sigmaInomGrupp(r, ar('kvinna'), ar('man'), 5)).toMatchObject({ grupper: 2, residualer: 26 });
     });
-    it('flaggaIndivider: alla 16 prövas mot kollegorna i koden; per text prövades ingen (grupperna under 10)', () => {
+    it('[B5.6] flaggaIndivider: alla 16 prövas mot kollegorna i koden; per text prövades ingen (grupperna under 10)', () => {
         const efter = flaggaIndivider(underlag(), { minGrupp: 10, grans: 10 });
         expect(efter.provade).toEqual({ kv: 8, ma: 8 });
         expect(efter.ejProvade).toBe(0);
@@ -161,16 +161,16 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
     });
     it('Utforska: pivoten och villkoren på AID-etikett läser koden', () => {
         const r = underlag();
-        const m = computePivot(r, { rad: 'aid', matt: 'median' }, { k: 10 });
+        const m = pivottabell(r, { rad: 'aid', matt: 'median' }, { k: 10 });
         expect(m.celler.map(c => [c.rad, c.n, c.liten])).toEqual([[TEXT_A, 16, false]]);
         const villkor = { lage: 'alla', villkor: [{ falt: 'aid', op: 'enAv', varde: [TEXT_A] }] };
-        expect(r.filter(personFilter(villkor, gruppnycklar(r)))).toHaveLength(16);
-        expect(r.filter(personFilter(villkor))).toHaveLength(8);   // groupKey utan underlag: bara texten
+        expect(r.filter(iUrvalet(villkor, gruppnycklar(r)))).toHaveLength(16);
+        expect(r.filter(iUrvalet(villkor))).toHaveLength(8);   // gruppnyckel utan underlag: bara texten
     });
 });
 
 describe('årsbokslutet: grupperna paras på koden', () => {
-    const gruppPost = g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad, spridning: null });
+    const gruppPost = g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.skillnadPct, flaggad: g.flaggad, spridning: null });
     const bokslut = (ar, grupper, k = 5) => byggArsbokslut({ ar, skapat: `${ar}-12-31`, k, verktyg: 'test', nyckeltal: { n: 16, nKv: 8, nMa: 8 }, grupper, punkter: [] });
     const arets = () => bokslut(2026, likaArbeteGrupper(underlag(), { k: 5, golv: 5 }).grupper.map(gruppPost));
     it('årets bokslut har en grupp för koden i intervallet, med namnet från texten på flest av gruppens rader', () => {

@@ -30,7 +30,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
             statistik: { namn: X('stat'), rader: [0, 1, 2, 3, 4, 5].map(g => ({ aid: g < 3 ? `10${g}` : `20${g}`, aidFull: X('aidfull' + g), bas: 'ABC'[g % 3],
                 median: 33000 + g * 1000, p10: 30000, p90: 36000, nKv: 20, nMa: 20, andelKv: g < 3 ? 80 : 20 })) } };
         w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket))}, 'x')`);
-        w.eval('populateSelects(); unlockTabs(); updateDashboardStats(); generateRapport(); generateSkevhet();');
+        w.eval('populateSelects(); unlockTabs(); ritaNyckeltal(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell());');
     };
 
     it('skadlig text i fil och organisationspaket skapar inga element i någon flik', async () => {
@@ -274,7 +274,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — k-anonymitet', (
             win.__state.data = Array.from({ length: 6 }, (_, i) => rad('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
             win.__state.policy = [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }];
             win.__state.kLage = 'export';   // så som diagrammet lämnar verktyget (ADR-51)
-            win.__renderLonepolitik();
+            win.__ritaLonepolitik();
             const el = win.document.getElementById('chart-lp-compliance');
             expect(el).not.toBeNull();
             // Inget aggregat får ritas — i stället en förklaring om tröskeln
@@ -289,7 +289,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — k-anonymitet', (
         try {
             win.__state.data = Array.from({ length: 14 }, (_, i) => rad('A', i % 2 ? 'kvinna' : 'man', 26000 + i * 500));
             win.__state.policy = [{ bas: 'A', p10: 25000, med: 30000, p90: 40000 }];
-            win.__renderLonepolitik();
+            win.__ritaLonepolitik();
             const el = win.document.getElementById('chart-lp-compliance');
             expect(el.textContent).not.toMatch(/färre än 10 personer/);
         } finally {

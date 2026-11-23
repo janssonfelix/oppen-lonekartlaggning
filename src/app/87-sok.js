@@ -1,6 +1,24 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Sök och hoppa ----
+import { svTal } from '../lib/talformat.js';
+import { stor } from '../lib/termer.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { openGlossary } from './04-ordlista.js';
+import { navigateTo } from './05-tabeller-och-lankar.js';
+import { isKMasked } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { diagramMarkering, sattDiagramMarkering } from './11-markering.js';
+import { getData } from './12-tillstand.js';
+import { visningNy } from './23-exportgrind.js';
+import { openDataResidency } from './28-vad-lagras-inaktivitet.js';
+import { visaAlderskravet, visaLonefilskortet, visaReferenskortet } from './31-navigering.js';
+import { utVisaUnderflikFor } from './74-alla-diagram.js';
+import { gruppdossierCandidates } from './80-gruppdossier.js';
+import { basdossierKandidater, openBasdossier } from './81-basdossier.js';
+import { oppnaInstallningar } from './86-installningar.js';
+import { SOK_FUNKTIONER } from './86-sok-register.js';
+import { sidindexGaTill } from './89-sidindex.js';
 /**
  * Ett fält i sidhuvudet: skriv ett yrke eller ett BAS-intervall, välj en träff, och gruppen markeras i alla diagram
  * och tabeller (11-markering.js). Raden om markeringen bär länken till gruppdossiern.
@@ -31,9 +49,9 @@ function sokKandidater() {
     const perBas = new Map();
     for (const r of d) if (r.bas != null && r.bas !== '') perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
     const ut = [...perBas].filter(([, n]) => !isKMasked(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv'))
-        .map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: termStor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
+        .map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
     for (const g of gruppdossierCandidates()) {
-        ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${termStor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
+        ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${stor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
     }
     return ut;
 }
@@ -181,42 +199,45 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
 let _sokHadeData = null;
 /** Fältet syns alltid (utan lönefil hittar det funktionerna). När lönefilen läses in eller rensas stängs en öppen
  *  träfflista, så att den inte visar grupper som inte längre gäller. Anropas när data läses in, rensas eller tröskeln ändras. */
-function sokUppdatera() {
+export function sokUppdatera() {
     const har = _sokHarData();
     if (_sokHadeData !== null && har !== _sokHadeData) _sokStang();
     _sokHadeData = har;
 }
 
-document.getElementById('sok-grupp')?.addEventListener('input', _sokRita);
-document.getElementById('sok-grupp')?.addEventListener('focus', () => { if (/** @type {HTMLInputElement} */ (document.getElementById('sok-grupp')).value.trim()) _sokRita(); });
-document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
-    const oppen = !/** @type {HTMLElement} */ (document.getElementById('sok-grupp-lista')).hidden;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        if (!_sokTraffar.length) return;
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartSok() {
+    document.getElementById('sok-grupp')?.addEventListener('input', _sokRita);
+    document.getElementById('sok-grupp')?.addEventListener('focus', () => { if (/** @type {HTMLInputElement} */ (document.getElementById('sok-grupp')).value.trim()) _sokRita(); });
+    document.getElementById('sok-grupp')?.addEventListener('keydown', e => {
+        const oppen = !/** @type {HTMLElement} */ (document.getElementById('sok-grupp-lista')).hidden;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!_sokTraffar.length) return;
+            e.preventDefault();
+            _sokAktiv = (_sokAktiv + (e.key === 'ArrowDown' ? 1 : -1) + _sokTraffar.length) % _sokTraffar.length;
+            _sokMarkeraAktiv();
+        } else if (e.key === 'Enter') {
+            if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv, { uppskjut: e.isTrusted }); }
+        } else if (e.key === 'Escape' && (oppen || /** @type {HTMLInputElement} */ (e.target).value)) {
+            // Escape i fältet stänger listan; markeringen (som Escape annars tar bort) rörs inte.
+            e.stopPropagation();
+            _sokStang();
+        }
+    });
+    document.getElementById('sok-grupp-lista')?.addEventListener('mousedown', e => e.preventDefault());   // fältet behåller fokus vid klick i listan
+    document.getElementById('sok-grupp-lista')?.addEventListener('click', e => {
+        const li = /** @type {HTMLElement} */ (e.target).closest('[data-sok-index]');
+        if (li) sokValj(Number(li.getAttribute('data-sok-index')), { uppskjut: e.isTrusted });
+    });
+    document.getElementById('sok-grupp')?.addEventListener('blur', () => _sokStang({ tom: false }));
+    // Kortkommandon: "/" (utanför textfält) och Ctrl/Cmd+K sätter fokus i sökfältet.
+    document.addEventListener('keydown', e => {
+        const falt = document.getElementById('sok-grupp'), ruta = document.getElementById('sok-ruta');
+        if (!falt || !ruta || ruta.hidden) return;
+        const iFalt = e.target && /** @type {HTMLElement} */ (e.target).matches && /** @type {HTMLElement} */ (e.target).matches('input, textarea, select, [contenteditable="true"]');
+        const snabb = (e.key === '/' && !iFalt && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k');
+        if (!snabb || document.querySelector('[role="dialog"][style*="flex"]')) return;
         e.preventDefault();
-        _sokAktiv = (_sokAktiv + (e.key === 'ArrowDown' ? 1 : -1) + _sokTraffar.length) % _sokTraffar.length;
-        _sokMarkeraAktiv();
-    } else if (e.key === 'Enter') {
-        if (_sokAktiv >= 0) { e.preventDefault(); sokValj(_sokAktiv, { uppskjut: e.isTrusted }); }
-    } else if (e.key === 'Escape' && (oppen || /** @type {HTMLInputElement} */ (e.target).value)) {
-        // Escape i fältet stänger listan; markeringen (som Escape annars tar bort) rörs inte.
-        e.stopPropagation();
-        _sokStang();
-    }
-});
-document.getElementById('sok-grupp-lista')?.addEventListener('mousedown', e => e.preventDefault());   // fältet behåller fokus vid klick i listan
-document.getElementById('sok-grupp-lista')?.addEventListener('click', e => {
-    const li = /** @type {HTMLElement} */ (e.target).closest('[data-sok-index]');
-    if (li) sokValj(Number(li.getAttribute('data-sok-index')), { uppskjut: e.isTrusted });
-});
-document.getElementById('sok-grupp')?.addEventListener('blur', () => _sokStang({ tom: false }));
-// Kortkommandon: "/" (utanför textfält) och Ctrl/Cmd+K sätter fokus i sökfältet.
-document.addEventListener('keydown', e => {
-    const falt = document.getElementById('sok-grupp'), ruta = document.getElementById('sok-ruta');
-    if (!falt || !ruta || ruta.hidden) return;
-    const iFalt = e.target && /** @type {HTMLElement} */ (e.target).matches && /** @type {HTMLElement} */ (e.target).matches('input, textarea, select, [contenteditable="true"]');
-    const snabb = (e.key === '/' && !iFalt && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k');
-    if (!snabb || document.querySelector('[role="dialog"][style*="flex"]')) return;
-    e.preventDefault();
-    falt.focus(); /** @type {HTMLInputElement} */ (falt).select();
-});
+        falt.focus(); /** @type {HTMLInputElement} */ (falt).select();
+    });
+}

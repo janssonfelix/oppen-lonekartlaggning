@@ -34,7 +34,7 @@ Vid körningen slutade den så här:
 | Appen: vyer, inläsning, export, menyn | `src/app/NN-*.js` ([`src/app/README.md`](../../src/app/README.md)) |
 | Sidans skal, stilmall och CSP | `src/index.html`, `src/style.css` |
 
-Ändra aldrig `dist/`, `src/app/08-version.js` eller `src/app/09-lib-speglar.js`. De genereras av bygget.
+Ändra aldrig `dist/` eller `src/app/08-version.js`. De genereras av bygget.
 
 ### 4. En första ändring: ett testfall i kostnaden
 
@@ -79,8 +79,9 @@ Vad som krävs för att en ändring är klar står i *Definition of Done* i [`CO
 ## b. För granskaren av beräkningarna
 
 Varje beräkning är en ren funktion i `src/lib/`, utan DOM och utan tillstånd. Den går att köra i Node på egen data;
-appen använder samma funktion via spegeln. Börja i [`berakningsregister.md`](berakningsregister.md): där står varje
-beräkning med funktion, vad den bygger på, tester och referensfall, och modellparametrarna.
+appen importerar samma funktion. Börja i spårbarhetsmatrisen, [`sparbarhet.md`](sparbarhet.md): där står varje
+beräkning med ett ID, funktion, vad den bygger på, tester och referensfall, och modellparametrarna. Testerna bär
+samma ID i sitt namn, så `npx vitest run -t "\[B2.1\]"` kör testerna för en rad.
 
 ### Huvudtalet på ett påhittat underlag
 

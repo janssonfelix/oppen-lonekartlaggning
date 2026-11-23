@@ -302,7 +302,7 @@ describe('exportmeny på alla diagram', () => {
         expect(rows.length).toBeGreaterThan(3);
     });
 
-    it('en behållare märkt med markeraUtanExport får ingen meny, och skälet står i verktygstipset', () => {
+    it('[I10] en behållare märkt med markeraUtanExport får ingen meny, och skälet står i verktygstipset', () => {
         const box = win.document.createElement('div');
         win.__markeraUtanExport(box, 'individer');
         expect(box.getAttribute('data-no-export')).toBe('individer');
@@ -320,7 +320,7 @@ describe('exportmeny på alla diagram', () => {
         expect(() => win.__markeraUtanExport(win.document.createElement('div'), 'hemligt')).toThrow(/okänt skäl/);
     });
 
-    it('varje behållare utan export i det ritade dokumentet har ett registrerat skäl', () => {
+    it('[I10] varje behållare utan export i det ritade dokumentet har ett registrerat skäl', () => {
         // Alla flikar är ritade (beforeAll); Lika arbete bär den märkta behållaren.
         win.__renderTabContent('dashboard');
         const skal = win.__exportSkal();

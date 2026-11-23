@@ -94,7 +94,7 @@ Det som exporteras ligger sedan utanför verktyget. Vad filerna innehåller och 
   har en kontrollsumma (SHA-256) i `RELEASE.txt`; bygget är reproducerbart. Signaturen styrker
   äktheten, kontrollsumman bara att filen inte skadats.
 
-## 3. Små grupper (k-anonymitet)
+## 3. Små grupper: tröskelvärdesregeln (minsta gruppstorlek)
 
 **Regeln gäller det som lämnar verktyget (ADR-51, beslut 2026-10-29).** På skärmen visas alla
 grupper: den som arbetar i verktyget har redan lönefilen. Det som lämnar verktyget ritas och räknas i ett
@@ -171,7 +171,7 @@ tabellerna per BAS-intervall inte ger en liten grupps medellön som differens.
 Testerna prövar inte undantagen nedan eller bilder av diagram.
 
 Standardvärdet är 10. Användaren kan ändra det under *Inställningar* i sidhuvudet (*Minsta gruppstorlek för redovisning*),
-till lägst 2. Ett högre värde skärper skyddet. Ett lägre värde gör att mindre grupper redovisas, och
+till lägst 3. Ett högre värde skärper skyddet. Ett lägre värde gör att mindre grupper redovisas, och
 då gäller tre saker:
 
 - Användaren måste bekräfta sänkningen, också när värdet kommer ur en konfigurationsfil eller ett
@@ -194,25 +194,27 @@ fältet, en konfigurationsfil eller ett senare paket kan gå under golvet. Fält
 lägre värden som ogiltiga. En lägre tröskel höjs till golvet när paketet läses in, och ett nytt paket med
 lägre eller inget golv kräver bekräftelse. Golvet följer paketet: *Rensa all data* tar bort det, och
 konfigurationsfilen bär det inte.
-Vissa skattningar (till exempel regression per BAS) följer `statGolv()` och sänks inte med tröskeln. Verktyget
+Vissa skattningar (till exempel regression per BAS) har ett eget golv, `statGolv()`, som är ett kvalitetsgolv och
+inte sänks med tröskeln. På skärmen är det 10; i det som lämnar verktyget är det den inställda tröskeln när den är
+högre (ADR-103), så att en höjd tröskel inte hindrar analysen på skärmen men gäller i exporterna. Verktyget
 har också andra, fasta golv som inte gör det (arkitekturbeslut.md, ADR-38). Texten ska alltså inte läsas som att alla
 golv är minst 10.
 
+Undantagen och avstegen från regeln är beslutade. Här står vad vart och ett innebär för risken: de fyra medvetna
+undantagen nedan, tabellerna per AID-kod och BAS-intervall, könsfördelningen per BAS-intervall och egna riktade rader
+i Löneöversyn. Hur vart och ett är byggt, vilka vyer och exporter det gäller och hur utdatan märks, står i
+`docs/utveckling/k-troskeln.md` §4, under samma namn.
+
 Fyra medvetna undantag:
 
-1. **Likvärdigt arbete:** lagen kräver att kvinnodominerat arbete prövas också när gruppen är liten. Därför
-   redovisar fliken och dess egen export (Excel och CSV) kandidatpar även när en grupp har
-   färre än 10 personer. Undantaget gäller bara dit. Överallt annars tas bara par med där båda
-   grupperna har minst 10 personer, och utdata anger hur många par som utelämnats. Det gäller
-   Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra
-   och dess CSV, handlingsplanens förifyllda rader (på skärmen, i Excel och på utskrift),
-   gruppdossiern och robusthetspanelen i Exportera.
-2. **Tabeller och egna vyer (ADR-14):** fliken visar alla grupper på skärmen, som de andra flikarna. Dess
-   export (tabellens CSV och urklipp, diagrammets bild och diagramdata) utelämnar grupper under tröskeln
-   och lönemått för ett kön under tröskeln. Det gäller om inte användaren kryssar i rutan *Ta med grupper
-   under tröskeln i exporten*. Rutan är undantaget: med den ikryssad lämnar små grupper verktyget.
-   Organisationspaketet kan stänga av möjligheten (ADR-47). Rutan är då dold och exporten
-   utelämnar alltid små grupper. En rad i fliken säger att paketet inte tillåter det.
+1. **Likvärdigt arbete i sin flik:** lagen kräver att kvinnodominerat arbete prövas också när gruppen är liten.
+   Därför redovisar fliken och dess egen export (Excel och CSV) kandidatpar även när en grupp har
+   färre än 10 personer. Undantaget gäller bara dit. Överallt annars, också i handlingsplanens förifyllda rader på
+   skärmen, tas bara par med där båda grupperna har minst 10 personer, och utdata anger hur många par som utelämnats.
+2. **Tabeller och egna vyer med rutan (ADR-14):** fliken visar alla grupper på skärmen, som de andra flikarna. Dess
+   export utelämnar grupper under tröskeln och lönemått för ett kön under tröskeln, om inte användaren kryssar i rutan
+   *Ta med grupper under tröskeln i exporten*. Rutan är undantaget: med den ikryssad lämnar små grupper verktyget.
+   Organisationspaketet kan stänga av möjligheten (ADR-47); då utelämnar exporten alltid små grupper.
 3. **Personer att granska (ADR-23):** Lika arbete listar enskilda personer som ligger klart
    under sina kollegor, med radnummer. Listan visas bara i verktyget — den kan inte
    exporteras, kopieras eller skrivas ut. Extremvärdeslistan i *Underlagets kvalitet* (Filer och kvalitet) visar
@@ -227,11 +229,10 @@ Fyra medvetna undantag:
    avvikare i låddiagrammet per kön är enskilda löner, utan AID-etikett. De får exporteras som bild och som
    diagramdata (en rad per person). Diagramdatan säger på rad 2 att filen innehåller en rad per person och ska
    hanteras som personuppgifter, och att text ur fältet för AID-etikett kan följa med som den står i lönefilen.
-   **Word-utkastet och rapportens avsnitt innehåller inga sådana diagram.** Båda ritas ur samma
-   rapportmodell, som bara bär diagram över grupper. **Utskriften av hela dokumentationen (mallen *Komplett
-   rapport*) har bilagor med bilder av Ålder & karriärs spridningsdiagram, låddiagram och täthetsdiagram.**
-   **ZIP-exporten innehåller bilder av alla ritade diagram från alla flikar**, också dessa. Det är ett beslut
-   (beslut 2026-10-16, ADR-48). Text ur fältet för AID-etikett maskeras inte (ADR-85): när spridningsdiagrammet
+   **Word-utkastet och rapportens avsnitt innehåller inga sådana diagram.** **Utskriften av hela dokumentationen
+   (mallen *Komplett rapport*) har bilagor med bilder av Ålder & karriärs spridningsdiagram, låddiagram och
+   täthetsdiagram.** **ZIP-exporten innehåller bilder av alla ritade diagram från alla flikar**, också dessa. Det är
+   ett beslut (ADR-48). Text ur fältet för AID-etikett maskeras inte (ADR-85): när spridningsdiagrammet
    färgläggs efter AID-etikett är texten serienamn i bildens förklaring och i diagramdatans kolumn Serie, och ett
    urval på AID-etikett står i diagramdatan och i exportmenyns fotrad, som texten står i lönefilen. Står ett namn i
    fältet följer det med. Filerna hanteras som personuppgifter (§4).
@@ -247,6 +248,14 @@ när båda könen når tröskeln. En andel som gäller färre än fem personer s
 förväntad lön per kön och BAS-intervall märker andelar som gäller färre än fem personer med en asterisk.
 Beräkningarna bakom översikten och trattdiagrammet hålls i minnet medan underlaget är inläst och släpps av
 *Rensa all data*.
+
+**Tabellerna per AID-kod och BAS-intervall** (ADR-57, ADR-90) är arbetsgivarens kartläggning av alla grupper, och
+lagen kräver att också små grupper analyseras. *Lika arbete AID x BAS* har Lika arbetes grupper och regler. De tre
+andra ger i det som exporteras en grupp en egen rad från 5 personer med antal per kön men utan lönemått, och mindre
+grupper namnges i en not med antal (§4). Lönemått redovisas bara för grupper och kön som når tröskeln.
+
+**Könsfördelningen per BAS-intervall** (ADR-57) i Lönestruktur ger ett intervall en rad med antal och andel per kön
+från fem personer totalt, oavsett tröskeln och antalet per kön, men inga lönemått. Mindre intervall namnges i en not.
 
 **Egna riktade rader i Löneöversyn är tillåtna även för grupper under tröskeln**.
 Löneöversyn är användarens egen simulering. En riktad rad som användaren själv lägger till för en grupp

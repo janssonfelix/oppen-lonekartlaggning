@@ -13,13 +13,9 @@
  * visas som verktyget sparar det: kortat och utan tecknen < > " ' &). Varningen om namn i yrkesfältet bygger på inläsningens
  * räknare (antal rader och de första radnumren), inte på fältets text. Varningarnas texter bär inga löner eller åldrar
  * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { skapaTermer } from './termer.js';
+import { STANDARDTERMER as T } from './termer.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 /** Antal rader i tolkningen. */
 export const FK_ANTAL_RADER = 10;

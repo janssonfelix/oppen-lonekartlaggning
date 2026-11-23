@@ -36,7 +36,7 @@ describe('kostnadsfaktor och periodkostnad: inställningarna med standardvärden
     });
 });
 
-describe('kostnadPerAr: formeln |belopp| × månader × (1 + PO) × antal', () => {
+describe('[B7.1] kostnadPerAr: formeln |belopp| × månader × (1 + PO) × antal', () => {
     it('1 000 kr × 12 mån × PO 39,15 % × 10 personer = 166 980', () => {
         expect(kostnadPerAr(1000, 10, KOST)).toBeCloseTo(166980, 6);
     });
@@ -72,7 +72,7 @@ describe('kostnadPerAr: formeln |belopp| × månader × (1 + PO) × antal', () =
     });
 });
 
-describe('arsbeloppMening: räkneexemplet om könsskillnaden', () => {
+describe('[B7.11] arsbeloppMening: räkneexemplet om könsskillnaden', () => {
     it('full mening: 6 000 kr per månad under, 10 kvinnor, 12 mån, PO 39,15 % ger 1 002 000 kr per år', () => {
         const g = { medKv: 30000, medMa: 36000, nKv: 10 };
         expect(arsbeloppMening(g, KOST, kr)).toBe(

@@ -1583,7 +1583,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "  K-anonymitet: 0 grupper utelämnades (n < 10); de räknas upp under respektive BAS",
+      "  Minsta gruppstorlek: 0 grupper utelämnades (n < 10); de räknas upp under respektive BAS",
       null,
     ],
     [
@@ -1643,7 +1643,7 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
       null,
     ],
     [
-      "  Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)",
+      "  Kräver minst 10 personer av varje kön för att medianer ska visas (minsta gruppstorlek)",
       null,
     ],
     [
@@ -3642,7 +3642,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
       "",
     ],
   ],
-  "4. Exkluderat (k-anon)": [
+  "4. Exkluderat (små grupper)": [
     [
       "EXKLUDERADE GRUPPER — transparens för fackliga parter",
       "",
@@ -3664,7 +3664,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
       "",
     ],
     [
-      "  Utelämnade: färre än 10 av ett kön (k-anonymitet)",
+      "  Utelämnade: färre än 10 av ett kön (minsta gruppstorlek)",
       4,
     ],
     [
@@ -3684,7 +3684,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
       "",
     ],
     [
-      "  Utelämnade: färre än 10 av ett kön (k-anonymitet)",
+      "  Utelämnade: färre än 10 av ett kön (minsta gruppstorlek)",
       0,
     ],
     [
@@ -3708,7 +3708,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
       "",
     ],
     [
-      "k-anonymitet (n<10) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).",
+      "Minsta gruppstorlek (n<10) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).",
       "",
     ],
     [
@@ -3790,7 +3790,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
       "",
     ],
     [
-      "— k-anonymitet —",
+      "— Minsta gruppstorlek —",
       "",
     ],
     [
@@ -4283,7 +4283,7 @@ exports[`golden: Excel-exporterna på fast dataset > den samlade jämförelseexp
       62,
     ],
     [
-      "Antal grupper utelämnade, k-anonymitet (n<10)",
+      "Antal grupper utelämnade, minsta gruppstorlek (n<10)",
       0,
     ],
     [
@@ -4327,7 +4327,7 @@ exports[`golden: Excel-exporterna på fast dataset > den samlade jämförelseexp
       "",
     ],
     [
-      "k-anonymitet (n<10) = grupper med färre än 10 personer exkluderas helt.",
+      "Minsta gruppstorlek (n<10) = grupper med färre än 10 personer exkluderas helt.",
       "",
     ],
   ],
@@ -4565,7 +4565,7 @@ exports[`golden: Excel-exporterna på fast dataset > exporten om likvärdigt arb
       20,
     ],
     [
-      "k-anonymitet",
+      "Minsta gruppstorlek",
       "Tillämpas EJ i denna analys",
     ],
     [
@@ -5145,7 +5145,7 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
                         <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Median:</strong> P50, mittersta värdet av sorterad lönelista</li><li><strong>P10:</strong> Värdet där 10% av gruppen tjänar mindre</li><li><strong>P90:</strong> Värdet där 90% av gruppen tjänar mindre</li><li><strong>Lönespridning:</strong> P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)</li><li><strong>Diff mot jämförelsestatistiken:</strong> (organisationens median / jämförelsens median) − 1 uttryckt i %</li></ul>
-                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>K-anonymitet: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS</li><li>BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje AID-etikett med ≥5 personer</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Minsta gruppstorlek: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS</li><li>BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje AID-etikett med ≥5 personer</li></ul>
                     
                         <h3 class="pr-ned-14">Löneskillnad och könsfördelning</h3>
                         <table class="kpi pr-under">
@@ -5154,7 +5154,7 @@ exports[`golden: PDF/print-rapporten (buildPrintReport) på fast dataset > urval
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
                         <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Kvinnors lön i % av mäns:</strong> median(kvinnors lön) / median(mäns lön) × 100 %. 100 % = lika lön.</li><li><strong>Status:</strong> Värt att granska = 95 % KI (bootstrap) utesluter 100 % och |kvot − 100 %| ≥ 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> |kvot − 100 %| ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Ojämn könsfördelning:</strong> Ett kön är under 40 % av gruppen (jämn fördelning betyder att båda könen är minst 40 %)</li><li><strong>Översiktsdiagram:</strong> Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)</li></ul>
-                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (minsta gruppstorlek)</li><li>Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen</li></ul>
                     
                         <h3 class="pr-ned-14">Ålder &amp; karriär — livscykelmodellen</h3>
                         <table class="kpi pr-under">
@@ -6735,7 +6735,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       null,
     ],
     [
-      "  K-anonymitet: 0 grupper utelämnades (n < 10); de räknas upp under respektive BAS",
+      "  Minsta gruppstorlek: 0 grupper utelämnades (n < 10); de räknas upp under respektive BAS",
       null,
     ],
     [
@@ -6795,7 +6795,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
       null,
     ],
     [
-      "  Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)",
+      "  Kräver minst 10 personer av varje kön för att medianer ska visas (minsta gruppstorlek)",
       null,
     ],
     [
@@ -7948,7 +7948,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > PDF-rapporten (komplett) byggs 
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
                         <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Median:</strong> P50, mittersta värdet av sorterad lönelista</li><li><strong>P10:</strong> Värdet där 10% av gruppen tjänar mindre</li><li><strong>P90:</strong> Värdet där 90% av gruppen tjänar mindre</li><li><strong>Lönespridning:</strong> P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)</li><li><strong>Diff mot jämförelsestatistiken:</strong> (organisationens median / jämförelsens median) − 1 uttryckt i %</li></ul>
-                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>K-anonymitet: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS</li><li>BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje AID-etikett med ≥5 personer</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Minsta gruppstorlek: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS</li><li>BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje AID-etikett med ≥5 personer</li></ul>
                     
                         <h3 class="pr-ned-14">Löneskillnad och könsfördelning</h3>
                         <table class="kpi pr-under">
@@ -7957,7 +7957,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > PDF-rapporten (komplett) byggs 
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
                         <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Kvinnors lön i % av mäns:</strong> median(kvinnors lön) / median(mäns lön) × 100 %. 100 % = lika lön.</li><li><strong>Status:</strong> Värt att granska = 95 % KI (bootstrap) utesluter 100 % och |kvot − 100 %| ≥ 3 % (verktygets storleksgräns) · Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 % · Balanserat = under 3 % och inte säkerställd · Går ej att bedöma = ett kön under 10</li><li><strong>Direktivmarkering:</strong> |kvot − 100 %| ≥ 5 % på den ojusterade medianskillnaden. Direktivets regler om gemensam lönebedömning utgår från en skillnad på minst 5 %; markeringen visar var den nivån nås. Den är inte en bedömning.</li><li><strong>Ojämn könsfördelning:</strong> Ett kön är under 40 % av gruppen (jämn fördelning betyder att båda könen är minst 40 %)</li><li><strong>Översiktsdiagram:</strong> Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)</li></ul>
-                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (k-anonymitet)</li><li>Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen</li></ul>
+                        <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Kräver minst 10 personer av varje kön för att medianer ska visas (minsta gruppstorlek)</li><li>Könsfördelningen redovisas för BAS-intervall med minst 5 personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen</li></ul>
                     
                         <h3 class="pr-ned-14">Ålder &amp; karriär — livscykelmodellen</h3>
                         <table class="kpi pr-under">

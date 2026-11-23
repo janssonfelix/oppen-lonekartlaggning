@@ -5,18 +5,18 @@
  * ur datat självt, inte ur Math.random().
  */
 import { describe, it, expect } from 'vitest';
-import { hashSeed, mulberry32, seedFromNumbers, rngFor } from '../src/lib/rng.js';
+import { froAvText, mulberry32, froAvTal, slumpFor } from '../src/lib/rng.js';
 
-describe('hashSeed', () => {
+describe('froAvText', () => {
     it('är stabil och ger osignerat 32-bitars heltal', () => {
-        const a = hashSeed('abc');
-        expect(a).toBe(hashSeed('abc'));
+        const a = froAvText('abc');
+        expect(a).toBe(froAvText('abc'));
         expect(Number.isInteger(a)).toBe(true);
         expect(a).toBeGreaterThanOrEqual(0);
         expect(a).toBeLessThan(2 ** 32);
     });
     it('skiljer på olika indata', () => {
-        expect(hashSeed('abc')).not.toBe(hashSeed('abd'));
+        expect(froAvText('abc')).not.toBe(froAvText('abd'));
     });
 });
 
@@ -39,31 +39,31 @@ describe('mulberry32', () => {
     });
 });
 
-describe('seedFromNumbers', () => {
+describe('froAvTal', () => {
     it('samma serier → samma seed', () => {
-        expect(seedFromNumbers([1, 2, 3], [4, 5])).toBe(seedFromNumbers([1, 2, 3], [4, 5]));
+        expect(froAvTal([1, 2, 3], [4, 5])).toBe(froAvTal([1, 2, 3], [4, 5]));
     });
     it('ändrat underlag → ny seed', () => {
-        expect(seedFromNumbers([1, 2, 3])).not.toBe(seedFromNumbers([1, 2, 4]));
-        expect(seedFromNumbers([1, 2, 3])).not.toBe(seedFromNumbers([1, 2, 3, 0]));
+        expect(froAvTal([1, 2, 3])).not.toBe(froAvTal([1, 2, 4]));
+        expect(froAvTal([1, 2, 3])).not.toBe(froAvTal([1, 2, 3, 0]));
     });
     it('tål icke-arrayer och icke-tal utan att kasta', () => {
-        expect(() => seedFromNumbers(null, [NaN, 1], undefined)).not.toThrow();
+        expect(() => froAvTal(null, [NaN, 1], undefined)).not.toThrow();
     });
     it('beror inte på ordningen, också när summan av löner med öre slutar på ,50 (ADR-86)', () => {
         // Påhittade löner med öre vars exakta summa är 364 305,50: summerade i omvänd ordning blir flyttalssumman
         // 364 305,49999999994 och avrundas nedåt.
         const loner = [54738.29, 48833.95, 32464.73, 62051.86, 71235.33, 64980.43, 30000.91];
         expect(Math.round([...loner].reverse().reduce((s, v) => s + v, 0))).not.toBe(Math.round(loner.reduce((s, v) => s + v, 0)));
-        expect(seedFromNumbers([...loner].reverse())).toBe(seedFromNumbers(loner));
-        expect(seedFromNumbers([...loner].sort((a, b) => b - a), [3, 1, 2])).toBe(seedFromNumbers(loner, [1, 2, 3]));
+        expect(froAvTal([...loner].reverse())).toBe(froAvTal(loner));
+        expect(froAvTal([...loner].sort((a, b) => b - a), [3, 1, 2])).toBe(froAvTal(loner, [1, 2, 3]));
     });
 });
 
-describe('rngFor — reproducerbar bootstrap', () => {
+describe('[B4.3] slumpFor — reproducerbar bootstrap', () => {
     // Samma bootstrap som analyserna gör: återsampla och ta medianen.
     const boot = (arr, B = 200) => {
-        const rnd = rngFor(arr);
+        const rnd = slumpFor(arr);
         const med = a => { const s = a.slice().sort((x, y) => x - y), m = s.length >> 1;
             return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
         const out = [];

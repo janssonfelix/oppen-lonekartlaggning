@@ -14,6 +14,11 @@
 // Toppnivåns `const` (_RF_RANDER, _RF_MARKEN) och PALETTE, CHART_FONT, d3 läses bara inne i funktioner;
 // _RF_MARKEN pekar på funktionsdeklarationer, som finns från början.
 // ====================================================================
+import { kvantilpunkter, ladstatistik, talformat } from '../lib/figur.js';
+import { FARG } from './01-farger.js';
+import { SCATTER_MAX_POINTS } from './02-verktygstips.js';
+import { _RF, _rfBas, _rfBredd, _rfDomanSorterad, _rfInomDoman, _rfKorta, _rfLinjeSkarRuta, _rfLitenPx, _rfPlaceraEtiketter, _rfPos, _rfRadbryt, _rfStapelPlats, _rfTal, _rfText } from './10-diagramlayout.js';
+import { CHART_FONT, PALETTE } from './10-diagramtema.js';
 
 // Markering av små grupper utöver färg (WCAG 1.4.1): streckad kant, och för ytor ränder. Ränderna är
 // verklig geometri i en egen nästlad <svg> (klipper till stapeln), inte ett mönster: SVG:n har inga id.
@@ -39,7 +44,7 @@ function _rfLitenYta(g, rect, c) {
 // Mönster på en yta (lagervalet `monster`, förbättring 7): en status får inte bäras av färgen ensam. Verklig geometri
 // i en nästlad <svg>, som ränderna: vågräta linjer eller prickar i rutnät — aldrig diagonalt, det betyder liten grupp.
 // Används både för stapeln (klippt till panelen av anroparen) och för förklaringens ruta.
-function _rfMonster(g, x0, y0, w, h, monster) {
+export function _rfMonster(g, x0, y0, w, h, monster) {
     if (!(w >= _RF_RANDER.minst && h >= _RF_RANDER.minst)) return;
     const yta = g.append('svg').attr('data-marke', 'monster').attr('pointer-events', 'none').attr('overflow', 'hidden')
         .attr('x', x0).attr('y', y0).attr('width', w).attr('height', h);
@@ -173,7 +178,7 @@ function _rfStapel(g, l, li, c) {
 
 // Fyllda symboler: cirkel (förval), romb och kvadrat. Formen skiljer serier åt utan färg; en tunn ring i ytans färg
 // håller isär punkter som ligger på varandra eller på en linje. Samma funktion ritar förklaringens prov.
-function _rfSymbol(g, symbol, x, y, r, farg) {
+export function _rfSymbol(g, symbol, x, y, r, farg) {
     const m = symbol === 'romb' ? g.append('path').attr('d', `M${x},${y - r * 1.25}L${x + r * 1.25},${y}L${x},${y + r * 1.25}L${x - r * 1.25},${y}Z`)
         : symbol === 'kvadrat' ? g.append('rect').attr('x', x - r * 0.9).attr('y', y - r * 0.9).attr('width', r * 1.8).attr('height', r * 1.8).attr('rx', 1)
         : g.append('circle').attr('cx', x).attr('cy', y).attr('r', r);
@@ -181,7 +186,7 @@ function _rfSymbol(g, symbol, x, y, r, farg) {
 }
 // En ofylld symbol (lagrets `ofylld`): en ring i seriens färg utan fyllning — en andra status i samma färg, som
 // fylld/ofylld för matchningsnivån. Ringens inre tar ändå emot pekaren (`visible`), som en fylld punkt.
-function _rfOfylld(m, farg) {
+export function _rfOfylld(m, farg) {
     return m.attr('fill', 'none').attr('stroke', farg).attr('stroke-width', 1.75).attr('pointer-events', 'visible');
 }
 
@@ -280,7 +285,7 @@ function _rfPunkt(g, l, li, c) {
 // punkters etiketter finns i listan, så en dold liten punkt påverkar inte de övrigas lägen.
 // Står alla etiketter ÖVER sin punkt (namnen i en matris) flyttas de i stället uppåt, bort från punkterna: en etikett
 // som knuffas nedåt hamnar annars mitt på bubblorna den hör till. Det är samma gång, speglad i höjdled.
-function _rfEtikettKrockar(etiketter, inreH) {
+export function _rfEtikettKrockar(etiketter, inreH) {
     if (!etiketter || etiketter.length < 2) return;
     const uppat = etiketter.every(e => e.over);
     const spegla = y => (uppat ? inreH - y : y);
@@ -310,7 +315,7 @@ function _rfEtikettKrockar(etiketter, inreH) {
 // _rfPlaceraEtiketter (10-diagramlayout.js) med de ritade punkterna som hinder, och en etikett som står en bit från sin
 // punkt får en tunn hänvisningslinje (data-marke="hanvisning") under texten. Linjen och texten hör till en ritad punkt
 // och tar inte emot pekaren.
-function _rfUndvikEtiketter(c) {
+export function _rfUndvikEtiketter(c) {
     if (!c.undvik || !c.undvik.length) return;
     // Rutan räknas med en tiondel och 2 px luft utöver den uppskattade bredden och 1,3 gånger teckenstorleken på höjden
     // (texten mitt i): teckensnittet i webbläsaren kan vara bredare och högre än uppskattningen (_RF.tecken), och en
@@ -460,7 +465,7 @@ function _rfTathetKurva(varden, lag, hog, steg = 40) {
     if (n < 2 || !(hog > lag)) return [{ v: lag, t: 1 }, { v: hog, t: 1 }];
     const medel = v.reduce((s, x) => s + x, 0) / n;
     const sd = Math.sqrt(v.reduce((s, x) => s + (x - medel) * (x - medel), 0) / (n - 1));
-    const st = _figLadstatistik(v), iqr = st ? st.q3 - st.q1 : 0;
+    const st = ladstatistik(v), iqr = st ? st.q3 - st.q1 : 0;
     let h = 0.9 * Math.min(sd || Infinity, iqr > 0 ? iqr / 1.34 : Infinity) * Math.pow(n, -0.2);
     if (!(h > 0) || !isFinite(h)) h = (hog - lag) / 10;
     const ut = [];
@@ -481,7 +486,7 @@ function _rfTathetKurva(varden, lag, hog, steg = 40) {
 // läge på värdeaxeln. Läget prövas mot skalan när den finns (ritaren); utan skala (sidan) gäller axelns slag:
 // på en logaritmisk axel har bara värden över noll ett läge. För en validerad figur är de två proven samma sak.
 // Ger [{ d, i }] i dataordning, med punktens index i lagrets data.
-function _rfLadIndivider(figur, l, dold, skala) {
+export function _rfLadIndivider(figur, l, dold, skala) {
     const axel = l.axel === 'y2' && figur.y2 ? figur.y2 : figur.y;
     const log = !!axel && axel.skala === 'log';
     const ut = [];
@@ -493,7 +498,7 @@ function _rfLadIndivider(figur, l, dold, skala) {
     return ut;
 }
 // Lådans kategori för en individ (lådorna grupperas på den).
-function _rfLadKategori(d) { return String(d.x); }
+export function _rfLadKategori(d) { return String(d.x); }
 
 // Kvantilpunkternas kolumner: prickarna (skärmläge i y, i kvantilordning) läggs i samma kolumn när de ligger
 // närmare varandra än en prickdiameter, så att ingen prick täcker en annan. [{ y, index }] — kolumnens läge (medel
@@ -512,7 +517,7 @@ function _rfKvantilKolumner(ypx, r) {
 function _rfKvantilRadie(grupper, l, ys, plats) {
     let r = 6;
     for (const punkter of grupper.values()) {
-        const kp = _figKvantilpunkter(punkter.map(p => p.d.y), l.antal || 20);
+        const kp = kvantilpunkter(punkter.map(p => p.d.y), l.antal || 20);
         if (!kp) continue;
         const ypx = kp.varden.map(v => ys(v));
         while (r > 1.5 && Math.max(..._rfKvantilKolumner(ypx, r).map(k => k.index.length)) * 2 * r > plats) r -= 0.5;
@@ -556,7 +561,7 @@ function _rfLada(g, l, li, c) {
             // och varje individ som en punkt till vänster ("regnet"). Kurvan och strecken är ett aggregat (lådans
             // data-marke); punkterna är individer med egna index. De små ritas sist, som i individpunkterna, så att
             // de övriga ligger still när små grupper slås av och på.
-            const s = _figLadstatistik(punkter.map(p => p.d.y));
+            const s = ladstatistik(punkter.map(p => p.d.y));
             if (!s) continue;
             const halv = Math.min(plats, 120) / 2, kant = 3;
             const kurva = _rfTathetKurva(punkter.map(p => p.d.y), s.lag, s.hog);
@@ -583,7 +588,7 @@ function _rfLada(g, l, li, c) {
             // Kvantilpunktdiagram: gruppen som `antal` lika stora andelar, var och en en prick vid
             // sin kvantil, staplade i sidled där de annars skulle täcka varandra (Wilkinson). Prickarna är ett aggregat
             // (lådans data-marke-familj): tips och klick gäller gruppen, och diagramdatan är kvantilerna.
-            const kp = _figKvantilpunkter(punkter.map(p => p.d.y), l.antal || 20);
+            const kp = kvantilpunkter(punkter.map(p => p.d.y), l.antal || 20);
             if (!kp) continue;
             // Samma prickstorlek i hela lagret, så att grupperna går att jämföra: den största som ryms i varje grupp.
             if (kvantilRadie == null) kvantilRadie = _rfKvantilRadie(grupper, l, ys, plats);
@@ -617,7 +622,7 @@ function _rfLada(g, l, li, c) {
             ritade += ordnade.length;
             continue;
         }
-        const s = _figLadstatistik(punkter.map(p => p.d.y));
+        const s = ladstatistik(punkter.map(p => p.d.y));
         if (!s) continue;
         const linje = (marke, y1, y2, x1, x2, tjock) => g.append('line').attr('data-marke', marke).attr('pointer-events', 'none')
             .attr('x1', x1).attr('x2', x2).attr('y1', y1).attr('y2', y2).attr('stroke', farg).attr('stroke-width', tjock);
@@ -674,7 +679,7 @@ const _rfFargMitt = (fs, [a, b]) => (_rfTal(fs.mitt) && fs.mitt > Math.min(a, b)
  * när domänen är sned. Skalan följer bara figurens `fargskala` — aldrig lagrens data, så en liten punkt kan inte
  * flytta den. Byggs en gång per ritning (_rfByggSvg) och skickas vidare.
  */
-function _rfFargskala(fs) {
+export function _rfFargskala(fs) {
     const dom = _rfFargDoman(fs);
     if (!dom) return null;
     const [a, b] = dom;
@@ -692,9 +697,9 @@ function _rfFargskala(fs) {
 // Bredden färgstapeln behöver i högermarginalen — ur figurens `fargskala` (som har en användbar domän: anroparen
 // har redan byggt skalan) och bildens bredd, aldrig ur data. Bredden rymmer titeln och ändvärdena, men högst 30 %
 // av bilden (minst _RF.fargB); en längre titel kortas (hela titeln i <title>).
-function _rfFargstapelMatt(fs, px, B) {
+export function _rfFargstapelMatt(fs, px, B) {
     const fpx = px - 1, dom = /** @type {any[]} */ (_rfFargDoman(fs)), mitt = _rfFargMitt(fs, dom);
-    const text = v => _figTalformat(v, fs.format, { enhet: false });
+    const text = v => talformat(v, fs.format, { enhet: false });
     const titel = fs.titel != null ? String(fs.titel) : '';
     const etB = [...dom, ...(mitt == null ? [] : [mitt])].reduce((m, v) => Math.max(m, _rfBredd(text(v), fpx)), 0);
     const behov = Math.ceil(Math.max(_RF.fargText + etB, _rfBredd(titel, fpx)));
@@ -706,7 +711,7 @@ function _rfFargstapelMatt(fs, px, B) {
 // om), med domänens ändvärden (och mittvärdet om skalan har ett) som text och titeln ovanför. `x` är stapelns
 // vänsterkant i ytans koordinater och `plats` bredden den får ta (från _rfFargstapelMatt). Stapeln är linjär i
 // värdet med det STÖRSTA värdet överst, också när domänen är omvänd. Fälten bär inga index och tar inte emot pekaren.
-function _rfFargstapel(rot, fs, skala, x, hojd, px, plats) {
+export function _rfFargstapel(rot, fs, skala, x, hojd, px, plats) {
     if (!skala) return;
     const fpx = px - 1, dom = /** @type {any[]} */ (_rfFargDoman(fs)), mitt = _rfFargMitt(fs, dom);
     const lag = Math.min(...dom), hog = Math.max(...dom);
@@ -725,7 +730,7 @@ function _rfFargstapel(rot, fs, skala, x, hojd, px, plats) {
     // Ändvärdena vid stapelns över- och underkant; mittvärdet på sin plats om det inte krockar med dem.
     // Ett tal som inte ryms på bredden hoppas över (tal kortas aldrig).
     const text = (v, y) => {
-        const t = _figTalformat(v, fs.format, { enhet: false });
+        const t = talformat(v, fs.format, { enhet: false });
         if (_RF.fargText + _rfBredd(t, fpx) <= plats + 0.01) _rfText(g, _RF.fargText, y, t, { px: fpx });
     };
     text(hog, fpx * 0.8);
@@ -887,7 +892,7 @@ function _rfZonEtiketter(zoner, c, bredd, hojd) {
 // De hör till figuren, inte till någon datapunkt: de bär inga index och tar inte emot pekaren. En referens
 // utanför axelns domän ritas inte — och domänen räknas bara ur de punkter som ritas.
 // `g` är panelens klippta svg, `bredd` × `hojd` panelens mått.
-function _rfReferenser(g, figur, c, bredd, hojd, del) {
+export function _rfReferenser(g, figur, c, bredd, hojd, del) {
     const zoner = _rfZoner(figur, c, bredd, hojd);
     if (del === 'zon') {
         for (const { r, lodrat, fran, till } of zoner) {
@@ -964,4 +969,4 @@ function _rfYta(g, l, li, c) {
     });
 }
 
-const _RF_MARKEN = { stapel: _rfStapel, punkt: _rfPunkt, linje: _rfLinje, band: _rfBand, intervall: _rfIntervall, lada: _rfLada, ruta: _rfRuta, yta: _rfYta };
+export const _RF_MARKEN = { stapel: _rfStapel, punkt: _rfPunkt, linje: _rfLinje, band: _rfBand, intervall: _rfIntervall, lada: _rfLada, ruta: _rfRuta, yta: _rfYta };

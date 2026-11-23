@@ -9,16 +9,12 @@
  *
  * Statistikens matchning (`statistikFor`) är det enda uppslaget i verktyget: samma AID och samma BAS, annars en rad
  * för samma AID som saknar BAS. En rad för ett annat BAS-intervall används aldrig.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
-import { median, quantile } from './stat.js';
+import { median, kvantil } from './stat.js';
 import { sektorsnamn, aidAvYrke, namnrader } from './aid.js';
-import { skapaTermer, ordForAntal, adjektiv } from './termer.js';
+import { STANDARDTERMER as T, ordForAntal, adjektiv } from './termer.js';
 import { arKvinna } from './kon.js';
 
-/** Standardtermerna (ADR-74); skapaTermer() utan egna termer ger standarduppsättningen. */
-const T = skapaTermer();
 
 const _pos = v => (typeof v === 'number' && v > 0 ? v : null);
 const _tre = (p10, med, p90) => ({ p10: _pos(p10), median: _pos(med), p90: _pos(p90) });
@@ -129,7 +125,7 @@ export function jamforelseRader(rader, { statistik = [], policyFor = () => null,
         for (const bas of [...perBas.keys()].sort()) {
             const { yrke, lons, kvinnor } = perBas.get(bas);
             if (lons.length < k) { utelamnade.push(`${aid} (BAS ${bas})`); continue; }
-            const org = _tre(quantile(lons, 0.1), median(lons), quantile(lons, 0.9));
+            const org = _tre(kvantil(lons, 0.1), median(lons), kvantil(lons, 0.9));
             const traff = statistikFor(statistik, aid, bas), s = traff?.rad;
             const p = policyFor(aid, bas);
             const stat = _tre(s?.p10, s?.median, s?.p90), pol = _tre(p?.p10, p?.med, p?.p90);

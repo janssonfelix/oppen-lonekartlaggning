@@ -5,20 +5,38 @@
 //
 // Användaren väljer rader, ev. kolumner, mått, diagramtyp och urval (72-utforska-urval.js) och får
 // diagram + tabell direkt. All beräkning sker i src/lib/utforska.js (speglad som
-// _utComputePivot m.fl.); figurerna byggs i 71-utforska-figur.js.
+// _utPivottabell m.fl.); figurerna byggs i 71-utforska-figur.js.
 //
 // SMÅ GRUPPER (ADR-14, ADR-51): på skärmen visas alla grupper som andra (kTroskel() är 1 där); i exportläget
 // märks grupper under tröskeln med klassen explore-liten, som exporten läser. Den som använder verktyget har
 // redan rådatan; skyddet gäller det som LÄMNAR verktyget. Exporten — tabellens CSV/urklipp och diagrammets exportmeny —
 // utelämnar dem därför om inte rutan "Ta med grupper under k" är ikryssad.
 // ====================================================================
+import { aidAvYrke } from '../lib/aid.js';
+import { gruppnycklar, konAv } from '../lib/falt.js';
+import { personOrd } from '../lib/namn.js';
+import { nyttRecept } from '../lib/tabellrecept.js';
+import { svKr } from '../lib/talformat.js';
+import { stor } from '../lib/termer.js';
+import { beskrivUrval, iUrvalet, villkorAktivt } from '../lib/urval.js';
+import { pivottabell } from '../lib/utforska.js';
+import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { enableTableSort } from './05-tabeller-och-lankar.js';
+import { kTroskel } from './06-k-troskel.js';
+import { T } from './09-termer.js';
+import { rensaFigur, ritaFigur } from './10-diagramritare.js';
+import { nedborrningGlom } from './11-markering.js';
+import { addTableExportTools, getData, state } from './12-tillstand.js';
+import { explorerFigure } from './71-utforska-figur.js';
+import { explorerNollstallUrval, explorerRensaUrval, explorerUrval, explorerUrvalSlappMinne, renderExplorerUrvalUi } from './72-utforska-urval.js';
+import { gruppdossierCandidates, openGruppdossier } from './80-gruppdossier.js';
 
 const EXPLORE_DIM_LABEL = {
-    bas: termStor(T.niva.en), aid: termStor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
-    aidbas: `${termStor(T.enhet.en)} i ${T.niva.en}`, lonespann: 'Lönespann', alla: 'Hela urvalet',
-    sektor: termStor(T.huvudomrade.en), aidniva: 'AID-mellannivå'
+    bas: stor(T.niva.en), aid: stor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
+    aidbas: `${stor(T.enhet.en)} i ${T.niva.en}`, lonespann: 'Lönespann', alla: 'Hela urvalet',
+    sektor: stor(T.huvudomrade.en), aidniva: 'AID-mellannivå'
 };
-const EXPLORE_MATT_LABEL = {
+export const EXPLORE_MATT_LABEL = {
     median: 'Median månadslön', medel: 'Medellön', n: 'Antal (n)',
     p10: 'P10', p25: 'P25', p75: 'P75', p90: 'P90',
     spridning: 'Spridning (P90/P10)', andelKv: 'Andel kvinnor (%)', gap: 'Kvinnors median i % av mäns'
@@ -49,7 +67,7 @@ const EXPLORE_KON_MATT = new Set(['andelKv', 'gap']);
 /** @type {{model: any, typ: string, rows: any[]}|null} */
 let _explorerState = null;            // { model, typ, rows } — senaste rendering
 
-function _exploreFmt(v, matt) {
+export function _exploreFmt(v, matt) {
     if (v == null || !isFinite(v)) return '–';
     if (matt === 'n') return Math.round(v).toLocaleString('sv-SE');
     if (matt === 'gap' || matt === 'andelKv') {
@@ -114,19 +132,19 @@ function _explorerVisaOnskad() {
 // ligger kvar när datan släpps.
 const _utNycklarMinne = new WeakMap();
 /** @param {any[]} rows */
-function _utNycklar(rows) {
+export function _utNycklar(rows) {
     let m = _utNycklarMinne.get(rows);
-    if (!m || m.n !== rows.length) { m = { n: rows.length, f: _utGruppnycklar(rows) }; _utNycklarMinne.set(rows, m); }
+    if (!m || m.n !== rows.length) { m = { n: rows.length, f: gruppnycklar(rows) }; _utNycklarMinne.set(rows, m); }
     return m.f;
 }
 
 function _explorerUrvalAntal(rows, urval) {
-    const person = _urPersonFilter(urval, _utNycklar(rows));
+    const person = iUrvalet(urval, _utNycklar(rows));
     const ut = { n: 0, nKv: 0, nMa: 0 };
     for (const r of rows) {
         if (!(r.lon > 0) || !person(r)) continue;
         ut.n++;
-        const k = _utKonOf(r);
+        const k = konAv(r);
         if (k === 'Kvinna') ut.nKv++; else if (k === 'Man') ut.nMa++;
     }
     return ut;
@@ -145,8 +163,6 @@ function _explorerSpec() {
         ...explorerUrval()
     };
 }
-
-
 
 function _explorerSyncControls(spec, typ, valdTyp, urval) {
     const typSel = document.getElementById('explore-typ');
@@ -215,12 +231,12 @@ function _explorerTitle(spec, typ) {
  * Får exporten ur Utforska ta med grupper under tröskeln? Rutan måste vara ikryssad OCH organisationspaketet
  * tillåta det (ADR-47); utan tillåtelse är rutan dold och svaret alltid nej.
  */
-function explorerSmaIExport() {
+export function explorerSmaIExport() {
     return state.paketLas.smaGrupperIExport !== false && !!/** @type {HTMLInputElement} */ (document.getElementById('explore-inkludera-sma'))?.checked;
 }
 
 /** Rutan "Ta med grupper under tröskeln" visas bara när paketet tillåter det; annars står en rad om varför. */
-function explorerSynkaSmaLas() {
+export function explorerSynkaSmaLas() {
     const tillatet = state.paketLas.smaGrupperIExport !== false;
     const rad = document.getElementById('explore-inkludera-sma-rad');
     if (rad) rad.hidden = !tillatet;
@@ -230,7 +246,7 @@ function explorerSynkaSmaLas() {
     if (not) not.hidden = tillatet;
 }
 
-function renderExplorer() {
+export function renderExplorer() {
     if (!document.getElementById('explore-rad')) return;
     explorerSynkaSmaLas();
     const rows = getData();
@@ -254,7 +270,7 @@ function renderExplorer() {
     if (typ === 'staplade') modelSpec.matt = 'n';
     const { tvingad } = explorerVisaSkal(spec, lasTyp, probe.urval);
     modelSpec.delaKon = tvingad ? tvingad === 'kon' : spec.delaKon;
-    const model = _utComputePivot(rows, modelSpec, { k: kTroskel() });
+    const model = pivottabell(rows, modelSpec, { k: kTroskel() });
 
     _explorerSyncControls(spec, lasTyp, valdTyp, model.urval);
     renderExplorerUrvalUi(rows);
@@ -294,7 +310,7 @@ function _renderExplorerChart(model, typ, rows) {
     ritaFigur(el, explorerFigure(model, typ, rows), {
         visaSma: true,
         exportMedSma: () => explorerSmaIExport(),
-        exportBeskrivning: _urBeskrivUrval(model.spec.urval, model.spec.gruppVillkor),
+        exportBeskrivning: beskrivUrval(model.spec.urval, model.spec.gruppVillkor),
         vidKlick: d => explorerHandleClick(d),
         tomtext: 'Inga grupper att visa för valt urval.'
     });
@@ -370,7 +386,7 @@ function _renderExplorerTable(model, typ, inkl) {
     }
     table.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
     // Tabellens export börjar med urvalet, som diagrammets gör (tableToMatrix).
-    table.setAttribute('data-export-beskrivning', _urBeskrivUrval(spec.urval, spec.gruppVillkor));
+    table.setAttribute('data-export-beskrivning', beskrivUrval(spec.urval, spec.gruppVillkor));
     // innerHTML bygger ett NYTT thead; sorteringsflaggan sitter på tabellnoden
     // och måste nollställas, annars är sorteringen död från andra renderingen.
     table._sortInit = false;
@@ -412,13 +428,13 @@ function _explorerUrvalEttVarde(spec, dim) {
     const u = spec.urval;
     if (!u || u.lage === 'nagot') return null;
     const falt = dim === 'alder' ? 'aldersgrupp' : dim;
-    const pa = (u.villkor || []).filter(v => _urVillkorAktivt(v) && v.falt === falt);
+    const pa = (u.villkor || []).filter(v => villkorAktivt(v) && v.falt === falt);
     if (pa.length !== 1) return null;
     const v = pa[0];
     return (v.op === 'enAv' && !v.inte && v.varde.length === 1) ? v.varde[0] : null;
 }
 // "207 Förskollärare · BAS E" → { aid: '207 Förskollärare', bas: 'E' }
-function _explorerAidBas(etikett) {
+export function _explorerAidBas(etikett) {
     const m = String(etikett ?? '').match(/^(.*) · BAS (.*)$/);
     return m ? { aid: m[1], bas: m[2] } : null;
 }
@@ -465,7 +481,7 @@ function explorerHandleClick(d) {
 }
 
 /** Släpper Utforskas referenser till lönerader (anropas av "Rensa all data"). */
-function explorerSlappMinne() {
+export function explorerSlappMinne() {
     _explorerState = null;
     const gd = document.getElementById('chart-explore');
     if (gd) rensaFigur(gd);
@@ -475,17 +491,6 @@ function explorerSlappMinne() {
 
 // ---- Wiring ----
 const _exploreVy = document.getElementById('view-utforska');
-_exploreVy?.addEventListener('change', e => {
-    const t = /** @type {HTMLElement} */ (e.target);
-    if (['explore-rad', 'explore-kolumn', 'explore-measure', 'explore-visa',
-         'explore-typ', 'explore-inkludera-sma', 'explore-sla-ihop', 'explore-stapel-visa'].includes(/** @type {HTMLElement} */ (t).id)) renderExplorer();
-});
-_exploreVy?.addEventListener('click', e => {
-    if (/** @type {HTMLElement} */ (e.target).closest('[data-explore-clear]')) {
-        explorerNollstallUrval();
-        renderExplorer();
-    }
-});
 
 // ---- Egna tabeller i rapporten (ADR-52) ----
 // Vyn sparas som ett recept (rader, kolumner, mått, urval); talen räknas om när rapporten byggs, i exportläget.
@@ -496,7 +501,7 @@ function explorerTillRapport() {
     const satt = (text, ok) => { if (status) { status.textContent = text; status.className = `status-msg${ok ? ' success' : ''}`; } };
     if (!getData().length) { satt('Läs in en lönefil först.', false); return null; }
     const spec = _explorerSpec();
-    const recept = _trNytt(spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
+    const recept = nyttRecept(spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
     if (!recept) { satt('Vyn går inte att spara som tabell.', false); return null; }
     if (perBas && !recept.upprepa) { satt(`En tabell per ${T.niva.en} går inte när raderna eller kolumnerna redan är ${T.niva.fl}.`, false); return null; }
     state.rapportTabeller = [...(state.rapportTabeller || []), recept];
@@ -505,5 +510,20 @@ function explorerTillRapport() {
     if (typeof announceToScreenReader === 'function') announceToScreenReader(`Tabellen ${recept.namn} är tillagd i rapporten.`);
     return recept;
 }
-document.getElementById('btn-explore-till-rapport')?.addEventListener('click', explorerTillRapport);
-document.getElementById('explore-rapport-namn')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); explorerTillRapport(); } });
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartUtforska() {
+    _exploreVy?.addEventListener('change', e => {
+        const t = /** @type {HTMLElement} */ (e.target);
+        if (['explore-rad', 'explore-kolumn', 'explore-measure', 'explore-visa',
+             'explore-typ', 'explore-inkludera-sma', 'explore-sla-ihop', 'explore-stapel-visa'].includes(/** @type {HTMLElement} */ (t).id)) renderExplorer();
+    });
+    _exploreVy?.addEventListener('click', e => {
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-explore-clear]')) {
+            explorerNollstallUrval();
+            renderExplorer();
+        }
+    });
+    document.getElementById('btn-explore-till-rapport')?.addEventListener('click', explorerTillRapport);
+    document.getElementById('explore-rapport-namn')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); explorerTillRapport(); } });
+}

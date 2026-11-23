@@ -15,7 +15,7 @@ CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas
 | Del | Fil |
 |---|---|
 | Skripten och Node-kravet | `package.json` (`scripts`, `engines`) |
-| Bygget | `tools/build-app.mjs`, `tools/bundle.mjs`, `tools/gen-mirrors.mjs`, `tools/gen-version.mjs`, `tools/lib/minify-css.mjs`, `tools/lib/minify-html.mjs` |
+| Bygget | `tools/build-app.mjs`, `tools/bundle.mjs`, `tools/gen-version.mjs`, `tools/lib/minify-css.mjs`, `tools/lib/minify-html.mjs` |
 | Testsviten och testmiljön | `vitest.config.js`, `tools/test.mjs`, `tests/helpers/app-harness.js` |
 | Webbläsarröktestet och prestandamätningen | `tools/browser-smoke.mjs`, `tools/browser-smoke/`, `tools/perf-smoke.mjs` |
 | Typkontrollen och linten | `tsconfig.json`, `tsconfig.app.json`, `types/globals.d.ts`, `eslint.config.js` |
@@ -35,10 +35,10 @@ CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas
 
 **Namngivning.** Filnamn skrivs med gemener och bindestreck, utan å, ä och ö. Levande dokument har inget datum eller
 versionsnummer i filnamnet; versionen står i dokumentet. Modulerna i `src/app/` har ett tvåsiffrigt prefix som styr
-ordningen när de slås ihop.
+ordningen för deras uppstart (`src/app/index.js`).
 
-**Källfilerna** är `src/index.html`, `src/style.css`, `src/app/NN-*.js` och `src/lib/*.js`. `dist/app.js` är ett
-**genererat** hopslag av `src/app/` och redigeras aldrig direkt (ADR-6, ADR-8).
+**Källfilerna** är `src/index.html`, `src/style.css`, `src/app/NN-*.js` och `src/lib/*.js`. `dist/app.js` är
+**genererad** ur `src/app/` och redigeras aldrig direkt (ADR-6, ADR-98).
 
 **`src/index.html` går inte att köra direkt i en webbläsare.** Den pekar på biblioteken i `vendor/` och på
 `dist/app.js` (relativa sökvägar från `src/`), men dess CSP (`default-src 'none'; script-src 'unsafe-inline'`)
@@ -49,9 +49,18 @@ blockerar stilmallen och alla skriptfilerna (fem: fyra bibliotek och verktygets 
 ## 2. Bygget
 
 **`npm run build:app`** (`tools/build-app.mjs`) regenererar `src/app/08-version.js` ur `VERSION`
-(`tools/gen-version.mjs`, ADR-13) och `src/app/09-lib-speglar.js` ur `src/lib/` (`tools/gen-mirrors.mjs`, ADR-8),
-och slår sedan ihop `src/app/NN-*.js` byte för byte (BOM och CRLF bevaras) till `dist/app.js` (ADR-6).
-Artefaktgrinden (§8 och §9) vaktar att de tre genererade filerna motsvarar källan.
+(`tools/gen-version.mjs`, ADR-13) och bygger sedan `dist/app.js` med esbuild ur ES-modulerna, med `src/app/index.js`
+som ingång (ADR-98): `src/app/NN-*.js` och de `src/lib/`-moduler de importerar blir en platt fil utan `import` och
+`export` (format `esm`, ingen tree shaking, ingen minifiering), som körs som ett klassiskt skript. Appens
+toppnivånamn blir globala, som sidan, testerna och röktestet läser dem. Bygget fäller om utfilen har `import` eller
+`export` kvar, om ett av appens namn (deklarerat i en del eller importerat ur lib under lib-namnet) deklareras i mer än
+en modul eller inte står oförändrat i utfilen (esbuild döper om vid en krock), om en del har kod utanför en
+deklaration (det som körs vid laddning står i delens uppstartsfunktion, som `index.js` anropar i sifferordning), och
+om ett toppnivånamn i utfilen heter som en egenskap på `window` eller dess prototyper: listan tas ur jsdom vid
+byggtiden, med en kort fast lista över det Chromium har men jsdom saknar (`chrome`, `scheduler`, `navigation` med
+flera; `krockarMedWindow`, prövad i `tests/build-app.test.js`).
+Lib-modulernas privata namn får döpas om. Bygget är deterministiskt, och artefaktgrinden (§8 och §9) vaktar att de
+genererade filerna motsvarar källan.
 
 **`npm run bundle`** (`tools/bundle.mjs`) gör samma regenerering och bygger sedan
 `dist/oppen-lonekartlaggning.html` (omkring 3,4 MB; en enda fil) och `dist/RELEASE.txt`:
@@ -69,6 +78,15 @@ Artefaktgrinden (§8 och §9) vaktar att de tre genererade filerna motsvarar kä
   summan. Filen är deterministisk: `Build:`-raden härleds ur `VERSION`, inte ur systemklockan, så en ombyggnad av
   oförändrad källa smutsar inte ner arbetskatalogen. Bygget är byte-reproducerbart, och det är vad artefaktgrinden
   i CI prövar (avsnitt 9).
+
+**Reproducerbart bygge** (ADR-101). Samma commit ger samma `dist/oppen-lonekartlaggning.html` bit för bit, oavsett
+katalog, tidszon, språk och datum: bygget läser inte klockan (`Build:` och `APP_BUILD_DATE` härleds ur `VERSION`;
+datumet läses bara för påminnelsen om att `VERSION` inte är dagens), inga sökvägar hamnar i filen (esbuild skriver
+relativa sökvägar i sina kommentarer), filerna läses i en fast ordning (skripten i en lista, modulerna i
+importordning), och esbuilds version är låst i `package.json`. Radsluten är LF i varje utcheckning genom
+`.gitattributes`: med `core.autocrlf` på Windows blev källan CRLF och filen en annan. `tests/build-app.test.js`
+prövar att två byggen av `dist/app.js` i samma process, med klockan på olika år, ger samma bytes; CI bygger om i en
+annan katalog (avsnitt 9) och release-arbetsflödet ur taggen (avsnitt 10).
 
 **Byggets skyddsnät.** Bundlern avbryter bygget vid U+FFFD (mojibake) i egna källfiler (`src/index.html`,
 `src/style.css`, `dist/app.js` och `src/licenser.txt`, inte de minifierade biblioteken), och kör `node --check` på
@@ -105,13 +123,13 @@ bibliotek av hjälpklasser som ersatte alla `style`-attribut (ADR-30).
 
 ### 5.1 Sviten
 
-Vitest. De genererade filerna (`dist/` och `src/app/08-version.js` och
-`09-lib-speglar.js`) prövas av artefaktgrinden, inte av sviten, så `npm test` efter en ändring i `src/lib/` kräver
+Vitest. De genererade filerna (`dist/` och `src/app/08-version.js`) prövas av artefaktgrinden, inte av sviten, så `npm test` efter en ändring i `src/lib/` kräver
 `npm run build:app` först; `npm run kontroll` gör det själv.
 
 - rena `src/lib/`-moduler och CSV-parsningen, en fil per modul eller område (`tests/<område>.test.js`);
 - jsdom-röktest av appen (ADR-7), en fil per funktion (`tests/<område>-app.test.js`, till exempel `inlasning-app` och
-  `rapport-app`);
+  `rapport-app`). Tal, maskering, status och urval prövas i Node mot vymodellen eller lib-funktionen; jsdom prövar att
+  vyn ritar den, händelser, exportflöden och tillgänglighet, och k-invarianten (I4);
 - det som går tvärs över funktionerna: k-tröskeln i `tests/ktroskel*.test.js` med riggen i
   `tests/helpers/ktroskel-rigg.js`; gränssnittet i `tests/granssnitt*.test.js` (riggen `tests/helpers/granssnitt-rigg.js`);
   diagrammen i `tests/diagram*.test.js` (riggen `tests/helpers/diagramvyer-rigg.js`); visningsminnet i
@@ -245,8 +263,8 @@ kvadratisk loop ska synas, och 1 s för förhandsbeskedet efter ett ändrat krys
 JavaScript-källan med JSDoc som typspråk — inget skrivs om till TypeScript och inget emitteras.
 
 - **Två projekt:** `tsconfig.json` (`npm run typecheck:lib`) tar `src/lib/**` och `tools/**` som ES-moduler;
-  `tsconfig.app.json` (`npm run typecheck:app`) tar `src/app/*.js` som skript i ett gemensamt globalt scope, precis
-  som i `dist/app.js`. Röktestet och prestandasvepet kör sina callbacks i webbläsarens realm (`page.evaluate`) och
+  `tsconfig.app.json` (`npm run typecheck:app`) tar ES-modulerna från `src/app/index.js` och följer importerna, också
+  till `src/lib/`. Röktestet och prestandasvepet kör sina callbacks i webbläsarens realm (`page.evaluate`) och
   är uteslutna, som i `eslint.config.js`.
 - **Inställningarna:** `strictNullChecks` är på, `noImplicitAny` av (koden är dynamiskt typad där JSDoc saknas),
   `useUnknownInCatchVariables` av.
@@ -262,10 +280,9 @@ JavaScript-källan med JSDoc som typspråk — inget skrivs om till TypeScript o
 
 ## 7. Lint
 
-`npm run lint` (`tools/lint.mjs`) kör ESLint på appen, `src/lib`, `tests` och `tools`; biblioteken i `vendor/` och
-`types/` lintas inte. Appen lintas hopslagen, som `build:app` bygger den, så att linten ser globaler som ingen fil
-använder och namn som ingen fil deklarerar, men felen anges med källfil och rad i `src/app/`, och `npm run lint:fix`
-skriver sina rättningar i källfilerna (kör `build:app` efteråt). Röktestet och prestandasvepet lintas med webbläsarens och appens
+`npm run lint` kör ESLint på `src` (appen och lib, som ES-moduler), `tests` och `tools`; `dist/`, biblioteken i
+`vendor/` och `types/` lintas inte. Ett namn som en del använder utan att importera fälls av `no-undef`.
+`npm run lint:fix` rättar det som går. Röktestet och prestandasvepet lintas med webbläsarens och appens
 globaler, eftersom deras callbacks körs i sidan.
 
 Linten förbjuder nät-API och lagring utanför lagringsspärren i appens kod och i lib-modulerna (skydden S1 och S2 i
@@ -280,8 +297,7 @@ förbjuds därför inte.
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3: `build:app`, `lint`, `typecheck`, `test:full`,
 `bundle` och `test:browser`, i den ordningen, och stannar på första fel med stegets slutkod. Efter `bundle` prövas
 samma två grindar som CI-jobbet `grindar` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen genererad
-fil: ingen spårad fil under `dist/`, alltså inte heller `RELEASE.txt`, och varken `src/app/08-version.js` eller
-`src/app/09-lib-speglar.js`; kedjan jämför filerna som de låg när den började, CI jämför med det incheckade. En
+fil: ingen spårad fil under `dist/`, alltså inte heller `RELEASE.txt`, och inte `src/app/08-version.js`; kedjan jämför filerna som de låg när den började, CI jämför med det incheckade. En
 ändring betyder att de inte motsvarade källan, och de ombyggda filerna ska checkas in)
 och **teckenkodningsgrinden** (ingen U+FFFD i `dist/app.js`, `src/index.html` och `src/style.css`). Sist skrivs
 stegens tider. `npm run kontroll -- --snabb` är körningen under arbetet: `test` i stället för `test:full`, och inget
@@ -295,9 +311,10 @@ arbetsflödet fyra jobb: **`grindar`** kör lint, typkontroll, teckenkodningsgri
 kör hela testsviten (`npm run test:full`) delad på fyra parallella jobb med Vitests `--shard`, så att varje testfil
 körs i exakt ett av dem, **`quality`** är grön först när `grindar` och alla delar av `tester` är gröna (det är den
 kontroll som regeln för `main` kräver), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
-byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, och de genererade
-`src/app/08-version.js` och `src/app/09-lib-speglar.js` blir byte-identiska med det incheckade. Den är den enda
-kontrollen av de genererade filerna.
+byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, och den genererade
+`src/app/08-version.js` blir byte-identiska med det incheckade. Den är den enda
+kontrollen av de genererade filerna. Efter den bygger `grindar` samma commit en gång till i en ny katalog
+(`git worktree`), med annan tidszon och annat språk, och kräver samma kontrollsumma (ADR-101).
 
 **Sårbarhetsbevakningen** är ett eget arbetsflöde, `.github/workflows/sarbarheter.yml`, vars kommentarer är källan
 till stegen. Det bygger programvaruförteckningen (`tools/sbom.mjs`), frågar den öppna sårbarhetsdatabasen OSV direkt
@@ -340,10 +357,21 @@ prövar bara det som gäller vid en release; vad, står i huvudet i `tools/relea
 commit prövar den inte, utan testsviten och artefaktgrinden (princip 4 i [`principer.md`](principer.md)).
 
 **Arbetsflödet** `.github/workflows/release.yml` körs på en tagg `v*`: det kör grinden igen, bygger om, tar fram
-programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), signerar med Sigstore
-cosign utan nyckel och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
-dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga klonen, att signeringen är utan nyckel
-och att jobbet har minsta behörighet.
+programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), bygger
+valideringsrapporten, bygger om verktyget ur taggen i en ren katalog och kräver att det blir filen som signeras,
+signerar med Sigstore cosign utan nyckel, låter GitHub attestera ursprunget (`actions/attest-build-provenance`, SLSA
+build provenance, ADR-101) och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
+dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga klonen, att signeringen är utan nyckel,
+att varje fil attesteras, ombygget och att jobbet har minsta behörighet.
+
+**Valideringsrapporten** `npm run valideringsrapport` (`tools/valideringsrapport.mjs`, prövad i
+`tests/valideringsrapport.test.js`, ADR-100) kör hela sviten med Vitests JSON-rapport och skriver
+`dist/valideringsrapport.md` och `dist/valideringsrapport.json`: byggets version och SHA-256 (ur `dist/RELEASE.txt`,
+prövad mot filen), commit, datum, Node, Vitest och jsdom, och en rad per ID i [`sparbarhet.md`](sparbarhet.md) med
+testerna vars namn bär ID:t och utfallet. Den fäller när ett ID saknar godkänt test eller något test faller. Testsviten
+körs bara här i release-arbetsflödet, inte i CI:s vanliga körning, som redan kör den delad på fyra jobb. Med en färdig
+JSON-rapport som argument (`node tools/valideringsrapport.mjs <fil>`) körs inga tester. Filerna i `dist/` är
+ignorerade, som programvaruförteckningen.
 
 **Demosidan.** `npm run site` (`tools/site.mjs`, efter `npm run bundle`) bygger `site/dist/` (startsidan ur
 `site/index.html`, bygget, `RELEASE.txt` och bildspelet `site/genomgang.html`) för valfri statisk webbplats. Sidan har inga skript och länkar till

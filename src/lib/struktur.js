@@ -5,42 +5,74 @@
  *
  * Rena funktioner för representation/segregation, kvartilfördelning (EU
  * 2023/970 Art. 9), distributionellt gap (sticky floor vs glass ceiling),
- * mediangap och direktivets tecken på gapet (tillDirektivtecken). Separat från app.js för Vitest; app.js får en AUTO-GENERERAD
- * spegel (`_st*` i src/app/09-lib-speglar.js via tools/gen-mirrors.mjs) — ändra
- * här och kör `npm run build:app`, rör ej spegeln. Inga DOM-/state-beroenden.
+ * mediangap och direktivets tecken på gapet (tillDirektivtecken). Separat från appen för Vitest.
+ * Inga DOM-/state-beroenden.
  *
- * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: verktygets egen modell; tecknet i docs/utveckling/regressionsmodellen.md avsnitt 1.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B2.1–B2.5).
  */
 
-import { median as _median, quantile as _quantile } from './stat.js';
+import { median as _median, kvantil as _kvantil } from './stat.js';
 import { arKvinna, arMan } from './kon.js';
+import { konFarRedovisasFor } from './ktroskel.js';
 
 
 /**
- * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
- * (k-anonymitet: gapet pekar annars ut de få i det mindre könet). Anroparen i appen skickar
- * alltid gällande tröskel; standardvärdet 1 finns för enhetstesterna.
+ * Kvinnors och mäns medianlön och kvoten mellan dem: det enda stället där verktygets centrala mått räknas. Bara rader
+ * med lön över 0 räknas. `konOk` är att båda könen har minst max(1, k) personer (minsta gruppstorlek: annars pekar måtten ut
+ * de få i det mindre könet); medianerna, kvoten (kvinnors median i procent av mäns) och gapet (kvoten minus 100) är
+ * null när konOk är falskt. Antalen står alltid kvar. Anroparen i appen skickar gällande tröskel; standardvärdet 1
+ * finns för enhetstesterna.
+ * @returns {{nKv:number, nMa:number, medKv:number, medMa:number, kvotPct:number, gapPct:number, konOk:true}
+ *         | {nKv:number, nMa:number, medKv:null, medMa:null, kvotPct:null, gapPct:null, konOk:false}}
  */
-export function medianGapPct(rows, { k = 1 } = {}) {
+export function konsMedianer(rader, { k = 1 } = {}) {
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
-    if (kv.length < Math.max(1, k) || ma.length < Math.max(1, k)) return null;
-    return (_median(kv) / _median(ma) - 1) * 100;
+    (rader || []).forEach(r => { if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
+    return konsMedianerUrLoner(kv, ma, { k });
+}
+
+/**
+ * Som konsMedianer, för den som redan har delat lönerna efter kön: kvinnornas och männens löner var för sig. Samma
+ * regel: bara löner över 0 räknas, och konOk kräver minst max(1, k) av vardera könet.
+ * @param {number[]} kvLoner
+ * @param {number[]} maLoner
+ * @param {{k?: number}} [val]
+ * @returns {ReturnType<typeof konsMedianer>}
+ */
+export function konsMedianerUrLoner(kvLoner, maLoner, { k = 1 } = {}) {
+    const kv = (kvLoner || []).filter(v => v > 0), ma = (maLoner || []).filter(v => v > 0);
+    const konOk = kv.length >= Math.max(1, k) && ma.length >= Math.max(1, k);
+    if (!konOk) return { nKv: kv.length, nMa: ma.length, medKv: null, medMa: null, kvotPct: null, gapPct: null, konOk };
+    // Bara löner över 0 räknas, så mäns median är alltid över 0 här. Täljaren gånger 100 före divisionen: för löner i
+    // hela kronor (en median kan bli en halv krona) är den exakt, så divisionen är den enda avrundningen och en kvot som
+    // är exakt en procentsats blir exakt den: 38 000 mot 40 000 ger gapet −5, inte −5,000000000000004 som
+    // (38 000 / 40 000 − 1) × 100. Då behövs ingen tolerans mot trösklar (prövas i tests/struktur.test.js).
+    const medKv = _median(kv), medMa = _median(ma);
+    return { nKv: kv.length, nMa: ma.length, medKv, medMa, kvotPct: medKv * 100 / medMa, gapPct: (medKv - medMa) * 100 / medMa, konOk };
+}
+
+/**
+ * Mediangapet kvinnor vs män (%), null om något kön saknas — eller har färre än `k` personer
+ * (minsta gruppstorlek: gapet pekar annars ut de få i det mindre könet). Se konsMedianer.
+ */
+export function medianGapPct(rader, { k = 1 } = {}) {
+    return konsMedianer(rader, { k }).gapPct;
 }
 
 /**
  * Representation/segregation per BAS-nivå. Sorteras BAS A–Ö (lägst värderad nivå
  * först) — om andelen kvinnor sjunker mot högre BAS finns vertikal segregering.
  *
- * `k` är minsta antal per kön för att könsuppdelade mått ska lämnas ut (k-anonymitet): har
+ * `k` är minsta antal per kön för att könsuppdelade mått ska lämnas ut (minsta gruppstorlek): har
  * ett kön färre, blir medianKv, medianMa och gapPct null och `konLitet` sant. BAS:ets samlade
  * median och antalen står kvar — om BAS:et som helhet får redovisas avgör anroparen på `n`.
  * @returns {Array<{bas,n,nKv,nMa,andelKv,median,medianKv,medianMa,gapPct,konLitet}>}
  */
-export function representationByBas(rows, { k = 1 } = {}) {
+export function representationPerBas(rader, { k = 1 } = {}) {
     const minst = Math.max(1, k);
     const m = new Map();
-    (rows || []).forEach(r => {
+    (rader || []).forEach(r => {
         if (!(r.lon > 0)) return;
         let g = m.get(r.bas);
         if (!g) { g = { bas: r.bas, lons: [], kvLons: [], maLons: [], nKv: 0, nMa: 0, n: 0 }; m.set(r.bas, g); }
@@ -58,7 +90,7 @@ export function representationByBas(rows, { k = 1 } = {}) {
             median: _median(g.lons),
             medianKv: visaKv ? _median(g.kvLons) : null,
             medianMa: visaMa ? _median(g.maLons) : null,
-            gapPct: (visaKv && visaMa) ? (_median(g.kvLons) / _median(g.maLons) - 1) * 100 : null,
+            gapPct: konsMedianerUrLoner(g.kvLons, g.maLons, { k: minst }).gapPct,
             konLitet
         };
     }).sort((a, b) => String(a.bas).localeCompare(String(b.bas), 'sv'));   // BAS A–Ö, som i övriga verktyget
@@ -77,8 +109,8 @@ export function representationByBas(rows, { k = 1 } = {}) {
  * tjänar. Antal per kvartil och gränserna står kvar.
  * @returns {Array<{q:number, n:number, nKv:number|null, nMa:number|null, andelKv:number|null, undre:number|null, ovre:number|null, konDolt:boolean}>}
  */
-export function quartileDistribution(rows, { k = 1 } = {}) {
-    const all = (rows || []).filter(r => r.lon > 0).slice().sort((a, b) => a.lon - b.lon);
+export function kvartilfordelning(rader, { k = 1 } = {}) {
+    const all = (rader || []).filter(r => r.lon > 0).slice().sort((a, b) => a.lon - b.lon);
     const n = all.length;
     if (n < 4) return [];
     /** @type {Array<{q:number, n:number, nKv:number, nMa:number, undre:number|null, ovre:number|null}>} */
@@ -110,19 +142,20 @@ export function quartileDistribution(rows, { k = 1 } = {}) {
  * Distributionellt gap: lönegapet vid olika percentiler. Större gap i toppen =
  * glastak; större i botten = sticky floor.
  *
- * `k` är minsta antal per kön (k-anonymitet); under det returneras en tom lista. Golvet är
+ * `k` är minsta antal per kön (minsta gruppstorlek); under det returneras en tom lista. Golvet är
  * aldrig lägre än 2, eftersom en percentil av en enda lön inte är ett mått.
  * @returns {Array<{p,kv,ma,gapPct}>}
  */
-export function distributionalGap(rows, percentiles, { k = 2 } = {}) {
-    const ps = percentiles || [10, 25, 50, 75, 90];
+export function fordelningsgap(rader, percentiler, { k = 2 } = {}) {
+    const ps = percentiler || [10, 25, 50, 75, 90];
     const kv = [], ma = [];
-    (rows || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
+    (rader || []).forEach(r => { if (!(r.lon > 0)) return; if (arKvinna(r)) kv.push(r.lon); else if (arMan(r)) ma.push(r.lon); });
     const minst = Math.max(2, k);
     if (kv.length < minst || ma.length < minst) return [];
     return ps.map(p => {
-        const kvP = _quantile(kv, p / 100), maP = _quantile(ma, p / 100);
-        return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP / maP - 1) * 100 : null };
+        const kvP = _kvantil(kv, p / 100), maP = _kvantil(ma, p / 100);
+        // En enda avrundning, som i konsMedianerUrLoner: 38 000 mot 40 000 ger exakt −5.
+        return { p, kv: kvP, ma: maP, gapPct: maP > 0 ? (kvP - maP) * 100 / maP : null };
     });
 }
 
@@ -162,7 +195,7 @@ export function omfang(v) {
 // Klassbredden väljs bland jämna steg så att spannet ger ungefär `mal` klasser. Spannet mäts mellan 5:e och 95:e
 // percentilen, så att enstaka löner långt ut inte gör klasserna för breda.
 export function lonesteg(loner, mal = 12) {
-    const spann = _quantile(loner, 0.95) - _quantile(loner, 0.05);
+    const spann = _kvantil(loner, 0.95) - _kvantil(loner, 0.05);
     return [500, 1000, 2000, 2500, 5000, 10000, 20000].find(s => spann / s <= mal) || 50000;
 }
 
@@ -189,4 +222,45 @@ export function histogramKlasser(kv, ma, k) {
         if (klasser.length >= 3 && klasser.every(c => n(c) >= k)) return klasser;
     }
     return null;
+}
+
+/**
+ * Lönestrukturens mått på ett ställe, för fliken Lönestruktur, rapportutkastet och EU-exporten: andelen kvinnor,
+ * representationen per BAS (med de BAS-intervall som får redovisas, n ≥ k, de som utelämnas och de där ett kön är
+ * för litet), percentilerna, kvartilerna och gapet i median- och medellön. Könsuppdelade mått kräver k för varje kön
+ * (ADR-12); `meanGap` är kvinnors medellön i procent av mäns minus 100, null när ett kön är under k eller saknas.
+ * @param {any[]} rader
+ * @param {number} k
+ */
+export function strukturMatt(rader, k) {
+    const d = rader || [];
+    const konOk = konFarRedovisasFor(d, k);
+    const kv = d.filter(r => arKvinna(r)).map(r => r.lon);
+    const ma = d.filter(r => arMan(r)).map(r => r.lon);
+    const totKv = kv.length;
+    const meanGap = (konOk && kv.length && ma.length) ? ((kv.reduce((s, x) => s + x, 0) / kv.length) / (ma.reduce((s, x) => s + x, 0) / ma.length) - 1) * 100 : null;
+    const rep = representationPerBas(d, { k });
+    const repVisade = rep.filter(g => g.n >= k);
+    return {
+        konOk, kv, ma, totKv, totAndel: d.length ? 100 * totKv / d.length : 0, meanGap,
+        rep, repVisade,
+        repUtelamnade: rep.filter(g => g.n < k).map(g => g.bas),
+        repKonLitet: repVisade.filter(g => g.konLitet).map(g => g.bas),
+        dist: fordelningsgap(d, undefined, { k }),
+        q: kvartilfordelning(d, { k }),
+        medGap: medianGapPct(d, { k }),
+    };
+}
+
+/**
+ * Måtten i en ögonblicksbild av hela organisationen (Spara och jämför år, årsbokslutet): antalet, könsmedianerna och
+ * det råa gapet bara när båda könen når k (ADR-12), och medelåldern bland åldrar över 0 (null utan ålder).
+ * @param {any[]} rader
+ * @param {number} k
+ */
+export function ogonblicksbildMatt(rader, k) {
+    const m = konsMedianer(rader, { k });
+    const aldrar = rader.map(r => r.alder).filter(a => a > 0);
+    return { n: rader.length, nKv: m.nKv, nMa: m.nMa, medianKv: m.medKv, medianMa: m.medMa, rawGapPct: m.gapPct,
+        avgAge: aldrar.length ? aldrar.reduce((s, a) => s + a, 0) / aldrar.length : null };
 }

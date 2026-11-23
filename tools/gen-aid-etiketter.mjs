@@ -45,8 +45,6 @@ function main() {
 // Copyright 2026 Felix Jansson
 // AUTO-GENERERAD av tools/gen-aid-etiketter.mjs ur ${kalla}. Ändra inte för hand.
 // Innehåller bara kod, etikettnamn och möjliga ansvarskoder per etikett.
-//
-// Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
 
 const LISTA = Object.freeze({
     version: '${version}',

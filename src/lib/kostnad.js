@@ -12,17 +12,24 @@
  * Multiplikationen görs i samma ordning som innan formeln samlades här (belopp × månader × PO-faktor), så att inget
  * tal ändras i sista decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
  *
- * Bygger på: verktygets egen modell; PO-påslagets standardvärde i ADR-84. Beräkningarna står i docs/utveckling/berakningsregister.md.
+ * Bygger på: verktygets egen modell; PO-påslagets standardvärde i ADR-84.
+ * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.1).
  */
+
+/** Kostnadsinställningarnas standardvärden. PO-påslaget 40 % är ett standardantagande; organisationen sätter sitt eget. */
+export const COST_DEFAULTS = Object.freeze({
+    months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
+    poPct:  40          // PO-påslag i % (arbetsgivaravgifter och pension ovanpå lönen)
+});
 
 /**
  * Kostnadsinställningarna med standardvärdena ifyllda.
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  * @returns {{months: number, poPct: number, poFaktor: number}}  poFaktor = 1 + poPct / 100
  */
-export function kostnadsfaktor(costSettings) {
-    const months = (costSettings && costSettings.months) || 12;
-    const poPct = (costSettings && costSettings.poPct) || 0;
+export function kostnadsfaktor(kostnadsval) {
+    const months = (kostnadsval && kostnadsval.months) || 12;
+    const poPct = (kostnadsval && kostnadsval.poPct) || 0;
     return { months, poPct, poFaktor: 1 + poPct / 100 };
 }
 
@@ -30,10 +37,10 @@ export function kostnadsfaktor(costSettings) {
  * En redan summerad månadskostnad för hela perioden med PO-påslag: belopp × månader × (1 + PO). Beloppet behåller
  * sitt tecken.
  * @param {number} kronorPerManad
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  */
-export function periodkostnad(kronorPerManad, costSettings) {
-    const { months, poFaktor } = kostnadsfaktor(costSettings);
+export function periodkostnad(kronorPerManad, kostnadsval) {
+    const { months, poFaktor } = kostnadsfaktor(kostnadsval);
     return kronorPerManad * months * poFaktor;
 }
 
@@ -43,8 +50,8 @@ export function periodkostnad(kronorPerManad, costSettings) {
  * gruppdossierns räkneexempel räknar med samma formel.
  * @param {number} kronorPerManad
  * @param {number} antal
- * @param {{months?: number, poPct?: number}|null|undefined} costSettings
+ * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval
  */
-export function kostnadPerAr(kronorPerManad, antal, costSettings) {
-    return periodkostnad(Math.abs(kronorPerManad), costSettings) * antal;
+export function kostnadPerAr(kronorPerManad, antal, kostnadsval) {
+    return periodkostnad(Math.abs(kronorPerManad), kostnadsval) * antal;
 }

@@ -3,15 +3,15 @@
  */
 import { describe, it, expect } from 'vitest';
 import { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot } from '../src/lib/sektor.js';
-import { computeSequentialGap } from '../src/lib/regression.js';
-import { fitOLS, tQuantile } from '../src/lib/stat.js';
+import { stegvisGap } from '../src/lib/regression.js';
+import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 const rad = (aid, kon, lon, alder = 40, bas = 'C', extra = {}) => ({ aid, kon, lon, alder, bas, ...extra });
 const flera = (n, f) => Array.from({ length: n }, (_, i) => f(i));
 
-describe('sektor: tabellen', () => {
+describe('[B3.8] sektor: tabellen', () => {
     // Vård: 20 kvinnor à 30 000 och 12 män à 33 000 (jämna åldrar/BAS) → kvot 90,9 %.
     const vard = [...flera(20, i => rad('207011', 'kvinna', 30000, 30 + i, i % 2 ? 'C' : 'B')),
                   ...flera(12, i => rad('207011', 'man', 33000, 30 + i, i % 2 ? 'C' : 'B'))];
@@ -78,7 +78,7 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         expect(v.justeratSkal).toBe('ok');
         expect(v.justerat).not.toBeNull();
         expect(v.justeratMedAlder).toBe(false);
-        const steg = computeSequentialGap(vard(false), 0, ['A', 'C', 'D'], { golv: 10, modell: { bas: true, alder: false, yrkesgrupp: false, skal: '' } });
+        const steg = stegvisGap(vard(false), 0, ['A', 'C', 'D'], { golv: 10, modell: { bas: true, alder: false, yrkesgrupp: false, skal: '' } });
         expect(v.justerat.pct).toBeCloseTo(steg.find(s => s.name === '+ BAS-intervall').gapPct, 10);
     });
     it('med ålder: samma koefficient för kön som huvudregressionen (kön + ålder + BAS som indikatorer) på samma urval', () => {
@@ -86,15 +86,15 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         const v = sektorsTabell(rader, { k: 10 })[0];
         expect(v.justeratMedAlder).toBe(true);
         const ageMean = rader.reduce((s, r) => s + r.alder, 0) / rader.length;
-        const steg = computeSequentialGap(rader, ageMean, ['A', 'C', 'D'], { golv: 10 });
+        const steg = stegvisGap(rader, ageMean, ['A', 'C', 'D'], { golv: 10 });
         expect(v.justerat.pct).toBeCloseTo(steg.find(s => s.name === '+ Ålder').gapPct, 10);
     });
     it('intervallet: HC3 och t-kvantilen vid n − k frihetsgrader, som huvudtalet', () => {
         const rader = vard();
         const ageMean = rader.reduce((s, r) => s + r.alder, 0) / rader.length;
         const X = rader.map(r => [1, r.kon === 'kvinna' ? 1 : 0, r.alder - ageMean, r.bas === 'C' ? 1 : 0, r.bas === 'D' ? 1 : 0]);
-        const fit = fitOLS(X, rader.map(r => Math.log(r.lon)));
-        const se = Math.sqrt(fit.vcovHC3[1][1]), tq = tQuantile(0.975, fit.n - fit.k);
+        const fit = anpassaOLS(X, rader.map(r => Math.log(r.lon)));
+        const se = Math.sqrt(fit.vcovHC3[1][1]), tq = tKvantil(0.975, fit.n - fit.k);
         expect(tq).toBeGreaterThan(2);   // 35 frihetsgrader: inte 1,96
         const j = sektorsTabell(rader, { k: 10 })[0].justerat;
         expect(j.low).toBeCloseTo((Math.exp(fit.beta[1] - tq * se) - 1) * 100, 10);
@@ -181,7 +181,7 @@ describe('sektor: rubriken och bisatsen för den justerade skillnaden (en regel 
     });
 });
 
-describe('sektor: sektorernas andel av gapet', () => {
+describe('[B3.9] sektor: sektorernas andel av gapet', () => {
     // Verktygets tecken (regressionsmodellen §1, Tecknet): kvinnor − män, negativt när kvinnor ligger lägre.
     it('hela gapet beror på sektorsfördelningen när lönerna är lika inom sektorerna', () => {
         // Vård 30 000 för alla, teknik 40 000 för alla; kvinnor mest i vård, män mest i teknik.
@@ -231,7 +231,7 @@ describe('sektor: sektorernas andel av gapet', () => {
 
 // ADR-87: ett huvudområde där ett kön har 1 till k − 1 personer räknas samman med andra, så att beloppet tillsammans
 // med medellönerna och antalen inte ger dess medellön (härledningarna står i tests/ktroskel-differens.test.js).
-describe('sektor: sammanräknade huvudområden (ADR-87)', () => {
+describe('[B6.9] sektor: sammanräknade huvudområden (ADR-87)', () => {
     // Vård: 30 kvinnor och 20 män; teknik: 12 kvinnor och 25 män; städ: 3 män.
     const tre = () => [...flera(30, () => rad('207011', 'kvinna', 30000)), ...flera(20, () => rad('207011', 'man', 31000)),
         ...flera(12, () => rad('502010', 'kvinna', 39000)), ...flera(25, () => rad('502010', 'man', 41000)),

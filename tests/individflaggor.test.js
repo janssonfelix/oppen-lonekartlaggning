@@ -6,7 +6,7 @@ const p = (kon, lon, alder, aid = '5301', bas = 'B') => ({ kon, lon, alder, aid,
 const flera = (n, kon, lon, alder, aid, bas) => Array.from({ length: n }, () => p(kon, lon, alder, aid, bas));
 const kurva = alder => 25000 + 400 * (alder - 25);
 
-describe('flaggaIndivider', () => {
+describe('[B5.6] flaggaIndivider', () => {
     it('förväntan räknas utan personen själv (median)', () => {
         const r = [...flera(9, 'kvinna', 30000, 40), p('man', 15000, 40)];
         const f = flaggaIndivider(r, {}).flaggade;
@@ -95,7 +95,7 @@ describe('flaggaIndivider utan ålder i lönefilen (ADR-64)', () => {
     });
 });
 
-describe('avvikelsePerKonOchBas', () => {
+describe('[B5.7] avvikelsePerKonOchBas', () => {
     it('andelar per kön i BAS-intervall där båda könen når k, sorterat efter BAS-intervallet', () => {
         // BAS 10: 5 kvinnor och 5 män på 30 000, en kvinna på 20 000 (långt under) och en man på 40 000 (långt över).
         // BAS 2: bara 2 män, under k = 3.

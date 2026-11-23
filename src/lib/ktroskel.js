@@ -7,20 +7,31 @@
  * Funktionerna tar tröskeln som argument. Vilken tröskel som gäller (den inställda i exportläget, 1 på skärmen; ADR-51)
  * avgör appen: adaptrarna i `src/app/06-k-troskel.js` läser `kTroskel()` eller `kInstalld()` och behåller sina
  * tidigare namn. Stämpeln och texterna om regeln får alltid den inställda tröskeln.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 import { arKvinna, arMan } from './kon.js';
 import { aidAvYrke } from './aid.js';
 import { personOrd } from './namn.js';
 
-/** Samma värden som K_STANDARD, K_MIN och K_MAX i src/app/06-k-troskel.js (tests/ktroskel-lib.test.js jämför). */
-const K_STANDARD = 10;
-const K_MIN = 2;
-const K_MAX = 1000;
+/** Tröskelns standardvärde och gränser (ADR-38, ADR-102); appen läser dem härifrån. */
+export const K_STANDARD = 10;
+export const K_MIN = 3;
+export const K_MAX = 1000;
+/** På skärmen maskeras inget: tröskeln är 1 (ADR-51). */
+export const K_SKARM = 1;
+/**
+ * Gränsen för "litet underlag" i ett diagram: en stapel eller ett segment som gäller färre personer än så ritas
+ * med mönster och sägs vara osäkert. Det är inte en maskeringsgräns — gruppen som stapeln räknas i når redan
+ * minsta gruppstorlek — utan en varning för att några få personer kan se ut som ett mönster. Fem är den gräns
+ * som är vanlig för små tal i tabeller, och samma som könsskevhetstabellen använder.
+ */
+export const LITET_UNDERLAG = 5;
 
-/** Golvet för skattningar: aldrig under standardvärdet, och följer en högre inställd tröskel uppåt. */
-export function statGolv(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
+/**
+ * Golvet för skattningar vid en tröskel: aldrig under standardvärdet, och följer en högre tröskel uppåt. Appen ger den
+ * tröskeln som gäller i läget (kTroskel), så golvet är standardvärdet på skärmen och följer den inställda i exportläget
+ * (ADR-103).
+ */
+export function statGolvVid(kInstalld) { return Math.max(kInstalld, K_STANDARD); }
 
 /** Heltal K_MIN–K_MAX ur ett tal eller en sträng, annars null. Bara rena heltal godtas. */
 export function kTolka(v) {
@@ -139,18 +150,18 @@ export function parUtelamnadeNot(antal, k) {
  * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
  * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
  * objekten är desamma som i indata.
- * @param {any[]|undefined} pairs
+ * @param {any[]|undefined} allaPar
  * @param {number} k
  */
-export function parForRedovisning(pairs, k) {
-    const alla = pairs || [];
+export function parForRedovisning(allaPar, k) {
+    const alla = allaPar || [];
     const par = alla.filter(p => parNarK(p, k));
     const utelamnade = alla.length - par.length;
     return { par, utelamnade, not: parUtelamnadeNot(utelamnade, k) };
 }
 
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
-export function kStampel(kInstalld) {
+export function kStampelVid(kInstalld) {
     return `Minsta gruppstorlek för redovisning: ${kInstalld}.`
         + (kInstalld < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
 }
@@ -164,13 +175,30 @@ export function kUndantagNot(undantag) {
     return undantag ? `Den här filen kan även innehålla grupper under tröskeln (undantag: ${undantag}).` : '';
 }
 
+/** De dokumenterade undantagen från tröskeln (k-troskeln.md §4), med namnen som stämpeln bär. */
+export const K_UNDANTAG = Object.freeze({ likvardighet: 'Likvärdigt arbete', utforska: 'valt i Tabeller och egna vyer' });
+
+/**
+ * Vilket undantag en tabell eller ett diagram hör till, om något. Allt i fliken Likvärdigt arbete hör dit, vad som än
+ * ritat det: fliken redovisar grupper under tröskeln utan att märka dem, och en stämpel som varnar i onödan är
+ * ofarlig. Ett diagram ritat med diagramkärnan hör annars till undantaget bara när dess export bär små grupper, och
+ * Utforskas tabell och diagram när användaren kryssat i att grupper under tröskeln ska med.
+ * @param {{iLikvardighet?: boolean, arFigur?: boolean, figurMedSma?: boolean, utforskaMedSma?: boolean}} el
+ * @returns {string} undantagets namn, eller tom sträng
+ */
+export function kUndantag({ iLikvardighet = false, arFigur = false, figurMedSma = false, utforskaMedSma = false }) {
+    if (iLikvardighet) return K_UNDANTAG.likvardighet;
+    if (arFigur) return figurMedSma ? K_UNDANTAG.utforska : '';
+    return utforskaMedSma ? K_UNDANTAG.utforska : '';
+}
+
 /** Stämpeln, med tillägget om undantag när exporten hör till ett. */
-export function kStampelFor(undantag, kInstalld) {
-    return undantag ? `${kStampel(kInstalld)} ${kUndantagNot(undantag)}` : kStampel(kInstalld);
+export function kStampelForVid(undantag, kInstalld) {
+    return undantag ? `${kStampelVid(kInstalld)} ${kUndantagNot(undantag)}` : kStampelVid(kInstalld);
 }
 
 /** Stämpeln när tröskeln är sänkt under standard, annars tom sträng. */
-export function kSanktNot(kInstalld) { return kInstalld < K_STANDARD ? kStampel(kInstalld) : ''; }
+export function kSanktNot(kInstalld) { return kInstalld < K_STANDARD ? kStampelVid(kInstalld) : ''; }
 
 /** Sidfot med tillägg när tröskeln är sänkt under standard. */
 export function kSidfot(text, kInstalld) {
@@ -179,17 +207,17 @@ export function kSidfot(text, kInstalld) {
 
 const harStampel = rows => rows.some(r => Array.isArray(r) && typeof r[0] === 'string' && r[0].includes('Minsta gruppstorlek för redovisning'));
 /** Tabell-CSV: stämpeln som sista rad, om den inte redan står i raderna (diagramdata). */
-export function csvMedStampel(rows, undantag, kInstalld) {
-    return harStampel(rows) ? rows : [...rows, [], [kStampelFor(undantag, kInstalld)]];
+export function csvMedStampel(rader, undantag, kInstalld) {
+    return harStampel(rader) ? rader : [...rader, [], [kStampelForVid(undantag, kInstalld)]];
 }
 /** Tabell till urklipp: stämpeln bara när tröskeln är sänkt eller exporten hör till ett undantag. */
-export function tsvMedStampel(rows, undantag, kInstalld) {
-    return (kSanktNot(kInstalld) || undantag) && !harStampel(rows) ? [...rows, [], [kStampelFor(undantag, kInstalld)]] : rows;
+export function tsvMedStampel(rader, undantag, kInstalld) {
+    return (kSanktNot(kInstalld) || undantag) && !harStampel(rader) ? [...rader, [], [kStampelForVid(undantag, kInstalld)]] : rader;
 }
 
-/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet. */
-export function kText(s, kInstalld) {
-    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(statGolv(kInstalld)));
+/** Byter {k} mot den inställda tröskeln och {golv} mot det statistiska golvet (utan golv: det i exportläget). */
+export function kText(s, kInstalld, golv = statGolvVid(kInstalld)) {
+    return String(s ?? '').replace(/\{k\}/g, String(kInstalld)).replace(/\{golv\}/g, String(golv));
 }
 
 /**
@@ -201,7 +229,7 @@ export function kText(s, kInstalld) {
  * @param {number} k
  * @returns {(rad:any) => boolean} sant om radens punkt är liten
  */
-export function individLitenFor(rader, k) {
+export function individLitenForVid(rader, k) {
     const grupp = r => `${aidAvYrke(r.yrke)}|${r.bas}`;
     const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
     const n = new Map();
@@ -212,4 +240,23 @@ export function individLitenFor(rader, k) {
         n.set(`${g}|${konAv(r)}`, (n.get(`${g}|${konAv(r)}`) || 0) + 1);
     }
     return r => (n.get(grupp(r)) || 0) < k || (n.get(`${grupp(r)}|${konAv(r)}`) || 0) < k;
+}
+
+/**
+ * Färdigcheckens punkt om små grupper: hur många grupper (AID-koden inom BAS-intervallet) som har färre än k personer,
+ * och hur många personer de har tillsammans. De grupperna redovisas inte i det som lämnar verktyget, så appen skickar
+ * den inställda tröskeln, också på skärmen.
+ * @param {any[]} rader
+ * @param {number} k
+ * @returns {{ grupper: number, personer: number }}
+ */
+export function smaGrupperVid(rader, k) {
+    const n = new Map();
+    for (const r of rader) {
+        const g = `${aidAvYrke(r.yrke)}|${r.bas}`;
+        n.set(g, (n.get(g) || 0) + 1);
+    }
+    let grupper = 0, personer = 0;
+    for (const antal of n.values()) if (antal < k) { grupper++; personer += antal; }
+    return { grupper, personer };
 }

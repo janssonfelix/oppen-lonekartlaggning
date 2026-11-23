@@ -1,29 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`beräkningar på demodatan (låsta tal) > extremvärdena (detectOutliers) ger samma tal > detectOutliers 1`] = `[]`;
-
-exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal > _laBootstrapGapCI 1`] = `
-{
-  "hi": 94.59854015,
-  "lo": 88.63636364,
-}
-`;
-
-exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerAnalysis) ger samma tal > computePowerAnalysis 1`] = `
-{
-  "balanced": true,
-  "mdePct": 2.201268033,
-  "n": 260,
-  "nKv": 138,
-  "nMa": 122,
-  "sigma": 0.06253178978,
-  "sigmaGrupper": 3,
-  "sigmaHela": 0.1714284909,
-  "sigmaKalla": "inomGrupp",
-}
-`;
-
-exports[`beräkningar på demodatan (låsta tal) > regressionen (runOLSRegression) ger samma tal > runOLSRegression 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > [B3.1] regressionen (runOLSRegression) ger samma tal > runOLSRegression 1`] = `
 {
   "R2": 0.9193716702,
   "adjR2": 0.9174595359,
@@ -277,6 +254,29 @@ exports[`beräkningar på demodatan (låsta tal) > regressionen (runOLSRegressio
     "name": "+ Yrkesgrupp",
     "status": "ok",
   },
+}
+`;
+
+exports[`beräkningar på demodatan (låsta tal) > extremvärdena (detectOutliers) ger samma tal > detectOutliers 1`] = `[]`;
+
+exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal > _laBootstrapGapCI 1`] = `
+{
+  "hi": 94.59854015,
+  "lo": 88.63636364,
+}
+`;
+
+exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerAnalysis) ger samma tal > computePowerAnalysis 1`] = `
+{
+  "balanced": true,
+  "mdePct": 2.201268033,
+  "n": 260,
+  "nKv": 138,
+  "nMa": 122,
+  "sigma": 0.06253178978,
+  "sigmaGrupper": 3,
+  "sigmaHela": 0.1714284909,
+  "sigmaKalla": "inomGrupp",
 }
 `;
 

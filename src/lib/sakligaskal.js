@@ -7,8 +7,6 @@
  * per månad av gruppens medianskillnad och en kort kommentar. Modulen är ren: kategorierna, valideringen av en lista
  * med skäl, sammanställningen för en rad (andel, summa, återstår) och summan per kategori över raderna. Andelarna är
  * organisationens bedömning; verktyget räknar bara ihop dem. Ingen DOM, inget state.
- *
- * Webbläsarbygget får en AUTO-GENERERAD spegel i src/app/09-lib-speglar.js.
  */
 
 /** Kategorierna i fast ordning (rullistan, tabellerna och årsjämförelsen följer den). */
@@ -108,4 +106,68 @@ export function skalPerKategori(rader) {
         return { kategori: k.id, namn: k.namn, summa: p.summa, andel: skillnad > 0 && p.iMed ? p.medSkillnad / skillnad : null, antalGrupper: p.grupper };
     });
     return { kategorier, antalGrupper: med.length, skillnadKr: skillnad, summa, andel: skillnad > 0 ? summaMedSkillnad / skillnad : null };
+}
+
+// ---- Minsta gruppstorlek (k-troskeln.md §2 och §9) ----
+// Skälen hör till rader som redan är k-grindade: förifyllningen i exportläget tar inte med en grupp under tröskeln.
+// En rad som följer med men där ett kön (den minsta gruppen bakom skillnaden) är under tröskeln bär bara
+// kategorierna: varken medianskillnad, belopp, andel eller kommentar lämnar verktyget.
+
+/** Noten i exporterna där belopp, andel och kommentar utelämnas. */
+export const SKAL_UTAN_BELOPP = 'belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek';
+
+/**
+ * Gruppens medianskillnad i kronor per månad (mäns median minus kvinnors, avrundad), eller null när ett kön har färre
+ * än k personer eller en median saknas: då redovisas medianerna inte, och inga andelar räknas.
+ * @param {{medKv: number, medMa: number, kvN: number, maN: number}|null|undefined} g
+ * @param {number} k
+ */
+export function gruppSkillnadKr(g, k) {
+    return g && g.medKv > 0 && g.medMa > 0 && g.kvN >= k && g.maN >= k ? Math.round(g.medMa - g.medKv) : null;
+}
+
+/**
+ * Står raden utan belopp? En förifylld rad där den minsta gruppen bakom skillnaden (`nMin`) har färre än k personer,
+ * eller där den saknas. En egen rad har ingen grupp och bär sina belopp.
+ * @param {{egen: boolean, nMin: number|null}} rad
+ * @param {number} k
+ */
+export function skalUtanBelopp(rad, k) {
+    return !rad.egen && !(Number.isFinite(rad.nMin) && /** @type {number} */ (rad.nMin) >= k);
+}
+
+/** Sammanställningen för en rad utan belopp: kategorierna med namn, inga belopp, andelar eller kommentarer. */
+export function skalBaraKategorier(skal) {
+    const lista = Array.isArray(skal) ? skal : [];
+    return { skal: lista.map(x => ({ kategori: x.kategori, namn: _namn.get(x.kategori) || x.kategori, belopp: null, andel: null, kommentar: '' })),
+        antal: lista.length, summa: null, skillnadKr: null, forklaradAndel: null, aterstar: null, aterstarAndel: null, overstiger: false };
+}
+
+/**
+ * En rads skäl som de får lämna verktyget: utan belopp (skalUtanBelopp) bara kategorierna, annars sammanställningen
+ * mot gruppens skillnad.
+ * @param {{kategori: string, belopp: number, kommentar?: string}[]} skal
+ * @param {{egen: boolean, nMin: number|null, skillnadKr: number|null}} rad
+ * @param {number} k
+ */
+export function skalForRad(skal, rad, k) {
+    const utanBelopp = skalUtanBelopp(rad, k);
+    return { utanBelopp, skillnadKr: utanBelopp ? null : rad.skillnadKr,
+        sammanstallning: utanBelopp ? skalBaraKategorier(skal) : skalSammanstallning(skal, rad.skillnadKr) };
+}
+
+/**
+ * De sakliga skälen för exporterna: en post per rad med minst ett skäl, i radernas ordning, och summan per kategori
+ * bara över raderna med belopp. Raderna är förifyllningen som den ser ut där exporten görs (i exportläget utan
+ * grupper under tröskeln); `skal` är radens skäl och `egen` om raden är användarens egen.
+ * @template {{egen: boolean, nMin: number|null, skillnadKr: number|null, skal: any[]}} R
+ * @param {R[]} rader
+ * @param {number} k
+ */
+export function skalUnderlag(rader, k) {
+    const grupper = rader.filter(r => r.skal && r.skal.length).map(r => {
+        const { skal, egen: _egen, ...rest } = r;   // egen styr bara regeln; posten bär radens övriga fält
+        return { ...rest, ...skalForRad(skal, r, k) };
+    });
+    return { grupper, perKategori: skalPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: /** @type {{kategori: string, belopp: number}[]} */ (g.sammanstallning.skal), skillnadKr: g.skillnadKr }))) };
 }

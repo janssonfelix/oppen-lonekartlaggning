@@ -21,7 +21,7 @@ const underlag = () => [
 ];
 const fonster = () => { const w = createAppWindow(); w.__state.data = underlag(); return w; };
 
-describe('Lika arbete i appen: en grupp per AID-kod', () => {
+describe('[B5.1] Lika arbete i appen: en grupp per AID-kod', () => {
     it('laLikaGrupper: en grupp på 22 med 11 kvinnor och 11 män och könsmedianer, vid tröskeln 10', () => {
         const w = fonster();
         const res = w.eval('laLikaGrupper(getData(), 10)');
@@ -31,7 +31,7 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
     });
     it('tabellen per AID-etikett har en rad för koden, och underraderna per ansvarsgrupp räknar alla kodens rader', () => {
         const w = fonster();
-        w.eval('generateEUDirectiveMatrix()');
+        w.eval('ritaLikaArbete(laVymodell())');
         const tbody = w.document.querySelector('#matrix-table tbody');
         // Yrkesraderna; under dem står underraderna och notraden om skörhet.
         const huvud = [...tbody.querySelectorAll('tr')].filter(tr => !tr.classList.contains('la-underrad') && /^\s*\d{6}/.test(tr.textContent));
@@ -49,7 +49,7 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
         const w = createAppWindow();
         const iD = underlag().map(r => ({ ...r, bas: 'D', lon: r.lon + 4000 }));
         w.__state.data = [...underlag(), ...iD];
-        w.eval('generateEUDirectiveMatrix()');
+        w.eval('ritaLikaArbete(laVymodell())');
         const rubriker = [...w.document.querySelectorAll('#matrix-table thead th')].map(th => th.textContent.trim());
         expect(rubriker[1]).toBe('BAS');
         const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow);
@@ -70,8 +70,8 @@ describe('Lika arbete i appen: en grupp per AID-kod', () => {
         expect(w.eval("buildBasdossier('C')").yrken.map(y => y.yrke)).toEqual([TEXT_A]);
         expect(w.eval('byggArsbokslutNu()').grupper.map(g => g.yrke)).toEqual([TEXT_A]);
         expect(w.eval("_forecastAidsForBas('C')").map(g => g.label)).toEqual(['Handläggare']);
-        expect(w.eval("_forecastLutningRader(getData(), getData().map(r => ({ lon: r.lon })), 'grupp')").map(g => g.yrke)).toEqual(['Handläggare']);
-        expect(w.eval('_lvKravGrupper(getData(), { k: 10 })').grupper.map(g => g.namn)).toEqual(['Handläggare']);
+        expect(w.eval("_lutningRader(getData(), getData().map(r => ({ lon: r.lon })), 'grupp')").map(g => g.yrke)).toEqual(['Handläggare']);
+        expect(w.eval('kravGrupper(getData(), { k: 10 })').grupper.map(g => g.namn)).toEqual(['Handläggare']);
     });
     it('BAS-dossiern: en yrkesrad för koden, med gruppens antal ur Lika arbete', () => {
         const w = fonster();

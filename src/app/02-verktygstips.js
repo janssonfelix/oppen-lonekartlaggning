@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { _rfTipsDolt } from './10-diagramritare.js';
 
 // ---- Diagrammens verktygstips: en portal i <body> ----
 //
@@ -21,7 +22,7 @@ function _ensureChartTip() {
  * Visar chart-tooltipen vid muspekarens position.
  * Använder fixed positioning så ingen overflow:auto-container kan klippa den.
  */
-function _showChartTip(html, mouseX, mouseY) {
+export function _showChartTip(html, mouseX, mouseY) {
     if (!html) return;
     const tip = _ensureChartTip();
     tip.innerHTML = html;
@@ -51,7 +52,7 @@ function _showChartTip(html, mouseX, mouseY) {
  * fönsterstorlek, pekaren lämnar diagrammet). _showChartTip sätter innehållet på nytt varje gång. Ett tips
  * som ägs av ett diagram ritat med diagramkärnan (ADR-39) släpper samtidigt sin ägare — _rfTipsDolt i 10-diagramritare.js (funktionsdeklaration: finns i hela bygget).
  */
-function _hideChartTip() {
+export function _hideChartTip() {
     if (_chartTipEl) {
         _chartTipEl.classList.remove('visible');
         _chartTipEl.textContent = '';
@@ -59,23 +60,17 @@ function _hideChartTip() {
     if (typeof _rfTipsDolt === 'function') _rfTipsDolt();
 }
 
-// Globalt: dölj (och töm) diagrammens verktygstips vid rullning, ändrad fönsterstorlek och Escape — när diagrammet
-// rör sig under pekaren står tipset annars kvar på fel plats, med ett lönevärde i.
-window.addEventListener('scroll', _hideChartTip, true);
-window.addEventListener('resize', _hideChartTip);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideChartTip(); });
-
 // ---- Punkt-sampling för stora punktmoln (prestanda) ----
 // Vid mycket stora underlag (tiotusentals rader) blir punktmolnet trögt och punkterna överlappar ändå till
 // oläsbarhet. Diagramkärnan ritar då ett DETERMINISTISKT, jämnt fördelat urval (var k:te punkt) — ENBART
 // visualiseringen. Alla statistiska mått räknas på FULL data före det steget.
-const SCATTER_MAX_POINTS = 8000;
+export const SCATTER_MAX_POINTS = 8000;
 
 /**
  * Visar/uppdaterar en diskret notis under diagrammet när sampling är aktiv.
  * `chartId` är diagrammets id eller elementet självt; ett element utan id får notisen som nästa syskon.
  */
-function _setScatterSampleNote(chartId, sampled) {
+export function _setScatterSampleNote(chartId, sampled) {
     const chart = typeof chartId === 'string' ? document.getElementById(chartId) : chartId;
     if (!chart) return;
     const noteId = chart.id ? chart.id + '-sample-note' : '';
@@ -218,36 +213,44 @@ function _restoreTitle(host) {
     }
 }
 
-document.addEventListener('mouseover', e => {
-    const host = _findTipHost(e.target);
-    if (host) {
-        _stealTitle(host);
-        _showTip(host);
-    }
-});
-document.addEventListener('mouseout', e => {
-    // Hitta värd från ut-händelsen (kan vara delegerad descendant)
-    const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
-    if (host && (!e.relatedTarget || !host.contains(e.relatedTarget))) {
-        _hideTip();
-        _restoreTitle(host);
-    }
-});
-document.addEventListener('focusin', e => {
-    const host = _findTipHost(e.target);
-    if (host) {
-        _stealTitle(host);
-        _showTip(host);
-    }
-});
-document.addEventListener('focusout', e => {
-    const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
-    if (host) {
-        _hideTip();
-        _restoreTitle(host);
-    }
-});
-// Dölj vid scroll/resize/escape — tooltipen följer inte med när värd-elementet flyttas
-window.addEventListener('scroll', _hideTip, true);
-window.addEventListener('resize', _hideTip);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideTip(); });
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartVerktygstips() {
+    // Globalt: dölj (och töm) diagrammens verktygstips vid rullning, ändrad fönsterstorlek och Escape — när diagrammet
+    // rör sig under pekaren står tipset annars kvar på fel plats, med ett lönevärde i.
+    window.addEventListener('scroll', _hideChartTip, true);
+    window.addEventListener('resize', _hideChartTip);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideChartTip(); });
+    document.addEventListener('mouseover', e => {
+        const host = _findTipHost(e.target);
+        if (host) {
+            _stealTitle(host);
+            _showTip(host);
+        }
+    });
+    document.addEventListener('mouseout', e => {
+        // Hitta värd från ut-händelsen (kan vara delegerad descendant)
+        const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
+        if (host && (!e.relatedTarget || !host.contains(e.relatedTarget))) {
+            _hideTip();
+            _restoreTitle(host);
+        }
+    });
+    document.addEventListener('focusin', e => {
+        const host = _findTipHost(e.target);
+        if (host) {
+            _stealTitle(host);
+            _showTip(host);
+        }
+    });
+    document.addEventListener('focusout', e => {
+        const host = _findTipHost(e.target) || (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[data-stolen-title]'));
+        if (host) {
+            _hideTip();
+            _restoreTitle(host);
+        }
+    });
+    // Dölj vid scroll/resize/escape — tooltipen följer inte med när värd-elementet flyttas
+    window.addEventListener('scroll', _hideTip, true);
+    window.addEventListener('resize', _hideTip);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') _hideTip(); });
+}

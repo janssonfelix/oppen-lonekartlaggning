@@ -1,26 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
+import { COST_DEFAULTS } from '../lib/kostnad.js';
+import { namnGenitiv, normaliseraNamn } from '../lib/namn.js';
+import { liknarPersonuppgift } from '../lib/organisationspaket.js';
+import { PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from '../lib/prioritering.js';
+import { _fyllKTexter } from './06-k-troskel.js';
+import { T, termText } from './09-termer.js';
+import { ritaOmReferens, state } from './12-tillstand.js';
+import { renderReferensKort } from './38-referensfiler.js';
 
 // ---- State ----
-const PRIO_CONFIG_DEFAULTS = Object.freeze({
-    atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
-    akutMinN:           10,   // minst antal personer för att klassas som AKUT
-    bevakaThreshold:    -2,   // %, gränsvärde för Bevaka
-    analyseraThreshold:  5    // %, gränsvärde för Analysera
-});
-const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
-    avvikelse:    50,   // viktning av avvikelsens storlek
-    volym:        30,   // viktning av gruppens volym
-    jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
-});
-// Kostnadsberäknings-defaults — PO-påslaget 40 % är ett standardantagande; organisationen sätter sitt eget
-const COST_DEFAULTS = Object.freeze({
-    months: 12,         // beräkningsperiod (3/6/9/12 vanligt)
-    poPct:  40          // PO-påslag i % (arbetsgivaravgifter och pension ovanpå lönen)
-});
+// Standardvärdena för prioriteringen och kostnaden står i src/lib/prioritering.js och src/lib/kostnad.js.
+export { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS };
 
 // Automatisk rensning vid inaktivitet: på som standard (GDPR art. 25.2). Organisationspaketet kan låsa värdet (ADR-47).
-const INAKTIVITET_STANDARD_MIN = 90;
+export const INAKTIVITET_STANDARD_MIN = 90;
 
 // ---- Profil: organisationens benämningar (ADR-28) ----
 // Verktyget är organisationsneutralt: ingen organisation är inbyggd. Profilen styr externa
@@ -28,7 +22,7 @@ const INAKTIVITET_STANDARD_MIN = 90;
 // organisationspaket.
 /** Standardnamnet när inget organisationspaket satt ett namn. */
 const ORG_STANDARDNAMN = 'Organisationen';
-const DEFAULT_PROFILE = Object.freeze({
+export const DEFAULT_PROFILE = Object.freeze({
     name:                    ORG_STANDARDNAMN,
     benchmarkLabel:          'jämförelsestatistiken',
     benchmarkLabelGenitive:  'jämförelsestatistikens',
@@ -48,7 +42,7 @@ const DEFAULT_PROFILE = Object.freeze({
  * Tillämpar profilens etiketter på alla DOM-noder med data-profile-attribut, och termerna (ADR-74) på noderna med
  * data-term-template. Anropas vid uppstart och varje gång state.profile uppdateras.
  */
-function applyProfileLabels() {
+export function applyProfileLabels() {
     // Mall som "Kvinnor och män med samma {enhet.en}" → fylls med de gällande termerna (termText, 09-termer.js).
     // Med data-term-attr fylls det attributet (till exempel data-tip) i stället för texten.
     document.querySelectorAll('[data-term-template]').forEach(el => {
@@ -79,24 +73,24 @@ function applyProfileLabels() {
 // ---- Namn på organisationen och jämförelsestatistiken (ADR-36) ----
 // Etiketterna läser namnen härifrån. Utan namn skickas dagens text som standard.
 const _PERSONUPPGIFT_FEL = 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.';
-function orgNamn(standard = ORG_STANDARDNAMN) {
+export function orgNamn(standard = ORG_STANDARDNAMN) {
     const n = state.profile && state.profile.name;
-    return n && n !== DEFAULT_PROFILE.name ? _namnNormalisera(n) : standard;   // även paketnamn högst 100 tecken
+    return n && n !== DEFAULT_PROFILE.name ? normaliseraNamn(n) : standard;   // även paketnamn högst 100 tecken
 }
-function jmfNamn(standard = 'Jämförelsestatistiken') {
+export function jmfNamn(standard = 'Jämförelsestatistiken') {
     const n = state.profile && state.profile.benchmarkLabel;
-    return n && n !== DEFAULT_PROFILE.benchmarkLabel ? _namnNormalisera(n) : standard;
+    return n && n !== DEFAULT_PROFILE.benchmarkLabel ? normaliseraNamn(n) : standard;
 }
 /** Jämförelsens namn i genitiv i löptext ("jämförelsestatistikens", eller paketets eget namn). */
-function jmfNamnGenitiv() {
+export function jmfNamnGenitiv() {
     const n = state.profile && state.profile.benchmarkLabelGenitive;
-    return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? _namnNormalisera(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
+    return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? normaliseraNamn(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
 }
 // Namn i diagrammens serier visas alltid som text: vinkelparenteser byts mot typografiska, så att ett namn aldrig ser ut som markering.
-function plotNamn(text) {
+export function plotNamn(text) {
     return String(text ?? '').replace(/</g, '‹').replace(/>/g, '›');
 }
-function synkaNamnFalt() {
+export function synkaNamnFalt() {
     const satt = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) /** @type {HTMLInputElement} */ (el).value = v; };
     satt('org-namn', orgNamn(''));
     satt('kl-org-name', orgNamn(''));
@@ -107,25 +101,25 @@ function _namnAndrat() {
     applyProfileLabels();
     if (typeof ritaOmReferens === 'function') ritaOmReferens();
 }
-function sattOrgNamn(text) {
-    const n = _namnNormalisera(text);
-    if (n && _opLiknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
+export function sattOrgNamn(text) {
+    const n = normaliseraNamn(text);
+    if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
     state.profile = { ...state.profile, name: n || DEFAULT_PROFILE.name };
     _namnAndrat();
     return { ok: true };
 }
-function sattJmfNamn(text) {
-    const n = _namnNormalisera(text);
-    if (n && _opLiknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
+export function sattJmfNamn(text) {
+    const n = normaliseraNamn(text);
+    if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
     state.profile = { ...state.profile,
         benchmarkLabel: n || DEFAULT_PROFILE.benchmarkLabel,
-        benchmarkLabelGenitive: n ? _namnGenitiv(n) : DEFAULT_PROFILE.benchmarkLabelGenitive,
+        benchmarkLabelGenitive: n ? namnGenitiv(n) : DEFAULT_PROFILE.benchmarkLabelGenitive,
         benchmarkShort: n || DEFAULT_PROFILE.benchmarkShort };
     _namnAndrat();
     return { ok: true };
 }
 // Namnfälten: sparas när fältet lämnas; ett avvisat namn visar felet under fältet.
-function _kopplaNamnFalt(id, satt) {
+export function _kopplaNamnFalt(id, satt) {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('change', () => {
@@ -135,4 +129,8 @@ function _kopplaNamnFalt(id, satt) {
         if (!r.ok) { synkaNamnFalt(); if (typeof renderReferensKort === 'function') renderReferensKort(); }
     });
 }
-_kopplaNamnFalt('kl-org-name', sattOrgNamn);
+
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartStandardinstallningar() {
+    _kopplaNamnFalt('kl-org-name', sattOrgNamn);
+}

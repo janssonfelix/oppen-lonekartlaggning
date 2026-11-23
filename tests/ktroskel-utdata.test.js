@@ -137,7 +137,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         };
     };
     const dossier = (w, nyckel) => {
-        w.eval(`renderGruppdossier('${nyckel}')`);
+        w.eval(`ritaGruppdossier('${nyckel}')`);
         return { skarm: normalisera(w.document.getElementById('dossier-body').textContent),
                  text: normalisera(w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier('${nyckel}')))`)) };
     };
@@ -325,7 +325,7 @@ describe('k-tröskeln i texterna', () => {
         w.eval('sattKTroskel(5, { fraga: false })');
         const rad = w.eval('_evidenceForPerBasRow({ bas: "X", n: 17, kvN: 7, maN: 10, status: "too_few" })').rows;
         const kv = rad.find(r => r.label === 'Antal kvinnor');
-        expect(kv.note).toBe('Under k=10');
+        expect(kv.note).toBe('Färre än 10 (golvet för skattningar)');
         expect(rad.find(r => r.label === 'Antal män').note).toBe('');
     });
     it('Excel-protokollets rad om BAS-regressionen citerar statistiska golvet, raden om yrken tröskeln', () => {
@@ -375,14 +375,14 @@ describe('k-tröskeln i gränssnittet', () => {
         expect(w.document.getElementById('k-troskel-varning').hidden).toBe(true);
         expect(w.document.getElementById('btn-k-aterstall').hidden).toBe(false);
     });
-    it.each(['', '10,0', '1e2', '1', '1001', 'tio'])('ogiltigt värde %p: felet syns vid fältet och fältet återfår gällande värde', v => {
+    it.each(['', '10,0', '1e2', '1', '2', '1001', 'tio'])('ogiltigt värde %p: felet syns vid fältet och fältet återfår gällande värde', v => {
         const w = createAppWindow();
         const f = skriv(w, v);
         expect(w.eval('kInstalld()')).toBe(10);
         expect(f.value).toBe('10');
         const fel = w.document.getElementById('k-troskel-fel');
         expect(fel.hidden).toBe(false);
-        expect(fel.textContent).toMatch(/heltal mellan 2 och 1000/);
+        expect(fel.textContent).toMatch(/heltal mellan 3 och 1000/);
     });
     it('nekad bekräftelse: fältet återfår gällande värde, inget felmeddelande', () => {
         const w = createAppWindow();
@@ -583,7 +583,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         const a = createAppWindow();
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
         delete cfg.kTroskel;
-        cfg.orgName = 'Exempelorganisationen';
+        cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         b.eval('sattKTroskel(15, { fraga: false })');
         b.__cfg = cfg;
@@ -591,17 +591,17 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         expect(b.eval('kInstalld()')).toBe(15);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');   // resten av filen läses in
     });
-    it.each([1, 2.5, '12', 1001, null])('ogiltigt värde %p avvisas och lämnar allt orört', v => {
+    it.each([1, 2, 2.5, '12', 1001, null])('ogiltigt värde %p avvisas och lämnar allt orört', v => {
         const a = createAppWindow();
         a.eval('sattKTroskel(15, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
         cfg.kTroskel = v;
-        cfg.orgName = 'Ska inte läsas in';
+        cfg.orgNamn = 'Ska inte läsas in';
         a.__cfg = cfg;
         // null räknas som att fältet saknas: värdet står kvar och resten läses in.
         if (v === null) { a.eval('applyConfigSnapshot(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
         a.eval('sattKTroskel(15, { fraga: false })');
-        expect(() => a.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 2 och 1000/);
+        expect(() => a.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 3 och 1000/);
         expect(a.eval('kInstalld()')).toBe(15);
         expect(a.eval('orgNamn("")')).not.toBe('Ska inte läsas in');
     });
@@ -609,7 +609,7 @@ describe('k-tröskeln i konfigurationsfilen', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(6, { fraga: false })');
         const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
-        cfg.orgName = 'Exempelorganisationen';
+        cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return false; };
@@ -732,7 +732,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
     };
     const perBas = w => {
         const pb = w.eval(`_computePerBasGap(getData(), ${JSON.stringify(BAS)})`);
-        const q = w.eval(`_bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
+        const q = w.eval(`bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
         return Object.fromEntries(pb.map((b, i) => [b.bas, { ...b, q: q[i] }]));
     };
     const protokollet = async w => {
@@ -798,9 +798,9 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         expect(pb[0].status).toBe('ok');
         const p = pb[0].pValue;
         expect(p).toBeLessThan(0.05);
-        expect(w.eval(`_bhJustera([${p}])`)).toEqual([p]);
+        expect(w.eval(`bhJustera([${p}])`)).toEqual([p]);
         // Kortet: q-cellen visar talet, inte —.
-        w.eval('renderRegressionCard()');
+        w.eval('ritaRegressionskort()');
         const rad = [...w.document.querySelectorAll('#perbas-table tbody tr')].find(tr => tr.cells[0].textContent.trim() === 'E');
         expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formatPValue(${p})`));
         // Protokollet: samma q, lika med p.
@@ -919,7 +919,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
     }
 });
 
-describe('k-tröskeln: Lika arbete AID x BAS har samma grupper som tabellen per AID-etikett (ADR-90)', () => {
+describe('[B5.5] k-tröskeln: Lika arbete AID x BAS har samma grupper som tabellen per AID-etikett (ADR-90)', () => {
     // Förut hade tabellen ett eget golv (fem personer) och visade grupper under tröskeln med antal per kön, som tabellen
     // per AID-etikett utelämnar. Nu är raderna Lika arbetes grupper: ingen grupp under tröskeln står i den ena men inte
     // i den andra, i exportläget vid 10 och 25.

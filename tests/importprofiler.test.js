@@ -93,7 +93,7 @@ describe('matchaImportprofil', () => {
     it('kräver alla kännetecken', () => {
         expect(matchaImportprofil(FIL.filter(r => r !== 'Juridiskt kön'), [p])).toBeNull();
     });
-    it('jämför normaliserat, som autoDetectColumnMap: versaler och tecken spelar ingen roll', () => {
+    it('jämför normaliserat, som gissaKolumnmappning: versaler och tecken spelar ingen roll', () => {
         const t = matchaImportprofil(['LÖNENIVÅ', 'befattnings-kod', 'Grundlön_heltid', 'födelseår', 'Juridiskt  kön'], [p]);
         expect(t.mappning.yrke).toBe('befattnings-kod');
         expect(normaliseraRubrik('Månadslön')).toBe('mnadsln');

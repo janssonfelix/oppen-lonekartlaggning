@@ -8,7 +8,7 @@
  *      med svenskt talformat, koder är textceller, och en tom cell är tom. Arbetsboken skrivs och läses tillbaka
  *      med SheetJS, och värdena är desamma.
  *   3. Rundtur av talen: ett tal som verktyget skriver i svenskt format (svTal/svPct, som tabellerna och därmed
- *      CSV-exporten bär) läses tillbaka av talinläsningen (`parseNumberStrict`) till samma värde.
+ *      CSV-exporten bär) läses tillbaka av talinläsningen (`tolkaTalStrikt`) till samma värde.
  *
  * All data är påhittad.
  */
@@ -32,7 +32,7 @@ describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
         w.document.body.appendChild(t);
         const rader = w.__tableToMatrix('talformat-prov');
         expect(rader[1]).toEqual(['012345 Påhittat yrke', 'A', `${MINUS}31 417`, '1 250,50', `${MINUS}3,25 %`, '12,5 %', '']);
-        expect(w.__toCsv(rader.slice(1))).toBe('012345 Påhittat yrke;A;-31 417;1 250,50;-3,25 %;12,5 %;');
+        expect(w.__tillCsv(rader.slice(1))).toBe('012345 Påhittat yrke;A;-31 417;1 250,50;-3,25 %;12,5 %;');
         expect(w.__tillTsv(rader.slice(1))).toBe('012345 Påhittat yrke\tA\t-31 417\t1 250,50\t-3,25 %\t12,5 %\t');
     });
 });
@@ -50,7 +50,7 @@ describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)',
         w.document.body.appendChild(t);
         const rader = w.__tableToMatrix('talformat-enhet');
         expect(rader[1]).toEqual(['012345 Påhittat yrke', '36 262 kr', `${MINUS}3,25 %`]);
-        expect(w.__toCsv(rader.slice(1))).toBe('012345 Påhittat yrke;36 262 kr;-3,25 %');
+        expect(w.__tillCsv(rader.slice(1))).toBe('012345 Påhittat yrke;36 262 kr;-3,25 %');
     });
     it('p-värdet hålls ihop: «p < 0,001» bryts inte mellan tecknet och talet', () => {
         expect(w.eval('_formatPValue(0.0004)')).toBe(`p${NBSP}<${NBSP}0,001`);
@@ -58,15 +58,15 @@ describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)',
         expect(w.eval('_formatPValue(0.1234)')).toBe(`p${NBSP}=${NBSP}0,123`);
     });
     it('talinläsningen läser tillbaka samma värde', () => {
-        expect(w.eval(`parseNumberStrict(svKr(-31417)).value`)).toBe(-31417);
-        expect(w.eval(`parseNumberStrict(svPct(-3.25, 2)).value`)).toBe(-3.25);
+        expect(w.eval(`tolkaTalStrikt(svKr(-31417)).value`)).toBe(-31417);
+        expect(w.eval(`tolkaTalStrikt(svPct(-3.25, 2)).value`)).toBe(-3.25);
     });
 });
 
-describe('Rundtur: verktygets svenska tal läses tillbaka till samma värde', () => {
+describe('[B9.1] Rundtur: verktygets svenska tal läses tillbaka till samma värde', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); });
-    const las = s => w.eval(`parseNumberStrict(${JSON.stringify(s)})`);
+    const las = s => w.eval(`tolkaTalStrikt(${JSON.stringify(s)})`);
     it('tal skrivna med svTal och svPct', () => {
         for (const [v, dec] of [[31417, 0], [-31417, 0], [1250.5, 2], [-1250.5, 2], [-3.25, 2], [0.5, 1], [-0.05, 2], [1234567.89, 2]]) {
             const text = w.eval(`svTal(${v}, ${dec})`);
@@ -87,7 +87,7 @@ describe('Rundtur: verktygets svenska tal läses tillbaka till samma värde', ()
         for (const [v, dec] of [[-31417, 0], [-1250.5, 2], [-3.25, 2], [-0.05, 2], [-7, 0]]) {
             for (const text of [w.eval(`svTal(${v}, ${dec})`), w.eval(`svPct(${v}, ${dec})`)]) {
                 expect(text.startsWith(MINUS), JSON.stringify(text)).toBe(true);
-                const csv = w.__toCsv([[text]]), tsv = w.__tillTsv([[text]]);
+                const csv = w.__tillCsv([[text]]), tsv = w.__tillTsv([[text]]);
                 expect(csv.startsWith('-'), JSON.stringify(csv)).toBe(true);
                 expect(tsv).toBe(csv);
                 expect(las(csv).value, JSON.stringify(csv)).toBe(v);
@@ -98,7 +98,7 @@ describe('Rundtur: verktygets svenska tal läses tillbaka till samma värde', ()
     it('ett minustecken (U+2212) byter tecken på talet precis som ett bindestreck', () => {
         expect(las(`${MINUS}7`).value).toBe(-7);
         expect(las(`${MINUS}3,25 %`).value).toBe(-3.25);
-        expect(w.eval(`parseNumber(${JSON.stringify(MINUS + '32 500')})`)).toBe(-32500);
+        expect(w.eval(`tolkaTal(${JSON.stringify(MINUS + '32 500')})`)).toBe(-32500);
     });
     it('tomma celler och ett ensamt streck är inga tal', () => {
         expect(las('').status).toBe('empty');

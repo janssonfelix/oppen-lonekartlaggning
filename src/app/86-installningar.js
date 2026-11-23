@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Inställningar ----
+import { importprofilerTillJson, inbyggdaProfiler } from '../lib/importprofiler.js';
+import { svTal } from '../lib/talformat.js';
+import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _importprofilKalla } from './03-hjalpfunktioner.js';
+import { kInstalld } from './06-k-troskel.js';
+import { orgNamn } from './07-standardinstallningar.js';
+import { T } from './09-termer.js';
+import { getData, referensNamn, state } from './12-tillstand.js';
+import { sattMeny } from './31-navigering.js';
+import { COLMAP_ROLES, maybeShowColumnMapping, renderFilrutor } from './32-filinlasning.js';
+import { _pagGrans } from './43-personer-att-granska.js';
+import { aidbasDefinition, lvJamforelse } from './45-aid-bas-tabeller.js';
 /**
  * Panelen samlar det som gäller flera flikar: minsta gruppstorlek, organisationstyp, PO-påslag och beräkningsperiod,
  * och Prioriteringens trösklar och viktning (de styr åtgärdslistan, kostnaden, handlingsplanen och rapporterna).
@@ -12,7 +24,7 @@ function installningarOppna() {
     return !!m && m.style.display === 'flex';
 }
 /** @param {{fokus?: string|null}} [val] fokus: id på fältet som ska få fokus */
-function oppnaInstallningar({ fokus = null } = {}) {
+export function oppnaInstallningar({ fokus = null } = {}) {
     const m = document.getElementById('installningar-modal');
     if (!m) return;
     if (typeof sattMeny === 'function') sattMeny(false, { fokus: false });
@@ -24,7 +36,7 @@ function oppnaInstallningar({ fokus = null } = {}) {
     // trapFocus sätter fokus på panelens första knapp efter en kort stund: det efterfrågade fältet tar över efter det.
     if (mal) { mal.focus(); setTimeout(() => { if (installningarOppna()) mal.focus(); }, 80); }
 }
-function stangInstallningar() {
+export function stangInstallningar() {
     const m = document.getElementById('installningar-modal');
     if (!m || !installningarOppna()) return;
     releaseFocus(m);
@@ -32,7 +44,7 @@ function stangInstallningar() {
 }
 
 /** Länken "Minsta gruppstorlek N" i flikarnas urvalsrad och i Översikts filrad: öppnar panelen med fokus i fältet. */
-function kTroskelLank() {
+export function kTroskelLank() {
     return `<button type="button" class="ov-filrad-lank" data-oppna-installningar="k-troskel" title="Ändra minsta gruppstorlek">Minsta gruppstorlek ${kInstalld()}</button>`;
 }
 
@@ -95,12 +107,12 @@ function _instRitaImportprofiler() {
     </li>`;
     el.innerHTML = (profiler.length ? `<ul class="inst-ip-lista">${profiler.map(rad).join('')}</ul>`
         : '<p class="text-dampad-sm">Inga sparade importprofiler. Peka ut kolumnerna i kolumnmappningen och spara mappningen där.</p>')
-        + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${_ipInbyggda().map(p => esc(p.namn)).join(', ')}.</p>`;
+        + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${inbyggdaProfiler().map(p => esc(p.namn)).join(', ')}.</p>`;
 }
 /** Profilen (eller alla sessionens profiler utan id) som JSON att dela eller bidra med: bara rubriknamn. */
 function importprofilExport(id) {
     const profiler = (state.importprofiler || []).filter(p => id == null || p.id === id);
-    return _ipTillJson(profiler);
+    return importprofilerTillJson(profiler);
 }
 function _ipExportera(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);
@@ -142,30 +154,32 @@ function _instGaTill(flik, avsnitt) {
     if (sammanfattning) /** @type {HTMLInputElement} */ (sammanfattning).focus();
 }
 
-document.getElementById('btn-open-installningar')?.addEventListener('click', () => oppnaInstallningar());
-document.getElementById('installningar-close')?.addEventListener('click', stangInstallningar);
-document.querySelector('#installningar-modal .glossary-backdrop')?.addEventListener('click', stangInstallningar);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && installningarOppna()) stangInstallningar(); });
-document.addEventListener('click', e => {
-    if (!/** @type {HTMLElement} */ (e.target).closest) return;
-    const lank = /** @type {HTMLElement} */ (e.target).closest('[data-oppna-installningar]');
-    if (lank) { oppnaInstallningar({ fokus: lank.getAttribute('data-oppna-installningar') || null }); return; }
-    const ipExp = /** @type {HTMLElement} */ (e.target).closest('[data-ip-exportera]');
-    if (ipExp) { _ipExportera(ipExp.getAttribute('data-ip-exportera')); return; }
-    const ipBort = /** @type {HTMLElement} */ (e.target).closest('[data-ip-ta-bort]');
-    if (ipBort) { _ipTaBort(ipBort.getAttribute('data-ip-ta-bort')); return; }
-    const flik = /** @type {HTMLElement} */ (e.target).closest('[data-inst-flik]');
-    if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
-    if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {
-        stangInstallningar();
-        const nav = document.querySelector('.nav-item[data-tab="filer"]');
-        if (nav) /** @type {HTMLElement} */ (nav).click();
-        const rad = document.getElementById('upload-row');
-        if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
-    }
-});
-
-// Stoppa och visa förhandskontrollen innan inläsning (17-forhandskontroll.js): standard av, följer med i konfigurationsfilen.
-document.getElementById('inst-fk-stopp')?.addEventListener('change', e => {
-    state.forhandskontrollStopp = /** @type {HTMLInputElement} */ (e.target).checked;
-});
+/** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
+export function uppstartInstallningar() {
+    document.getElementById('btn-open-installningar')?.addEventListener('click', () => oppnaInstallningar());
+    document.getElementById('installningar-close')?.addEventListener('click', stangInstallningar);
+    document.querySelector('#installningar-modal .glossary-backdrop')?.addEventListener('click', stangInstallningar);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && installningarOppna()) stangInstallningar(); });
+    document.addEventListener('click', e => {
+        if (!/** @type {HTMLElement} */ (e.target).closest) return;
+        const lank = /** @type {HTMLElement} */ (e.target).closest('[data-oppna-installningar]');
+        if (lank) { oppnaInstallningar({ fokus: lank.getAttribute('data-oppna-installningar') || null }); return; }
+        const ipExp = /** @type {HTMLElement} */ (e.target).closest('[data-ip-exportera]');
+        if (ipExp) { _ipExportera(ipExp.getAttribute('data-ip-exportera')); return; }
+        const ipBort = /** @type {HTMLElement} */ (e.target).closest('[data-ip-ta-bort]');
+        if (ipBort) { _ipTaBort(ipBort.getAttribute('data-ip-ta-bort')); return; }
+        const flik = /** @type {HTMLElement} */ (e.target).closest('[data-inst-flik]');
+        if (flik) { _instGaTill(flik.getAttribute('data-inst-flik'), flik.getAttribute('data-inst-avsnitt')); return; }
+        if (/** @type {HTMLElement} */ (e.target).closest('#inst-till-filer')) {
+            stangInstallningar();
+            const nav = document.querySelector('.nav-item[data-tab="filer"]');
+            if (nav) /** @type {HTMLElement} */ (nav).click();
+            const rad = document.getElementById('upload-row');
+            if (rad && typeof rad.scrollIntoView === 'function') rad.scrollIntoView({ block: 'start' });
+        }
+    });
+    // Stoppa och visa förhandskontrollen innan inläsning (17-forhandskontroll.js): standard av, följer med i konfigurationsfilen.
+    document.getElementById('inst-fk-stopp')?.addEventListener('change', e => {
+        state.forhandskontrollStopp = /** @type {HTMLInputElement} */ (e.target).checked;
+    });
+}
