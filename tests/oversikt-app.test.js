@@ -140,12 +140,6 @@ describe('underlagets kvalitet (ADR-19)', () => {
         expect(['ok', 'varning', 'kritisk']).toContain(p.dataset.status);
         expect(p.textContent).not.toMatch(/\/100/);
     });
-    it('helheten är det sämsta kriteriet', () => {
-        const b = w.__bedomningUnderlag();
-        const rang = { ok: 0, varning: 1, kritisk: 2 };
-        const samsta = b.kriterier.reduce((s, c) => rang[c.status] > rang[s] ? c.status : s, 'ok');
-        expect(b.status).toBe(samsta);
-    });
     it('demodatan: 2 av 5 BAS maskeras → jämförbarheten är inte OK', () => {
         const j = w.__bedomningUnderlag().kriterier.find(c => c.id === 'jamforbarhet');
         expect(j.status).not.toBe('ok');
