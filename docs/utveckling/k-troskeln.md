@@ -48,7 +48,8 @@ Exempel ur koden i dag:
 - **Det Översikt säger om exporterna.** Hur många BAS-intervall exporterna kan jämföra (`_dqJamforbaraBas`) och
   underlagets kvalitet räknas med `kInstalld()` (`kravstatus` i `src/lib/vymodell-oversikt.js`, `13-oversikt.js`), eftersom de gäller det som lämnar verktyget.
 - **Handlingsplanens belopp.** En förifylld rad där den minsta gruppen bakom skillnaden är under den inställda
-  tröskeln står i exporterna och bokslutet bara med kategorierna (`_hpUtanBelopp` i `56-handlingsplan.js`).
+  tröskeln står i exporterna och bokslutet bara med kategorierna (`skalUtanBelopp`, `skalUnderlag` i
+  `src/lib/sakligaskal.js`; adaptern `_hpSkalUnderlag` i `56-handlingsplan.js`).
 - **Löneöversyns förslag (ADR-69).** *Föreslå riktade potter*, mål-läget och känslighetskurvan tar bara kandidatpar
   där båda grupperna når den inställda tröskeln, också på skärmen (`_fcKandidater` i `36-loneoversyn.js` anropar
   `forslagskandidater(pairs, kInstalld())` i `src/lib/vymodell-loneoversyn.js`), och meningen om utelämnade par vid förslagen

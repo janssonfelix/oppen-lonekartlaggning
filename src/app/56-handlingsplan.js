@@ -11,7 +11,7 @@
 // Varifrån en förifylld rad kommer, som kolumnen Underlag och exporterna säger det.
 import { periodkostnad } from '../lib/kostnad.js';
 import { liknarPersonuppgift } from '../lib/organisationspaket.js';
-import { skalKategorier, skalPerKategori, skalSammanstallning, valideraSkal } from '../lib/sakligaskal.js';
+import { gruppSkillnadKr, SKAL_UTAN_BELOPP, skalForRad, skalSammanstallning, skalUnderlag, skalUtanBelopp, valideraSkal } from '../lib/sakligaskal.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { genitiv, termFras } from '../lib/termer.js';
 import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
@@ -89,14 +89,6 @@ export function _hpSattSkal(nyckel, lista) {
     return bort;
 }
 
-/**
- * Gruppens medianskillnad i kronor per månad för en rad ur Prioritering: mäns median minus kvinnors, ur samma
- * underlag som raden. null när ett kön har färre än minsta gruppstorlek (medianerna redovisas inte då).
- */
-function _hpPrioSkillnad(i) {
-    return i && i.medKv > 0 && i.medMa > 0 && i.kvN >= kInstalld() && i.maN >= kInstalld() ? Math.round(i.medMa - i.medKv) : null;
-}
-
 /** Lägger till en egen rad sist i tabellen och sätter fokus i dess första fält. */
 function _hpLaggTillEgen() {
     if (!state.handlingsplan) state.handlingsplan = {};
@@ -137,7 +129,7 @@ export function _handlingsplanSeedRows({ baraEgna = false } = {}) {
         if (hasRef) {
             const thr = (state.prioConfig && state.prioConfig.atgardThreshold != null) ? state.prioConfig.atgardThreshold : -5;
             computePrioritization(ref).filter(i => i.diffPct < thr).forEach(i => {
-                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, _hpPrioSkillnad(i), Math.min(i.kvN, i.maN));
+                lagg(_hpNyckel('prio', i.aid || i.yrke, i.bas), 'Granska löneläge och väg mot sakliga skäl', _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, gruppSkillnadKr(i, kInstalld()), Math.min(i.kvN, i.maN));
                 prioCount++;
             });
         }
@@ -281,40 +273,20 @@ export function _hpGaTillRad(nyckel) {
 }
 
 /**
- * De sakliga skälen för exporterna: en post per förifylld eller egen rad med minst ett skäl, i tabellens ordning, och
- * summan per kategori (src/lib/sakligaskal.js). Bygger på förifyllningen, så en rad som inte finns i underlaget (i
- * exportläget: en grupp under tröskeln) inte följer med. `seed` återanvänder en förifyllning som redan är räknad.
+ * De sakliga skälen för exporterna (skalUnderlag, src/lib/sakligaskal.js): förifyllningens rader med skäl, i tabellens
+ * ordning. Bygger på förifyllningen, så en rad som inte finns i underlaget (i exportläget: en grupp under tröskeln)
+ * inte följer med. `seed` återanvänder en förifyllning som redan är räknad.
  * @param {ReturnType<typeof _handlingsplanSeedRows>} [seed]
  */
 export function _hpSkalUnderlag(seed) {
     const s = seed || _handlingsplanSeedRows();
-    const grupper = s.nycklar.map((nyckel, i) => ({ nyckel, i, skal: _hpVarden(nyckel).skal || [] })).filter(g => g.skal.length)
-        .map(({ nyckel, i, skal }) => {
-            const utanBelopp = _hpUtanBelopp(nyckel, s.minsta[i]);
-            return { nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i], skillnadKr: utanBelopp ? null : s.skillnader[i],
-                utanBelopp, sammanstallning: utanBelopp ? _hpBaraKategorier(skal) : skalSammanstallning(skal, s.skillnader[i]) };
-        });
-    // Summan per kategori bara över grupper med belopp.
-    return { grupper, perKategori: skalPerKategori(grupper.filter(g => !g.utanBelopp).map(g => ({ skal: g.sammanstallning.skal, skillnadKr: g.skillnadKr }))) };
+    return skalUnderlag(s.nycklar.map((nyckel, i) => ({ nyckel, grupp: s.rows[i][1] || 'Egen rad', underlag: s.rows[i][2], antal: s.rows[i][8], nMin: s.minsta[i],
+        skillnadKr: s.skillnader[i], egen: _hpArEgen(nyckel), skal: _hpVarden(nyckel).skal || [] })), kInstalld());
 }
-/** Noten i exporterna där belopp, andel och kommentar utelämnas. */
-export const HP_SKAL_UTAN_BELOPP = 'belopp och kommentar utelämnade: ett kön har färre personer än minsta gruppstorlek';
-/**
- * En förifylld rad där den minsta gruppen bakom skillnaden (ett kön) är under den inställda minsta gruppstorleken:
- * i exporterna och bokslutet står då bara kategorierna, utan belopp, andel och kommentar. En egen rad har ingen grupp
- * och bär sina belopp.
- * @param {string} nyckel
- * @param {number|null} nMin
- */
-export function _hpUtanBelopp(nyckel, nMin) {
-    return !_hpArEgen(nyckel) && !(Number.isFinite(nMin) && /** @type {number} */ (nMin) >= kInstalld());
-}
-/** Sammanställningen för en rad utan belopp: kategorierna med namn, inga belopp, andelar eller kommentarer. */
-function _hpBaraKategorier(skal) {
-    const namn = new Map(skalKategorier().map(k => [k.id, k.namn]));
-    return { skal: skal.map(x => ({ kategori: x.kategori, namn: namn.get(x.kategori) || x.kategori, belopp: null, andel: null, kommentar: '' })),
-        antal: skal.length, summa: null, skillnadKr: null, forklaradAndel: null, aterstar: null, aterstarAndel: null, overstiger: false };
-}
+/** Noten i exporterna där belopp, andel och kommentar utelämnas (src/lib/sakligaskal.js). */
+export const HP_SKAL_UTAN_BELOPP = SKAL_UTAN_BELOPP;
+/** Står raden utan belopp i exporterna (skalUtanBelopp, src/lib/sakligaskal.js)? */
+export function _hpUtanBelopp(nyckel, nMin) { return skalUtanBelopp({ egen: _hpArEgen(nyckel), nMin }, kInstalld()); }
 /** Radens skäl som text för exporterna: "Marknad 800 kr; Erfarenhet 400 kr"; utan belopp bara kategorierna med noten. */
 function _hpSkalText(skal) {
     const lista = skal || [];
@@ -462,8 +434,7 @@ function _exportHandlingsplanExport() {
     // kostnaden (tomt för en egen rad). Sist de sakliga skälen ("Marknad 800 kr; Erfarenhet 400 kr") och hur stor andel
     // av gruppens medianskillnad de förklarar.
     const rows = seed.rows.map((r, i) => {
-        const sk = _hpVarden(seed.nycklar[i]).skal || [];
-        const sum = sk.length && _hpUtanBelopp(seed.nycklar[i], seed.minsta[i]) ? _hpBaraKategorier(sk) : skalSammanstallning(sk, seed.skillnader[i]);
+        const sum = skalForRad(_hpVarden(seed.nycklar[i]).skal || [], { egen: _hpArEgen(seed.nycklar[i]), nMin: seed.minsta[i], skillnadKr: seed.skillnader[i] }, kInstalld()).sammanstallning;
         return [r[0], r[1], r[8] != null ? r[8] : '', ...r.slice(2, 5), _hpKostnadAvser(r[2]), ...r.slice(5, 8), _hpSkalText(sum.skal), sum.antal && sum.forklaradAndel != null ? Math.round(sum.forklaradAndel * 1000) / 10 : ''];
     });
     for (let i = 0; i < 5; i++) rows.push(header.map(() => ''));   // tomma rader för manuella tillägg
