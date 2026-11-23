@@ -7602,7 +7602,7 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
       continue;
     }
     const km = (
-      /** @type {{medKv:number, medMa:number, kvotPct:number}} */
+      /** @type {{medKv:number, medMa:number, kvotPct:number, gapPct:number}} */
       konsMedianerUrLoner(kv, ma)
     ), { medKv, medMa } = km;
     const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
@@ -7623,6 +7623,8 @@ function likaArbeteGrupper(rader, { k, golv = 10 }) {
       medelKv,
       medelMa,
       kvot,
+      kvotPct: km.kvotPct,
+      skillnadPct: km.gapPct,
       gapPct,
       niva: b.niva,
       sakerstalld: b.sakerstalld,
@@ -7743,7 +7745,7 @@ function _kanslighet(st, k) {
 function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNot, arsbelopp } = {}) {
   const { fore, efter } = _inled({ demo, urval, troskelNot });
   const vad = g.bas != null && g.bas !== "" ? "ålder" : "ålder och BAS", Vad = stor(vad);
-  let fakta = `Inom ${gruppMedBas(g)} (n = ${g.tot}, varav ${g.nKv} kvinnor och ${g.nMa} män) är kvinnornas medianlön ${_pct2(g.kvot * 100)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : "") + "." + (g.niva === "granska" ? " Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns)." : "") + (g.direktiv ? " Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning)." : "");
+  let fakta = `Inom ${gruppMedBas(g)} (n = ${g.tot}, varav ${g.nKv} kvinnor och ${g.nMa} män) är kvinnornas medianlön ${_pct2(g.kvotPct)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : "") + "." + (g.niva === "granska" ? " Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns)." : "") + (g.direktiv ? " Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning)." : "");
   let provat;
   if (justerat && justerat.utanAlder) {
     provat = [`Lönefilen saknar ålder, så skillnaden har inte justerats för ${vad}.`];
@@ -7751,7 +7753,7 @@ function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNot, arsb
     provat = [`${Vad} kunde inte prövas eftersom kön och BAS sammanfaller i ${STANDARDTERMER.enhet.bf} (kvinnor och män finns i olika BAS).`];
   } else if (justerat && !justerat.forFa) {
     fakta += ` Efter hänsyn till ${vad} inom ${STANDARDTERMER.enhet.bf} återstår en skillnad på ${_pct2(justerat.gapPct)}.`;
-    const ra = (g.kvot - 1) * 100, ju = justerat.gapPct;
+    const ra = g.skillnadPct, ju = justerat.gapPct;
     const siffror = `(${_pct2(ra)} före justering, ${_pct2(ju)} efter)`;
     if (ra !== 0 && ju !== 0 && Math.sign(ra) !== Math.sign(ju)) {
       provat = [`Efter hänsyn till ${vad} inom ${STANDARDTERMER.enhet.bf} byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
@@ -7862,7 +7864,7 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
       [...st, `Kolumnen ${DIREKTIV_KOLUMN2} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS2}`],
       {
         rubriker: [stor(STANDARDTERMER.enhet.en), stor(STANDARDTERMER.niva.en), "Kvinnor", "Män", "Median kvinnor", "Median män", "Kvinnors lön i % av mäns", DIREKTIV_KOLUMN2],
-        rader: flagg.map((x) => [x.yrke, x.bas == null ? "" : String(x.bas), String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct2(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT2 : ""])
+        rader: flagg.map((x) => [x.yrke, x.bas == null ? "" : String(x.bas), String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct2(x.kvotPct), x.direktiv ? DIREKTIV_ETIKETT2 : ""])
       }
     );
   }
@@ -17150,7 +17152,7 @@ function bokslutGrupper(grupper, rader, k) {
     nMa: g.nMa,
     medKv: g.medKv,
     medMa: g.medMa,
-    gapPct: g.kvot * 100 - 100,
+    gapPct: g.skillnadPct,
     flaggad: g.flaggad,
     spridning: lonespridning(lonPerGrupp.get(`${g.aid}|${g.bas}`) || [], k)
   }));

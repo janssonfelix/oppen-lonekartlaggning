@@ -3,7 +3,9 @@
 // Årsbokslutet (ADR-54): validering, k-skydd och jämförelsen mellan två år — den rena modulen.
 import { describe, it, expect } from 'vitest';
 import { bokslutBasRad, bokslutGrupper, byggArsbokslut, valideraArsbokslut, jamforArsbokslut, hantelRader, basHantelRader, lonespridning, ARSBOKSLUT_NYCKELTAL } from '../src/lib/arsbokslut.js';
-import { arsjamforelseBlock, tillWordHtml } from '../src/lib/rapportunderlag.js';
+import { arsjamforelseBlock, likaArbeteGrupper, tillWordHtml } from '../src/lib/rapportunderlag.js';
+import { konsMedianerUrLoner } from '../src/lib/struktur.js';
+import { svPct } from '../src/lib/talformat.js';
 
 const bokslut = (ar, over = {}) => byggArsbokslut({
     ar, skapat: `${ar}-11-01`, k: 10, verktyg: 'v2026.10.19',
@@ -371,15 +373,24 @@ describe('[B8.2] årsbokslut: raden per BAS-intervall', () => {
 });
 
 describe('[B8.2] årsbokslut: grupperna ur Lika arbetes grupper', () => {
-    it('bokslutGrupper: en samlad median följer inte med; gapet ur kvoten och spridningen ur gruppens löner', () => {
+    it('bokslutGrupper: en samlad median följer inte med; gapet är gruppens skillnadPct och spridningen ur gruppens löner', () => {
         const rader = [30000, 31000, 32000, 33000].flatMap((lon, i) => [{ yrke: '5100 Vård', aid: '5100', bas: 'A', kon: i % 2 ? 'man' : 'kvinna', lon }]);
         const grupper = [
-            { aid: '5100', yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, kvot: 0.96875, flaggad: false },
+            { aid: '5100', yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, kvot: 0.96875, kvotPct: 96.875, skillnadPct: -3.125, flaggad: false },
             { aid: '6100', yrke: 'Annat', bas: 'B', nKv: 1, nMa: 9, medKv: null, medMa: null, kvot: null, flaggad: false, samladMedian: true },
         ];
         const ut = bokslutGrupper(grupper, rader, 2);
         expect(ut).toHaveLength(1);
-        expect(ut[0]).toEqual({ yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, gapPct: 0.96875 * 100 - 100, flaggad: false,
+        expect(ut[0]).toEqual({ yrke: 'Vård', bas: 'A', nKv: 2, nMa: 2, medKv: 31000, medMa: 32000, gapPct: -3.125, flaggad: false,
             spridning: lonespridning([30000, 31000, 32000, 33000], 2) });
+    });
+    it('bokslutGrupper: gapet är konsMedianerUrLoner:s, inte räknat om ur kvoten', () => {
+        // 24 045 mot 30 000 är exakt −19,85; ur kvoten (kvot × 100 − 100) blev det strax under och visades som −19,8.
+        const rader = [24045, 24045, 30000, 30000].map((lon, i) => ({ yrke: '5100 Vård', aid: '5100', bas: 'A', kon: i < 2 ? 'kvinna' : 'man', lon }));
+        const g = likaArbeteGrupper(rader, { k: 2, golv: 2 }).grupper[0];
+        expect(svPct(g.kvot * 100 - 100, 1)).toBe(svPct(-19.8, 1));   // den gamla vägen
+        const ut = bokslutGrupper([g], rader, 2)[0];
+        expect(ut.gapPct).toBe(konsMedianerUrLoner([24045, 24045], [30000, 30000]).gapPct);
+        expect(ut.gapPct).toBe(-19.85);
     });
 });

@@ -170,7 +170,7 @@ describe('trattdiagrammet, personer att granska, regressionen, uppdelningen och 
 });
 
 describe('årsbokslutet: grupperna paras på koden', () => {
-    const gruppPost = g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad, spridning: null });
+    const gruppPost = g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.skillnadPct, flaggad: g.flaggad, spridning: null });
     const bokslut = (ar, grupper, k = 5) => byggArsbokslut({ ar, skapat: `${ar}-12-31`, k, verktyg: 'test', nyckeltal: { n: 16, nKv: 8, nMa: 8 }, grupper, punkter: [] });
     const arets = () => bokslut(2026, likaArbeteGrupper(underlag(), { k: 5, golv: 5 }).grupper.map(gruppPost));
     it('årets bokslut har en grupp för koden i intervallet, med namnet från texten på flest av gruppens rader', () => {

@@ -53,6 +53,9 @@ export function gruppMedBas(g) {
  * rads etikett (yrkeLabel när den finns, annars texten), som tabellerna per AID-kod och BAS-intervall visar bredvid koden. `lag` och `hog`
  * är slumpens gränser som prövningen använde (null när gruppen inte prövades). Grupperna står med samma kod intill varandra: koderna
  * ordnade efter den största skillnaden bland kodens grupper, och inom koden intervallen i BAS-ordning.
+ * En grupp som redovisas per kön bär konsMedianerUrLoner:s tal: `kvotPct` (kvinnors median i procent av mäns) och
+ * `skillnadPct` (kvoten minus 100, med tecken), räknade med en avrundning; `gapPct` är skillnaden utan tecken och `kvot`
+ * förhållandet medKv / medMa. Texterna och bokslutet läser `kvotPct` och `skillnadPct`, inte `kvot`.
  * `utelamnade` och `ejJamforbara` bär namnen med intervallet (gruppMedBas); `utelamnadeGrupper` och
  * `ejJamforbaraGrupper` samma grupper som { yrke, aid, bas }.
  * @param {any[]} rader
@@ -81,14 +84,14 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
             continue;
         }
         // Båda könen har minst två löner här (över 0 efter inläsningen), så konOk är sant och talen finns.
-        const km = /** @type {{medKv:number, medMa:number, kvotPct:number}} */ (konsMedianerUrLoner(kv, ma)), { medKv, medMa } = km;
+        const km = /** @type {{medKv:number, medMa:number, kvotPct:number, gapPct:number}} */ (konsMedianerUrLoner(kv, ma)), { medKv, medMa } = km;
         // Medelvärdet på samma löner som medianen; protokollet redovisar båda (ADR-79), statusen följer medianen.
         const medelKv = kv.reduce((s, x) => s + x, 0) / kv.length, medelMa = ma.reduce((s, x) => s + x, 0) / ma.length;
         const kvot = medKv / medMa;
         const gapPct = Math.abs(km.kvotPct - 100);
         const b = bedomSkillnad(kv, ma, { golv });
         const g = { yrke, etikett, aid, bas, nKv: kv.length, nMa: ma.length, tot, samladMedian: false,
-            medKv, medMa, medelKv, medelMa, kvot, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
+            medKv, medMa, medelKv, medelMa, kvot, kvotPct: km.kvotPct, skillnadPct: km.gapPct, gapPct, niva: b.niva, sakerstalld: b.sakerstalld, direktiv: b.direktiv, flaggad: b.niva === 'granska',
             lag: b.granser ? b.granser.lag : null, hog: b.granser ? b.granser.hog : null,
             p10Kv: kvantil(kv, 0.1), p90Kv: kvantil(kv, 0.9), p10Ma: kvantil(ma, 0.1), p90Ma: kvantil(ma, 0.9) };
         // Stabiliteten gäller storleken: kan skillnaden hamna under 3 % om en eller två personer tas bort? Den räknas för
@@ -229,7 +232,7 @@ export function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNo
     // intervall (koden över flera intervall) justeras för ålder och BAS.
     const vad = g.bas != null && g.bas !== '' ? 'ålder' : 'ålder och BAS', Vad = stor(vad);
     let fakta = `Inom ${gruppMedBas(g)} (n = ${g.tot}, varav ${g.nKv} kvinnor och ${g.nMa} män) är kvinnornas medianlön `
-        + `${_pct(g.kvot * 100)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : '') + '.'
+        + `${_pct(g.kvotPct)} av männens` + (ki ? ` (95 % KI ${_ki(ki.lo, ki.hi)})` : '') + '.'
         + (g.niva === 'granska' ? ' Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns).' : '')
         + (g.direktiv ? ' Den ojusterade löneskillnaden når 5 % (direktivmarkeringen; den är inte en bedömning).' : '');
     let provat;
@@ -239,7 +242,7 @@ export function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNo
         provat = [`${Vad} kunde inte prövas eftersom kön och BAS sammanfaller i ${T.enhet.bf} (kvinnor och män finns i olika BAS).`];
     } else if (justerat && !justerat.forFa) {
         fakta += ` Efter hänsyn till ${vad} inom ${T.enhet.bf} återstår en skillnad på ${_pct(justerat.gapPct)}.`;
-        const ra = (g.kvot - 1) * 100, ju = justerat.gapPct;
+        const ra = g.skillnadPct, ju = justerat.gapPct;
         const siffror = `(${_pct(ra)} före justering, ${_pct(ju)} efter)`;
         if (ra !== 0 && ju !== 0 && Math.sign(ra) !== Math.sign(ju)) {
             provat = [`Efter hänsyn till ${vad} inom ${T.enhet.bf} byter skillnaden tecken ${siffror}. Råskillnaden och den justerade skillnaden mäter olika saker (median respektive genomsnitt i en modell) och bör läsas var för sig.`];
@@ -371,7 +374,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         if (!flagg.length) return blk('Lika arbete', [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${adjektiv({ utrum: 'värd', neutrum: 'värt', plural: 'värda' }, T.enhet)} att granska.`], null);
         return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
             { rubriker: [stor(T.enhet.en), stor(T.niva.en), 'Kvinnor', 'Män', 'Median kvinnor', 'Median män', 'Kvinnors lön i % av mäns', DIREKTIV_KOLUMN],
-            rader: flagg.map(x => [x.yrke, x.bas == null ? '' : String(x.bas), String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvot * 100), x.direktiv ? DIREKTIV_ETIKETT : '']) });
+            rader: flagg.map(x => [x.yrke, x.bas == null ? '' : String(x.bas), String(x.nKv), String(x.nMa), _kr(x.medKv), _kr(x.medMa), _pct(x.kvotPct), x.direktiv ? DIREKTIV_ETIKETT : '']) });
     }
     if (typ === 'likvardigt') {
         const par = u.par || [];

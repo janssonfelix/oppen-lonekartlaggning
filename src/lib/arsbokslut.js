@@ -44,7 +44,7 @@ export function lonespridning(lon, k) {
  * Bokslutets grupper ur Lika arbetes grupper (AID-koden i BAS-intervallet): de som redovisas per kön (inte med en
  * samlad median), med kvinnors median i procent av mäns minus 100 och lönespridningen ur gruppens löner (lönerna för
  * kvinnor och män med lön över 0, som Lika arbete räknar dem).
- * @param {{aid: string, yrke: string, bas: string, nKv: number, nMa: number, medKv: number, medMa: number, kvot: number, flaggad: boolean, samladMedian?: boolean}[]} grupper
+ * @param {{aid: string, yrke: string, bas: string, nKv: number, nMa: number, medKv: number, medMa: number, skillnadPct: number, flaggad: boolean, samladMedian?: boolean}[]} grupper
  * @param {any[]} rader
  * @param {number} k
  */
@@ -55,7 +55,7 @@ export function bokslutGrupper(grupper, rader, k) {
         if (!lonPerGrupp.has(kod)) lonPerGrupp.set(kod, []);
         /** @type {number[]} */ (lonPerGrupp.get(kod)).push(r.lon);
     }
-    return grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.kvot * 100 - 100, flaggad: g.flaggad,
+    return grupper.filter(g => !g.samladMedian).map(g => ({ yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, medKv: g.medKv, medMa: g.medMa, gapPct: g.skillnadPct, flaggad: g.flaggad,
         spridning: lonespridning(lonPerGrupp.get(`${g.aid}|${g.bas}`) || [], k) }));
 }
 
