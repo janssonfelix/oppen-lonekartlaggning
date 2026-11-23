@@ -677,6 +677,29 @@ describe('[B3.12] Regressionskortets vymodell', () => {
         expect(vm.andelAvLonesumma).toBeCloseTo(Math.abs(vm.kronor.krTotalYear) / summa * 100, 10);
         expect(regressionKronor({ konPct: -5, medianMa: 40000, nKvAnalysed: 10 })).toMatchObject({ refKvinna: 38000, krMonth: 2000, krYear: 24000, krTotalYear: 240000 });
         expect(regressionKronor({ konPct: -5, medianMa: 0 })).toBeNull();
+        expect(regressionKronor({ konPct: NaN, medianMa: 40000 })).toBeNull();
+        expect(regressionKronor(null)).toBeNull();
+    });
+    it('förklaringsbudgeten: varje steg får det det tar bort, och delarna och resten summerar till hela gapet', () => {
+        const b = forklaringsbudget([{ name: 'Endast kön', gapPct: -10, status: 'ok' }, { name: '+ BAS-intervall', gapPct: -6, status: 'ok' },
+            { name: '+ Ålder', gapPct: -4, status: 'ok' }]);
+        expect([b.g0, b.remaining, b.anyNegative]).toEqual([10, 4, false]);
+        expect(b.parts.map(p => p.key)).toEqual(['bas', 'alder']);
+        expect(b.parts[0].val).toBeCloseTo(4, 6);
+        expect(b.parts[1].val).toBeCloseTo(2, 6);
+        expect(b.parts.reduce((s, p) => s + p.share, 0) + b.remainingShare).toBeCloseTo(100, 6);
+        // Stegen tas som de kommer: utan BAS-steget går ålderns del från Endast kön.
+        const utanBas = forklaringsbudget([{ name: 'Endast kön', status: 'ok', gapPct: -6 }, { name: '+ Ålder', status: 'ok', gapPct: -4 }]);
+        expect(utanBas.parts.map(p => p.key)).toEqual(['alder']);
+        expect(utanBas.parts[0].val).toBeCloseTo(2, 10);
+        expect(utanBas.remaining).toBe(4);
+    });
+    it('förklaringsbudgeten flaggar en kontroll som ökar gapet, och den delen ritas inte som stapel', () => {
+        const b = forklaringsbudget([{ name: 'Endast kön', gapPct: -4, status: 'ok' }, { name: '+ BAS-intervall', gapPct: -7, status: 'ok' },
+            { name: '+ Ålder', gapPct: -6, status: 'ok' }]);
+        expect(b.anyNegative).toBe(true);
+        expect(b.parts[0].val).toBeLessThan(0);
+        expect(b.parts[0].share).toBe(0);
     });
     it('slutsatsen: titta från storleksgränsen 3 %, dokumentera under den, ingen utan säkerställd skillnad', () => {
         const { r } = rk(10);

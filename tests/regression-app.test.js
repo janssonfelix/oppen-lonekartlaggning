@@ -4,7 +4,6 @@
 // och metodbilagan följer modellen, regressionskortet och att regressionen körs en gång per varv.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { forklaringsbudget, regressionKronor } from '../src/lib/vymodell-regressionskort.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
 
 let win;
@@ -367,12 +366,6 @@ describe('runOLSRegression på vald modell (ADR-56)', () => {
         expect(r.modell).toMatchObject({ bas: true, alder: true });
         expect(r.modellVarning).toMatch(/under tröskeln|färre än/);
     });
-    it('forklaringsbudget bygger delarna ur stegen som de kommer', () => {
-        const b = forklaringsbudget([{ name: 'Endast kön', status: 'ok', gapPct: -6 }, { name: '+ Ålder', status: 'ok', gapPct: -4 }]);
-        expect(b.parts.map(p => p.key)).toEqual(['alder']);
-        expect(b.parts[0].val).toBeCloseTo(2, 10);
-        expect(b.remaining).toBe(4);
-    });
 });
 
 describe('modellpanelen (ADR-56)', () => {
@@ -640,50 +633,6 @@ describe('regressionskortets tekniska specifikation', () => {
 });
 
 describe('[B3.12] multivariat analys: pedagogik (kronor, budget, per-BAS-diagram)', () => {
-    it('regressionKronor översätter kön-effekten till kronor konsekvent', () => {
-        // Modellen är multiplikativ: kvinna = man × (1 + konPct/100).
-        const kr = regressionKronor({ konPct: -5, medianMa: 40000, nKvAnalysed: 10 });
-        expect(kr.refMan).toBe(40000);
-        expect(kr.refKvinna).toBeCloseTo(38000, 6);      // 40000 × 0,95
-        expect(kr.krMonth).toBeCloseTo(2000, 6);
-        expect(kr.krYear).toBeCloseTo(24000, 6);
-        expect(kr.krTotalYear).toBeCloseTo(240000, 6);   // × 10 kvinnor
-    });
-
-    it('regressionKronor returnerar null utan användbart underlag', () => {
-        expect(regressionKronor(null)).toBeNull();
-        expect(regressionKronor({ konPct: -5, medianMa: 0 })).toBeNull();
-        expect(regressionKronor({ konPct: NaN, medianMa: 40000 })).toBeNull();
-    });
-
-    it('forklaringsbudget delar upp gapet i förklarat + kvarstående', () => {
-        const b = forklaringsbudget([
-            { name: 'Endast kön', gapPct: -10, status: 'ok' },
-            { name: '+ BAS-intervall', gapPct: -6, status: 'ok' },
-            { name: '+ Ålder', gapPct: -4, status: 'ok' }
-        ]);
-        expect(b.g0).toBe(10);
-        expect(b.remaining).toBe(4);
-        expect(b.parts.map(p => p.key)).toEqual(['bas', 'alder']);
-        expect(b.parts[0].val).toBeCloseTo(4, 6);   // 10 → 6
-        expect(b.parts[1].val).toBeCloseTo(2, 6);   // 6 → 4
-        expect(b.anyNegative).toBe(false);
-        // andelarna summerar till 100 % av det ursprungliga gapet
-        const sum = b.parts.reduce((s, p) => s + p.share, 0) + b.remainingShare;
-        expect(sum).toBeCloseTo(100, 6);
-    });
-
-    it('forklaringsbudget flaggar när en kontroll ÖKAR gapet', () => {
-        const b = forklaringsbudget([
-            { name: 'Endast kön', gapPct: -4, status: 'ok' },
-            { name: '+ BAS-intervall', gapPct: -7, status: 'ok' },
-            { name: '+ Ålder', gapPct: -6, status: 'ok' }
-        ]);
-        expect(b.anyNegative).toBe(true);
-        expect(b.parts[0].val).toBeLessThan(0);   // BAS dolde en del av gapet
-        expect(b.parts[0].share).toBe(0);         // negativa bidrag ritas inte som stapel
-    });
-
     it('regressionskortet renderar kronor, signalkolumn och per-BAS-container', () => {
         win.__loadDemoData();
         expect(() => win.__ritaRegressionskort()).not.toThrow();
