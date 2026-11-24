@@ -221,8 +221,8 @@ importprofiler kommer ur ett organisationspaket som handläggaren läser in i et
 `docs/anvandare/organisationspaket.md` och `.github/CONTRIBUTING.md` (importprofiler).
 
 **ADR-29 — Ett steg är klart när dess punkter är hanterade.** Processöversikten markerar ett analyssteg som klart när
-arbetet är gjort, med stegets punkter i Att göra avbockade, inte när analysen har körts. *Börja här* tar underlaget
-först och sedan fynden om skillnader mellan kvinnor och män. *Gäller i dag:* `granssnittet.md` §2.
+arbetet är gjort, med stegets punkter i Att göra avbockade, inte när analysen har körts. *Börja här* sorterar efter
+prioritet och inom samma prioritet underlaget först, sedan fynden om skillnader mellan kvinnor och män. *Gäller i dag:* `granssnittet.md` §2.
 
 **ADR-30 — Stilelement kräver kontrollsumma, stilattribut är förbjudna; låsta beroenden.** Alla `style="…"` är ersatta
 av klasser, och CSP:n har `style-src-elem` med kontrollsummor och `style-src-attr 'none'`; beroendena är låsta
