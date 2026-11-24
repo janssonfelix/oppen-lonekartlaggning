@@ -3,7 +3,7 @@
   try {
     if (typeof Storage !== "undefined" && Storage.prototype) {
       Storage.prototype.setItem = function(key) {
-        throw new Error(`Persistent storage forbidden (Storage.setItem("${key}")). Verktyget får inte skriva till localStorage/sessionStorage. Se dataskydd.md, avsnitt 4.`);
+        throw new Error(`Persistent storage forbidden (Storage.setItem("${key}")). Verktyget får inte skriva till localStorage/sessionStorage. Se dataskydd.md, avsnitt 2.`);
       };
     }
     for (const namn of ["localStorage", "sessionStorage"]) {
@@ -11,7 +11,7 @@
         const riktig = window[namn];
         if (!riktig) continue;
         const forbjudet = (nyckel) => {
-          throw new Error(`Persistent storage forbidden (${namn}["${String(nyckel)}"] = …). Verktyget får inte skriva till localStorage/sessionStorage. Se dataskydd.md, avsnitt 4.`);
+          throw new Error(`Persistent storage forbidden (${namn}["${String(nyckel)}"] = …). Verktyget får inte skriva till localStorage/sessionStorage. Se dataskydd.md, avsnitt 2.`);
         };
         const ombud = new Proxy(riktig, {
           get(mal, nyckel) {
@@ -34,7 +34,7 @@
       Object.defineProperty(Document.prototype, "cookie", {
         get: cookieDesc.get,
         set(_val) {
-          throw new Error("Persistent storage forbidden (document.cookie). Se dataskydd.md, avsnitt 4.");
+          throw new Error("Persistent storage forbidden (document.cookie). Se dataskydd.md, avsnitt 2.");
         },
         configurable: true
       });
