@@ -467,7 +467,7 @@ export function tabellTillBok(tableId, sheetName) {
 // semikolon-separerade filer med UTF-8 BOM (svenska Excel-default), CRLF-
 // radslut och korrekta citerade fält. Garanterat fungerande i alla webbläsare:
 // blob-URL + anchor-klick + revokeObjectURL.
-// Formelskyddet (_neutraliseraCell) och CSV-texten (_tillCsv) ligger i src/lib/csv.js (ADR-15).
+// Formelskyddet (neutraliseraCell) och CSV-texten (tillCsv) ligger i src/lib/csv.js (ADR-15).
 // Demoläget märks i filnamnet, som diagram- och Word-exporterna (bara en gång).
 function _csvFilnamn(namn) {
     const n = namn || 'export';
