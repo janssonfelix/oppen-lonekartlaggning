@@ -3,7 +3,7 @@
 /**
  * Öppen lönekartläggning — organisationspaket (ADR-28).
  *
- * En systemägare samlar organisationens namn och benämningar, grundinställningar,
+ * En systemförvaltare samlar organisationens namn och benämningar, grundinställningar,
  * lönepolitiska ställningstagande och jämförelsestatistik i en JSON-fil som handläggarna
  * läser in i ett steg. Modulen bygger paketet ur appens delar och tolkar ett paket
  * tillbaka till dem. Bara vitlistade fält följer med; allt annat ignoreras, så att en
@@ -48,7 +48,7 @@ const _kTroskel = v => (Number.isInteger(v) && v >= K_MIN && v <= K_MAX ? v : un
 // Beräkningsperioden väljs bland verktygets värden (Prioriteringens rullista).
 const PERIODER = [3, 6, 9, 12];
 const _period = v => (PERIODER.includes(v) ? v : undefined);
-// Låsningar som systemägaren kan sätta (ADR-47). Rensning vid inaktivitet: 0 (av) eller 5–120 minuter.
+// Låsningar som systemförvaltaren kan sätta (ADR-47). Rensning vid inaktivitet: 0 (av) eller 5–120 minuter.
 export const INAKTIVITET_MIN = 5;
 export const INAKTIVITET_MAX = 120;
 const _inaktivitet = v => (v === 0 || (Number.isInteger(v) && v >= INAKTIVITET_MIN && v <= INAKTIVITET_MAX) ? v : undefined);
@@ -181,7 +181,7 @@ function _allaTexter(v, ut = []) {
 
 /**
  * Låsningarna i installningar (ADR-47), normaliserade. Ett ogiltigt värde utelämnas med en varning, så att ett
- * paket aldrig tyst låser något annat än det systemägaren skrev. Rensningstiden kan inte låsas i läget Av (0).
+ * paket aldrig tyst låser något annat än det systemförvaltaren skrev. Rensningstiden kan inte låsas i läget Av (0).
  */
 function _lasningar(inst, varningar) {
     const ut = {};
@@ -219,6 +219,18 @@ function _rader(del, radFn, benamning, varningar) {
 }
 
 /**
+ * Är paketet från ett tidigare år än datorns klocka? Förra årets paket räknas först från och med 1 mars, så att
+ * förra årets kartläggning kan göras i början av året. Ett paket utan år räknas aldrig.
+ * @param {number|undefined} avserAr
+ * @param {Date} idag
+ */
+export function paketArGammalt(avserAr, idag) {
+    if (typeof avserAr !== 'number' || !Number.isInteger(avserAr)) return false;
+    const ar = idag.getFullYear();
+    return avserAr < ar - 1 || (avserAr === ar - 1 && idag.getMonth() >= 2);
+}
+
+/**
  * Tolkar ett paket (filens text) till appens delar.
  * @param {string} text
  * @returns {{ok:true, paket:Object, delar:Object, varningar:string[]} | {ok:false, fel:string}}
@@ -227,7 +239,7 @@ export function tolkaPaket(text) {
     if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
     if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
     let o;
-    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemägaren om en ny fil.' }; }
+    try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemförvaltaren om en ny fil.' }; }
     if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };
 
     if (o.format !== PAKET_FORMAT) return { ok: false, fel: 'Filen är inte ett organisationspaket för lönekartläggning.' };
@@ -237,7 +249,7 @@ export function tolkaPaket(text) {
     const organisation = _text(o.organisation?.namn);
     if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
     const skapat = _text(o.skapat);
-    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemägaren om en ny fil.' };
+    if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemförvaltaren om en ny fil.' };
     if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
         return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
     }

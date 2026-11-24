@@ -14,7 +14,7 @@ describe('Uppgift 1: Filer och kvalitet', () => {
     it('Filer och kvalitet bär filrutorna, kvaliteten och extremvärdena; Översikt inte', () => {
         const d = createAppWindow().document, filer = d.getElementById('view-filer'), ov = d.getElementById('view-dashboard');
         expect(filer).toBeTruthy();
-        for (const id of ['organisationspaket', 'upload-cell-data', 'underlagets-kvalitet', 'outliers-container', 'paket-skapa'])
+        for (const id of ['organisationspaket', 'upload-cell-data', 'underlagets-kvalitet', 'outliers-container'])
             expect(filer.contains(d.getElementById(id)), id).toBe(true);
         for (const id of ['att-gora', 'avsnitt-ov-process', 'ov-filrad']) expect(ov.contains(d.getElementById(id)), id).toBe(true);
         expect(ov.contains(d.getElementById('upload-sektion'))).toBe(false);
@@ -249,7 +249,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
     it('menyn står i rapportens ordning; med ställningstagandet syns varje flik, också Löneläget', () => {
         const w = createAppWindow(), d = w.document;
         const MENYN = ['dashboard', 'filer', 'bestammelser', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon',
-             'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'dokumentera', 'utforska', 'arbetet', 'info'];
+             'prioritering', 'loneoversyn', 'handlingsplan', 'rapporttext', 'dokumentera', 'utforska', 'arbetet', 'info', 'forvaltare'];
         expect([...d.querySelectorAll('.nav-menu .nav-item')].map(b => b.dataset.tab)).toEqual(MENYN);
         expect([...d.querySelectorAll('.nav-group')].map(g => g.textContent.trim())).toEqual(
             ['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport', 'Arbetet', 'Hjälp']);

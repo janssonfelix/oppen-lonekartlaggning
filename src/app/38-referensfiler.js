@@ -50,7 +50,7 @@ export function ritaReferensKort() {
     const aterga = document.getElementById('btn-referens-aterga');
     const egen = har && state.policyKalla === 'fil';
     // Namnet får ändras både för en egen fil och för ett inläst paket (paketet kan bära ett filnamn som
-    // systemägaren inte bytte); borttagning gäller bara egen fil — paketets delar tas bort med paketet.
+    // systemförvaltaren inte bytte); borttagning gäller bara egen fil — paketets delar tas bort med paketet.
     const namnges = har && (state.policyKalla === 'fil' || state.policyKalla === 'paket');
     if (falt) falt.hidden = !namnges;
     if (input && document.activeElement !== input) /** @type {HTMLInputElement} */ (input).value = namnges ? referensNamn() : '';

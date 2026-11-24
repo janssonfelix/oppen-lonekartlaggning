@@ -866,26 +866,19 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 @media (max-width: 640px) { .upload-row { grid-template-columns: 1fr; } }
 .steg-nr { display: inline-block; white-space: nowrap; margin-right: 6px; padding: 1px 7px; border-radius: 10px; background: var(--primary); color: #fff; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.02em; vertical-align: middle; }
 /* Organisationspaket (ADR-28), steg 1 i Filer och kvalitet: knappen och läget synliga, förklaringen hopfälld bakom
-   Vad är ett organisationspaket?, och formuläret för systemägaren bakom en länk sist i steget. */
+   Vad är ett organisationspaket?, och en rad till fliken För systemförvaltaren, där formuläret står (samma rutor). */
 .paket-steg { margin: 0 0 14px; padding: 14px 16px; background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
 .paket-huvud { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .paket-huvud h3 { margin: 0; font-size: var(--fs-md); font-weight: 600; }
 .paket-lage { margin: 6px 0 0; }
 .paket-vad { margin-top: 12px; }
 .paket-vad .upload-help-content p { margin: 0 0 6px; }
-.paket-skapa { margin-top: 10px; font-size: var(--fs-sm); line-height: 1.6; }
-.paket-skapa > summary { display: inline-block; cursor: pointer; list-style: none; font-size: var(--fs-xs); color: var(--text-muted); text-decoration: underline; }
-.paket-skapa > summary::-webkit-details-marker { display: none; }
-.paket-skapa > summary:hover { color: var(--primary); }
-.paket-skapa > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
-.paket-skapa[open] { padding-top: 10px; border-top: 1px dashed var(--border); }
-.paket-skapa[open] > summary { color: var(--text-main); font-weight: 600; text-decoration: none; }
 .paket-rad { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 .paket-info { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); }
 .paket-info dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
 .paket-info dt { color: var(--text-muted); }
 .paket-info dd { margin: 0; }
-.paket-formular { display: grid; grid-template-columns: max-content minmax(0, 360px); gap: 8px 12px; align-items: center; margin: 10px 0; }
+.paket-formular { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 360px); gap: 8px 12px; align-items: center; margin: 10px 0; }
 .paket-sammanfattning { font-size: var(--fs-sm); color: var(--text-muted); }
 
 .upload-cell {

@@ -112,6 +112,7 @@ export const FLIKAR = [
     ['dokumentera', []],
     ['rapporttext', []],
     ['arbetet', []],
+    ['forvaltare', []],
 ];
 // Antalet misslyckade kontroller hittills; sammanfattningen i tools/browser-smoke.mjs läser det.
 export const antalFel = () => fel;

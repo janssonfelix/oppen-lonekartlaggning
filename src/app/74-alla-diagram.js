@@ -34,7 +34,7 @@ const UT_KOPIA_PREFIX = 'ut-diagram-';
 // Flikar som inte får någon grupp: fliken själv; dokumentationsflikarna (Rapporttext, Exportera, Spara och jämför år),
 // som ritas i exportläget (ADR-51) och som ZIP-filen inte heller hämtar diagram ur; och flikarna utan diagram ritade
 // med diagramkärnan (tests/alla-diagram.test.js vaktar att de förblir utan).
-const _UT_ALLA_UTAN = new Set(['utforska', 'dokumentera', 'rapporttext', 'arbetet', 'info', 'dashboard', 'filer', 'bestammelser', 'handlingsplan']);
+const _UT_ALLA_UTAN = new Set(['utforska', 'dokumentera', 'rapporttext', 'arbetet', 'info', 'forvaltare', 'dashboard', 'filer', 'bestammelser', 'handlingsplan']);
 
 /** @type {'egna'|'alla'} */
 let _utUnderflik = 'egna';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { byggPaket, tolkaPaket, PAKET_FORMAT, PAKET_MAX_BYTE } from '../src/lib/organisationspaket.js';
+import { byggPaket, tolkaPaket, paketArGammalt, PAKET_FORMAT, PAKET_MAX_BYTE } from '../src/lib/organisationspaket.js';
 import { nyttRecept } from '../src/lib/tabellrecept.js';
 import { perBasStandard } from '../src/lib/perbas.js';
 import { readFileSync } from 'node:fs';
@@ -136,6 +136,23 @@ describe('organisationspaket: perioden', () => {
         expect(r.delar.installningar.months).toBeUndefined();
         const r2 = tolkaPaket(JSON.stringify(byggPaket({ ...underlag(), installningar: { months: 6 } })));
         expect(r2.delar.installningar.months).toBe(6);
+    });
+});
+
+describe('organisationspaket: gammalt paket (årsraden)', () => {
+    it('förra årets paket flaggas från och med 1 mars', () => {
+        expect(paketArGammalt(2026, new Date(2027, 1, 28))).toBe(false);
+        expect(paketArGammalt(2026, new Date(2027, 2, 1))).toBe(true);
+    });
+    it('ett paket två år bakåt flaggas alltid', () => {
+        expect(paketArGammalt(2025, new Date(2027, 0, 15))).toBe(true);
+    });
+    it('årets och kommande års paket flaggas inte', () => {
+        expect(paketArGammalt(2027, new Date(2027, 11, 31))).toBe(false);
+        expect(paketArGammalt(2028, new Date(2027, 5, 1))).toBe(false);
+    });
+    it('ett paket utan år flaggas inte', () => {
+        for (const ar of [undefined, NaN, '2026']) expect(paketArGammalt(ar, new Date(2027, 5, 1))).toBe(false);
     });
 });
 

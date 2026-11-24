@@ -106,6 +106,8 @@ export const SOK_FUNKTIONER = [
     { namn: 'Jämför med en ögonblicksbild', synonymer: ['ögonblicksbild', 'snapshot', 'jämför inställningar', 'före efter'], flik: 'arbetet', avsnitt: 'avsnitt-ar-ogonblick' },
     { namn: 'Jämförelse med förra året', synonymer: ['årsjämförelse', 'förra året', 'fjolår', 'fjolåret', 'årsbokslut', 'sakliga skäl per kategori'], flik: 'arbetet', avsnitt: 'avsnitt-ar-arsjamforelse' },
     { namn: 'Kontrollera verktyget med testdata', synonymer: ['självdiagnostik', 'testdata', 'syntetisk'], flik: 'arbetet', avsnitt: 'avsnitt-ar-diagnostik' },
+    // För systemförvaltaren
+    { namn: 'Skapa organisationsfil', synonymer: ['organisationspaket', 'systemförvaltare', 'sprida', 'ny version', 'inbakat paket'], flik: 'forvaltare', avsnitt: 'forvaltare-steg-1' },
     // Tabeller och egna vyer
     { namn: `Löneöversikt — alla ${T.niva.fl}`, synonymer: ['tabell', 'lönenivåer', 'fast tabell'], flik: 'utforska', avsnitt: 'avsnitt-ut-oversikt' },
     { namn: 'Egna vyer', synonymer: ['pivot', 'egen tabell', 'eget diagram', 'utforska'], flik: 'utforska', avsnitt: 'avsnitt-ut-egna' },

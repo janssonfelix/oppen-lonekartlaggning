@@ -454,8 +454,8 @@ tillsammans med paketet; konfigurationsfilen bär dem inte, så en fil kan varke
   avkryssad, svaret alltid nej, och `#explore-sma-last` säger varför.
 
 Paketformuläret har de tre fälten (ett ogiltigt värde stoppar sparandet, som för tröskeln), och faktarutan listar
-låsningarna. För systemägaren: `docs/anvandare/organisationspaket.md` §5; för dataskyddsombudet: `dataskydd.md` §3 och
-riskanalysen B2b.
+låsningarna. För systemförvaltaren: `docs/anvandare/organisationspaket.md` §5; för dataskyddsombudet: `dataskydd.md` §3
+och riskanalysen B2b.
 
 ## 7. Värdet i utdata
 

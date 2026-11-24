@@ -52,7 +52,7 @@ async function _exportZipExport() {
         for (const knapp of document.querySelectorAll('.nav-item[data-tab]')) {
             if (/** @type {HTMLInputElement} */ (knapp).disabled || /** @type {HTMLElement} */ (knapp).hidden) continue;
             const flik = knapp.getAttribute('data-tab');
-            if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info'].includes(flik)) continue;      // som förut: inga diagram hämtas där
+            if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info', 'forvaltare'].includes(flik)) continue;      // som förut: inga diagram hämtas där
             try { ritaFlik(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
         }
         // Jämförelsen med förra året (Spara och jämför år) har sina två hantlar när ett bokslut är inläst; panelen ritas

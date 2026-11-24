@@ -376,10 +376,10 @@ describe('utfällt som standard', () => {
     // diagramkärnans lista med kryssrutor ("Räkna för sektor", "Yrkesgrupp") och gu-andra valet av förklaringsvariabler under trappan i Var uppstår
     // löneskillnaden? ("Ändra uppdelning") — kontroller, inte grupperingar.
     const HJALP = ['flik-usage', 'audit-panel', 'bakgrund-panel', 'explore-urval-val', 'diagram-urval-lista', 'gu-andra'];
-    // Organisationspaketets förklaring (Vad är ett organisationspaket?) och formuläret för systemägaren är hopfällda i
-    // steg 1 i Filer och kvalitet, och Underlagets kvalitet är ihopfälld när allt är OK (utfälld vid varning).
+    // Organisationspaketets förklaring (Vad är ett organisationspaket?) är hopfälld i steg 1 i Filer och kvalitet, och
+    // Underlagets kvalitet är ihopfälld när allt är OK (utfälld vid varning).
     // Livscykelns tabell per BAS-intervall och modelljämförelsen är modellens underlag, inte beskedet, och hopfällda.
-    const UNDANTAG_ID = ['paket-vad', 'paket-skapa', 'uk-fallbar', 'livscykel-bas-tabell', 'livscykel-modelljamforelse'];
+    const UNDANTAG_ID = ['paket-vad', 'uk-fallbar', 'livscykel-bas-tabell', 'livscykel-modelljamforelse'];
     it('varje <details> är utfälld utom hjälppanelerna — i markup och efter rendering av alla flikar', () => {
         const w = allaFlikar();
         const infallda = [...w.document.querySelectorAll('details:not([open])')]

@@ -15,11 +15,14 @@ besluten gör och äger arbetsgivaren.
 - **Ansvar:** Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.
 - En dator med en modern webbläsare: **Chrome/Edge, Firefox eller Safari 16.4+**.
   Verktyget är byggt för datorskärm; surfplatta och mobil stöds inte.
-- Filen `oppen-lonekartlaggning.html` — eller din **organisationsfil**, där systemägaren bakat in
+- Filen `oppen-lonekartlaggning.html` — eller din **organisationsfil**, där systemförvaltaren bakat in
   organisationspaketet (`organisationspaket.md` avsnitt 3b) — öppnad **lokalt** (dubbelklick/`file://`
   eller från en intern, behörighetsstyrd filyta). Ingen installation, ingen internetanslutning behövs.
+  Avser organisationspaketet ett tidigare år, står det i paketets filruta i Filer och kvalitet: *Paketet avser
+  2025. Kontrollera med systemförvaltaren att det är det som gäller.* Raden stoppar ingenting; för förra årets
+  paket visas den från och med 1 mars.
 - **Verifiera filens äkthet** innan du läser in verklig lönedata. Den som laddar ner en version
-  (ofta IT eller systemägaren) verifierar **signaturen** med cosign. Signaturen prövas mot
+  (ofta IT eller systemförvaltaren) verifierar **signaturen** med cosign. Signaturen prövas mot
   Sigstore-paketet (`oppen-lonekartlaggning.html.sigstore.json`) som ligger bredvid filen på
   versionens releasesida. Kommandot är detsamma i Windows (PowerShell, `cosign.exe`) och Linux/Mac:
   `cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.html.sigstore.json --certificate-identity-regexp "^https://github\.com/janssonfelix/oppen-lonekartlaggning/\.github/workflows/release\.yml@refs/tags/v" --certificate-oidc-issuer https://token.actions.githubusercontent.com`
@@ -569,7 +572,7 @@ rapportunderlaget visar alltid hela underlaget.
 ett namn och lägg till den. Då står den som en egen tabell i avsnittet *Egna tabeller* i
 Word-utkastet och PDF-rapporten och i bladet *Egna tabeller* i Excel-filen. Den står också som block under
 *Egna tabeller från Tabeller och egna vyer* i rapportunderlaget (fliken Rapporttext). Kryssa i **En tabell
-per BAS-intervall** för att få samma tabell upprepad för varje intervall. Systemägaren kan lägga
+per BAS-intervall** för att få samma tabell upprepad för varje intervall. Systemförvaltaren kan lägga
 tabellerna i organisationspaketet, så att alla handläggare får samma. Det är vyns recept som
 sparas (rader, kolumner, mått och urval), inte talen. Tabellen räknas om med minsta gruppstorlek
 när rapporten byggs, och recepten följer med i konfigurationsfilen. Under *Exportera*, i *Rapportens innehåll*, kan

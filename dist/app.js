@@ -3604,6 +3604,11 @@ function _rader(del, radFn, benamning, varningar) {
   if (bort) varningar.push(`${bort} ${bort === 1 ? "rad" : "rader"} i ${benamning} hoppades över (saknade eller ogiltiga värden).`);
   return rader.length ? rader : null;
 }
+function paketArGammalt(avserAr, idag) {
+  if (typeof avserAr !== "number" || !Number.isInteger(avserAr)) return false;
+  const ar = idag.getFullYear();
+  return avserAr < ar - 1 || avserAr === ar - 1 && idag.getMonth() >= 2;
+}
 function tolkaPaket(text) {
   if (typeof text !== "string") return { ok: false, fel: "Filen kunde inte läsas." };
   if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: "Filen är för stor för att vara ett organisationspaket (högst 5 MB)." };
@@ -3611,7 +3616,7 @@ function tolkaPaket(text) {
   try {
     o = JSON.parse(text);
   } catch (_e) {
-    return { ok: false, fel: "Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemägaren om en ny fil." };
+    return { ok: false, fel: "Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemförvaltaren om en ny fil." };
   }
   if (!o || typeof o !== "object" || Array.isArray(o)) return { ok: false, fel: "Filen är inte ett organisationspaket." };
   if (o.format !== PAKET_FORMAT) return { ok: false, fel: "Filen är inte ett organisationspaket för lönekartläggning." };
@@ -3621,7 +3626,7 @@ function tolkaPaket(text) {
   const organisation = _text2(o.organisation?.namn);
   if (!organisation) return { ok: false, fel: "Paketet saknar organisationens namn (organisation.namn)." };
   const skapat = _text2(o.skapat);
-  if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: "Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemägaren om en ny fil." };
+  if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: "Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemförvaltaren om en ny fil." };
   if (_allaTexter(o).some((t) => PNR2.test(t) || EPOST2.test(t))) {
     return { ok: false, fel: "Paketet innehåller något som liknar personnummer eller e-post och läses inte in." };
   }
@@ -9955,6 +9960,33 @@ function bakaIn(html, paketJson, meta = {}) {
   svans = svans.slice(0, slut) + block + svans.slice(slut);
   return { ok: true, html: huvud + svans, version: k.version };
 }
+function jamforVersion(a, b) {
+  const ma = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(String(a ?? ""));
+  const mb = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(String(b ?? ""));
+  if (!ma || !mb) return null;
+  for (let i = 1; i <= 3; i++) if (+ma[i] !== +mb[i]) return +ma[i] < +mb[i] ? -1 : 1;
+  return 0;
+}
+function flyttaOrganisationsfil(gammalHtml, nyHtml, meta) {
+  const k = kannIgenVerktyget(gammalHtml);
+  if (!k.ok) return { ok: false, fel: String(k.fel).replace(/^Filen/, "Den gamla filen") };
+  const ut = lasUt(gammalHtml);
+  if (!ut) return { ok: false, fel: "Den gamla filen har inget inbakat paket. Välj den organisationsfil som handläggarna använder." };
+  const t = tolkaPaket(ut.json);
+  if (!t.ok) return { ok: false, fel: `Paketet i den gamla filen går inte att läsa: ${t.fel}` };
+  const organisation = t.paket.organisation;
+  const r = bakaIn(nyHtml, ut.json, { skapad: meta.skapad, organisation, verktygssha: meta.verktygssha });
+  if (!r.ok) return { ok: false, fel: r.fel.replace(/^Filen/, "Den nya filen") };
+  return {
+    ok: true,
+    html: r.html,
+    franVersion: k.version,
+    tillVersion: r.version,
+    organisation,
+    paketSkapat: t.paket.skapat,
+    aldreVersion: jamforVersion(k.version, r.version) === 1
+  };
+}
 function skriptBlock(html) {
   return [...String(html ?? "").matchAll(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi)].map((m) => m[0]);
 }
@@ -12120,7 +12152,7 @@ function uppstartSidindex() {
 
 // src/app/74-alla-diagram.js
 var UT_KOPIA_PREFIX = "ut-diagram-";
-var _UT_ALLA_UTAN = /* @__PURE__ */ new Set(["utforska", "dokumentera", "rapporttext", "arbetet", "info", "dashboard", "filer", "bestammelser", "handlingsplan"]);
+var _UT_ALLA_UTAN = /* @__PURE__ */ new Set(["utforska", "dokumentera", "rapporttext", "arbetet", "info", "forvaltare", "dashboard", "filer", "bestammelser", "handlingsplan"]);
 var _utUnderflik = "egna";
 var _utKopiaExporterad = /* @__PURE__ */ new Set();
 function arDiagramKopia(el) {
@@ -24528,7 +24560,7 @@ function ritaPaketinfo() {
   const rad = (dt, dd) => dd == null || dd === "" ? "" : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`;
   const inb = state.paketInbakat;
   const kalla = p.kalla === "inbakat" ? `Inbakat i den här filen (skapad ${inb?.skapad || "–"})` : inb ? "Inläst fil — ersätter det inbakade paketet för den här sessionen" : null;
-  el.innerHTML = `<dl>${rad("Organisation", p.organisation)}${rad("Utgivare", p.utgivare)}${rad("Skapat", p.skapat)}${rad("Avser år", p.avserAr)}${rad("Innehåll", innehall)}${rad("Låsningar", _paketLasText(state.paketLas))}${rad("Källa", kalla)}</dl>` + (p.kalla === "inbakat" ? `<p class="paket-knappar"><button type="button" id="btn-paket-visa" class="btn btn-secondary btn-sm">Visa paketet</button> <button type="button" id="btn-paket-ladda-ner" class="btn btn-secondary btn-sm">Ladda ner paketet</button></p>` : "");
+  el.innerHTML = `<dl>${rad("Organisation", p.organisation)}${rad("Utgivare", p.utgivare)}${rad("Skapat", p.skapat)}${rad("Avser år", p.avserAr)}${rad("Innehåll", innehall)}${rad("Låsningar", _paketLasText(state.paketLas))}${rad("Källa", kalla)}</dl>` + (paketArGammalt(p.avserAr, /* @__PURE__ */ new Date()) ? `<p class="text-dampad-sm" role="note">Paketet avser ${esc(String(p.avserAr))}. Kontrollera med systemförvaltaren att det är det som gäller.</p>` : "") + (p.kalla === "inbakat" ? `<p class="paket-knappar"><button type="button" id="btn-paket-visa" class="btn btn-secondary btn-sm">Visa paketet</button> <button type="button" id="btn-paket-ladda-ner" class="btn btn-secondary btn-sm">Ladda ner paketet</button></p>` : "");
   el.hidden = false;
 }
 function lasInPaket(...a) {
@@ -24762,7 +24794,7 @@ function uppdateraPaketKnapp() {
     sam.textContent = harData ? `Paketet får med: ${[
       harReferens() ? `ställningstagandet "${referensNamn()}" (${state.policy.length} rader)` : null,
       state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null
-    ].filter(Boolean).join(" och ")}.${kDel}${lasDel}${rpDel}` : "Läs först in ett ställningstagande eller jämförelsestatistik med rutorna ovan.";
+    ].filter(Boolean).join(" och ")}.${kDel}${lasDel}${rpDel}` : "Läs först in ett ställningstagande eller jämförelsestatistik med knapparna ovan.";
   }
 }
 function _paketKFel() {
@@ -24841,8 +24873,8 @@ function uppdateraOrganisationsfilKnapp() {
   );
   if (namn && !namn.value && document.activeElement !== namn) namn.placeholder = filnamnForslag(_paketText("paket-org"));
 }
-function _organisationsfilStatus(text, ok) {
-  const el = _paketFalt("organisationsfil-status");
+function _organisationsfilStatus(text, ok, id = "organisationsfil-status") {
+  const el = _paketFalt(id);
   if (!el) return;
   el.textContent = text;
   el.className = "status-msg" + (ok ? " success" : "");
@@ -24886,16 +24918,42 @@ async function skapaOrganisationsfil() {
     return { ok: false, meddelande: r.fel };
   }
   const filnamn = normaliseraFilnamn(_paketText("organisationsfil-namn"), paket.organisation.namn);
-  const blob = new Blob([r.html], { type: "text/html" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filnamn;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
+  _laddaNerHtml(r.html, filnamn);
   const annanVersion = r.version && r.version !== APP_VERSION;
   const meddelande = `Organisationsfilen ${filnamn} är nedladdad: paketet från ${paket.organisation.namn} (${skapad}) inbakat i verktyget version ${r.version || "okänd"}.` + (annanVersion ? ` Observera: den utpekade filen är en annan version än den som körs (${APP_VERSION}).` : "") + " Ingen lönedata ingår.";
   _organisationsfilStatus(meddelande, true);
   meddelaSkarmlasare(meddelande);
+  return { ok: true, meddelande };
+}
+function _laddaNerHtml(html, filnamn) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+  a.download = filnamn;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
+}
+var _flyttGammal = null;
+var _flyttNy = null;
+function uppdateraFlyttKnapp() {
+  const knapp = (
+    /** @type {HTMLInputElement|null} */
+    _paketFalt("btn-flytt-ladda-ner")
+  );
+  if (knapp) knapp.disabled = !_flyttGammal || !_flyttNy;
+}
+async function flyttaTillNyVersion() {
+  if (!_flyttGammal || !_flyttNy) return { ok: false, meddelande: "Välj den gamla organisationsfilen och den nya verktygsfilen." };
+  const [gammalBuf, nyBuf] = await Promise.all([_flyttGammal.arrayBuffer(), _flyttNy.arrayBuffer()]);
+  const text = (buf) => new TextDecoder("utf-8").decode(buf);
+  const r = flyttaOrganisationsfil(text(gammalBuf), text(nyBuf), { skapad: idagDatum(), verktygssha: await _sha256Hex(nyBuf) });
+  if (!r.ok) {
+    _organisationsfilStatus(r.fel, false, "flytt-status");
+    return { ok: false, meddelande: r.fel };
+  }
+  const filnamn = normaliseraFilnamn(_paketText("flytt-filnamn"), r.organisation);
+  _laddaNerHtml(r.html, filnamn);
+  const meddelande = `Organisationsfilen ${filnamn} är nedladdad: paketet från ${r.organisation} (${r.paketSkapat}) flyttat från version ${r.franVersion || "okänd"} till version ${r.tillVersion || "okänd"}.` + (r.aldreVersion ? " Observera: den nya filen är en äldre version än den gamla." : "") + " Ingen lönedata ingår.";
+  _organisationsfilStatus(meddelande, true, "flytt-status");
   return { ok: true, meddelande };
 }
 function lasInInbakatPaket() {
@@ -24968,8 +25026,7 @@ function sattOrgTyp(v) {
   _synkaOrgTyp();
 }
 function uppstartOrganisationspaket() {
-  document.getElementById("paket-skapa")?.addEventListener("input", uppdateraPaketKnapp);
-  document.getElementById("paket-skapa")?.addEventListener("toggle", uppdateraPaketKnapp);
+  document.getElementById("view-forvaltare")?.addEventListener("input", uppdateraPaketKnapp);
   document.getElementById("btn-paket-spara")?.addEventListener("click", () => {
     const formFel = _paketFormularFel();
     if (formFel) {
@@ -24998,9 +25055,33 @@ function uppstartOrganisationspaket() {
     _verktygsfil = inp.files && inp.files[0] ? inp.files[0] : null;
     uppdateraOrganisationsfilKnapp();
   });
-  document.getElementById("paket-skapa")?.addEventListener("input", uppdateraOrganisationsfilKnapp);
+  document.getElementById("view-forvaltare")?.addEventListener("input", uppdateraOrganisationsfilKnapp);
   document.getElementById("btn-organisationsfil-spara")?.addEventListener("click", () => {
     skapaOrganisationsfil();
+  });
+  for (
+    const [id, satt] of
+    /** @type {[string, (f: File|null) => void][]} */
+    [
+      ["file-input-gammal-organisationsfil", (f) => {
+        _flyttGammal = f;
+      }],
+      ["file-input-ny-verktygsfil", (f) => {
+        _flyttNy = f;
+      }]
+    ]
+  ) {
+    document.getElementById(id)?.addEventListener("change", (e) => {
+      const inp = (
+        /** @type {HTMLInputElement} */
+        e.target
+      );
+      satt(inp.files && inp.files[0] ? inp.files[0] : null);
+      uppdateraFlyttKnapp();
+    });
+  }
+  document.getElementById("btn-flytt-ladda-ner")?.addEventListener("click", () => {
+    flyttaTillNyVersion();
   });
   document.getElementById("paket-info")?.addEventListener("click", (e) => {
     const t = (
@@ -29543,7 +29624,7 @@ function oppnaVadLagras() {
                     ${state.inactivityTimeoutMin > 0 ? "Aktiv (" + state.inactivityTimeoutMin + " min)" : "Av"}
                 </span>
             </div>
-            <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? " hidden" : ""}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ""}: systemägaren har bestämt tiden, så den kan inte ändras här.</p>
+            <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? " hidden" : ""}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ""}: systemförvaltaren har bestämt tiden, så den kan inte ändras här.</p>
         </div>`;
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal);
@@ -30108,6 +30189,8 @@ var SOK_FUNKTIONER = [
   { namn: "Jämför med en ögonblicksbild", synonymer: ["ögonblicksbild", "snapshot", "jämför inställningar", "före efter"], flik: "arbetet", avsnitt: "avsnitt-ar-ogonblick" },
   { namn: "Jämförelse med förra året", synonymer: ["årsjämförelse", "förra året", "fjolår", "fjolåret", "årsbokslut", "sakliga skäl per kategori"], flik: "arbetet", avsnitt: "avsnitt-ar-arsjamforelse" },
   { namn: "Kontrollera verktyget med testdata", synonymer: ["självdiagnostik", "testdata", "syntetisk"], flik: "arbetet", avsnitt: "avsnitt-ar-diagnostik" },
+  // För systemförvaltaren
+  { namn: "Skapa organisationsfil", synonymer: ["organisationspaket", "systemförvaltare", "sprida", "ny version", "inbakat paket"], flik: "forvaltare", avsnitt: "forvaltare-steg-1" },
   // Tabeller och egna vyer
   { namn: `Löneöversikt — alla ${T.niva.fl}`, synonymer: ["tabell", "lönenivåer", "fast tabell"], flik: "utforska", avsnitt: "avsnitt-ut-oversikt" },
   { namn: "Egna vyer", synonymer: ["pivot", "egen tabell", "eget diagram", "utforska"], flik: "utforska", avsnitt: "avsnitt-ut-egna" },
@@ -31364,7 +31447,7 @@ var OM_AVSNITT = {
             Öppen lönekartläggning är ett fritt verktyg för den årliga <strong>lönekartläggningen enligt diskrimineringslagen</strong> (3 kap., aktiva åtgärder om lönefrågor). Det tar emot en lönefil, räknar fram löneskillnaderna mellan kvinnor och män för lika och likvärdigt arbete, visar vad som bör prioriteras och vad det kostar, och skriver ett utkast till dokumentationen. Bedömningen av sakliga skäl och den slutliga dokumentationen gör arbetsgivaren i samverkan med facklig part.
         </p>
         <p>
-            Verktyget är byggt för arbetsgivare som klassificerar sina anställda enligt <strong>${T.system}</strong> och <strong>${T.niva.fl}</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt.
+            Verktyget är byggt för arbetsgivare som klassificerar sina anställda enligt <strong>${T.system}</strong> och <strong>${T.niva.fl}</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt. Systemförvaltaren kan baka in paketet i verktyget och sprida en enda fil, organisationsfilen; det görs under <button type="button" class="ov-filrad-lank" data-go-to-tab="forvaltare">För systemförvaltaren</button>.
         </p>
         <p>
             Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, gränsen 5 procent i direktivets regler om gemensam lönebedömning och protokollet för gemensam lönebedömning. ${EU_LONEBEGREPP_RESERVATION} Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och den rapportering som direktivet beskriver ligger utanför verktyget.
@@ -31563,6 +31646,7 @@ var OM_AVSNITT = {
             <tr><td>4 · Rapport</td><td>Tabeller och egna vyer</td><td>Två avsnitt: Löneöversikten (hela löneläget per BAS, kön och ${T.enhet.en}) och Egna vyer: rader och kolumner, mått, helhet eller per kön, urval med villkor, tolv diagramtyper (de vanliga först, resten under Fler diagramtyper), klick till gruppdossier</td></tr>
             <tr><td>Arbetet</td><td>Spara och jämför år</td><td>Spara och ladda konfigurationen, jämför med en ögonblicksbild eller med förra året, och kör självdiagnostiken. Kräver ingen data.</td></tr>
             <tr><td>Hjälp</td><td>Om verktyget</td><td>Du är här</td></tr>
+            <tr><td>Hjälp</td><td>För systemförvaltaren</td><td>Ta fram organisationsfilen: läs in eller skapa organisationspaketet, välj verktygsfilen och ladda ner verktyget med paketet inbakat. Kräver ingen lönefil.</td></tr>
         </table>
 
         <h3>Genvägar och funktioner</h3>
@@ -31606,7 +31690,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         </div>
 
         ${state.paketInbakat ? `<h3>Organisationsfil</h3>
-        <p>Den här filen är en organisationsfil: organisationspaketet från <strong>${esc(state.paketInbakat.organisation)}</strong> är inbakat (skapad ${esc(state.paketInbakat.skapad || "–")}) och läses in vid varje start. Filen bygger på verktyget version ${esc(state.paketInbakat.verktygsversion || "okänd")}${state.paketInbakat.verktygssha ? ` (verktygsfilens SHA-256: <code>${esc(state.paketInbakat.verktygssha)}</code>)` : ""}. Paketet går att granska och ladda ner under <em>Organisationspaket</em> i Filer och kvalitet. Ingen lönedata ingår i filen.</p>` : ""}
+        <p>Den här filen är en organisationsfil: organisationspaketet från <strong>${esc(state.paketInbakat.organisation)}</strong> är inbakat (skapad ${esc(state.paketInbakat.skapad || "–")}) och läses in vid varje start. Filen bygger på verktyget version ${esc(state.paketInbakat.verktygsversion || "okänd")}${state.paketInbakat.verktygssha ? ` (verktygsfilens SHA-256: <code>${esc(state.paketInbakat.verktygssha)}</code>)` : ""}. Paketet går att granska och ladda ner under <em>Organisationspaket</em> i Filer och kvalitet. Ingen lönedata ingår i filen. En ny organisationsfil tas fram under <button type="button" class="ov-filrad-lank" data-go-to-tab="forvaltare">För systemförvaltaren</button>.</p>` : ""}
         <h3>Verifiera integriteten</h3>
         <p>Kontrollera att din kopia av <code>oppen-lonekartlaggning.html</code> matchar SHA-256-hashen i <code>RELEASE.txt</code>:</p>
         <h4>Windows (PowerShell):</h4>
@@ -32913,7 +32997,8 @@ function uppstartNavigering() {
         loneoversyn: "Löneöversyn",
         likvardighet: "Likvärdigt arbete",
         utforska: "Tabeller och egna vyer",
-        info: "Om verktyget"
+        info: "Om verktyget",
+        forvaltare: "För systemförvaltaren"
       };
       const titleEl = document.getElementById("page-title");
       if (titleEl) titleEl.textContent = titles[target] || target;
@@ -36782,7 +36867,7 @@ async function _exportZipExport() {
         knapp.hidden
       ) continue;
       const flik = knapp.getAttribute("data-tab");
-      if (!flik || ["dokumentera", "rapporttext", "arbetet", "info"].includes(flik)) continue;
+      if (!flik || ["dokumentera", "rapporttext", "arbetet", "info", "forvaltare"].includes(flik)) continue;
       try {
         ritaFlik(flik);
       } catch (e) {

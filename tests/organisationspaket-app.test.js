@@ -173,6 +173,22 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
         expect(w.__state.policy).toHaveLength(3);
     });
+    it('ett paket för ett tidigare år får en upplysning i filrutan, inbakat eller inläst, men ingen punkt i Att göra', () => {
+        const ARSRAD = 'Paketet avser 2000. Kontrollera med systemförvaltaren att det är det som gäller.';
+        const arsrad = w => w.document.querySelector('#paket-info [role="note"]');
+        const w = createAppWindow({ html: organisationsfil(paket({ avserAr: 2000 })) });
+        expect(arsrad(w)?.textContent).toBe(ARSRAD);
+        w.__state.data = rader();
+        w.eval('ritaAtgardslista()');
+        expect(w.document.getElementById('att-gora').textContent).not.toContain('systemförvaltaren');
+        const w2 = createAppWindow();
+        expect(las(w2, paket({ avserAr: 2000 })).ok).toBe(true);
+        expect(arsrad(w2)?.textContent).toBe(ARSRAD);
+        const nasta = new Date().getFullYear() + 1;
+        expect(las(w2, paket({ avserAr: nasta })).ok).toBe(true);
+        expect(arsrad(w2)).toBeNull();
+        expect(arsrad(createAppWindow({ html: organisationsfil(paket({ avserAr: nasta })) }))).toBeNull();
+    });
     it('demoläget går före det inbakade paketet', () => {
         const w = createAppWindow({ html: organisationsfil(), url: 'http://localhost/?demo=1' });
         expect(w.__state.isDemo).toBe(true);
@@ -186,7 +202,7 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w.document.getElementById('paket-status').textContent).toMatch(/inbakade paketet kunde inte läsas/);
         expect(w.document.getElementById('tab-bestammelser')).not.toBeNull();   // appen startade
     });
-    it('systemägaren bakar in paketet i den utpekade verktygsfilen och får en organisationsfil', async () => {
+    it('systemförvaltaren bakar in paketet i den utpekade verktygsfilen och får en organisationsfil', async () => {
         const w = createAppWindow();
         las(w, paket());
         // Inläst lönedata med igenkännbara värden: inget av dem får följa med in i organisationsfilen.
@@ -219,6 +235,119 @@ describe('organisationspaket: läs in och skapa', () => {
         // Resultatet startar som organisationsfil
         const w2 = createAppWindow({ html: ut });
         expect(w2.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
+    });
+    // ---- Fliken För systemförvaltaren: formuläret och organisationsfilen, flyttade från Filer och kvalitet ----
+    it('fliken för systemförvaltaren står sist i menyn, är aldrig låst och bär formuläret', () => {
+        const w = createAppWindow(), d = w.document;
+        const knapp = d.getElementById('tab-forvaltare');
+        expect([...d.querySelectorAll('.nav-menu .nav-item')].pop()).toBe(knapp);
+        expect(knapp.getAttribute('aria-disabled')).toBeNull();
+        knapp.click();
+        expect(d.getElementById('view-forvaltare').style.display).toBe('block');
+        expect(d.getElementById('page-title').textContent).toBe('För systemförvaltaren');
+        const vy = d.getElementById('view-forvaltare'), filer = d.getElementById('organisationspaket');
+        for (const id of ['paket-org', 'paket-rapport', 'paket-sammanfattning', 'btn-paket-spara', 'file-input-verktygsfil', 'organisationsfil-namn',
+            'btn-organisationsfil-spara', 'organisationsfil-status']) {
+            expect(vy.contains(d.getElementById(id)), id).toBe(true);
+            expect(filer.contains(d.getElementById(id)), id).toBe(false);
+        }
+        expect(d.getElementById('paket-skapa')).toBeNull();
+        expect(vy.textContent).toMatch(/Webbläsaren låter inte en sida läsa sig själv, så filen måste väljas\./);
+        expect(vy.textContent).toMatch(/ingen lönedata/i);
+    });
+    it('raden i Filer och kvalitet och länken i Om verktyget öppnar fliken', () => {
+        const w = createAppWindow(), d = w.document;
+        d.querySelector('#organisationspaket [data-go-to-tab="forvaltare"]').click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('forvaltare');
+        d.getElementById('tab-info').click();
+        d.querySelector('#view-info [data-go-to-tab="forvaltare"]').click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('forvaltare');
+    });
+    it('knapparna i steg 1 öppnar samma filval som Filer och kvalitet', () => {
+        const w = createAppWindow(), d = w.document, vy = d.getElementById('view-forvaltare');
+        for (const id of ['file-input-paket', 'file-input-policy', 'file-input-stat']) {
+            let klick = 0;
+            d.getElementById(id).click = () => { klick++; };
+            vy.querySelector(`button[data-byt-fil="${id}"]`).click();
+            expect(klick, id).toBe(1);
+        }
+    });
+    it('i en organisationsfil är formuläret förifyllt, och steg 3 fungerar när bara verktygsfilen är vald', () => {
+        const w = createAppWindow({ html: organisationsfil() }), d = w.document;
+        d.getElementById('tab-forvaltare').click();
+        expect(d.getElementById('paket-org').value).toBe('Exempelregionen');
+        const knapp = d.getElementById('btn-organisationsfil-spara');
+        expect(knapp.disabled).toBe(true);
+        const inp = d.getElementById('file-input-verktygsfil');
+        Object.defineProperty(inp, 'files', { configurable: true, value: [new w.File([INDEX], 'oppen-lonekartlaggning.html', { type: 'text/html' })] });
+        inp.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(knapp.disabled).toBe(false);
+    });
+    // ---- Flytta till en ny version: paketet ur den gamla organisationsfilen in i en ny verktygsfil ----
+    const medVersion = (html, v) => html.replace('</head>', `<script>var APP_VERSION = "${v}";</script></head>`);
+    const valj = (w, id, html, namn) => {
+        const inp = w.document.getElementById(id);
+        Object.defineProperty(inp, 'files', { configurable: true, value: [new w.File([html], namn, { type: 'text/html' })] });
+        inp.dispatchEvent(new w.Event('change', { bubbles: true }));
+    };
+    const flytta = async (w, gammal, ny) => {
+        valj(w, 'file-input-gammal-organisationsfil', gammal, 'gammal.html');
+        valj(w, 'file-input-ny-verktygsfil', ny, 'ny.html');
+        let fangad = null;
+        w.URL.createObjectURL = b => { fangad = b; return 'blob:x'; };
+        const origClick = w.HTMLAnchorElement.prototype.click;
+        w.HTMLAnchorElement.prototype.click = function () {};
+        const r = await w.eval('flyttaTillNyVersion()');
+        w.HTMLAnchorElement.prototype.click = origClick;
+        return { r, ut: fangad ? await fangad.text() : null, status: w.document.getElementById('flytt-status').textContent };
+    };
+    const gammalFil = (p = paket()) => organisationsfil(p, { skapad: '2026-10-19', organisation: p.organisation.namn }).replace('</head>', '<script>var APP_VERSION = "2026.01.15";</script></head>');
+    it('flytten bär det gamla paketet in i den nya filen och anger organisation, datum och versioner', async () => {
+        const w = createAppWindow();
+        const { r, ut, status } = await flytta(w, gammalFil(), medVersion(INDEX, '2026.11.01'));
+        expect(r.ok).toBe(true);
+        expect(status).toBe(r.meddelande);
+        for (const del of ['Exempelregionen', '2026-10-01', '2026.01.15', '2026.11.01', 'Ingen lönedata ingår.']) expect(r.meddelande).toContain(del);
+        expect(r.meddelande).not.toContain('Observera');
+        const block = lasUt(ut);
+        expect(block.meta).toMatchObject({ organisation: 'Exempelregionen', verktygsversion: '2026.11.01' });
+        expect(JSON.parse(block.json)).toEqual(paket());
+    });
+    it('knappen för flytten är inaktiv tills båda filerna är valda', () => {
+        const w = createAppWindow(), knapp = w.document.getElementById('btn-flytt-ladda-ner');
+        expect(knapp.disabled).toBe(true);
+        valj(w, 'file-input-gammal-organisationsfil', gammalFil(), 'gammal.html');
+        expect(knapp.disabled).toBe(true);
+        valj(w, 'file-input-ny-verktygsfil', INDEX, 'ny.html');
+        expect(knapp.disabled).toBe(false);
+    });
+    it('en gammal fil utan paket ger ett fel och ingen nedladdning', async () => {
+        const { r, ut, status } = await flytta(createAppWindow(), medVersion(INDEX, '2026.01.15'), INDEX);
+        expect(r.ok).toBe(false);
+        expect(status).toMatch(/Den gamla filen har inget inbakat paket/);
+        expect(ut).toBeNull();
+    });
+    it('en nedgradering varnar men laddar ner', async () => {
+        const { r, ut } = await flytta(createAppWindow(), gammalFil(), medVersion(INDEX, '2025.06.01'));
+        expect(r.ok).toBe(true);
+        expect(r.meddelande).toContain('Observera: den nya filen är en äldre version än den gamla');
+        expect(lasUt(ut)).not.toBeNull();
+    });
+    it('flytten ändrar inte sessionens paket', async () => {
+        const w = createAppWindow({ html: organisationsfil() });
+        const fore = JSON.stringify(w.__state.paket);
+        const { r } = await flytta(w, gammalFil(paket({ organisation: { namn: 'Annan organisation' } })), INDEX);
+        expect(r.ok).toBe(true);
+        expect(r.meddelande).toContain('Annan organisation');
+        expect(JSON.stringify(w.__state.paket)).toBe(fore);
+    });
+    it('sökningen på organisationsfil leder till fliken', () => {
+        const w = createAppWindow(), d = w.document, f = d.getElementById('sok-grupp');
+        f.value = 'organisationsfil';
+        f.dispatchEvent(new w.Event('input', { bubbles: true }));
+        const li = [...d.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'Skapa organisationsfil');
+        li.click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('forvaltare');
     });
     it('spara-knappen är avstängd utan namn eller utan data', () => {
         const w = createAppWindow();

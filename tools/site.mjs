@@ -25,7 +25,7 @@ const SLINGA_KALLA = join(ROOT, 'dist', 'marknad', 'gif', 'fran-fil-till-analys.
 const GUIDER = [
     ['korguide.md', 'Körguide', 'arbetsflödet steg för steg'],
     ['datauttag.md', 'Datauttag', 'vilka fält personalfilen behöver'],
-    ['organisationspaket.md', 'Organisationspaket', 'för systemägaren'],
+    ['organisationspaket.md', 'Organisationspaket', 'för systemförvaltaren'],
     ['pilotchecklista.md', 'Checklista för skarp data', 'inför första kartläggningen'],
     ['sakerhetsbeskrivning.md', 'Säkerhetsbeskrivning', 'för IT och dataskyddsombud, på en sida'],
     ['tillganglighetsredogorelse.md', 'Tillgänglighetsredogörelse', 'vad som är prövat och kända begränsningar'],

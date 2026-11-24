@@ -6,7 +6,7 @@ teckenkodning, avgränsare och talformat hanteras automatiskt. Men filen måste
 innehålla rätt **fält** och får **aldrig** innehålla identifierande personuppgifter.
 
 > Stegen per lönesystem (avsnitt 4) är **inte verifierade mot systemen**; organisationens
-> systemägare fyller i och bekräftar dem. Fält- och formatkraven är däremot verifierade
+> systemförvaltare fyller i och bekräftar dem. Fält- och formatkraven är däremot verifierade
 > mot verktygets kod och gäller som de står.
 
 ---
@@ -152,7 +152,7 @@ och läs in filen igen. Vad skydden gör och inte gör står samlat i
 > **Inte verifierat mot systemen.** Stegen nedan bygger på hur lönesystemen i kommuner och
 > regioner brukar vara uppbyggda, inte på provkörningar. Rapportnamn, menyvägar och fältnamn
 > skiljer sig mellan installationer, versioner och hur systemet är inställt i organisationen. Organisationens
-> systemägare fyller i raderna markerade **[fylls i lokalt]**. Rättelser och steg för fler system
+> systemförvaltare fyller i raderna markerade **[fylls i lokalt]**. Rättelser och steg för fler system
 > är välkomna som bidrag (`.github/CONTRIBUTING.md`).
 
 ### Gemensamt för alla system

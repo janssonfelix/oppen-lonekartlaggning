@@ -244,7 +244,7 @@ export async function utseende() {
         for (const bredd of [1440, 1100, 1024]) {
             await page.setViewportSize({ width: bredd, height: 900 });
             const hojder = {};
-            for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
+            for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info', 'forvaltare']) {
                 await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
                 hojder[flik] = await page.evaluate(() => Math.round(document.querySelector('.top-header').getBoundingClientRect().height));
             }
@@ -265,7 +265,7 @@ export async function utseende() {
             await page.setViewportSize({ width: bredd, height: 900 });
             const over = [], utanfor = [];
             let antal = 0, sidomeny = 0;
-            for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info']) {
+            for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info', 'forvaltare']) {
                 await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
                 const m = await page.evaluate(() => {
                     const h1 = document.getElementById('page-title'), rng = document.createRange(); rng.selectNodeContents(h1);
@@ -522,7 +522,7 @@ export async function smalaSkarmar() {
 
     console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
     {
-        const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info'];
+        const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info', 'forvaltare'];
         const oppna = async (bredd, hojd) => { const s = await browser.newPage({ viewport: { width: bredd, height: hojd } });
             await s.goto('file://' + FIL + '?demo=1');
             await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 30000 });

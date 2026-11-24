@@ -29,7 +29,7 @@ const OM_AVSNITT = {
             Öppen lönekartläggning är ett fritt verktyg för den årliga <strong>lönekartläggningen enligt diskrimineringslagen</strong> (3 kap., aktiva åtgärder om lönefrågor). Det tar emot en lönefil, räknar fram löneskillnaderna mellan kvinnor och män för lika och likvärdigt arbete, visar vad som bör prioriteras och vad det kostar, och skriver ett utkast till dokumentationen. Bedömningen av sakliga skäl och den slutliga dokumentationen gör arbetsgivaren i samverkan med facklig part.
         </p>
         <p>
-            Verktyget är byggt för arbetsgivare som klassificerar sina anställda enligt <strong>${T.system}</strong> och <strong>${T.niva.fl}</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt.
+            Verktyget är byggt för arbetsgivare som klassificerar sina anställda enligt <strong>${T.system}</strong> och <strong>${T.niva.fl}</strong> och kan jämföra sig med SKR:s personalstatistik, i praktiken kommuner och regioner. Varje organisation läser in sitt eget ställningstagande, sin statistik och sina benämningar i ett organisationspaket, så att ingenting om en viss organisation är inbyggt. Systemförvaltaren kan baka in paketet i verktyget och sprida en enda fil, organisationsfilen; det görs under <button type="button" class="ov-filrad-lank" data-go-to-tab="forvaltare">För systemförvaltaren</button>.
         </p>
         <p>
             Verktyget stödjer också delar av <strong>EU:s lönetransparensdirektiv 2023/970</strong>: rapportmåtten i Lönestruktur, gränsen 5 procent i direktivets regler om gemensam lönebedömning och protokollet för gemensam lönebedömning. ${EU_LONEBEGREPP_RESERVATION} Direktivet skulle vara infört senast den 7 juni 2026 men är ännu inte infört i Sverige; vissa delar kan ha direkt verkan mot kommuner och regioner. Den anställdes rätt till information och den rapportering som direktivet beskriver ligger utanför verktyget.
@@ -228,6 +228,7 @@ const OM_AVSNITT = {
             <tr><td>4 · Rapport</td><td>Tabeller och egna vyer</td><td>Två avsnitt: Löneöversikten (hela löneläget per BAS, kön och ${T.enhet.en}) och Egna vyer: rader och kolumner, mått, helhet eller per kön, urval med villkor, tolv diagramtyper (de vanliga först, resten under Fler diagramtyper), klick till gruppdossier</td></tr>
             <tr><td>Arbetet</td><td>Spara och jämför år</td><td>Spara och ladda konfigurationen, jämför med en ögonblicksbild eller med förra året, och kör självdiagnostiken. Kräver ingen data.</td></tr>
             <tr><td>Hjälp</td><td>Om verktyget</td><td>Du är här</td></tr>
+            <tr><td>Hjälp</td><td>För systemförvaltaren</td><td>Ta fram organisationsfilen: läs in eller skapa organisationspaketet, välj verktygsfilen och ladda ner verktyget med paketet inbakat. Kräver ingen lönefil.</td></tr>
         </table>
 
         <h3>Genvägar och funktioner</h3>
@@ -274,7 +275,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         </div>
 
         ${state.paketInbakat ? `<h3>Organisationsfil</h3>
-        <p>Den här filen är en organisationsfil: organisationspaketet från <strong>${esc(state.paketInbakat.organisation)}</strong> är inbakat (skapad ${esc(state.paketInbakat.skapad || '–')}) och läses in vid varje start. Filen bygger på verktyget version ${esc(state.paketInbakat.verktygsversion || 'okänd')}${state.paketInbakat.verktygssha ? ` (verktygsfilens SHA-256: <code>${esc(state.paketInbakat.verktygssha)}</code>)` : ''}. Paketet går att granska och ladda ner under <em>Organisationspaket</em> i Filer och kvalitet. Ingen lönedata ingår i filen.</p>` : ''}
+        <p>Den här filen är en organisationsfil: organisationspaketet från <strong>${esc(state.paketInbakat.organisation)}</strong> är inbakat (skapad ${esc(state.paketInbakat.skapad || '–')}) och läses in vid varje start. Filen bygger på verktyget version ${esc(state.paketInbakat.verktygsversion || 'okänd')}${state.paketInbakat.verktygssha ? ` (verktygsfilens SHA-256: <code>${esc(state.paketInbakat.verktygssha)}</code>)` : ''}. Paketet går att granska och ladda ner under <em>Organisationspaket</em> i Filer och kvalitet. Ingen lönedata ingår i filen. En ny organisationsfil tas fram under <button type="button" class="ov-filrad-lank" data-go-to-tab="forvaltare">För systemförvaltaren</button>.</p>` : ''}
         <h3>Verifiera integriteten</h3>
         <p>Kontrollera att din kopia av <code>oppen-lonekartlaggning.html</code> matchar SHA-256-hashen i <code>RELEASE.txt</code>:</p>
         <h4>Windows (PowerShell):</h4>

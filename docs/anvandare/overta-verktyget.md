@@ -1,6 +1,6 @@
 # Så tar du över verktyget — bygg, signera och sprid din egen version
 
-**För:** IT, systemägare och den som ansvarar för verktyget hos arbetsgivaren. Verktyget är byggt för
+**För:** IT, systemförvaltare och den som ansvarar för verktyget hos arbetsgivaren. Verktyget är byggt för
 att varje organisation ska kunna äga sitt exemplar helt. Du kan bygga det från källan, ändra det,
 signera det med egen identitet och sprida det internt. Du behöver inget konto hos, ingen tjänst från
 och inget beroende av projektet. Allt som behövs finns i källkoden under MIT-licensen. Det finns inga
@@ -42,13 +42,19 @@ Biblioteken i `vendor/` kontrolleras mot `vendor/SHA256SUMS` av testerna och vid
 ## 3. Gör verktyget till ditt: organisationsfilen
 
 Organisationens benämningar, grundinställningar, lönepolitiska ställningstagande, jämförelsestatistik och
-låsningar läggs i ett **organisationspaket**. Systemägaren bakar in paketet i verktyget till **en
-organisationsfil** att sprida. Handläggaren öppnar en fil, och allt är på plats. Hur, steg för steg:
-[`organisationspaket.md`](organisationspaket.md), särskilt avsnitt 3b och checklistan i avsnitt 8.
+låsningar läggs i ett **organisationspaket**. Systemförvaltaren bakar in paketet i verktyget till **en
+organisationsfil** att sprida, i fliken *För systemförvaltaren*, sist i menyn. Handläggaren öppnar en fil, och
+allt är på plats. Hur, steg för steg: [`organisationspaket.md`](organisationspaket.md), särskilt avsnitt 3b och
+checklistan i avsnitt 8.
 
 Paketet ligger i filen som data, inte som kod. Koden förblir identisk med den verifierade versionen,
 och inget i paketet kan köra kod (innehållssäkerhetspolicyn tillåter bara de inbyggda skripten). Paketet
 innehåller inga personuppgifter och kan spridas internt som vilken fil som helst.
+
+**IT:s kontroll.** Organisationsfilen är releasefilen oförändrad plus ett block sist i filen,
+`<template id="inbakat-organisationspaket" …>…</template>`, och har därför en egen kontrollsumma. Tas blocket bort
+blir resten byte för byte releasefilen, med samma kontrollsumma som i `RELEASE.txt`. Kommandona för Linux, macOS och
+Windows står i [`organisationspaket.md`](organisationspaket.md) avsnitt 3b, *IT:s kontroll av organisationsfilen*.
 
 ## 4. Ändra i verktyget
 
@@ -109,8 +115,10 @@ I båda fallen: signera `RELEASE.txt` också. Skriv sedan kontrollsumman från d
 ## 6. Underhåll över tid
 
 - **Nya versioner från projektet** hämtar du när du vill. Verktyget hämtar aldrig något självt.
-  Jämför `CHANGELOG.md`, bygg om, kör testerna, baka in organisationspaketet på nytt (avsnitt 4 i
-  [`organisationspaket.md`](organisationspaket.md)) och signera.
+  Jämför `CHANGELOG.md`, bygg om, kör testerna och signera. Flytta sedan organisationspaketet till den nya
+  versionen med *Flytta till en ny version* i fliken *För systemförvaltaren*: den gamla organisationsfilen och den
+  nya releasefilen räcker, ingen separat paketfil behövs (avsnitt 4 i [`organisationspaket.md`](organisationspaket.md)).
+  Kontrollera den nya organisationsfilen som i steg 3.
 - **Biblioteken** (D3, SheetJS, PapaParse, JSZip) är låsta med kontrollsummor i `vendor/SHA256SUMS` och
   uppgraderas medvetet, i en egen ändring, med uppdaterad kontrollsumma och `TREDJEPARTSLICENSER.md`. Dependabot
   i din fork föreslår uppdateringar av utvecklingsverktygen och arbetsflödenas steg; inget av dem ingår
