@@ -86,7 +86,7 @@ kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsför
 - I modellen: `aggregeraOrgKvDom` och `klassificeraStatistik`, som följer kvinnotröskeln (orkestratorn skickar
   den som gräns) i stället för fasta 60 %.
 - `dominans` i `src/lib/aidbas.js` (tabellerna per AID-kod och BAS-intervall, ADR-57, och Lika arbetes kolumn
-  Dominans genom `dominans` i `src/lib/aidbas.js`, importerad som `_aidbasDominans`), med `arJamforelseKlass` för jämförelsemängden (avsnitt 4).
+  Dominans genom `src/lib/vymodell-lika-arbete.js`), med `arJamforelseKlass` för jämförelsemängden (avsnitt 4).
 - `prognosutfall` i `src/lib/loneoversyn.js`: Löneöversynens *Varav till kvinnodominerade grupper*.
 - I appen genom `kvDomNu`/`konsklassNu`: Löneöversynens massregel (`36-loneoversyn.js`), diagrammet Krav mot lön
   (`34-likvardigt-arbete.js`), Lönepolitikens diagram (`75-lonepolitik.js`) och uppslaget i den nationella statistiken

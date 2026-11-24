@@ -50,7 +50,7 @@ Exempel ur koden i dag:
 - **Huvudtalets spärr (ADR-56).** *Endast kön* är det ojusterade gapet och får inte vara huvudtalet när ett kön ligger
   under den inställda tröskeln. Spärren följer `kInstalld()` oavsett läge, så att huvudtalet är detsamma på skärmen och
   i exporten, och panelen säger varför (`51-lika-arbete-regressionskort.js`).
-- **Det Översikt säger om exporterna.** Hur många BAS-intervall exporterna kan jämföra (`_dqJamforbaraBas`) och
+- **Det Översikt säger om exporterna.** Hur många BAS-intervall exporterna kan jämföra (`jamforbaraBas`) och
   underlagets kvalitet räknas med `kInstalld()` (`kravstatus` i `src/lib/vymodell-oversikt.js`, `13-oversikt.js`), eftersom de gäller det som lämnar verktyget.
 - **Handlingsplanens belopp.** En förifylld rad där den minsta gruppen bakom skillnaden är under den inställda
   tröskeln står i exporterna och bokslutet bara med kategorierna (`skalUtanBelopp`, `skalUnderlag` i
@@ -247,7 +247,7 @@ sådana par; beslut). Löneöversyns förslag prövas mot den inställda tröske
 *Lägre krav, högre lön* följer samma regel i rapportunderlaget och BAS-dossiern (`parNarK`; rapportunderlagets i
 `src/lib/vymodell-rapportunderlag.js`). Har alla
 kandidatpar en grupp under tröskeln blir processöversiktens steg 4 inte klart: steget säger att inget finns att hantera
-i Att göra och hur många par som bara redovisas i fliken Likvärdigt arbete, och leder dit (`_agStegLikvardigt` i
+i Att göra och hur många par som bara redovisas i fliken Likvärdigt arbete, och leder dit (`stegLikvardigt` i
 `src/lib/attgora.js`, ADR-29).
 
 **Lönenivåerna i JPA-protokollet.** Median och medelvärde per kön (ADR-79) står bara för AID-etiketter och

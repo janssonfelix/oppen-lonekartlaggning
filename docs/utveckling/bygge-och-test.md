@@ -402,8 +402,8 @@ Orden för AID:s begrepp (AID-etikett, jämförelseetikett, AID-kod, etikettnamn
 i `STANDARDTERMER` i `src/lib/termer.js` (ADR-74), med de fyra ordformerna och genus per begrepp, så att artikel,
 adjektiv och genitiv böjs rätt. I appen är `T` den gällande uppsättningen (`src/app/09-termer.js`).
 
-- **En text i koden** byggs med `T` och hjälparna (`termFras`, `termArtikel`, `termAdjektiv`, `termGenitiv`, `termStor`,
-  `termForAntal`), aldrig med orden själva. Kommentaren överst i `src/app/09-termer.js` har exemplen.
+- **En text i koden** byggs med `T` och hjälparna i `src/lib/termer.js` (`termFras`, `artikel`, `adjektiv`, `genitiv`, `stor`,
+  `ordForAntal`), aldrig med orden själva. Kommentaren överst i `src/app/09-termer.js` har exemplen.
 - **Fast text** (ordlistan, `src/index.html`) är en mall, `{Enhet.bfl} i samma {niva.en}`, som `termText` fyller. I
   `index.html` bär elementet mallen i `data-term-template`, och standardtexten står kvar i elementet.
 - **Kort form** (`kort`, mallen `{enhet.kort}`) är valfri per begrepp och används i en kolumnrubrik där hela termen

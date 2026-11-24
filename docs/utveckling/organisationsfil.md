@@ -107,7 +107,7 @@ avsluta elementet.
   `textContent`, anropa `lasInPaket(text, 'inbakat')` med `kalla: 'inbakat'`; status i filrutan.
   Fel i blocket (ogiltig JSON, ogiltigt paket) visas som fel i filrutan, verktyget startar ändå utan
   paket.
-- `12-tillstand.js`: `state.paketKalla` får värdet `'inbakat'` utöver `'fil'`; `referensKalla()`
+- `12-tillstand.js`: `state.paket.kalla` får värdet `'inbakat'` utöver `'fil'`; `referensKalla()`
   och `statistikBeskrivning()` säger *(inbakat i den här filen)*.
 - `26-rensning.js`: efter rensningen läses det inbakade paketet in igen (utan bekräftelsefråga om
   tröskeln: filens eget värde gäller som vid start).
