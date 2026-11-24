@@ -242,7 +242,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         const fil = csv(w);
         expect(fil).not.toContain('Yrke 5300');
         expect(fil).toMatch(/1 par med en grupp under 10 personer redovisas inte här/);
-        // I exportläget är steg 4 "inget att hantera": paret redovisas bara i fliken (tests/troskelbeslut.test.js).
+        // I exportläget är steg 4 "inget att hantera": paret redovisas bara i fliken (tests/ktroskel-utdata.test.js).
         w.__state.kLage = 'export'; w.eval('ritaKartlaggningensSteg()');
         expect(w.document.getElementById('process-tracker').textContent).toMatch(/Inget att hantera i Att göra: 1 par har en grupp under 10 personer/);
     });

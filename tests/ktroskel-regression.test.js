@@ -7,7 +7,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { utanTaggar } from '../src/lib/htmltext.js';
-import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_KV, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_KV, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport, byggDataset, elementText } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -508,5 +508,55 @@ describe('regressionskortet: BH-texten räknar testerna, budgeten säger att ord
         const w = createAppWindow();
         w.__lasInDemodata();
         expect(tips(w)).not.toMatch(/Bygger på få/);
+    });
+});
+
+describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräver att urvalet når tröskeln', () => {
+    const rita = (w, bas) => { iExport(w); w.document.getElementById('kon-trend-alla').checked = true; w.eval(`ritaAlderOchLon('${bas}')`); return w.document; };
+    const harTrend = fig => fig.lager.some(l => l.marke === 'linje' && /^Hela urvalet \(trend/.test(l.serie));
+    it('ett valt BAS med 6 personer: ingen trendlinje för hela urvalet och en not under diagrammet (vid 10)', () => {
+        const d = rita(fonster(null), 'E');
+        const fig = d.getElementById('chart-kon-scatter')._figur;
+        expect(harTrend(fig)).toBe(false);
+        expect(fig.lager.filter(l => l.marke === 'punkt')).toHaveLength(2);   // punkterna per person ritas som förut (ADR-14)
+        expect(fig.beskrivning).not.toMatch(/Trend för hela urvalet/);
+        expect(elementText(d.getElementById('chart-kon-scatter-k-not'))).toMatch(/Trendlinje för hela urvalet visas inte: urvalet har 6 personer, färre än 10\./);
+        expect(elementText(d.getElementById('nyckel-ak-lon'))).toBe('');            // inga femårsgrupper når tröskeln
+    });
+    it('samma BAS vid tröskeln 5: trendlinje i figuren och beskrivningen, ingen not om den', () => {
+        const d = rita(fonster(5), 'E');
+        const fig = d.getElementById('chart-kon-scatter')._figur;
+        expect(harTrend(fig)).toBe(true);
+        expect(fig.beskrivning).toMatch(/Trend för hela urvalet: [+−]\d+ kr per år\./);
+        expect(elementText(d.getElementById('chart-kon-scatter-k-not'))).not.toMatch(/Trendlinje för hela urvalet visas inte/);
+    });
+    it('vid 25 behåller hela urvalet trendlinjen, ett BAS med 20 personer förlorar den; utan kryss finns inget lager', () => {
+        const w = fonster(25);
+        expect(harTrend(rita(w, '__ALLA__').getElementById('chart-kon-scatter')._figur)).toBe(true);
+        expect(harTrend(rita(w, 'A').getElementById('chart-kon-scatter')._figur)).toBe(false);
+        expect(elementText(w.document.getElementById('chart-kon-scatter-k-not'))).toMatch(/urvalet har 20 personer, färre än 25/);
+        w.document.getElementById('kon-trend-alla').checked = false;
+        w.eval("ritaAlderOchLon('__ALLA__')");
+        expect(harTrend(w.document.getElementById('chart-kon-scatter')._figur)).toBe(false);
+        expect(elementText(w.document.getElementById('chart-kon-scatter-k-not'))).not.toMatch(/hela urvalet/);
+    });
+});
+
+describe('[R5] Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
+    const resultat = w => { iExport(w); w.eval("ritaFlik('loneoversyn'); _fcLyftMotMal()"); return elementText(w.document.getElementById('forecast-threshold-result')); };
+    it('med 6 kvinnor i urvalet: streck och meningen om utelämnat könsuppdelat mått', () => {
+        const alla = byggDataset();
+        const kvinnor = alla.filter(r => r.kon === 'kvinna').slice(0, 6);
+        const w = fonster(null, [...alla.filter(r => r.kon === 'man'), ...kvinnor]);
+        const t = resultat(w);
+        expect(t).toMatch(/^– Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än 10 personer i urvalet\.$/);
+        expect(t).not.toMatch(/likalönslyft|Kostnad/);
+    });
+    it('med hela urvalet visas lyftet som förut', () => {
+        expect(resultat(fonster(null))).toMatch(/likalönslyft|Målet är redan uppfyllt/);
+    });
+    it('vid en tröskel över antalet kvinnor försvinner det igen', () => {
+        const w = fonster(600);   // 600 kvinnor finns inte i underlaget
+        expect(resultat(w)).toMatch(/färre än 600 personer/);
     });
 });

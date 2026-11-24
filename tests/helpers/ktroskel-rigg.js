@@ -47,10 +47,10 @@ export function synliga(win, varden) {
 }
 /** Sätter fönstret i exportläget (ADR-51): vyerna ritas då med den inställda tröskeln, som exporterna läser dem. */
 export const iExport = w => { w.__state.kLage = 'export'; return w; };
-export function fonster(k) {
+export function fonster(k = null, rader = byggDataset()) {
     const win = createAppWindow();
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
-    win.__state.data = byggDataset();
+    win.__state.data = rader;
     win.__state.policy = [...STORA, TOPP, ...MELLAN, ...SMA].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
     win.eval('fyllValjare(); lasUppFlikar();');
     return win;
@@ -571,3 +571,22 @@ export function fonsterMan(k, manLoner) {
 export const tvaDec = v => { const s = Math.abs(v).toFixed(2), a1 = (100 + v).toFixed(1), a2 = (100 + v).toFixed(2); return [...new Set([s, a1, a2].flatMap(t => [t, t.replace('.', ',')]))]; };
 export const somTal = v => new RegExp(String(v).replace('-', '[-\u2212]').replace('.', '[.,]'));
 export const andelText = v => (100 + v).toFixed(1).replace('.', ',');
+
+/** Elementets text med blanktecken hopslagna; tom sträng när elementet saknas. */
+export const elementText = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
+
+// Likvärdigt arbete i liten skala: ett kvinnodominerat yrke (5300) med 6 personer som bara blir ett
+// kandidatpar vid tröskeln 5, och ett stort yrke (6000) för en egen rad.
+export function fonsterParLikvardigt(k = 5) {
+    const w = createAppWindow();
+    const rader = [];
+    const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + (i % 3) * 10,
+        alder: 30 + (i * 7) % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
+    lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000');
+    lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
+    lagg(6, 'kvinna', 36421, 'C', '5300');
+    w.__state.data = rader;
+    w.eval(`fyllValjare(); lasUppFlikar(); sattKTroskel(${k}, { fraga: false });`);
+    w.alert = () => {};
+    return w;
+}

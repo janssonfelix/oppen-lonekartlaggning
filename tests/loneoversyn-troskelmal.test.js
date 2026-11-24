@@ -5,7 +5,7 @@
  * kvinnorna som får den oförklarade skillnaden att nå målet. Skattningen är stubbad med en känd funktion av lönerna
  * (kvinnornas medellön mot männens), så att rätt svar går att räkna för hand; sökningen ska hitta det inom den
  * tolerans som TROSKELMAL_VARV halveringar av 0–TROSKELMAL_MAX_LYFT_PCT ger. Att appen ritar samma HTML som förut
- * prövas av tests/troskelbeslut.test.js.
+ * prövas av R5 i tests/ktroskel-regression.test.js.
  */
 import { describe, it, expect } from 'vitest';
 import {

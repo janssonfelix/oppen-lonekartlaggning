@@ -7,13 +7,13 @@
  * när tröskeln höjs över någon av parets grupper, och en föreslagen rad i en konfigurationsfil prövas mot tröskeln när
  * den läses in. Användarens egna rader står kvar som förut (regel R2 i docs/utveckling/k-troskeln.md §8).
  *
- * Underlaget som parFonster i tests/troskelbeslut.test.js: ett kvinnodominerat yrke (5300) och ett jämförelseyrke (6100)
+ * Underlaget som fonsterParLikvardigt i tests/helpers/ktroskel-rigg.js: ett kvinnodominerat yrke (5300) och ett jämförelseyrke (6100)
  * i BAS C, och ett stort yrke (6000) i BAS A för egna rader. Varje grupp i paret har en enda lön, ett sentinelvärde, så
  * att ett tal i utdata bara kan komma ur den gruppen: jämförelseyrkets median, skillnaden och förslagets belopp.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, laddaXlsx, fangaBocker, oppnaFlik } from './helpers/ktroskel-rigg.js';
+import { normalisera, laddaXlsx, fangaBocker, oppnaFlik, fonsterParLikvardigt } from './helpers/ktroskel-rigg.js';
 
 vi.setConfig({ testTimeout: 30000 });
 
@@ -406,5 +406,55 @@ describe('[B7.6] Löneöversyn: ett par per yrke i förslagen, och försiktig re
         w.__state.forecast.targets.push({ bas: 'C', aid: '5300', mode: 'kr', value: 777, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         w.eval('sattKTroskel(10, { fraga: false })');
         expect(w.__state.forecast.targets.map(t => [t.aid, t.value, t.kalla])).toEqual([['5300', 777, undefined]]);
+    });
+});
+
+// … med ett förslag ur paret och en egen rad i Löneöversyn.
+function parFonsterMedRader() {
+    const w = fonsterParLikvardigt(5);
+    Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
+    w.eval("ritaFlik('loneoversyn'); _fcOptimera()");
+    expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
+    w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+    return w;
+}
+
+// Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Ett förslag ur ett par med en
+// grupp under den tas bort när tröskeln höjs och läses inte in ur en konfigurationsfil; förr stod det kvar på skärmen
+// (ADR-51). Egna rader står kvar som förut (regel R2).
+describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag under den inställda tröskeln rensas, också på skärmen (ADR-69)', () => {
+    const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
+    it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {
+        const cfg = parFonsterMedRader().eval('byggKonfiguration()');
+        expect(cfg.version).toBe(3);
+        expect(cfg.loneoversyn.mal.find(t => t.aid === '5300').kalla).toBe('par');
+        expect(cfg.loneoversyn.mal.find(t => t.aid === '6000').kalla).toBeUndefined();
+    });
+    it('spara vid 5, höj till 10, läs in: förslaget rensas, också på skärmen, och den egna raden står kvar', () => {
+        const w = parFonsterMedRader();
+        const cfg = w.eval('byggKonfiguration()');
+        delete cfg.kTroskel;   // filen ska inte sänka tröskeln igen
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(aids(w)).toEqual(['6000']);
+        w.__cfg = JSON.parse(JSON.stringify(cfg));
+        w.eval('tillampaKonfiguration(window.__cfg)');
+        expect(aids(w)).toEqual(['6000']);
+        // En egen rad på en grupp under tröskeln läses in som egen och får noten.
+        w.__cfg.loneoversyn.mal = [{ bas: 'C', aid: '5300', enhet: 'kr', varde: 500, fordelning: 'lowest', malniva: 'median', pott: 'övrigt' }];
+        w.eval('tillampaKonfiguration(window.__cfg)');
+        expect(aids(w)).toEqual(['5300']);
+        expect(w.__state.forecast.targets[0].kalla).toBeUndefined();
+        expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
+    });
+    it('läs in vid 5 och höj sedan: raden ur filen bär kalla och rensas när tröskeln höjs', () => {
+        const w = parFonsterMedRader();
+        const cfg = w.eval('byggKonfiguration()');
+        w.__state.forecast.targets = [];
+        w.__cfg = JSON.parse(JSON.stringify(cfg));
+        w.eval('tillampaKonfiguration(window.__cfg)');
+        expect(aids(w)).toEqual(['5300', '6000']);
+        expect(w.__state.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
+        w.eval('sattKTroskel(10, { fraga: false })');
+        expect(aids(w)).toEqual(['6000']);
     });
 });
