@@ -2476,6 +2476,19 @@ function hittaKansligaKolumner(rader) {
   });
   return issues;
 }
+function bladetsSlut(blad) {
+  let r = -1, c = -1;
+  for (const adress of Object.keys(blad || {})) {
+    const m = /^([A-Z]+)(\d+)$/.exec(adress);
+    const cell = blad[adress];
+    if (!m || !cell || cell.v == null || String(cell.v).trim() === "") continue;
+    let kol = 0;
+    for (const tecken of m[1]) kol = kol * 26 + tecken.charCodeAt(0) - 64;
+    r = Math.max(r, Number(m[2]) - 1);
+    c = Math.max(c, kol - 1);
+  }
+  return r < 0 ? null : { r, c };
+}
 function _gissaTabellformat(byte) {
   if (byte.length >= 4 && byte[0] === 80 && byte[1] === 75 && (byte[2] === 3 || byte[2] === 5 || byte[2] === 7)) return "xlsx";
   if (byte.length >= 4 && byte[0] === 208 && byte[1] === 207 && byte[2] === 17 && byte[3] === 224) return "xls-legacy";
@@ -22563,6 +22576,13 @@ function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
   const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
   const sheetName = wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
+  const slut = bladetsSlut(ws);
+  if (!slut) throw new Error("Excel-bladet är tomt.");
+  if (ws["!ref"]) {
+    const omrade = XLSX.utils.decode_range(ws["!ref"]);
+    omrade.e = { r: Math.min(omrade.e.r, slut.r), c: Math.min(omrade.e.c, slut.c) };
+    ws["!ref"] = XLSX.utils.encode_range(omrade);
+  }
   const grid = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "", blankrows: true });
   const startRad = ws["!ref"] ? XLSX.utils.decode_range(ws["!ref"]).s.r : 0;
   if (!grid.length) throw new Error("Excel-bladet är tomt.");

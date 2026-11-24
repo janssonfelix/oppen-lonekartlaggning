@@ -21,6 +21,8 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
   *Anställningsålder* och *Grundlön* före *Lönetillägg*. Yrkets kolumner prövas i samma ordning som förut.
 - **Ett par i likvärdigt arbete vars skillnad ligger exakt på den lägsta skillnaden räknas**, till exempel 29,0 % mot
   gränsen 29 %. Förut kunde avrundningen i datorn lägga det en aning under gränsen.
+- **En Excelfil med en ensam cell långt ut i bladet låser inte längre verktyget.** Inläsningen läser bladet fram till
+  den sista cellen med ett värde, inte hela det område som filen anger.
 
 ## 2026.11.22
 

@@ -12,7 +12,7 @@ import {
     tolkaTal, tolkaTalStrikt, _normaliseraKon, _normaliseraBas, _normaliseraPolicyAid, _stadaYrkesfalt,
     _pnrSampelSteg, hittaKansligaKolumner, tolkaLonerad, yrkeLiknarNamn, YRKE_NAMNMONSTER,
     yrkeNamnNyckel, sallsyntaNamnrader, YRKE_NAMN_HOGST_RADER,
-    _gissaAvgransare, _avkodaCsv, _hittaCsvRubrik, _gissaTabellformat,
+    _gissaAvgransare, _avkodaCsv, _hittaCsvRubrik, _gissaTabellformat, bladetsSlut,
     _rubrikForRoll, vardeForRoll, gissaKolumnmappning, lonefilensRubriker, hittaAnsvarKolumn, _bedomAnsvarKolumn, minimeraRad
 } from '../src/lib/inlasning.js';
 import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
@@ -462,6 +462,15 @@ describe('_gissaTabellformat (magiska bytes)', () => {
         expect(_gissaTabellformat(new Uint8Array([0xD0, 0xCF, 0x11, 0xE0, 0xA1]))).toBe('xls-legacy');
         expect(_gissaTabellformat(new TextEncoder().encode('BAS;Lön;Kön'))).toBe('text');
         expect(_gissaTabellformat(new Uint8Array([0xEF, 0xBB, 0xBF, 0x42]))).toBe('text');  // UTF-8 BOM = text
+    });
+});
+
+describe('bladetsSlut (Excelbladets verkliga område)', () => {
+    it('sista raden och kolumnen med värde; blanka celler och nycklar med ! räknas inte', () => {
+        expect(bladetsSlut({ '!ref': 'A1:XFD1048576', A1: { v: 'BAS' }, E3: { v: 30000 }, AA2: { v: '' }, XFD1048576: { v: ' ' } }))
+            .toEqual({ r: 2, c: 4 });
+        expect(bladetsSlut({ AB10: { v: 0 } })).toEqual({ r: 9, c: 27 });
+        expect(bladetsSlut({ '!ref': 'A1:C3' })).toBeNull();
     });
 });
 

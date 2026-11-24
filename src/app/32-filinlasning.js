@@ -3,7 +3,7 @@
 import { tolkaAnsvarskod } from '../lib/ansvar.js';
 import { forhandskontrollGranser } from '../lib/forhandskontroll.js';
 import { matchaImportprofil, profilFranMappning, valideraImportprofiler } from '../lib/importprofiler.js';
-import { _avkodaCsv, _bedomAnsvarKolumn, _faltIRad, _gissaTabellformat, _hittaCsvRubrik, _pnrSampelSteg, delaRader, gissaKolumnmappning, hittaKansligaKolumner, rubrikgrupper, sallsyntaNamnrader, yrkeNamnNyckel } from '../lib/inlasning.js';
+import { _avkodaCsv, _bedomAnsvarKolumn, _faltIRad, bladetsSlut, _gissaTabellformat, _hittaCsvRubrik, _pnrSampelSteg, delaRader, gissaKolumnmappning, hittaKansligaKolumner, rubrikgrupper, sallsyntaNamnrader, yrkeNamnNyckel } from '../lib/inlasning.js';
 import { filStorlekFel } from '../lib/installningsgranser.js';
 import { arKvinna, arMan } from '../lib/kon.js';
 import { tolkaPaket } from '../lib/organisationspaket.js';
@@ -203,6 +203,14 @@ function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
     const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     const sheetName = wb.SheetNames[0];
     const ws = wb.Sheets[sheetName];
+    // Tabellen byggs bara fram till de celler som har värden: ett uppblåst område i bladet låser annars fliken.
+    const slut = bladetsSlut(ws);
+    if (!slut) throw new Error('Excel-bladet är tomt.');
+    if (ws['!ref']) {
+        const omrade = XLSX.utils.decode_range(ws['!ref']);
+        omrade.e = { r: Math.min(omrade.e.r, slut.r), c: Math.min(omrade.e.c, slut.c) };
+        ws['!ref'] = XLSX.utils.encode_range(omrade);
+    }
     const grid = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: true });
     const startRad = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).s.r : 0;
     if (!grid.length) throw new Error('Excel-bladet är tomt.');

@@ -656,6 +656,22 @@ describe('inläsning i appen: kolumnvalet', () => {
         expect(wX.__state._dataHeaders).toEqual(['Kön', 'Lön', 'BAS', 'AID', 'Lön_1']);
     });
 
+    it('ett uppblåst område i Excelbladet (en blank cell i XFD1048576) låser inte inläsningen', async () => {
+        const wX = createAppWindow();
+        wX.eval(readFileSync(join(import.meta.dirname, '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
+        const X = wX.XLSX, wb = X.utils.book_new();
+        X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(tabell()), 'Blad1');
+        const fil = new wX.File([X.write(wb, { type: 'array', bookType: 'xlsx' })], 'uppblast.xlsx');
+        // Bladet som en sådan fil läses till (att skriva den tar själv lika lång tid som tabellen över området).
+        const ws = X.utils.aoa_to_sheet(tabell());
+        ws.XFD1048576 = { t: 's', v: ' ' };
+        ws['!ref'] = 'A1:XFD1048576';
+        X.read = () => ({ SheetNames: ['Blad1'], Sheets: { Blad1: ws } });
+        const loner = await lasIn(wX, fil);
+        expect(loner).toHaveLength(40);
+        expect(wX.__state._dataHeaders).toEqual(['Kön', 'Lön', 'BAS', 'AID', 'Lön_1']);
+    }, 20000);
+
     it('kolumnerna slås upp en gång per fil, inte för varje rad', async () => {
         const w = createAppWindow();
         papa(w);

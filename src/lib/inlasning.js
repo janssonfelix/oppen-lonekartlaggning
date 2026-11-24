@@ -581,6 +581,27 @@ export function hittaKansligaKolumner(rader) {
 // ---- Filtexten: teckenkodning, avgränsare och rubrikrad (flyttade från src/app/32-filinlasning.js) ----
 
 /**
+ * Den sista raden och kolumnen (räknade från 0) som har en cell med värde i ett Excelblad, eller null för ett tomt blad.
+ * Bladets angivna område kan vara uppblåst: en enda cell i XFD1048576 gör det till 17 miljarder celler, och tabellen
+ * som byggs över det låser fliken. Inläsningen bygger därför tabellen bara fram till de celler som finns.
+ * @param {Object<string, *>} blad - Arbetsbladet: cellerna under sina adresser ("A1"), övriga nycklar börjar med "!".
+ * @returns {{r: number, c: number}|null}
+ */
+export function bladetsSlut(blad) {
+    let r = -1, c = -1;
+    for (const adress of Object.keys(blad || {})) {
+        const m = /^([A-Z]+)(\d+)$/.exec(adress);
+        const cell = blad[adress];
+        if (!m || !cell || cell.v == null || String(cell.v).trim() === '') continue;
+        let kol = 0;
+        for (const tecken of m[1]) kol = kol * 26 + tecken.charCodeAt(0) - 64;
+        r = Math.max(r, Number(m[2]) - 1);
+        c = Math.max(c, kol - 1);
+    }
+    return r < 0 ? null : { r, c };
+}
+
+/**
  * Identifierar filformat via magiska bytes (accept-attributet är bara rådgivande
  * — användare kan välja "Alla filer" och lägga en Excel-fil i en CSV-ruta).
  *   - "xlsx"       : ZIP-container (PK..) — .xlsx
