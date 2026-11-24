@@ -205,6 +205,20 @@ export async function organisationsfilen() {
         await o.evaluate(() => document.getElementById('btn-paket-visa').click());
         const modal = await o.evaluate(() => ({ synlig: document.getElementById('paket-modal').style.display === 'flex', text: document.getElementById('paket-modal-content').textContent }));
         ok(modal.synlig && /Röktestkommunen/.test(modal.text) && /"format"/.test(modal.text), 'Visa paketet öppnar modalen med innehållet och råtexten');
+        await o.evaluate(() => document.getElementById('paket-modal-close').click());
+        // Flytta till en ny version: paketet ur organisationsfilen in i samma bygge, nedladdat och öppnat från file://.
+        await o.click('#tab-forvaltare');
+        await o.setInputFiles('#file-input-gammal-organisationsfil', orgFil);
+        await o.setInputFiles('#file-input-ny-verktygsfil', FIL);
+        const [nedladdning] = await Promise.all([o.waitForEvent('download'), o.click('#btn-flytt-ladda-ner')]);
+        const flyttFil = join(katalog, 'flyttad.html');
+        await nedladdning.saveAs(flyttFil);
+        const flyttStatus = await o.evaluate(() => document.getElementById('flytt-status').textContent);
+        ok(/Röktestkommunen/.test(flyttStatus) && /Ingen lönedata ingår/.test(flyttStatus), `flytten till en ny version laddar ner en organisationsfil (${flyttStatus.slice(0, 80)})`);
+        await o.goto('file://' + flyttFil);
+        const f = await o.evaluate(() => ({ paket: state.paket && state.paket.kalla, org: state.paket && state.paket.organisation, brott: window.__cspBrott.length }));
+        ok(f.paket === 'inbakat' && f.org === 'Röktestkommunen' && f.brott === 0 && oFel.length === 0,
+            `den flyttade organisationsfilen startar med paketet inläst och utan CSP-överträdelser (${f.org}, ${f.paket}, ${f.brott} brott${oFel.length ? ', ' + oFel[0] : ''})`);
         await o.close();
         rmSync(katalog, { recursive: true, force: true });
     }

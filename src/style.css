@@ -878,7 +878,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 .paket-info dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
 .paket-info dt { color: var(--text-muted); }
 .paket-info dd { margin: 0; }
-.paket-formular { display: grid; grid-template-columns: max-content minmax(0, 360px); gap: 8px 12px; align-items: center; margin: 10px 0; }
+.paket-formular { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 360px); gap: 8px 12px; align-items: center; margin: 10px 0; }
 .paket-sammanfattning { font-size: var(--fs-sm); color: var(--text-muted); }
 
 .upload-cell {

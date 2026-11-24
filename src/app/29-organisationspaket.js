@@ -7,7 +7,7 @@
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
 import { installningsGrans } from '../lib/installningsgranser.js';
 import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
-import { bakaIn, filnamnForslag, normaliseraFilnamn } from '../lib/organisationsfil.js';
+import { bakaIn, filnamnForslag, flyttaOrganisationsfil, normaliseraFilnamn } from '../lib/organisationsfil.js';
 import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, paketArGammalt, tolkaPaket } from '../lib/organisationspaket.js';
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
@@ -413,8 +413,8 @@ function uppdateraOrganisationsfilKnapp() {
     const namn = /** @type {HTMLInputElement|null} */ (_paketFalt('organisationsfil-namn'));
     if (namn && !namn.value && document.activeElement !== namn) namn.placeholder = filnamnForslag(_paketText('paket-org'));
 }
-function _organisationsfilStatus(text, ok) {
-    const el = _paketFalt('organisationsfil-status');
+function _organisationsfilStatus(text, ok, id = 'organisationsfil-status') {
+    const el = _paketFalt(id);
     if (!el) return;
     el.textContent = text;
     el.className = 'status-msg' + (ok ? ' success' : '');
@@ -446,18 +446,50 @@ async function skapaOrganisationsfil() {
     const r = bakaIn(html, JSON.stringify(paket), { skapad, organisation: paket.organisation.namn, verktygssha: await _sha256Hex(buf) });
     if (!r.ok) { _organisationsfilStatus(r.fel, false); return { ok: false, meddelande: r.fel }; }
     const filnamn = normaliseraFilnamn(_paketText('organisationsfil-namn'), paket.organisation.namn);
-    const blob = new Blob([r.html], { type: 'text/html' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filnamn;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    _laddaNerHtml(r.html, filnamn);
     const annanVersion = r.version && r.version !== APP_VERSION;
     const meddelande = `Organisationsfilen ${filnamn} är nedladdad: paketet från ${paket.organisation.namn} (${skapad}) inbakat i verktyget version ${r.version || 'okänd'}.`
         + (annanVersion ? ` Observera: den utpekade filen är en annan version än den som körs (${APP_VERSION}).` : '')
         + ' Ingen lönedata ingår.';
     _organisationsfilStatus(meddelande, true);
     meddelaSkarmlasare(meddelande);
+    return { ok: true, meddelande };
+}
+function _laddaNerHtml(html, filnamn) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    a.download = filnamn;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ---- Flytta till en ny version: paketet ur den gamla organisationsfilen in i en ny verktygsfil ----
+// Rör varken sessionens paket (state.paket) eller den inlästa lönefilen: allt kommer ur de två filerna.
+/** @type {File|null} */
+let _flyttGammal = null;
+/** @type {File|null} */
+let _flyttNy = null;
+function uppdateraFlyttKnapp() {
+    const knapp = /** @type {HTMLInputElement|null} */ (_paketFalt('btn-flytt-ladda-ner'));
+    if (knapp) knapp.disabled = !_flyttGammal || !_flyttNy;
+}
+/**
+ * Läser paketet ur den gamla organisationsfilen, validerar det som vid inläsning och bakar in det i den nya
+ * verktygsfilen (flyttaOrganisationsfil i src/lib/organisationsfil.js). Laddar ner resultatet.
+ * @returns {Promise<{ok:boolean, meddelande:string}>}
+ */
+async function flyttaTillNyVersion() {
+    if (!_flyttGammal || !_flyttNy) return { ok: false, meddelande: 'Välj den gamla organisationsfilen och den nya verktygsfilen.' };
+    const [gammalBuf, nyBuf] = await Promise.all([_flyttGammal.arrayBuffer(), _flyttNy.arrayBuffer()]);
+    const text = buf => new TextDecoder('utf-8').decode(buf);
+    const r = flyttaOrganisationsfil(text(gammalBuf), text(nyBuf), { skapad: idagDatum(), verktygssha: await _sha256Hex(nyBuf) });
+    if (!r.ok) { _organisationsfilStatus(r.fel, false, 'flytt-status'); return { ok: false, meddelande: r.fel }; }
+    const filnamn = normaliseraFilnamn(_paketText('flytt-filnamn'), r.organisation);
+    _laddaNerHtml(r.html, filnamn);
+    const meddelande = `Organisationsfilen ${filnamn} är nedladdad: paketet från ${r.organisation} (${r.paketSkapat}) flyttat från version ${r.franVersion || 'okänd'} till version ${r.tillVersion || 'okänd'}.`
+        + (r.aldreVersion ? ' Observera: den nya filen är en äldre version än den gamla.' : '')
+        + ' Ingen lönedata ingår.';
+    _organisationsfilStatus(meddelande, true, 'flytt-status');
     return { ok: true, meddelande };
 }
 
@@ -555,6 +587,15 @@ export function uppstartOrganisationspaket() {
     });
     document.getElementById('view-forvaltare')?.addEventListener('input', uppdateraOrganisationsfilKnapp);
     document.getElementById('btn-organisationsfil-spara')?.addEventListener('click', () => { skapaOrganisationsfil(); });
+    for (const [id, satt] of /** @type {[string, (f: File|null) => void][]} */ ([
+        ['file-input-gammal-organisationsfil', f => { _flyttGammal = f; }], ['file-input-ny-verktygsfil', f => { _flyttNy = f; }]])) {
+        document.getElementById(id)?.addEventListener('change', e => {
+            const inp = /** @type {HTMLInputElement} */ (e.target);
+            satt(inp.files && inp.files[0] ? inp.files[0] : null);
+            uppdateraFlyttKnapp();
+        });
+    }
+    document.getElementById('btn-flytt-ladda-ner')?.addEventListener('click', () => { flyttaTillNyVersion(); });
     document.getElementById('paket-info')?.addEventListener('click', e => {
         const t = /** @type {HTMLElement} */ (e.target);
         if (t.closest('#btn-paket-visa')) visaInbakatPaket();

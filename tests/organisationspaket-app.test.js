@@ -283,6 +283,64 @@ describe('organisationspaket: läs in och skapa', () => {
         inp.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(knapp.disabled).toBe(false);
     });
+    // ---- Flytta till en ny version: paketet ur den gamla organisationsfilen in i en ny verktygsfil ----
+    const medVersion = (html, v) => html.replace('</head>', `<script>var APP_VERSION = "${v}";</script></head>`);
+    const valj = (w, id, html, namn) => {
+        const inp = w.document.getElementById(id);
+        Object.defineProperty(inp, 'files', { configurable: true, value: [new w.File([html], namn, { type: 'text/html' })] });
+        inp.dispatchEvent(new w.Event('change', { bubbles: true }));
+    };
+    const flytta = async (w, gammal, ny) => {
+        valj(w, 'file-input-gammal-organisationsfil', gammal, 'gammal.html');
+        valj(w, 'file-input-ny-verktygsfil', ny, 'ny.html');
+        let fangad = null;
+        w.URL.createObjectURL = b => { fangad = b; return 'blob:x'; };
+        const origClick = w.HTMLAnchorElement.prototype.click;
+        w.HTMLAnchorElement.prototype.click = function () {};
+        const r = await w.eval('flyttaTillNyVersion()');
+        w.HTMLAnchorElement.prototype.click = origClick;
+        return { r, ut: fangad ? await fangad.text() : null, status: w.document.getElementById('flytt-status').textContent };
+    };
+    const gammalFil = (p = paket()) => organisationsfil(p, { skapad: '2026-10-19', organisation: p.organisation.namn }).replace('</head>', '<script>var APP_VERSION = "2026.01.15";</script></head>');
+    it('flytten bär det gamla paketet in i den nya filen och anger organisation, datum och versioner', async () => {
+        const w = createAppWindow();
+        const { r, ut, status } = await flytta(w, gammalFil(), medVersion(INDEX, '2026.11.01'));
+        expect(r.ok).toBe(true);
+        expect(status).toBe(r.meddelande);
+        for (const del of ['Exempelregionen', '2026-10-01', '2026.01.15', '2026.11.01', 'Ingen lönedata ingår.']) expect(r.meddelande).toContain(del);
+        expect(r.meddelande).not.toContain('Observera');
+        const block = lasUt(ut);
+        expect(block.meta).toMatchObject({ organisation: 'Exempelregionen', verktygsversion: '2026.11.01' });
+        expect(JSON.parse(block.json)).toEqual(paket());
+    });
+    it('knappen för flytten är inaktiv tills båda filerna är valda', () => {
+        const w = createAppWindow(), knapp = w.document.getElementById('btn-flytt-ladda-ner');
+        expect(knapp.disabled).toBe(true);
+        valj(w, 'file-input-gammal-organisationsfil', gammalFil(), 'gammal.html');
+        expect(knapp.disabled).toBe(true);
+        valj(w, 'file-input-ny-verktygsfil', INDEX, 'ny.html');
+        expect(knapp.disabled).toBe(false);
+    });
+    it('en gammal fil utan paket ger ett fel och ingen nedladdning', async () => {
+        const { r, ut, status } = await flytta(createAppWindow(), medVersion(INDEX, '2026.01.15'), INDEX);
+        expect(r.ok).toBe(false);
+        expect(status).toMatch(/Den gamla filen har inget inbakat paket/);
+        expect(ut).toBeNull();
+    });
+    it('en nedgradering varnar men laddar ner', async () => {
+        const { r, ut } = await flytta(createAppWindow(), gammalFil(), medVersion(INDEX, '2025.06.01'));
+        expect(r.ok).toBe(true);
+        expect(r.meddelande).toContain('Observera: den nya filen är en äldre version än den gamla');
+        expect(lasUt(ut)).not.toBeNull();
+    });
+    it('flytten ändrar inte sessionens paket', async () => {
+        const w = createAppWindow({ html: organisationsfil() });
+        const fore = JSON.stringify(w.__state.paket);
+        const { r } = await flytta(w, gammalFil(paket({ organisation: { namn: 'Annan organisation' } })), INDEX);
+        expect(r.ok).toBe(true);
+        expect(r.meddelande).toContain('Annan organisation');
+        expect(JSON.stringify(w.__state.paket)).toBe(fore);
+    });
     it('sökningen på organisationsfil leder till fliken', () => {
         const w = createAppWindow(), d = w.document, f = d.getElementById('sok-grupp');
         f.value = 'organisationsfil';

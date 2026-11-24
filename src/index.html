@@ -1189,7 +1189,20 @@
                         <p id="organisationsfil-status" class="status-msg" role="status" aria-live="polite"></p>
                         <button type="button" id="btn-organisationsfil-spara" class="btn btn-secondary btn-sm" disabled>Ladda ner organisationsfilen</button>
                     </section>
-                    <!-- Plats för rutan Flytta till en ny version. -->
+                    <section class="paket-steg" id="forvaltare-flytt" aria-labelledby="forvaltare-flytt-rubrik">
+                        <h2 id="forvaltare-flytt-rubrik" class="fs-md fw-600 marg-0">Flytta till en ny version</h2>
+                        <p>Har en ny version av verktyget kommit? Välj den organisationsfil som handläggarna använder och den nya verktygsfilen. Paketet flyttas oförändrat till den nya versionen, och den nya organisationsfilen laddas ner. Ingen lönedata följer med. Ska paketet också ändras, gör det i steg 1–3.</p>
+                        <div class="paket-formular">
+                            <label for="file-input-gammal-organisationsfil">Den gamla organisationsfilen (.html)</label>
+                            <input type="file" id="file-input-gammal-organisationsfil" class="form-select" accept=".html,text/html">
+                            <label for="file-input-ny-verktygsfil">Den nya verktygsfilen (.html)</label>
+                            <input type="file" id="file-input-ny-verktygsfil" class="form-select" accept=".html,text/html">
+                            <label for="flytt-filnamn">Filnamn</label>
+                            <input type="text" id="flytt-filnamn" class="form-select" autocomplete="off" maxlength="120" placeholder="oppen-lonekartlaggning-organisationen.html">
+                        </div>
+                        <p id="flytt-status" class="status-msg" role="status" aria-live="polite"></p>
+                        <button type="button" id="btn-flytt-ladda-ner" class="btn btn-secondary btn-sm" disabled>Ladda ner den nya organisationsfilen</button>
+                    </section>
                 </div>
 
                 <!-- Skevhet Tab -->
