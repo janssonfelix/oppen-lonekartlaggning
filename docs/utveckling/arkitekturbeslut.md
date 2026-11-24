@@ -111,6 +111,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-102 | Minsta gruppstorlek är lägst 3 | Gällande | 2026-11-23 |
 | ADR-103 | Golvet för skattningar följer tröskeln bara i exportläget | Gällande | 2026-11-23 |
 | ADR-104 | Funktionerna i `src/app/` har svenska namn; tillståndets fält och DOM:ens id:n står kvar | Gällande | 2026-11-23 |
+| ADR-105 | Konfidensintervall och p-värden använder t-fördelningen vid alla frihetsgrader | Gällande | 2026-11-24 |
 
 ## Besluten
 
@@ -759,3 +760,17 @@ några av appens gamla namn; tabellen visar vad de heter nu:
 Namnen i S4 och exporten (`06-k-troskel.js`, `06-maskeringsnoter.js`, `11-diagramexport.js`, `19-konfiguration.js`,
 `22-exporthjalpare.js`, `23-exportgrind.js`, `24-excelexport.js`) nämns inte där, och inte heller de övriga i
 tillståndet och starten. *Gäller i dag:* `src/app/README.md`.
+
+**ADR-105 — Konfidensintervall och p-värden använder t-fördelningen vid alla frihetsgrader.** Beslutat av
+underhållaren 2026-11-24. `tKvantil` och `pVardeTvasidigt` (`src/lib/stat.js`) gick tidigare över till
+normalfördelningen vid df ≥ 100; nu används t-fördelningen med df = n − k vid alla frihetsgrader, och
+`tFordelningCdf` går själv över i normalfördelningen först över df 1 000 000. Det gäller huvudregressionen,
+regressionerna per BAS-intervall, översikten per huvudområde och livscykelmodellen, och därmed protokollets blad 3, som
+väljs på p-värdet efter korrigeringen för många tester. *Skäl:* bytet gav något för smala intervall och något för små
+p-värden (df 100: kvantilen 1,96 i stället för 1,984, intervallet omkring 1 % för smalt; t = 1,97 gav p 0,049 i
+stället för 0,052), alltså en liten men systematisk överskattning av säkerheten i den riktning en granskare invänder
+mot. Den exakta fördelningen fanns redan och kostar omkring 0,04 ms per anrop, och samma fördelning vid alla df gör
+talen jämförbara med statsmodels och R (`qt`, `pt`). *Följd:* på demodatan (df omkring 240) blir huvudtalets intervall
+några hundradelar av en procentenhet bredare och p-värdena större; ingen status ändras. Golden-facit ändras bara i
+metodbilagans mening om p-värden, eftersom dess underlag har färre än 100 frihetsgrader. *Gäller i dag:*
+`regressionsmodellen.md` §7.

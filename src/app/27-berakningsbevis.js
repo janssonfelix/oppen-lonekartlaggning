@@ -277,7 +277,7 @@ export function _bevisForPerBasRad(p, bhCtx) {
             { label: 'Antal totalt',           value: p.n.toLocaleString('sv-SE') },
             { label: 'Antal kvinnor / män',    value: `${p.kvN} / ${p.maN}` },
             { label: '— Oförklarad löneskillnad', value: `<strong>${fmtPct(p.gapPct)}</strong>`, isHtml: true, note: harAlder() ? 'När skillnaden i ålder har räknats bort' : 'Utan åldersjustering: lönefilen saknar ålder' },
-            { label: '95 % konfidensintervall', value: `[${fmtPct(p.ciLow)}, ${fmtPct(p.ciHigh)}]`, note: 'β ± t(0,975; n−k) × HC3-SE (1,96 vid n−k ≥ 100), transformerat tillbaka från log' },
+            { label: '95 % konfidensintervall', value: `[${fmtPct(p.ciLow)}, ${fmtPct(p.ciHigh)}]`, note: 'β ± t(0,975; n−k) × HC3-SE, transformerat tillbaka från log' },
             { label: 'p-värde',                value: p.pValue < 0.001 ? '< 0,001' : svTal(p.pValue, 4), note: isSig ? 'Statistiskt signifikant (p < 0,05)' : 'Ej signifikant' },
             { label: 'BH-FDR-korrektion',      value: bhCtx && bhCtx.q != null ? (bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)) : '—', note: bhNote },
             { label: 'Klassning',              value: { titta: 'Titta närmare', dokumentera: 'Dokumentera: signifikant, under verktygets storleksgräns på 3 %', osakert: 'Osäkert utslag: håller inte efter korrigering', inget: 'Inom statistisk osäkerhet' }[perBasSignal(p.gapPct, sigAfterBH, p.pValue < 0.05).niva], isHtml: true },

@@ -676,7 +676,7 @@ function _exportJPAProtokollExport() {
         [`Lika arbete (${T.enhet.en})`, `Direkt median-jämförelse mellan kvinnors och mäns löner inom samma ${T.kod.en}. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.`],
         ['Median och medelvärde', `Blad 2 och 3 redovisar både median och medelvärde för kvinnor och män, i kronor och som kvinnors i procent av mäns. Statusen och urvalet följer medianen i blad 2 och regressionen i blad 3; medelvärdet står bredvid som underlag. I blad 3 räknas båda på samma personer som regressionen.`],
         [`Likvärdigt arbete (${T.niva.en})`, `OLS-regression: log(lön) ~ kön${harAlder() ? ' + ålder (centrerad)' : ''} inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).${harAlder() ? '' : ' Lönefilen saknar ålder, så ålder räknas inte bort.'}`],
-        ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader.'],
+        ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen räknas vid n−k frihetsgrader (2,0 vid 60, 1,98 vid 100).'],
         ['Statistisk signifikans', `p < 0.05 = ej slumpmässig skillnad. För ${T.niva.bfl} gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).`],
         ['', ''],
         ['— Minsta gruppstorlek —', ''],

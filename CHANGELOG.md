@@ -9,6 +9,9 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Konfidensintervall och p-värden räknas med t-fördelningen också i stora underlag.** Tidigare användes
+  normalfördelningen från 100 frihetsgrader, vilket gav en aning för smala intervall; nu blir de en aning bredare och
+  p-värdena en aning större nära gränsen 0,05 (ADR-105).
 - **Kvantilregressionen säger till när en skattning inte stabiliserats.** Står könsskillnaden vid P10, medianen eller
   P90 fortfarande och rör sig efter 60 varv, säger kortet det under tabellen.
 - **En grupp exakt på kvinnotröskeln klassas rätt.** Med lydelsen *Mer än 55 %* blev till exempel 11 kvinnor av 20
