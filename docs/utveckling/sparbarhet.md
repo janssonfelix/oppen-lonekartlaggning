@@ -51,7 +51,7 @@ avsnitt 11.
 | B1.1 | Median; 0 för en tom lista | `median`, `stat.js` | tal | – | `tests/stat.test.js` | `stat-referens-varden.json` (indirekt) |
 | B1.2 | Kvantil med linjär interpolation (typ 7, samma som R:s standard och som PERCENTIL.INK i kalkylprogram) | `kvantil`, `stat.js` | tal, andel 0–1 | Hyndman och Fan typ 7 | `tests/stat.test.js` | saknas |
 | B1.3 | OLS med klassisk kovarians och HC3; null när n < antal parametrar + 2 | `anpassaOLS`, `stat.js` | designmatris, lön | `regressionsmodellen.md` §1, §7; ADR-77 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
-| B1.4 | t-fördelningens CDF och kvantil, tvåsidigt p | `tFordelningCdf`, `tKvantil`, `pVardeTvasidigt`, `stat.js` | t, frihetsgrader | `regressionsmodellen.md` §7; ADR-45 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
+| B1.4 | t-fördelningens CDF och kvantil, tvåsidigt p | `tFordelningCdf`, `tKvantil`, `pVardeTvasidigt`, `stat.js` | t, frihetsgrader | `regressionsmodellen.md` §7; ADR-45, 105 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `stat-referens-varden.json` |
 | B1.5 | Normalfördelningens CDF | `normalCdf`, `stat.js` | z | Abramowitz och Stegun 26.2.17 (kommentaren i koden) | `tests/stat.test.js` | saknas |
 | B1.6 | Benjamini–Hochberg (q-värden) | `bhJustera`, `stat.js` | p-värden | `regressionsmodellen.md` §7 | `tests/stat.test.js`, `tests/stat-referens.test.js` | `bh-justera-referens.json` |
 | B1.7 | Percentilintervall ur bootstrapdragningar: index ⌊n·0,025⌋ och n − 1 − ⌊n·0,025⌋ | `percentilintervall`, `stat.js` | sorterade dragningar | ADR-86 | `tests/osakerhet.test.js`, `tests/slumpintervall-ordning.test.js` | saknas |
@@ -208,6 +208,7 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `TILLFOR_GRANS_PP` | 0,5 | `src/lib/regression.js` | under så många procentenheter i R² tillför en variabel lite | Fast |
 | `FORKLARINGSMODELL_STANDARD` | BAS och ålder | `src/lib/regression.js` | förklaringsmodellen som standard | Inställning |
 | `GAP_VARIABLER_STANDARD` | BAS, AID | `src/lib/gapuppdelning.js` | uppdelningens variabler som standard | Inställning |
+| `KVANTIL_MAX_VARV` | 60 | `src/lib/regression.js` | kvantilregressionens IRLS-varv; könskoefficienten räknas som konvergerad när dess sista ändring är under 1e-5 | Fast |
 | `MIN_REGRESSION` | 30 | `src/lib/sektor.js` | minsta antal för justerad skillnad per huvudområde | Fast |
 | `SAMSPEL_GRANS` | 0,10 | `src/lib/livscykel.js` | samspelet kön × ålder är säkerställt när p är under gränsen | Fast |
 | `STORLEKSGRANS` | 3 % | `src/lib/status.js` | trappans storleksgräns | Fast |
@@ -238,6 +239,9 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `TROSKELMAL_STANDARD_PCT`, `TROSKELMAL_MAX_LYFT_PCT`, `TROSKELMAL_VARV`, `TROSKELMAL_SIGNIFIKANS_P` | 5 %, 40 %, 22, 0,05 | `src/lib/loneoversyn.js` | tröskelmålet; målet går att ändra i fliken | Fast (målet: värde i fliken) |
 | `LAGE_OVER`, `LAGE_UNDER` | 1,10, 0,90 | `src/lib/vymodell-loneoversyn.js` | läget mot BAS-medianen i Löneöversyn | Fast |
 | `TACKNING_OK`, `TACKNING_LAG` | 90 %, 60 % | `src/lib/vymodell-lonepolitik.js` | täckningsgradens status mot ställningstagandet | Fast |
+| `LONEOVERSIKT_MINSTA_YRKE` | 5 | `src/lib/vymodell-loneoversikt.js` | minsta antal för en egen rad per AID-etikett i Löneöversikten (`k-troskeln.md` §5) | Fast |
+| `JAMN_KONSFORDELNING` | 40 % | `src/lib/vymodell-lonestruktur.js` | jämn könsfördelning i ett BAS-intervall: båda könen minst så stor andel | Fast |
+| `RM_IAKTTAGELSE_PE` | 15 procentenheter | `src/lib/vymodell-rapport.js` | rapportens iakttagelse om andelen kvinnor i det lägst betalda intervallet | Fast |
 
 Värden som står direkt i koden i stället för som namngivna konstanter, och som därför inte går att hitta på namn:
 gapgränsen 5 % i `individlyft` (`loneoversyn.js`),
