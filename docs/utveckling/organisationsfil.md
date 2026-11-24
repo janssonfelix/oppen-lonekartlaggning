@@ -20,8 +20,8 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
 ## 2. Mål, icke-mål, antimål
 
 **Mål**
-- Systemförvaltaren skapar organisationsfilen i verktyget, utan utvecklarkunskap, med ett klick och ett
-  val av filnamn.
+- Systemförvaltaren skapar organisationsfilen i verktyget, utan utvecklarkunskap, i en egen flik med tre steg,
+  och flyttar den till en ny version med bara den gamla organisationsfilen och den nya releasefilen.
 - Handläggaren öppnar organisationsfilen och har benämningar, ställningstagande, jämförelsestatistik
   och låsningar på plats, utan att läsa in något.
 - Det inbakade paketet går att granska i verktyget och ladda ner som fil, så att det kan kontrolleras
@@ -31,8 +31,10 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
 
 **Icke-mål**
 - Ingen verifiering av organisationsfilen mot den publicerade versionens kontrollsumma eller
-  signatur (beslut, ADR-49): att filen kommer från systemförvaltaren internt räcker. Spårbarhet ges
-  i stället genom att filen anger vilken version av verktyget den bygger på.
+  signatur i verktyget (beslut, ADR-49): att filen kommer från systemförvaltaren internt räcker. Spårbarhet ges
+  i stället genom att filen anger vilken version av verktyget den bygger på. IT kan kontrollera filen för hand:
+  utan blocket är den byte för byte releasefilen (`organisationspaket.md` avsnitt 3b, *IT:s kontroll av
+  organisationsfilen*; prövat i `tests/organisationsfil.test.js`).
 - Ingen automatisk inläsning av filer i samma mapp (omöjligt och oönskat).
 - Ingen ändring av paketets format eller innehåll.
 
@@ -44,17 +46,23 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
 
 ## 3. Hur det ser ut för användaren
 
-**Systemförvaltaren** (steg 1, *Organisationspaket*, i Filer och kvalitet, under länken *Skapa organisationspaket*):
-1. Läser in paketet (eller bygger det i formuläret som i dag).
-2. Klickar **Skapa organisationsfil**. En rad fälls ut: en filväljare *Verktygsfilen du öppnade*
-   (`.html`), ett fält *Filnamn* förifyllt med `oppen-lonekartlaggning-<organisation>.html`, och
-   knappen *Ladda ner organisationsfilen*. Filväljaren behövs eftersom en sida från disk inte kan
-   läsa sig själv.
-3. Verktyget kontrollerar att den valda filen är verktyget (CSP-metataggen och versionsstämpeln
-   finns), varnar om den är en annan version än den som körs, tar bort ett eventuellt tidigare
-   inbakat paket, lägger in det gällande paketet, och laddar ner resultatet under det valda namnet.
-4. Ett besked säger vad filen innehåller: organisation, paketets datum, verktygets version, och att
-   ingen lönedata ingår.
+**Systemförvaltaren** i fliken *För systemförvaltaren*, sist i menyn (nås också från *Om verktyget* och från en
+rad i steg 1 i Filer och kvalitet; `granssnittet.md` §1):
+1. **Steg 1, Paketet:** läser in ställningstagande, statistik eller ett befintligt paket och fyller i formuläret.
+   När filen som körs är en organisationsfil är det inbakade paketet förvalt. Paketet kan sparas som fil (valfritt).
+2. **Steg 2, Verktygsfilen:** väljer den HTML-fil som är öppen, eller en nyare version. Filväljaren behövs eftersom
+   en sida från disk inte kan läsa sig själv; texten i steget säger det.
+3. **Steg 3, Ladda ner:** fältet *Filnamn* (förslaget `oppen-lonekartlaggning-<organisation>.html`) och knappen
+   *Ladda ner organisationsfilen*. Verktyget kontrollerar att den valda filen är verktyget (CSP-metataggen och
+   versionsstämpeln finns), tar bort ett eventuellt tidigare inbakat paket, lägger in det gällande paketet och
+   laddar ner resultatet. Beskedet säger vad filen innehåller: organisation, paketets datum, verktygets version, att
+   ingen lönedata ingår, och om den valda filen är en annan version än den som körs.
+4. **Flytta till en ny version:** en ruta med två filval, den gamla organisationsfilen och den nya verktygsfilen,
+   ett filnamn och knappen *Ladda ner den nya organisationsfilen*. Paketet läses ut ur den gamla filen, prövas som
+   vid inläsning (`tolkaPaket`) och bakas in oförändrat i den nya (`flyttaOrganisationsfil`). Beskedet anger
+   organisation, paketets datum, den gamla och den nya versionen och att ingen lönedata ingår, och säger till om
+   den nya filen är äldre än den gamla (det tillåts). En gammal fil utan inbakat paket ger ett fel och ingen
+   nedladdning. Flytten rör varken sessionens paket eller en inläst lönefil.
 
 **Handläggaren** öppnar organisationsfilen:
 - Paketet läses in vid start, tyst, på samma väg som en inläst paketfil (samma validering, samma
@@ -64,6 +72,10 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
   benämningar, inställningar och låsningar som tabell, ställningstagandet och statistiken som
   tabeller, och råtexten i JSON under en utfällbar rad) och **Ladda ner paketet** (sparar
   `<org>.lonepaket.json`, så att det kan granskas, ändras och bakas in på nytt).
+- Är paketets år (`avserAr`) äldre än året enligt datorns klocka visar filrutan *Paketet avser {år}. Kontrollera
+  med systemförvaltaren att det är det som gäller.* För förra årets paket visas raden först från och med 1 mars
+  (`paketArGammalt` i `src/lib/organisationspaket.js`). Raden är en upplysning: den stoppar ingenting och kommer
+  inte in i Att göra. Ett paket utan år får ingen rad.
 - Den som läser in en annan paketfil ersätter det inbakade för sessionen; beskedet säger
   *Ersätter det inbakade paketet*. *Rensa all data* går tillbaka till det inbakade paketet, eftersom
   det är en del av filen.
@@ -97,10 +109,14 @@ avsluta elementet.
 - `lasUt(html)` → `{ json, meta } | null`: läser blocket ur en HTML-text (används av tester och av
   startläsningen genom DOM:en i appen).
 - `filnamnForslag(organisation)` → `oppen-lonekartlaggning-<slug>.html`.
+- `flyttaOrganisationsfil(gammalHtml, nyHtml, meta)` → `{ ok, html, franVersion, tillVersion, organisation,
+  paketSkapat, aldreVersion } | { ok: false, fel }`: läser ut paketet ur den gamla filen med `lasUt`, prövar det
+  med `tolkaPaket` och bakar in det med `bakaIn`. Ett paket som redan finns i den nya filen ersätts.
 
 **Appen**
-- `29-organisationspaket.js`: knappen, raden med filväljare och filnamn, läsning av den valda filen
-  med `FileReader` (ingen nätverksåtkomst), anrop till `bakaIn`, nedladdning via `Blob` som övriga
+- `29-organisationspaket.js`: stegen i fliken *För systemförvaltaren* (`#view-forvaltare` i `index.html`) och
+  rutan *Flytta till en ny version*, årsraden i filrutan, filväljarna och filnamnen, läsning av de valda filerna
+  med `File.arrayBuffer` (ingen nätverksåtkomst), anrop till `bakaIn` och `flyttaOrganisationsfil`, nedladdning via `Blob` som övriga
   exporter, beskedet. Kontrollsumman för verktygsfilen räknas med `crypto.subtle.digest` när det
   finns (file:// är en säker kontext i Chrome, Firefox och Safari); saknas det skrivs `–`.
 - `90-uppstart.js`: vid start, om `?demo=1` inte är satt och `#inbakat-organisationspaket` finns: läs
@@ -116,8 +132,8 @@ avsluta elementet.
   och de inlästa delarna; råtexten ur `#inbakat-organisationspaket`.
 
 **Dokument och vakter**
-- `docs/anvandare/organisationspaket.md`: nytt avsnitt *Organisationsfil* (hur den skapas, sprids,
-  uppdateras och granskas); `korguide.md` §0 och README *Kom igång* steg 2 får alternativet "eller
+- `docs/anvandare/organisationspaket.md`: avsnitt 3b *Organisationsfil* (hur den skapas, sprids och granskas, och
+  IT:s kontroll) och avsnitt 4 (flytten till en ny version); `korguide.md` §0 och README *Kom igång* steg 2 får alternativet "eller
   öppna organisationsfilen som er systemförvaltare tagit fram"; `pilotchecklista.md` en rad.
 - `docs/dataskydd/riskanalys.md` §6.8 (konfigurationsfilen) får ett syskonavsnitt om
   organisationsfilen: innehåll, att lönedata aldrig ingår, att paketet valideras som vid inläsning,

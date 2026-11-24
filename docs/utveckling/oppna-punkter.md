@@ -90,9 +90,10 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning
     för facklig samverkan. (Textförslaget till information till de anställda, tillgänglighetsredogörelsen och
     säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`; textförslaget är inte juridiskt granskat.)
-33. **Före release: systemförvaltarens väg för organisationspaketet.** Hur systemförvaltaren lägger in
-    organisationens paket och sprider det till handläggarna ska bli enklare (noterat 2026-11-23). I dag läser varje
-    handläggare in paketet själv (`docs/anvandare/organisationspaket.md`).
+33. *Avslutad 2026-11-24:* systemförvaltarens väg för organisationspaketet är enklare. Fliken *För
+    systemförvaltaren* tar fram organisationsfilen i tre steg, och *Flytta till en ny version* flyttar paketet ur den
+    gamla organisationsfilen utan separat paketfil (ADR-49, not 2026-11-24; `docs/anvandare/organisationspaket.md`
+    avsnitt 3b och 4).
 
 **Juridiska frågor.** Hänvisningarna gicks igenom 2026-10-19 (status *Förslag* i [`lagrum.md`](lagrum.md): inte
 juridiskt granskade). Beslut som följde: verktyget hänvisar övergripande

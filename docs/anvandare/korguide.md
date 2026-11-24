@@ -18,6 +18,9 @@ besluten gör och äger arbetsgivaren.
 - Filen `oppen-lonekartlaggning.html` — eller din **organisationsfil**, där systemförvaltaren bakat in
   organisationspaketet (`organisationspaket.md` avsnitt 3b) — öppnad **lokalt** (dubbelklick/`file://`
   eller från en intern, behörighetsstyrd filyta). Ingen installation, ingen internetanslutning behövs.
+  Avser organisationspaketet ett tidigare år, står det i paketets filruta i Filer och kvalitet: *Paketet avser
+  2025. Kontrollera med systemförvaltaren att det är det som gäller.* Raden stoppar ingenting; för förra årets
+  paket visas den från och med 1 mars.
 - **Verifiera filens äkthet** innan du läser in verklig lönedata. Den som laddar ner en version
   (ofta IT eller systemförvaltaren) verifierar **signaturen** med cosign. Signaturen prövas mot
   Sigstore-paketet (`oppen-lonekartlaggning.html.sigstore.json`) som ligger bredvid filen på

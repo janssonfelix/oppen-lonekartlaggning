@@ -17,8 +17,8 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
 - [ ] **Signaturen är verifierad** med `cosign verify-blob` mot versionens `.sigstore.json`-paket
       (kommandot i `SECURITY.md`); svaret är `Verified OK`.
 - [ ] Filens **SHA-256 matchar `RELEASE.txt`** (kontrollerar att den kopia du använder är den verifierade).
-      En organisationsfil har en egen kontrollsumma. *Visa paketet* anger kontrollsumman för den verktygsfil den
-      byggdes av, och den ska matcha `RELEASE.txt`. Uppgiften står i filen och styrker inte äktheten. Hämta därför
+      En organisationsfil har en egen kontrollsumma. Utan det inbakade blocket ska den matcha `RELEASE.txt`
+      (kommandona i `organisationspaket.md` avsnitt 3b, *IT:s kontroll av organisationsfilen*). Hämta
       organisationsfilen bara från din behörighetsstyrda interna yta.
 - [ ] **Nätverksfliken** i utvecklarverktygen visar **noll utgående anrop** under hela
       sessionen (ladda upp, analysera, exportera).

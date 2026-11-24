@@ -35,24 +35,25 @@ personnummer eller e-postadresser.
 
 ## 2. Skapa paketet
 
-1. Öppna verktyget och gå till **Filer och kvalitet**.
-2. Läs in **ställningstagandet** och **jämförelsestatistiken** i sina rutor, precis som vid en
-   vanlig kartläggning. Kontrollera att antalet rader stämmer.
-3. Klicka på länken **Skapa organisationspaket (för systemförvaltaren)** längst ned i steg 1, *Organisationspaket*,
-   överst i fliken.
-4. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta och vad
+1. Öppna verktyget och gå till **För systemförvaltaren**, sist i menyn. Fliken nås också från *Om verktyget* och
+   från en rad i steg 1 i Filer och kvalitet.
+2. I **Steg 1, Paketet**: läs in ställningstagandet och jämförelsestatistiken med knapparna **Läs in
+   ställningstagande** och **Läs in jämförelsestatistik**, eller ett befintligt paket med **Läs in
+   organisationspaket**. Är filen du har öppen redan en organisationsfil, är dess paket förvalt.
+3. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta och vad
    ställningstagandet ska heta. Fyll också i PO-påslag och beräkningsperiod (utan paket gäller 40 %, ett
    standardantagande). Fältet för ställningstagandets namn är förifyllt med filens namn. Byt till ett namn som passar i rapporten,
    t.ex. *Lönepolitiskt ställningstagande 2026*, och en kort form som *ställningstagandet*. Fältet
    *Minsta gruppstorlek för redovisning* är ifyllt med det värde som gäller just nu. Lämna det tomt
    om paketet inte ska ange något. Ett ogiltigt
    värde (inte ett heltal mellan 3 och 1000) stoppar sparandet.
-5. Fyll i låsningarna om organisationen vill ha dem (avsnitt 5): *Lägsta tillåtna minsta
+4. Fyll i låsningarna om organisationen vill ha dem (avsnitt 5): *Lägsta tillåtna minsta
    gruppstorlek*, *Rensning vid inaktivitet* med rutan *Lås rensningstiden*, och rutan *Små
    grupper får tas med i exporten från Tabeller och egna vyer*. Tomma fält betyder att paketet inte anger något.
-6. Kontrollera sammanfattningen ("Paketet får med: …" — den anger också vilken minsta
-   gruppstorlek paketet får och vad det låser) och välj **Spara som
-   organisationspaket**. Filen heter `<organisation>.lonepaket.json`.
+5. Kontrollera sammanfattningen ("Paketet får med: …" — den anger också vilken minsta
+   gruppstorlek paketet får och vad det låser). Ska paketet spridas som en egen fil (avsnitt 3) eller arkiveras,
+   välj **Spara som organisationspaket**. Filen heter `<organisation>.lonepaket.json`. Sprids i stället en
+   organisationsfil (avsnitt 3b), behövs ingen paketfil.
 
 Ingen lönefil behövs för att skapa paketet.
 
@@ -72,13 +73,15 @@ Handläggarna behöver inte få paketet som en egen fil. Systemförvaltaren kan 
 i själva verktyget och sprida **en organisationsfil**. Handläggaren öppnar den, och benämningar,
 ställningstagande, jämförelsestatistik och låsningar är på plats utan att något läses in.
 
-1. Läs in paketet (eller bygg det i formuläret under *Skapa organisationspaket*).
-2. Gå till **Skapa organisationsfil — verktyget med paketet inbakat** längst ned i samma panel.
-3. Peka ut **verktygsfilen du öppnade** (`oppen-lonekartlaggning.html`). Det behövs eftersom en
-   sida som öppnats från disk inte kan läsa sig själv — webbläsaren förbjuder det, och verktyget
-   hämtar aldrig något.
-4. Välj **filnamn** (förslaget är `oppen-lonekartlaggning-<organisation>.html`; ändelsen `.html`
-   läggs på om den saknas) och klicka **Ladda ner organisationsfilen**.
+Stegen står i fliken **För systemförvaltaren**:
+
+1. **Steg 1, Paketet:** läs in eller bygg paketet (avsnitt 2).
+2. **Steg 2, Verktygsfilen:** välj den HTML-fil du har öppen nu (`oppen-lonekartlaggning.html`), eller en nyare
+   version. Webbläsaren låter inte en sida läsa sig själv, och verktyget hämtar aldrig något, så filen måste väljas.
+3. **Steg 3, Ladda ner:** välj **filnamn** (förslaget är `oppen-lonekartlaggning-<organisation>.html`; ändelsen
+   `.html` läggs på om den saknas) och klicka **Ladda ner organisationsfilen**. Beskedet anger organisation,
+   paketets datum och vilken version av verktyget filen bygger på, och att ingen lönedata ingår. Är den valda filen
+   en annan version än den som körs, säger beskedet det.
 
 Organisationsfilen innehåller verktyget oförändrat plus paketet som en inaktiv datablock sist i
 filen. Inget skript ändras, så skyddet mot nätverk och lagring och kontrollsummorna i
@@ -91,15 +94,60 @@ För handläggaren: filrutan *Organisationspaket* visar *Inbakat i den här file
 paketfil ersätter det inbakade för sessionen. *Rensa all data* går tillbaka till det inbakade.
 Demoläget (`?demo=1`) går före och använder inte det inbakade paketet.
 
-**Ny version av verktyget eller ändrat paket:** gör om stegen ovan med den nya verktygsfilen eller
-det ändrade paketet, och sprid den nya organisationsfilen. Verktyget varnar om den utpekade
-filen är en annan version än den som körs.
+När paketet avser ett tidigare år visar filrutan en rad, till exempel *Paketet avser 2025. Kontrollera med
+systemförvaltaren att det är det som gäller.* För förra årets paket visas raden från och med 1 mars, så att förra
+årets kartläggning kan göras i början av året. Raden är en upplysning och stoppar ingenting. Ett paket utan år får
+ingen rad.
+
+**Ändrat paket:** gör om steg 1–3 och sprid den nya organisationsfilen. **Ny version av verktyget:** se avsnitt 4.
+
+### IT:s kontroll av organisationsfilen
+
+Organisationsfilen är releasefilen oförändrad plus ett block sist i filen,
+`<template id="inbakat-organisationspaket" …>…</template>`. Den har därför en annan kontrollsumma än releasen.
+IT kan kontrollera den genom att ta bort blocket och jämföra kontrollsumman för resten med `RELEASE.txt` för den
+version filen bygger på (versionen står i *Om verktyget*). Kommandona skriver resten till en ny fil och räknar dess
+kontrollsumma; organisationsfilen ändras inte.
+
+Linux och macOS (byt `organisationsfil.html` mot filens namn; på en Mac utan `sha256sum`: `shasum -a 256`):
+
+```bash
+perl -0pe 's/<template id="inbakat-organisationspaket"[^>]*>[\s\S]*?<\/template>//' organisationsfil.html > utan-paket.html
+sha256sum utan-paket.html
+```
+
+Windows (PowerShell, i mappen där filen ligger):
+
+```powershell
+$text = [IO.File]::ReadAllText("$PWD\organisationsfil.html")
+$rest = $text -creplace '<template id="inbakat-organisationspaket"[^>]*>[\s\S]*?</template>', ''
+[IO.File]::WriteAllText("$PWD\utan-paket.html", $rest)
+Get-FileHash .\utan-paket.html -Algorithm SHA256
+```
+
+Kontrollsumman ska vara densamma som i `RELEASE.txt`, vars signatur IT verifierar enligt `SECURITY.md`. Det
+styrker att allt utom paketet är den publicerade filen.
+Paketet självt granskas med **Visa paketet**. Ett annat sätt är att jämföra organisationsfilen med releasefilen i
+ett jämförelseverktyg och se att bara blocket skiljer sig.
 
 ## 4. Uppdatera paketet
 
 Gör ett nytt paket när ställningstagandet eller jämförelsestatistiken ändras — i regel en
-gång om året, eller när lönesystemets uttag fått nya kolumnnamn (en ny importprofil). Läs in det gamla paketet, byt ut det som ändrats med rutorna, ändra år i
-formuläret och spara. Datumet i paketet visar vilken version som använts.
+gång om året, eller när lönesystemets uttag fått nya kolumnnamn (en ny importprofil). Öppna organisationsfilen (dess
+paket är förvalt i steg 1) eller läs in det gamla paketet, byt ut det som ändrats med knapparna, ändra år i
+formuläret och gör steg 2 och 3 (eller spara paketet). Datumet i paketet visar vilken version som använts.
+
+**Ny version av verktyget.** Rutan **Flytta till en ny version** i fliken För systemförvaltaren flyttar paketet
+oförändrat, utan någon separat paketfil:
+
+1. Välj **den gamla organisationsfilen**, den som handläggarna använder.
+2. Välj **den nya verktygsfilen**, releasefilen för den nya versionen.
+3. Välj filnamn och klicka **Ladda ner den nya organisationsfilen**.
+
+Paketet i den gamla filen prövas som vid inläsning. Beskedet anger organisation, paketets datum, den gamla och den
+nya versionen, och att ingen lönedata ingår. Är den nya filen en äldre version än den gamla, säger beskedet det,
+men filen laddas ändå ner. Har den gamla filen inget inbakat paket, laddas inget ner. Ska paketet också ändras, gör
+det i steg 1–3.
 
 ## 5. Låsningar — det handläggaren inte får ändra
 
@@ -264,10 +312,14 @@ Före spridning:
       från Tabeller och egna vyer. Beslutet och skälet är dokumenterat, till exempel i dataskyddsombudets bedömning.
 - [ ] Paketet är prövat: läs in det i en ny flik och kontrollera faktarutan (organisation, datum,
       innehåll och låsningar). Kontrollera också att *Inställningar* visar golvet och *Vad lagras?* den låsta tiden.
+- [ ] En organisationsfil är öppnad och prövad på samma sätt, och IT har kontrollerat den mot `RELEASE.txt`
+      (avsnitt 3b, *IT:s kontroll av organisationsfilen*).
 
 Vid spridning:
 
 - [ ] Paketet ligger bredvid verktyget på den interna filytan, med ett namn som visar året. Alternativt
       ligger organisationsfilen (avsnitt 3b) där, så att handläggarna bara behöver en fil.
+- [ ] Vid en ny version av verktyget är paketet flyttat med *Flytta till en ny version* (avsnitt 4), och den gamla
+      organisationsfilen är ersatt.
 - [ ] Handläggarna vet vilket paket som gäller och att det läses in varje gång verktyget öppnas.
 - [ ] Det gamla paketet är borttaget eller tydligt markerat som ersatt.

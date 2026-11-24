@@ -314,7 +314,13 @@ längre, så punktdiagrammet färgat efter AID-etikett bär filens text som seri
 **ADR-49 — Organisationsfil: paketet inbakat i verktygsfilen, en fil att sprida.** Paketet bakas in som ett inaktivt
 block efter sista skriptet, så att CSP:ns kontrollsummor är orörda; filen verifieras inte mot den publicerade versionen
 (beslut 2026-10-19). *Avvisat:* automatisk inläsning av en paketfil i samma mapp, som `connect-src 'none'` och
-webbläsaren gör omöjlig. *Gäller i dag:* `organisationsfil.md`.
+webbläsaren gör omöjlig. *Gäller i dag:* `organisationsfil.md`. *Not (2026-11-24):* systemförvaltaren har en egen
+flik, *För systemförvaltaren*, sist i menyn och aldrig låst, med paketet, verktygsfilen och nedladdningen i tre steg;
+formuläret flyttade dit från Filer och kvalitet. Rutan *Flytta till en ny version* flyttar paketet ur den gamla
+organisationsfilen till en ny releasefil utan separat paketfil, och filrutan visar en rad när paketet avser ett
+tidigare år (för förra årets paket från och med 1 mars). Verktyget verifierar fortfarande inte filen; IT kan göra
+det för hand, eftersom filen utan blocket är releasefilen (`organisationspaket.md` avsnitt 3b). Formatet och
+skydden är oförändrade.
 
 **ADR-50 — Prioritering är vad, Löneöversyn är hur.** Prioritering svarar på vad som bör åtgärdas och vad det kostar;
 Löneöversyn på hur potten fördelas, och lönerevisionssimulatorn i Prioritering är borttagen. *Gäller i dag:*
