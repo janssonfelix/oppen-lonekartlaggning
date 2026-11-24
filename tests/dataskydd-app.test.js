@@ -110,6 +110,43 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
     });
 
+    it('tiden räknas på klockan: en dator som sovit förbi hela tiden rensas vid första provet, och musen förlänger inte', () => {
+        const w = createAppWindow();
+        w.__state.data = [{ bas: 'A', kon: 'kvinna', lon: 30000 }];
+        let prov = null;
+        w.setInterval = fn => { prov = fn; return 1; };   // intervallet körs för hand; under sömnen körs det inte alls
+        const start = w.Date.now();
+        w.Date.now = () => start;
+        w.eval('sattInaktivitetstid(30)');
+        w.Date.now = () => start + 10 * 60 * 1000;
+        prov();
+        expect(w.document.querySelector('.inactivity-warn-overlay')).toBeNull();
+        // Locket fälls ned; tre timmar senare rör någon musen innan intervallet hunnit köra.
+        w.Date.now = () => start + 3 * 60 * 60 * 1000;
+        w.dispatchEvent(new w.Event('mousemove'));
+        expect(w.__state.data).toEqual([]);
+        expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
+    });
+
+    it('tiden räknas på klockan: i den sista minuten visar provet varningen, och aktivitet före den förlänger', () => {
+        const w = createAppWindow();
+        w.__state.data = [{ bas: 'A', kon: 'kvinna', lon: 30000 }];
+        let prov = null;
+        w.setInterval = fn => { prov = prov || fn; return 1; };   // det första intervallet är timerns, nästa varningens
+        const start = w.Date.now();
+        w.Date.now = () => start;
+        w.eval('sattInaktivitetstid(30)');
+        w.Date.now = () => start + 20 * 60 * 1000;
+        w.dispatchEvent(new w.Event('keydown'));   // aktivitet efter 20 minuter: tiden räknas därifrån
+        w.Date.now = () => start + 48 * 60 * 1000;
+        prov();
+        expect(w.document.querySelector('.inactivity-warn-overlay')).toBeNull();
+        w.Date.now = () => start + 49 * 60 * 1000 + 1000;
+        prov();
+        expect(w.document.querySelector('.inactivity-warn-overlay')).not.toBeNull();
+        expect(w.__state.data).toHaveLength(1);
+    });
+
     it('tidsväljaren i Vad lagras? gäller direkt när dialogen öppnats, både från knappen och från sökningen', () => {
         const w = createAppWindow();
         const valj = min => {

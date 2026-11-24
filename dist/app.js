@@ -29548,7 +29548,9 @@ function oppnaVadLagras() {
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal);
 }
+var _INAKTIVITET_PROV_MS = 15 * 1e3;
 var _inaktivitetstimer = null;
+var _sistaAktivitet = 0;
 var _inaktivitetsvarningTimer = null;
 var _inaktivitetsvarningElement = null;
 function _doljInaktivitetsvarning() {
@@ -29614,15 +29616,34 @@ function _rensaVidInaktivitet() {
     }, 3e4);
   }
 }
+var _harNagotAttRensa = () => state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
+function _provaInaktivitet() {
+  if (!_inaktivitetstimer || _inaktivitetsvarningElement || state.inactivityTimeoutMin <= 0) return false;
+  if (!_harNagotAttRensa()) {
+    clearInterval(_inaktivitetstimer);
+    _inaktivitetstimer = null;
+    return false;
+  }
+  const gatt = Date.now() - _sistaAktivitet, tid = state.inactivityTimeoutMin * 60 * 1e3;
+  if (gatt >= tid) {
+    _rensaVidInaktivitet();
+    return true;
+  }
+  if (gatt >= tid - 60 * 1e3) {
+    _visaInaktivitetsvarning();
+    return true;
+  }
+  return false;
+}
 function _aterstallInaktivitetstimer() {
   if (_inaktivitetstimer) {
-    clearTimeout(_inaktivitetstimer);
+    clearInterval(_inaktivitetstimer);
     _inaktivitetstimer = null;
   }
   if (state.inactivityTimeoutMin <= 0) return;
-  if (state.data.length === 0 && !_fkVantar && !state.forhandskontroll) return;
-  const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1e3 - 60 * 1e3);
-  _inaktivitetstimer = setTimeout(_visaInaktivitetsvarning, warnAfterMs);
+  if (!_harNagotAttRensa()) return;
+  _sistaAktivitet = Date.now();
+  _inaktivitetstimer = setInterval(_provaInaktivitet, _INAKTIVITET_PROV_MS);
 }
 function sattInaktivitetstid(minutes) {
   const last = state.paketLas.inaktivitetMin;
@@ -29649,7 +29670,9 @@ function uppstartVadLagrasInaktivitet() {
   });
   ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"].forEach((evt) => {
     window.addEventListener(evt, () => {
-      if (state.inactivityTimeoutMin > 0 && !_inaktivitetsvarningElement) _aterstallInaktivitetstimer();
+      if (state.inactivityTimeoutMin <= 0 || _inaktivitetsvarningElement || _provaInaktivitet()) return;
+      if (_inaktivitetstimer) _sistaAktivitet = Date.now();
+      else _aterstallInaktivitetstimer();
     }, { passive: true });
   });
   document.getElementById("data-residency-close")?.addEventListener("click", () => {

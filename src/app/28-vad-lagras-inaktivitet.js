@@ -102,8 +102,14 @@ export function oppnaVadLagras() {
 // På som standard (90 minuter: dataskydd som standard enligt GDPR art. 25.2, med en tid som inte
 // avbryter ett normalt arbetspass). HR kan
 // ändra eller stänga av det i "Vad lagras?"-modalen.
-/** @type {ReturnType<typeof setTimeout>|null} */
+// Tiden räknas på klockan (Date.now), inte med en lång setTimeout: webbläsarens timer står ofta still medan datorn
+// sover, och en dator som öppnas efter timmar visade annars underlaget tills resten av tiden gått. Intervallet prövar
+// klockan; det står också still under sömnen men prövar igen så snart datorn vaknar.
+const _INAKTIVITET_PROV_MS = 15 * 1000;
+/** @type {ReturnType<typeof setInterval>|null} */
 let _inaktivitetstimer  = null;
+/** Klockan vid senaste aktiviteten. */
+let _sistaAktivitet = 0;
 /** @type {ReturnType<typeof setInterval>|null} */
 let _inaktivitetsvarningTimer = null;
 /** @type {HTMLElement|null} */
@@ -179,16 +185,30 @@ function _rensaVidInaktivitet() {
     }
 }
 
+const _harNagotAttRensa = () => state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;   // en väntande fil och en förhandskontroll på skärmen rensas också
+
+/**
+ * Prövar klockan mot senaste aktiviteten. Har hela tiden gått rensas allt direkt (datorn har sovit förbi varningen);
+ * har allt utom den sista minuten gått visas varningen. Sant när något av det gjordes.
+ */
+function _provaInaktivitet() {
+    if (!_inaktivitetstimer || _inaktivitetsvarningElement || state.inactivityTimeoutMin <= 0) return false;
+    if (!_harNagotAttRensa()) { clearInterval(_inaktivitetstimer); _inaktivitetstimer = null; return false; }
+    const gatt = Date.now() - _sistaAktivitet, tid = state.inactivityTimeoutMin * 60 * 1000;
+    if (gatt >= tid) { _rensaVidInaktivitet(); return true; }
+    if (gatt >= tid - 60 * 1000) { _visaInaktivitetsvarning(); return true; }
+    return false;
+}
+
 export function _aterstallInaktivitetstimer() {
     if (_inaktivitetstimer) {
-        clearTimeout(_inaktivitetstimer);
+        clearInterval(_inaktivitetstimer);
         _inaktivitetstimer = null;
     }
     if (state.inactivityTimeoutMin <= 0) return;
-    if (state.data.length === 0 && !_fkVantar && !state.forhandskontroll) return;   // en väntande fil och en förhandskontroll på skärmen rensas också
-    // Visa varningen 60 s INNAN total timeout
-    const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1000 - 60 * 1000);
-    _inaktivitetstimer = setTimeout(_visaInaktivitetsvarning, warnAfterMs);
+    if (!_harNagotAttRensa()) return;
+    _sistaAktivitet = Date.now();
+    _inaktivitetstimer = setInterval(_provaInaktivitet, _INAKTIVITET_PROV_MS);
 }
 
 // Ett värde låst av organisationspaketet (ADR-47) gäller oavsett vad som begärs.
@@ -219,8 +239,9 @@ export function uppstartVadLagrasInaktivitet() {
     // Registrera aktivitets-lyssnare en gång — billiga (passive)
     ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
         window.addEventListener(evt, () => {
-            // Bara reset om timern är igång (annars onödig CPU)
-            if (state.inactivityTimeoutMin > 0 && !_inaktivitetsvarningElement) _aterstallInaktivitetstimer();
+            // Klockan prövas först: den som rör musen efter att datorn sovit förbi tiden förlänger inte sessionen.
+            if (state.inactivityTimeoutMin <= 0 || _inaktivitetsvarningElement || _provaInaktivitet()) return;
+            if (_inaktivitetstimer) _sistaAktivitet = Date.now(); else _aterstallInaktivitetstimer();
         }, { passive: true });
     });
     document.getElementById('data-residency-close')?.addEventListener('click', () => {

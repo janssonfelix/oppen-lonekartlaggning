@@ -23,6 +23,9 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
   gränsen 29 %. Förut kunde avrundningen i datorn lägga det en aning under gränsen.
 - **En Excelfil med en ensam cell långt ut i bladet låser inte längre verktyget.** Inläsningen läser bladet fram till
   den sista cellen med ett värde, inte hela det område som filen anger.
+- **Rensningen vid inaktivitet räknar tiden på klockan, också medan datorn sover.** Förut stod tiden ofta still under
+  sömnen, och en dator som öppnades efter flera timmar visade underlaget tills resten av tiden gått. Nu rensas den
+  inom 15 sekunder, eller direkt när någon rör musen.
 
 ## 2026.11.22
 
