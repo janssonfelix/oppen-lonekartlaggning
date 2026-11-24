@@ -1,7 +1,8 @@
 # Dataskyddsbeskrivning — Öppen lönekartläggning
 
-**För:** dataskyddsombud och IT-säkerhet som ska bedöma verktyget inför användning.
-**Omfattning:** en sammanfattning på två sidor. Den fullständiga, kodverifierade analysen —
+**För:** dataskyddsombudet som ska bedöma behandlingen. Ingången för IT-säkerhet och dataskyddsombud är
+[`sakerhetsbeskrivning.md`](../anvandare/sakerhetsbeskrivning.md); det här är fördjupningen.
+**Omfattning:** två sidor. Den fullständiga, kodverifierade analysen —
 dataflöde, tekniska skydd, riskregister och verifieringslogg — finns i
 [`riskanalys.md`](riskanalys.md), som också är underlaget till arbetsgivarens
 konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
