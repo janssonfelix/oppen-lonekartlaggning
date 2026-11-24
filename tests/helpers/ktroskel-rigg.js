@@ -163,6 +163,10 @@ export function fonsterKon(k) {
     return win;
 }
 export const harNagon = (text, varden) => varden.filter(v => text.includes(String(v)));
+// Som harNagon men som ett eget tal: ingen siffra (eller siffra och tusentalsmellanrum) före och ingen siffra efter.
+// För korta tal som könsgapen ("50,23"), som annars hittas inuti ett större belopp ("26 050,23" kr, ADR-105).
+const _reTal = v => new RegExp(`(?<!\\d[\\s\u00a0\u202f]?)${String(v).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?!\\d)`);
+export const harNagonTal = (text, varden) => varden.filter(v => _reTal(v).test(text));
 // ISO-tidsstämplar (konfigurationsfilen, exporternas metadata) tas bort innan utdata söks igenom: sekunder och
 // millisekunder kan se ut som ett dolt värde ("…:48.30Z", "…:57.785Z" mot 57.7), och då föll testet bara när klockan
 // råkade stå rätt.
