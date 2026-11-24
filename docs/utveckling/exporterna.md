@@ -36,9 +36,9 @@ Alla exporter körs i exportläget (`medExportLage`, `k-troskeln.md` §3).
   tabeller och diagram; de kortare urvalen är bara avsnitten.
 - **ZIP-filen** (`lonekartlaggning_export.zip`) innehåller Excel-filen med alla flikar
   (`lonekartlaggning_komplett.xlsx`), Word-utkastet och en bild 1920 × 1080 av varje diagram som är ritat och får
-  exporteras (`diagram/<id>.png`). Varje upplåst flik ritas först, utom Exportera, Rapporttext, Spara och jämför år och
-  Om verktyget; Spara och jämför år ritas när ett årsbokslut är inläst. Ett fel i en del stoppar inte de andra: det
-  rapporteras (`granssnittet.md` §6), och filen får det som gick att bygga.
+  exporteras (`diagram/<id>.png`). Varje upplåst flik ritas först, utom Exportera, Rapporttext, Spara och jämför år,
+  Om verktyget och För systemförvaltaren; Spara och jämför år ritas när ett årsbokslut är inläst. Ett fel i en del
+  stoppar inte de andra: det rapporteras (`granssnittet.md` §6), och filen får det som gick att bygga.
 - **Exportnotisen** (`_visaExportvarning`) visas efter en sparad fil och säger att filen innehåller lönedata och ska
   hanteras som personuppgifter.
 - **Demodata** märks: Word-utkastets sidfot och filnamn säger DEMODATA, och CSV-filer, diagrambilder och diagramdata får
