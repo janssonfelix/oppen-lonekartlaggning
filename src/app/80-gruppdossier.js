@@ -13,7 +13,6 @@
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 import { htmlTillText } from '../lib/htmltext.js';
-import { arKvinna, arMan } from '../lib/kon.js';
 import { personOrd } from '../lib/namn.js';
 import { medianKvotKIGiltiga } from '../lib/osakerhet.js';
 import { skrDelText } from '../lib/skrreferens.js';
@@ -46,11 +45,6 @@ export function _gdBootstrapGapKI(kvLons, maLons, B) {
 /** Alla grupper som får öppnas i dossier (minsta gruppstorlek som överallt annars): gruppdossierGrupper i src/lib/vymodell-gruppdossier.js. */
 export function gruppdossierKandidater() {
     return gruppdossierGrupper(hamtaData(), kTroskel());
-}
-
-/** Kvinnorna och männen i en grupps rader, på samma sätt som dossiern räknar dem. */
-export function _gdKon(rows) {
-    return { kv: rows.filter(r => arKvinna(r)), ma: rows.filter(r => arMan(r)) };
 }
 
 /**

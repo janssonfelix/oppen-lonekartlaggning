@@ -323,8 +323,7 @@ export function lasUppFlikar() {
         if (!el) return;
         /** @type {HTMLInputElement} */ (el).disabled = false;
         // Låst läge visar "ladda upp först" i title. När fliken låses upp byts den
-        // mot flikens egen förklaring (data-tip) — där lagrum/paragrafer bor, så
-        // etiketten kan vara på klarspråk.
+        // mot flikens egen förklaring (data-tip).
         const tip = el.getAttribute('data-tip');
         if (tip) el.setAttribute('title', tip); else el.removeAttribute('title');
     });

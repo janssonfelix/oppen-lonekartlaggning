@@ -11,8 +11,8 @@ Dokumentet beskriver den byggda koden. Där det skiljer sig från koden är det 
 | Lager | Var det bor | Ansvar |
 |---|---|---|
 | Sidan | `src/index.html`, `src/style.css` | Skalet, stilmallen och innehållspolicyn (CSP) som bygget gör till en fil. Sidan kör inget från nätet (S1). |
-| Beräkningskärnan | `src/lib/` (50 moduler) | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
-| Appen | `src/app/NN-*.js` (85 delar) och `src/app/index.js` | ES-moduler som importerar det de använder, ur andra delar och ur lib under lib-namnen: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas; bygget gör dem till ett klassiskt skript. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
+| Beräkningskärnan | `src/lib/` | Rena ES-moduler utan DOM och utan tillstånd: statistik, modeller, regler och formatet för figurer. Kan köras i Node. |
+| Appen | `src/app/NN-*.js` och `src/app/index.js` | ES-moduler som importerar det de använder, ur andra delar och ur lib under lib-namnen: tillstånd, inläsning, vyer, exporter. Det är här som lib anropas; bygget gör dem till ett klassiskt skript. Förteckningen står i [`src/app/README.md`](../../src/app/README.md). |
 | Biblioteken | `vendor/` | D3, JSZip, PapaParse och SheetJS, låsta med kontrollsummor i `SHA256SUMS`. Licenserna står i `TREDJEPARTSLICENSER.md`. |
 | Bygget | `tools/` | `build-app.mjs` bygger appen med esbuild, `bundle.mjs` bygger filen och `RELEASE.txt`, `kontroll.mjs` kör hela kedjan. Se [`bygge-och-test.md`](bygge-och-test.md). |
 | Testerna | `tests/` | Vitest: enhetstester av `src/lib/`, appen per funktion i jsdom (`<område>-app.test.js`), invarianter för exporterna och vakter för dokument och skydd. Webbläsarröktestet ligger i `tools/browser-smoke/`. |
