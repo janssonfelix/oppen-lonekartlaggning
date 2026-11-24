@@ -38,8 +38,12 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     *Framtida utveckling (mätt 2026-11-23):* när flikarnas regler flyttade till vymodeller (ADR-99) och 31 dubbletter
     i jsdom ersattes av tester i Node gick sviten från 201 till 199 s, omkring 1 %. Tiden går till tre filer som ritar
     och exporterar: k-invarianten (100 s), start och meny (79 s) och diagramritaren (68 s). De har inga dubbletter
-    att ta bort; tiden kortas bara om de görs om, till exempel så att invarianten prövar vymodellerna i Node och
-    bara ett urval av utdatavägarna i jsdom.
+    att ta bort.
+    *Invarianten i Node prövad och kastad (mätt 2026-11-24):* av `tests/ktroskel-invarianter.test.js` 112 s går
+    omkring 60 s till att bygga och söka igenom exporterna (I4), 30 s till I6, 14 s till I1–I1b och 6 s till I7.
+    Exporterna (Word, Excel, ZIP, utskrift) når inte vymodellerna, så I4 kan inte flyttas till Node utan att S4 vaktas
+    sämre. I1–I1b och I6 har redan sina regler i Node (`vymodeller.test.js`, `figur.test.js`), och jsdom prövar
+    kopplingen; att pröva I6 för ett diagram i stället för fem sparar omkring 24 s processortid, omkring 1 % av sviten.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
 9e. *Avslutad 2026-11-21:* att Utforska och kolumnen *Skillnad kön* i Prioriteringen visar storleken utan prövning
