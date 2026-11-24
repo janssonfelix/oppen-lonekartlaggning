@@ -8,7 +8,7 @@
 import { installningsGrans } from '../lib/installningsgranser.js';
 import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
 import { bakaIn, filnamnForslag, normaliseraFilnamn } from '../lib/organisationsfil.js';
-import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, tolkaPaket } from '../lib/organisationspaket.js';
+import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, paketArGammalt, tolkaPaket } from '../lib/organisationspaket.js';
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
@@ -96,6 +96,8 @@ export function ritaPaketinfo() {
         : inb ? 'Inläst fil — ersätter det inbakade paketet för den här sessionen' : null;
     el.innerHTML = `<dl>${rad('Organisation', p.organisation)}${rad('Utgivare', p.utgivare)}${rad('Skapat', p.skapat)}`
         + `${rad('Avser år', p.avserAr)}${rad('Innehåll', innehall)}${rad('Låsningar', _paketLasText(state.paketLas))}${rad('Källa', kalla)}</dl>`
+        // Bara en upplysning: den stoppar ingenting och kommer inte in i Att göra (lib: paketArGammalt).
+        + (paketArGammalt(p.avserAr, new Date()) ? `<p class="text-dampad-sm" role="note">Paketet avser ${esc(String(p.avserAr))}. Kontrollera med systemförvaltaren att det är det som gäller.</p>` : '')
         + (p.kalla === 'inbakat' ? `<p class="paket-knappar"><button type="button" id="btn-paket-visa" class="btn btn-secondary btn-sm">Visa paketet</button> `
             + `<button type="button" id="btn-paket-ladda-ner" class="btn btn-secondary btn-sm">Ladda ner paketet</button></p>` : '');
     el.hidden = false;

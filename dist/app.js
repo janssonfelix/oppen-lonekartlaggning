@@ -24560,7 +24560,7 @@ function ritaPaketinfo() {
   const rad = (dt, dd) => dd == null || dd === "" ? "" : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`;
   const inb = state.paketInbakat;
   const kalla = p.kalla === "inbakat" ? `Inbakat i den här filen (skapad ${inb?.skapad || "–"})` : inb ? "Inläst fil — ersätter det inbakade paketet för den här sessionen" : null;
-  el.innerHTML = `<dl>${rad("Organisation", p.organisation)}${rad("Utgivare", p.utgivare)}${rad("Skapat", p.skapat)}${rad("Avser år", p.avserAr)}${rad("Innehåll", innehall)}${rad("Låsningar", _paketLasText(state.paketLas))}${rad("Källa", kalla)}</dl>` + (p.kalla === "inbakat" ? `<p class="paket-knappar"><button type="button" id="btn-paket-visa" class="btn btn-secondary btn-sm">Visa paketet</button> <button type="button" id="btn-paket-ladda-ner" class="btn btn-secondary btn-sm">Ladda ner paketet</button></p>` : "");
+  el.innerHTML = `<dl>${rad("Organisation", p.organisation)}${rad("Utgivare", p.utgivare)}${rad("Skapat", p.skapat)}${rad("Avser år", p.avserAr)}${rad("Innehåll", innehall)}${rad("Låsningar", _paketLasText(state.paketLas))}${rad("Källa", kalla)}</dl>` + (paketArGammalt(p.avserAr, /* @__PURE__ */ new Date()) ? `<p class="text-dampad-sm" role="note">Paketet avser ${esc(String(p.avserAr))}. Kontrollera med systemförvaltaren att det är det som gäller.</p>` : "") + (p.kalla === "inbakat" ? `<p class="paket-knappar"><button type="button" id="btn-paket-visa" class="btn btn-secondary btn-sm">Visa paketet</button> <button type="button" id="btn-paket-ladda-ner" class="btn btn-secondary btn-sm">Ladda ner paketet</button></p>` : "");
   el.hidden = false;
 }
 function lasInPaket(...a) {

@@ -173,6 +173,22 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
         expect(w.__state.policy).toHaveLength(3);
     });
+    it('ett paket för ett tidigare år får en upplysning i filrutan, inbakat eller inläst, men ingen punkt i Att göra', () => {
+        const ARSRAD = 'Paketet avser 2000. Kontrollera med systemförvaltaren att det är det som gäller.';
+        const arsrad = w => w.document.querySelector('#paket-info [role="note"]');
+        const w = createAppWindow({ html: organisationsfil(paket({ avserAr: 2000 })) });
+        expect(arsrad(w)?.textContent).toBe(ARSRAD);
+        w.__state.data = rader();
+        w.eval('ritaAtgardslista()');
+        expect(w.document.getElementById('att-gora').textContent).not.toContain('systemförvaltaren');
+        const w2 = createAppWindow();
+        expect(las(w2, paket({ avserAr: 2000 })).ok).toBe(true);
+        expect(arsrad(w2)?.textContent).toBe(ARSRAD);
+        const nasta = new Date().getFullYear() + 1;
+        expect(las(w2, paket({ avserAr: nasta })).ok).toBe(true);
+        expect(arsrad(w2)).toBeNull();
+        expect(arsrad(createAppWindow({ html: organisationsfil(paket({ avserAr: nasta })) }))).toBeNull();
+    });
     it('demoläget går före det inbakade paketet', () => {
         const w = createAppWindow({ html: organisationsfil(), url: 'http://localhost/?demo=1' });
         expect(w.__state.isDemo).toBe(true);
