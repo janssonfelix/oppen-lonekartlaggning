@@ -19,8 +19,8 @@ Verktyget är ett proof of concept; vad det betyder står i README:s [*Status*](
 | Dokument | Vad det är |
 |---|---|
 | [`sammanfattning-hr-chefer.md`](anvandare/sammanfattning-hr-chefer.md) | Sammanfattning för HR-chefer: vad verktyget gör och inte gör. |
-| [`sakerhetsbeskrivning.md`](anvandare/sakerhetsbeskrivning.md) | Säkerhetsbeskrivning på en sida för IT-säkerhet och dataskyddsombud. |
-| [`dataskydd.md`](dataskydd/dataskydd.md) | Dataskyddsbeskrivningen i sammanfattning: vilka uppgifter, var de finns och hur de skyddas. |
+| [`sakerhetsbeskrivning.md`](anvandare/sakerhetsbeskrivning.md) | Ingången för IT-säkerhet och dataskyddsombud, på en sida. |
+| [`dataskydd.md`](dataskydd/dataskydd.md) | Fördjupningen för dataskyddsombudet: vilka uppgifter, var de finns, hur de skyddas och vad som kan lämna verktyget. |
 | [`riskanalys.md`](dataskydd/riskanalys.md) | Den fullständiga risk- och sårbarhetsanalysen, granskad mot koden med AI-verktyg: dataflöde, skydd, riskregister och verifiering. |
 | [`tillganglighetsredogorelse.md`](anvandare/tillganglighetsredogorelse.md) | Tillgänglighetsredogörelse för verktyget (WCAG 2.1 AA) som underlag till organisationens bedömning. |
 | [`organisationspaket.md`](anvandare/organisationspaket.md) | Guide för systemägaren: organisationspaketet med benämningar, inställningar, ställningstagande och statistik. |

@@ -275,10 +275,10 @@ finns ingen C1.
 | R2 | En egen riktad rad på en grupp under tröskeln är tillåten och får en upplysning; verktygets egna förslag följer tröskeln | `k-troskeln.md` §8; ADR-69 | `forslagskandidater`, `rensaForeslagnaRader`, `riktadRadInfo`, `vymodell-loneoversyn.js`; `ettParPerYrke`, `loneoversyn.js`; minnet av paren i `_fcRensaParMal`, `src/app/36-loneoversyn.js` | `tests/vymodeller.test.js`, `tests/ktroskel-regression.test.js` |
 | R3 | Ålder & karriär följer regeln för könsuppdelade mått | `k-troskeln.md` §8 | `_sattDiagramKNot`, `src/app/06-k-troskel.js`; `vymodellAlderOchLon`, `alderBandRader`, `vymodell-alder-karriar.js` | `tests/ktroskel-regression.test.js` |
 | R4 | Löneöversynens scenariojämförelse maskerar ett rågap som sparats vid en lägre tröskel (lönegapet före och efter) | `k-troskeln.md` §8 | `scenarioUr`, `scenariojamforelse`, `vymodell-loneoversyn.js`; `konFarRedovisas`, `ktroskel.js` | `tests/vymodeller.test.js`, `tests/ktroskel-regression.test.js` |
-| R5 | Löneöversyns tröskelmål (lyft i procent och kostnad) kräver tröskeln för varje kön | `k-troskeln.md` §8 | `vymodellTroskelmal`, `vymodell-loneoversyn.js`; `konFarRedovisasFor`, `ktroskel.js` | `tests/vymodeller.test.js`, `tests/troskelbeslut.test.js` |
+| R5 | Löneöversyns tröskelmål (lyft i procent och kostnad) kräver tröskeln för varje kön | `k-troskeln.md` §8 | `vymodellTroskelmal`, `vymodell-loneoversyn.js`; `konFarRedovisasFor`, `ktroskel.js` | `tests/vymodeller.test.js`, `tests/ktroskel-regression.test.js` |
 
-Regel R4 vaktas också av C3 och röktestet. De övriga testerna i `tests/ktroskel*.test.js`, `tests/kanonymitet.test.js`
-och `tests/troskelbeslut.test.js` heter efter det de prövar och står i `k-troskeln.md` §9.
+Regel R4 vaktas också av C3 och röktestet. De övriga testerna i `tests/ktroskel*.test.js` och `tests/kanonymitet.test.js`
+heter efter det de prövar och står i `k-troskeln.md` §9.
 
 ## 12. Skydden
 

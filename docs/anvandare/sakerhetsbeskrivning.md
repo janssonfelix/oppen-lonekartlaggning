@@ -1,8 +1,9 @@
 # Säkerhetsbeskrivning — Öppen lönekartläggning
 
-**För:** IT-säkerhet och dataskyddsombud som ska godkänna verktyget. En sida; den fullständiga analysen, granskad
-mot koden med AI-verktyg, står i [`riskanalys.md`](../dataskydd/riskanalys.md) (avsnitten anges inom parentes) och
-dataskyddet i korthet i [`dataskydd.md`](../dataskydd/dataskydd.md).
+**För:** IT-säkerhet och dataskyddsombud som ska godkänna verktyget. Det här är ingången, på en sida. Dataskyddsombudet
+fördjupar sig i [`dataskydd.md`](../dataskydd/dataskydd.md) (behandlingen, undantagen från minsta gruppstorlek och det
+som kan lämna verktyget). Den fullständiga analysen, granskad mot koden med AI-verktyg, står i
+[`riskanalys.md`](../dataskydd/riskanalys.md) (avsnitten anges inom parentes).
 
 **Status:** verktyget är ett proof of concept, inte prövat med verklig lönedata och inte granskat av statistiker,
 jurist eller dataskyddsombud; mer i README:s [*Status*](../../README.md#status-ett-proof-of-concept).

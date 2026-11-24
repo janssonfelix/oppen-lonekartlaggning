@@ -61,3 +61,13 @@ describe('attgora: processöversiktens steg (ADR-29)', () => {
         expect(stegLikvardigt({ analys: true, antalPar: 2, t: 0, d: 0 }).status).toBe('delvis');
     });
 });
+
+describe('Processöversiktens steg 4: inget att hantera när alla kandidatpar har en grupp under tröskeln', () => {
+    it('regeln: tillståndet inget, inte klar, med antalet par och hänvisning till fliken', () => {
+        expect(stegLikvardigt({ analys: true, antalPar: 0, utelamnade: 2, k: 10, t: 0, d: 0 })).toEqual({ status: 'inget',
+            detail: 'Inget att hantera i Att göra: 2 par har en grupp under 10 personer och redovisas bara i fliken Likvärdigt arbete — gå till steget för att granska dem.' });
+        expect(stegLikvardigt({ analys: true, antalPar: 0, utelamnade: 0, t: 0, d: 0 }).status).toBe('klar');
+        expect(stegLikvardigt({ analys: true, antalPar: 1, utelamnade: 2, t: 1, d: 1 }).status).toBe('klar');
+        expect(stegLikvardigt({ analys: true, antalPar: 1, utelamnade: 2, t: 1, d: 0 }).status).toBe('delvis');
+    });
+});

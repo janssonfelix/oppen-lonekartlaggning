@@ -4,6 +4,7 @@
 // vad verktyget lagrar.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { fonster } from './helpers/ktroskel-rigg.js';
 import { attributtext } from './helpers/attributtext.js';
 import { las } from './helpers/granssnitt-rigg.js';
 
@@ -108,6 +109,43 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         expect(w.document.querySelector('.inactivity-warn-overlay')).toBeNull();
         expect(w.__state.data).toEqual([]);
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
+    });
+
+    it('tiden räknas på klockan: en dator som sovit förbi hela tiden rensas vid första provet, och musen förlänger inte', () => {
+        const w = createAppWindow();
+        w.__state.data = [{ bas: 'A', kon: 'kvinna', lon: 30000 }];
+        let prov = null;
+        w.setInterval = fn => { prov = fn; return 1; };   // intervallet körs för hand; under sömnen körs det inte alls
+        const start = w.Date.now();
+        w.Date.now = () => start;
+        w.eval('sattInaktivitetstid(30)');
+        w.Date.now = () => start + 10 * 60 * 1000;
+        prov();
+        expect(w.document.querySelector('.inactivity-warn-overlay')).toBeNull();
+        // Locket fälls ned; tre timmar senare rör någon musen innan intervallet hunnit köra.
+        w.Date.now = () => start + 3 * 60 * 60 * 1000;
+        w.dispatchEvent(new w.Event('mousemove'));
+        expect(w.__state.data).toEqual([]);
+        expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
+    });
+
+    it('tiden räknas på klockan: i den sista minuten visar provet varningen, och aktivitet före den förlänger', () => {
+        const w = createAppWindow();
+        w.__state.data = [{ bas: 'A', kon: 'kvinna', lon: 30000 }];
+        let prov = null;
+        w.setInterval = fn => { prov = prov || fn; return 1; };   // det första intervallet är timerns, nästa varningens
+        const start = w.Date.now();
+        w.Date.now = () => start;
+        w.eval('sattInaktivitetstid(30)');
+        w.Date.now = () => start + 20 * 60 * 1000;
+        w.dispatchEvent(new w.Event('keydown'));   // aktivitet efter 20 minuter: tiden räknas därifrån
+        w.Date.now = () => start + 48 * 60 * 1000;
+        prov();
+        expect(w.document.querySelector('.inactivity-warn-overlay')).toBeNull();
+        w.Date.now = () => start + 49 * 60 * 1000 + 1000;
+        prov();
+        expect(w.document.querySelector('.inactivity-warn-overlay')).not.toBeNull();
+        expect(w.__state.data).toHaveLength(1);
     });
 
     it('tidsväljaren i Vad lagras? gäller direkt när dialogen öppnats, både från knappen och från sökningen', () => {
@@ -337,5 +375,35 @@ describe('«Vad lagras?»', () => {
         w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-modal').style.display).toBe('flex');
         expect(w.document.getElementById('data-residency-modal').textContent).not.toMatch(/\bRAM\b/);
+    });
+});
+
+describe('autocomplete="off" på alla fält, också de som skapas efter start', () => {
+    const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
+                    'kon', 'demografi', 'benchmark', 'kvalitet', 'rapport', 'handlingsplan', 'info', 'utforska', 'dokumentera', 'livscykel'];
+    const utan = d => [...d.querySelectorAll('input, textarea, select')]
+        .filter(el => el.type !== 'file' && el.getAttribute('autocomplete') !== 'off')
+        .map(el => `${el.tagName.toLowerCase()}#${el.id || '?'}[name=${el.name || ''}][type=${el.type || ''}]`);
+    it('efter att alla flikar ritats och riktade rader lagts till saknar inget fält attributet', { timeout: 30000 }, async () => {
+        const w = fonster(null);
+        for (const f of FLIKAR) { try { w.eval(`ritaFlik('${f}')`); } catch (_e) { /* fliken finns inte */ } }
+        w.__state.forecast.targets.push({ bas: 'A', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
+        w.eval('ritaRiktadeRader()');
+        // Fält som en knapp skapar (de riktade raderna) får attributet av observatören, strax efter.
+        expect(w.document.querySelectorAll('#forecast-targets select, #forecast-targets input').length).toBeGreaterThan(3);
+        await new Promise(r => setTimeout(r, 0));
+        // Anteckningsfälten i Regler & praxis skapas vid start och ska ha attributet i mallen.
+        const not = w.document.getElementById('bes8-note-1');
+        expect(not).not.toBeNull();
+        expect(not.getAttribute('autocomplete')).toBe('off');
+        expect(w.document.querySelectorAll('input[type="text"], textarea').length).toBeGreaterThan(10);
+        expect(utan(w.document)).toEqual([]);
+    });
+    it('ett fält som läggs till senare får attributet av observatören', async () => {
+        const w = fonster(null);
+        w.eval("const d = document.createElement('div'); d.innerHTML = '<input type=\"text\" id=\"sent-falt\"><textarea id=\"sent-text\"></textarea>'; document.body.appendChild(d);");
+        await new Promise(r => setTimeout(r, 0));
+        expect(w.document.getElementById('sent-falt').getAttribute('autocomplete')).toBe('off');
+        expect(w.document.getElementById('sent-text').getAttribute('autocomplete')).toBe('off');
     });
 });

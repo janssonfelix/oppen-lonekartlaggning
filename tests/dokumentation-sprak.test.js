@@ -117,8 +117,14 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['BAS-nivå', /BAS-nivå(?!\s+[A-ZÅÄÖ]\b)/],
         ['strukturdata', /[Ss]trukturdata|[Ss]trukturfil/],
         ['osakliga gap', /osakliga gap/],
-        ['anmälningspliktig', /anmälningspliktig/],
-        ['utredningsgräns', /utrednings(?:gräns|tröskel|steg)|obligatorisk utredning|[Ll]agstadgat tröskelvärde/],
+        // Juridiska formuleringar hålls övergripande (beslut 8c, ingen juristgranskning före lansering): verktyget påstår
+        // inte vad direktivet kräver i detalj. "ingen anmälningsplikt" får stå; "anmälningspliktig" inte.
+        ['anmälningspliktig', /anmälningspliktig/iu],
+        ['utredningsgräns', /utrednings(?:krav|gräns|tröskel|steg)|obligatorisk utredning|(?:bör|ska|måste) utredas/iu],
+        ['lagstadgat', /lagstadga/iu],
+        ['direktivet kräver', /enligt (?:eu-?)?direktivet (?:bör|ska|säger)|direktiv\S* (?:bör|ska|säger|kräver)\b/iu],
+        ['unexplained gender pay gap', /unexplained gender pay gap/iu],
+        ['diskrimineringsindikerande', /diskrimineringsindikerande/iu],
         // Klarspråksputsen (K-OR7): "Nära pension", och svenska ord i stället för de engelska och tekniska termerna.
         // Ordlistan får ange den engelska termen inom parentes som förklaring ("(eng. privacy by design)").
         ['Successionszon', /[Ss]uccessions(?:zon|risk)/],
@@ -152,11 +158,14 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
             'BAS-nivån', 'Ladda upp strukturdata', 'strukturfilen', 'medarbetarna', 'likvärdiga arbeten',
             'osakliga gap', 'anmälningspliktig', 'EU-direktivets utredningströskel', 'Lagstadgat tröskelvärde', 'Gap-analys',
             'i successionszon', 'Hög successionsrisk', 'Per-BAS conditional gap', 'Privacy by Design', 'Privacy by design', 'Urval (datafunnel)', 'bara vitlistade kolumner', 'Fältvitlistan',
-            'lokal-only-arkitektur', 'leverage', 'media-mått', 'rekryteringspipelinen', 'K-anonymitet', 'k-anonymiteten', '4. Exkluderat (k-anon)'])
+            'lokal-only-arkitektur', 'leverage', 'media-mått', 'rekryteringspipelinen', 'K-anonymitet', 'k-anonymiteten', '4. Exkluderat (k-anon)',
+            'utredningskrav', 'enligt EU-direktivet bör', 'Lönetransparensdirektivet kräver att', 'gap över 5 % bör utredas',
+            'anmälningspliktiga', 'Unexplained gender pay gap'])
             expect(traffar(t, AVFORDA), t).not.toEqual([]);
         for (const t of ['gapPct', 'meanGap', '68-var-uppstar-gapet.js', 'chart-perbas-gap', 'BAS-nivå B',
             'löneskillnad', 'anställda', 'BAS-intervall', 'likvärdigt arbete', 'lönefilen', '`gap`',
-            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `TILLATNA_FALT`', 'inflytelserika punkter', 'rekryteringen', 'minsta gruppstorlek', 'tests/kanonymitet.test.js'])
+            'Nära pension', 'Inbyggt dataskydd', '(eng. privacy by design)', 'bara godkända fält', 'vitlista `TILLATNA_FALT`', 'inflytelserika punkter', 'rekryteringen', 'minsta gruppstorlek', 'tests/kanonymitet.test.js',
+            'ingen anmälningsplikt', 'direktivets regler om gemensam lönebedömning', 'Direktivet skulle vara infört'])
             expect(traffar(t, AVFORDA), t).toEqual([]);
         for (const t of ['(§ 8)', 'art. 9', 'Art. 9', 'artikel 10', '3 kap. 9 §']) expect(traffar(t, LAGRUM_UI), t).not.toEqual([]);
         for (const t of ['Diskrimineringslagen kräver att du analyserar varje skillnad (3 kap.).', 'lagen'])

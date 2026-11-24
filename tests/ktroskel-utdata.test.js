@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { normalisera, fonster, fonsterLitet, tvaDec, iExport } from './helpers/ktroskel-rigg.js';
+import { normalisera, fonster, fonsterLitet, tvaDec, iExport, elementText, fonsterParLikvardigt } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -940,4 +940,64 @@ describe('[B5.5] k-tröskeln: Lika arbete AID x BAS har samma grupper som tabell
             expect(not).not.toMatch(/\(\d+ kvinnor, \d+ män\)/);
         });
     }
+});
+
+describe('k-tröskeln: processöversiktens steg 4 är inget att hantera när alla kandidatpar har en grupp under tröskeln', () => {
+    const steg4 = w => { w.eval('ritaKartlaggningensSteg()'); return [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Likvärdigt arbete/.test(r.textContent)); };
+    it('vid 10 är steget "inget att hantera" med knappen till fliken; vid 5 är paret en punkt att hantera', () => {
+        const w10 = fonsterParLikvardigt(10);
+        iExport(w10);
+        const rad10 = steg4(w10);
+        expect(rad10.querySelector('.ptrack-status').dataset.status).toBe('inget');
+        expect(elementText(rad10)).toMatch(/Inget att hantera i Att göra: 1 par har en grupp under 10 personer och redovisas bara i fliken Likvärdigt arbete/);
+        expect(elementText(rad10)).not.toMatch(/redovisas inte här/);
+        expect(rad10.querySelector('.ptrack-goto').dataset.gotoTab).toBe('likvardighet');
+        const rad5 = steg4(iExport(fonsterParLikvardigt(5)));
+        expect(rad5.querySelector('.ptrack-status').dataset.status).toBe('delvis');
+        expect(elementText(rad5)).toMatch(/1 kandidatpar/);
+    });
+});
+
+describe('Diagramdata från diagram med en punkt per person säger att filen innehåller en rad per person', () => {
+    const RAD = 'Filen innehåller en rad per person (lön, kön, ålder eller grupp) och ska hanteras som personuppgifter. Text ur fältet för AID-etikett kan följa med som den står i lönefilen.';
+    const rader = (w, id) => { w.__id = id; return w.eval('diagramexportRader(document.getElementById(window.__id))'); };
+    it('spridningsdiagrammen i Ålder & karriär bär raden på rad 2, efter stämpeln; aggregerade diagram bär den inte', () => {
+        const w = fonster(null);
+        w.eval("ritaFlik('kon')");
+        for (const id of ['chart-kon-scatter', 'chart-kon-multiplar']) {
+            const r = rader(w, id);
+            expect(r.length, id).toBeGreaterThan(3);
+            expect(r[0][0], id).toMatch(/^.* — Lönekartläggning .*Minsta gruppstorlek för redovisning: 10\.$/);
+            expect(r[1], id).toEqual([RAD]);
+            expect(w.document.getElementById(id)._figur.individer, id).toBe(true);
+        }
+        for (const id of ['chart-kon-boxplot', 'chart-demo-hist', 'chart-demo-spread']) {
+            const r = rader(w, id);
+            expect(r.length, id).toBeGreaterThan(1);
+            expect(JSON.stringify(r), id).not.toContain('rad per person');
+        }
+    });
+    it('färglagt efter AID-etikett blir texten ur fältet serienamn, som den står i lönefilen (ADR-85)', () => {
+        const w = fonster(null);
+        w.eval("ritaFlik('kon')");
+        w.document.getElementById('kon-color-by').value = 'aid';
+        w.eval("ritaAlderOchLon('__ALLA__')");
+        const serier = new Set(rader(w, 'chart-kon-scatter').slice(2).map(r => r[0]));
+        expect(serier.has('6000 Säkeryrke 0')).toBe(true);
+    });
+    it('raden följer med till urklipp och CSV', async () => {
+        const w = fonster(null);
+        w.eval("ritaFlik('kon')");
+        const texter = [];
+        w.navigator.clipboard = { writeText: t => { texter.push(t); return Promise.resolve(); } };
+        w.__id = 'chart-kon-scatter';
+        await w.eval('exporteraDiagram(document.getElementById(window.__id), "data-kopiera")');
+        expect(texter.join('\n')).toContain(RAD);
+        const blobbar = [];
+        w.URL.createObjectURL = b => { blobbar.push(b); return 'blob:x'; };
+        w.URL.revokeObjectURL = () => {};
+        await w.eval('exporteraDiagram(document.getElementById(window.__id), "data-csv")');
+        expect(blobbar.length).toBeGreaterThan(0);
+        expect(await blobbar[0].text()).toContain(RAD);
+    });
 });

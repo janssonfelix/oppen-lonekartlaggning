@@ -231,7 +231,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   varje fält som skapas medan användaren arbetar. Det gäller till exempel anteckningarna i Regler & praxis,
   handlingsplanens fält, Löneöversyns riktade rader och Tabeller och egna vyer. En observatör sätter attributet på
   fält som läggs till i dokumentet (`stangAutofyll`, `01-html-och-tillganglighet.js`). Då sparas inte
-  organisationsnamn och anteckningar i autofyll-historiken, som kan synkas till leverantörens moln. Vaktas av `tests/troskelbeslut.test.js`,
+  organisationsnamn och anteckningar i autofyll-historiken, som kan synkas till leverantörens moln. Vaktas av `tests/dataskydd-app.test.js`,
   som ritar alla flikar och kräver attributet på varje fält.
 - **Notering (utanför verktygets kontroll):** operativsystemets minnesväxling
   (swap) eller webbläsarens egen sidcache kan teoretiskt skriva minnessidor till
@@ -246,7 +246,8 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 - Inaktivitetstimern rensar sessionen automatiskt efter 90 minuter (standard;
   30, 60, 120 minuter eller av under *Vad lagras?*), via **samma** rensningsväg
   (`_rensaAllData`) men utan bekräftelsefråga. Varning och möjlighet att förlänga visas en
-  minut innan. Organisationspaketet kan låsa tiden (5–120 minuter; läget av kan inte låsas,
+  minut innan. Tiden räknas på klockan, också medan datorn sover: en dator som öppnas efter att tiden gått rensas
+  inom 15 sekunder, eller direkt när någon rör musen eller tangentbordet. Organisationspaketet kan låsa tiden (5–120 minuter; läget av kan inte låsas,
   ADR-47). Rullistan står då på värdet, och `sattInaktivitetstid()` tar inte emot något annat.
   *Rensa all data* häver låsningen tillsammans med paketet.
 - **Vaktas av en invariant** (`tests/dataskydd-app.test.js`): alla flikar, extremvärdesdetektorn
