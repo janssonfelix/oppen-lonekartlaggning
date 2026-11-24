@@ -26,7 +26,7 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 6. *Avslutad 2026-11-23:* kraschen i Node under testkörning (V8:s skräpsamlare) har inte setts sedan dess: inte i 80
    framkallningsförsök på Node 22 och 24 (2026-11-22), inte i de 25 senaste CI-körningarna och inte i åtta hela
    kontroller lokalt. Omkörningen i `tools/test.mjs` står kvar som skydd och kostar inget när inget kraschar.
-8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Logik flyttas till `src/lib/` när en del ändå ändras.
+8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Reglerna flyttas till `src/lib/`, med tillståndet som argument och prövade i Node, så att en extern granskare hittar varje regel och dess test på ett ställe.
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
     2026-11-22: omkring 2 050 s sammanlagt på tolv arbetare). Väntetiden för en pull request sätts av röktestet i
     webbläsarna (4,5–5,5 min), inte av sviten. Filerna som ritar verktyget i jsdom står för nästan hela tiden, och

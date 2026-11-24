@@ -38,7 +38,7 @@ datastrukturering kan verktyget leverera värde över flera år utan att uppdate
 - **Läser inga** historiska lönefiler: de skulle lägga fler personuppgifter i minnet och förutsätter stabila
   BAS-strukturer. Jämförelsen mellan år görs genom årsbokslutet i konfigurationsfilen (ADR-54), som bara bär aggregat.
   *Att läsa historiska lönefiler får inte införas utan nytt beslut.*
-- Kolumnen Ansvar läses inte in och inget enhetsmått beräknas.
+- **Läser inte** organisatorisk enhet, och inget mått per enhet beräknas. Ansvarskoden enligt AID är ett valfritt fält.
 - **Analyserar inte** rörliga eller kompletterande lönedelar. Verktyget har en lönedefinition — heltidsomräknad
   månadslön — och EU-rapportens mått redovisas för den.
 - **Stödjer inte** surfplatta eller telefon: verktyget är ett skrivbordsverktyg (ADR-82). Ett smalt eller delat
@@ -62,7 +62,7 @@ datastrukturering kan verktyget leverera värde över flera år utan att uppdate
 | Rapporttext | Auto-rapportutkastet i klarspråk och rapportunderlaget att klistra in i egen mall (ADR-20) |
 | Exportera | Färdigcheck, robusthetspanel, rapportens innehåll och all export: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt** (ADR-40), med förhandsbesked; därtill JPA-protokoll (art. 10) och handlingsplansunderlag |
 | Spara och jämför år | Konfigurationen, ögonblicksbilden, jämförelse med förra året (ADR-54) och självdiagnostiken |
-| Gränssnittets form | 16 flikar i grupperna 1 · Underlag, 2 · Kartläggning, 3 · Åtgärder, 4 · Rapport, Arbetet och Hjälp (`PANELGRUPPER` i `31-navigering.js`); Översiktens processkarta med de åtta lagstegen; flikmallen (ADR-41), sidindexet, sök i sidhuvudet (länkade vyer), panelen Inställningar och två lägen, vägledande och kompakt |
+| Gränssnittets form | Flikarna i grupperna 1 · Underlag, 2 · Kartläggning, 3 · Åtgärder, 4 · Rapport, Arbetet och Hjälp (`PANELGRUPPER` i `31-navigering.js`); Översiktens processkarta med de åtta lagstegen; flikmallen (ADR-41), sidindexet, sök i sidhuvudet (länkade vyer), panelen Inställningar och två lägen, vägledande och kompakt |
 | Diagram och export | Diagramkärnan (ADR-39), formen och färgen efter uppgiften (ADR-42); exportmeny på varje diagram: PNG, SVG och diagramdata |
 | Underlagets kvalitet | Fem kriterier med OK/Varning/Kritisk; svagaste kriteriet avgör (ADR-19) |
 | Transparens | Bevis-popup på varje fynd: visar *uträkningen*, inte tabelldata |

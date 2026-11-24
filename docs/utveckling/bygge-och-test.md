@@ -148,8 +148,8 @@ Vitest. De genererade filerna (`dist/` och `src/app/08-version.js`) prövas av a
 **Ett nytt test prövar en sak på ett ställe.** En regel (en beräkning, en tolkning, en gräns) prövas i en enhetsfil
 mot modulen i `src/lib/`: den körs på millisekunder och pekar ut felet. Ett apptest i jsdom skrivs för det som bara
 syns när verktyget är ihopkopplat: vad en flik visar, vad som lämnar verktyget och att ett val når rätt väg. Har
-regeln redan ett enhetstest prövar apptestet att regeln används, inte alla fall en gång till. Befintliga tester
-flyttas när de ändå ändras, inte i ett svep.
+regeln redan ett enhetstest prövar apptestet att regeln används, inte alla fall en gång till. Ett befintligt test
+som inte följer det flyttas till regelns enhetsfil (`oppna-punkter.md` punkt 8).
 
 **Ett dokumenttest låser inte ordalydelsen.** Dokumenttesterna prövar att det dokumenten pekar på finns (filer,
 skript, ADR-nummer), att tal ur koden står rätt och att avförda ord och påståenden inte står kvar. En formulering
