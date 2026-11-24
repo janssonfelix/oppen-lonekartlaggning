@@ -354,12 +354,11 @@ skattningarna som avstånd från nollinjen med intervallet. Kortet visas när mi
 
 **t-kvantilen.** Konfidensintervallen i huvudregressionen (huvudtalet och `basEffekter`), regressionerna per
 BAS-intervall, översikten per huvudområde och livscykelmodellen är exp(β ± t(0,975; n − k) · SE) − 1, i procent, med `tKvantil(p, df)` i
-`src/lib/stat.js`. Funktionen inverterar `tFordelningCdf` med bisektion. Vid **df ≥ 100** används normalfördelningen (1,96),
-samma gräns som `pVardeTvasidigt`; vid färre frihetsgrader är intervallet bredare (df 5: 2,571; df 10: 2,228; df 26:
-2,056; df 60: 2,000).
+`src/lib/stat.js`. Funktionen inverterar `tFordelningCdf` med bisektion, vid alla frihetsgrader (ADR-105): df 5: 2,571;
+df 10: 2,228; df 26: 2,056; df 60: 2,000; df 100: 1,984; df 1 000: 1,962.
 
-**p-värdet.** `pVardeTvasidigt(t, n, k)` är det tvåsidiga p-värdet med df = n − k: t-fördelningen vid df under 100,
-normalfördelningen därifrån. Signifikansnivån är 0,05.
+**p-värdet.** `pVardeTvasidigt(t, n, k)` är det tvåsidiga p-värdet ur t-fördelningen med df = n − k, vid alla
+frihetsgrader (ADR-105). Signifikansnivån är 0,05.
 
 **t-fördelningen** (`tFordelningCdf`) är exakt, via den regulariserade ofullständiga betafunktionen: P(|T| > t) = I_x(df/2,
 1/2) med x = df / (df + t²), räknad med kedjebråk och ln Γ enligt Lanczos. Över df 1 000 000 används

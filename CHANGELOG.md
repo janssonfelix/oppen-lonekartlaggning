@@ -9,6 +9,9 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Konfidensintervall och p-värden räknas med t-fördelningen också i stora underlag.** Tidigare användes
+  normalfördelningen från 100 frihetsgrader, vilket gav en aning för smala intervall; nu blir de en aning bredare och
+  p-värdena en aning större nära gränsen 0,05 (ADR-105).
 - **Personer att granska säger hur många som saknar ålder.** Har lönefilen ålder prövas den som saknar ålder inte,
   och en not under listan säger nu hur många det gäller.
 - **Kvantilregressionen säger till när en skattning inte stabiliserats.** Står könsskillnaden vid P10, medianen eller

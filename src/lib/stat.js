@@ -11,7 +11,7 @@
  *   - median, kvantil, linjarRegression     (Stat-objektet i appen pekar hit)
  *   - matrisprodukt, transponera, invertera (matrisalgebra)
  *   - anpassaOLS                            (OLS + HC3-robusta SE)
- *   - normalCdf                             (Φ för p-värden)
+ *   - normalCdf                             (Φ; t-fördelningen vid df > 1e6)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
  *   - percentilintervall                    (95 %-percentilintervallet ur sorterade dragningar)
  *   - avrundaSymmetriskt                    (avrundningen i talformaten: halvorna bort från noll)
@@ -160,15 +160,14 @@ export function tFordelningCdf(t, df) {
 /**
  * t-fördelningens kvantil: det t för vilket P(T ≤ t | df) = p. Används för
  * konfidensintervall (p = 0,975 ger halvbredden för 95 %). Inverterar tFordelningCdf
- * med bisektion; vid df ≥ 100 används normalfördelningen (1,96 för 95 %), samma
- * gräns som pVardeTvasidigt.
+ * med bisektion, vid alla df (ADR-105; tFordelningCdf går själv över i normalfördelningen vid df > 1e6).
  * @param {number} p  - sannolikhet i (0, 1)
  * @param {number} df - frihetsgrader (n − k)
  * @returns {number} kvantilen, NaN vid ogiltiga argument
  */
 export function tKvantil(p, df) {
     if (!(p > 0 && p < 1) || !(df > 0)) return NaN;
-    const cdf = df >= 100 ? normalCdf : t => tFordelningCdf(t, df);
+    const cdf = t => tFordelningCdf(t, df);
     let lo = -1, hi = 1;
     while (cdf(lo) > p) lo *= 2;
     while (cdf(hi) < p) hi *= 2;
@@ -180,8 +179,7 @@ export function tKvantil(p, df) {
 }
 
 /**
- * Tvåsidigt p-värde för en regressionskoefficient. Använder t-fördelning
- * vid små df (< 100), annars normalfördelning.
+ * Tvåsidigt p-värde för en regressionskoefficient ur t-fördelningen med df = n − k, vid alla df (ADR-105).
  * @param {number} t - β / SE
  * @param {number} n    - antal observationer
  * @param {number} k    - antal regressorer
@@ -191,7 +189,6 @@ export function pVardeTvasidigt(t, n, k) {
     const df = n - k;
     if (!isFinite(t) || !(df > 0)) return NaN;
     const absT = Math.abs(t);
-    if (df >= 100) return 2 * (1 - normalCdf(absT));
     return 2 * (1 - tFordelningCdf(absT, df));
 }
 

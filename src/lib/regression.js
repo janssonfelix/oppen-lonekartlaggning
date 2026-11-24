@@ -179,7 +179,7 @@ export function gapPerBas(rader, basLista, { golv }) {
         const beta = fit.beta[1];
         const se   = Math.sqrt(fit.vcovHC3[1][1]); // HC3 robust SE
         const p    = pVardeTvasidigt(beta/se, fit.n, fit.k);
-        const tq   = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
+        const tq   = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (ADR-105)
         const ciLo = (Math.exp(beta - tq*se) - 1) * 100;
         const ciHi = (Math.exp(beta + tq*se) - 1) * 100;
         // Lönenivåerna för samma personer som regressionen (protokollet redovisar median och medelvärde, ADR-79). De
@@ -782,7 +782,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
     const tStat    = betaKon / seKonR;
     const pValue   = pVardeTvasidigt(tStat, chosen.n, chosen.k);
     const pct      = (Math.exp(betaKon) - 1) * 100;
-    // Halvbredden för 95 % KI: t-fördelningens kvantil vid df = n − k (1,96 först vid df ≥ 100)
+    // Halvbredden för 95 % KI: t-fördelningens kvantil vid df = n − k (ADR-105)
     const tq       = tKvantil(0.975, chosen.n - chosen.k);
     const pctLow   = (Math.exp(betaKon - tq*seKonR) - 1) * 100;
     const pctHigh  = (Math.exp(betaKon + tq*seKonR) - 1) * 100;

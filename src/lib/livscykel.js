@@ -116,7 +116,7 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     const aic = n * Math.log(rss / n) + 2 * k;
 
     // Tester på kön-relaterade koefficienter (huvudeffekt + interaktioner)
-    const Z = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (1,96 vid df ≥ 100)
+    const Z = tKvantil(0.975, fit.n - fit.k);   // t-kvantil för 95 % KI (ADR-105)
     const idxKv      = 1;
     const idxKvAge   = 4;
     const idxKvAge2  = 5;

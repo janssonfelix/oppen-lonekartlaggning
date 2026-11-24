@@ -388,10 +388,12 @@ describe('tKvantil', () => {
         expect(tKvantil(0.975, 26)).toBeCloseTo(2.056, 3);
         expect(tKvantil(0.975, 60)).toBeCloseTo(2.000, 3);
     });
-    it('faller tillbaka på normalfördelningens 1,96 vid df ≥ 100', () => {
-        expect(tKvantil(0.975, 100)).toBeCloseTo(1.96, 3);
-        expect(tKvantil(0.975, 5000)).toBeCloseTo(1.96, 3);
-        expect(tKvantil(0.975, 99)).toBeGreaterThan(1.96);
+    it('är t-fördelningens också vid df ≥ 100 (ADR-105)', () => {
+        // R: qt(0.975, df)
+        expect(tKvantil(0.975, 100)).toBeCloseTo(1.983972, 5);
+        expect(tKvantil(0.975, 200)).toBeCloseTo(1.971896, 5);
+        expect(tKvantil(0.975, 1000)).toBeCloseTo(1.962339, 5);
+        expect(tKvantil(0.975, 10000)).toBeCloseTo(1.960201, 5);
     });
     it('inverterar tFordelningCdf och är symmetrisk', () => {
         for (const df of [3, 12, 40]) {
@@ -421,14 +423,14 @@ describe('pVardeTvasidigt', () => {
     it('ger högre p-värde med t-fördelning än normal vid små df', () => {
         // Liten df → t-fördelning → större p-värde än ren z-approximation
         const pSmall = pVardeTvasidigt(1.96, 15, 3);  // df=12 → t
-        const pLarge = pVardeTvasidigt(1.96, 200, 3); // df=197 → normal
+        const pLarge = pVardeTvasidigt(1.96, 200, 3); // df=197
         expect(pSmall).toBeGreaterThan(pLarge);
     });
-    it('växlar till normalfördelning vid df ≥ 100', () => {
-        // df=100 ska använda normal, df=99 ska använda t
-        const pNormal = pVardeTvasidigt(2.0, 103, 3);
-        const expected = 2 * (1 - normalCdf(2.0));
-        expect(close(pNormal, expected, 1e-9)).toBe(true);
+    it('använder t-fördelningen också vid df ≥ 100 (ADR-105)', () => {
+        // df = 100: R 2 * pt(-2, 100) = 0,048212; normalfördelningen ger 0,045500
+        expect(pVardeTvasidigt(2.0, 103, 3)).toBeCloseTo(2 * (1 - tFordelningCdf(2.0, 100)), 12);
+        expect(pVardeTvasidigt(2.0, 103, 3)).toBeCloseTo(0.048212, 5);
+        expect(pVardeTvasidigt(2.0, 103, 3)).toBeGreaterThan(2 * (1 - normalCdf(2.0)));
     });
     it('returnerar NaN för df ≤ 0', () => {
         expect(Number.isNaN(pVardeTvasidigt(1, 3, 3))).toBe(true);

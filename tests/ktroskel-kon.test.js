@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { STORA, MELLAN, SMA, normalisera, oppnaFlik, KON_BAS, KON_KV, KON_MA, KON_GAP, KON_DOLDA, byggKonDataset, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { STORA, MELLAN, SMA, normalisera, oppnaFlik, KON_BAS, KON_KV, KON_MA, KON_GAP, KON_DOLDA, byggKonDataset, fonsterKon, harNagon, harNagonTal, laddaXlsx, fangaBocker, utskriftAv, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
 // fäller olika tester från körning till körning.
@@ -29,6 +29,10 @@ describe('fixturen för kön under tröskeln', () => {
         expect(new Set(KON_DOLDA).size).toBe(KON_DOLDA.length);
         const forekomster = v => data.filter(r => r.lon === v).length;
         for (const v of KON_DOLDA) expect(forekomster(v), String(v)).toBeLessThanOrEqual(3);   // bara i sin egen lilla grupp
+    });    it('könsgapet söks som ett eget tal: inte inuti ett större belopp, men med tecken, mellanrum och cellgräns (I4)', () => {
+        const gap = KON_GAP.find(v => v.includes(','));
+        for (const t of [`−${gap} %`, `| ${gap} |`, `gap ${gap}`, gap]) expect(harNagonTal(t, [gap]), t).toEqual([gap]);
+        for (const t of [`26 0${gap} kr`, `260${gap}`, `1${gap}`, `${gap}1`]) expect(harNagonTal(t, [gap]), t).toEqual([]);
     });
 });
 

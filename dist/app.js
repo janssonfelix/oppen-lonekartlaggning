@@ -291,7 +291,7 @@ function tFordelningCdf(t, df) {
 }
 function tKvantil(p, df) {
   if (!(p > 0 && p < 1) || !(df > 0)) return NaN;
-  const cdf = df >= 100 ? normalCdf : (t) => tFordelningCdf(t, df);
+  const cdf = (t) => tFordelningCdf(t, df);
   let lo = -1, hi = 1;
   while (cdf(lo) > p) lo *= 2;
   while (cdf(hi) < p) hi *= 2;
@@ -306,7 +306,6 @@ function pVardeTvasidigt(t, n, k) {
   const df = n - k;
   if (!isFinite(t) || !(df > 0)) return NaN;
   const absT = Math.abs(t);
-  if (df >= 100) return 2 * (1 - normalCdf(absT));
   return 2 * (1 - tFordelningCdf(absT, df));
 }
 function matrisprodukt(A2, B) {
@@ -11776,7 +11775,7 @@ function _bevisForPerBasRad(p, bhCtx) {
       { label: "Antal totalt", value: p.n.toLocaleString("sv-SE") },
       { label: "Antal kvinnor / män", value: `${p.kvN} / ${p.maN}` },
       { label: "— Oförklarad löneskillnad", value: `<strong>${fmtPct(p.gapPct)}</strong>`, isHtml: true, note: harAlder() ? "När skillnaden i ålder har räknats bort" : "Utan åldersjustering: lönefilen saknar ålder" },
-      { label: "95 % konfidensintervall", value: `[${fmtPct(p.ciLow)}, ${fmtPct(p.ciHigh)}]`, note: "β ± t(0,975; n−k) × HC3-SE (1,96 vid n−k ≥ 100), transformerat tillbaka från log" },
+      { label: "95 % konfidensintervall", value: `[${fmtPct(p.ciLow)}, ${fmtPct(p.ciHigh)}]`, note: "β ± t(0,975; n−k) × HC3-SE, transformerat tillbaka från log" },
       { label: "p-värde", value: p.pValue < 1e-3 ? "< 0,001" : svTal(p.pValue, 4), note: isSig ? "Statistiskt signifikant (p < 0,05)" : "Ej signifikant" },
       { label: "BH-FDR-korrektion", value: bhCtx && bhCtx.q != null ? bhCtx.q < 1e-3 ? "< 0,001" : svTal(bhCtx.q, 4) : "—", note: bhNote },
       { label: "Klassning", value: { titta: "Titta närmare", dokumentera: "Dokumentera: signifikant, under verktygets storleksgräns på 3 %", osakert: "Osäkert utslag: håller inte efter korrigering", inget: "Inom statistisk osäkerhet" }[perBasSignal(p.gapPct, sigAfterBH, p.pValue < 0.05).niva], isHtml: true },
@@ -28173,7 +28172,7 @@ function _exportJPAProtokollExport() {
     [`Lika arbete (${T.enhet.en})`, `Direkt median-jämförelse mellan kvinnors och mäns löner inom samma ${T.kod.en}. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.`],
     ["Median och medelvärde", `Blad 2 och 3 redovisar både median och medelvärde för kvinnor och män, i kronor och som kvinnors i procent av mäns. Statusen och urvalet följer medianen i blad 2 och regressionen i blad 3; medelvärdet står bredvid som underlag. I blad 3 räknas båda på samma personer som regressionen.`],
     [`Likvärdigt arbete (${T.niva.en})`, `OLS-regression: log(lön) ~ kön${harAlder() ? " + ålder (centrerad)" : ""} inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).${harAlder() ? "" : " Lönefilen saknar ålder, så ålder räknas inte bort."}`],
-    ["Konfidensintervall", "95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen är 1,96 vid n−k ≥ 100 och större vid färre frihetsgrader."],
+    ["Konfidensintervall", "95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen räknas vid n−k frihetsgrader (2,0 vid 60, 1,98 vid 100)."],
     ["Statistisk signifikans", `p < 0.05 = ej slumpmässig skillnad. För ${T.niva.bfl} gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).`],
     ["", ""],
     ["— Minsta gruppstorlek —", ""],
@@ -28561,7 +28560,7 @@ function _metodbilaga() {
     ...typeof gapVariabler === "function" && !gapVariablerArStandard(gapVariabler()) ? [["Var uppstår löneskillnaden (variabler)", gapVariabler().length > 1 ? `Skillnaden i medellön delas med ${gapVariablerIText(gapVariabler())}, i den ordningen (standard: BAS och AID). Ordningen påverkar delarna.` : `Skillnaden i medellön delas med ${gapVariablerIText(gapVariabler())} (standard: BAS och AID).`]] : [],
     ["Ålder & karriär (tvärsnitt)", "Lön mot ålder och livscykelmodellen bygger på ett tvärsnitt: de visar skillnader mellan åldersgrupper i dag, inte hur en persons lön utvecklas över karriären (kohorteffekter)"],
     ["Trattdiagrammet", `Med färre än tio ${T.enhet.fl} i ${T.niva.en} säger trattens form lite; varje grupp bedöms då för sig i tabellen. Punktens bedömning bygger på en omkastning av könen inom gruppen`],
-    ["p-värden", "t-fördelning vid df < 100, annars normalfördelning; Benjamini-Hochberg (FDR) vid multipla grupptest"],
+    ["p-värden", "t-fördelning med df = n − k; Benjamini-Hochberg (FDR) vid multipla grupptest"],
     ["Konfidensintervall", "Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man"],
     ["Signifikansnivå", "α = 0,05"],
     ["Minsta gruppstorlek för redovisning", `${kInstalld()} ${personOrd(kInstalld())}. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.` + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : "")],
@@ -31586,7 +31585,7 @@ var OM_AVSNITT = {
             <li><strong>Förklaringsmodellen kan väljas (ADR-56):</strong> i panelen <em>Förklaringsmodell</em> i Lönestruktur kan du ta bort ${T.niva.en} eller ålder, eller lägga till ${T.enhet.en} inom BAS. Fullmodellen är utgångsläge. Tabellen i panelen visar vad varje variabel tillför i förklaringsgrad (R²) när den läggs till sist i fullmodellen. Den visar också skillnaden utan och med variabeln. Tillför variabeln under 0,5 procentenheter föreslår verktyget att den lämnas utanför. Det är ett pedagogiskt råd, inte ett statistiskt test. Valet styr huvudtalet överallt, trappan, förklaringsbudgeten och Blinder-Oaxaca. En bortvald variabel redovisas som kontrollerad, med ett eventuellt skäl, i panelen och i rapporten. Valet följer med i konfigurationsfilen</li>
             <li><strong>BAS som indikatorvariabler:</strong> varje ${T.niva.en} får en egen indikator, en variabel som är 1 eller 0. Det alfabetiskt första intervallet är referens. Varje intervall får då sin egen lönenivå, utan antagandet att varje bokstavssteg är värt lika mycket. Bokstavsordningen (A lägst) är fast och kan inte ändras</li>
             <li>Konvertering till kr-procent: <code>gapPct = (exp(β) − 1) · 100</code></li>
-            <li><strong>Konfidensintervall:</strong> 95 % KI = β ± t<sub>0,975; n−k</sub> × SE. Vid färre än 100 frihetsgrader (antal observationer minus antal skattade parametrar) används t-fördelningens kvantil, därefter 1,96. Det gäller huvudregressionen, regressionerna per ${T.niva.en} och livscykelmodellen</li>
+            <li><strong>Konfidensintervall:</strong> 95 % KI = β ± t<sub>0,975; n−k</sub> × SE. Kvantilen är t-fördelningens vid n − k frihetsgrader (antal observationer minus antal skattade parametrar), och p-värdena räknas ur samma fördelning. Det gäller huvudregressionen, regressionerna per ${T.niva.en} och livscykelmodellen</li>
         </ul>
 
         <h3>Ålder &amp; karriär och livscykelmodellen: ett tvärsnitt, inte en karriär</h3>

@@ -8,7 +8,7 @@
  * tests/ktroskel-invarianter-25.test.js (25), som då körs parallellt.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, samlaUtdata, sammanhang, fonsterKon, SENT_MELLAN, SENT_SMA, FK_RA,
+import { KON_MA, KON_GAP, KON_GAP_1, KON_GAP_CELL, KON_DOLDA, harNagon, harNagonTal, samlaUtdata, sammanhang, fonsterKon, SENT_MELLAN, SENT_SMA, FK_RA,
     DIFFERENS_DEKLARATIONER, smaGrupper, byggKonDataset } from './ktroskel-rigg.js';
 import { differensprov, tabellerIUtdata } from './differens.js';
 
@@ -224,7 +224,7 @@ export function invariantSvit(k, extra) {
         it('inget könsgap för en grupp där ett kön är under tröskeln i det som lämnar verktyget', () => {
             const lackor = [];
             for (const [namn, text] of exporter()) {   // tidsstämplarna är redan borttagna (utanTid i samlaUtdata)
-                for (const v of harNagon(text, KON_GAP)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
+                for (const v of harNagonTal(text, KON_GAP)) lackor.push(`${namn}: ${v} — "${sammanhang(text, v)}"`);
                 for (const re of [...KON_GAP_1, ...KON_GAP_CELL]) { const m = text.match(re); if (m) lackor.push(`${namn}: ${m[0]} — "${sammanhang(text, m[0])}"`); }
             }
             expect(lackor).toEqual([]);
