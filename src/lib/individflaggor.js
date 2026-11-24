@@ -62,10 +62,13 @@ export function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     const grupper = new Map();
     // Utan ålder i lönefilen (ADR-64) prövas alla med kollegornas median: åldersspridningen är då noll.
     const harAlder = (rader || []).some(r => r && r.alder > 0);
+    // Med ålder i filen prövas inte den som saknar ålder (0 = saknas), men räknas, så att panelen kan säga det.
+    let utanAlder = 0;
     for (const r of rader || []) {
-        if (!(r.lon > 0) || (harAlder && !(r.alder > 0))) continue;
+        if (!(r.lon > 0)) continue;
         const kon = konAv(r);
         if (kon !== 'Kvinna' && kon !== 'Man') continue;
+        if (harAlder && !(r.alder > 0)) { utanAlder++; continue; }
         // Gruppen är AID-koden i BAS-intervallet (aidAvRad), inte texten i fältet: två stavningar av samma etikett
         // är samma kollegor. Posten bär personens egen text i `aid`.
         const nyckel = `${aidAvRad(r)}\u0000${r.bas}`;
@@ -83,7 +86,7 @@ export function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
     flaggade.sort((a, b) => a.avvikelsePct - b.avvikelsePct || (a.radnr ?? Infinity) - (b.radnr ?? Infinity));
     const tot = provade.kv + provade.ma;
     const kvFlagg = flaggade.filter(f => f.kon === 'Kvinna').length;
-    return { provade, ejProvade, flaggade, andelKv: {
+    return { provade, ejProvade, utanAlder, flaggade, andelKv: {
         provade: tot ? provade.kv / tot * 100 : null,
         flaggade: flaggade.length ? kvFlagg / flaggade.length * 100 : null,
     } };

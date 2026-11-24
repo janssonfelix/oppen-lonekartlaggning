@@ -92,6 +92,18 @@ describe('flaggaIndivider utan ålder i lönefilen (ADR-64)', () => {
         expect(res.flaggade).toHaveLength(1);
         expect(res.flaggade[0].metod).toBe('median');
         expect(res.flaggade[0].forvantad).toBe(30000);
+    });    it('ingen räknas som utan ålder när filen saknar ålder', () => {
+        expect(flaggaIndivider([...flera(10, 'kvinna', 30000, 0)], {}).utanAlder).toBe(0);
+    });
+});
+
+describe('flaggaIndivider med ålder i filen och en saknad ålder', () => {
+    it('den som saknar ålder prövas inte, är ingen kollega och räknas i utanAlder', () => {
+        const res = flaggaIndivider([...flera(10, 'kvinna', 30000, 40), p('man', 15000, 0), p('man', 0, 0)], {});
+        expect(res.utanAlder).toBe(1);   // raden utan lön räknas inte
+        expect(res.provade.kv + res.provade.ma).toBe(10);
+        expect(res.flaggade).toHaveLength(0);
+        expect(res.ejProvade).toBe(0);
     });
 });
 
