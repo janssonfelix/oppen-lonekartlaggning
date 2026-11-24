@@ -242,13 +242,13 @@ export function invertera(A) {
 /**
  * OLS-estimat med klassisk + HC3-robusta vcov (Long & Ervin 2000).
  *
- * Returnerar identiskt fältnamn-gränssnitt som app.js _anpassaOLS:
+ * Returnerar:
  *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
- * hHoga = antalet observationer med hävstång h_i > 0,99 (B4). De har (nästan) noll residual och bidrar inte till
- * HC3-köttet; antalet visas i regressionskortets tekniska specifikation (en ensam person i en indikator ger h = 1).
+ * hHoga = antalet observationer med hävstång h_i > 0,99 (B4); antalet visas i regressionskortets tekniska specifikation.
+ * Bara en observation med h = 1 (en ensam person i en indikator, residualen 0) får vikten 0 i HC3-köttet; övriga
+ * bidrar med e²/(1 − h)², också de med hög hävstång.
  * hTillagg (valfri) läggs till hävstången per rad innan HC3 och hHoga räknas: när X är inomtransformerad ger
  * 1/n_g per rad den fulla designens hävstång (ADR-77, inomYrkesgrupp i regression.js).
- * Detta är "single source of truth" — app.js mirrar denna implementation.
  *
  * @param {number[][]} X - n×k designmatris.
  * @param {number[]} y    - n-vektor.
