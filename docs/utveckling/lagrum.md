@@ -17,7 +17,7 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 | Sammanhang | Form |
 |---|---|
 | Gränssnitt, verktygstips, exporter, Word, PDF, protokoll | Övergripande: *enligt diskrimineringslagen*, *lönekartläggningens regler*, *likvärdigt arbete*, *direktivets regler om gemensam lönebedömning*. Inga paragraf- eller artikelnummer. |
-| Metodbilagan (varje Excelfil, Word och PDF) | Raden *Rättslig ram*: diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970; och en hänvisning hit. |
+| Metodbilagan (varje Excelfil, Word och PDF) | Raden *Rättslig ram*: diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970. I Excelfilerna står också en hänvisning hit. |
 | Dokumenten i `docs/` | Övergripande, med hänvisning hit där ett lagrum behövs. |
 | Den här tabellen | Exakt: *3 kap. 9 § 2 diskrimineringslagen*, *art. 10.1 a direktiv (EU) 2023/970*, *art. 5.1 c dataskyddsförordningen*. |
 
