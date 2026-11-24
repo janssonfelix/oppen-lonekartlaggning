@@ -1,4 +1,4 @@
-# Organisationspaket — guide för systemägaren
+# Organisationspaket — guide för systemförvaltaren
 
 Ett **organisationspaket** är en fil som samlar det som är gemensamt för hela organisationen.
 Varje HR-handläggare läser då in det i ett steg, i stället för att hämta och ladda upp
@@ -38,7 +38,7 @@ personnummer eller e-postadresser.
 1. Öppna verktyget och gå till **Filer och kvalitet**.
 2. Läs in **ställningstagandet** och **jämförelsestatistiken** i sina rutor, precis som vid en
    vanlig kartläggning. Kontrollera att antalet rader stämmer.
-3. Klicka på länken **Skapa organisationspaket (för systemägaren)** längst ned i steg 1, *Organisationspaket*,
+3. Klicka på länken **Skapa organisationspaket (för systemförvaltaren)** längst ned i steg 1, *Organisationspaket*,
    överst i fliken.
 4. Fyll i organisationens namn, utgivare och år, vad jämförelsestatistiken ska heta och vad
    ställningstagandet ska heta. Fyll också i PO-påslag och beräkningsperiod (utan paket gäller 40 %, ett
@@ -68,7 +68,7 @@ Ingen lönefil behövs för att skapa paketet.
 
 ## 3b. Organisationsfil — en enda fil att sprida
 
-Handläggarna behöver inte få paketet som en egen fil. Systemägaren kan i stället baka in paketet
+Handläggarna behöver inte få paketet som en egen fil. Systemförvaltaren kan i stället baka in paketet
 i själva verktyget och sprida **en organisationsfil**. Handläggaren öppnar den, och benämningar,
 ställningstagande, jämförelsestatistik och låsningar är på plats utan att något läses in.
 
@@ -251,7 +251,7 @@ Vad paketet gör när det läses in:
 - ställningstagandet har spann för BAS A och B och för en AID-etikett i BAS C, och statistiken har
   två AID-etiketter.
 
-## 8. Checklista för systemägaren
+## 8. Checklista för systemförvaltaren
 
 Före spridning:
 

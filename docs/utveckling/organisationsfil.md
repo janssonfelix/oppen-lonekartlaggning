@@ -10,7 +10,7 @@
 Utan organisationsfil sprids två filer till handläggarna: verktyget (`oppen-lonekartlaggning.html`) och
 organisationspaketet (`<org>.lonepaket.json`). Paketet måste då både spridas och läsas in som ett eget
 steg, och det steget glöms eller görs fel. Organisationsfilen är **en fil som bara öppnas och är färdig**:
-systemägaren tar fram den en gång, och det är den som sprids.
+systemförvaltaren tar fram den en gång, och det är den som sprids.
 
 En fil som öppnas från disk kan inte läsa andra filer i samma mapp — webbläsaren förbjuder det, och
 verktygets egen policy (`connect-src 'none'`) stänger all hämtning. Automatisk inläsning av en fil
@@ -20,7 +20,7 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
 ## 2. Mål, icke-mål, antimål
 
 **Mål**
-- Systemägaren skapar organisationsfilen i verktyget, utan utvecklarkunskap, med ett klick och ett
+- Systemförvaltaren skapar organisationsfilen i verktyget, utan utvecklarkunskap, med ett klick och ett
   val av filnamn.
 - Handläggaren öppnar organisationsfilen och har benämningar, ställningstagande, jämförelsestatistik
   och låsningar på plats, utan att läsa in något.
@@ -31,7 +31,7 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
 
 **Icke-mål**
 - Ingen verifiering av organisationsfilen mot den publicerade versionens kontrollsumma eller
-  signatur (beslut, ADR-49): att filen kommer från systemägaren internt räcker. Spårbarhet ges
+  signatur (beslut, ADR-49): att filen kommer från systemförvaltaren internt räcker. Spårbarhet ges
   i stället genom att filen anger vilken version av verktyget den bygger på.
 - Ingen automatisk inläsning av filer i samma mapp (omöjligt och oönskat).
 - Ingen ändring av paketets format eller innehåll.
@@ -44,7 +44,7 @@ bredvid är därför inte möjlig, och den begränsningen är ett medvetet skydd
 
 ## 3. Hur det ser ut för användaren
 
-**Systemägaren** (steg 1, *Organisationspaket*, i Filer och kvalitet, under länken *Skapa organisationspaket*):
+**Systemförvaltaren** (steg 1, *Organisationspaket*, i Filer och kvalitet, under länken *Skapa organisationspaket*):
 1. Läser in paketet (eller bygger det i formuläret som i dag).
 2. Klickar **Skapa organisationsfil**. En rad fälls ut: en filväljare *Verktygsfilen du öppnade*
    (`.html`), ett fält *Filnamn* förifyllt med `oppen-lonekartlaggning-<organisation>.html`, och
@@ -118,7 +118,7 @@ avsluta elementet.
 **Dokument och vakter**
 - `docs/anvandare/organisationspaket.md`: nytt avsnitt *Organisationsfil* (hur den skapas, sprids,
   uppdateras och granskas); `korguide.md` §0 och README *Kom igång* steg 2 får alternativet "eller
-  öppna organisationsfilen som er systemägare tagit fram"; `pilotchecklista.md` en rad.
+  öppna organisationsfilen som er systemförvaltare tagit fram"; `pilotchecklista.md` en rad.
 - `docs/dataskydd/riskanalys.md` §6.8 (konfigurationsfilen) får ett syskonavsnitt om
   organisationsfilen: innehåll, att lönedata aldrig ingår, att paketet valideras som vid inläsning,
   att blocket inte exekveras; `dataskydd.md` §3 en mening. `tests/dokumentation-struktur.test.js` vaktar att
@@ -139,4 +139,4 @@ avsluta elementet.
 - Råtexten i *Visa paketet* visas som en utfällbar `<pre>`; knapparna sitter i paketets filruta i Filer och kvalitet.
 - Filnamnsfältet lägger på ändelsen `.html` när den saknas.
 - När den valda verktygsfilen är en annan version än den som körs varnar verktyget och tillåter ändå
-  (systemägaren kan medvetet baka in i en nyare fil).
+  (systemförvaltaren kan medvetet baka in i en nyare fil).

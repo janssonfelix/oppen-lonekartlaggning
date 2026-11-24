@@ -3616,7 +3616,7 @@ function tolkaPaket(text) {
   try {
     o = JSON.parse(text);
   } catch (_e) {
-    return { ok: false, fel: "Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemägaren om en ny fil." };
+    return { ok: false, fel: "Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemförvaltaren om en ny fil." };
   }
   if (!o || typeof o !== "object" || Array.isArray(o)) return { ok: false, fel: "Filen är inte ett organisationspaket." };
   if (o.format !== PAKET_FORMAT) return { ok: false, fel: "Filen är inte ett organisationspaket för lönekartläggning." };
@@ -3626,7 +3626,7 @@ function tolkaPaket(text) {
   const organisation = _text2(o.organisation?.namn);
   if (!organisation) return { ok: false, fel: "Paketet saknar organisationens namn (organisation.namn)." };
   const skapat = _text2(o.skapat);
-  if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: "Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemägaren om en ny fil." };
+  if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: "Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemförvaltaren om en ny fil." };
   if (_allaTexter(o).some((t) => PNR2.test(t) || EPOST2.test(t))) {
     return { ok: false, fel: "Paketet innehåller något som liknar personnummer eller e-post och läses inte in." };
   }
@@ -29624,7 +29624,7 @@ function oppnaVadLagras() {
                     ${state.inactivityTimeoutMin > 0 ? "Aktiv (" + state.inactivityTimeoutMin + " min)" : "Av"}
                 </span>
             </div>
-            <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? " hidden" : ""}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ""}: systemägaren har bestämt tiden, så den kan inte ändras här.</p>
+            <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? " hidden" : ""}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ""}: systemförvaltaren har bestämt tiden, så den kan inte ändras här.</p>
         </div>`;
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal);

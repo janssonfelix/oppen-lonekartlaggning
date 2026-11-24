@@ -293,7 +293,7 @@ Verktyget säger vid förslagen när en rad har tagits bort. Varningen "underlag
 än tröskeln av något kön. Processöversiktens steg 4 blir inte klart när alla kandidatpar har en grupp
 under tröskeln. Steget säger då hur många par som bara redovisas i fliken Likvärdigt arbete och leder dit.
 
-**Organisationsfilen.** Systemägaren kan baka in organisationspaketet i verktygsfilen och sprida en fil.
+**Organisationsfilen.** Systemförvaltaren kan baka in organisationspaketet i verktygsfilen och sprida en fil.
 Den innehåller bara det paketet bär: benämningar, inställningar, aggregat och rapportens tabellrecept utan
 tal. Den innehåller aldrig lönedata. Inget skript ändras, så skydden ovan gäller oförändrade (riskanalysen §6.9).
 
@@ -310,7 +310,7 @@ eller via urklipp — aldrig över nätverket:
 | ZIP-export | Word-utkastet, Excelfilen med alla flikar (aggregat) och bilder av alla ritade diagram från alla flikar. ZIP-filen är alltså inte enbart aggregat: spridningsdiagrammen i Ålder & karriär har en punkt per anställd (bara personer vars grupp och kön i gruppen når tröskeln), och låddiagrammet visar enskilda avvikande löner | Som personuppgifter |
 | Rapportunderlag via urklipp | Aggregat, med lönemått bara för grupper som når minsta gruppstorlek (standard 10); kandidatpar med en grupp under tröskeln utelämnas | Som rapportmaterial |
 | Konfigurationsfil | Inställningar, organisationens namn och jämförelsestatistikens namn (användarens egna namn; text som liknar personnummer eller e-post avvisas), HR:s anteckningar (bedömningarna i Regler & praxis och det som fyllts i på fliken Handlingsplan: sakligt skäl, ansvarig, tidsplan och status per rad, och för egna rader åtgärd och berörd grupp; fritext som liknar personnummer eller e-post ger en varning men sparas), förklaringsmodellen i Lika arbete med skälet (fritext, högst 300 tecken), variablerna i *Var uppstår löneskillnaden?*, definitionen av kvinnodominerat (*Mer än X %* eller *X % eller mer*), lönemånaden (fritext, högst 40 tecken), rapportens innehåll och egna tabeller som recept utan tal (med ett namn som fritext, högst 80 tecken), och avbockningarna i Att göra, och ett årsbokslut (nyckeltal, en rad per AID-etikett där båda könen når minsta gruppstorlek och en per BAS-intervall med minst så många personer, med lönespridningen (P90 − P10) / median, Att göra-punkternas läge; ADR-54) — aldrig individrader; noterar vilket organisationspaket som användes | Som övriga exportfiler |
-| Organisationspaket (systemägaren) | Organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik — bara aggregat | Kan spridas internt; innehåller inga personuppgifter |
+| Organisationspaket (systemförvaltaren) | Organisationens benämningar, grundinställningar, ställningstagande och jämförelsestatistik — bara aggregat | Kan spridas internt; innehåller inga personuppgifter |
 
 Det som kopieras till urklipp (tabeller, diagramdata och rapportunderlag) kan synkas till molnet eller
 andra enheter. Det kan göras av operativsystemet eller en urklippshanterare (Windows molnurklipp,

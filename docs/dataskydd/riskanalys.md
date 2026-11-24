@@ -612,7 +612,7 @@ före någon mutation).
 ---
 
 ### 6.9 Organisationsfilen — verktyget med paketet inbakat
-Systemägaren kan baka in organisationspaketet i verktygsfilen och sprida **en** fil
+Systemförvaltaren kan baka in organisationspaketet i verktygsfilen och sprida **en** fil
 (`docs/utveckling/organisationsfil.md`). Paketet ligger som en inaktiv datablock
 (`<template id="inbakat-organisationspaket">`) sist i filen, efter sista skriptet. Blocket tolkas inte och
 exekveras inte. Inget skript ändras, och CSP:ns per-script-hashar är oförändrade (vaktas av
@@ -623,7 +623,7 @@ benämningar, inställningar, ställningstagande och jämförelsestatistik, aldr
 (`skapaPaket()` läser aldrig `state.data`; röktestet kräver att organisationsfilen saknar lönefält). Filen
 anger vilken version av verktyget den bygger på och verktygsfilens kontrollsumma. Någon verifiering av
 organisationsfilen mot den publicerade versionen görs inte (beslut, ADR-49: filen kommer från
-systemägaren internt). Handläggaren kan granska och ladda ner det inbakade paketet; demoläget går före.
+systemförvaltaren internt). Handläggaren kan granska och ladda ner det inbakade paketet; demoläget går före.
 Webbläsarröktestet öppnar en organisationsfil under CSP:n från `file://` och kräver noll överträdelser.
 
 ## 7. Hotbild & riskregister
@@ -639,7 +639,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 | A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering av tecken (`_stadaYrkesfalt` och `_normaliseraBas` tar bort `< > " ' &`; ingen namnmaskering, ADR-85); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
 | A4 | Sårbarhet i tredjepartsbibliotek | Medel | Medel | Lokalt buntade, fastställda versioner, SHA i bygget; CSP hindrar exfiltrering även vid kompromiss; veckovis sårbarhetsbevakning av biblioteken mot OSV i CI (`.github/workflows/sarbarheter.yml`), som bara täcker brister som förts in i databasen | **Låg–medel** |
 | A5 | Skadligt webbläsartillägg / komprometterad enhet läser DOM | Medel | Hög | Utanför verktygets kontroll | **Medel** (organisatorisk åtgärd, §8) |
-| A6 | Manipulerad/utbytt HTML-fil distribueras | Låg | Hög | Sigstore-signatur från release-arbetsflödet, verifieras med `cosign verify-blob` (`SECURITY.md`); SHA-256 i `RELEASE.txt` skyddar bara mot en skadad fil. En organisationsfil (§6.9) har en annan kontrollsumma än den publicerade versionen och kan inte verifieras mot den: systemägaren verifierar den nedladdade versionen och sprider organisationsfilen via en behörighetsstyrd intern yta; *Visa paketet* anger kontrollsumman för den verktygsfil den byggdes av, som en uppgift i filen, inte ett äkthetsbevis | **Låg** (kräver att signaturen verifieras och att organisationsfilen sprids internt) |
+| A6 | Manipulerad/utbytt HTML-fil distribueras | Låg | Hög | Sigstore-signatur från release-arbetsflödet, verifieras med `cosign verify-blob` (`SECURITY.md`); SHA-256 i `RELEASE.txt` skyddar bara mot en skadad fil. En organisationsfil (§6.9) har en annan kontrollsumma än den publicerade versionen och kan inte verifieras mot den: systemförvaltaren verifierar den nedladdade versionen och sprider organisationsfilen via en behörighetsstyrd intern yta; *Visa paketet* anger kontrollsumman för den verktygsfil den byggdes av, som en uppgift i filen, inte ett äkthetsbevis | **Låg** (kräver att signaturen verifieras och att organisationsfilen sprids internt) |
 | A7 | Formel i CSV-export körs i Excel (CSV-injektion via etikettnamn i lönefilen) | Låg | Medel | Textceller som börjar med `= + - @` neutraliseras i CSV och urklipp (ADR-15); regressionstest i `tests/csv.test.js` | **Mycket låg** |
 
 ### B. Användning (organisatoriskt / tolkning)

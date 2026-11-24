@@ -1,6 +1,6 @@
 # Så tar du över verktyget — bygg, signera och sprid din egen version
 
-**För:** IT, systemägare och den som ansvarar för verktyget hos arbetsgivaren. Verktyget är byggt för
+**För:** IT, systemförvaltare och den som ansvarar för verktyget hos arbetsgivaren. Verktyget är byggt för
 att varje organisation ska kunna äga sitt exemplar helt. Du kan bygga det från källan, ändra det,
 signera det med egen identitet och sprida det internt. Du behöver inget konto hos, ingen tjänst från
 och inget beroende av projektet. Allt som behövs finns i källkoden under MIT-licensen. Det finns inga
@@ -42,7 +42,7 @@ Biblioteken i `vendor/` kontrolleras mot `vendor/SHA256SUMS` av testerna och vid
 ## 3. Gör verktyget till ditt: organisationsfilen
 
 Organisationens benämningar, grundinställningar, lönepolitiska ställningstagande, jämförelsestatistik och
-låsningar läggs i ett **organisationspaket**. Systemägaren bakar in paketet i verktyget till **en
+låsningar läggs i ett **organisationspaket**. Systemförvaltaren bakar in paketet i verktyget till **en
 organisationsfil** att sprida. Handläggaren öppnar en fil, och allt är på plats. Hur, steg för steg:
 [`organisationspaket.md`](organisationspaket.md), särskilt avsnitt 3b och checklistan i avsnitt 8.
 

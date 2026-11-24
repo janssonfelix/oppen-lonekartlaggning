@@ -289,7 +289,7 @@ describe('dokumentation: licenstexterna följer med den byggda filen', () => {
         // bryter skriptets CSP-hash.
         expect(bygge.indexOf('<template id="licenstexter">')).toBeGreaterThan(bygge.lastIndexOf('</script>'));
     });
-    it('den publicerade filen har inget inbakat organisationspaket (organisationsfilen skapas av systemägaren)', () => {
+    it('den publicerade filen har inget inbakat organisationspaket (organisationsfilen skapas av systemförvaltaren)', () => {
         // Strängen byggs ihop så att inte sökningen träffar sin egen källkod i bygget.
         const mall = '<' + 'template id="inbakat-' + 'organisationspaket"';
         expect(bygge.slice(bygge.lastIndexOf('</script>'))).not.toContain(mall);

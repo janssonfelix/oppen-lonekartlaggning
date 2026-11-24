@@ -43,7 +43,7 @@ Därtill finns **Spara och jämför år**, där arbetet sparas som fil och jämf
 
 1. Öppna filen i webbläsaren på en dator — ingen installation, ingen IT-beställning.
 2. Klicka **"litet demo"** (under *Prova med demodata*) och utforska hela verktyget med påhittad exempeldata — ingen verklig lönedata behövs för att utvärdera.
-3. När du är redo: läs in organisationens **organisationspaket**. Det är en fil med ställningstagande, jämförelsestatistik och benämningar, som organisationens systemägare tar fram i verktyget. Läs sedan in lönefilen ur lönesystemet (heltidsomräknade månadslöner, CSV eller Excel).
+3. När du är redo: läs in organisationens **organisationspaket**. Det är en fil med ställningstagande, jämförelsestatistik och benämningar, som organisationens systemförvaltare tar fram i verktyget. Läs sedan in lönefilen ur lönesystemet (heltidsomräknade månadslöner, CSV eller Excel).
 
 ---
 

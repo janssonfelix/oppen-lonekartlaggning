@@ -39,7 +39,7 @@ export function filnamnForslag(organisation) {
     return `oppen-lonekartlaggning-${slug || 'organisation'}.html`;
 }
 
-/** Ett filnamn som systemägaren skrivit: trimmat, utan sökvägstecken, med ändelsen .html. */
+/** Ett filnamn som systemförvaltaren skrivit: trimmat, utan sökvägstecken, med ändelsen .html. */
 export function normaliseraFilnamn(namn, organisation) {
     let n = String(namn ?? '').trim().replace(/[\\/:*?"<>|]/g, '-');
     if (!n) return filnamnForslag(organisation);

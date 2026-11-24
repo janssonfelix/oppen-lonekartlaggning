@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Organisationspaket (ADR-28) ----
-// En systemägare samlar organisationens benämningar, grundinställningar, lönepolitiska
+// En systemförvaltare samlar organisationens benämningar, grundinställningar, lönepolitiska
 // ställningstagande och jämförelsestatistik i en fil (skapaPaket); handläggarna läser in
 // den i ett steg (lasInPaket). Tolkning och validering bor i src/lib/organisationspaket.js
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
@@ -230,7 +230,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     return { ok: true, meddelande };
 }
 
-// ---- Skapa paket (systemägaren) ----
+// ---- Skapa paket (systemförvaltaren) ----
 
 const _paketFalt = id => document.getElementById(id);
 const _paketText = id => (/** @type {HTMLInputElement} */ (_paketFalt(id))?.value || '').trim();
@@ -404,7 +404,7 @@ export function skapaPaketMedImportprofil(profil) {
 // ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil.md) ----
 const INBAKAT_PAKET_ID = 'inbakat-organisationspaket';   // = MALL_ID i src/lib/organisationsfil.js
 /** @type {File|null} */
-let _verktygsfil = null;   // den fil systemägaren pekat ut
+let _verktygsfil = null;   // den fil systemförvaltaren pekat ut
 
 function uppdateraOrganisationsfilKnapp() {
     const knapp = _paketFalt('btn-organisationsfil-spara');
@@ -495,7 +495,7 @@ async function flyttaTillNyVersion() {
 
 /**
  * Läser det paket som ligger inbakat i den här filen (mallen med id inbakat-organisationspaket, lagd dit av
- * skapaOrganisationsfil i systemägarens verktyg). Körs vid start och efter Rensa all data. Demoläget går före.
+ * skapaOrganisationsfil i systemförvaltarens verktyg). Körs vid start och efter Rensa all data. Demoläget går före.
  * @returns {{ok:boolean, meddelande:string}|null} null när inget paket är inbakat
  */
 export function lasInInbakatPaket() {

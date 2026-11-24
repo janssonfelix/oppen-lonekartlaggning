@@ -26,7 +26,7 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
 ## B. Inläsning med skarp data
 - [ ] **Organisationspaketet** (om du har ett) läses in i Filer och kvalitet; organisation, datum och innehåll
       stämmer, och Prioritering och Löneläget använder ditt ställningstagande.
-- [ ] **Organisationsfilen** (om systemägaren tagit fram en, `organisationspaket.md` avsnitt 3b) startar
+- [ ] **Organisationsfilen** (om systemförvaltaren tagit fram en, `organisationspaket.md` avsnitt 3b) startar
       med paketet inläst. Filrutan säger *Inbakat i den här filen* och *Visa paketet* visar rätt innehåll.
       *Om verktyget* anger versionen filen bygger på.
 - [ ] **Paketets låsningar** (om paketet har dem, `organisationspaket.md` §5) gäller. *Inställningar*

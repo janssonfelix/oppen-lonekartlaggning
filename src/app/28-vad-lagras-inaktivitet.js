@@ -85,7 +85,7 @@ export function oppnaVadLagras() {
                     ${state.inactivityTimeoutMin > 0 ? 'Aktiv (' + state.inactivityTimeoutMin + ' min)' : 'Av'}
                 </span>
             </div>
-            <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? ' hidden' : ''}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ''}: systemägaren har bestämt tiden, så den kan inte ändras här.</p>
+            <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? ' hidden' : ''}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ''}: systemförvaltaren har bestämt tiden, så den kan inte ändras här.</p>
         </div>`;
 
     modal.style.display = 'flex';   // som övriga modaler: .glossary-modal centrerar sin panel

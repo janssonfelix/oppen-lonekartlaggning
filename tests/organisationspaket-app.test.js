@@ -202,7 +202,7 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w.document.getElementById('paket-status').textContent).toMatch(/inbakade paketet kunde inte läsas/);
         expect(w.document.getElementById('tab-bestammelser')).not.toBeNull();   // appen startade
     });
-    it('systemägaren bakar in paketet i den utpekade verktygsfilen och får en organisationsfil', async () => {
+    it('systemförvaltaren bakar in paketet i den utpekade verktygsfilen och får en organisationsfil', async () => {
         const w = createAppWindow();
         las(w, paket());
         // Inläst lönedata med igenkännbara värden: inget av dem får följa med in i organisationsfilen.

@@ -87,7 +87,7 @@ describe('organisationsfil: filnamn', () => {
         expect(filnamnForslag('Region Örebro län')).toBe('oppen-lonekartlaggning-region-orebro-lan.html');
         expect(filnamnForslag('')).toBe('oppen-lonekartlaggning-organisation.html');
     });
-    it('systemägarens namn behålls, får ändelsen .html och rensas från sökvägstecken', () => {
+    it('systemförvaltarens namn behålls, får ändelsen .html och rensas från sökvägstecken', () => {
         expect(normaliseraFilnamn('Lönekartläggning 2026', 'X')).toBe('Lönekartläggning 2026.html');
         expect(normaliseraFilnamn('verktyg.HTML', 'X')).toBe('verktyg.HTML');
         expect(normaliseraFilnamn('a/b:c', 'X')).toBe('a-b-c.html');

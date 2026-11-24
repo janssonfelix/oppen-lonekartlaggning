@@ -23,7 +23,7 @@ Verktyget är ett proof of concept; vad det betyder står i README:s [*Status*](
 | [`dataskydd.md`](dataskydd/dataskydd.md) | Fördjupningen för dataskyddsombudet: vilka uppgifter, var de finns, hur de skyddas och vad som kan lämna verktyget. |
 | [`riskanalys.md`](dataskydd/riskanalys.md) | Den fullständiga risk- och sårbarhetsanalysen, granskad mot koden med AI-verktyg: dataflöde, skydd, riskregister och verifiering. |
 | [`tillganglighetsredogorelse.md`](anvandare/tillganglighetsredogorelse.md) | Tillgänglighetsredogörelse för verktyget (WCAG 2.1 AA) som underlag till organisationens bedömning. |
-| [`organisationspaket.md`](anvandare/organisationspaket.md) | Guide för systemägaren: organisationspaketet med benämningar, inställningar, ställningstagande och statistik. |
+| [`organisationspaket.md`](anvandare/organisationspaket.md) | Guide för systemförvaltaren: organisationspaketet med benämningar, inställningar, ställningstagande och statistik. |
 | [`overta-verktyget.md`](anvandare/overta-verktyget.md) | Så bygger, signerar och sprider organisationen sin egen version av verktyget. |
 | [`pilotchecklista.md`](anvandare/pilotchecklista.md) | Checklista för en provkörning med verklig lönefil innan verktyget används på riktigt. |
 

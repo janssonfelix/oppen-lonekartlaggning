@@ -474,7 +474,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         const vad = d.getElementById('paket-vad');
         expect(vad.open).toBe(false);
         expect(vad.querySelector('summary').textContent.trim()).toBe('Vad är ett organisationspaket?');
-        expect(vad.textContent).toMatch(/Systemägaren skapar det/);
+        expect(vad.textContent).toMatch(/Systemförvaltaren skapar det/);
         expect(d.getElementById('paket-skapa')).toBeNull();
         expect([...paket.children].pop().querySelector('[data-go-to-tab="forvaltare"]')).not.toBeNull();
         w.__lasInDemodata();
