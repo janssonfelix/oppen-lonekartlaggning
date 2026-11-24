@@ -8264,12 +8264,23 @@ function _rfLitenRuta(g, rect) {
   if (s < 3) return;
   g.append("path").attr("data-marke", "rander").attr("pointer-events", "none").attr("d", `M${x + w - s},${y}H${x + w}V${y + s}Z`).attr("fill", PALETT.semantic.neutral);
 }
-function _rfTextPaFarg(farg) {
-  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(farg));
-  if (!m) return DIAGRAM_TYPSNITT.color;
-  const h = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? FARG.vit : DIAGRAM_TYPSNITT.color;
+function _rfKontrast(a, b) {
+  const lum = (c) => c.map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (l1 + 0.05) / (l2 + 0.05);
+}
+var _rfTextKant = (vit) => ({ stroke: vit ? DIAGRAM_TYPSNITT.color : FARG.vit, "stroke-width": vit ? _RF.kantMork : 3, "stroke-linejoin": "round", "paint-order": "stroke" });
+function _rfTextPa(farg, opacitet = 1) {
+  const f = d3.color(farg), t = d3.color(DIAGRAM_TYPSNITT.color);
+  if (!f || !t) return { farg: DIAGRAM_TYPSNITT.color, kant: null };
+  const a = Math.max(0, Math.min(1, (f.opacity ?? 1) * opacitet));
+  const yta = [f.r, f.g, f.b].map((v) => v * a + 255 * (1 - a));
+  const mork = _rfKontrast(yta, [t.r, t.g, t.b]), vitK = _rfKontrast(yta, [255, 255, 255]);
+  const vit = vitK > mork;
+  return { farg: vit ? FARG.vit : DIAGRAM_TYPSNITT.color, kant: Math.max(mork, vitK) >= 4.5 ? null : _rfTextKant(vit) };
 }
 function _rfStapel(g, l, li, c) {
   const ligg = l.riktning === "liggande";
@@ -8316,8 +8327,8 @@ function _rfStapel(g, l, li, c) {
       const langs = Math.abs(b - a), tvars = tjock;
       const ryms = ligg ? langs >= _rfBredd(hel, px) + 4 && tvars >= px + 2 : langs >= px + 2 && tvars >= _rfBredd(hel, px) + 4;
       if (ryms) {
-        const m = (a + b) / 2;
-        const t = _rfText(c.texter, ligg ? m : mitt, ligg ? mitt + px * 0.35 : m + px * 0.35, hel, { px, ankare: "middle", farg: _rfTextPaFarg(farg) });
+        const m = (a + b) / 2, textPa = _rfTextPa(farg);
+        const t = _rfText(c.texter, ligg ? m : mitt, ligg ? mitt + px * 0.35 : m + px * 0.35, hel, { px, ankare: "middle", farg: textPa.farg, attr: textPa.kant });
         t.attr("data-marke", "etikett").attr("pointer-events", "none");
       }
     } else {
@@ -8789,9 +8800,8 @@ function _rfRuta(g, l, li, c) {
     const r = g.append("rect").attr("data-marke", "ruta").attr("data-l", li).attr("data-i", i).attr("x", mx - w / 2).attr("y", my - h / 2).attr("width", w).attr("height", h).attr("fill", farg);
     if (d.liten) _rfLitenRuta(g, r);
     if (!medText || d.text == null) continue;
-    const f = d3.color(farg), textfarg = _rfTextPaFarg(f ? f.formatHex() : "");
-    const vit = textfarg === FARG.vit;
-    const attr = d.liten ? { stroke: vit ? DIAGRAM_TYPSNITT.color : FARG.vit, "stroke-width": vit ? _RF.kantMork : 3, "stroke-linejoin": "round", "paint-order": "stroke" } : null;
+    const { farg: textfarg, kant } = _rfTextPa(farg);
+    const attr = d.liten ? _rfTextKant(textfarg === FARG.vit) : kant;
     _rfText(g, mx, my + fpx * 0.35, String(d.text), { px: fpx, ankare: "middle", farg: textfarg, attr }).attr("data-marke", "rutatext").attr("pointer-events", "none");
   }
 }
@@ -8954,12 +8964,12 @@ function _rfYta(g, l, li, c) {
     if (l.opacitet != null) r.attr("fill-opacity", l.opacitet);
     if (d.liten) _rfLitenYta(g, r, c);
     if (d.etikett == null || String(d.etikett) === "" || h < fpx + 6 || w < 28) return;
-    const f = d3.color(farg), textfarg = l.opacitet != null && l.opacitet < 0.6 ? DIAGRAM_TYPSNITT.color : _rfTextPaFarg(f ? f.formatHex() : "");
+    const { farg: textfarg, kant } = _rfTextPa(farg, l.opacitet ?? 1);
     const tecken = Math.max(3, Math.floor((w - 8) / (fpx * _RF.tecken)));
     const hel = String(d.etikett);
-    _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { "data-marke": "ytetikett", "pointer-events": "none" } });
+    _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { "data-marke": "ytetikett", "pointer-events": "none", ...kant } });
     if (l.etikettLage !== "topp" && d.undertext != null && h >= 2 * fpx + 10) {
-      _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: _rfLitenPx(c.px), farg: textfarg, attr: { "data-marke": "ytetikett", "pointer-events": "none" } });
+      _rfText(g, x + 4, y + 2 * fpx + 5, _rfKorta(String(d.undertext), tecken), { px: _rfLitenPx(c.px), farg: textfarg, attr: { "data-marke": "ytetikett", "pointer-events": "none", ...kant } });
     }
   });
 }
@@ -9363,11 +9373,17 @@ function _rfText(g, x, y, text, { px, ankare = "start", farg, fet, title, attr }
   if (title && title !== text) t.append("title").text(title);
   return t;
 }
+function _rfKortaVidOrd(s, maxTecken) {
+  const k = _rfKorta(s, maxTecken);
+  if (k === String(s ?? "")) return k;
+  const i = k.lastIndexOf(" ", k.length - 2);
+  return i >= Math.floor(maxTecken / 2) ? k.slice(0, i) + "…" : k;
+}
 function _rfForklaringensPoster(serier, px, avail, maxRader) {
   const fler = (n) => `+ ${n} till`;
   const maxTecken = Math.max(3, Math.min(_RF.legendText, Math.floor((avail - 18) / (px * _RF.tecken))));
   const alla = serier.map((s) => {
-    const text = _rfKorta(s.serie, maxTecken);
+    const text = _rfKortaVidOrd(s.serie, maxTecken);
     return { ...s, text, w: 18 + _rfBredd(text, px) + 16 };
   });
   if (!alla.length || maxRader < 1) return { poster: [], fler: null, rader: 0 };

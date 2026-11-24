@@ -2,7 +2,7 @@
 
 **För:** IT, inköp och tillgänglighetssamordnare. Underlag till organisationens egen bedömning av verktyget;
 redogörelsen gäller verktyget som fil (`oppen-lonekartlaggning.html`), inte en webbplats. Målet är WCAG 2.1
-nivå AA. Senast bedömd för hand 2026-10-17. Den automatiska prövningen (axe-core i testsviten, ADR-10) körs mot
+nivå AA. Senast prövad i webbläsare 2026-11-24. Den automatiska prövningen (axe-core i testsviten, ADR-10) körs mot
 varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 
 ## Hur verktyget är prövat
@@ -13,10 +13,14 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 - **Färgerna:** statusfärgerna har minst 4,5:1 mot sin bakgrund som text, och diagrammens statusfärger minst
   3:1 mot vit bakgrund. Varning och ok skiljer sig i ljushet, så att rött och grönt inte behöver skiljas på
   färgtonen (`tests/farger.test.js`, ADR-43).
-- **I webbläsare 2026-10-17:** axe-core (WCAG 2.0 och 2.1, A och AA, med färgkontrast) prövade var och en av de
-  då 14 flikarna med demodata, i Chromium 1400 punkter brett. Resultatet: **inga överträdelser**. Menyn har sedan
-  dess delats om till 16 flikar (2026-11-06), och den nya indelningen är inte prövad på det sättet. Axe prövar inte kontrasten i
-  diagrammens SVG-text, och det som axe markerar som "behöver granskas" är inte genomgånget för hand.
+- **I webbläsare 2026-11-24:** axe-core 4.14 (WCAG 2.0 och 2.1, A och AA, med färgkontrast) prövade var och en av
+  de 17 flikarna med alla avsnitt utfällda, i Chromium 1400 punkter brett, med det lilla och det stora demot (5 000
+  påhittade personer). Resultatet: **inga överträdelser**. Det axe inte kunde avgöra är genomgånget: texten i
+  diagrammen (axe läser inte bakgrunden i en SVG) är mätt för sig mot den yta den står på, och all text når 4,5:1;
+  flikarnas inledningar, som axe inte kunde avgöra för att de överlappas, har minst 6,9:1. Prövningen hittade två
+  brister, som är rättade: en text på en fyllning i en mellanton (trädkartan, staplade staplar) nådde 4,0–4,4:1 och
+  har nu en kant i motsatt färg, och ett kortat namn i diagrammens förklaring stod inte i knappens namn (WCAG 2.5.3)
+  och kortas nu vid ett ordslut.
 - **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/start-och-meny-app.test.js`). Röktestet
   i Chromium, Firefox och WebKit prövar tre saker. Avsnittens rubriker nås med Tab och fälls ut med Enter.
   Menyn i smalt fönster öppnas, fokus flyttas dit, och Escape stänger den och lämnar tillbaka fokus. Ingen
@@ -36,8 +40,8 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 - **Utskriftsfönstret** för checklistan i Regler & praxis och handlingsplanens mall öppnas som ett eget fönster
   utan skript, och webbläsarens utskriftsdialog visas direkt. Fönstret har ingen egen navigering; stäng det med
   webbläsarens vanliga kommando.
-- **Diagrammens text** är inte kontrastprövad automatiskt (se ovan); färgerna i dem följer paletten som prövas
-  i `tests/farger.test.js`.
+- **Diagrammens text** är kontrastmätt i webbläsaren 2026-11-24 (se ovan), inte i varje testkörning; färgerna
+  följer paletten som prövas i `tests/farger.test.js`.
 - **Skärmläsare** är inte prövade med en användare. Prövningen ovan är automatisk och strukturell.
 - **Exporterna** (Word, Excel, PDF) är inte granskade mot tillgänglighetskrav för dokument; Word-utkastet har
   rubrikformat (Rubrik 1–3) och bildtexter under diagrammen, och PDF-rapporten skrivs ut från webbläsaren.

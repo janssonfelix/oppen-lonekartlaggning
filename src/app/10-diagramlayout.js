@@ -463,13 +463,21 @@ export function _rfText(g, x, y, text, { px, ankare = 'start', farg, fet, title,
     return t;
 }
 
+// Kortar vid ett ordslut när det går (minst halva längden kvar), annars som _rfKorta. Förklaringens poster är knappar
+// vars namn är seriens hela namn: en text kortad mitt i ett ord står inte i namnet (WCAG 2.5.3, etiketten i namnet).
+export function _rfKortaVidOrd(s, maxTecken) {
+    const k = _rfKorta(s, maxTecken);
+    if (k === String(s ?? '')) return k;
+    const i = k.lastIndexOf(' ', k.length - 2);
+    return i >= Math.floor(maxTecken / 2) ? k.slice(0, i) + '…' : k;
+}
 // Förklaringens poster: en per serie. Texten kortas till _RF.legendText tecken (och till bildens bredd),
 // raderna är högst maxRader; finns fler poster sist "+ N till" (vanlig text, ingen knapp).
 function _rfForklaringensPoster(serier, px, avail, maxRader) {
     const fler = n => `+ ${n} till`;
     const maxTecken = Math.max(3, Math.min(_RF.legendText, Math.floor((avail - 18) / (px * _RF.tecken))));
     const alla = serier.map(s => {
-        const text = _rfKorta(s.serie, maxTecken);
+        const text = _rfKortaVidOrd(s.serie, maxTecken);
         return { ...s, text, w: 18 + _rfBredd(text, px) + 16 };
     });
     if (!alla.length || maxRader < 1) return { poster: [], fler: null, rader: 0 };

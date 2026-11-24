@@ -29,7 +29,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    `tests/start-och-meny-app.test.js`, och omkörningen i `tools/test.mjs` gick igenom. Samma dag kördes hela sviten
    20 varv i följd (Node 22.22.2, `node tools/test.mjs`): i två varv dog en arbetare med SIGSEGV, med
    `tests/ktroskel-utdata.test.js` och `tests/struktur-flikar.test.js`, och omkörningen gick igenom båda gångerna.
-   Kraschen följer alltså ingen fil; alla tre filerna ritar verktyget i jsdom. Omkörningen står kvar som skydd;
+   Kraschen följer alltså ingen fil; alla tre filerna ritar verktyget i jsdom. Med skräpsamlaren i en tråd
+   (`--single-threaded-gc` i arbetarna) gav 20 varv ingen krasch och samma tid; 0 mot 2 av 20 skiljer sig inte säkert
+   (p ≈ 0,5), så inställningen är inte ändrad. Omkörningen står kvar som skydd;
    orsaken är inte funnen.
 8. *Avslutad 2026-11-24:* reglerna ligger i `src/lib/`, med tillståndet som argument och prövade i Node; den sista,
    JPA-protokollets urval och lönenivåer, flyttade till `src/lib/jpaprotokoll.js`. Utfilen är platt så att testerna
