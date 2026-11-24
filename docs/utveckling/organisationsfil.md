@@ -97,7 +97,7 @@ ignoreras med ett besked. Så kan en organisationsfil ändå visas i demoläge.
 
 Ett `<template>` tolkas inte och exekveras inte; innehållet är text. Skriptens hashar i CSP:n
 påverkas inte eftersom inget skript ändras (samma mönster som licenstexterna, prövat i
-`tests/dokumentation-struktur.test.js`). JSON-texten skrivs med `<` som `<` och `</` kan därmed inte
+`tests/dokumentation-struktur.test.js`). JSON-texten skrivs med `<` som `\u003c` och `&` som `\u0026`, och `</` kan därmed inte
 avsluta elementet.
 
 **Ren kärna i `src/lib/organisationsfil.js`** (importerad av appen som övriga lib-moduler, ADR-98):
