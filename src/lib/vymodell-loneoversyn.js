@@ -17,11 +17,11 @@ import { namnrader } from './aid.js';
 import { arKvinna, arMan } from './kon.js';
 import { konAntal, konFarRedovisas, konFarRedovisasFor, parForRedovisning, parNarK } from './ktroskel.js';
 import { arKvinnodominerad } from './likvardighet.js';
-import { _median, beraknaPott, fordela, foreslaRiktning, hittaOmkorningar, individlyft, kanslighetskurva, likalonslyftForMal, lonespannPerBas,
+import { beraknaPott, fordela, foreslaRiktning, hittaOmkorningar, individlyft, kanslighetskurva, likalonslyftForMal, lonespannPerBas,
     prognosutfall, riktadeRader, sammanstallGrupper, stegvisPlan } from './loneoversyn.js';
 import { konskvotPerGrupp } from './osakerhet.js';
 import { huvudregression } from './regression.js';
-import { avrundaSymmetriskt } from './stat.js';
+import { avrundaSymmetriskt, median } from './stat.js';
 
 /** Pottyperna som en riktad rad kan bära, i visningsordning. En rad utan känd typ räknas som 'övrigt'. */
 export const POTTYPER = Object.freeze(['equity', 'marknad', 'befordran', 'övrigt']);
@@ -306,14 +306,14 @@ export function forslagUrPotten(rader, { budget, generell, kandidater, minN }) {
  */
 export function villkorsgrupper(rader, { villkor, minN, arKvDom }) {
     const basMed = new Map(), basP25 = new Map(lonespannPerBas(rader).map(b => [b.bas, b.p25]));
-    const median = bas => {
-        if (!basMed.has(bas)) basMed.set(bas, _median(rader.filter(r => r.bas === bas).map(r => r.lon)));
+    const basMedian = bas => {
+        if (!basMed.has(bas)) basMed.set(bas, median(rader.filter(r => r.bas === bas).map(r => r.lon)));
         return basMed.get(bas);
     };
     return sammanstallGrupper(rader).filter(g => {
         if (g.n < minN) return false;
         if (villkor === 'kvdom') return arKvDom(g.andelKv);
-        if (villkor === 'underbas') return g.median < median(g.bas);
+        if (villkor === 'underbas') return g.median < basMedian(g.bas);
         if (villkor === 'underp25') return g.median < basP25.get(g.bas);
         return true;
     });

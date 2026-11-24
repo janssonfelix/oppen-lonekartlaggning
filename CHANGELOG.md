@@ -16,6 +16,11 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 - **Minsta gruppstorlek är lägst 3.** Med tröskeln 2 kan två personer i en grupp räkna fram varandras lön. En
   konfigurationsfil med tröskeln 2 avvisas, och i ett organisationspaket används värdet inte (tröskeln eller golvet)
   och ger en varning (ADR-102).
+- **Kolumnerna i lönefilen känns igen säkrare.** En rubrik som är exakt *Kön* eller *BAS-intervall* går före en som
+  bara innehåller ordet, som *Kontor* eller *Basenhet*, och annars väljs den kortaste rubriken: *Ålder (år)* före
+  *Anställningsålder* och *Grundlön* före *Lönetillägg*. Yrkets kolumner prövas i samma ordning som förut.
+- **Ett par i likvärdigt arbete vars skillnad ligger exakt på den lägsta skillnaden räknas**, till exempel 29,0 % mot
+  gränsen 29 %. Förut kunde avrundningen i datorn lägga det en aning under gränsen.
 
 ## 2026.11.22
 

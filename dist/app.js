@@ -2325,11 +2325,18 @@ function rubrikgrupper() {
 function _hittaRubrik(rubriker, sokord, roll) {
   const hoppa = (h) => roll === "yrke" && arAnsvarskodRubrik(h);
   const rensade = (rubriker || []).map((h) => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ""));
-  for (const name of sokord) {
-    const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-    let i = rensade.indexOf(searchStr);
-    if (i < 0) i = rensade.findIndex((r) => r !== null && r.includes(searchStr));
+  const ord = sokord.map((s) => s.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  if (roll !== "yrke") for (const s of ord) {
+    const i = rensade.indexOf(s);
     if (i >= 0) return rubriker[i];
+  }
+  for (const s of ord) {
+    let bast = rensade.indexOf(s);
+    if (bast >= 0) return rubriker[bast];
+    rensade.forEach((r, i) => {
+      if (r !== null && r.includes(s) && (bast < 0 || r.length < rensade[bast].length)) bast = i;
+    });
+    if (bast >= 0) return rubriker[bast];
   }
   return void 0;
 }
@@ -9973,12 +9980,6 @@ function minimeraLonerad(row, rubriker = _lonefilensRubriker(Object.keys(row))) 
 }
 
 // src/lib/loneoversyn.js
-function _median(arr) {
-  return arr && arr.length ? median(arr) : 0;
-}
-function _kvantil(arr, q) {
-  return arr && arr.length ? kvantil(arr, q) : 0;
-}
 function _lyftLagstForst(lons, pott, cap) {
   const n = lons.length;
   if (!n || pott <= 0) return new Array(n).fill(0);
@@ -10063,7 +10064,7 @@ function fordela(rader, generell, riktningar, avrundning) {
       const frac = pott / groupSum;
       gd = lons.map((x) => x > 0 ? x * frac : 0);
     } else {
-      const cap = t.dist === "target" ? t.targetLevel === "p25" ? _kvantil(lons, 0.25) : _median(lons) : Infinity;
+      const cap = t.dist === "target" ? t.targetLevel === "p25" ? kvantil(lons, 0.25) : median(lons) : Infinity;
       gd = _lyftLagstForst(lons, pott, cap);
     }
     idxs.forEach((i, j) => {
@@ -10099,8 +10100,8 @@ function fordela(rader, generell, riktningar, avrundning) {
     n: gr.n,
     kvN: gr.kvN,
     andelKv: gr.n ? 100 * gr.kvN / gr.n : 0,
-    gammalMedian: _median(gr.oldL),
-    nyMedian: _median(gr.newL),
+    gammalMedian: median(gr.oldL),
+    nyMedian: median(gr.newL),
     kostnad: gr.cost
   }));
   const generellCost = genDeltas.reduce((s, x) => s + x, 0);
@@ -10177,7 +10178,7 @@ function sammanstallGrupper(rader) {
     n: g.n,
     kvN: g.kvN,
     andelKv: g.n ? 100 * g.kvN / g.n : 0,
-    median: _median(g.lons)
+    median: median(g.lons)
   }));
 }
 function hittaOmkorningar(perGrupp) {
@@ -10242,9 +10243,9 @@ function lonespannPerBas(rader) {
   return [...m.entries()].map(([bas, lons]) => ({
     bas,
     n: lons.length,
-    p25: _kvantil(lons, 0.25),
-    median: _median(lons),
-    p75: _kvantil(lons, 0.75)
+    p25: kvantil(lons, 0.25),
+    median: median(lons),
+    p75: kvantil(lons, 0.75)
   })).sort((a, b) => a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0);
 }
 function individlyft(rader, val) {
@@ -10263,9 +10264,9 @@ function individlyft(rader, val) {
   });
   const benchFor = (bas, aid) => {
     const g = menByGroup.get(bas + "|" + aid);
-    if (g && g.length >= minMen) return { v: _median(g), kalla: "yrke" };
+    if (g && g.length >= minMen) return { v: median(g), kalla: "yrke" };
     const b = menByBas.get(bas);
-    if (b && b.length >= minMen) return { v: _median(b), kalla: "bas" };
+    if (b && b.length >= minMen) return { v: median(b), kalla: "bas" };
     return null;
   };
   const flagged = [];
@@ -10555,14 +10556,14 @@ function forslagUrPotten(rader, { budget, generell, kandidater, minN }) {
 }
 function villkorsgrupper(rader, { villkor, minN, arKvDom }) {
   const basMed = /* @__PURE__ */ new Map(), basP25 = new Map(lonespannPerBas(rader).map((b) => [b.bas, b.p25]));
-  const median2 = (bas) => {
-    if (!basMed.has(bas)) basMed.set(bas, _median(rader.filter((r) => r.bas === bas).map((r) => r.lon)));
+  const basMedian = (bas) => {
+    if (!basMed.has(bas)) basMed.set(bas, median(rader.filter((r) => r.bas === bas).map((r) => r.lon)));
     return basMed.get(bas);
   };
   return sammanstallGrupper(rader).filter((g) => {
     if (g.n < minN) return false;
     if (villkor === "kvdom") return arKvDom(g.andelKv);
-    if (villkor === "underbas") return g.median < median2(g.bas);
+    if (villkor === "underbas") return g.median < basMedian(g.bas);
     if (villkor === "underp25") return g.median < basP25.get(g.bas);
     return true;
   });

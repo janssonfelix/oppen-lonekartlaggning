@@ -541,6 +541,15 @@ describe('inläsning: kolumnvalet', () => {
         expect(gissaKolumnmappning(['Lönetillägg', 'Kön']).lon).toBe('Lönetillägg');
         expect(gissaKolumnmappning(['Lön', 'Månadslön']).lon).toBe('Månadslön');
     });
+    it('en exakt rubrik för ett senare sökord går före en delsträng för ett tidigare, och annars den kortaste', () => {
+        expect(gissaKolumnmappning(['Kontor', 'Kön']).kon).toBe('Kön');
+        expect(gissaKolumnmappning(['Basenhet', 'BAS-intervall']).bas).toBe('BAS-intervall');
+        expect(gissaKolumnmappning(['Anställningsålder', 'Ålder (år)']).alder).toBe('Ålder (år)');
+        expect(gissaKolumnmappning(['Lönetillägg', 'Grundlön']).lon).toBe('Grundlön');
+    });
+    it('yrkets sökord är en prioritetsordning: AID-etikett går före en rubrik som bara heter AID', () => {
+        expect(gissaKolumnmappning(['AID', 'AID-etikett']).yrke).toBe('AID-etikett');
+    });
 });
 
 describe('_normaliseraBas + minimeraLonerad', () => {

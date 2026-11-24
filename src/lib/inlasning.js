@@ -315,19 +315,25 @@ export function rubrikgrupper() {
 }
 
 /**
- * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med sökordet, annars en som innehåller det; sökorden
- * prövas i tur och ordning. Exakt likhet först, så att "Lön" går före "Lönetillägg" för sökordet "ln".
+ * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med något av sökorden, prövade i tur och ordning, så
+ * att "Kön" går före "Kontor". Annars, sökord för sökord, den rubrik som är lika med sökordet eller den kortaste som
+ * innehåller det, så att "Grundlön" går före "Lönetillägg" för sökordet "ln". Yrkets sökord är en prioritetsordning och
+ * prövas bara sökord för sökord, så att "AID-etikett" går före "AID".
  */
 export function _hittaRubrik(rubriker, sokord, roll) {
     // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
     // får aldrig tas för yrke (ADR-33).
     const hoppa = h => roll === 'yrke' && _anArRubrik(h);
     const rensade = (rubriker || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
-    for (const name of sokord) {
-        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        let i = rensade.indexOf(searchStr);
-        if (i < 0) i = rensade.findIndex(r => r !== null && r.includes(searchStr));
-        if (i >= 0) return rubriker[i];
+    const ord = sokord.map(s => s.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    // Yrkets sökord är en prioritetsordning (TILLATNA_FALT), de andra rollernas olika stavningar av samma sak.
+    if (roll !== 'yrke') for (const s of ord) { const i = rensade.indexOf(s); if (i >= 0) return rubriker[i]; }
+    // Sökord för sökord: exakt, annars den kortaste rubriken som innehåller det ("Ålder (år)" före "Anställningsålder").
+    for (const s of ord) {
+        let bast = rensade.indexOf(s);
+        if (bast >= 0) return rubriker[bast];
+        rensade.forEach((r, i) => { if (r !== null && r.includes(s) && (bast < 0 || r.length < rensade[bast].length)) bast = i; });
+        if (bast >= 0) return rubriker[bast];
     }
     return undefined;
 }
