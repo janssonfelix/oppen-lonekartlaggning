@@ -331,7 +331,7 @@ export function uppdateraPaketKnapp() {
         sam.textContent = harData
             ? `Paketet får med: ${[harReferens() ? `ställningstagandet "${referensNamn()}" (${state.policy.length} rader)` : null,
                 state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}${rpDel}`
-            : 'Läs först in ett ställningstagande eller jämförelsestatistik med rutorna ovan.';
+            : 'Läs först in ett ställningstagande eller jämförelsestatistik med knapparna ovan.';
     }
 }
 
@@ -531,8 +531,8 @@ export function sattOrgTyp(v) {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartOrganisationspaket() {
-    document.getElementById('paket-skapa')?.addEventListener('input', uppdateraPaketKnapp);
-    document.getElementById('paket-skapa')?.addEventListener('toggle', uppdateraPaketKnapp);
+    // Formuläret står i fliken För systemförvaltaren; filvalen i steg 1 är Filer och kvalitets (data-byt-fil).
+    document.getElementById('view-forvaltare')?.addEventListener('input', uppdateraPaketKnapp);
     document.getElementById('btn-paket-spara')?.addEventListener('click', () => {
         const formFel = _paketFormularFel();
         if (formFel) { _paketStatus(formFel, false); return; }
@@ -553,7 +553,7 @@ export function uppstartOrganisationspaket() {
         _verktygsfil = inp.files && inp.files[0] ? inp.files[0] : null;
         uppdateraOrganisationsfilKnapp();
     });
-    document.getElementById('paket-skapa')?.addEventListener('input', uppdateraOrganisationsfilKnapp);
+    document.getElementById('view-forvaltare')?.addEventListener('input', uppdateraOrganisationsfilKnapp);
     document.getElementById('btn-organisationsfil-spara')?.addEventListener('click', () => { skapaOrganisationsfil(); });
     document.getElementById('paket-info')?.addEventListener('click', e => {
         const t = /** @type {HTMLElement} */ (e.target);

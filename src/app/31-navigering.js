@@ -560,7 +560,8 @@ export function uppstartNavigering() {
                 loneoversyn: 'Löneöversyn',
                 likvardighet: 'Likvärdigt arbete',
                 utforska: 'Tabeller och egna vyer',
-                info: 'Om verktyget'
+                info: 'Om verktyget',
+                forvaltare: 'För systemförvaltaren'
             };
             const titleEl = document.getElementById("page-title");
             if (titleEl) titleEl.textContent = titles[target] || target;

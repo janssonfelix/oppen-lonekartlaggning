@@ -236,6 +236,61 @@ describe('organisationspaket: läs in och skapa', () => {
         const w2 = createAppWindow({ html: ut });
         expect(w2.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
     });
+    // ---- Fliken För systemförvaltaren: formuläret och organisationsfilen, flyttade från Filer och kvalitet ----
+    it('fliken för systemförvaltaren står sist i menyn, är aldrig låst och bär formuläret', () => {
+        const w = createAppWindow(), d = w.document;
+        const knapp = d.getElementById('tab-forvaltare');
+        expect([...d.querySelectorAll('.nav-menu .nav-item')].pop()).toBe(knapp);
+        expect(knapp.getAttribute('aria-disabled')).toBeNull();
+        knapp.click();
+        expect(d.getElementById('view-forvaltare').style.display).toBe('block');
+        expect(d.getElementById('page-title').textContent).toBe('För systemförvaltaren');
+        const vy = d.getElementById('view-forvaltare'), filer = d.getElementById('organisationspaket');
+        for (const id of ['paket-org', 'paket-rapport', 'paket-sammanfattning', 'btn-paket-spara', 'file-input-verktygsfil', 'organisationsfil-namn',
+            'btn-organisationsfil-spara', 'organisationsfil-status']) {
+            expect(vy.contains(d.getElementById(id)), id).toBe(true);
+            expect(filer.contains(d.getElementById(id)), id).toBe(false);
+        }
+        expect(d.getElementById('paket-skapa')).toBeNull();
+        expect(vy.textContent).toMatch(/Webbläsaren låter inte en sida läsa sig själv, så filen måste väljas\./);
+        expect(vy.textContent).toMatch(/ingen lönedata/i);
+    });
+    it('raden i Filer och kvalitet och länken i Om verktyget öppnar fliken', () => {
+        const w = createAppWindow(), d = w.document;
+        d.querySelector('#organisationspaket [data-go-to-tab="forvaltare"]').click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('forvaltare');
+        d.getElementById('tab-info').click();
+        d.querySelector('#view-info [data-go-to-tab="forvaltare"]').click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('forvaltare');
+    });
+    it('knapparna i steg 1 öppnar samma filval som Filer och kvalitet', () => {
+        const w = createAppWindow(), d = w.document, vy = d.getElementById('view-forvaltare');
+        for (const id of ['file-input-paket', 'file-input-policy', 'file-input-stat']) {
+            let klick = 0;
+            d.getElementById(id).click = () => { klick++; };
+            vy.querySelector(`button[data-byt-fil="${id}"]`).click();
+            expect(klick, id).toBe(1);
+        }
+    });
+    it('i en organisationsfil är formuläret förifyllt, och steg 3 fungerar när bara verktygsfilen är vald', () => {
+        const w = createAppWindow({ html: organisationsfil() }), d = w.document;
+        d.getElementById('tab-forvaltare').click();
+        expect(d.getElementById('paket-org').value).toBe('Exempelregionen');
+        const knapp = d.getElementById('btn-organisationsfil-spara');
+        expect(knapp.disabled).toBe(true);
+        const inp = d.getElementById('file-input-verktygsfil');
+        Object.defineProperty(inp, 'files', { configurable: true, value: [new w.File([INDEX], 'oppen-lonekartlaggning.html', { type: 'text/html' })] });
+        inp.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(knapp.disabled).toBe(false);
+    });
+    it('sökningen på organisationsfil leder till fliken', () => {
+        const w = createAppWindow(), d = w.document, f = d.getElementById('sok-grupp');
+        f.value = 'organisationsfil';
+        f.dispatchEvent(new w.Event('input', { bubbles: true }));
+        const li = [...d.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'Skapa organisationsfil');
+        li.click();
+        expect(d.querySelector('.nav-item.active').dataset.tab).toBe('forvaltare');
+    });
     it('spara-knappen är avstängd utan namn eller utan data', () => {
         const w = createAppWindow();
         const d = w.document;

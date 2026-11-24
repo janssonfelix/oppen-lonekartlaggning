@@ -32,6 +32,13 @@ knappar (`.nav-item`) utan roll, och den aktiva bär `aria-current="page"`. Grup
 andra) är `role="presentation"` och `aria-hidden`. Varje knapp har `aria-controls` mot flikens paneler
 (`PANELGRUPPER`), och panelerna får `tabindex="-1"`, så att de kan få fokus vid flikbytet men inte står i Tab-ordningen.
 
+**Menyns sista post** är *För systemförvaltaren* (`forvaltare`) under *Hjälp*, efter *Om verktyget*. Den syns alltid
+och är aldrig låst, eftersom den inte behöver någon lönefil. Fliken bär formuläret för organisationspaketet och
+organisationsfilen i tre steg: paketet, verktygsfilen och nedladdningen (`docs/utveckling/organisationsfil.md`).
+Knapparna i steg 1 öppnar samma filval som Filer och kvalitet (`data-byt-fil`), så att samma hanterare och besked
+används. I Filer och kvalitet pekar en rad sist i steg 1 dit, och *Om verktyget* länkar dit. Fliken är, som *Om
+verktyget*, ingen analysflik: den ritar inga diagram och har ingen grupp i *Alla diagram*.
+
 **Tangentbordet.** Alla knappar i menyn står i den naturliga Tab-ordningen. Pilarna, Home och End flyttar därtill fokus
 mellan de knappar som varken är låsta eller dolda och byter flik; från en låst knapp går pilen till närmaste upplåsta
 åt det hållet. Ett byte med pilarna är användarens flikbyte (`k-troskeln.md` §3).

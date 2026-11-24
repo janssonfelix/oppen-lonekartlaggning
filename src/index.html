@@ -139,6 +139,11 @@
                     <span class="nav-etikett">Om verktyget</span>
                     <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </button>
+                <button class="nav-item" data-tip="Ta fram organisationsfilen: verktyget med organisationens uppgifter inbakade, en fil att sprida." data-tab="forvaltare" id="tab-forvaltare" aria-controls="view-forvaltare">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+                    <span class="nav-etikett">För systemförvaltaren</span>
+                    <svg class="ikon nav-las" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                </button>
             </nav>
         </aside>
 
@@ -368,58 +373,7 @@
                                 <p>Organisationstyp och minsta gruppstorlek väljer du under <button type="button" class="ov-filrad-lank" data-oppna-installningar>Inställningar</button>.</p>
                             </div>
                         </details>
-                            <details id="paket-skapa" class="paket-skapa">
-                                <summary>Skapa organisationspaket (för systemägaren)</summary>
-                                <p>Läs in ställningstagandet och jämförelsestatistiken med rutorna ovan, fyll i uppgifterna och spara. De som gör kartläggningen läser sedan in filen med knappen <em>Läs in organisationspaket</em>.</p>
-                                <div class="paket-formular">
-                                    <label for="paket-org">Organisationens namn</label>
-                                    <input type="text" id="paket-org" class="form-select" autocomplete="off" maxlength="200">
-                                    <label for="paket-utgivare">Utgivare</label>
-                                    <input type="text" id="paket-utgivare" class="form-select" autocomplete="off" maxlength="200" placeholder="t.ex. Lönefunktionen, HR-avdelningen">
-                                    <label for="paket-ar">Avser år</label>
-                                    <input type="number" id="paket-ar" class="form-select" min="2000" max="2100" step="1">
-                                    <label for="paket-jamf-namn">Benämning på jämförelsestatistiken</label>
-                                    <input type="text" id="paket-jamf-namn" class="form-select" autocomplete="off" maxlength="200" placeholder="t.ex. Kommunens lönestatistik">
-                                    <label for="paket-jamf-genitiv">… i genitiv</label>
-                                    <input type="text" id="paket-jamf-genitiv" class="form-select" autocomplete="off" maxlength="200" placeholder="t.ex. Kommunens lönestatistiks">
-                                    <label for="paket-ref-namn">Benämning på ställningstagandet</label>
-                                    <input type="text" id="paket-ref-namn" class="form-select" autocomplete="off" maxlength="100" placeholder="t.ex. Lönepolitiskt ställningstagande 2026">
-                                    <label for="paket-ref-kortnamn">… kort form</label>
-                                    <input type="text" id="paket-ref-kortnamn" class="form-select" autocomplete="off" maxlength="100" placeholder="t.ex. ställningstagandet">
-                                    <label for="paket-po">PO-påslag (%)</label>
-                                    <input type="number" id="paket-po" class="form-select" min="0" max="100" step="0.01">
-                                    <label for="paket-manader">Beräkningsperiod (månader)</label>
-                                    <input type="number" id="paket-manader" class="form-select" min="1" max="12" step="1">
-                                    <label for="paket-k">Minsta gruppstorlek för redovisning</label>
-                                    <input type="number" id="paket-k" class="form-select" min="3" max="1000" step="1">
-                                    <!-- Låsningar (ADR-47): det handläggaren inte får ändra. Tomt fält = paketet anger inget. -->
-                                    <label for="paket-k-lagst">Lägsta tillåtna minsta gruppstorlek</label>
-                                    <input type="number" id="paket-k-lagst" class="form-select" min="3" max="1000" step="1" placeholder="tomt = ingen gräns">
-                                    <label for="paket-inaktivitet">Rensning vid inaktivitet (minuter)</label>
-                                    <input type="number" id="paket-inaktivitet" class="form-select" min="0" max="120" step="1" placeholder="0 = av, tomt = anger inget">
-                                    <label for="paket-inaktivitet-last">Lås rensningstiden</label>
-                                    <input type="checkbox" id="paket-inaktivitet-last" class="sjalv-start">
-                                    <label for="paket-sma-export">Små grupper får tas med i exporten från Tabeller och egna vyer</label>
-                                    <input type="checkbox" id="paket-sma-export" checked class="sjalv-start">
-                                    <label for="paket-rapport"><span data-term-template="Ta med rapportens egna tabeller och receptet per {niva.en}">Ta med rapportens egna tabeller och receptet per BAS-intervall</span></label>
-                                    <input type="checkbox" id="paket-rapport" class="sjalv-start">
-                                </div>
-                                <p id="paket-sammanfattning" class="paket-sammanfattning"></p>
-                                <button type="button" id="btn-paket-spara" class="btn btn-secondary btn-sm" disabled>Spara som organisationspaket</button>
-                                <!-- Organisationsfil (docs/utveckling/organisationsfil.md): verktyget med paketet inbakat, en fil att sprida. -->
-                                <div id="organisationsfil-skapa" class="marg-t-12">
-                                    <p><strong>Skapa organisationsfil — verktyget med paketet inbakat</strong></p>
-                                    <p>De som gör kartläggningen behöver då bara en fil: de öppnar organisationsfilen och paketet är på plats. Peka ut verktygsfilen du öppnade (en sida från disk kan inte läsa sig själv), välj filnamn och ladda ner. Ingen lönedata följer med — bara det paketet innehåller. Ny version av verktyget eller ändrat paket: gör om samma steg.</p>
-                                    <div class="paket-formular">
-                                        <label for="file-input-verktygsfil">Verktygsfilen du öppnade (.html)</label>
-                                        <input type="file" id="file-input-verktygsfil" class="form-select" accept=".html,text/html">
-                                        <label for="organisationsfil-namn">Filnamn</label>
-                                        <input type="text" id="organisationsfil-namn" class="form-select" autocomplete="off" maxlength="120" placeholder="oppen-lonekartlaggning-organisationen.html">
-                                    </div>
-                                    <p id="organisationsfil-status" class="status-msg" role="status" aria-live="polite"></p>
-                                    <button type="button" id="btn-organisationsfil-spara" class="btn btn-secondary btn-sm" disabled>Ladda ner organisationsfilen</button>
-                                </div>
-                            </details>
+                        <p class="paket-till-forvaltare text-dampad-sm marg-t-12">Ska organisationens paket eller organisationsfil tas fram eller uppdateras? Det görs under <button type="button" class="ov-filrad-lank" data-go-to-tab="forvaltare">För systemförvaltaren</button>.</p>
                     </section>
                     <!-- Horisontell upload-rad: alla uppladdningskaellor -->
                     <div class="upload-row" id="upload-row">
@@ -1166,6 +1120,76 @@
                         </div>
                         <div id="info-tab-content" class="info-tab-content"></div>
                     </div>
+                </div>
+
+                <!-- För systemförvaltaren (ADR-49): organisationspaketet och organisationsfilen, verktyget med paketet inbakat.
+                     Filvalen i steg 1 är desamma som i Filer och kvalitet (data-byt-fil), så att samma hanterare och besked används. -->
+                <div id="view-forvaltare" class="view-panel dold">
+                    <div class="flik-intro"><strong>Ta fram organisationsfilen.</strong> En organisationsfil är verktyget med organisationens uppgifter inbakade: en enda fil att sprida till dem som gör kartläggningen. Den innehåller ingen lönedata, bara det som organisationspaketet innehåller. Uppgifterna är förval som handläggaren kan ändra, utom de tre låsningarna: lägsta tillåtna minsta gruppstorlek, den låsta rensningstiden och små grupper i exporten från Tabeller och egna vyer.</div>
+                    <section class="paket-steg" id="forvaltare-steg-1" aria-labelledby="forvaltare-steg-1-rubrik">
+                        <h2 id="forvaltare-steg-1-rubrik" class="fs-md fw-600 marg-0"><span class="steg-nr">Steg 1</span> Paketet</h2>
+                        <p>Läs in ställningstagandet och jämförelsestatistiken, eller ett befintligt organisationspaket, och fyll i uppgifterna. När den här filen redan är en organisationsfil är dess paket förvalt.</p>
+                        <div class="paket-rad">
+                            <button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-paket">Läs in organisationspaket</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-policy">Läs in ställningstagande</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-byt-fil="file-input-stat">Läs in jämförelsestatistik</button>
+                        </div>
+                        <div class="paket-formular">
+                            <label for="paket-org">Organisationens namn</label>
+                            <input type="text" id="paket-org" class="form-select" autocomplete="off" maxlength="200">
+                            <label for="paket-utgivare">Utgivare</label>
+                            <input type="text" id="paket-utgivare" class="form-select" autocomplete="off" maxlength="200" placeholder="t.ex. Lönefunktionen, HR-avdelningen">
+                            <label for="paket-ar">Avser år</label>
+                            <input type="number" id="paket-ar" class="form-select" min="2000" max="2100" step="1">
+                            <label for="paket-jamf-namn">Benämning på jämförelsestatistiken</label>
+                            <input type="text" id="paket-jamf-namn" class="form-select" autocomplete="off" maxlength="200" placeholder="t.ex. Kommunens lönestatistik">
+                            <label for="paket-jamf-genitiv">… i genitiv</label>
+                            <input type="text" id="paket-jamf-genitiv" class="form-select" autocomplete="off" maxlength="200" placeholder="t.ex. Kommunens lönestatistiks">
+                            <label for="paket-ref-namn">Benämning på ställningstagandet</label>
+                            <input type="text" id="paket-ref-namn" class="form-select" autocomplete="off" maxlength="100" placeholder="t.ex. Lönepolitiskt ställningstagande 2026">
+                            <label for="paket-ref-kortnamn">… kort form</label>
+                            <input type="text" id="paket-ref-kortnamn" class="form-select" autocomplete="off" maxlength="100" placeholder="t.ex. ställningstagandet">
+                            <label for="paket-po">PO-påslag (%)</label>
+                            <input type="number" id="paket-po" class="form-select" min="0" max="100" step="0.01">
+                            <label for="paket-manader">Beräkningsperiod (månader)</label>
+                            <input type="number" id="paket-manader" class="form-select" min="1" max="12" step="1">
+                            <label for="paket-k">Minsta gruppstorlek för redovisning</label>
+                            <input type="number" id="paket-k" class="form-select" min="3" max="1000" step="1">
+                            <!-- Låsningar (ADR-47): det handläggaren inte får ändra. Tomt fält = paketet anger inget. -->
+                            <label for="paket-k-lagst">Lägsta tillåtna minsta gruppstorlek</label>
+                            <input type="number" id="paket-k-lagst" class="form-select" min="3" max="1000" step="1" placeholder="tomt = ingen gräns">
+                            <label for="paket-inaktivitet">Rensning vid inaktivitet (minuter)</label>
+                            <input type="number" id="paket-inaktivitet" class="form-select" min="0" max="120" step="1" placeholder="0 = av, tomt = anger inget">
+                            <label for="paket-inaktivitet-last">Lås rensningstiden</label>
+                            <input type="checkbox" id="paket-inaktivitet-last" class="sjalv-start">
+                            <label for="paket-sma-export">Små grupper får tas med i exporten från Tabeller och egna vyer</label>
+                            <input type="checkbox" id="paket-sma-export" checked class="sjalv-start">
+                            <label for="paket-rapport"><span data-term-template="Ta med rapportens egna tabeller och receptet per {niva.en}">Ta med rapportens egna tabeller och receptet per BAS-intervall</span></label>
+                            <input type="checkbox" id="paket-rapport" class="sjalv-start">
+                        </div>
+                        <p id="paket-sammanfattning" class="paket-sammanfattning"></p>
+                        <p>Paketet kan också sparas som en egen fil (valfritt), till exempel för att arkivera det eller läsa in det i en annan version.</p>
+                        <button type="button" id="btn-paket-spara" class="btn btn-secondary btn-sm" disabled>Spara som organisationspaket</button>
+                    </section>
+                    <section class="paket-steg" id="forvaltare-steg-2" aria-labelledby="forvaltare-steg-2-rubrik">
+                        <h2 id="forvaltare-steg-2-rubrik" class="fs-md fw-600 marg-0"><span class="steg-nr">Steg 2</span> Verktygsfilen</h2>
+                        <p>Välj den HTML-fil du har öppen nu, eller en nyare version. Webbläsaren låter inte en sida läsa sig själv, så filen måste väljas.</p>
+                        <div class="paket-formular">
+                            <label for="file-input-verktygsfil">Verktygsfilen (.html)</label>
+                            <input type="file" id="file-input-verktygsfil" class="form-select" accept=".html,text/html">
+                        </div>
+                    </section>
+                    <section class="paket-steg" id="forvaltare-steg-3" aria-labelledby="forvaltare-steg-3-rubrik">
+                        <h2 id="forvaltare-steg-3-rubrik" class="fs-md fw-600 marg-0"><span class="steg-nr">Steg 3</span> Ladda ner</h2>
+                        <p>Välj filnamn och ladda ner organisationsfilen. Den som öppnar den har paketet på plats. Ingen lönedata följer med. Ändras paketet, gör om stegen.</p>
+                        <div class="paket-formular">
+                            <label for="organisationsfil-namn">Filnamn</label>
+                            <input type="text" id="organisationsfil-namn" class="form-select" autocomplete="off" maxlength="120" placeholder="oppen-lonekartlaggning-organisationen.html">
+                        </div>
+                        <p id="organisationsfil-status" class="status-msg" role="status" aria-live="polite"></p>
+                        <button type="button" id="btn-organisationsfil-spara" class="btn btn-secondary btn-sm" disabled>Ladda ner organisationsfilen</button>
+                    </section>
+                    <!-- Plats för rutan Flytta till en ny version. -->
                 </div>
 
                 <!-- Skevhet Tab -->

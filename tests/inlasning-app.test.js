@@ -468,18 +468,15 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         const paket = d.getElementById('organisationspaket');
         expect(paket.querySelector('.paket-huvud').textContent).toMatch(/Steg 1/);
         expect(paket.compareDocumentPosition(d.getElementById('upload-row')) & 4).toBeTruthy();
-        // Knappen syns; förklaringen står bakom Vad är ett organisationspaket?, och formuläret för systemägaren bakom
-        // en länk sist i steget.
+        // Knappen syns; förklaringen står bakom Vad är ett organisationspaket?, och sist i steget pekar en rad till
+        // fliken För systemförvaltaren, där formuläret står.
         expect(paket.querySelector('label.btn #file-input-paket')).not.toBeNull();
         const vad = d.getElementById('paket-vad');
         expect(vad.open).toBe(false);
         expect(vad.querySelector('summary').textContent.trim()).toBe('Vad är ett organisationspaket?');
         expect(vad.textContent).toMatch(/Systemägaren skapar det/);
-        const skapa = d.getElementById('paket-skapa');
-        expect(skapa.open).toBe(false);
-        expect(skapa.classList.contains('bakgrund-panel')).toBe(false);
-        expect(skapa.querySelector('summary').textContent.trim()).toBe('Skapa organisationspaket (för systemägaren)');
-        expect([...paket.children].pop()).toBe(skapa);
+        expect(d.getElementById('paket-skapa')).toBeNull();
+        expect([...paket.children].pop().querySelector('[data-go-to-tab="forvaltare"]')).not.toBeNull();
         w.__lasInDemodata();
         const pol = d.getElementById('upload-cell-policy');
         expect(pol.classList.contains('loaded')).toBe(true);
