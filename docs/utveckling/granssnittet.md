@@ -138,6 +138,8 @@ Panelen sist i Lika arbete listar personer vars lön ligger minst X % under en f
   `statGolv()` personer prövas (`k-troskeln.md` §5); antalet personer i mindre grupper står i en not.
 - **Den förväntade lönen** är `exp(a + b · ålder)` ur kollegornas `ln(lön) = a + b · ålder` när kollegornas åldrar
   skiljer sig minst 5 år, annars kollegornas medianlön. Utan ålder i lönefilen prövas alla mot kollegornas median.
+  Har lönefilen ålder prövas inte den som saknar ålder, och hen räknas inte som kollega; antalet står i en not
+  (`utanAlder`).
 - **Gränsen X** är standard 10 och går att ställa in mellan 5 och 30 (fältet `pag-grans`; ett värde utanför sätts till
   närmaste gräns). Både kvinnor och män prövas och flaggas.
 - **Personen identifieras med filens radnummer**, så att ingen ny identifierare samlas in. Ett citerat fält med

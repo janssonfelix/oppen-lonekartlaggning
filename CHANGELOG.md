@@ -9,6 +9,8 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Personer att granska säger hur många som saknar ålder.** Har lönefilen ålder prövas den som saknar ålder inte,
+  och en not under listan säger nu hur många det gäller.
 - **Kvantilregressionen säger till när en skattning inte stabiliserats.** Står könsskillnaden vid P10, medianen eller
   P90 fortfarande och rör sig efter 60 varv, säger kortet det under tabellen.
 - **En grupp exakt på kvinnotröskeln klassas rätt.** Med lydelsen *Mer än 55 %* blev till exempel 11 kvinnor av 20
