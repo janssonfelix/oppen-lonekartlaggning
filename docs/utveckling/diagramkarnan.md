@@ -171,8 +171,8 @@ data — och ritas som en färgstapel i högermarginalen med ändvärdena och ti
   «5 %»); annars kortas den (hela texten i `<title>`),
   och ryms inte tre tecken ritas den inte. Etiketten läggs i zonens överkant där den varken täcker en ritad punkt,
   en hänvisningslinje eller en annan text: mitt i zonen om det går, annars förskjuten i sidled eller en rad i taget
-  nedåt (högst tolv rader). Finns ingen sådan plats gäller den äldre regeln: mitt i zonen, under en text som redan
-  står där.
+  nedåt (högst tolv rader). Finns ingen sådan plats gäller den äldre regeln: mitt i zonen, på någon av de tre översta
+  raderna där den inte täcker en annan text (punkterna räknas då inte); finns ingen sådan rad ritas etiketten inte.
   På en bandaxel är gränserna kategorinamn och zonen täcker dem inklusive; saknas en gränskategori bland de
   ritade kategorierna ritas ingen zon.
 - Linje: `{ typ?: 'linje', x | y, axel?: 'y2', streck?, farg?, tjocklek?, etikett?, textfarg? }`. `etikett` står vid linjens
@@ -665,7 +665,8 @@ rader eller avkortas (`_rfRadbryt`, `_rfKorta` i `10-diagramlayout.js`).
 - **Status:** bara för status, och alltid tillsammans med form eller ord. En skillnad som bedöms mot 3- och
   5-procentsgränserna har ett ordförråd i hela verktyget, `GAP_STATUS` i `10-diagramtema.js`: *Balanserat* (grönt,
   cirkel), *Följ upp* (bärnsten, kvadrat) och *Värt att granska* (lila, romb) i diagrammen; samma ord, färg och
-  linjeikon i tabellerna. Sådant som inte är en bedömning (att ett gap *förklaras* av ålder, att en lön ligger
+  linjeikon i tabellerna. Kan skillnaden inte prövas, för att ett kön är för litet, är statusen *Går ej att bedöma*
+  (grå, cirkel, `GAP_STATUS_EJ`): ingen allvarlighetsgrad. Sådant som inte är en bedömning (att ett gap *förklaras* av ålder, att en lön ligger
   *under* ett spann) får inte statusfärg.
 - **Prioriteringens statusar:** «Börja här» (rangordningens översta nivå) och «Värt att granska» är lila, samma lila
   som i Lika arbete (användarens beslut) — «titta här först» utan att påstå att något är fel. «Över referens» är

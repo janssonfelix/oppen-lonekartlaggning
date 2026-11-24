@@ -97,7 +97,7 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    *Minsta gruppstorlek* i flikarnas översta rad är en länk dit). På skärmen visas alla grupper. Gränsen gäller
    det som lämnar verktyget (Excel, Word, PDF, ZIP, CSV, urklipp, diagrambilder, rapportunderlaget). Standardvärdet är 10: lönemått för grupper med färre personer än så redovisas
    inte där. Antal och andelar, också per kön, kan däremot stå i exporterna för små grupper, till exempel antalet
-   kvinnor och män i en AID-etikett med få personer; bedöm själv vad som kan spridas. Du kan ändra värdet till ett heltal från 2 (högre skärper skyddet). Ett värde under 10
+   kvinnor och män i en AID-etikett med få personer; bedöm själv vad som kan spridas. Du kan ändra värdet till ett heltal från 3 till 1 000 (högre skärper skyddet). Ett värde under 10
    kräver att du bekräftar och visas som en varning överst på alla flikar. Värdet står i
    metodbilagan och i exporterad data. Under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
@@ -234,7 +234,7 @@ rubrikraden, också när det är hopfällt.
   Handlingsplan.
 
 1. **Regler & praxis** — gå igenom de sex granskningsområdena. Sätt
-   **status** (Ingen risk / Möjlig risk — utreds / Åtgärd krävs / Ej tillämplig) och
+   **status** (Ingen risk identifierad / Möjlig risk – utreds vidare / Åtgärd krävs / Ej tillämplig) och
    skriv en **anteckning** per område. *Skriv på gruppnivå: inga namn eller
    personnummer i fritext.* Värdena följer automatiskt med in i Word-utkastet
    och utskriften.
@@ -367,13 +367,13 @@ rubrikraden, också när det är hopfällt.
    Standard är tre delar:
    - **BAS-fördelning:** kvinnor och män i olika BAS. Det är en fråga om karriärvägar och rekrytering.
    - **AID inom BAS:** olika AID-etiketter i samma BAS-intervall. Pröva likvärdigt arbete.
-   - **oförklarat, lön inom samma AID och BAS:** olika lön i samma arbete, det som fördelningen inte förklarar. En grupp med bara kvinnor eller bara män kan inte jämföras och räknas till delarna ovan. Pröva lika arbete.
+   - **Oförklarat: lön inom samma AID och BAS:** olika lön i samma arbete, det som fördelningen inte förklarar. En grupp med bara kvinnor eller bara män kan inte jämföras och räknas till delarna ovan. Pröva lika arbete.
 
    Under diagrammet fäller **Ändra uppdelning** ut rutan **Förklara med:**, där du väljer andra variabler: BAS, huvudområde, AID-mellannivå, AID och åldersgrupp
    (åldersgrupp bara när lönefilen har ålder). Välj en till fyra och ordna dem med pilknapparna. Ordningen spelar
    roll: den första variabeln får det den förklarar ensam, nästa det den förklarar utöver den första, och så vidare.
    AID-nivåerna står alltid från grov till fin. Med BAS och åldersgrupp blir delarna *BAS-fördelning*, *Åldersgrupp
-   inom BAS* och *Inom åldersgrupp och BAS*. Varje vald variabel ger en del, och den sista delen är skillnaden inom
+   inom BAS* och *Oförklarat: lön inom samma åldersgrupp och BAS*. Varje vald variabel ger en del, och den sista delen är skillnaden inom
    samma grupp. Valet sparas i konfigurationsfilen och följer med i rapportunderlaget.
 
    Under varje del står de grupper som bidrar mest i kronor.
@@ -475,7 +475,7 @@ rubrikraden, också när det är hopfällt.
    villkor under **Urval**: på personer (t.ex. "lön minst 30 000 kr", "BAS är inte
    A", alla eller något av villkoren) och på grupper (till exempel "skillnad mindre än 95 %").
    Hanteldiagrammet visar skillnaden per grupp, bubbeldiagrammet om
-   kvinnodominerade grupper har lägre lön. Grupper med färre än 10 personer visas
+   kvinnodominerade grupper har lägre lön. Grupper med färre personer än minsta gruppstorlek visas
    som alla andra på skärmen men följer inte med i exporten om du inte kryssar i det. Klicka på en grupp
    för att öppna dess gruppdossier. Rader och kolumner kan också vara **Huvudområde** eller
    **AID-mellannivå** (de fyra första siffrorna, t.ex. "AID 2070xx" för undersköterskor och
@@ -619,7 +619,7 @@ du ordna om och ta bort tabellerna.
    Varje avsnitt har en knapp **Kopiera**. Det har också varje AID-etikett med statusen *Värt att granska*
    (statistiskt säkerställd skillnad på minst 3 %) och varje kandidatpar där båda grupperna är stora nog att redovisas. Faktastycket och tabellen hamnar på urklipp och tar mallens format när
    du klistrar in. Diagrammen kopieras som bild med **Kopiera diagram**. Under varje grupp
-   finns **frågor till verksamheten** — skicka dem till ansvarig chef inför bedömningen av
+   finns **Frågor till ansvarig chef** — skicka dem till chefen inför bedömningen av
    om skillnaden är saklig.
    Blocket **Var uppstår löneskillnaden?** kommer direkt efter Sammanfattning.
    Efter Likvärdigt arbete kommer blocket **Lägre krav, högre lön**.
