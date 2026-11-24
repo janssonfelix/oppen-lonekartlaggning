@@ -24,7 +24,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-8 | lib-speglarna genereras från `src/lib/` | Upphävd | – |
 | ADR-9 | Hash-baserad CSP `script-src` | Gällande | – |
 | ADR-10 | Sidopanelen är navigation, inte ARIA-tabs | Gällande | – |
-| ADR-12 | K-anonymitetens redovisningsform: utelämna och namnge | Ändrad av ADR-51 | – |
+| ADR-12 | Redovisningsformen för minsta gruppstorlek: utelämna och namnge | Ändrad av ADR-51 | – |
 | ADR-13 | `VERSION` är enda källa för versionsstämpeln | Gällande | – |
 | ADR-14 | Tabeller och egna vyer visar små grupper; exporten utelämnar dem | Sammanförd i `k-troskeln.md` | – |
 | ADR-15 | Formler i CSV- och urklippsexport neutraliseras | Gällande | – |
@@ -115,7 +115,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 ## Besluten
 
 **ADR-1 — Web Worker avvisad.** Verktyget använder ingen arbetstråd; vid ett faktiskt prestandabehov används
-main-tråds-chunking (`requestIdleCallback`) och nedsampling i diagramkärnan. *Avvisat:* en worker: CSP:n saknar
+uppgifter i följd på huvudtråden (`setTimeout`, ADR-80) och nedsampling i diagramkärnan. *Avvisat:* en worker: CSP:n saknar
 `worker-src`, en worker når IndexedDB utanför lagringsspärren, `file://` och blob-workers är opålitliga, och
 diagramritningen arbetar ändå mot DOM. *Gäller i dag:* `skydd.md` S1.
 
@@ -155,7 +155,7 @@ aktiva knappen och alla knappar i Tab-ordningen; pil-, Home- och End-tangenterna
 flikraderna har tablist-mönstret. En meny som byter sidans huvudinnehåll är navigation. *Avvisat:* tablist-mönstret för
 menyn, som bara tillåter `role="tab"`-barn (menyn hade då en hopfällbar grupp). *Gäller i dag:* `granssnittet.md` §1.
 
-**ADR-12 — K-anonymitetens redovisningsform: utelämna och namnge.** En grupp under tröskeln utelämnas i det som lämnar
+**ADR-12 — Redovisningsformen för minsta gruppstorlek: utelämna och namnge.** En grupp under tröskeln utelämnas i det som lämnar
 verktyget och namnges i en not; är bara könsuppdelningen för liten redovisas gruppens samlade median. *Avvisat:* en rad
 med `< 10` i varje mätvärde (värdelös, långa tabeller), och att utelämna grupper där bara ena könet är litet (i
 EU-matrisen har grupperna ofta 14–17 personer men 2–3 av ena könet). *Gäller i dag:* `k-troskeln.md` §2 och §4.
@@ -250,7 +250,7 @@ egen gräns på 20 personer för P10 och P90: värdet pekar inte ut vem, och med
 *Gäller i dag:* `granssnittet.md` §4.
 
 **ADR-36 — Filrutorna syns alltid; namn på organisationen och jämförelsestatistiken.** Filrutorna syns alltid, så att
-ställningstagandet och statistiken aldrig döljs bakom en hopfälld rad. `orgNamn` och `jmfNamn` (`src/lib/namn.js`) är
+ställningstagandet och statistiken aldrig döljs bakom en hopfälld rad. `orgNamn` och `jmfNamn` (`src/app/07-standardinstallningar.js`) är
 enda källan för etiketterna, och namnfälten avvisar text som liknar personnummer eller e-post. *Gäller i dag:*
 `skydd.md` S5.
 
@@ -632,7 +632,7 @@ De äldre besluten och CHANGELOG nämner de gamla namnen; tabellen visar vad de 
 
 Spegelns alias följer samma ord: `_fitOLS` heter `_anpassaOLS`, `_rngFor` `_slumpFor`, `_fcComputePott` `_fcBeraknaPott`,
 `_lvComputePairs` `_lvLikvardighetspar`, `_toCsv` `_tillCsv` och så vidare. *Gäller i dag:* `sparbarhet.md`
-(kolumnen Funktion och fil), `gen-mirrors.mjs`.
+(kolumnen Funktion och fil).
 
 **ADR-98 — Appen byggs från ES-moduler med esbuild.** Beslutat av underhållaren 2026-11-23. Delarna i `src/app/` är
 ES-moduler med explicita `import` och `export`, och de importerar `src/lib/` under lib-namnen. `tools/build-app.mjs`
@@ -662,8 +662,9 @@ bara det den får; en tunn adapter i samma del (`laVymodell()`) läser tillstån
 minne för de dyra delarna (bootstrap, omkastning) som valfria argument. Vymodellen för en flik ligger i
 `src/lib/vymodell-<flik>.js`, platt bland de andra modulerna, så att vakterna för `src/lib/` (`tests/lib-beroenden.test.js`,
 modultabellen i `arkitektur.md`) gäller utan ändring. Varje vymodell prövas i Node med ID-märkta tester i
-spårbarhetsmatrisen, och k-invarianten prövas på vymodellen vid 10 och 25 (I9). Först ute är Lika arbete och
-Lönestrukturs avsnitt per BAS-intervall (`vymodell-lonestruktur.js`); flikens övriga delar och de andra flikarna följer.
+spårbarhetsmatrisen, och k-invarianten prövas på vymodellen vid 10 och 25 (I9). Först ute var Lika arbete och
+Lönestrukturs avsnitt per BAS-intervall (`vymodell-lonestruktur.js`); vilka flikar och delar som har en vymodell står i
+modultabellen i `arkitektur.md`.
 Diagrammens figurer byggs kvar i appen ur vymodellens data. *Skäl:* en extern granskare ska kunna läsa och pröva varje
 regel som styr vad en flik visar utan DOM och tillstånd (ADR-95, ADR-98). *Avvisat:* en mapp `src/lib/vymodeller/`,
 som vakterna för `src/lib/` inte läser och som skulle kräva att de skrivs om; att låta ritfunktionen läsa tillståndet
@@ -728,7 +729,7 @@ dag:* `k-troskeln.md` §1 och §5.
 
 **ADR-104 — Funktionerna i `src/app/` har svenska namn; tillståndets fält och DOM:ens id:n står kvar.** Beslutat av
 underhållaren 2026-11-23. Utvidgar ADR-97 till appen. Toppnivånamnen i `src/app/` (funktioner, konstanter och `let`)
-som har en engelsk del byts mot svenska, en grupp moduler i taget och utan beteendeändring: först S4 och exporten,
+som hade en engelsk del är bytta mot svenska, en grupp moduler i taget och utan beteendeändring: först S4 och exporten,
 sedan tillståndet och starten, flikarna och sist diagramritaren och verktygstipsen. Verben följer en ordlista (render
 blir rita, compute räkna, build bygg, apply tillämpa, show visa och så vidare) och substantiven verktygets egna ord
 (diagram, tabell, prognos, kostnad, inställningar). Prefixen (`_fc`, `_st`, `_rf` …) och etablerade förkortningar (CSV,
@@ -741,7 +742,7 @@ tabellerna med sitt id; en granskare läser dem inte. *Skäl:* den som följer e
 skärmen och exporten ska känna igen samma ord i koden, dokumenten och spårbarhetsmatrisen (ADR-95). Bygget fäller ett
 namn som krockar med ett annat eller med `window` (`bygge-och-test.md` §2). *Avvisat:* att byta tillståndets fält och
 id:n i samma ändring, som rör varje fil utan att en granskare vinner något. De äldre besluten och CHANGELOG nämner
-några av appens gamla namn; tabellen visar vad de heter nu och fylls på grupp för grupp:
+några av appens gamla namn; tabellen visar vad de heter nu:
 
 | Modul | Gammalt namn | Nytt namn |
 |---|---|---|
