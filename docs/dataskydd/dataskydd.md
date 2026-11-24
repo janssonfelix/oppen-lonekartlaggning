@@ -110,53 +110,23 @@ ansvarar för vad som lämnas ut. Ibland står det i det här avsnittet att ett 
 Med knappen *Som i exporten* i sidhuvudet kan användaren se flikarna i exportläget (en banner och en ram visar det).
 Exporterna byter då inte läge.
 
+**Hur varje utdata redovisas** står i `docs/utveckling/k-troskeln.md` avsnitt 2 och 3 (bland annat
+könsuppdelade mått, regressionens BAS-effekter, Ålder & karriär, spridningsdiagrammen, Löneläget, *Räkna för* i
+diagrammen, tabellerna per BAS-intervall och *Var uppstår löneskillnaden?*), och vakten för varje utdata i avsnitt 9.
+Det som avgör risken är detta:
+
 - **Ett kön för litet:** är gruppen stor nog men ett av könen för litet visas gruppens samlade median utan
-  könsjämförelse.
-- **Könsuppdelade mått:** samma regel gäller de beskrivande könsuppdelade måtten, också när måttet gäller hela
-  organisationen. Det är ett köns median eller percentil, den råa löneskillnaden, regressionens ojusterade steg
-  ("Endast kön") med den förklarade andelen och en kostnad som räknats ur en löneskillnad. De redovisas bara när
-  varje kön har minst 10 personer.
-- **Den justerade löneskillnaden** ur huvudregressionen (Lönestruktur, och talet i Lika arbetes nyckeltal) följer
-  inte regeln. Den visas från regressionens eget fasta golv, 5 av varje kön (ADR-38), också på skärmen.
-- **Regressionens BAS-effekter:** effekten för ett BAS-intervall med färre än 10 personer, intervallets lönenivå mot
-  referensintervallet, skrivs inte ut i Word-utkastet, PDF-rapporten, utskriften eller regressionskortet i
-  exportläget. Intervallet namnges i en not. Har referensintervallet självt färre än 10 personer skrivs ingen effekt
-  ut. Modellen räknas som förut med alla personer.
-- **Ålder & karriär:** i bilder och diagramdata följer flera mått regeln: löneskillnaderna (ojusterad och
-  åldersjusterad), lutningen per kön, trendlinjerna med konfidensband och lådorna per kön. Där ett kön är under
-  tröskeln står ett streck, och en not under diagrammet säger vad som utelämnats. Livscykelns lönekurva för ett valt
-  BAS-intervall med färre än 10 personer ritas inte; en not säger vilket intervall som är valt.
-- **Spridningsdiagrammen:** i bilder och diagramdata finns en persons punkt bara när personens grupp (AID-etikett
-  inom BAS-intervallet) och personens kön i gruppen når tröskeln. En not säger hur många som inte är med.
-- **Löneläget:** avsnittet mot ställningstagandet har en mellannivå i exporten. För grupper med 5 eller fler
-  men under tröskeln anges antal, inga lönemått. Bladet *Lönepolitik* i Excelfilen med alla flikar följer den
-  trappan och samma regel per kön. Överblicken i Löneläget och bladet *Referenser* redovisar organisationens
-  lönemått bara för AID-etiketter som når tröskeln. Referensernas egna tal och tabellen statistiken mot
-  ställningstagandet bär inga organisationsvärden och maskeras inte.
-- **Filter och *Räkna för* i diagrammen:** filtren ovanför diagrammen döljer märken och ändrar inga tal i text och
-  tabeller. I *Lön mot ålder* räknas trendlinjerna om ur de punkter som syns, och en linje ritas bara ur minst 10
-  synliga punkter. Raden *Räkna för* räknar om fem sammanfattande diagram för en del av underlaget, till exempel ett
-  huvudområde. Ett sådant val görs bara när både urvalet och resten av underlaget har inga eller minst 10 kvinnor och
-  inga eller minst 10 män. Spärren gör det svårare att få fram en liten grupp som skillnaden mellan två exporter,
-  men den är ingen garanti: skyddet gäller en fil i taget (ADR-92), och den som gör kartläggningen ansvarar för vad som exporteras.
-  Diagrammets egen export säger vad det är räknat för. Rapporten, utskriften, ZIP-filen och rapportunderlaget visar
-  alltid hela underlaget (riskanalysen §6.6).
-- **Tabellerna per BAS-intervall** i rapportens avsnitt *Lönestruktur per BAS-intervall* (Word-utkastet,
-  PDF-rapporten och Excelbladet *Per BAS*): raden *Alla* räknas på hela underlaget, också de intervall som utelämnas.
-  Så att raden *Alla* minus de visade intervallen inte ger ett utelämnat intervalls medellön redovisas då inte heller
-  medellön och medelålder för det minsta visade intervallet, när de utelämnade tillsammans har färre än 10 personer,
-  och så vidare tills de tillsammans har minst 10. Samma regel gäller per kön och, när tabellen visar medellön, för
-  AID-etiketterna i ett intervall. Antal och andel kvinnor står kvar, och en not säger vad som inte redovisas och
-  varför (ADR-83).
-- **Var uppstår löneskillnaden?** och **huvudområdenas andel av skillnaden** (Lönestruktur och rapportunderlaget):
-  skillnaden delas upp i delar som är vägda medellöner, och tillsammans med medellönerna och antalen skulle de kunna
-  ge en liten grupps medellön. I exporten räknas därför grupper där ett kön har färre än 10 personer samman med andra
-  grupper innan delarna räknas, så att varje grupp har inga eller minst 10 av varje kön. De sammanslagna grupperna
-  namnges inte; varje del säger hur många de är, och en not säger varför. Delarna kan därför skilja sig något från
-  skärmens. Räknas alla huvudområden samman redovisas inte hur stor del av skillnaden som beror på att kvinnor och män
-  arbetar i olika huvudområden (ADR-87).
-- **Diagram som aldrig lämnar verktyget:** Personer att granskas diagram är märkt så i koden, med ett uppräknat
-  skäl som står i behållarens verktygstips. Ingen exportväg (meny, bild, diagramdata, ZIP, utskrift) tar med det.
+  könsjämförelse. De könsuppdelade lönemåtten (ett köns median eller percentil, den råa löneskillnaden och en
+  kostnad som räknats ur en löneskillnad) redovisas bara när varje kön har minst 10 personer, också när måttet gäller
+  hela organisationen.
+- **Den justerade löneskillnaden** ur huvudregressionen följer inte regeln. Den visas från regressionens eget fasta
+  golv, 5 av varje kön (ADR-38), också på skärmen.
+- **Differenser inom en fil:** där en total minus de visade delarna skulle ge en utelämnad grupps lönemått redovisas
+  inte heller den minsta visade delen, eller så räknas små grupper samman innan delarna räknas (ADR-83, ADR-87).
+  Det som kan räknas fram ur två filer skyddas inte (ADR-92), och den som gör kartläggningen ansvarar för vad som
+  exporteras.
+- **Diagram över personer:** i bilder och diagramdata finns en persons punkt bara när personens grupp och kön i
+  gruppen når tröskeln. Personer att granskas diagram lämnar aldrig verktyget.
 
 **Vad testerna prövar.** Automatiska tester ritar varje flik i exportläget. De bygger också Word-utkastet,
 PDF-rapporten i dess tre urval (hela dokumentationen, ledningsbrief och facklig dialog), rapportunderlaget och
