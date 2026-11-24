@@ -219,6 +219,18 @@ function _rader(del, radFn, benamning, varningar) {
 }
 
 /**
+ * Är paketet från ett tidigare år än datorns klocka? Förra årets paket räknas först från och med 1 mars, så att
+ * förra årets kartläggning kan göras i början av året. Ett paket utan år räknas aldrig.
+ * @param {number|undefined} avserAr
+ * @param {Date} idag
+ */
+export function paketArGammalt(avserAr, idag) {
+    if (typeof avserAr !== 'number' || !Number.isInteger(avserAr)) return false;
+    const ar = idag.getFullYear();
+    return avserAr < ar - 1 || (avserAr === ar - 1 && idag.getMonth() >= 2);
+}
+
+/**
  * Tolkar ett paket (filens text) till appens delar.
  * @param {string} text
  * @returns {{ok:true, paket:Object, delar:Object, varningar:string[]} | {ok:false, fel:string}}

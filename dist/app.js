@@ -3604,6 +3604,11 @@ function _rader(del, radFn, benamning, varningar) {
   if (bort) varningar.push(`${bort} ${bort === 1 ? "rad" : "rader"} i ${benamning} hoppades över (saknade eller ogiltiga värden).`);
   return rader.length ? rader : null;
 }
+function paketArGammalt(avserAr, idag) {
+  if (typeof avserAr !== "number" || !Number.isInteger(avserAr)) return false;
+  const ar = idag.getFullYear();
+  return avserAr < ar - 1 || avserAr === ar - 1 && idag.getMonth() >= 2;
+}
 function tolkaPaket(text) {
   if (typeof text !== "string") return { ok: false, fel: "Filen kunde inte läsas." };
   if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: "Filen är för stor för att vara ett organisationspaket (högst 5 MB)." };
@@ -9954,6 +9959,33 @@ function bakaIn(html, paketJson, meta = {}) {
   const block = `${MALL_START} data-skapad="${_attr(meta.skapad)}" data-organisation="${_attr(meta.organisation)}" data-verktygsversion="${_attr(k.version || "")}" data-verktygssha="${_attr(meta.verktygssha)}">${text}</template>`;
   svans = svans.slice(0, slut) + block + svans.slice(slut);
   return { ok: true, html: huvud + svans, version: k.version };
+}
+function jamforVersion(a, b) {
+  const ma = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(String(a ?? ""));
+  const mb = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(String(b ?? ""));
+  if (!ma || !mb) return null;
+  for (let i = 1; i <= 3; i++) if (+ma[i] !== +mb[i]) return +ma[i] < +mb[i] ? -1 : 1;
+  return 0;
+}
+function flyttaOrganisationsfil(gammalHtml, nyHtml, meta) {
+  const k = kannIgenVerktyget(gammalHtml);
+  if (!k.ok) return { ok: false, fel: String(k.fel).replace(/^Filen/, "Den gamla filen") };
+  const ut = lasUt(gammalHtml);
+  if (!ut) return { ok: false, fel: "Den gamla filen har inget inbakat paket. Välj den organisationsfil som handläggarna använder." };
+  const t = tolkaPaket(ut.json);
+  if (!t.ok) return { ok: false, fel: `Paketet i den gamla filen går inte att läsa: ${t.fel}` };
+  const organisation = t.paket.organisation;
+  const r = bakaIn(nyHtml, ut.json, { skapad: meta.skapad, organisation, verktygssha: meta.verktygssha });
+  if (!r.ok) return { ok: false, fel: r.fel.replace(/^Filen/, "Den nya filen") };
+  return {
+    ok: true,
+    html: r.html,
+    franVersion: k.version,
+    tillVersion: r.version,
+    organisation,
+    paketSkapat: t.paket.skapat,
+    aldreVersion: jamforVersion(k.version, r.version) === 1
+  };
 }
 function skriptBlock(html) {
   return [...String(html ?? "").matchAll(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi)].map((m) => m[0]);

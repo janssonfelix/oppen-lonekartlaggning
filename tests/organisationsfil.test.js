@@ -8,7 +8,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { bakaIn, lasUt, kannIgenVerktyget, filnamnForslag, normaliseraFilnamn, skriptBlock, MALL_ID } from '../src/lib/organisationsfil.js';
+import { bakaIn, lasUt, kannIgenVerktyget, filnamnForslag, normaliseraFilnamn, skriptBlock, jamforVersion, flyttaOrganisationsfil, MALL_ID } from '../src/lib/organisationsfil.js';
+import { byggPaket, tolkaPaket } from '../src/lib/organisationspaket.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const bygge = readFileSync(join(root, 'dist', 'oppen-lonekartlaggning.html'), 'utf8');
@@ -91,5 +92,83 @@ describe('organisationsfil: filnamn', () => {
         expect(normaliseraFilnamn('verktyg.HTML', 'X')).toBe('verktyg.HTML');
         expect(normaliseraFilnamn('a/b:c', 'X')).toBe('a-b-c.html');
         expect(normaliseraFilnamn('   ', 'Kommunen')).toBe('oppen-lonekartlaggning-kommunen.html');
+    });
+});
+
+describe('organisationsfil: jämföra versioner', () => {
+    it('jämför de tre talen i ÅÅÅÅ.MM.DD', () => {
+        expect(jamforVersion('2026.11.22', '2026.11.22')).toBe(0);
+        expect(jamforVersion('2026.11.03', '2026.11.22')).toBe(-1);
+        expect(jamforVersion('2027.01.02', '2026.12.30')).toBe(1);
+    });
+    it('ett suffix räknas inte, och en sträng utan mönstret ger null', () => {
+        expect(jamforVersion('2026.11.22-kommunen', '2026.11.22')).toBe(0);
+        expect(jamforVersion('okänd', '2026.11.22')).toBeNull();
+    });
+});
+
+describe('organisationsfil: flytta till en ny version', () => {
+    const giltigt = JSON.stringify(byggPaket({ organisation: 'Exempelregionen', skapat: '2026-10-01', avserAr: 2026,
+        referens: { namn: 'Ställningstagandet', rader: [{ bas: 'A', p10: 25000, med: 30000, p90: 35000 }] } }));
+    const medVersion = (html, v) => html.replace(/(var APP_VERSION = ")[0-9.]+(")/, `$1${v}$2`);
+    const nyHtml = bygge;
+    const nyVersion = kannIgenVerktyget(bygge).version;
+    const gammalUtan = medVersion(bygge, '2026.01.15');
+    const baka = (html, json) => { const r = bakaIn(html, json, { skapad: '2026-10-02', organisation: 'Exempelregionen' }); if (!r.ok) throw new Error(r.fel); return r.html; };
+    const gammal = baka(gammalUtan, giltigt);
+    const meta = { skapad: '2026-11-24', verktygssha: 'def' };
+
+    it('flyttar paketet till den nya filen och anger organisation, datum och versioner', () => {
+        const r = flyttaOrganisationsfil(gammal, nyHtml, meta);
+        if (!r.ok) throw new Error(r.fel);
+        const ut = lasUt(r.html);
+        expect(tolkaPaket(ut.json)).toEqual(tolkaPaket(giltigt));
+        expect(ut.meta).toEqual({ skapad: '2026-11-24', organisation: 'Exempelregionen', verktygsversion: nyVersion, verktygssha: 'def' });
+        expect(r).toMatchObject({ organisation: 'Exempelregionen', paketSkapat: '2026-10-01', franVersion: '2026.01.15', tillVersion: nyVersion, aldreVersion: false });
+    });
+    it('inga skript rörs i den nya filen', () => {
+        const r = flyttaOrganisationsfil(gammal, nyHtml, meta);
+        if (!r.ok) throw new Error(r.fel);
+        expect(skriptBlock(r.html)).toEqual(skriptBlock(nyHtml));
+    });
+    it('en gammal fil utan paket avvisas', () => {
+        const r = flyttaOrganisationsfil(gammalUtan, nyHtml, meta);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.fel).toContain('Den gamla filen har inget inbakat paket');
+    });
+    it('ett ogiltigt paket i den gamla filen avvisas med samma fel som vid inläsning', () => {
+        const trasig = baka(gammalUtan, '{"format":"fel"}');
+        const r = flyttaOrganisationsfil(trasig, nyHtml, meta);
+        const t = tolkaPaket('{"format":"fel"}');
+        expect(r.ok).toBe(false);
+        if (!r.ok && !t.ok) expect(r.fel).toContain(t.fel);
+    });
+    it('en gammal fil som inte är verktyget avvisas med besked om vilken fil det gäller', () => {
+        const r = flyttaOrganisationsfil('<html><body>hej</body></html>', nyHtml, meta);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.fel).toMatch(/^Den gamla filen är inte verktyget: innehållssäkerhetspolicyn saknas/);
+    });
+    it('en ny fil som inte är verktyget avvisas med besked om vilken fil det gäller', () => {
+        const r = flyttaOrganisationsfil(gammal, '<html><body>hej</body></html>', meta);
+        expect(r.ok).toBe(false);
+        if (!r.ok) expect(r.fel).toMatch(/^Den nya filen är inte verktyget/);
+    });
+    it('en ny fil som redan är en organisationsfil får det gamla paketet i stället för sitt eget', () => {
+        const annat = JSON.stringify(byggPaket({ organisation: 'Exempelkommunen', skapat: '2026-09-01',
+            referens: { rader: [{ bas: 'A', p10: 1, med: 2, p90: 3 }] } }));
+        const r = flyttaOrganisationsfil(gammal, baka(nyHtml, annat), meta);
+        if (!r.ok) throw new Error(r.fel);
+        expect((r.html.match(/<template id="inbakat-organisationspaket"/g) || []).length).toBe(1);
+        expect(tolkaPaket(lasUt(r.html).json)).toEqual(tolkaPaket(giltigt));
+    });
+    it('en ny fil som är äldre än den gamla tillåts men flaggas', () => {
+        const r = flyttaOrganisationsfil(baka(medVersion(bygge, '2099.01.01'), giltigt), nyHtml, meta);
+        if (!r.ok) throw new Error(r.fel);
+        expect(r.aldreVersion).toBe(true);
+    });
+    it('IT:s kontroll: utan blocket är organisationsfilen byte för byte den fil som bakades in i', () => {
+        const r = flyttaOrganisationsfil(gammal, nyHtml, meta);
+        if (!r.ok) throw new Error(r.fel);
+        expect(r.html.replace(/<template id="inbakat-organisationspaket"[^>]*>[\s\S]*?<\/template>/, '')).toBe(nyHtml);
     });
 });

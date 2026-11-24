@@ -15,6 +15,8 @@
  * laddar ner resultatet som Blob och läser vid start blocket ur DOM:en.
  */
 
+import { tolkaPaket } from './organisationspaket.js';
+
 export const MALL_ID = 'inbakat-organisationspaket';
 // Mallens öppningstagg byggs ihop av delar, så att den exakta strängen inte står i källkoden (som
 // följer med i den byggda filen): en sökning efter blocket får bara träffa det riktiga blocket.
@@ -93,6 +95,41 @@ export function bakaIn(html, paketJson, meta = {}) {
         + ` data-verktygsversion="${_attr(k.version || '')}" data-verktygssha="${_attr(meta.verktygssha)}">${text}</template>`;
     svans = svans.slice(0, slut) + block + svans.slice(slut);
     return { ok: true, html: huvud + svans, version: k.version };
+}
+
+/**
+ * Jämför två versioner på de tre talen i ÅÅÅÅ.MM.DD i början av strängen; ett suffix räknas inte.
+ * @returns {-1|0|1|null} null när någon av strängarna saknar mönstret
+ */
+export function jamforVersion(a, b) {
+    const ma = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(String(a ?? ''));
+    const mb = /^(\d{4})\.(\d{2})\.(\d{2})/.exec(String(b ?? ''));
+    if (!ma || !mb) return null;
+    for (let i = 1; i <= 3; i++) if (+ma[i] !== +mb[i]) return +ma[i] < +mb[i] ? -1 : 1;
+    return 0;
+}
+
+/**
+ * Flyttar paketet ur en organisationsfil till en ny version av verktyget. Paketet valideras som vid inläsning.
+ * En nyare gammal fil än den nya tillåts, men flaggas med aldreVersion.
+ * @param {string} gammalHtml - den gamla organisationsfilen
+ * @param {string} nyHtml - den nya verktygsfilen
+ * @param {{skapad:string, verktygssha?:string}} meta
+ * @returns {{ok:true, html:string, franVersion:string|null, tillVersion:string|null, organisation:string,
+ *            paketSkapat:string, aldreVersion:boolean} | {ok:false, fel:string}}
+ */
+export function flyttaOrganisationsfil(gammalHtml, nyHtml, meta) {
+    const k = kannIgenVerktyget(gammalHtml);
+    if (!k.ok) return { ok: false, fel: String(k.fel).replace(/^Filen/, 'Den gamla filen') };
+    const ut = lasUt(gammalHtml);
+    if (!ut) return { ok: false, fel: 'Den gamla filen har inget inbakat paket. Välj den organisationsfil som handläggarna använder.' };
+    const t = tolkaPaket(ut.json);
+    if (!t.ok) return { ok: false, fel: `Paketet i den gamla filen går inte att läsa: ${t.fel}` };
+    const organisation = t.paket.organisation;
+    const r = bakaIn(nyHtml, ut.json, { skapad: meta.skapad, organisation, verktygssha: meta.verktygssha });
+    if (!r.ok) return { ok: false, fel: r.fel.replace(/^Filen/, 'Den nya filen') };
+    return { ok: true, html: r.html, franVersion: k.version, tillVersion: r.version, organisation,
+        paketSkapat: t.paket.skapat, aldreVersion: jamforVersion(k.version, r.version) === 1 };
 }
 
 /** Skriptblocken i en HTML-text, för tester som hävdar att inbakningen inte rör något skript. */
