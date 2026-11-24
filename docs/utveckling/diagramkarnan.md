@@ -246,8 +246,8 @@ tips visas. Portalen är gemensam för sidan; ett dolt tips töms alltid.
 och kan inte nå en hanterare.
 
 **Förklaringen.** En post per serienamn som har minst en ritad punkt. Klick, Enter eller mellanslag döljer
-eller visar serien; posten står kvar, nedtonad. Högst fyra rader, namn kortas till 36 tecken (hela namnet i
-`<title>`), därefter "+ N till". Rader tas bort om ritytan annars blir lägre än 40 px.
+eller visar serien; posten står kvar, nedtonad. Högst fyra rader, namn kortas till 36 tecken, vid ett ordslut när det går
+(`_rfKortaVidOrd`: den synliga texten ska stå i knappens namn, WCAG 2.5.3; hela namnet i `<title>`), därefter "+ N till". Rader tas bort om ritytan annars blir lägre än 40 px.
 
 **Notisen om urval.** Har ritaren nedsamplat står antalen i en rad under diagrammet
 (`_sattPunkturvalsnot`). Antalen räknar inte dolda punkter.
@@ -672,6 +672,10 @@ rader eller avkortas (`_rfRadbryt`, `_rfKorta` i `10-diagramlayout.js`).
 - **Prioriteringens statusar:** «Börja här» (rangordningens översta nivå) och «Värt att granska» är lila, samma lila
   som i Lika arbete (användarens beslut) — «titta här först» utan att påstå att något är fel. «Över referens» är
   blått: ett läge, ingen allvarlighetsgrad.
+
+**Text på en fyllning** (staplade staplar, värmekartans rutor, trädkartans ytor) är vit eller den vanliga textfärgen,
+den som ger högst kontrast mot fyllningen blandad mot vitt (`_rfTextPa`). Når ingen av dem 4,5:1, som i en
+mellanton, får texten en kant i den andra färgen (WCAG 1.4.3).
 
 **Märken.** Staplar har ett tak för tjockleken och rundade hörn; staplade delar och punkter har en tunn kant i
 ytans färg; axelsiffror är dämpade. Mönster (tunna sneda streck, små prickar) används bara för litet underlag.

@@ -490,6 +490,13 @@ describe('DR6: förklaring och texter är begränsade', () => {
         expect(t.querySelector('title').textContent).toBe(namn);
         expect(kontrolleraYta(svg, 'lång serie')).toEqual([]);
     });
+    it('ett namn med ord kortas vid ett ordslut, så att den synliga texten står i knappens namn (WCAG 2.5.3)', () => {
+        const namn = 'Organisationens lönepolitik (P10–P90) per intervall';
+        const svg = rita(staplar({ lager: [{ marke: 'stapel', serie: namn, data: [{ x: 'A', y: 1 }] }] }), 600);
+        const g = alla(svg, '[data-serie]')[0];
+        expect(texten(g.querySelector('text'))).toBe('Organisationens lönepolitik…');
+        expect(g.getAttribute('aria-label')).toBe(`${namn}, visa eller dölj serien`);
+    });
     for (const b of [320, 600]) {
         it(`40 serier på ${b} px: högst fyra rader, "+ N till", ytan minst 120 px hög`, () => {
             const svg = rita(manga(40), b);
@@ -1255,6 +1262,15 @@ describe('Uppgift 5: små grupper i band, intervall, låda och ruta', () => {
         const liten = alla(med, 'rect[data-marke="ruta"]')[1];
         expect(liten.getAttribute('stroke-dasharray')).toBeTruthy();
         expect(liten.nextElementSibling.getAttribute('data-marke')).toBe('rander');
+    });
+    it('text på en fyllning: den färg som ger högst kontrast, och en kant när ingen når 4,5:1 (WCAG 1.4.3)', () => {
+        const segment = farg => alla(rita(staplar({ lager: [{ marke: 'stapel', lage: 'staplad', serie: 'S', farg, data: [{ x: 'A', y: 20, etikett: '20' }] }] }), 500),
+            '[data-marke="etikett"]')[0];
+        const mork = segment('#1f2430'), ljus = segment('#e8ecf2'), mellan = segment('#2a78d6');
+        expect([mork.getAttribute('fill'), mork.getAttribute('stroke')]).toEqual(['#ffffff', null]);
+        expect([ljus.getAttribute('fill'), ljus.getAttribute('stroke')]).toEqual(['#1f2430', null]);
+        // Vit på #2a78d6 är 4,4:1 och mörk 3,6:1: vit text med en mörk kant.
+        expect([mellan.getAttribute('fill'), mellan.getAttribute('stroke'), mellan.getAttribute('paint-order')]).toEqual(['#ffffff', '#1f2430', 'stroke']);
     });
     it('ruta utan visaText ritar ingen text; texterna ritas alla eller inga — ryms inte en ritad cells text ritas ingen', () => {
         const f = (visaText, lang, liten) => ({ beskrivning: 'b', x: { skala: 'band' }, y: { skala: 'band' }, fargskala: { typ: 'sekventiell', doman: [0, 100] },

@@ -9,6 +9,9 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Text i diagrammen syns bättre på mellantoner.** En siffra eller ett namn på en fyllning väljs nu vit eller mörk
+  efter kontrasten, och där ingen av dem räcker, som på trädkartans lila ytor, får texten en kant. Ett långt namn i
+  diagrammens förklaring kortas vid ett ordslut, så att skärmläsare och röststyrning hittar knappen på det som står.
 - **Konfidensintervall och p-värden räknas med t-fördelningen också i stora underlag.** Tidigare användes
   normalfördelningen från 100 frihetsgrader, vilket gav en aning för smala intervall; nu blir de en aning bredare och
   p-värdena en aning större nära gränsen 0,05 (ADR-105).
