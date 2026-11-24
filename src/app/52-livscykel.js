@@ -405,6 +405,6 @@ function _livscykelFigur(r) {
  */
 /** @param {string|null} [fixBas] BAS-intervall att fixera vid; null = det mest folkrika */
 export function korLivscykelregression(fixBas) {
-    // Modellen (designmatris, OLS, HC3, prediktioner) ligger i src/lib/livscykel.js (ADR-8).
+    // Modellen (designmatris, OLS, HC3, prediktioner) ligger i src/lib/livscykel.js (ADR-98).
     return livscykelRegression(hamtaData(), { fixBas, golv: statGolv() });
 }

@@ -11,7 +11,7 @@
  * Referensen kommer utifrån som funktionen referensFor(aid, bas), så samma modell
  * används för både ställningstagandet och jämförelsestatistiken.
  *
- * Appen får modellen genom lib-speglarna (ADR-8); raknaPrioritering() i
+ * Appen importerar modellen (ADR-98); raknaPrioritering() i
  * src/app/55-prioritering.js är den tunna adaptern som läser state.
  *
  * Bygger på: verktygets egen modell, docs/utveckling/prioriteringsmodellen.md.

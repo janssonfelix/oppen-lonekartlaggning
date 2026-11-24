@@ -210,7 +210,7 @@ describe('Jämförelseexporten: talceller med svenskt talformat, koder som text'
     });
 });
 
-// Talformatet (src/lib/talformat.js) prövas utan DOM: appen får samma funktioner genom spegeln. Halvorna avrundas
+// Talformatet (src/lib/talformat.js) prövas utan DOM: appen importerar samma funktioner. Halvorna avrundas
 // bort från noll (avrundaSymmetriskt i src/lib/stat.js), så att ett tal och dess motsatta tal visas med samma siffror.
 // Math.round avrundar halvorna uppåt, och då stod samma avvikelse som "−1 600 kr" och kostnaden, samma tal utan
 // tecken, som "1 601 kr".

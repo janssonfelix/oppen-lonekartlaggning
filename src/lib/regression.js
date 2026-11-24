@@ -11,7 +11,7 @@
  * statGolv-värdet, den inställda tröskeln och förklaringsmodellen) och läser inget
  * globalt tillstånd.
  *
- * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
+ * Appen importerar dem (ADR-98); src/app/50-regressionsmodeller.js
  * och korOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
  * som läser hamtaData(), statGolv() och resten av tillståndet. OLS-kärnan
  * (anpassaOLS, invertera, matrisprodukt, pVardeTvasidigt, tKvantil) ligger i stat.js. Ingen modell här

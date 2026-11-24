@@ -26,7 +26,7 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 
 ## 1. Vad modellen gör och var den bor
 
-Modellen bor i `src/lib/likvardighet.js` och speglas in i bygget som övriga kärnmoduler (ADR-8).
+Modellen bor i `src/lib/likvardighet.js` och appen importerar den som övriga lib-moduler (ADR-98).
 Det fliken räknar och bedömer utöver paren står i vymodellen `src/lib/vymodell-likvardigt-arbete.js` (ADR-99), prövad i
 Node i `tests/vymodeller.test.js` (B5.11, B5.12). `src/app/34-likvardigt-arbete.js` innehåller bara tillståndsadaptern
 och det som ritar: fliken (`ritaLikvardigtArbete`), diagrammen (`ritaKravMotLon`, `ritaKandidatparen`) och exporten. Att

@@ -81,13 +81,13 @@ i [`lagrum.md`](lagrum.md); vad som utelämnas och döljs under tröskeln i `k-t
 | Blad | Innehåll |
 |---|---|
 | 1. Försättssida | Omfattningen i antal, fält för deltagarna i samrådet och fält för den gemensamma sammanfattningen, bland dem löneökningen efter föräldraledighet eller ledighet för vård av anhörig, utvärderingen av föregående åtgärder och analysen av systemen för könsneutral arbetsvärdering och arbetsindelning |
-| 2. Lika arbete | Grupperna med statusen *Värt att granska* i Lika arbete, mest negativ skillnad först |
+| 2. Lika arbete (AID) | Grupperna med statusen *Värt att granska* i Lika arbete, mest negativ skillnad först |
 | 2a. Lika arbete, alla grupper | Alla grupper i Lika arbete: samma blad som *Lika arbete AID x BAS* i Excel-filen med alla flikar, byggt av samma funktion (`_aidbasLikaBlad`); antal och medianer, inga medelvärden |
 | 3. Likvärdigt arbete (BAS) | BAS-intervallen där regressionens oförklarade skillnad är säkerställd efter korrigering för många tester och minst 3 % |
 | 3b. Likvärdigt arbete (krav) | Kandidatparen som når tröskeln |
 | 4. Exkluderat (små grupper) | Det som utelämnats under tröskeln |
 | 5. Metodik & rättslig grund | Metoden |
-| 6. Signaturblad | Underskrifterna |
+| 6. Signaturer | Underskrifterna |
 
 - **Urvalet och statusen** följer i blad 2 Lika arbetes grupper och status (`laLikaGrupper`, ur medianerna) och i
   blad 3 regressionen per BAS-intervall; medelvärdet ändrar inget urval.

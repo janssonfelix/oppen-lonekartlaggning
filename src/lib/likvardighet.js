@@ -3,8 +3,8 @@
 /**
  * Öppen lönekartläggning — Likvärdighetsanalys (DiskrL 3:10 §)
  *
- * Ren, testbar kärna för § 3:10-analysen. Appen får den genom lib-speglarna
- * (ADR-8); likvardighetspar() i 34-likvardigt-arbete.js är adaptern
+ * Ren, testbar kärna för § 3:10-analysen. Appen importerar den
+ * (ADR-98); likvardighetspar() i 34-likvardigt-arbete.js är adaptern
  * runt den. Vitest verifierar *algoritmen* deterministiskt.
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):

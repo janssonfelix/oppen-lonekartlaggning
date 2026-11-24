@@ -88,7 +88,7 @@ påverkas inte eftersom inget skript ändras (samma mönster som licenstexterna,
 `tests/dokumentation-struktur.test.js`). JSON-texten skrivs med `<` som `<` och `</` kan därmed inte
 avsluta elementet.
 
-**Ren kärna i `src/lib/organisationsfil.js`** (speglad till appen som övriga lib-moduler, ADR-8):
+**Ren kärna i `src/lib/organisationsfil.js`** (importerad av appen som övriga lib-moduler, ADR-98):
 - `bakaIn(html, paketJson, meta)` → `{ ok, html, fel?, varning? }`: kontrollerar att `html` är
   verktyget (CSP-metataggen, `APP_VERSION`-mönstret), läser versionen ur filen, tar bort ett tidigare
   `<template id="inbakat-organisationspaket">`, lägger in det nya före `</body>`, returnerar resultatet.
