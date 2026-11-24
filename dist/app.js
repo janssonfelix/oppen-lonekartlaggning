@@ -4677,7 +4677,8 @@ function inomYrkesgrupp(rader, y, kol) {
   }
   return { ok: true, X, yW, hGrupp, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
 }
-function kvantilregression(X, y, tau, maxVarv = 60, tolerans = 1e-5, start = null) {
+var KVANTIL_MAX_VARV = 60;
+function kvantilregression(X, y, tau, maxVarv = KVANTIL_MAX_VARV, tolerans = 1e-5, start = null) {
   const n = X.length, k = X[0].length;
   if (n < k + 5) return null;
   let beta;
@@ -4688,6 +4689,7 @@ function kvantilregression(X, y, tau, maxVarv = 60, tolerans = 1e-5, start = nul
     beta = olsFit.beta.slice();
   }
   const eps = 1e-6;
+  let konvergerat = false, andring = new Array(k).fill(0);
   const rs = new Int32Array(n + 1);
   for (let i = 0; i < n; i++) {
     let c = 0;
@@ -4724,12 +4726,15 @@ function kvantilregression(X, y, tau, maxVarv = 60, tolerans = 1e-5, start = nul
     const inv = invertera(XtWX);
     if (!inv) return null;
     const newBeta = matrisprodukt(inv, XtWy.map((v) => [v])).map((r) => r[0]);
-    let delta = 0;
-    for (let i = 0; i < k; i++) delta += Math.abs(newBeta[i] - beta[i]);
+    andring = newBeta.map((v, i) => Math.abs(v - beta[i]));
+    const delta = andring.reduce((a, v) => a + v, 0);
     beta = newBeta;
-    if (delta < tolerans) break;
+    if (delta < tolerans) {
+      konvergerat = true;
+      break;
+    }
   }
-  return { beta };
+  return { beta, konvergerat, andring };
 }
 function blinderOaxaca(rader, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
   const harAlder2 = harAlderIRader(rader);
@@ -4846,7 +4851,7 @@ function kvantilregressionAllaTau(allaRader, { modell = FORKLARINGSMODELL_STANDA
       results.push({ tau, error: true });
       continue;
     }
-    results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100 });
+    results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100, konvergerat: fit.konvergerat || fit.andring[1] < 1e-5 });
   }
   const p10 = results[0], p90 = results[2];
   const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;
@@ -6561,7 +6566,8 @@ function kvantilVymodell(qr) {
   const diff = qr.diff || { varde: null, ki: null };
   const harDiff = typeof diff.varde === "number" && isFinite(diff.varde);
   const tolkning = !harDiff ? null : diff.ki && diff.ki.hog < 0 ? "glastak" : diff.ki && diff.ki.lag > 0 ? "golv" : diff.ki ? "ingen" : qr.kiUtelamnad ? "utanIntervall" : null;
-  return { visas: true, giltiga, p10: vid(0.1), p50: vid(0.5), p90: vid(0.9), diff, harDiff, tolkning };
+  const ejKonvergerat = giltiga.filter((x) => x.konvergerat === false).map((x) => x.tau);
+  return { visas: true, giltiga, p10: vid(0.1), p50: vid(0.5), p90: vid(0.9), diff, harDiff, tolkning, ejKonvergerat };
 }
 function vymodellRegressionskort(r, { k, rader, medAlder, basEffektNot }) {
   if (!r || r.error) return null;
@@ -15843,6 +15849,7 @@ function ritaRegressionskort() {
                         </table>
                     </div>
                     ${tolkning2 ? `<div class="bak-info-yta rund-4 fs-sm marg-t-10 pad-10-14">${tolkning2}</div>` : ""}
+                    ${kv.ejKonvergerat.length ? `<p class="notis-varning fs-sm marg-10-0-0 pad-8-12">Skattningen vid ${kv.ejKonvergerat.map((t) => t === 0.5 ? "medianen" : `P${Math.round(t * 100)}`).join(" och ")} stabiliserades inte inom ${KVANTIL_MAX_VARV} varv. Den visas som den stod efter sista varvet och är osäkrare än tabellen ger sken av.</p>` : ""}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
                         <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan ${T.enhet.en} inom BAS)${(() => {
       const f = modellFras({ ...forklaringsmodell(), yrkesgrupp: false });

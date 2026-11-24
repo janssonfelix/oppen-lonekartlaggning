@@ -309,7 +309,12 @@ i procentenheter; negativt betyder att skillnaden till kvinnornas nackdel är st
 50 rader ger den null. `kvantilregression` är IRLS: start i OLS-lösningen (eller i ett givet startvärde, `start`),
 högst 60 varv, tolerans 1e-5 och residualgolvet 1e-6; den ger null när n < k + 5 eller vägningsmatrisen är singulär.
 Kärnan hoppar över nollor i designen, vilket ger samma summor men går snabbare med indikatorer. IRLS är en
-approximation av kvantillösningen, inte den exakta minimeringen, och kortet säger det.
+approximation av kvantillösningen, inte den exakta minimeringen, och kortet säger det. Den ger också `konvergerat`,
+falskt när varvtaket (`KVANTIL_MAX_VARV`) tog slut innan ändringen i β föll under toleransen, och `andring`, ändringen
+per koefficient i sista varvet. Vid taket är det oftast intercept och BAS-indikatorer som fortfarande rör sig (så på
+demodatan och referensfixturen) medan könskoefficienten står still, så `kvantilregressionAllaTau` räknar en kvantil som
+konvergerad när könskoefficientens egen ändring är under 1e-5. När den inte är det säger kortet vid vilken kvantil
+(`ejKonvergerat` i `kvantilVymodell`).
 
 **Intervallen.** `kvantilBootstrap` i `src/lib/osakerhet.js` (i appen adaptern `_regKvantilBootstrap`, anropad av
 `_regKvantilBerakna` i `51-lika-arbete-regressionskort.js`) ger ett percentil-bootstrap-intervall för `konPct` vid

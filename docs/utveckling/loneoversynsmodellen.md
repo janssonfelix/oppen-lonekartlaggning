@@ -140,8 +140,8 @@ BAS-intervallets median; över 1,10 (`LAGE_OVER`) märks *över* och under 0,90 
 **Riktningen** före och efter (*minskar*, *ökar*, *oförändrat*, och färgen i diagrammet) avgörs på talen som de visas,
 med en decimal (`riktning`): lika visade tal är oförändrat.
 
-**Kontrollerna** varnar för en negativ budget eller ett negativt generellt påslag, en budget över 50 % av lönesumman,
-ett generellt påslag över 25 %, en riktad rad utan belopp och en riktad rad som inte träffar någon (`kontrollvarningar`).
+**Kontrollerna** varnar för en negativ budget eller ett negativt generellt påslag, en budget angiven i procent över
+50 %, ett generellt påslag angivet i procent över 25 % (belopp i kronor prövas inte mot lönesumman), en riktad rad utan belopp och en riktad rad som inte träffar någon (`kontrollvarningar`).
 
 ## 7. Förslagen
 

@@ -394,6 +394,9 @@ export function inomYrkesgrupp(rader, y, kol) {
     return { ok: true, X, yW, hGrupp, k: p + grupper.size, nGrupper: grupper.size, meta, R2Total };
 }
 
+/** IRLS-varvens tak i kvantilregressionen (regressionsmodellen.md §6). */
+export const KVANTIL_MAX_VARV = 60;
+
 /**
  * Kvantilregression via IRLS (Iteratively Reweighted Least Squares).
  * Estimerar τ:te kvantilen istället för medelvärdet. Ger insyn i hur lönegapet
@@ -406,9 +409,11 @@ export function inomYrkesgrupp(rader, y, kol) {
  * @param {number} [maxVarv=60]
  * @param {number} [tolerans=1e-5]
  * @param {number[]|null} [start] - startvärde för β (annars OLS-lösningen); påverkar bara hur snabbt det konvergerar.
- * @returns {null | {beta:number[]}} null om n < k+5 eller XtWX singulär.
+ * @returns {null | {beta:number[], konvergerat:boolean, andring:number[]}} null om n < k+5 eller XtWX singulär;
+ *   `konvergerat` är falskt när maxVarv tog slut innan ändringen i β föll under toleransen (skattningen är då den
+ *   sista); `andring` är |Δβ| per koefficient i sista varvet.
  */
-export function kvantilregression(X, y, tau, maxVarv = 60, tolerans = 1e-5, start = null) {
+export function kvantilregression(X, y, tau, maxVarv = KVANTIL_MAX_VARV, tolerans = 1e-5, start = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 5) return null;
     // Starta från OLS för snabb konvergens, eller från ett givet startvärde (bootstrappen startar i punktskattningen)
@@ -420,6 +425,7 @@ export function kvantilregression(X, y, tau, maxVarv = 60, tolerans = 1e-5, star
         beta = olsFit.beta.slice();
     }
     const eps = 1e-6;
+    let konvergerat = false, andring = new Array(k).fill(0);
     // Bara radernas nollskilda kolumner räknas (BAS-indikatorerna är mest nollor, ADR-63), i platta typade fält; en
     // nolla bidrar inte till någon summa och ordningen är densamma, så resultatet är detsamma som med hela raden.
     const rs = new Int32Array(n + 1);
@@ -452,12 +458,12 @@ export function kvantilregression(X, y, tau, maxVarv = 60, tolerans = 1e-5, star
         if (!inv) return null;
         const newBeta = matrisprodukt(inv, XtWy.map(v => [v])).map(r => r[0]);
         // Konvergens-check
-        let delta = 0;
-        for (let i = 0; i < k; i++) delta += Math.abs(newBeta[i] - beta[i]);
+        andring = newBeta.map((v, i) => Math.abs(v - beta[i]));
+        const delta = andring.reduce((a, v) => a + v, 0);
         beta = newBeta;
-        if (delta < tolerans) break;
+        if (delta < tolerans) { konvergerat = true; break; }
     }
-    return { beta };
+    return { beta, konvergerat, andring };
 }
 
 /**
@@ -630,7 +636,7 @@ export function kvantilDesign(allaRader, modell = FORKLARINGSMODELL_STANDARD, { 
  * Används för analysen av glastak och klibbigt golv i UI:t.
  * @param {any[]} allaRader - råradernas poster; filtreras i kvantilDesign.
  * @param {{modell?:any, ageMean?:number, basList?:string[]}} [opts] modell = förklaringsmodellen.
- * @returns {null | {results:Array<{tau:number, konPct?:number, error?:true}>, diffP90P10:number|null,
+ * @returns {null | {results:Array<{tau:number, konPct?:number, konvergerat?:boolean, error?:true}>, diffP90P10:number|null,
  *   kolumner:string[], n:number, nKv:number, nMa:number}} null om N < 50.
  */
 export function kvantilregressionAllaTau(allaRader, { modell = FORKLARINGSMODELL_STANDARD, ageMean, basList } = {}) {
@@ -640,7 +646,9 @@ export function kvantilregressionAllaTau(allaRader, { modell = FORKLARINGSMODELL
     for (const tau of [0.1, 0.5, 0.9]) {
         const fit = kvantilregression(d.X, d.y, tau);
         if (!fit) { results.push({ tau, error: true }); continue; }
-        results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100 });
+        // Kortet visar bara könskoefficienten, och den står ofta still medan intercept och BAS-indikatorer kryper vid
+        // varvtaket; därför räknas den som konvergerad när dess egen sista ändring är under toleransen.
+        results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100, konvergerat: fit.konvergerat || fit.andring[1] < 1e-5 });
     }
     const p10 = results[0], p90 = results[2];
     const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;

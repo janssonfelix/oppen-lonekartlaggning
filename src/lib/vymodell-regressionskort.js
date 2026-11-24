@@ -121,7 +121,8 @@ export function tillforlitlighet(r) {
 /**
  * Tolkningen av gapet längs lönefördelningen (ADR-63), ur kvantilregressionens skattningar med intervall: 'glastak'
  * när intervallet för P90 − P10 ligger under noll, 'golv' när det ligger över, 'ingen' när det täcker noll,
- * 'utanIntervall' när intervallet inte räknas, annars null. `visas` när minst två skattningar lyckades.
+ * 'utanIntervall' när intervallet inte räknas, annars null. `visas` när minst två skattningar lyckades. `ejKonvergerat`:
+ * de kvantiler vars IRLS inte konvergerade inom varvtaket (S2), så att kortet kan säga det.
  * @param {any} qr _regKvantilBerakna i appen: results, diff, kiUtelamnad
  */
 export function kvantilVymodell(qr) {
@@ -133,7 +134,8 @@ export function kvantilVymodell(qr) {
     const harDiff = typeof diff.varde === 'number' && isFinite(diff.varde);
     const tolkning = !harDiff ? null : diff.ki && diff.ki.hog < 0 ? 'glastak' : diff.ki && diff.ki.lag > 0 ? 'golv'
         : diff.ki ? 'ingen' : qr.kiUtelamnad ? 'utanIntervall' : null;
-    return { visas: true, giltiga, p10: vid(0.1), p50: vid(0.5), p90: vid(0.9), diff, harDiff, tolkning };
+    const ejKonvergerat = giltiga.filter(x => x.konvergerat === false).map(x => x.tau);
+    return { visas: true, giltiga, p10: vid(0.1), p50: vid(0.5), p90: vid(0.9), diff, harDiff, tolkning, ejKonvergerat };
 }
 
 /**
