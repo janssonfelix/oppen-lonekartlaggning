@@ -23,9 +23,11 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    bakgrundsanalyser ~7,5 s; en ändrad minsta gruppstorlek tar 1,9 s. Äldre mätningar står i git-historiken.
 
 **Kod och bygge:**
-6. *Avslutad 2026-11-23:* kraschen i Node under testkörning (V8:s skräpsamlare) har inte setts sedan dess: inte i 80
-   framkallningsförsök på Node 22 och 24 (2026-11-22), inte i de 25 senaste CI-körningarna och inte i åtta hela
-   kontroller lokalt. Omkörningen i `tools/test.mjs` står kvar som skydd och kostar inget när inget kraschar.
+6. **En arbetare i testkörningen kraschar ibland i Node** (SIGSEGV, V8:s skräpsamlare). Punkten avslutades
+   2026-11-23, efter 80 framkallningsförsök på Node 22 och 24, 25 CI-körningar och åtta hela kontroller lokalt utan
+   krasch, och öppnades igen 2026-11-24: i en hel kontroll lokalt (Node 22.22.2) dog arbetaren med
+   `tests/start-och-meny-app.test.js`, och omkörningen i `tools/test.mjs` gick igenom. Omkörningen står kvar som skydd;
+   orsaken är inte funnen.
 8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Reglerna flyttas till `src/lib/`, med tillståndet som argument och prövade i Node, så att en extern granskare hittar varje regel och dess test på ett ställe.
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
     2026-11-22: omkring 2 050 s sammanlagt på tolv arbetare). Väntetiden för en pull request sätts av röktestet i
