@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
 **Bygge:** `2026.11.22` · **Artefakt-SHA-256:** `7963dc3380d95ecf83d9eca0fd592f606dd588e6e22629f66d0f95f0e148eddb` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-22.
+**Granskningsdatum:** 2026-11-24.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -639,7 +639,7 @@ Skala: Sannolikhet/Konsekvens = Låg / Medel / Hög. Restrisk = efter åtgärd.
 |---|---|---|---|---|---|
 | A1 | Exfiltrering av data via nätverk | Låg | Hög | CSP `connect-src 'none'` + 0 nätverksanrop + 0 externa resurser | **Låg** |
 | A2 | Spår kvar på disk (lagring) | Låg | Medel | Ingen kod eller inbyggt bibliotek skriver till lagringen (webbläsartestet kräver tom lagring); storage-tripwire som reserv, med kända luckor (§6.2); ingen IndexedDB/cache; rensningsknapp | **Låg** (OS-swap utanför kontroll; spärren hindrar inte en framtida kodändring som skriver utan `setItem`) |
-| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering av tecken (`_stadaYrkesfalt` och `_normaliseraBas` tar bort `< > " ' &`; ingen namnmaskering, ADR-85); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `parsing`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
+| A3 | XSS via fientligt CSV-innehåll | Låg | Medel | Fyra lager: hash-baserad `script-src` (ADR-9) avvisar injicerade inline-`<script>` OCH inline-handlers — själva exekveringen blockeras; `esc()` (escapear `& < > " '`, säker i attributkontext); ingångssanering av tecken (`_stadaYrkesfalt` och `_normaliseraBas` tar bort `< > " ' &`; ingen namnmaskering, ADR-85); `connect-src 'none'` hindrar all exfiltrering. Regressionstester i `tests/inlasning.test.js`; live-verifierat (injicerad handler kördes ej). Escaping-vakten (`tests/escaping.test.js`) läser källkoden och kräver att varje värde i appens HTML-mallar och HTML-sänkor går genom `esc()` eller bevisas säkert (tal, termer, konstanter, dataflöde); det den inte kan bevisa står i en granskad undantagslista. Den täcker inte HTML som byggs på annat sätt än med mallsträngar och `+`, attributkontexten (citering, `href`) eller ändringar genom alias, och antar säkert i en krets i dataflödet. Termerna (ADR-74) som sätts in i texterna är fasta ord ur `src/lib/termer.js`, aldrig ur en inläst fil, och `skapaTermer` avvisar tecken som kan bilda markering | **Mycket låg** |
 | A4 | Sårbarhet i tredjepartsbibliotek | Medel | Medel | Lokalt buntade, fastställda versioner, SHA i bygget; CSP hindrar exfiltrering även vid kompromiss; veckovis sårbarhetsbevakning av biblioteken mot OSV i CI (`.github/workflows/sarbarheter.yml`), som bara täcker brister som förts in i databasen | **Låg–medel** |
 | A5 | Skadligt webbläsartillägg / komprometterad enhet läser DOM | Medel | Hög | Utanför verktygets kontroll | **Medel** (organisatorisk åtgärd, §8) |
 | A6 | Manipulerad/utbytt HTML-fil distribueras | Låg | Hög | Sigstore-signatur från release-arbetsflödet, verifieras med `cosign verify-blob` (`SECURITY.md`); SHA-256 i `RELEASE.txt` skyddar bara mot en skadad fil. En organisationsfil (§6.9) har en annan kontrollsumma än den publicerade versionen och bär ingen egen signatur: systemförvaltaren verifierar den nedladdade versionen och sprider organisationsfilen via en behörighetsstyrd intern yta, och IT kan kontrollera den genom att ta bort det inbakade blocket och jämföra resten med kontrollsumman i `RELEASE.txt` (`organisationspaket.md` avsnitt 3b); *Visa paketet* anger kontrollsumman för den verktygsfil den byggdes av, som en uppgift i filen, inte ett äkthetsbevis | **Låg** (kräver att signaturen verifieras och att organisationsfilen sprids internt) |
@@ -726,29 +726,34 @@ Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare
 - invarianterna prövar inte undantagen och diagrambilderna (§6.5).
 
 Här står bara den senaste granskningen; varje ny granskning ersätter stycket om den förra. De tidigare
-(2026-10-19 av hela dokumentet, och 2026-11-02, 11-05, 11-06, 11-16 och 11-21 av det som ändrats) står i git-historiken
-för den här filen.
+(2026-10-19 av hela dokumentet, och 2026-11-02, 11-05, 11-06, 11-16, 11-21 och 11-22 av det som ändrats) står i
+git-historiken för den här filen.
 
-**Granskningen 2026-11-22** (inför bygget 2026.11.22) prövade dokumentet och dataskyddsbeskrivningen mot koden som
-ändrats efter bygget 2026.11.21 (#104–#114). Biblioteken i `vendor/` och `tools/bundle.mjs` är oförändrade. Kontrollerat:
-- CSP-raden i bygget har samma direktiv som i bygget 2026.11.21; bara hasharna har ändrats. Sökningen i `dist/app.js`
-  efter nätverks- och lagringsanrop ger samma träffar som i bygget 2026.11.21 (lagringsspärren och verktygets egen
-  text). Bygget har inget `<script src>` och stilmallen inget `url(`. `src/index.html` har bara ändrade rubriker,
-  tillgängliga namn och den borttagna rimlighetspanelen.
-- Protokollet för gemensam lönebedömning har bladet 2a, samma blad som *Lika arbete AID x BAS* (ADR-93, §6.6). Det har
-  antal och medianer men inga medelvärden, så det ger ingen ny skillnad mot blad 3; k-invarianten läser alla
-  protokollets blad.
-- Inaktivitetsrensningen räknar minuten före rensningen mot en sluttid i stället för i tick, så att den inte dras ut i
-  en flik som inte syns (§6.3). Tiderna och rensningsvägen är oförändrade.
-- Förhandskontrollens varning om ålder utanför 16–75 år anger högst fem radnummer (§6.4), som varningen om personnamn.
-- Datum i filnamn och i konfigurationsfilens fält `skapat` tas i lokal tid; inget nytt fält skrivs.
-- Rimlighetspanelen i Underlagets kvalitet är borttagen; dess kontroller fanns redan i förhandskontrollen.
+**Granskningen 2026-11-24** prövade dokumentet och dataskyddsbeskrivningen mot koden som ändrats efter bygget
+2026.11.22 (#115–#140). Biblioteken i `vendor/` är oförändrade. Kontrollerat:
+- Appen byggs nu som ES-moduler med esbuild (ADR-98); `tools/bundle.mjs` anropar bara det nya byggsteget, och
+  skydden mot mojibake och `node --check` står kvar. Lagringsspärren är fortfarande den första koden i verktygets
+  skript (§6.2). CSP-raden i bygget har samma direktiv som i bygget 2026.11.22, med fem skript och fem hashar.
+  Sökningen i `dist/app.js` efter nätverks-, lagrings- och navigeringsanrop ger bara lagringsspärren, verktygets egen
+  text och utskriftsfönstret (§6.6). Bygget har inget `<script src>` och stilmallen inget `url(`; det som lagts till i
+  `src/index.html` har inga länkar, ramar, bilder eller stilattribut.
+- Funktionerna har bytt till svenska namn (ADR-104) och reglerna har flyttat till `src/lib/` (ADR-99). Varje funktion,
+  fil och test som de två dokumenten nämner finns; hänvisningen till ett borttaget test i A3 är rättad.
+- Konfigurationsfilen skrivs i version 3 med svenska fältnamn och läser version 2 (ADR-96, §6.8); `byggKonfiguration()`
+  läser fortfarande inte `state.data`.
+- Minsta gruppstorlek är 3–1 000 (ADR-102), och golvet för skattningar följer tröskeln bara i exportläget (ADR-103,
+  §6.5). JPA-protokollets urval och lönenivåer har flyttat till `src/lib/jpaprotokoll.js` utan ändrad utdata.
+- Inaktivitetsrensningen räknar tiden på klockan, också medan datorn sover (§6.3); ett paket kan inte låsa läget av.
+- Organisationsfilen har en egen flik och kan flyttas till en ny version ur den gamla filen (§6.9); blocket är
+  fortfarande ett `<template>` efter sista skriptet.
+- Lagringsspärrens felmeddelande hänvisade till avsnitt 4 i dataskyddsbeskrivningen och hänvisar nu till avsnitt 2.
 
-Ingen avvikelse mot skydden hittades, och inget påstående behövde rättas utöver §6.6.
+Ingen avvikelse mot skydden hittades. Rättat: testnamnet i A3, spärrens avsnittshänvisning och rutans namn i
+dataskyddsbeskrivningen §3 (*Ta med grupper under 10 i exporten*).
 
 Granskningen är avgränsad till det som ändrats; påståenden om oförändrad kod lästes inte om mot koden.
 
-Testsviten (141 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
+Testsviten (148 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
 granskningen: röktestet i Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
 har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsare.
 

@@ -8,7 +8,7 @@ dataflöde, tekniska skydd, riskregister och verifieringslogg — finns i
 konsekvensbedömning (DPIA). Lagrumshänvisningarna samlas i
 [`lagrum.md`](../utveckling/lagrum.md).
 
-**Granskad mot koden:** 2026-11-22.
+**Granskad mot koden:** 2026-11-24.
 Granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 
 ---
@@ -184,7 +184,7 @@ Fyra medvetna undantag:
    skärmen, tas bara par med där båda grupperna har minst 10 personer, och utdata anger hur många par som utelämnats.
 2. **Tabeller och egna vyer med rutan (ADR-14):** fliken visar alla grupper på skärmen, som de andra flikarna. Dess
    export utelämnar grupper under tröskeln och lönemått för ett kön under tröskeln, om inte användaren kryssar i rutan
-   *Ta med grupper under tröskeln i exporten*. Rutan är undantaget: med den ikryssad lämnar små grupper verktyget.
+   *Ta med grupper under 10 i exporten* (talet är den inställda tröskeln). Rutan är undantaget: med den ikryssad lämnar små grupper verktyget.
    Organisationspaketet kan stänga av möjligheten (ADR-47); då utelämnar exporten alltid små grupper.
 3. **Personer att granska (ADR-23):** Lika arbete listar enskilda personer som ligger klart
    under sina kollegor, med radnummer. Listan visas bara i verktyget — den kan inte
