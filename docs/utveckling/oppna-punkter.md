@@ -26,7 +26,10 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 6. **En arbetare i testkörningen kraschar ibland i Node** (SIGSEGV, V8:s skräpsamlare). Punkten avslutades
    2026-11-23, efter 80 framkallningsförsök på Node 22 och 24, 25 CI-körningar och åtta hela kontroller lokalt utan
    krasch, och öppnades igen 2026-11-24: i en hel kontroll lokalt (Node 22.22.2) dog arbetaren med
-   `tests/start-och-meny-app.test.js`, och omkörningen i `tools/test.mjs` gick igenom. Omkörningen står kvar som skydd;
+   `tests/start-och-meny-app.test.js`, och omkörningen i `tools/test.mjs` gick igenom. Samma dag kördes hela sviten
+   20 varv i följd (Node 22.22.2, `node tools/test.mjs`): i två varv dog en arbetare med SIGSEGV, med
+   `tests/ktroskel-utdata.test.js` och `tests/struktur-flikar.test.js`, och omkörningen gick igenom båda gångerna.
+   Kraschen följer alltså ingen fil; alla tre filerna ritar verktyget i jsdom. Omkörningen står kvar som skydd;
    orsaken är inte funnen.
 8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Reglerna flyttas till `src/lib/`, med tillståndet som argument och prövade i Node, så att en extern granskare hittar varje regel och dess test på ett ställe.
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
@@ -38,8 +41,12 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
     *Framtida utveckling (mätt 2026-11-23):* när flikarnas regler flyttade till vymodeller (ADR-99) och 31 dubbletter
     i jsdom ersattes av tester i Node gick sviten från 201 till 199 s, omkring 1 %. Tiden går till tre filer som ritar
     och exporterar: k-invarianten (100 s), start och meny (79 s) och diagramritaren (68 s). De har inga dubbletter
-    att ta bort; tiden kortas bara om de görs om, till exempel så att invarianten prövar vymodellerna i Node och
-    bara ett urval av utdatavägarna i jsdom.
+    att ta bort.
+    *Invarianten i Node prövad och kastad (mätt 2026-11-24):* av `tests/ktroskel-invarianter.test.js` 112 s går
+    omkring 60 s till att bygga och söka igenom exporterna (I4), 30 s till I6, 14 s till I1–I1b och 6 s till I7.
+    Exporterna (Word, Excel, ZIP, utskrift) når inte vymodellerna, så I4 kan inte flyttas till Node utan att S4 vaktas
+    sämre. I1–I1b och I6 har redan sina regler i Node (`vymodeller.test.js`, `figur.test.js`), och jsdom prövar
+    kopplingen; att pröva I6 för ett diagram i stället för fem sparar omkring 24 s processortid, omkring 1 % av sviten.
 
 **Gränssnitt och analys (översynen 2026-10-29):**
 9e. *Avslutad 2026-11-21:* att Utforska och kolumnen *Skillnad kön* i Prioriteringen visar storleken utan prövning
