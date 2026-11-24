@@ -683,3 +683,19 @@ describe('inläsning i appen: kolumnvalet', () => {
         expect(anrop).toBe(0);
     });
 });
+
+describe('ett oväntat fel under inläsningen', () => {
+    it('döljer laddningsrutan, behåller underlaget och visar felbannern', async () => {
+        const w = createAppWindow();
+        papa(w);
+        w.Papa.parse = () => { throw new Error('oväntat'); };
+        const ruta = w.document.getElementById('loading-overlay');
+        const banner = w.document.getElementById('internt-fel-banner');
+        w.lasInStrukturfil(csvFil(w, braRader()));
+        expect(ruta.style.display).toBe('flex');
+        await vanta(() => !banner.hidden);
+        expect(ruta.style.display).toBe('none');
+        expect(w.__state.data.length).toBe(0);
+        expect(w.document.getElementById('data-status').textContent).toContain('ett internt fel avbröt inläsningen');
+    });
+});

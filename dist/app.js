@@ -22973,6 +22973,10 @@ function lasInStrukturfil(file) {
   _csvReader.onload = () => {
     try {
       _lasLonefil();
+    } catch (err) {
+      if (state.data === parsed) doljLaddning();
+      else failLoad("Lönefilen lästes inte in: ett internt fel avbröt inläsningen.");
+      rapporteraFel("inläsningen av lönefilen", err);
     } finally {
       visningNy();
       _beskedEfterOversikt(franOversikt);

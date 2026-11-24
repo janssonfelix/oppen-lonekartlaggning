@@ -9,6 +9,8 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Ett oväntat fel när lönefilen läses in låser inte längre skärmen.** Laddningsrutan försvinner, det tidigare
+  underlaget står kvar och bannern för interna fel säger att något avbröts.
 - **Systemförvaltaren har en egen flik, *För systemförvaltaren*, sist i menyn.** Där tas organisationsfilen fram i
   tre steg, och *Flytta till en ny version* flyttar paketet ur den gamla organisationsfilen till en ny version utan
   separat paketfil. Avser paketet ett tidigare år, säger filrutan det (för förra årets paket från och med 1 mars).
