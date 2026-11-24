@@ -54,7 +54,8 @@ inom BAS vald är det steget *+ AID-etikett inom BAS*. Huvudtalet är detsamma i
 **Standardfel** är HC3-robusta (`vcovHC3` ur `anpassaOLS`, Long & Ervin 2000). Kortet redovisar också intervallet med
 klassiska standardfel (`konPctLowClassical`, `konPctHighClassical`). p-värdet och konfidensintervallet räknas som i
 avsnitt 7. Ålderns effekt redovisas som procent per år (`ageEffect`, `ageP`) när ålder är med. `hHoga` är antalet
-observationer med hävstång över 0,99; de bidrar inte till HC3 och antalet står i kortets tekniska specifikation.
+observationer med hävstång över 0,99, och antalet står i kortets tekniska specifikation. En observation med hävstången
+1 (en ensam person i en indikator, residualen 0) får vikten 0 i HC3; övriga bidrar, också de med hög hävstång.
 
 **Den råa skillnaden** bredvid (`rawGapPct`) är mediankvoten, (median kvinnor / median män − 1) · 100, inte en
 regression. **Den förklarade andelen** (`explainedShare`) är (|första steget| − |sista steget|) / |första steget| · 100

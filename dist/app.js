@@ -3814,7 +3814,8 @@ var KVINNO_TROSKEL_STANDARD = 60;
 var KV_DOM_STAT = 60;
 function arKvinnodominerad(pct, definition = "do", grans = KVINNO_TROSKEL_STANDARD) {
   if (typeof pct !== "number" || !isFinite(pct)) return false;
-  return definition === "scb" ? pct >= grans : pct > grans;
+  const p = Math.round(pct * 1e9) / 1e9;
+  return definition === "scb" ? p >= grans : p > grans;
 }
 function konsklass(pct, definition = "do", grans = KVINNO_TROSKEL_STANDARD) {
   if (typeof pct !== "number" || !isFinite(pct)) return "";
@@ -3887,7 +3888,7 @@ function _medel2(arr) {
   return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
 }
 function aldersjusteradSkillnad(kvRader, jmfRader, { golv = ALDERS_GOLV_STANDARD } = {}) {
-  const ok = (r) => !!r && r.lon > 0 && typeof r.alder === "number" && isFinite(r.alder);
+  const ok = (r) => !!r && r.lon > 0 && typeof r.alder === "number" && isFinite(r.alder) && r.alder > 0;
   const jmf = (jmfRader || []).filter(ok);
   if (jmf.length < Math.max(golv, 3)) return null;
   let lagst = Infinity, hogst = -Infinity;
@@ -3953,7 +3954,7 @@ function aggregeraOrgKvDom(data, kvinnoGrans = KVINNO_TROSKEL_STANDARD, K = 10, 
     g.n++;
     if (arKvinna(r)) g.nKv++;
     g.lons.push(r.lon);
-    g.aldrar.push(typeof r.alder === "number" && isFinite(r.alder) ? r.alder : null);
+    g.aldrar.push(typeof r.alder === "number" && isFinite(r.alder) && r.alder > 0 ? r.alder : null);
   }
   const orgKvDom = [];
   const orgIckeKv = [];

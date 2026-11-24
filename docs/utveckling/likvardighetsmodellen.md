@@ -57,6 +57,9 @@ tröskel varje gång resultatet läses (`kvDomUnderK` i vymodellen).
 
 - *Mer än X %* (nyckeln `'do'`): kvinnodominerat när andelen är **mer än** gränsen.
 - *X % eller mer* (nyckeln `'scb'`): kvinnodominerat när andelen är gränsen **eller mer**.
+- **Exakt på gränsen.** Andelen avrundas till nio decimaler innan den jämförs, så att en andel som är exakt
+  gränsen, till exempel 11 av 20 vid 55 %, hamnar på rätt sida oavsett hur den räknats (`nKv / n * 100` ger
+  55,00000000000001).
 - **Mansdominerat** speglas: samma prövning på andelen män (100 − `pct`). Vid gränsen 60 är en grupp med *Mer än*
   mansdominerad under 40 % kvinnor, med *eller mer* vid 40 % eller mindre.
 
@@ -98,7 +101,8 @@ kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsför
 `aggregeraOrgKvDom(data, kvinnoThr, K, definition)` grupperar organisationens rader per AID × BAS (nyckeln
 `aid|bas`). Rader utan AID, utan BAS eller utan lön över 0 räknas inte. Varje grupp får antal, antal kvinnor
 (`kon` som innehåller `kvinna`), andel kvinnor, klass, medianlön, lönerna och åldrarna (parallellt med lönerna, `null`
-när åldern saknas; de används av åldersjusteringen i avsnitt 5). Namnet (etikettnamnet) är `yrkeLabel`, annars `yrke`, annars
+när åldern saknas; ålder 0 räknas som saknad, som i resten av verktyget; de används av åldersjusteringen i avsnitt 5).
+Namnet (etikettnamnet) är `yrkeLabel`, annars `yrke`, annars
 AID, från den rad vars text står på flest av gruppens rader (vid lika många den första i lönefilen; `namnrader`,
 ADR-89). En grupp är AID-koden i BAS-intervallet, som i hela verktyget (ADR-89): två texter med
 samma kod är en grupp.

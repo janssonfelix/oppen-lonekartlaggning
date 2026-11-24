@@ -9,6 +9,10 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **En grupp exakt på kvinnotröskeln klassas rätt.** Med lydelsen *Mer än 55 %* blev till exempel 11 kvinnor av 20
+  kvinnodominerad, eftersom andelen räknades till en aning över 55 %; robusthetspanelen prövar alltid 55 %.
+- **En tom ålder räknas inte som 0 år i likvärdigt arbete.** Den åldersjusterade skillnaden och medelåldern per par
+  räknas nu bara på dem som har en ålder, som resten av verktyget.
 - **Ett oväntat fel när lönefilen läses in låser inte längre skärmen.** Laddningsrutan försvinner, det tidigare
   underlaget står kvar och bannern för interna fel säger att något avbröts.
 - **Systemförvaltaren har en egen flik, *För systemförvaltaren*, sist i menyn.** Där tas organisationsfilen fram i

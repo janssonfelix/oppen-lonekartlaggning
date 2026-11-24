@@ -57,7 +57,10 @@ export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatis
  */
 export function arKvinnodominerad(pct, definition = 'do', grans = KVINNO_TROSKEL_STANDARD) {
     if (typeof pct !== 'number' || !isFinite(pct)) return false;
-    return definition === 'scb' ? pct >= grans : pct > grans;
+    // Andelen räknas på flera sätt (nKv / n * 100 …), och 11 av 20 blir 55,00000000000001; avrundad hamnar en andel
+    // exakt på gränsen på rätt sida, oavsett hur den räknats.
+    const p = Math.round(pct * 1e9) / 1e9;
+    return definition === 'scb' ? p >= grans : p > grans;
 }
 
 /**
@@ -210,7 +213,8 @@ function _medel(arr) {
  */
 export function aldersjusteradSkillnad(kvRader, jmfRader, { golv = ALDERS_GOLV_STANDARD } = {}) {
     /** @returns {r is {lon:number, alder:number}} */
-    const ok = r => !!r && r.lon > 0 && typeof r.alder === 'number' && isFinite(r.alder);
+    // Ålder 0 är en saknad ålder: inläsningen ger 0 för en tom cell (som i regression.js och resten av lib).
+    const ok = r => !!r && r.lon > 0 && typeof r.alder === 'number' && isFinite(r.alder) && r.alder > 0;
     const jmf = (jmfRader || []).filter(ok);
     if (jmf.length < Math.max(golv, 3)) return null;
     let lagst = Infinity, hogst = -Infinity;
@@ -283,7 +287,7 @@ export function aggregeraOrgKvDom(data, kvinnoGrans = KVINNO_TROSKEL_STANDARD, K
         if (arKvinna(r)) g.nKv++;
         g.lons.push(r.lon);
         // Åldern bärs parallellt med lönen (null när den saknas) för åldersjusteringen i steg 3.
-        g.aldrar.push(typeof r.alder === 'number' && isFinite(r.alder) ? r.alder : null);
+        g.aldrar.push(typeof r.alder === 'number' && isFinite(r.alder) && r.alder > 0 ? r.alder : null);   // 0 = saknas
     }
     const orgKvDom = [];
     const orgIckeKv = [];

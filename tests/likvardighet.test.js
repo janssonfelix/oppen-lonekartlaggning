@@ -737,6 +737,24 @@ describe('[B5.4] aldersjusteradSkillnad — jämförelseyrkets lön omräknad ti
         expect(ext.kvMedelAlder).toBeCloseTo(29.5, 5);
     });
 
+    it('ålder 0 är en saknad ålder (inläsningen ger 0 för en tom cell), som i resten av verktyget', () => {
+        const rows = [];
+        unga.forEach(alder => rows.push({ aid: '5301', bas: 'B', lon: kurva(alder), alder, kon: 'kvinna' }));
+        rows.push({ aid: '5301', bas: 'B', lon: kurva(30), alder: 0, kon: 'kvinna' });
+        aldre.forEach(alder => rows.push({ aid: '4100', bas: 'B', lon: kurva(alder), alder, kon: 'man' }));
+        [0, 0, 0].forEach(alder => rows.push({ aid: '4100', bas: 'B', lon: kurva(50), alder, kon: 'man' }));
+        const { orgKvDom, orgIckeKv } = aggregeraOrgKvDom(rows, 60);
+        expect(orgKvDom[0].aldrar.filter(a => a === 0)).toEqual([]);
+        const { pairs } = byggPar(orgKvDom, orgIckeKvPerBas(orgIckeKv), new Map(), { B: 20, rng: makeRng() });
+        expect(pairs[0].kvMedelAlder).toBeCloseTo(29.5, 5);
+        expect(pairs[0].maMedelAlder).toBeCloseTo(50.5, 5);
+        // Lönekurvan skattas bara på dem med ålder, och prediktionerna görs bara för dem med ålder.
+        expect(Math.abs(pairs[0].aldersJusterad.gapPct)).toBeLessThan(1);
+        const kv = yrke(unga), ma = yrke(aldre);
+        expect(aldersjusteradSkillnad([...kv, { lon: kurva(30), alder: 0 }], [...ma, { lon: kurva(50), alder: 0 }], { golv: 10 }).medianJusterad)
+            .toBeCloseTo(aldersjusteradSkillnad(kv, ma, { golv: 10 }).medianJusterad, 6);
+    });
+
     it('byggParPoang fyller fältet på samma sätt', () => {
         const rows = [];
         unga.forEach(alder => rows.push({ aid: '5301', bas: 'B', lon: kurva(alder), alder, kon: 'kvinna', yrkeLabel: 'Undersköterska' }));
@@ -769,6 +787,17 @@ describe('[B5.2] en definition av kvinnodominerat (ADR-60, §9.22)', () => {
         expect(arKvinnodominerad(59.99, 'scb')).toBe(false);
         expect(arKvinnodominerad(55, 'do', 50)).toBe(true);
         expect(arKvinnodominerad(NaN, 'do')).toBe(false);
+    });
+
+    it('en andel exakt på gränsen avgörs som på gränsen, också när divisionen ger ett flyttal en aning bredvid', () => {
+        // 11 av 20 ger 55,00000000000001 och 9 av 20 44,99999999999999 med nKv / n * 100.
+        const kv = 11 / 20 * 100, ma = 9 / 20 * 100;
+        expect(kv).not.toBe(55);
+        expect(arKvinnodominerad(kv, 'do', 55)).toBe(false);
+        expect(arKvinnodominerad(kv, 'scb', 55)).toBe(true);
+        expect(konsklass(kv, 'do', 55)).toBe('blandad');
+        expect(konsklass(ma, 'do', 55)).toBe('blandad');
+        expect(konsklass(ma, 'scb', 55)).toBe('mansdominerad');
     });
 
     it('konsklass speglar gränsen för män och ger blandad däremellan', () => {
