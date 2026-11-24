@@ -3,14 +3,13 @@
 // ---- Excel-export: alla flikar och JPA-protokollet (EU 2023/970 art. 10) ----
 import { likaArbeteTabell } from '../lib/aidbas.js';
 import { htmlTillText } from '../lib/htmltext.js';
+import { jpaNivaCeller, jpaUrval } from '../lib/jpaprotokoll.js';
 import { arKvinna, arMan } from '../lib/kon.js';
 import { personOrd } from '../lib/namn.js';
 import { gruppMedBas, skalSammanstallningNot } from '../lib/rapportunderlag.js';
-import { bhJustera } from '../lib/stat.js';
-import { direktivMarkering, perBasSignal } from '../lib/status.js';
+import { direktivMarkering } from '../lib/status.js';
 import { receptBeskrivning, receptTillTabeller } from '../lib/tabellrecept.js';
 import { adjektiv, artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
-import { kompletterandeUndertryckningPerNyckel } from '../lib/undertryckning.js';
 import { alderGapRader } from '../lib/vymodell-alder-karriar.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
@@ -330,15 +329,8 @@ function _jpaExkluderadeTexter() {
 const _JPA_MEDEL_KOLUMNER = ['Medelvärde kvinnor (kr)', 'Medelvärde män (kr)', 'Differens medelvärde (kr)', 'Kvinnors medelvärde i % av mäns'];
 /** Rubrikerna för medianen i protokollets blad 2 och 3. */
 const _JPA_MEDIAN_KOLUMNER = ['Median kvinnor (kr)', 'Median män (kr)', 'Differens (kr)', 'Kvinnors median i % av mäns'];
-/**
- * Cellerna för ett lönemått per kön: kvinnor, män, differens (kr) och kvinnors i % av mäns. Bara för en grupp där
- * båda könen når tröskeln (S4); annars fyra tankstreck.
- */
-function _jpaNivaCeller(kv, ma, nKv, nMa) {
-    const k = kTroskel();
-    if (!(nKv >= k && nMa >= k) || !isFinite(kv) || !isFinite(ma) || !(ma > 0)) return ['—', '—', '—', '—'];
-    return [Math.round(kv), Math.round(ma), Math.round(kv - ma), +(kv / ma * 100).toFixed(1)];
-}
+/** Cellerna för ett lönemått per kön med den inställda tröskeln (`jpaNivaCeller` i src/lib/jpaprotokoll.js, S4). */
+function _jpaNivaCeller(kv, ma, nKv, nMa) { return jpaNivaCeller(kv, ma, nKv, nMa, kTroskel()); }
 /** Protokollets blad med alla grupper i lika arbete (ADR-93). */
 const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
 /**
@@ -385,54 +377,14 @@ function _exportJPAProtokollExport() {
     // Samma grupper och samma status som Lika arbete (laLikaGrupper, ADR-59): Värt att granska = skillnaden mellan
     // medianerna är säkerställd mot slumpens gränser för gruppen och minst 3 %. Minsta gruppstorlek som i tabellen.
     const lika = laLikaGrupper(d);
-    const jamforda = lika.grupper.filter(g => !g.samladMedian);
-    const jpaYrken = jamforda.filter(g => g.niva === 'granska').map(g => ({
-        yrke: g.yrke, bas: g.bas, nKv: g.nKv, nMa: g.nMa, tot: g.tot,
-        medKv: Math.round(g.medKv), medMa: Math.round(g.medMa),
-        // Negativ = kvinnor lägre. En enda avrundning, som i konsMedianer, och ingen före cellens: 34 059 mot 40 000 är 85,1475 %
-        // och står som 85,1 (avrundat till två decimaler först blev det 85,2).
-        gapPct: (g.medKv - g.medMa) * 100 / g.medMa,
-        diffKr: Math.round(g.medKv - g.medMa), direktiv: g.direktiv,
-        // Medelvärdet redovisas bredvid medianen (ADR-79); urvalet och statusen bestäms av medianen som förut.
-        medel: _jpaNivaCeller(g.medelKv, g.medelMa, g.nKv, g.nMa)
-    }));
-    const yrkenExkluderadeMaskerade = lika.grupper.filter(g => g.samladMedian).length + lika.utelamnade.length + lika.ejJamforbara.length;
-    const yrkenEjBedomda = jamforda.filter(g => g.niva === 'ejbedomd').length;
-    const yrkenExkluderadeOjamn = jamforda.filter(g => g.niva === 'folj' || g.niva === 'balanserat').length;
-    jpaYrken.sort((a, b) => a.gapPct - b.gapPct);  // mest negativa (mest kritiska) först
-
     // ---- B) Identifiera JPA-grupper (likvärdigt arbete = BAS-intervall) ----
-    // OLS-regression per BAS, kräver minst statGolv() av varje kön
-    const basList = [...new Set(d.map(r => r.bas))].sort();
-    const perBas = _raknaPerBasGap(d, basList);
-    // Korrigering för många samtidiga tester (Benjamini–Hochberg) över samma tester som regressionskortet och Att
-    // göra: intervallen med status ok och ändligt p-värde. Ett enda test ger q = p.
-    const okTests = perBas.filter(b => b.status === 'ok' && isFinite(b.pValue));
-    const qVarden = bhJustera(okTests.map(b => b.pValue));
-    const bhQ = new Map(okTests.map((b, i) => [b, qVarden[i]]));
-    let basExkluderadeMaskerade = 0;
-    let basExkluderadeSingular = 0;
-    let basExkluderadeUnderTröskel = 0;
-    const jpaBas = [];
-    perBas.forEach(b => {
-        if (b.status === 'too_few')    { basExkluderadeMaskerade++; return; }
-        if (b.status === 'singular')   { basExkluderadeSingular++; return; }
-        // Regressionens tal är justerat: samma regel som statusen (säkerställd efter korrigering och minst 3 %), ingen
-        // direktivmarkering. Ett intervall utan ändligt p-värde har inget q och räknas som inte säkerställt.
-        const q = bhQ.get(b);
-        if (q == null || perBasSignal(b.gapPct, q < 0.05, b.pValue < 0.05).niva !== 'titta') { basExkluderadeUnderTröskel++; return; }
-        jpaBas.push({ ...b, q });
-    });
-    jpaBas.sort((a, b) => a.gapPct - b.gapPct);
-
-    // Kompletterande undertryckning mellan bladen (ADR-91): intervallets medelvärde per kön i blad 3 minus gruppernas i
-    // samma intervall i blad 2 får inte ge medelvärdet för 1 till k − 1 personer av ett kön. Annars döljs medelvärdena
-    // för den minsta gruppen i blad 2, och så vidare; intervallets rad i blad 3 står som förut, och medianerna står kvar.
+    // OLS-regression per BAS, kräver minst statGolv() av varje kön. Urvalet i blad 2 och 3, Benjamini–Hochberg och den
+    // kompletterande undertryckningen mellan bladen (ADR-91) står i src/lib/jpaprotokoll.js.
+    const perBas = _raknaPerBasGap(d, [...new Set(d.map(r => r.bas))].sort());
     const kJpa = kTroskel();
-    const jpaUndertryckta = kompletterandeUndertryckningPerNyckel(
-        jpaBas.filter(b => b.kvN >= kJpa && b.maN >= kJpa).map(b => ({ nyckel: String(b.bas), nKv: b.kvN, nMa: b.maN })),
-        jpaYrken.map(j => ({ nyckel: String(j.bas ?? ''), nKv: j.nKv, nMa: j.nMa, namn: j.yrke, dold: j.medel[0] === '—' })), kJpa)
-        .map(i => { jpaYrken[i].medel = ['—', '—', '—', '—']; return jpaYrken[i]; });
+    const { yrken: jpaYrken, bas: jpaBas, undertryckta: jpaUndertryckta, exkluderade: ex } = jpaUrval(lika, perBas, { k: kJpa });
+    const { yrkenMaskerade: yrkenExkluderadeMaskerade, yrkenEjBedomda, yrkenOjamn: yrkenExkluderadeOjamn,
+        basMaskerade: basExkluderadeMaskerade, basSingular: basExkluderadeSingular, basUnderTroskel: basExkluderadeUnderTröskel } = ex;
 
     // ---- C) Bygg arbetsbok ----
     const wb = XLSX.utils.book_new();

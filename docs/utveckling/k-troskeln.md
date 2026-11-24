@@ -253,11 +253,11 @@ i Att göra och hur många par som bara redovisas i fliken Likvärdigt arbete, o
 **Lönenivåerna i JPA-protokollet.** Median och medelvärde per kön (ADR-79) står bara för AID-etiketter och
 BAS-intervall som protokollet redan redovisar: AID-etiketter där båda könen når tröskeln och BAS-intervall där båda
 könen når `statGolv()`, som aldrig är under den inställda tröskeln. Cellerna prövar tröskeln också själva
-(`_jpaNivaCeller`). Testet står i `tests/ktroskel-utdata.test.js` (vid 10 och 25). Bladet för BAS-intervall räknar
+(`jpaNivaCeller` i `src/lib/jpaprotokoll.js`). Testet står i `tests/ktroskel-utdata.test.js` (vid 10 och 25). Bladet för BAS-intervall räknar
 intervallets medelvärden på alla i intervallet, så lämnar intervallet minus de AID-etiketter i intervallet som bladet
 för lika arbete visar 1 till k − 1 personer av ett kön, undertrycks medelvärdena för den minsta visade etiketten i
 intervallet, en i taget, med samma regel som tabellerna per BAS-intervall (ADR-83, ADR-91; inom protokollet och inte mot organisationens medelvärden, ADR-92). Regeln
-är `kompletterandeUndertryckningPerNyckel` i `src/lib/undertryckning.js`, anropad från `src/app/24-excelexport.js`.
+är `kompletterandeUndertryckningPerNyckel` i `src/lib/undertryckning.js`, anropad från `jpaUrval` i `src/lib/jpaprotokoll.js`.
 En etikett vars medelvärden döljs förlorar båda könens och differenserna, och räknas som dold för båda könen när
 nästa mått prövas. Intervallets rad och medianerna står kvar, och en not i bladet för lika arbete namnger etiketterna. Blad 2a, alla
 grupper i lika arbete (ADR-93), är bladet *Lika arbete AID x BAS* med dess regler (avsnitt 4): antal och medianer,

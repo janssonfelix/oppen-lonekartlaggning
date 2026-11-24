@@ -59,6 +59,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Lika och likvärdigt arbete | `likvardighet` | `aid`, `kon`, `rng`, `stat`, `status` |
 |  | `aidbas` | `aid`, `kon`, `likvardighet`, `stat` |
 |  | `perbas` | `aid`, `jamforelse`, `kon`, `stat`, `termer`, `undertryckning` |
+|  | `jpaprotokoll` | `stat`, `status`, `undertryckning` |
 |  | `individflaggor` | `aid`, `falt` |
 | Struktur och rapportmått | `struktur` | `kon`, `ktroskel`, `stat` |
 |  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `struktur`, `termer`, `undertryckning` |

@@ -31,7 +31,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
    `tests/ktroskel-utdata.test.js` och `tests/struktur-flikar.test.js`, och omkörningen gick igenom båda gångerna.
    Kraschen följer alltså ingen fil; alla tre filerna ritar verktyget i jsdom. Omkörningen står kvar som skydd;
    orsaken är inte funnen.
-8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Reglerna flyttas till `src/lib/`, med tillståndet som argument och prövade i Node, så att en extern granskare hittar varje regel och dess test på ett ställe.
+8. *Avslutad 2026-11-24:* reglerna ligger i `src/lib/`, med tillståndet som argument och prövade i Node; den sista,
+   JPA-protokollets urval och lönenivåer, flyttade till `src/lib/jpaprotokoll.js`. Utfilen är platt så att testerna
+   når appens namn som globala, och det är ett beslut (ADR-98).
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
     2026-11-22: omkring 2 050 s sammanlagt på tolv arbetare). Väntetiden för en pull request sätts av röktestet i
     webbläsarna (4,5–5,5 min), inte av sviten. Filerna som ritar verktyget i jsdom står för nästan hela tiden, och

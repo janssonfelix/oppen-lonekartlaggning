@@ -93,6 +93,6 @@ i [`lagrum.md`](lagrum.md); vad som utelämnas och döljs under tröskeln i `k-t
   blad 3 regressionen per BAS-intervall; medelvärdet ändrar inget urval.
 - **Lönenivåerna** i blad 2 och 3: median och medelvärde per kön, med skillnaden i kronor och kvinnors i procent av
   mäns. I blad 3 gäller de samma personer som regressionen. Medelvärdena står bara för en grupp där båda könen når
-  tröskeln (`_jpaNivaCeller`); annars står `—`.
+  tröskeln (`jpaNivaCeller` i `src/lib/jpaprotokoll.js`); annars står `—`.
 - **Fälten att fylla i** per rad i blad 2 och 3: sakliga skäl, den fackliga partens kommentar, status efter samråd,
   överenskommen åtgärd, tidplan och ansvarig.

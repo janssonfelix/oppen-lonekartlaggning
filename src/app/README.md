@@ -67,7 +67,7 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | `21-stort-demo.js` | Stort demo: `lasInStortDemo` (som det lilla demot, utan självdiagnostik) och ingångarna i Kom igång, lönefilskortet och `?demo=stor`. Generatorn står i `src/lib/demodata.js`: `genereraStortDemo` (5 000 påhittade personer med 100 AID-etiketter i BAS A–K, med inlagda gap, ett par för likvärdigt arbete och små grupper), påhittad jämförelsestatistik och ett ställningstagande ur demots löner |
 | `22-exporthjalpare.js` | Exportnavets knappar, metodbilagans data, Excel-/CSV-hjälpare, formelskydd |
 | `23-exportgrind.js` | Exportgrinden: ingen export läser en tabell eller ett diagram ur en flik som inte är ritad med gällande tröskel; regeln (`skaRitasForeExport`) står i `src/lib/exportgrind.js` |
-| `24-excelexport.js` | Excel (alla flikar) och JPA-protokollet |
+| `24-excelexport.js` | Excel (alla flikar) och JPA-protokollet; urvalet i blad 2 och 3 och lönenivåerna per kön i `src/lib/jpaprotokoll.js` |
 | `25-dataskyddsinfo.js` | Dataskyddsrutan och GDPR-bannern |
 | `26-rensning.js` | "Rensa all data" (`_rensaAllData`) |
 | `27-berakningsbevis.js` | Bevisrutan: uträkningen bakom ett fynd. Prioriteringens delpoäng läses ur posten och taken ur `prioKonstanter()` i `src/lib/prioritering.js`, så beviset och rangordningen visar samma tal |
