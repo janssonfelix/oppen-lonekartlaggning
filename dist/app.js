@@ -26861,6 +26861,71 @@ function nationellAidKlass(aid) {
   return { kvAndel, klass, prefix: ref.prefix || s.slice(0, 3), niva: ref.niva, del: ref.del, kalla: skrReferensInfo().kalla };
 }
 
+// src/lib/jpaprotokoll.js
+var JPA_DOLD = Object.freeze(["—", "—", "—", "—"]);
+function jpaNivaCeller(kv, ma, nKv, nMa, k) {
+  if (!(nKv >= k && nMa >= k) || !isFinite(kv) || !isFinite(ma) || !(ma > 0)) return [...JPA_DOLD];
+  return [Math.round(kv), Math.round(ma), Math.round(kv - ma), +(kv / ma * 100).toFixed(1)];
+}
+function jpaUrval(lika, perBas, { k }) {
+  const jamforda = lika.grupper.filter((g) => !g.samladMedian);
+  const yrken = jamforda.filter((g) => g.niva === "granska").map((g) => ({
+    yrke: g.yrke,
+    bas: g.bas,
+    nKv: g.nKv,
+    nMa: g.nMa,
+    tot: g.tot,
+    medKv: Math.round(g.medKv),
+    medMa: Math.round(g.medMa),
+    // Negativ = kvinnor lägre. En enda avrundning, som i konsMedianer, och ingen före cellens: 34 059 mot 40 000 är
+    // 85,1475 % och står som 85,1 (avrundat till två decimaler först blev det 85,2).
+    gapPct: (g.medKv - g.medMa) * 100 / g.medMa,
+    diffKr: Math.round(g.medKv - g.medMa),
+    direktiv: g.direktiv,
+    // Medelvärdet redovisas bredvid medianen (ADR-79); urvalet och statusen bestäms av medianen.
+    medel: jpaNivaCeller(g.medelKv, g.medelMa, g.nKv, g.nMa, k)
+  }));
+  yrken.sort((a, b) => a.gapPct - b.gapPct);
+  const okTester = perBas.filter((b) => b.status === "ok" && isFinite(b.pValue));
+  const qVarden = bhJustera(okTester.map((b) => b.pValue));
+  const bhQ = new Map(okTester.map((b, i) => [b, qVarden[i]]));
+  const exkluderade = {
+    yrkenMaskerade: lika.grupper.filter((g) => g.samladMedian).length + lika.utelamnade.length + lika.ejJamforbara.length,
+    yrkenEjBedomda: jamforda.filter((g) => g.niva === "ejbedomd").length,
+    yrkenOjamn: jamforda.filter((g) => g.niva === "folj" || g.niva === "balanserat").length,
+    basMaskerade: 0,
+    basSingular: 0,
+    basUnderTroskel: 0
+  };
+  const bas = [];
+  for (const b of perBas) {
+    if (b.status === "too_few") {
+      exkluderade.basMaskerade++;
+      continue;
+    }
+    if (b.status === "singular") {
+      exkluderade.basSingular++;
+      continue;
+    }
+    const q = bhQ.get(b);
+    if (q == null || perBasSignal(b.gapPct, q < 0.05, b.pValue < 0.05).niva !== "titta") {
+      exkluderade.basUnderTroskel++;
+      continue;
+    }
+    bas.push({ ...b, q });
+  }
+  bas.sort((a, b) => a.gapPct - b.gapPct);
+  const undertryckta = kompletterandeUndertryckningPerNyckel(
+    bas.filter((b) => b.kvN >= k && b.maN >= k).map((b) => ({ nyckel: String(b.bas), nKv: b.kvN, nMa: b.maN })),
+    yrken.map((j) => ({ nyckel: String(j.bas ?? ""), nKv: j.nKv, nMa: j.nMa, namn: j.yrke, dold: j.medel[0] === JPA_DOLD[0] })),
+    k
+  ).map((i) => {
+    yrken[i].medel = [...JPA_DOLD];
+    return yrken[i];
+  });
+  return { yrken, bas, undertryckta, exkluderade };
+}
+
 // src/app/37-struktur.js
 function ritaStruktur() {
   const wrap = document.getElementById("view-struktur");
@@ -27735,9 +27800,7 @@ function _jpaExkluderadeTexter() {
 var _JPA_MEDEL_KOLUMNER = ["Medelvärde kvinnor (kr)", "Medelvärde män (kr)", "Differens medelvärde (kr)", "Kvinnors medelvärde i % av mäns"];
 var _JPA_MEDIAN_KOLUMNER = ["Median kvinnor (kr)", "Median män (kr)", "Differens (kr)", "Kvinnors median i % av mäns"];
 function _jpaNivaCeller(kv, ma, nKv, nMa) {
-  const k = kTroskel();
-  if (!(nKv >= k && nMa >= k) || !isFinite(kv) || !isFinite(ma) || !(ma > 0)) return ["—", "—", "—", "—"];
-  return [Math.round(kv), Math.round(ma), Math.round(kv - ma), +(kv / ma * 100).toFixed(1)];
+  return jpaNivaCeller(kv, ma, nKv, nMa, kTroskel());
 }
 var JPA_BLAD_ALLA_GRUPPER = "2a. Lika arbete, alla grupper";
 function exportJPAProtokoll(...a) {
@@ -27765,62 +27828,17 @@ function _exportJPAProtokollExport() {
   const lvRedovisning = _parForRedovisning(lvResult?.pairs);
   const lvPairsCount = lvRedovisning.par.length;
   const lika = laLikaGrupper(d);
-  const jamforda = lika.grupper.filter((g) => !g.samladMedian);
-  const jpaYrken = jamforda.filter((g) => g.niva === "granska").map((g) => ({
-    yrke: g.yrke,
-    bas: g.bas,
-    nKv: g.nKv,
-    nMa: g.nMa,
-    tot: g.tot,
-    medKv: Math.round(g.medKv),
-    medMa: Math.round(g.medMa),
-    // Negativ = kvinnor lägre. En enda avrundning, som i konsMedianer, och ingen före cellens: 34 059 mot 40 000 är 85,1475 %
-    // och står som 85,1 (avrundat till två decimaler först blev det 85,2).
-    gapPct: (g.medKv - g.medMa) * 100 / g.medMa,
-    diffKr: Math.round(g.medKv - g.medMa),
-    direktiv: g.direktiv,
-    // Medelvärdet redovisas bredvid medianen (ADR-79); urvalet och statusen bestäms av medianen som förut.
-    medel: _jpaNivaCeller(g.medelKv, g.medelMa, g.nKv, g.nMa)
-  }));
-  const yrkenExkluderadeMaskerade = lika.grupper.filter((g) => g.samladMedian).length + lika.utelamnade.length + lika.ejJamforbara.length;
-  const yrkenEjBedomda = jamforda.filter((g) => g.niva === "ejbedomd").length;
-  const yrkenExkluderadeOjamn = jamforda.filter((g) => g.niva === "folj" || g.niva === "balanserat").length;
-  jpaYrken.sort((a, b) => a.gapPct - b.gapPct);
-  const basList = [...new Set(d.map((r) => r.bas))].sort();
-  const perBas = _raknaPerBasGap(d, basList);
-  const okTests = perBas.filter((b) => b.status === "ok" && isFinite(b.pValue));
-  const qVarden = bhJustera(okTests.map((b) => b.pValue));
-  const bhQ = new Map(okTests.map((b, i) => [b, qVarden[i]]));
-  let basExkluderadeMaskerade = 0;
-  let basExkluderadeSingular = 0;
-  let basExkluderadeUnderTröskel = 0;
-  const jpaBas = [];
-  perBas.forEach((b) => {
-    if (b.status === "too_few") {
-      basExkluderadeMaskerade++;
-      return;
-    }
-    if (b.status === "singular") {
-      basExkluderadeSingular++;
-      return;
-    }
-    const q = bhQ.get(b);
-    if (q == null || perBasSignal(b.gapPct, q < 0.05, b.pValue < 0.05).niva !== "titta") {
-      basExkluderadeUnderTröskel++;
-      return;
-    }
-    jpaBas.push({ ...b, q });
-  });
-  jpaBas.sort((a, b) => a.gapPct - b.gapPct);
+  const perBas = _raknaPerBasGap(d, [...new Set(d.map((r) => r.bas))].sort());
   const kJpa = kTroskel();
-  const jpaUndertryckta = kompletterandeUndertryckningPerNyckel(
-    jpaBas.filter((b) => b.kvN >= kJpa && b.maN >= kJpa).map((b) => ({ nyckel: String(b.bas), nKv: b.kvN, nMa: b.maN })),
-    jpaYrken.map((j) => ({ nyckel: String(j.bas ?? ""), nKv: j.nKv, nMa: j.nMa, namn: j.yrke, dold: j.medel[0] === "—" })),
-    kJpa
-  ).map((i) => {
-    jpaYrken[i].medel = ["—", "—", "—", "—"];
-    return jpaYrken[i];
-  });
+  const { yrken: jpaYrken, bas: jpaBas, undertryckta: jpaUndertryckta, exkluderade: ex } = jpaUrval(lika, perBas, { k: kJpa });
+  const {
+    yrkenMaskerade: yrkenExkluderadeMaskerade,
+    yrkenEjBedomda,
+    yrkenOjamn: yrkenExkluderadeOjamn,
+    basMaskerade: basExkluderadeMaskerade,
+    basSingular: basExkluderadeSingular,
+    basUnderTroskel: basExkluderadeUnderTröskel
+  } = ex;
   const wb = XLSX.utils.book_new();
   const coverRows = [
     ["GEMENSAM LÖNEBEDÖMNING — SAMVERKANSPROTOKOLL", ""],
