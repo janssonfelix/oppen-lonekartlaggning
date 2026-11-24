@@ -7440,10 +7440,15 @@ function _grupp(g, grans) {
 function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
   const grupper = /* @__PURE__ */ new Map();
   const harAlder2 = (rader || []).some((r) => r && r.alder > 0);
+  let utanAlder = 0;
   for (const r of rader || []) {
-    if (!(r.lon > 0) || harAlder2 && !(r.alder > 0)) continue;
+    if (!(r.lon > 0)) continue;
     const kon = konAv(r);
     if (kon !== "Kvinna" && kon !== "Man") continue;
+    if (harAlder2 && !(r.alder > 0)) {
+      utanAlder++;
+      continue;
+    }
     const nyckel = `${aidAvRad(r)}\0${r.bas}`;
     if (!grupper.has(nyckel)) grupper.set(nyckel, []);
     grupper.get(nyckel).push(r);
@@ -7462,7 +7467,7 @@ function flaggaIndivider(rader, { minGrupp = 10, grans = 10 } = {}) {
   flaggade.sort((a, b) => a.avvikelsePct - b.avvikelsePct || (a.radnr ?? Infinity) - (b.radnr ?? Infinity));
   const tot = provade.kv + provade.ma;
   const kvFlagg = flaggade.filter((f) => f.kon === "Kvinna").length;
-  return { provade, ejProvade, flaggade, andelKv: {
+  return { provade, ejProvade, utanAlder, flaggade, andelKv: {
     provade: tot ? provade.kv / tot * 100 : null,
     flaggade: flaggade.length ? kvFlagg / flaggade.length * 100 : null
   } };
@@ -12722,12 +12727,13 @@ function ritaPersonerAttGranska(visaAlla = false) {
   const g = new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(grans);
   const demo = state.isDemo ? '<p class="pag-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : "";
   const ejProvade = r.ejProvade ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? "person" : "personer"} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.${provaEnskiltText()}</p>` : "";
+  const utanAlder = r.utanAlder ? `<p class="pag-not">${tal(r.utanAlder)} ${r.utanAlder === 1 ? "person saknar" : "personer saknar"} ålder och prövades inte.</p>` : "";
   if (!(r.provade.kv + r.provade.ma)) {
-    body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} ${personOrd(statGolv())} i samma AID och BAS.</p>` + ejProvade;
+    body.innerHTML = demo + `<p>Inga grupper med minst ${statGolv()} ${personOrd(statGolv())} i samma AID och BAS.</p>` + ejProvade + utanAlder;
     return;
   }
   if (!r.flaggade.length) {
-    body.innerHTML = demo + `<p>Ingen ligger minst ${g} % under förväntad lön.</p>` + ejProvade;
+    body.innerHTML = demo + `<p>Ingen ligger minst ${g} % under förväntad lön.</p>` + ejProvade + utanAlder;
     return;
   }
   const n = r.flaggade.length;
@@ -12742,7 +12748,7 @@ function ritaPersonerAttGranska(visaAlla = false) {
         <td class="num">${tal(f.avvikelsePct, 1).replace("-", "−")} %</td><td class="num">${tal(f.kollegor)}</td>${medAnsvar ? `<td class="pag-ansvar"${_pagAnsvarKort(f.ansvarsgrupp) !== ansvarsgruppNamn(f.ansvarsgrupp) ? ` title="${esc(ansvarsgruppNamn(f.ansvarsgrupp))}"` : ""}>${esc(_pagAnsvarKort(f.ansvarsgrupp))}</td>` : ""}</tr>`).join("");
   const medMedian = visade.some((f) => f.metod !== "alder");
   const metodNot = `<p class="pag-not pag-metod">Förväntad lön är räknad ur åldern bland kollegorna i samma AID och BAS.` + (medMedian ? ' <span class="pag-median">*</span> Gruppens median: åldrarna i gruppen ligger för nära varandra för att räkna med åldern.' : "") + "</p>";
-  body.innerHTML = demo + sammanfattning + ejProvade + `<div class="pag-tabell-wrap" tabindex="0" role="region" aria-label="Personer att granska, rullar i sidled"><table id="pag-tabell" class="data-table"><thead><tr>
+  body.innerHTML = demo + sammanfattning + ejProvade + utanAlder + `<div class="pag-tabell-wrap" tabindex="0" role="region" aria-label="Personer att granska, rullar i sidled"><table id="pag-tabell" class="data-table"><thead><tr>
             <th>Rad</th><th>Kön</th><th class="num">Ålder</th><th>AID</th><th>BAS</th><th class="num">Lön</th>
             <th class="num">Förväntad lön</th><th class="num">Avvikelse</th><th class="num">Kollegor</th>${medAnsvar ? "<th>Ansvar</th>" : ""}
         </tr></thead><tbody>${rader}</tbody></table></div>` + metodNot + (visade.length < n ? `<p class="pag-not">Visar de ${tal(visade.length)} största avvikelserna. <button type="button" class="btn btn-secondary btn-sm" id="pag-visa-alla">Visa alla (${tal(n)})</button></p>` : "");
