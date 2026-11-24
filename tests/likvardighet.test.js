@@ -215,6 +215,14 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
         expect(jämförelse.basMedExternFallback).toBe(1);
     });
 
+    it('ett par exakt på minGap räknas (5 800 / 20 000 = 29 %, som med division först blir 28,999…)', () => {
+        const org = [{ ...orgKvDom[0], median: 20000, lons: Array(20).fill(20000) }];
+        const ext = statMap([{ aid: '2051', bas: 'B', median: 25800, kvAndel: 25, källa: 'lokal' }]);
+        const { pairs } = byggPar(org, tomMap(), ext, { minGap: 29, topN: 100, rng: makeRng() });
+        expect(pairs).toHaveLength(1);
+        expect(pairs[0].gapPct).toBe(29);
+    });
+
     it('prioriterar internt jämförelseyrke framför statistiken i samma BAS', () => {
         const intern = orgIckeKvPerBas([
             { aid: '7001', bas: 'B', label: 'Tekniker', n: 12, nKv: 2, kvinnoPct: 16.7, median: 35000, lons: Array(12).fill(35000) }

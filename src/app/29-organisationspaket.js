@@ -8,7 +8,7 @@
 import { installningsGrans } from '../lib/installningsgranser.js';
 import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
 import { bakaIn, filnamnForslag, normaliseraFilnamn } from '../lib/organisationsfil.js';
-import { byggPaket, tolkaPaket } from '../lib/organisationspaket.js';
+import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, tolkaPaket } from '../lib/organisationspaket.js';
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
@@ -34,9 +34,6 @@ import { _lasKostnadsinstallningar } from './55-prioritering.js';
 import { utforskaSynkaSmaLas } from './70-utforska.js';
 
 const PAKET_MAX_FILSTORLEK = installningsGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
-// Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
-const PAKET_INAKTIVITET_MIN = 5;
-const PAKET_INAKTIVITET_MAX = 120;
 
 /** Låsningarna utan något satt (ADR-47). */
 function _paketLasStandard() { return { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true }; }
@@ -300,11 +297,11 @@ function _paketLasFel() {
         return `Minsta gruppstorlek ${k} är lägre än lägsta tillåtna ${lagst}.`;
     }
     const inakt = /^\d+$/.test(inaktText) ? Number(inaktText) : null;
-    if (inaktText !== '' && (inakt == null || (inakt !== 0 && (inakt < PAKET_INAKTIVITET_MIN || inakt > PAKET_INAKTIVITET_MAX)))) {
-        return `Rensning vid inaktivitet: ange 0 (av) eller ett heltal mellan ${PAKET_INAKTIVITET_MIN} och ${PAKET_INAKTIVITET_MAX} minuter.`;
+    if (inaktText !== '' && (inakt == null || (inakt !== 0 && (inakt < INAKTIVITET_MIN || inakt > INAKTIVITET_MAX)))) {
+        return `Rensning vid inaktivitet: ange 0 (av) eller ett heltal mellan ${INAKTIVITET_MIN} och ${INAKTIVITET_MAX} minuter.`;
     }
     if (/** @type {HTMLInputElement} */ (_paketFalt('paket-inaktivitet-last'))?.checked && !(inakt != null && inakt > 0)) {
-        return `Rensning vid inaktivitet kan bara låsas till ett värde mellan ${PAKET_INAKTIVITET_MIN} och ${PAKET_INAKTIVITET_MAX} minuter.`;
+        return `Rensning vid inaktivitet kan bara låsas till ett värde mellan ${INAKTIVITET_MIN} och ${INAKTIVITET_MAX} minuter.`;
     }
     return null;
 }

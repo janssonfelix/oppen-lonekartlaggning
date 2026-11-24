@@ -3890,7 +3890,7 @@ function aldersjusteradSkillnad(kvRader, jmfRader, { golv = ALDERS_GOLV_STANDARD
   const kvMedian = median(kvAlla.map((r) => r.lon));
   if (!(medianJusterad > 0) || !(kvMedian > 0)) return null;
   const gapKr = medianJusterad - kvMedian;
-  return { medianJusterad, gapKr, gapPct: gapKr / kvMedian * 100, metod: "alder" };
+  return { medianJusterad, gapKr, gapPct: gapKr * 100 / kvMedian, metod: "alder" };
 }
 function _gruppRader(g) {
   if (!g || !Array.isArray(g.lons)) return [];
@@ -4077,7 +4077,7 @@ function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
       }
       jämförelse.statHögre++;
       const gapKr = g.median - f.median;
-      const gapPct = gapKr / f.median * 100;
+      const gapPct = gapKr * 100 / f.median;
       if (gapPct < minGap) continue;
       const ärIntern = källa === "intern";
       let gapCI = null;
@@ -4166,7 +4166,7 @@ function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
       }
       jämförelse.statHögre++;
       const gapKr = g.median - f.median;
-      const gapPct = gapKr / f.median * 100;
+      const gapPct = gapKr * 100 / f.median;
       if (gapPct < minGap) continue;
       let gapCI = null;
       try {
@@ -4219,7 +4219,7 @@ function byggParLagreKrav(orgKvDom, orgIckeKv, val = {}) {
       const rg = rang(g.bas);
       if (!(rg < rf) || !(g.median > f.median)) continue;
       const gapKr = g.median - f.median;
-      const gapPct = gapKr / f.median * 100;
+      const gapPct = gapKr * 100 / f.median;
       if (gapPct < minGap) continue;
       ut.push({
         _f: f,
@@ -24452,8 +24452,6 @@ function uppstartUtforska() {
 
 // src/app/29-organisationspaket.js
 var PAKET_MAX_FILSTORLEK = installningsGrans("fil").paket;
-var PAKET_INAKTIVITET_MIN = 5;
-var PAKET_INAKTIVITET_MAX = 120;
 function _paketLasStandard() {
   return { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
 }
@@ -24711,14 +24709,14 @@ function _paketLasFel() {
     return `Minsta gruppstorlek ${k} är lägre än lägsta tillåtna ${lagst}.`;
   }
   const inakt = /^\d+$/.test(inaktText) ? Number(inaktText) : null;
-  if (inaktText !== "" && (inakt == null || inakt !== 0 && (inakt < PAKET_INAKTIVITET_MIN || inakt > PAKET_INAKTIVITET_MAX))) {
-    return `Rensning vid inaktivitet: ange 0 (av) eller ett heltal mellan ${PAKET_INAKTIVITET_MIN} och ${PAKET_INAKTIVITET_MAX} minuter.`;
+  if (inaktText !== "" && (inakt == null || inakt !== 0 && (inakt < INAKTIVITET_MIN || inakt > INAKTIVITET_MAX))) {
+    return `Rensning vid inaktivitet: ange 0 (av) eller ett heltal mellan ${INAKTIVITET_MIN} och ${INAKTIVITET_MAX} minuter.`;
   }
   if (
     /** @type {HTMLInputElement} */
     _paketFalt("paket-inaktivitet-last")?.checked && !(inakt != null && inakt > 0)
   ) {
-    return `Rensning vid inaktivitet kan bara låsas till ett värde mellan ${PAKET_INAKTIVITET_MIN} och ${PAKET_INAKTIVITET_MAX} minuter.`;
+    return `Rensning vid inaktivitet kan bara låsas till ett värde mellan ${INAKTIVITET_MIN} och ${INAKTIVITET_MAX} minuter.`;
   }
   return null;
 }
