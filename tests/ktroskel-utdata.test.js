@@ -6,6 +6,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { maskeringsniva } from '../src/lib/lonepolitik.js';
 import { normalisera, fonster, fonsterLitet, tvaDec, iExport, elementText, fonsterParLikvardigt } from './helpers/ktroskel-rigg.js';
 
 // Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
@@ -15,8 +16,8 @@ vi.setConfig({ testTimeout: 30000 });
 describe('k-tröskeln under 5 i Lönepolitik', () => {
     it('mellannivån med bara antal finns inte när tröskeln är 3 (exportläget)', () => {
         const w = iExport(fonster(3));
-        expect(w.eval('_lpNiva(4)')).toBe('full');
-        expect(w.eval('_lpNiva(2)')).toBe('masked');
+        expect(maskeringsniva(4, w.eval('kTroskel()'))).toBe('full');
+        expect(maskeringsniva(2, w.eval('kTroskel()'))).toBe('masked');
         w.__ritaFlik('lonepolitik');
         expect(w.document.getElementById('view-benchmark').textContent).not.toMatch(/under 5 maskeras/);
     });

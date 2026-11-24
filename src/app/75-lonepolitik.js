@@ -17,7 +17,6 @@
 // Är tröskeln satt till ANTAL_MIN (5) eller lägre finns ingen mellannivå.
 // ====================================================================
 import { talformat } from '../lib/figur.js';
-import { maskeringsniva } from '../lib/lonepolitik.js';
 import { personOrd } from '../lib/namn.js';
 import { froAvText } from '../lib/rng.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
@@ -38,8 +37,6 @@ import { statusMarke } from './13-oversikt.js';
 import { _laSlutsats } from './41-lika-arbete.js';
 import { konsklassNu } from './45-aid-bas-tabeller.js';
 import { kTroskelLank } from './86-installningar.js';
-
-export function _lpNiva(n) { return maskeringsniva(n, kTroskel()); }
 
 /**
  * Vymodellen för avsnitten om ställningstagandet (vymodellLonepolitik i src/lib/vymodell-lonepolitik.js): här
