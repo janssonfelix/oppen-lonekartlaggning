@@ -13,21 +13,21 @@ import { rot, las, papa, vanta, csvFil, okandaRader } from './helpers/granssnitt
 // rita dem är det dyra, inte att läsa. Ordningen spelar ingen roll (prövat: samma dokument, bortsett från
 // exportmenyernas löpnummer). Vakten i delatFonster fäller det test som ändrar tillståndet.
 const ALLA_FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info'];
-const allaFlikar = delatFonster(w => { w.__loadDemoData(); for (const f of ALLA_FLIKAR) w.__renderTabContent(f); });
+const allaFlikar = delatFonster(w => { w.__lasInDemodata(); for (const f of ALLA_FLIKAR) w.__ritaFlik(f); });
 // Med en pott och ett generellt påslag, så att Löneöversyn ritar prognosen. Procenttestet läser också Exportera, som det
 // förut inte ritade.
 const medPott = delatFonster(w => {
-    w.__loadDemoData();
+    w.__lasInDemodata();
     w.__state.forecast.budget = { mode: 'pct', value: 2 };
     w.__state.forecast.generell = { mode: 'pct', value: 1 };
-    for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera']) w.__renderTabContent(f);
+    for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera']) w.__ritaFlik(f);
 });
 
 describe('tomma lägen som inte låter som fel', () => {
     it('Löneöversyn utan pott visar en rad om vad som behövs, inte en tom mätare och tabeller där före är lika med efter', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('loneoversyn');
+        w.__lasInDemodata();
+        w.__ritaFlik('loneoversyn');
         const d = w.document, vy = d.getElementById('view-loneoversyn');
         expect(vy.classList.contains('lo-tomt')).toBe(true);
         expect(d.getElementById('forecast-outcome').textContent.trim()).toBe('Ange en pott ovan så visas utfallet här.');
@@ -37,14 +37,14 @@ describe('tomma lägen som inte låter som fel', () => {
         // Med en pott visas utfallet igen.
         w.__state.forecast.budget = { mode: 'pct', value: 2 };
         w.__state.forecast.generell = { mode: 'pct', value: 1 };
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         expect(vy.classList.contains('lo-tomt')).toBe(false);
         expect(d.getElementById('forecast-outcome').querySelector('table')).toBeTruthy();
     });
     it('Likvärdigt arbete utan jämförelsestatistik säger att den är valfri', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
+        w.__lasInDemodata();
+        w.__ritaFlik('likvardighet');
         const text = w.document.getElementById('view-likvardighet').textContent;
         expect(text).not.toContain('kontrollera att Excel-filen är uppladdad');
         expect(text).toContain('Ingen jämförelsestatistik inläst (valfri)');
@@ -105,14 +105,14 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
         // Rensningen ändrar tillståndet och görs i ett eget fönster; notisen den lämnar är densamma med eller utan ritade
         // flikar (prövat).
         const rensat = createAppWindow();
-        rensat.__loadDemoData();
-        rensat.eval('_autoClearOnInactivity()');
+        rensat.__lasInDemodata();
+        rensat.eval('_rensaVidInaktivitet()');
         expect(BILDTECKEN.test(rensat.document.body.textContent.replace(/\s+/g, ' ').slice(-4000))).toBe(false);
         expect([...fynd]).toEqual([]);
     }, 30000);
     it('filkortets märke och filnamnsraden bär bocken som linjeikon', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const marke = w.document.querySelector('#upload-cell-data .upload-badge');
         expect(marke.textContent.trim()).toBe('Testdata');   // demots märke; en egen fil märks «Inläst»
         expect(marke.querySelector('svg.ikon-bock')).toBeTruthy();
@@ -202,14 +202,14 @@ describe('en låst flik svarar', () => {
     });
     it('upplåsning och låsning går genom egenskapen disabled', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const flik = w.document.getElementById('tab-matrix');
         expect(flik.disabled).toBe(false);
         expect(flik.hasAttribute('aria-disabled')).toBe(false);
         flik.click();
         expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('matrix');
         w.confirm = () => true;
-        w.eval('clearAllData()');
+        w.eval('rensaAllData()');
         expect(flik.getAttribute('aria-disabled')).toBe('true');
     });
 });
@@ -316,7 +316,7 @@ describe('kantränderna', () => {
 });
 
 describe('slutgranskningens fynd', () => {
-    const lasIn = async (w, rader) => { papa(w); w.loadStructureFile(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
+    const lasIn = async (w, rader) => { papa(w); w.lasInStrukturfil(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
     it('en fil som saknar en obligatorisk kolumn men har läsbara rader läses in, och kolumnmappningen säger vad som saknas', async () => {
         const w = createAppWindow();
         // Ålder är valfri (ADR-64); filen saknar i stället AID.
@@ -345,8 +345,8 @@ describe('slutgranskningens fynd', () => {
     });
     it('regressionskortets tolkning har samma precision som huvudtalet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__lasInDemodata();
+        w.__ritaFlik('struktur');
         expect(w.document.getElementById('regression-card').querySelector('.reg-verdict')?.closest('.card').textContent.match(/\d,\d\d\s% (mindre|mer)|skillnad på \d+,\d\d\s%/)).toBeNull();
     });
     it('piltangent på en låst flik går till närmaste upplåsta flik i den riktningen, inte runt hela menyn', () => {
@@ -381,8 +381,8 @@ describe('procenttal i flikarna har en decimal', () => {
 describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () => {
     it('Lika arbetes kolumn Dominans skriver ut orden, också i cellens text för exporten', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('matrix');
+        w.__lasInDemodata();
+        w.__ritaFlik('matrix');
         const d = w.document;
         const rubriker = [...d.querySelectorAll('#matrix-table thead th')];
         const kol = rubriker.findIndex(th => th.textContent.trim() === 'Dominans');
@@ -394,8 +394,8 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
     });
     it('Likvärdigt arbetes kolumn heter Summa för gruppen, med verktygstips; Excel-bladen har samma rubrik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
+        w.__lasInDemodata();
+        w.__ritaFlik('likvardighet');
         const th = w.document.querySelector('#likvardighet-table thead th[data-kol="paverkan"]');
         expect(th.textContent.trim()).toBe('Summa för gruppen (kr/mån)');
         expect(th.title).toBe('Skillnaden i kronor gånger antalet personer med den kvinnodominerade AID-etiketten, per månad');
@@ -408,7 +408,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
     it('varje Nästa steg-knapp heter det menyn heter', () => {
         const w = createAppWindow();
         const d = w.document;
-        const steg = w.eval('FLOW_NEXT');
+        const steg = w.eval('NASTA_STEG');
         for (const { tab, label } of Object.values(steg)) {
             const meny = d.querySelector(`.nav-item[data-tab="${tab}"] .nav-etikett`);
             expect(meny, tab).toBeTruthy();
@@ -448,8 +448,8 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         expect(rader().map(l => l.dataset.stod)).toEqual(['likvardighet', 'matrix', 'struktur']);
         const fast = rader().map(l => l.textContent.trim());
         for (const l of rader()) { expect(l.querySelector('a')).toBeNull(); expect(l.textContent).not.toContain('Gå dit'); }
-        w.__loadDemoData();
-        w.__renderTabContent('bestammelser');
+        w.__lasInDemodata();
+        w.__ritaFlik('bestammelser');
         for (const l of rader()) {
             const a = l.querySelector('a[data-go-to-tab]');
             expect(a?.dataset.goToTab, l.dataset.stod).toBe(l.dataset.stod);
@@ -459,9 +459,9 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
             expect(l.textContent.trim(), l.dataset.stod).not.toBe(fast[rader().indexOf(l)]);
         }
         // Talen är flikarnas egna: samma som i flikarnas toppar.
-        w.__renderTabContent('matrix');
-        w.__renderTabContent('likvardighet');
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('matrix');
+        w.__ritaFlik('likvardighet');
+        w.__ritaFlik('struktur');
         const topp = (id, etikett) => [...d.querySelectorAll(`#${id} .slutsats`)].find(s => s.textContent.includes(etikett))?.querySelector('.slutsats-varde')?.textContent.trim();
         const [lv, la, st] = rader().map(l => l.textContent);
         expect(la).toContain(`har ${topp('la-slutsatser', 'AID-etiketter att granska')} AID-etiketter i BAS-intervall att granska`);

@@ -10,17 +10,17 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     it('okänd nyckel ger null i stället för att kasta', () => {
-        expect(win.__buildGruppdossier('finns-inte|Z')).toBeNull();
+        expect(win.__byggGruppdossier('finns-inte|Z')).toBeNull();
     });
 
     it('textversionen innehåller gränsdragningen mot sakliga skäl', () => {
-        const d = win.__buildGruppdossier(win.__gruppdossierCandidates()[0].key);
-        const txt = win.__gruppdossierAsText(d);
+        const d = win.__byggGruppdossier(win.__gruppdossierKandidater()[0].key);
+        const txt = win.__gruppdossierSomText(d);
         expect(txt).toMatch(/^Gruppdossier: /);
         expect(txt).toContain('dokumenterar inte sakliga skäl');
     });
@@ -45,7 +45,7 @@ describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     });
 
     it('färdigcheck ger observationer med nivå och detalj', () => {
-        const items = win.__buildFardigcheck();
+        const items = win.__byggFardigcheck();
         expect(Array.isArray(items)).toBe(true);
         items.forEach(i => {
             expect(['warn', 'info']).toContain(i.level);
@@ -56,7 +56,7 @@ describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
     });
 
     it('kvalitetssäkringsfliken renderar båda panelerna utan kast', () => {
-        expect(() => win.__renderKvalitetssakring()).not.toThrow();
+        expect(() => win.__ritaKvalitetssakring()).not.toThrow();
         expect(win.document.getElementById('robusthet-body')).not.toBeNull();
         expect(win.document.getElementById('fardigcheck-body')).not.toBeNull();
     });
@@ -70,19 +70,19 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
     });
 
     it('modalen öppnas med vald grupp och stängs igen', () => {
-        win.__loadDemoData();
-        const key = win.__gruppdossierCandidates()[0].key;
-        win.__openGruppdossier(key);
+        win.__lasInDemodata();
+        const key = win.__gruppdossierKandidater()[0].key;
+        win.__oppnaGruppdossier(key);
         const modal = win.document.getElementById('dossier-modal');
         expect(modal.style.display).toBe('flex');
         expect(win.document.getElementById('dossier-select').value).toBe(key);
         expect(win.document.getElementById('dossier-body').innerHTML.length).toBeGreaterThan(50);
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
         expect(modal.style.display).toBe('none');
     });
 
     it('robusthetspanelen visar en startknapp i stället för att räkna direkt', () => {
-        win.__renderKvalitetssakring();
+        win.__ritaKvalitetssakring();
         const host = win.document.getElementById('robusthet-body');
         expect(host.querySelector('#btn-run-robusthet')).not.toBeNull();
         // färdigchecken är billig och körs direkt
@@ -90,7 +90,7 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
     });
 
     it('robusthetsanalysen producerar resultat när den körs', async () => {
-        win.__runRobusthet();
+        win.__korRobusthet();
         await new Promise(r => setTimeout(r, 120));   // renderingen är fördröjd för att hinna måla om
         const host = win.document.getElementById('robusthet-body');
         expect(host.innerHTML).toMatch(/Likvärdigt arbete|Prioritering/);
@@ -99,17 +99,17 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
 
 describe('k-anonymitet, sortering, efterlevnad och dossiern — dossiern', () => {
     it('hypotesrutan i dossiern renderar markup i stället för att visa taggar', () => {
-        win.__loadDemoData();
-        const key = win.__gruppdossierCandidates()[0].key;
-        const d = win.__buildGruppdossier(key);
-        win.__openGruppdossier(key);
+        win.__lasInDemodata();
+        const key = win.__gruppdossierKandidater()[0].key;
+        const d = win.__byggGruppdossier(key);
+        win.__oppnaGruppdossier(key);
         const body = win.document.getElementById('dossier-body');
         expect(body.innerHTML).not.toContain('&lt;strong&gt;');
         if (d.suggestions.length) {
             // textkopian ska däremot vara fri från markup
-            expect(win.__gruppdossierAsText(d)).not.toMatch(/<\/?strong>/);
+            expect(win.__gruppdossierSomText(d)).not.toMatch(/<\/?strong>/);
         }
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
     });
 });
 
@@ -124,7 +124,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';   // panelen hör till Exportera och ritas alltid i exportläget (ADR-51)
         return w;
     };
@@ -134,7 +134,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         expect(r.utelamnade).toBe(1);
         expect(r.rows).toEqual([]);
         expect(r.not).toBe('1 par med en grupp under 10 personer redovisas inte här.');
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))");
         const t = w.document.getElementById('robusthet-body').textContent;
         expect(t).not.toContain('5300');
         expect(t).toContain('1 par med en grupp under 10 personer redovisas inte här.');
@@ -149,7 +149,7 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         expect(r.utelamnade).toBe(0);
         expect(r.not).toBe('');
         expect(r.rows.some(x => x.label.includes('5300'))).toBe(true);
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))");
         const t = w.document.getElementById('robusthet-body').textContent;
         expect(t).toContain('5300');
         expect(t).not.toMatch(/redovisas inte här/);
@@ -168,16 +168,16 @@ describe('gruppdossiern', () => {
     });
     it('rubriken, väljaren och textkopian dubblerar inte AID-koden, och inget tal har decimalpunkt', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        const kandidater = w.eval('gruppdossierCandidates().map(g => ({ key: g.key, aid: g.aid }))');
+        w.__lasInDemodata();
+        const kandidater = w.eval('gruppdossierKandidater().map(g => ({ key: g.key, aid: g.aid }))');
         expect(kandidater.length).toBeGreaterThan(3);
         const fel = [];
         for (const k of kandidater) {
-            w.eval(`openGruppdossier(${JSON.stringify(k.key)})`);
+            w.eval(`oppnaGruppdossier(${JSON.stringify(k.key)})`);
             const modal = w.document.getElementById('dossier-modal');
             const rubrik = modal.querySelector('.gd-head h3').textContent;
             const val = modal.querySelector('select').selectedOptions[0].textContent;
-            const text = w.eval(`gruppdossierAsText(buildGruppdossier(${JSON.stringify(k.key)}))`);
+            const text = w.eval(`gruppdossierSomText(byggGruppdossier(${JSON.stringify(k.key)}))`);
             for (const t of [rubrik, val, text.split('\n')[0]]) if (t.includes(`${k.aid} ${k.aid}`)) fel.push(t);
             fel.push(...medDecimalpunkt(modal));
             if (/\d\.\d/.test(text)) fel.push(text.split('\n').find(r => /\d\.\d/.test(r)));

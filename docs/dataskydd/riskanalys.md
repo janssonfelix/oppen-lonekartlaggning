@@ -211,7 +211,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   `document.cookie` (sökning i biblioteksfilerna). Det är det
   egentliga skyddet, och webbläsarröktestet kräver att localStorage, sessionStorage och cookies är tomma efter
   en full körning.
-- **Storage-tripwire som reserv** (`installStorageTripwire`): den första koden i verktygets
+- **Storage-tripwire som reserv** (`installeraLagringsspar`): den första koden i verktygets
   eget skript, som körs efter att de fyra biblioteken laddats. Den kastar när
   `Storage.prototype.setItem` anropas (localStorage och sessionStorage) eller
   `document.cookie` sätts. `removeItem`/`clear` spärras inte — de kan inte lagra något.
@@ -247,7 +247,7 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
   30, 60, 120 minuter eller av under *Vad lagras?*), via **samma** rensningsväg
   (`_rensaAllData`) men utan bekräftelsefråga. Varning och möjlighet att förlänga visas en
   minut innan. Organisationspaketet kan låsa tiden (5–120 minuter; läget av kan inte låsas,
-  ADR-47). Rullistan står då på värdet, och `setInactivityTimeout()` tar inte emot något annat.
+  ADR-47). Rullistan står då på värdet, och `sattInaktivitetstid()` tar inte emot något annat.
   *Rensa all data* häver låsningen tillsammans med paketet.
 - **Vaktas av en invariant** (`tests/dataskydd-app.test.js`): alla flikar, extremvärdesdetektorn
   och utskriftsrapporten ritas med löner i ett unikt intervall (inklusive ett
@@ -259,10 +259,10 @@ Lönen ska läsas in heltidsomräknad; omräkningen görs i lönesystemet, inte 
 
 ### 6.4 Uppgiftsminimering & avvisning av känsliga fält ✔
 - **Var koden bor:** vitlistan och kolumnvalet (`TILLATNA_FALT`, kolumnuppslaget, ansvarskolumnen), tolkningen av
-  värdena — talen, kön, BAS, saneringen av AID-etiketten, kärnan i `extractMinimalRecord` (`minimeraRad`,
+  värdena — talen, kön, BAS, saneringen av AID-etiketten, kärnan i `minimeraLonerad` (`minimeraRad`,
   `tolkaLonerad`) — och `hittaKansligaKolumner` är rena funktioner i `src/lib/inlasning.js`, utan tillstånd och utan
   klocka. Kolumnmappningen, importprofilen, den godkända ansvarskolumnen och året som ett födelseår räknas mot skickas
-  in av appens tunna adaptrar (`getField`, `extractMinimalRecord` m.fl. i `src/app/03-hjalpfunktioner.js` och
+  in av appens tunna adaptrar (`hamtaFalt`, `minimeraLonerad` m.fl. i `src/app/03-hjalpfunktioner.js` och
   `src/app/06-uppgiftsminimering.js`). Reglerna prövas i `tests/inlasning.test.js`, adaptrarna och hela filer i
   `tests/inlasning-app.test.js`.
 - **Fältvitlista** (`TILLATNA_FALT`): endast BAS, AID-etikett, lön och kön, samt valfri ålder
@@ -592,7 +592,7 @@ Konfig-JSON:en (**version 3**) innehåller tre slags uppgifter. Fälten har sven
   läses aldrig ur filen. Vid inläsning prövas varje text mot längden (80 tecken) och mot personnummer och e-post
   (`valideraImportprofil` i `src/lib/importprofiler.js`). En fil utan profiler tar inte bort sessionens.
 
-`state.data` (individrader) ingår **aldrig**. Det är verifierat mot `buildConfigSnapshot()` i koden (ingen
+`state.data` (individrader) ingår **aldrig**. Det är verifierat mot `byggKonfiguration()` i koden (ingen
 `state.data`-referens). Organisationens namn och jämförelsestatistikens namn ingår. Det är användarens egna namn,
 och text som liknar personnummer eller e-post avvisas. Organisationstypen (kommun, region eller båda) ingår som
 inställning. Ansvarskoderna och ansvarskolumnens namn ingår inte heller (vaktas av röktest). Inte heller lönedata
@@ -757,7 +757,7 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Lagringsspärren | Automatiskt test i jsdom och röktest i Chromium och Firefox: `setItem` med olika nycklar, direkt tilldelning och `defineProperty`, i localStorage och sessionStorage; cookie; sökning efter `setItem` i biblioteksfilerna | ✔ varje skrivning kastar, inga undantag, inget lagras; ✔ 0 `setItem` i de fyra biblioteken (§6.2) |
 | Web Workers | Webbläsarröktestet skapar en worker från `blob:` | ✔ avvisas av CSP (`script-src` som reserv för `worker-src`) |
 | Rensning (lagringsminimering, art. 5.1 e och 25.2) | Invariant för båda rensningsvägarna (inkl. extremvärden och utskrift) + körning i Chromium (alla flikar, utskrift, rensa, ladda om) | ✔ inget lönevärde kvar i dokumentet eller minnet; allt ritas igen efter ny inläsning |
-| Dataminimering | `TILLATNA_FALT` + `extractMinimalRecord` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/inlasning-app.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
+| Dataminimering | `TILLATNA_FALT` + `minimeraLonerad` + test som läser in en fil med extra kolumner och kräver exakt de godkända fälten i minnet (`tests/inlasning-app.test.js`) | ✔ 4 obligatoriska fält + valfri ålder (ADR-64) + valfri poäng + valfri ansvarskod + radnummer (härledda `aid`/`yrkeLabel`/`ansvarsgrupp`); kolumnen *Ansvar* läses inte in |
 | PII-avvisning | `hittaKansligaKolumner` + körning i Chromium med PII-testfil; rubrikprov i jsdom | ✔ lönefilen avvisas (0 rader inlästa); policy-/statistikfil kontrolleras inte (dokumenterat, §6.4); ✔ rubrikerna *Förnamn* och *Fornamn* avvisas (§6.4); ✔ rubriker som antyder en särskild kategori (fackmedlemskap, hälsa, sjukfrånvaro, diagnos, etnicitet, religion, politisk tillhörighet, sexuell läggning, funktionsnedsättning, genetik, biometri) avvisas, prövat med 21 rubriker i `tests/inlasning.test.js` (§6.4) |
 | Namn i fältet för AID-etikett | `_stadaYrkesfalt`, `yrkeNamnNyckel` och `sallsyntaNamnrader`; jsdom-prov med CSV och Excel | ✔ ingen maskering (ADR-85): "101010 Anna Andersson" behålls; ✔ två namnrader ger varningen med antal och radnummer på de tre ställena; ✔ "Sjuksköterska Natt" på 20 rader varnar inte; ✔ ingen etikett i etikettlistan och ingen AID-etikett i demona träffas |
 | Minsta gruppstorlek | `kTroskel()` + render-läsning vid 10, 25 och 5 (`tests/ktroskel.test.js` och `tests/ktroskel-hojning.test.js`) | ✔ standard 10, inställbart (ADR-38; undantag likvärdigt arbete dokumenterat) |
@@ -773,7 +773,7 @@ har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsa
 | Lokala exporter | Blob/`<a download>`/print-läsning | ✔ inga uppladdningar |
 | Hash-baserad CSP (ADR-9) | Hash-jämförelse + webbläsarröktestet: injicerat `<script>`, inline-`onclick` och `<img onerror>`; skadlig text i lönefil och paket i jsdom (`tests/dataskydd-app.test.js`) | ✔ ingen av dem exekverades; appen fullt funktionell |
 | XSS-utdatakodning | `esc()` escapear `& < > " '` + regressionstester (`tests/sakerhet.test.js`) | ✔ säker även i attributkontext |
-| Konfigfilens innehåll | Kodläsning av `buildConfigSnapshot()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och 3 och avvisar andra versioner |
+| Konfigfilens innehåll | Kodläsning av `byggKonfiguration()` och importen | ✔ ingen `state.data`-referens; inställningar (med förklaringsmodellen, definitionen av kvinnodominerat och lönemånaden) + användartext + avbockningar i Att göra (§6.8) + egna importprofiler (bara rubriknamn, validerade vid inläsning); import läser version 2 och 3 och avvisar andra versioner |
 | Word-utkast lokalt | Kodläsning + live-test: Blob fångad, innehåll inspekterat; zip-filen läses tillbaka i röktesterna (ADR-37) | ✔ lokal `Blob` (`.docx`), DEMODATA-märkning fungerar |
 | Tillgänglighet (markup) | axe-core i automatiska sviten (`tests/a11y.test.js`) | ✔ 0 överträdelser |
 | Automatiska tester | `npm run test:full` (hela Vitest-sviten; kör om en fil vars arbetare kraschat i Node) + `npm run test:browser` (bygget i Chromium; samma röktest finns för Firefox och WebKit) | ✔ alla gröna |

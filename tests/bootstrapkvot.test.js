@@ -5,8 +5,8 @@
  * percentilindex: med samma slumpföljd ska intervallen vara exakt desamma.
  *
  * Täcker kärnan i lib och de tre anroparna i appen: översikten per BAS-intervall och lönegapet per åldersgrupp
- * (`_laBootstrapGapCI`), gruppdossiern och rapportunderlaget (`_gdBootstrapGapCI`) och Översiktens intervall
- * för hela organisationen (`computeBootstrapCI`).
+ * (`_laBootstrapGapKI`), gruppdossiern och rapportunderlaget (`_gdBootstrapGapKI`) och Översiktens intervall
+ * för hela organisationen (`raknaBootstrapKI`).
  */
 import { describe, it, expect } from 'vitest';
 import { bootstrapMedianer } from '../src/lib/likvardighet.js';
@@ -28,7 +28,7 @@ function refDragningar(kv0, ma0, B, rnd) {
     }
     return ut;
 }
-// Den tidigare _laBootstrapGapCI (B = 1000, 100 när männens median inte är positiv).
+// Den tidigare _laBootstrapGapKI (B = 1000, 100 när männens median inte är positiv).
 function refLa(kv, ma, B = 1000) {
     if (kv.length < 3 || ma.length < 3) return null;
     const ratios = refDragningar(kv, ma, B, slumpFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : 100));
@@ -36,7 +36,7 @@ function refLa(kv, ma, B = 1000) {
     const svans = Math.floor(B * 0.025);
     return { lo: ratios[svans], hi: ratios[B - 1 - svans] };
 }
-// Den tidigare _gdBootstrapGapCI (B = 2000, dragningar med männens median 0 räknas inte).
+// Den tidigare _gdBootstrapGapKI (B = 2000, dragningar med männens median 0 räknas inte).
 function refGd(kv, ma, B = 2000) {
     if (kv.length < 3 || ma.length < 3) return null;
     const ratios = refDragningar(kv, ma, B, slumpFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : NaN));
@@ -74,18 +74,18 @@ describe('bootstrapMedianer: samma medianer som en sortering per dragning', () =
 describe('[B4.1] appens intervall på mediankvoten är desamma som med sortering per dragning', () => {
     const w = createAppWindow();
     for (const [namn, kv, ma] of fall) {
-        it(`_laBootstrapGapCI och _gdBootstrapGapCI: ${namn}`, () => {
-            expect(w._laBootstrapGapCI(kv, ma)).toEqual(refLa(kv, ma));
-            expect(w._gdBootstrapGapCI(kv, ma)).toEqual(refGd(kv, ma));
+        it(`_laBootstrapGapKI och _gdBootstrapGapKI: ${namn}`, () => {
+            expect(w._laBootstrapGapKI(kv, ma)).toEqual(refLa(kv, ma));
+            expect(w._gdBootstrapGapKI(kv, ma)).toEqual(refGd(kv, ma));
         });
     }
     it('för få personer ger inget intervall', () => {
-        expect(w._laBootstrapGapCI([1, 2], [1, 2, 3])).toBeNull();
-        expect(w._gdBootstrapGapCI([1, 2, 3], [1, 2])).toBeNull();
+        expect(w._laBootstrapGapKI([1, 2], [1, 2, 3])).toBeNull();
+        expect(w._gdBootstrapGapKI([1, 2, 3], [1, 2])).toBeNull();
     });
-    it('computeBootstrapCI på demodatan', () => {
-        w.__loadDemoData();
-        w.eval('computeBootstrapCI()');
+    it('raknaBootstrapKI på demodatan', () => {
+        w.__lasInDemodata();
+        w.eval('raknaBootstrapKI()');
         const d = w.__state.data.filter(r => r.lon > 0);
         const kv = d.filter(r => r.kon.includes('kvinna')).map(r => r.lon);
         const ma = d.filter(r => r.kon === 'man' || r.kon === 'män').map(r => r.lon);
@@ -103,10 +103,12 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
     const tal = t => Number(t.replace('−', '-').replace(',', '.'));
     it('på demodatan: intervallet är "−17,8 % till −11,9 %" och den råa skillnaden ligger inom det', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.computeBootstrapCI();
-        const r = w.runOLSRegression();
-        const text = w.fmtCI(w.__state.bootstrapCI.gapPct).replace(/<[^>]*>/g, '').replace(/ /g, ' ');
+        w.__lasInDemodata();
+        w.raknaBootstrapKI();
+        const r = w.korOLSRegression();
+        const el = w.document.createElement('span');
+        el.innerHTML = w.formateraKI(w.__state.bootstrapCI.gapPct);
+        const text = el.textContent.replace(/ /g, ' ');
         expect(text).toBe(' [95 % KI: −17,8 % till −11,9 %]');
         const { lo, hi } = w.__state.bootstrapCI.gapPct;
         expect(r.rawGapPct).toBeLessThan(0);
@@ -124,10 +126,10 @@ describe('den råa skillnaden och bootstrapintervallet bredvid har samma tecken'
             rader.push(rad('S2', i < 10 ? 'kvinna' : 'man', 34000 + ((i * 53) % 29) * 100, 25 + (i * 11) % 35));
         }
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        w.computeBootstrapCI();
-        w.__renderTabContent('struktur');
-        expect(w.runOLSRegression().pValue).toBeGreaterThanOrEqual(0.05);
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.raknaBootstrapKI();
+        w.__ritaFlik('struktur');
+        expect(w.korOLSRegression().pValue).toBeGreaterThanOrEqual(0.05);
         const text = w.document.getElementById('regression-card').textContent.replace(/ /g, ' ');
         const m = text.match(/Den råa löneskillnaden \((−?\d+,\d) % \[95 % KI: (−?\d+,\d) % till (−?\d+,\d) %\]\)/);
         expect(m).not.toBeNull();

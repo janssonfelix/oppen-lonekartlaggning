@@ -80,7 +80,7 @@ describe('appen prövar filstorleken innan filen läses', () => {
     it('lönefilen över 50 MB: meddelandet, och ingen tolkning påbörjas', () => {
         const w = createAppWindow();
         const lasArrayBuffer = vi.spyOn(w.FileReader.prototype, 'readAsArrayBuffer');
-        w.loadStructureFile(storlek(csvFil(w, ['BAS;Månadslön;Ålder;Kön;AID', 'C;30000;40;Kvinna;207011']), 51 * MB));
+        w.lasInStrukturfil(storlek(csvFil(w, ['BAS;Månadslön;Ålder;Kön;AID', 'C;30000;40;Kvinna;207011']), 51 * MB));
         expect(w.document.getElementById('data-status').textContent).toBe('Lönefilen är för stor för att läsas in (högst 50 MB).');
         expect(lasArrayBuffer).not.toHaveBeenCalled();
         expect(w.__state.data).toHaveLength(0);
@@ -91,7 +91,7 @@ describe('appen prövar filstorleken innan filen läses', () => {
         papa(w);
         const lasArrayBuffer = vi.spyOn(w.FileReader.prototype, 'readAsArrayBuffer');
         let utfall = null;
-        w.readTabularFile(storlek(csvFil(w, ['BAS;Median', 'C;30000']), 21 * MB), [['bas'], ['median']], res => { utfall = res; }, 'stallningstagande');
+        w.lasTabellfil(storlek(csvFil(w, ['BAS;Median', 'C;30000']), 21 * MB), [['bas'], ['median']], res => { utfall = res; }, 'stallningstagande');
         expect(utfall).toEqual({ ok: false, error: 'Filen med ställningstagandet är för stor för att läsas in (högst 20 MB).' });
         expect(lasArrayBuffer).not.toHaveBeenCalled();
     });
@@ -101,7 +101,7 @@ describe('appen prövar filstorleken innan filen läses', () => {
         papa(w);
         const lasArrayBuffer = vi.spyOn(w.FileReader.prototype, 'readAsArrayBuffer');
         let utfall = null;
-        w.readTabularFile(storlek(csvFil(w, ['AID;Median', '5301;31000']), 21 * MB), [['aid'], ['median']], res => { utfall = res; }, 'jamforelsestatistik');
+        w.lasTabellfil(storlek(csvFil(w, ['AID;Median', '5301;31000']), 21 * MB), [['aid'], ['median']], res => { utfall = res; }, 'jamforelsestatistik');
         expect(utfall.ok).toBe(false);
         expect(utfall.error).toMatch(/jämförelsestatistiken är för stor.*20 MB/);
         expect(lasArrayBuffer).not.toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe('appen prövar filstorleken innan filen läses', () => {
         const w = createAppWindow();
         papa(w);
         let utfall = null;
-        w.readTabularFile(csvFil(w, ['BAS;Median', 'C;30000', 'D;31000']), [['bas'], ['median']], res => { utfall = res; }, 'stallningstagande');
+        w.lasTabellfil(csvFil(w, ['BAS;Median', 'C;30000', 'D;31000']), [['bas'], ['median']], res => { utfall = res; }, 'stallningstagande');
         await vanta(() => utfall);
         expect(utfall.ok).toBe(true);
         expect(utfall.rows).toHaveLength(2);

@@ -3,15 +3,15 @@
 import { _normaliseraBas, _normaliseraPolicyAid, _utanHtmlTecken, tolkaTal } from '../lib/inlasning.js';
 import { namnFranFil } from '../lib/referens.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { getField, hideLoading, showLoading } from './03-hjalpfunktioner.js';
+import { hamtaFalt, doljLaddning, visaLaddning } from './03-hjalpfunktioner.js';
 import { _kopplaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
-import { aterstallReferens, getData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
-import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
-import { renderConsistencyBanner } from './16-inlasningskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
-import { renderPaketInfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
-import { markUploadLoaded, readTabularFile, renderFilrutor, resetUploadCell } from './32-filinlasning.js';
+import { aterstallReferens, hamtaData, harReferens, referensKalla, referensNamn, ritaOmReferens, sattReferensNamn, state } from './12-tillstand.js';
+import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
+import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
+import { ritaPaketinfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
+import { markeraFilrutaInlast, lasTabellfil, ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 
 // ---- File Upload: Policy CSV ----
@@ -19,11 +19,11 @@ import { ritaLoneoversikt } from './39-loneoversikt.js';
 // filen (ADR-28). Returnerar antal giltiga rader; 0 = inget ändrat.
 function _lasInReferens(rader, filnamn) {
     const policy = rader.map(row => ({
-        aid: _normaliseraPolicyAid(row.aid ?? getField(row, ["aid","yrkeskod","befattningskod"])),
-        bas: _normaliseraBas(row.bas ?? getField(row, ["bas","basintervall"])),
-        p10: typeof row.p10 === 'number' ? row.p10 : tolkaTal(getField(row, ["10e","p10","10"])),
-        med: typeof row.med === 'number' ? row.med : tolkaTal(getField(row, ["median","med"])),
-        p90: typeof row.p90 === 'number' ? row.p90 : tolkaTal(getField(row, ["90e","p90","90"]))
+        aid: _normaliseraPolicyAid(row.aid ?? hamtaFalt(row, ["aid","yrkeskod","befattningskod"])),
+        bas: _normaliseraBas(row.bas ?? hamtaFalt(row, ["bas","basintervall"])),
+        p10: typeof row.p10 === 'number' ? row.p10 : tolkaTal(hamtaFalt(row, ["10e","p10","10"])),
+        med: typeof row.med === 'number' ? row.med : tolkaTal(hamtaFalt(row, ["median","med"])),
+        p90: typeof row.p90 === 'number' ? row.p90 : tolkaTal(hamtaFalt(row, ["90e","p90","90"]))
     })).filter(p => p.bas || p.aid);
     if (!policy.length) return 0;
     state.policy = policy;
@@ -31,14 +31,14 @@ function _lasInReferens(rader, filnamn) {
     const namn = namnFranFil(filnamn);
     state.policyNamn = namn;
     state.policyKortnamn = namn;
-    renderReferensKort();
-    if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
+    ritaReferensKort();
+    if (typeof ritaPaketinfo === 'function') { ritaPaketinfo(); uppdateraPaketKnapp(); }
     return policy.length;
 }
 
 // Referenskortet i Filer och kvalitet: vilken referens som används, namnfält för egen fil
 // och knappen som tar bort den.
-export function renderReferensKort() {
+export function ritaReferensKort() {
     const el = document.getElementById('referens-status');
     if (!el) return;
     const har = harReferens();
@@ -56,7 +56,7 @@ export function renderReferensKort() {
     if (input && document.activeElement !== input) /** @type {HTMLInputElement} */ (input).value = namnges ? referensNamn() : '';
     if (aterga) { aterga.hidden = !egen; aterga.textContent = 'Ta bort referensen'; }
 }
-const policyInput = /** @type {HTMLElement} */ (document.getElementById("file-input-policy"));
+const policyFilval = /** @type {HTMLElement} */ (document.getElementById("file-input-policy"));
 const policyStatus = /** @type {HTMLElement} */ (document.getElementById("policy-status"));
 
 // Fliken Löneläget syns när underlaget och minst en referens är inlästa. Utan underlag är den låst som de andra
@@ -74,7 +74,7 @@ export function _visaJamforelseFlik(synlig) {
 export function synkaJamforelseFlik() { _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0)); }
 
 // ---- File Upload: External Statistics (Excel) ----
-const statInput = /** @type {HTMLElement} */ (document.getElementById("file-input-stat"));
+const statFilval = /** @type {HTMLElement} */ (document.getElementById("file-input-stat"));
 const statStatus = /** @type {HTMLElement} */ (document.getElementById("stat-status"));
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
@@ -87,28 +87,28 @@ export function uppstartReferensfiler() {
         if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
         const fil = document.getElementById('file-input-policy');
         if (fil) /** @type {HTMLInputElement} */ (fil).value = '';   // samma fil ska kunna laddas upp igen
-        if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
+        if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         ritaOmReferens();
     });
-    policyInput.addEventListener("change", e => {
+    policyFilval.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
-        showLoading();
+        visaLaddning();
         // Gemensam läsväg: CSV (alla kodningar/avgränsare, preamble-tolerant) + XLSX.
         // `aid` är VALFRI: en policyrad får vara BAS-nivå, AID-specifik
         // (yrke oavsett BAS) eller AID+BAS (mest specifik). Uppslaget sker via
         // policyFor(), som följer specificitetsordningen. _hittaCsvRubrik poängsätter
         // synonymträffar (kräver inte alla grupper), så BAS-only-filer hittas också.
-        readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], res => {
+        lasTabellfil(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], res => {
             if (!res.ok) {
-                hideLoading();
+                doljLaddning();
                 policyStatus.textContent = '' + res.error;
                 policyStatus.className = "status-msg";
                 return;
             }
             const nInlasta = _lasInReferens(res.rows, file.name);
             if (!nInlasta) {
-                hideLoading();
+                doljLaddning();
                 policyStatus.textContent = 'Inga giltiga rader — varje rad behöver en BAS-kolumn, en AID-kolumn eller båda.';
                 policyStatus.className = "status-msg";
                 return;
@@ -120,25 +120,25 @@ export function uppstartReferensfiler() {
                 + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
             policyStatus.className = "status-msg success";
             synkaJamforelseFlik();
-            markUploadLoaded('upload-cell-policy', 'Inläst');
-            state.filnamn.policy = file.name; renderFilrutor();
-            hideLoading(); ritaKravstatus();
-            renderConsistencyBanner();
-            renderActionChecklist();
-            renderProcessTracker();
-            if (getData().length > 0) ritaLoneoversikt();
+            markeraFilrutaInlast('upload-cell-policy', 'Inläst');
+            state.filnamn.policy = file.name; ritaFilrutor();
+            doljLaddning(); ritaKravstatus();
+            ritaKonsistenskontroll();
+            ritaAtgardslista();
+            ritaKartlaggningensSteg();
+            if (hamtaData().length > 0) ritaLoneoversikt();
         }, 'stallningstagande');
     });
-    statInput.addEventListener("change", e => {
+    statFilval.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
-        showLoading();
+        visaLaddning();
         // Gemensam läsväg (samma som struktur/policy/historik): CSV alla kodningar +
-        // preamble-tolerans, XLSX, och tydligt .xls-besked. Rubrikraden hittas av readTabularFile via synonymerna
+        // preamble-tolerans, XLSX, och tydligt .xls-besked. Rubrikraden hittas av lasTabellfil via synonymerna
         // AID + Median; kolumnrollerna mappas därefter på de funna rubrikerna.
-        readTabularFile(file, [["aid", "yrkesgrupp"], ["median"]], res => {
+        lasTabellfil(file, [["aid", "yrkesgrupp"], ["median"]], res => {
             if (!res.ok) {
-                hideLoading();
+                doljLaddning();
                 statStatus.textContent = "Fel: " + res.error;
                 statStatus.className = "status-msg error";
                 return;
@@ -222,16 +222,16 @@ export function uppstartReferensfiler() {
                     ? `${state.statistik.length} poster inlästa (median + ${extras.join(' + ')})`
                     : `${state.statistik.length} poster inlästa`) + ` · ${src}`;
                 statStatus.className = "status-msg success";
-                markUploadLoaded('upload-cell-stat', 'Inläst');
-                state.filnamn.statistik = file.name; renderFilrutor();
-                if (typeof renderPaketInfo === 'function') { renderPaketInfo(); uppdateraPaketKnapp(); }
+                markeraFilrutaInlast('upload-cell-stat', 'Inläst');
+                state.filnamn.statistik = file.name; ritaFilrutor();
+                if (typeof ritaPaketinfo === 'function') { ritaPaketinfo(); uppdateraPaketKnapp(); }
                 synkaJamforelseFlik();
-                hideLoading(); ritaKravstatus();
-                renderConsistencyBanner();
-                renderActionChecklist();
-                renderProcessTracker();
+                doljLaddning(); ritaKravstatus();
+                ritaKonsistenskontroll();
+                ritaAtgardslista();
+                ritaKartlaggningensSteg();
             } catch (err) {
-                hideLoading();
+                doljLaddning();
                 statStatus.textContent = "Fel: " + err.message;
                 statStatus.className = "status-msg error";
             }

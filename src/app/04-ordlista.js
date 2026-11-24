@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { _kText } from './06-k-troskel.js';
 import { termText } from './09-termer.js';
 
@@ -12,7 +12,7 @@ export const AID_METODTEXT = 'AID är ett klassificeringssystem för att grupper
 // ---- Ordlista (Glossary) ----
 // Texterna är mallar: {k} och {golv} fylls med tröskeln (_kText), {enhet.en} och de andra termerna med termText
 // (ADR-74). Fältet sok gör att de gamla orden, till exempel yrke och yrkesgrupp, hittar rätt post.
-const GLOSSARY = [
+const ORDLISTA = [
     // Statistik
     { cat:'Statistik', term:'Median (P50)', short:'Mittersta värdet av sorterad lista', long:'Den lön där exakt hälften av gruppen tjänar mer och hälften tjänar mindre. Påverkas mindre än medelvärdet av enstaka mycket höga eller låga löner.' },
     { cat:'Statistik', term:'P10 (10:e percentilen)', short:'Värdet där 10 % av gruppen tjänar mindre', long:'Speglar lönenivån för de lägst betalda i gruppen. Används som "lägsta önskad nivå" i lönepolitiska ställningstaganden.' },
@@ -89,7 +89,7 @@ const GLOSSARY = [
     { cat:'GDPR', term:'Beräkning och urval', short:'Spårbarhet från lönefil till analys', long:'I flera analysflikar finns en panel "Beräkning och urval" som redovisar exakt hur många rader som ingår, vilka som exkluderats och varför. Möjliggör kvalitetssäkring och svar på frågan "Stämmer denna siffra?".' }
 ];
 
-function _normalizeTerm(s) { return s.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]/g, ''); }
+function _normaliseraTerm(s) { return s.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]/g, ''); }
 
 const STATISTIK_101 = `
 <details class="bak-accent-yta ram-1-accent-kant rund-8 marg-0-0-14 pad-14-16" open>
@@ -134,13 +134,13 @@ const STATISTIK_101 = `
 </details>
 `;
 
-function renderGlossary(filterText = '') {
+function ritaOrdlista(filterText = '') {
     const wrap = document.getElementById('glossary-content');
     if (!wrap) return;
-    const filter = _normalizeTerm(filterText.trim());
-    const lista = GLOSSARY.map(g => ({ ...g, term: termText(g.term), short: termText(_kText(g.short)), long: termText(_kText(g.long)) }));
+    const filter = _normaliseraTerm(filterText.trim());
+    const lista = ORDLISTA.map(g => ({ ...g, term: termText(g.term), short: termText(_kText(g.short)), long: termText(_kText(g.long)) }));
     const matches = filter
-        ? lista.filter(g => _normalizeTerm(g.term + ' ' + g.short + ' ' + g.long + ' ' + (g.sok || '')).includes(filter))
+        ? lista.filter(g => _normaliseraTerm(g.term + ' ' + g.short + ' ' + g.long + ' ' + (g.sok || '')).includes(filter))
         : lista;
     if (!matches.length) {
         wrap.innerHTML = `<div class="glossary-empty">Inga termer matchar "${esc(filterText)}".</div>`;
@@ -165,42 +165,42 @@ function renderGlossary(filterText = '') {
     wrap.innerHTML = html;
 }
 
-export function openGlossary() {
+export function oppnaOrdlista() {
     const m = document.getElementById('glossary-modal');
     if (!m) return;
     m.style.display = 'flex';
-    renderGlossary('');
-    trapFocus(m);
+    ritaOrdlista('');
+    fangaFokus(m);
 }
-function closeGlossary() {
+function stangOrdlista() {
     const m = document.getElementById('glossary-modal');
     if (m) {
-        releaseFocus(m);
+        slappFokus(m);
         m.style.display = 'none';
     }
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartOrdlista() {
-    document.getElementById('btn-open-glossary')?.addEventListener('click', openGlossary);
-    document.getElementById('glossary-close')?.addEventListener('click', closeGlossary);
-    document.querySelector('#glossary-modal .glossary-backdrop')?.addEventListener('click', closeGlossary);
-    document.getElementById('glossary-search')?.addEventListener('input', e => renderGlossary(/** @type {HTMLInputElement} */ (e.target).value));
+    document.getElementById('btn-open-glossary')?.addEventListener('click', oppnaOrdlista);
+    document.getElementById('glossary-close')?.addEventListener('click', stangOrdlista);
+    document.querySelector('#glossary-modal .glossary-backdrop')?.addEventListener('click', stangOrdlista);
+    document.getElementById('glossary-search')?.addEventListener('input', e => ritaOrdlista(/** @type {HTMLInputElement} */ (e.target).value));
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && /** @type {HTMLElement} */ (document.getElementById('glossary-modal')).style.display === 'flex') closeGlossary();
+        if (e.key === 'Escape' && /** @type {HTMLElement} */ (document.getElementById('glossary-modal')).style.display === 'flex') stangOrdlista();
     });
     // Symbol/färgförklaring-modal
     document.getElementById('btn-open-symbols')?.addEventListener('click', () => {
         const m = document.getElementById('symbols-modal');
-        if (m) { m.style.display = 'flex'; trapFocus(m); }
+        if (m) { m.style.display = 'flex'; fangaFokus(m); }
     });
     document.getElementById('symbols-close')?.addEventListener('click', () => {
         const m = document.getElementById('symbols-modal');
-        if (m) { releaseFocus(m); m.style.display = 'none'; }
+        if (m) { slappFokus(m); m.style.display = 'none'; }
     });
     document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', () => {
         const m = document.getElementById('symbols-modal');
-        if (m) { releaseFocus(m); m.style.display = 'none'; }
+        if (m) { slappFokus(m); m.style.display = 'none'; }
     });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') {

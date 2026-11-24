@@ -7,7 +7,7 @@
 // flyttar mellan dem): Egna vyer (förvald) och Alla diagram. Valet minns så länge sidan är öppen.
 //
 // Alla diagram (#ut-alla-diagram) samlar diagrammen från de andra flikarna, en grupp per upplåst flik i menyns
-// ordning (<details class="avsnitt">, stängd från början). När en grupp öppnas ritas fliken (renderTabContent) om
+// ordning (<details class="avsnitt">, stängd från början). När en grupp öppnas ritas fliken (ritaFlik) om
 // den inte är ritad eller är inaktuell, och varje diagram i den som är ritat, har något att visa, får lämna verktyget
 // (diagramUrval, samma urval som ZIP-filen) och inte är dolt i sin flik får en kopia:
 //   ritaFigur(kopia, källa._figur, källa._figurVal)  i en egen behållare  ut-diagram-<källans id>.
@@ -23,11 +23,11 @@
 // ====================================================================
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _rfBehallare, _rfExportFigur, rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { chartExportTitle, exportTillaten } from './11-diagramexport.js';
-import { getData } from './12-tillstand.js';
+import { diagramexportRubrik, exportTillaten } from './11-diagramexport.js';
+import { hamtaData } from './12-tillstand.js';
 import { _egFlikFor, _exportDjup, _ritadVid, exportSakra, flikInaktuell, iExportLage, iForhandsvisning } from './23-exportgrind.js';
-import { renderTabContent } from './31-navigering.js';
-import { _wireTablistKeys } from './63-tangentbordsnavigering.js';
+import { ritaFlik } from './31-navigering.js';
+import { _kopplaFlikradensTangenter } from './63-tangentbordsnavigering.js';
 import { sidindexBygg } from './89-sidindex.js';
 
 const UT_KOPIA_PREFIX = 'ut-diagram-';
@@ -156,7 +156,7 @@ function utAllaDiagramRita() {
     const behallare = document.getElementById('ut-alla-grupper');
     if (!behallare) return;
     const tom = document.getElementById('ut-alla-tom');
-    if (!getData().length) {
+    if (!hamtaData().length) {
         _utAllaRensa(behallare);
         if (tom) tom.hidden = false;
         return;
@@ -195,7 +195,7 @@ function utAllaGruppRita(grupp) {
     if (!flik || !yta || (typeof _exportDjup !== 'undefined' && _exportDjup > 0)) return 0;
     if (!_ritadVid.has(flik) || flikInaktuell(flik)) {
         const fokus = /** @type {HTMLElement|null} */ (document.activeElement), x = window.scrollX, y = window.scrollY;
-        try { renderTabContent(flik); } catch (e) { rapporteraFel(`Alla diagram: ${flik}`, e); }
+        try { ritaFlik(flik); } catch (e) { rapporteraFel(`Alla diagram: ${flik}`, e); }
         if (fokus && fokus !== document.activeElement && fokus.isConnected && typeof fokus.focus === 'function') fokus.focus({ preventScroll: true });
         if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
     }
@@ -210,7 +210,7 @@ function utAllaGruppRita(grupp) {
     }
     for (const kalla of kallor) {
         const kort = fanns.get(kalla.id) || _utNyKopia(kalla, flik);
-        /** @type {HTMLElement} */ (kort.querySelector('.ut-kopia-rubrik')).textContent = chartExportTitle(kalla);
+        /** @type {HTMLElement} */ (kort.querySelector('.ut-kopia-rubrik')).textContent = diagramexportRubrik(kalla);
         yta.appendChild(kort);   // i flikens ordning
         const kopia = /** @type {HTMLElement} */ (kort.querySelector(`[id^="${UT_KOPIA_PREFIX}"]`));
         try { ritaFigur(kopia, kalla._figur, { ...kalla._figurVal }); } catch (e) { rapporteraFel(`Alla diagram: ${kalla.id}`, e); }
@@ -253,7 +253,7 @@ function _utNyKopia(kalla, flik) {
     return kort;
 }
 
-/** Fliken Tabeller och egna vyer har ritats (renderTabContent): Alla diagram ritas om när den visas. */
+/** Fliken Tabeller och egna vyer har ritats (ritaFlik): Alla diagram ritas om när den visas. */
 export function utAllaDiagramVidRitning() {
     if (_utUnderflik === 'alla' && _utFlikVisas()) utAllaDiagramRita();
 }
@@ -298,7 +298,7 @@ export function uppstartAllaDiagram() {
     document.querySelectorAll('[data-ut-underflik]').forEach(b => {
         b.addEventListener('click', () => utValjUnderflik(/** @type {HTMLElement} */ (b).dataset.utUnderflik || 'egna'));
     });
-    _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
+    _kopplaFlikradensTangenter(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-ut-underflik]')]));
     // En grupp som öppnas ritar sina kopior. toggle bubblar inte: lyssnaren fångar den på vägen ned. En grupp som öppnas
     // medan samlingen inte visas ritas när den visas.
     document.getElementById('ut-alla-grupper')?.addEventListener('toggle', e => {

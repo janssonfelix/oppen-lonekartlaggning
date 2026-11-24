@@ -2,24 +2,24 @@
 // Copyright 2026 Felix Jansson
 import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_SKARM, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, LITET_UNDERLAG, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
-import { _kMaskNoteText } from './06-maskeringsnoter.js';
+import { _kMaskNotText } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _rfExportFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
-import { computeBootstrapCI, computePowerAnalysis, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderOutliers } from './15-extremvarden-basrang.js';
-import { renderDataValidationReport } from './16-inlasningskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
-import { renderSnapshotComparison } from './19-konfiguration.js';
+import { raknaBootstrapKI, raknaStyrkeanalys, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { ritaExtremvarden } from './15-extremvarden-basrang.js';
+import { ritaValideringsrapport } from './16-inlasningskontroll.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
+import { ritaOgonblicksbildJamforelse } from './19-konfiguration.js';
 import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
-import { invalidateStatCaches } from './30-statistikcacher.js';
-import { renderTabContent } from './31-navigering.js';
+import { tomStatistikcacher } from './30-statistikcacher.js';
+import { ritaFlik } from './31-navigering.js';
 import { _fcRensaParMal } from './36-loneoversyn.js';
 import { forklaringsmodell } from './50-regressionsmodeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { explorerSmaIExport } from './70-utforska.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { utforskaSmaIExport } from './70-utforska.js';
 import { diagramKopiaKalla } from './74-alla-diagram.js';
 import { ritaGruppdossier } from './80-gruppdossier.js';
 import { oppnaInstallningar } from './86-installningar.js';
@@ -56,7 +56,7 @@ function _kAterstallVarde() { return Math.max(K_STANDARD, kTroskelLagst() ?? K_M
  * där gäller skattningens tillförlitlighet och inte redovisningen. På skärmen är det K_STANDARD, ett kvalitetsgolv; i
  * exportläget följer det med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden i det som lämnar
  * verktyget (ADR-103). En höjd tröskel hindrar alltså inte analysen på skärmen. Skattningar som sparas har golvet i
- * nyckeln (bootstrapCIGallande och styrkaGallande i 13-oversikt.js, laLikaGrupper i 41-lika-arbete.js).
+ * nyckeln (bootstrapKIGallande och styrkaGallande i 13-oversikt.js, laLikaGrupper i 41-lika-arbete.js).
  */
 export function statGolv() { return statGolvVid(kTroskel()); }   // kTroskel() är 1 på skärmen: golvet blir K_STANDARD
 
@@ -73,7 +73,7 @@ export function provaEnskiltText() {
  * @param {number} n - Antal personer i gruppen.
  * @returns {boolean}
  */
-export function isKMasked(n) { return n < kTroskel(); }
+export function kMaskerad(n) { return n < kTroskel(); }
 
 /** Gränsen för "litet underlag" i ett diagram (LITET_UNDERLAG, src/lib/ktroskel.js). */
 export function litetUnderlag() { return LITET_UNDERLAG; }
@@ -96,7 +96,7 @@ export function _raGapText(reg, fmt) { return raGapText(reg, fmt, kTroskel()); }
  * @param {string[]} utelamnade @param {number} k
  */
 export function _basEffektNot(utelamnade, k) {
-    return _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen');
+    return _kMaskNotText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, 'deras effekt i modellen skulle visa deras genomsnittliga lönenivå', 'modellen');
 }
 
 /**
@@ -104,7 +104,7 @@ export function _basEffektNot(utelamnade, k) {
  * noter). Tom text tar bort noten. Noten läggs efter diagrammets behållare, så att den inte tränger
  * ihop ritytan.
  */
-export function _setDiagramKNot(chartId, text) {
+export function _sattDiagramKNot(chartId, text) {
     const chart = document.getElementById(chartId);
     if (!chart) return;
     const noteId = chartId + '-k-not';
@@ -125,7 +125,7 @@ export function _setDiagramKNot(chartId, text) {
  * skriver över den andra. Tom text tar bort noten. Läggs efter k-noten om den finns, annars efter behållaren. Id:t
  * börjar med diagrammets (chart-…), så *Rensa all data* tömmer den med diagrammen.
  */
-export function _setDiagramMetodNot(chartId, text) {
+export function _sattDiagramMetodNot(chartId, text) {
     const chart = document.getElementById(chartId);
     if (!chart) return;
     const noteId = chartId + '-metod-not';
@@ -197,7 +197,7 @@ export function _kUndantagFor(el, medSma) {
         iLikvardighet: !!(el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))),
         arFigur,
         figurMedSma: arFigur && !!(typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma),
-        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && typeof explorerSmaIExport === 'function' && !!explorerSmaIExport(),
+        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && typeof utforskaSmaIExport === 'function' && !!utforskaSmaIExport(),
     });
 }
 
@@ -273,7 +273,7 @@ export function _kVisaFel(meddelande) {
  * hoppar över den; används av tester och när anroparen redan har frågat).
  *
  * `rita: false` hoppar över omritningen — bara för anropare som själva anropar
- * _renderaOmAllaFlikar() innan de återvänder (inläsning av konfigurationsfil och
+ * _ritaOmAllaFlikar() innan de återvänder (inläsning av konfigurationsfil och
  * organisationspaket, som ändrar mer än tröskeln och annars skulle rita allt två gånger).
  * Ett värde under organisationspaketets golv (ADR-47) avvisas som ett ogiltigt värde, oavsett varifrån det kommer.
  * @param {any} v
@@ -299,10 +299,10 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
     // bootstrapen sekunder. På skärmen är golvet alltid K_STANDARD (ADR-103), så det händer bara i förhandsvisningen;
-    // exportens golv räknas när en export läser det (bootstrapCIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // exportens golv räknas när en export läser det (bootstrapKIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
     // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
-    if (golvAndrat && typeof invalidateStatCaches === 'function') invalidateStatCaches({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
+    if (golvAndrat && typeof tomStatistikcacher === 'function') tomStatistikcacher({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
@@ -311,7 +311,7 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     // Från gränssnittet ritas allt om stegvis, med förlopp (stegvis); program och tester får det direkt.
     /** @type {Promise<void>|null} */
     let klar = null;
-    if (rita) { if (stegvis) klar = _renderaOmAllaFlikarStegvis(); else _renderaOmAllaFlikar(); }
+    if (rita) { if (stegvis) klar = _ritaOmAllaFlikarStegvis(); else _ritaOmAllaFlikar(); }
     // Skattningarna som läser golvet räknas om i bakgrunden när omritningen är klar (rutan är borta), som vid inläsning.
     if (golvAndrat) { if (klar) klar.then(() => _skattningarIBakgrunden()); else _skattningarIBakgrunden(); }
     return { ok: true, varde: n, andrad: true, ...(klar ? { klar } : {}) };
@@ -333,13 +333,13 @@ function _skattningarIBakgrunden() {
     _bakgrundsrakning = new Promise(resolve => setTimeout(() => {
         try {
             if (state.data.length) {
-                try { computeBootstrapCI(); } catch (_e) { state.bootstrapCI = null; }
-                try { state.powerAnalysis = computePowerAnalysis(); } catch (_e) { state.powerAnalysis = null; }
+                try { raknaBootstrapKI(); } catch (_e) { state.bootstrapCI = null; }
+                try { state.powerAnalysis = raknaStyrkeanalys(); } catch (_e) { state.powerAnalysis = null; }
                 if (typeof ritaNyckeltal === 'function') ritaNyckeltal();
-                if (typeof renderUnderlagetsKvalitet === 'function') renderUnderlagetsKvalitet();
+                if (typeof ritaUnderlagetsKvalitet === 'function') ritaUnderlagetsKvalitet();
                 const oppen = document.querySelector('.nav-item.active[data-tab]');
                 const flik = oppen ? oppen.getAttribute('data-tab') : null;
-                if ((flik === 'matrix' || flik === 'prioritering') && typeof renderTabContent === 'function') renderTabContent(flik);
+                if ((flik === 'matrix' || flik === 'prioritering') && typeof ritaFlik === 'function') ritaFlik(flik);
             }
         } catch (e) { rapporteraFel('skattningar i bakgrunden', e); }
         finally {
@@ -353,12 +353,12 @@ function _skattningarIBakgrunden() {
 }
 
 /**
- * Ritar om det som syns efter ändrad tröskel: Översikts delar (som inläsningen ritar men renderTabContent inte
+ * Ritar om det som syns efter ändrad tröskel: Översikts delar (som inläsningen ritar men ritaFlik inte
  * gör, jämför 32-filinlasning.js) och den flik som är öppen. Övriga flikar ritas om när de öppnas — navigeringen
  * visar aldrig en flik som ritades före en ändring (ADR-81) — och exporterna går genom exportgrinden (23-exportgrind.js), som ritar om en flik som inte
  * är aktuell innan något läses ur den.
  */
-export function _renderaOmAllaFlikar() {
+export function _ritaOmAllaFlikar() {
     for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
     visningNy();   // omritningen rör flera flikar: ingen visas igen som den var (ADR-81)
 }
@@ -366,7 +366,7 @@ export function _omritningForsok(namn, fn) { try { fn(); } catch (e) { rapporter
 
 // Stegen i omritningen efter ändrad tröskel, i ordning: [namn, funktion].
 export function _omritningssteg() {
-    if (!state.data.length || typeof renderTabContent !== 'function') return [];
+    if (!state.data.length || typeof ritaFlik !== 'function') return [];
     const steg = [];
     // Först töms de flikar som inte syns: de bär tal från den gamla tröskeln tills de ritas om (exportgrinden).
     steg.push(['flikar som inte syns', () => {
@@ -388,33 +388,33 @@ export function _omritningssteg() {
     /** @type {any} */ let reg;
     /** @type {any} */ let regFangst = null;
     steg.push(['underlagets kvalitet', () => {
-        if (typeof renderUnderlagetsKvalitet !== 'function') return;
+        if (typeof ritaUnderlagetsKvalitet !== 'function') return;
         regFangst = indata();
-        reg = typeof runOLSRegression === 'function' ? runOLSRegression() : undefined;
-        renderUnderlagetsKvalitet({ reg });
+        reg = typeof korOLSRegression === 'function' ? korOLSRegression() : undefined;
+        ritaUnderlagetsKvalitet({ reg });
     }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
     /** @type {any} */ let punktFangst = null;
     steg.push(['Att göra', () => {
-        if (typeof renderActionChecklist !== 'function') return;
+        if (typeof ritaAtgardslista !== 'function') return;
         punktFangst = indata();
-        punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : undefined });
+        punkter = ritaAtgardslista({ reg: oforandrat(regFangst) ? reg : undefined });
     }]);
     steg.push(['processöversikten', () => {
-        if (typeof renderProcessTracker !== 'function') return;
-        renderProcessTracker({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
+        if (typeof ritaKartlaggningensSteg !== 'function') return;
+        ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
     }]);
-    steg.push(['extremvärden', () => { if (typeof renderOutliers === 'function') renderOutliers(); }]);
-    steg.push(['inläsningsrapporten', () => { if (typeof renderDataValidationReport === 'function') renderDataValidationReport(); }]);
+    steg.push(['extremvärden', () => { if (typeof ritaExtremvarden === 'function') ritaExtremvarden(); }]);
+    steg.push(['inläsningsrapporten', () => { if (typeof ritaValideringsrapport === 'function') ritaValideringsrapport(); }]);
     steg.push(['A/B-jämförelsen', () => {
         const ab = document.getElementById('snapshot-comparison');
-        if (ab && ab.style.display !== 'none' && typeof renderSnapshotComparison === 'function') renderSnapshotComparison();
+        if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
     }]);
     // Bara den öppna fliken. De övriga är inaktuella tills de öppnas eller en export behöver dem (exportgrinden).
-    // Översikt är redan ritad av stegen ovan (renderTabContent('dashboard') gör inget annat).
+    // Översikt är redan ritad av stegen ovan (ritaFlik('dashboard') gör inget annat).
     const oppen = document.querySelector('.nav-item.active[data-tab]');
-    if (oppen && oppen.getAttribute('data-tab') !== 'dashboard') steg.push([oppen.getAttribute('data-tab'), () => renderTabContent(oppen.getAttribute('data-tab'))]);
+    if (oppen && oppen.getAttribute('data-tab') !== 'dashboard') steg.push([oppen.getAttribute('data-tab'), () => ritaFlik(oppen.getAttribute('data-tab'))]);
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', () => {
         const dossier = document.getElementById('dossier-body');
@@ -431,7 +431,7 @@ export function _omritningssteg() {
  */
 /** @type {Promise<void>|null} */
 let _omritningPagar = null;
-export function _renderaOmAllaFlikarStegvis() {
+export function _ritaOmAllaFlikarStegvis() {
     if (_omritningPagar) return _omritningPagar;
     const steg = _omritningssteg();
     if (!steg.length) return Promise.resolve();
@@ -472,7 +472,7 @@ export function uppstartKTroskel() {
     document.getElementById('k-troskel')?.addEventListener('change', e => {
         const r = sattKTroskel(/** @type {HTMLInputElement} */ (e.target).value, { stegvis: true });
         _kVisaFel(r.ok || r.nekad ? '' : r.fel);
-        const sag = () => { if (r.ok && typeof announceToScreenReader === 'function') announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`); };
+        const sag = () => { if (r.ok && typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`Minsta gruppstorlek är nu ${r.varde}.`); };
         if (r.klar) r.klar.then(sag); else sag();
     });
     document.getElementById('btn-k-aterstall')?.addEventListener('click', () => {

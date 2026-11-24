@@ -25,7 +25,7 @@ describe('radnummer vid inläsning', () => {
             '',                         // rad 4 (tom)
             'K;90000;50;Man;7101',      // rad 5 (BAS K ingår sedan 2026.10)
             'A;31000;41;Man;5301'];     // rad 6
-        w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         await vanta(w);
         expect(w.__state.data.map(r => r.radnr)).toEqual([3, 5, 6]);
     });
@@ -37,21 +37,21 @@ describe('radnummer vid inläsning', () => {
             ['A', 30000, 40, 'Kvinna', '5301'], [], ['A', 31000, 41, 'Man', '5301']]);
         const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Blad1');
         const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
-        w.loadStructureFile(new w.File([buf], 'p.xlsx'));
+        w.lasInStrukturfil(new w.File([buf], 'p.xlsx'));
         await vanta(w);
         expect(w.__state.data.map(r => r.radnr)).toEqual([4, 6]);
     });
     it('demodatan har radnr = index + 2', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.data.slice(0, 3).map(r => r.radnr)).toEqual([2, 3, 4]);
     });
     it('extremvärdesdetektorn visar filens radnummer', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const i = 40;
         w.__state.data[i].lon = 400000;   // tydlig avvikelse
-        const ut = w.eval('detectOutliers(3)');
+        const ut = w.eval('hittaExtremvarden(3)');
         const o = ut.find(x => x.lon === 400000);
         expect(o.radnr).toBe(w.__state.data[i].radnr);
         expect(o.seq).toBeUndefined();
@@ -69,7 +69,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
             ...flera(25, 'G', 'kvinna', 38000, 'G1'), ...flera(15, 'G', 'man', 41000, 'G1')];
         w.__state.data = [...flera(20, 'A', 'kvinna', 30000, 'A1'), ...flera(20, 'A', 'man', 31000, 'A1'),
             ...flera(5, 'C', 'kvinna', 50000, 'C1'), ...flera(3, 'C', 'man', 60000, 'C1'), ...bakgrund];
-        w.eval('populateSelects(); unlockTabs(); ritaGapUppdelning();');
+        w.eval('fyllValjare(); lasUppFlikar(); ritaGapUppdelning();');
         const ovriga = [...w.document.querySelectorAll('#gap-uppdelning .gu-ovriga')].map(li => li.textContent);
         expect(ovriga.length).toBeGreaterThan(0);
         for (const t of ovriga) { expect(t).not.toMatch(/kr/); expect(t).toMatch(/namnges inte: ett kön har färre än 10 personer/); }
@@ -90,7 +90,7 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
     });
     it('kortet förklarar beloppens tecken', () => {
         const w = createAppWindow();
-        w.__loadDemoData(); w.__renderTabContent('struktur');
+        w.__lasInDemodata(); w.__ritaFlik('struktur');
         expect(w.document.getElementById('gap-uppdelning').textContent).toContain('negativa belopp betyder att kvinnornas medellön är lägre');
     });
     it('CSV med bara CR som radslut får radnummer', async () => {
@@ -100,13 +100,13 @@ describe('dolda grupper, belopp, radslut och gränsfältet', () => {
         const w = createAppWindow();
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
         const rader = ['BAS;Månadslön;Ålder;Kön;AID', 'A;30000;40;Kvinna;5301', 'A;31000;41;Man;5301'];
-        w.loadStructureFile(new w.File([rader.join('\r')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\r')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data.map(r => r.radnr)).toEqual([2, 3]);
     });
     it('gränsfältet visar det värde som används när man lämnar det', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const g = w.document.getElementById('pag-grans');
         for (const [in_, ut] of [['100', '30'], ['2', '5'], ['', '10'], ['abc', '10']]) {
@@ -133,7 +133,7 @@ describe('ansvarskodskolumnen vid inläsning', () => {
         const w = createAppWindow();
         await vendorPapa(w);
         w.__state.columnMap = { ansvar: '' };
-        w.loadStructureFile(new w.File([csv()], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([csv()], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data.length).toBe(30);
         expect(w.__state.ansvarKolumn).toBeNull();
@@ -142,7 +142,7 @@ describe('ansvarskodskolumnen vid inläsning', () => {
     it('kolumnmappningens "— ingen —" för Ansvarskod sparas och visas som vald', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
-        w.loadStructureFile(new w.File([csv()], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([csv()], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.ansvarKolumn).toMatchObject({ namn: 'Ansvarskod' });
         const sel = () => w.document.querySelector('#column-map-panel [data-colmap-role="ansvar"]');
@@ -160,7 +160,7 @@ describe('ansvarskodskolumnen vid inläsning', () => {
         await vendorPapa(w);
         // Ett förnamn per rad: värdekontrollen kräver för- OCH efternamn, så bara rubriken kan fälla filen.
         const namn = ['Anna', 'Bo', 'Cecilia', 'David', 'Eva'];
-        w.loadStructureFile(new w.File([csv(';Förnamn', i => `;${namn[i % namn.length]}`)], 'f.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([csv(';Förnamn', i => `;${namn[i % namn.length]}`)], 'f.csv', { type: 'text/csv' }));
         await new Promise(r => setTimeout(r, 400));
         expect(w.__state.data).toEqual([]);
         const status = w.document.getElementById('data-status').textContent;
@@ -172,7 +172,7 @@ describe('ansvarskodskolumnen vid inläsning', () => {
         await vendorPapa(w);
         const rader = [csv(';Poäng;Anställningsnr;Ansvar;Kostnadsställe', i => `;${300 + i};ANSTNR${9000 + i};ANSVAR${i};KST${i}`)];
         for (let i = 0; i < 3; i++) rader.push(`K;${99000 + i};${40 + i};Kvinna;207011;;${300 + i};ANSTNR${9900 + i};ANSVAR9${i};KST9${i}`);
-        w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data.length).toBe(33);
         const nycklar = [...new Set(w.__state.data.flatMap(r => Object.keys(r)))].sort();
@@ -184,9 +184,9 @@ describe('ansvarskodskolumnen vid inläsning', () => {
     it('en avvisad fil ändrar inte ansvarskolumnen för den data som redan finns', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fore = JSON.stringify(w.__state.ansvarKolumn);
-        w.loadStructureFile(new w.File([csv(';Personnummer', i => `;19800101-${String(1000 + i)}`)], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([csv(';Personnummer', i => `;19800101-${String(1000 + i)}`)], 'p.csv', { type: 'text/csv' }));
         await new Promise(r => setTimeout(r, 400));
         expect(JSON.stringify(w.__state.ansvarKolumn)).toBe(fore);
     });
@@ -208,7 +208,7 @@ describe('PII-kontrollen vid inläsning samplar hela filen', () => {
     it('CSV: personnummer som börjar på rad 200 fäller filen', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
-        w.loadStructureFile(new w.File([rader().map(r => r.join(';')).join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader().map(r => r.join(';')).join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !/avvisad/.test(w.document.getElementById('data-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data).toEqual([]);
         expect(w.document.getElementById('data-status').textContent).toMatch(/Filen avvisad[\s\S]*Id/);
@@ -222,7 +222,7 @@ describe('PII-kontrollen vid inläsning samplar hela filen', () => {
         const X = w.XLSX;
         const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(rader()), 'Blad1');
         const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
-        w.loadStructureFile(new w.File([buf], 'p.xlsx'));
+        w.lasInStrukturfil(new w.File([buf], 'p.xlsx'));
         for (let i = 0; i < 100 && !/avvisad/.test(w.document.getElementById('data-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data).toEqual([]);
         expect(w.document.getElementById('data-status').textContent).toMatch(/Filen avvisad[\s\S]*Id/);
@@ -231,7 +231,7 @@ describe('PII-kontrollen vid inläsning samplar hela filen', () => {
         const w = createAppWindow();
         await vendorPapa(w);
         const r = rader().map((x, i) => (i > 0 ? [...x.slice(0, 4), `L${i}`] : x));
-        w.loadStructureFile(new w.File([r.map(x => x.join(';')).join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([r.map(x => x.join(';')).join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r2 => setTimeout(r2, 20));
         expect(w.__state.data.length).toBe(300);
     });
@@ -255,7 +255,7 @@ describe('ansvarsraden och ansvarskolumnen vid fel', () => {
     it('ett CSV-fel mitt i läsningen återställer ansvarskolumnen för den data som redan finns', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fore = JSON.stringify(w.__state.ansvarKolumn);
         const antal = w.__state.data.length;
         w.Papa.parse = (text, cfg) => {
@@ -265,7 +265,7 @@ describe('ansvarsraden och ansvarskolumnen vid fel', () => {
             }
             cfg.error();
         };
-        w.loadStructureFile(new w.File(['BAS;Månadslön;Ålder;Kön;AID;Annan ansvarskod\nC;30000;40;Kvinna;207011;C'], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File(['BAS;Månadslön;Ålder;Kön;AID;Annan ansvarskod\nC;30000;40;Kvinna;207011;C'], 'p.csv', { type: 'text/csv' }));
         await new Promise(r => setTimeout(r, 300));
         expect(w.document.getElementById('data-status').textContent).toMatch(/Fel vid CSV-parsning/);
         expect(w.__state.data.length).toBe(antal);
@@ -276,7 +276,7 @@ describe('ansvarsraden och ansvarskolumnen vid fel', () => {
         await vendorPapa(w);
         const rader = ['BAS;Månadslön;Ålder;Kön;AID;Ansvarskod'];
         for (let i = 0; i < 40; i++) rader.push(`C;${30000 + i * 10};${30 + (i % 20)};${i % 2 ? 'Man' : 'Kvinna'};207011;${i === 7 ? 'X9' : (i % 2 ? 'C' : 'F')}`);
-        w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.ansvarKolumn).toMatchObject({ namn: 'Ansvarskod' });
         expect(w.document.getElementById('data-status').textContent).toMatch(/1 ogiltigt värde räknades som inget särskilt ansvar/);
@@ -296,7 +296,7 @@ describe('inläsning: alla BAS-intervall ingår', () => {
         for (let i = 0; i < 5; i++) rader.push(`K;88888;50;Man;7101`);
         for (let i = 0; i < 2; i++) rader.push(`L;99999;55;Kvinna;7102`);
         const fil = new w.File([rader.join('\n')], 'personal.csv', { type: 'text/csv' });
-        w.loadStructureFile(fil);
+        w.lasInStrukturfil(fil);
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data.length).toBe(47);
         expect(w.__state.data.filter(r => r.bas === 'K').length).toBe(5);
@@ -305,15 +305,15 @@ describe('inläsning: alla BAS-intervall ingår', () => {
         const status = w.document.getElementById('data-status').textContent;
         expect(status).toContain('47 rader · 5 BAS');
         expect(status).not.toContain('analyseras manuellt');
-        expect(w.eval('buildActionChecklist()').some(i => i.id === 'bas-ovanfor-grans')).toBe(false);
+        expect(w.eval('byggAtgardslista()').some(i => i.id === 'bas-ovanfor-grans')).toBe(false);
     });
 });
 
 describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i mal.md)', () => {
     it('ordlistan, Vad lagras? och riskanalysen beskriver fem fält, utan enhet', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('openDataResidency()');
+        w.__lasInDemodata();
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-content').textContent).not.toMatch(/\bsex fält\b/);
         expect(w.document.body.innerHTML).not.toMatch(/hur en enhet skiljer sig/);
         const { readFileSync } = await import('node:fs');
@@ -321,7 +321,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         const { fileURLToPath } = await import('node:url');
         const rot = join(dirname(fileURLToPath(import.meta.url)), '..');
         const risk = readFileSync(join(rot, 'docs', 'dataskydd', 'riskanalys.md'), 'utf8');
-        // GLOSSARY är en const och nås inte i testfönstret — läs ordlistans källa.
+        // ORDLISTA är en const och nås inte i testfönstret — läs ordlistans källa.
         const ord = readFileSync(join(rot, 'src', 'app', '04-ordlista.js'), 'utf8').split('\n').find(l => l.includes("term:'Uppgiftsminimering'"));
         expect(ord).not.toMatch(/ansvar/i);
         expect(risk).not.toMatch(/sex minimerade|sex obligatoriska/);
@@ -333,7 +333,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         for (let i = 0; i < 12; i++) rader.push(rad('kvinna', 31000 + i * 50, i));
         for (let i = 0; i < 3; i++) rader.push(rad('man', 77777, i));
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const text = w.__rapportunderlagBlock().map(b => w.__ruTillText(b)).join('\n').replace(/(\d)[\s\u00a0\u202f](?=\d)/g, '$1');
         expect(text).not.toContain('77777');
         expect(text).toContain('Urval: Hela organisationen');
@@ -349,15 +349,15 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
     });
     it('exporterna och hjälptexterna nämner ingen enhet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const html = w.__docDraftHtml();
         expect(html).not.toMatch(/Enhet \d|enhetsfilter/i);
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-content').textContent).not.toMatch(/\benhet\b/);
     });
     it('ingen vy erbjuder enhet som val, och rapportunderlaget har inga enhetsblock', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.document.querySelectorAll('option[value="enhet"]')).toHaveLength(0);
         expect(w.document.getElementById('prio-per-enhet-card')).toBeNull();
         const ids = w.__rapportunderlagBlock();
@@ -374,18 +374,18 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
         await vendor(w);
         const rader = ['BAS;Månadslön;Ålder;Kön;AID;Ansvar'];
         for (let i = 0; i < 12; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301;110045`);
-        w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data).toHaveLength(12);
         expect(w.__state.data.every(r => !('enhet' in r))).toBe(true);
-        const rec = w.eval(`extractMinimalRecord({ BAS: 'A', 'Månadslön': '30000', 'Ålder': '40', 'Kön': 'Kvinna', AID: '5301', Ansvar: '110045' })`);
+        const rec = w.eval(`minimeraLonerad({ BAS: 'A', 'Månadslön': '30000', 'Ålder': '40', 'Kön': 'Kvinna', AID: '5301', Ansvar: '110045' })`);
         expect('enhet' in rec).toBe(false);
     });
-    it('getData är hela datan, och tillståndet har inget enhetsfilter', () => {
+    it('hamtaData är hela datan, och tillståndet har inget enhetsfilter', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.document.getElementById('enhet-select')).toBeNull();
-        expect(w.__getData()).toBe(w.__state.data);
+        expect(w.__hamtaData()).toBe(w.__state.data);
         expect('activeEnhet' in w.__state).toBe(false);
         expect(w.__state.data.every(r => !('enhet' in r))).toBe(true);
     });
@@ -396,7 +396,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         const w = createAppWindow();
         const d = w.document;
         expect(d.querySelector('.gdpr-info-compact').hidden).toBe(false);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(d.getElementById('upload-row').style.display).toBe('');
         expect(d.getElementById('upload-collapsed-bar')).toBeNull();
         expect(d.getElementById('btn-toggle-upload')).toBeNull();
@@ -414,7 +414,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         }
         expect(d.querySelector('.gdpr-info-compact').hidden).toBe(true);
         expect(d.getElementById('gdpr-banner').style.display).toBe('inline-flex');
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(data.classList.contains('loaded')).toBe(false);
         expect(data.querySelector('.upload-inlast').hidden).toBe(true);
         expect(d.querySelector('.gdpr-info-compact').hidden).toBe(false);
@@ -427,7 +427,7 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
         const rader = ['BAS;Månadslön;Ålder;Kön;AID'];
         for (let i = 0; i < 20; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301`);
-        w.loadStructureFile(new w.File([rader.join('\n')], 'lonefil_2026.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'lonefil_2026.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         await new Promise(r => setTimeout(r, 50));
         const cell = w.document.getElementById('upload-cell-data');
@@ -436,17 +436,17 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         w.document.getElementById('file-input-data').click = () => { klickad = true; };
         cell.querySelector('[data-byt-fil]').click();
         expect(klickad).toBe(true);
-        w.loadStructureFile(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
+        w.lasInStrukturfil(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
         await new Promise(r => setTimeout(r, 100));
         expect(cell.classList.contains('loaded')).toBe(true);
         expect(cell.querySelector('.upload-filnamn').textContent).toMatch(/lonefil_2026\.csv/);
     });
     it('ställningstagande och statistik: kompakta med namnfält; Ta bort referensen återställer rutan', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval("_lasInReferens([{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }], 'lonepolitik_2026.csv'); markUploadLoaded('upload-cell-policy', 'Inläst');");
+        w.__lasInDemodata();
+        w.eval("_lasInReferens([{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }], 'lonepolitik_2026.csv'); markeraFilrutaInlast('upload-cell-policy', 'Inläst');");
         w.__state.filnamn.policy = 'lonepolitik_2026.csv';
-        w.eval('renderFilrutor()');
+        w.eval('ritaFilrutor()');
         const pol = w.document.getElementById('upload-cell-policy');
         expect(pol.classList.contains('loaded')).toBe(true);
         expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/lonepolitik_2026\.csv/);
@@ -480,12 +480,12 @@ describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna'
         expect(skapa.classList.contains('bakgrund-panel')).toBe(false);
         expect(skapa.querySelector('summary').textContent.trim()).toBe('Skapa organisationspaket (för systemägaren)');
         expect([...paket.children].pop()).toBe(skapa);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const pol = d.getElementById('upload-cell-policy');
         expect(pol.classList.contains('loaded')).toBe(true);
         expect(pol.querySelector('.upload-filnamn').textContent).toMatch(/Demots ställningstagande/);
         expect(d.querySelector('#organisationspaket .paket-lage').textContent).toMatch(/Organisationen är: en kommun/);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(pol.classList.contains('loaded')).toBe(false);
     });
     it('startytan har de två demovalen bredvid ytan för lönefilen (stort och litet demo)', () => {
@@ -514,7 +514,7 @@ describe('lönefil vars kolumner inte känns igen', () => {
     const lasIn = async rader => {
         const w = createAppWindow();
         papa(w);
-        w.loadStructureFile(csvFil(w, rader));
+        w.lasInStrukturfil(csvFil(w, rader));
         await vanta(() => w.document.getElementById('column-map-panel')?.innerHTML);
         return w;
     };
@@ -551,7 +551,7 @@ describe('lönefil vars kolumner inte känns igen', () => {
     it('ett tidigare inläst underlag ligger kvar när nästa fil inte går att läsa', async () => {
         const w = await lasIn(braRader());
         await vanta(() => w.__state.data.length);
-        w.loadStructureFile(csvFil(w, okandaRader(), 'okand.csv'));
+        w.lasInStrukturfil(csvFil(w, okandaRader(), 'okand.csv'));
         await vanta(() => /Kolumnmappning behövs/.test(w.document.getElementById('column-map-panel').textContent));
         expect(w.__state.data.length).toBe(30);
         expect(w.document.getElementById('tab-matrix').disabled).toBe(false);
@@ -574,7 +574,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — inläsning'
         const w = createAppWindow();
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
         const rader = ['Lönerapport september', 'BAS;Månadslön;Ålder;Kön;AID', 'A;30000;40;Kvinna;5301', 'A;31000;41;Man;5301'];
-        w.loadStructureFile(new w.File([rader.join('\r')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\r')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.data.map(r => r.radnr)).toEqual([3, 4]);
     });
@@ -592,19 +592,19 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — inläsning', (
         await vendor(w, 'papaparse.min.js');
         const rader = ['BAS;Månadslön;Ålder;Kön;AID'];
         for (let i = 0; i < 20; i++) rader.push(`A;${30000 + i};40;${i % 2 ? 'Man' : 'Kvinna'};5301`);
-        w.loadStructureFile(new w.File([rader.join('\n')], 'bra.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'bra.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
-        w.loadStructureFile(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
+        w.lasInStrukturfil(new w.File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])], 'arbetsbok.xls'));
         await new Promise(r => setTimeout(r, 100));
         expect(w.__state._lastStructureFile.name).toBe('bra.csv');
     });
 });
 
 // ---- Adaptrarna i appen: tillståndet och klockan (reglerna prövas i tests/inlasning.test.js) ----
-describe('extractMinimalRecord i appen', () => {
+describe('minimeraLonerad i appen', () => {
     it('tolkar födelseår i ålderskolumnen som ålder', () => {
         const w = createAppWindow();
-        const rec = w.eval(`extractMinimalRecord({ 'BAS': 'A', 'Månadslön': '30000', 'Ålder': '1980', 'Kön': 'Kvinna', 'AID': '5301' })`);
+        const rec = w.eval(`minimeraLonerad({ 'BAS': 'A', 'Månadslön': '30000', 'Ålder': '1980', 'Kön': 'Kvinna', 'AID': '5301' })`);
         const expectedAge = new Date().getFullYear() - 1980;
         expect(rec.alder).toBe(expectedAge);
         expect(rec._alderStatus).toBe('birthyear');
@@ -617,7 +617,7 @@ describe('inläsning i appen: lönefil utan ålderskolumn', () => {
         papa(w);
         const rader = ['BAS;AID;Månadslön;Kön'];
         for (let i = 0; i < 40; i++) rader.push(`${i % 2 ? 'C' : 'D'};207011 Handläggare;${30000 + i * 10};${i % 4 < 2 ? 'Man' : 'Kvinna'}`);
-        w.loadStructureFile(csvFil(w, rader, 'utan-alder.csv'));
+        w.lasInStrukturfil(csvFil(w, rader, 'utan-alder.csv'));
         await vanta(() => w.__state.data.length > 0);
         expect(w.__state.data).toHaveLength(40);
         expect(w.__state.data.every(r => r.alder === 0)).toBe(true);
@@ -637,7 +637,7 @@ describe('inläsning i appen: kolumnvalet', () => {
         return t;
     };
     const lasIn = async (w, fil) => {
-        w.loadStructureFile(fil);
+        w.lasInStrukturfil(fil);
         await vanta(() => w.__state.data.length > 0);
         return w.__state.data.map(r => r.lon);
     };
@@ -659,12 +659,12 @@ describe('inläsning i appen: kolumnvalet', () => {
     it('kolumnerna slås upp en gång per fil, inte för varje rad', async () => {
         const w = createAppWindow();
         papa(w);
-        const original = w.getField;
+        const original = w.hamtaFalt;
         let anrop = 0;
-        w.getField = (...a) => { anrop++; return original(...a); };
+        w.hamtaFalt = (...a) => { anrop++; return original(...a); };
         const rader = ['BAS;AID;Månadslön;Ålder;Kön'];
         for (let i = 0; i < 40; i++) rader.push(`C;207011 Handläggare;${30000 + i * 10};40;${i % 2 ? 'Man' : 'Kvinna'}`);
-        w.loadStructureFile(csvFil(w, rader, 'uppslag.csv'));
+        w.lasInStrukturfil(csvFil(w, rader, 'uppslag.csv'));
         await vanta(() => w.__state.data.length > 0);
         expect(w.__state.data).toHaveLength(40);
         expect(anrop).toBe(0);

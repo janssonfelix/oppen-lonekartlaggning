@@ -4,14 +4,14 @@ import { byggForhandskontroll, forhandskontrollGranser } from '../lib/forhandsko
 import { personOrd } from '../lib/namn.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
-import { hideLoading, importprofilText } from './03-hjalpfunktioner.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
+import { doljLaddning, importprofilText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { state } from './12-tillstand.js';
-import { _resetInactivityTimer } from './28-vad-lagras-inaktivitet.js';
-import { _kolumnval, dataStatus, maybeShowColumnMapping } from './32-filinlasning.js';
+import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
+import { _kolumnval, dataStatus, visaKolumnmappningOmBehov } from './32-filinlasning.js';
 import { _laNyckel } from './41-lika-arbete.js';
 
 // ---- Förhandskontroll av lönefilen ----
@@ -71,18 +71,18 @@ export function _fkPausa(fk, lasIn) {
     const tidigare = _fkVantar ? _fkVantar.tidigare : state.forhandskontroll;
     _fkVantar = { lasIn, tidigare };
     state.forhandskontroll = { ...fk, vantar: true };
-    hideLoading();
+    doljLaddning();
     dataStatus.textContent = 'Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.';
     dataStatus.className = 'status-msg warning';
-    renderForhandskontroll();
-    maybeShowColumnMapping();   // förra filens kolumnmappning döljs medan filen väntar
-    _resetInactivityTimer();    // den väntande filen rensas vid inaktivitet som ett inläst underlag
+    ritaForhandskontroll();
+    visaKolumnmappningOmBehov();   // förra filens kolumnmappning döljs medan filen väntar
+    _aterstallInaktivitetstimer();    // den väntande filen rensas vid inaktivitet som ett inläst underlag
     const av = document.getElementById('avsnitt-fi-forhandskontroll');
     const filer = document.querySelector('.nav-item[data-tab="filer"]');
     if (filer && !filer.classList.contains('active')) /** @type {HTMLElement} */ (filer).click();
     av?.scrollIntoView?.({ block: 'start' });
     /** @type {HTMLElement|null} */ (document.getElementById('fk-las-in'))?.focus?.({ preventScroll: true });
-    announceToScreenReader(dataStatus.textContent);
+    meddelaSkarmlasare(dataStatus.textContent);
 }
 /** En fil som väntade på Läs in ersätts av en ny inläsning (32-filinlasning.js). */
 export function _fkSlappVantande() { _fkVantar = null; }
@@ -99,20 +99,20 @@ function _fkAvbryt() {
     if (!v) return;
     _fkVantar = null;
     state.forhandskontroll = v.tidigare || null;
-    renderForhandskontroll();
-    maybeShowColumnMapping();   // det tidigare underlagets kolumnmappning
+    ritaForhandskontroll();
+    visaKolumnmappningOmBehov();   // det tidigare underlagets kolumnmappning
     dataStatus.textContent = state.data.length
         ? 'Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar.'
         : 'Inläsningen avbröts. Ingen lönefil är inläst.';
     dataStatus.className = 'status-msg';
-    announceToScreenReader(dataStatus.textContent);
+    meddelaSkarmlasare(dataStatus.textContent);
 }
 /** Rensa all data och en ny inläsning av demot: förhandskontrollen och en väntande fil släpps. */
 export function _fkSlapp() {
     _fkVantar = null;
     _fkRitad = null;
     state.forhandskontroll = null;
-    renderForhandskontroll();
+    ritaForhandskontroll();
 }
 
 /** Titeln per varning i Att göra: olika titlar, så att länkarnas aria-label skiljer punkterna åt. */
@@ -168,7 +168,7 @@ const _fkLista = (rader) => `<ul class="fk-lista">${rader.map(r => `<li>${r}</li
 const _fkKr = v => svKr(v);
 
 /** Ritar avsnittet Förhandskontroll av lönefilen ur state.forhandskontroll (dolt när den saknas). */
-export function renderForhandskontroll() {
+export function ritaForhandskontroll() {
     const av = /** @type {HTMLDetailsElement|null} */ (document.getElementById('avsnitt-fi-forhandskontroll'));
     const host = document.getElementById('forhandskontroll');
     if (!av || !host) return;

@@ -20,11 +20,11 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         await ritaAlla(w);   // det som räknades klart i bakgrunden första varvet är med
         const fore = Object.fromEntries(flikar(w).map(f => [f, runda(w, f)]));
         let regressioner = 0;
-        const orig = w.runOLSRegression;
-        w.runOLSRegression = function (...a) { regressioner++; return orig.apply(this, a); };
+        const orig = w.korOLSRegression;
+        w.korOLSRegression = function (...a) { regressioner++; return orig.apply(this, a); };
         // Varje flik öppnas efter alla de andra, också dokumentationsflikarna som ritas i exportläget.
         for (const flik of flikar(w)) await byt(w, flik);
-        w.runOLSRegression = orig;
+        w.korOLSRegression = orig;
         expect(Object.fromEntries(flikar(w).map(f => [f, runda(w, f)]))).toEqual(fore);
         expect(regressioner).toBe(0);
         expect(flikar(w).length).toBeGreaterThan(12);
@@ -52,17 +52,17 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const w = demo();
         await ritaAlla(w);
         await byt(w, 'dashboard');
-        // En konfigurationsfil utan ökningen (som om applyConfigSnapshot saknade den): Prioritering visar då det som
+        // En konfigurationsfil utan ökningen (som om tillampaKonfiguration saknade den): Prioritering visar då det som
         // ritades med den förra kostnadsperioden.
-        const snap = w.__buildConfigSnapshot();
+        const snap = w.__byggKonfiguration();
         const visningNy = w.visningNy;
         w.visningNy = () => {};
-        w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } });
+        w.__tillampaKonfiguration({ ...snap, kostnad: { ...snap.kostnad, manader: 9 } });
         w.visningNy = visningNy;
         const fel = await jamforAlla(w);
         expect(fel.map(f => f.split('\n')[0])).toContain('prioritering');
         // Med ökningen visas ingenting som det var.
-        expect(await prova(w, 'dashboard', w => { w.__applyConfigSnapshot({ ...snap, kostnad: { ...snap.kostnad, manader: 4 } }); })).toEqual([]);
+        expect(await prova(w, 'dashboard', w => { w.__tillampaKonfiguration({ ...snap, kostnad: { ...snap.kostnad, manader: 4 } }); })).toEqual([]);
     });
 
     it('direkta anrop, exportläget och klick från koden ritar alltid', async () => {
@@ -72,11 +72,11 @@ describe('visningsminnet: en färdigritad flik visas igen bara när ingenting ha
         const r = runda(w, 'struktur');
         nav(w, 'struktur').click();                                             // ett klick från koden
         expect(runda(w, 'struktur')).toBe(r + 1);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(runda(w, 'struktur')).toBe(r + 2);
         // Ritad i exportläget medan den inte syns (som exportgrinden gör): fliken visas inte som den är utan ritas om.
         await byt(w, 'dashboard');
-        w.eval('medExportLage(() => renderTabContent("struktur"))');
+        w.eval('medExportLage(() => ritaFlik("struktur"))');
         expect(runda(w, 'struktur')).toBe(r + 3);
         await byt(w, 'struktur');
         expect(runda(w, 'struktur')).toBe(r + 4);

@@ -11,21 +11,21 @@
 // Allt som räknas ur flera punkter (kvartiler, urval, spridning i sidled, banor, textbeslut) räknas ur dem som
 // återstår — en liten grupp som inte ritas får inte lämna spår i någon annan geometri.
 //
-// Toppnivåns `const` (_RF_RANDER, _RF_MARKEN) och PALETTE, CHART_FONT, d3 läses bara inne i funktioner;
+// Toppnivåns `const` (_RF_RANDER, _RF_MARKEN) och PALETT, DIAGRAM_TYPSNITT, d3 läses bara inne i funktioner;
 // _RF_MARKEN pekar på funktionsdeklarationer, som finns från början.
 // ====================================================================
 import { kvantilpunkter, ladstatistik, talformat } from '../lib/figur.js';
 import { FARG } from './01-farger.js';
-import { SCATTER_MAX_POINTS } from './02-verktygstips.js';
+import { PUNKTMOLN_MAX_PUNKTER } from './02-verktygstips.js';
 import { _RF, _rfBas, _rfBredd, _rfDomanSorterad, _rfInomDoman, _rfKorta, _rfLinjeSkarRuta, _rfLitenPx, _rfPlaceraEtiketter, _rfPos, _rfRadbryt, _rfStapelPlats, _rfTal, _rfText } from './10-diagramlayout.js';
-import { CHART_FONT, PALETTE } from './10-diagramtema.js';
+import { DIAGRAM_TYPSNITT, PALETT } from './10-diagramtema.js';
 
 // Markering av små grupper utöver färg (WCAG 1.4.1): streckad kant, och för ytor ränder. Ränderna är
 // verklig geometri i en egen nästlad <svg> (klipper till stapeln), inte ett mönster: SVG:n har inga id.
 // Glesa, tunna ränder: markeringen ska synas utan att ta över bilden — värdet under ska gå att läsa.
 const _RF_RANDER = { steg: 10 * Math.SQRT2, bredd: 1.6, max: 400, minst: 3 };
 function _rfLitenYta(g, rect, c) {
-    rect.attr('stroke', PALETTE.semantic.neutral).attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3');
+    rect.attr('stroke', PALETT.semantic.neutral).attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3');
     // Bara den del av stapeln som ligger i panelen (en stapel som skjuter långt utanför ska inte ge tusen streck).
     const x0 = Math.max(0, +rect.attr('x')), y0 = Math.max(0, +rect.attr('y'));
     const x1 = Math.min(c.panelB, +rect.attr('x') + +rect.attr('width')), y1 = Math.min(c.inreH, +rect.attr('y') + +rect.attr('height'));
@@ -76,21 +76,21 @@ function _rfMonsterIPanel(g, rect, c, monster) {
 // En liten ruta i en värmekarta: streckad kant och ett hörnmärke (mer än färg, WCAG 1.4.1) — inga ränder över hela
 // rutan, som i en karta med många små celler skulle dölja färgerna.
 function _rfLitenRuta(g, rect) {
-    rect.attr('stroke', PALETTE.semantic.neutral).attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3');
+    rect.attr('stroke', PALETT.semantic.neutral).attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3');
     const x = +rect.attr('x'), y = +rect.attr('y'), w = +rect.attr('width'), h = +rect.attr('height');
     const s = Math.min(9, w / 2, h / 2);
     if (s < 3) return;
     g.append('path').attr('data-marke', 'rander').attr('pointer-events', 'none')
-        .attr('d', `M${x + w - s},${y}H${x + w}V${y + s}Z`).attr('fill', PALETTE.semantic.neutral);
+        .attr('d', `M${x + w - s},${y}H${x + w}V${y + s}Z`).attr('fill', PALETT.semantic.neutral);
 }
 
 // Textfärg som syns mot en fyllning: vit mot mörk, annars den vanliga textfärgen. Bara #rgb och #rrggbb känns igen.
 function _rfTextPaFarg(farg) {
     const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(farg));
-    if (!m) return CHART_FONT.color;
+    if (!m) return DIAGRAM_TYPSNITT.color;
     const h = m[1].length === 3 ? m[1].replace(/./g, c => c + c) : m[1];
     const [r, g, b] = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? FARG.vit : CHART_FONT.color;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? FARG.vit : DIAGRAM_TYPSNITT.color;
 }
 
 function _rfStapel(g, l, li, c) {
@@ -197,7 +197,7 @@ function _rfPunkt(g, l, li, c) {
     // Bara ritningen — alla mått räknas på hela underlaget innan figuren byggs.
     const syns = [];
     l.data.forEach((d, i) => { if (d && !c.dold(d)) syns.push([d, i]); });
-    const steg = syns.length > SCATTER_MAX_POINTS ? Math.ceil(syns.length / SCATTER_MAX_POINTS) : 1;
+    const steg = syns.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(syns.length / PUNKTMOLN_MAX_PUNKTER) : 1;
     let ritade = 0;
     syns.forEach(([d, i], n) => {
         if (n % steg) return;
@@ -270,7 +270,7 @@ function _rfPunkt(g, l, li, c) {
             // Mer än färg: streckad kant. Strecket har ingen yta, så det blir självt streckat och behåller färgen.
             if (l.symbol === 'streck') m.attr('stroke-dasharray', '3 2');
             else {
-                m.attr('stroke', PALETTE.semantic.neutral).attr('stroke-width', 2).attr('stroke-dasharray', '2 2');
+                m.attr('stroke', PALETT.semantic.neutral).attr('stroke-width', 2).attr('stroke-dasharray', '2 2');
                 if (!l.symbol || l.symbol === 'cirkel') m.attr('fill-opacity', 0.45);
             }
         }
@@ -341,7 +341,7 @@ export function _rfUndvikEtiketter(c) {
 function _rfLitenPunkt(g, li, i, x, y) {
     g.append('circle').attr('data-marke', 'litenpunkt').attr('data-l', li).attr('data-i', i).attr('pointer-events', 'none')
         .attr('cx', x).attr('cy', y).attr('r', 5).attr('fill', 'none')
-        .attr('stroke', PALETTE.semantic.neutral).attr('stroke-width', 1.5).attr('stroke-dasharray', '2 2');
+        .attr('stroke', PALETT.semantic.neutral).attr('stroke-width', 1.5).attr('stroke-dasharray', '2 2');
 }
 
 function _rfLinje(g, l, li, c) {
@@ -540,7 +540,7 @@ function _rfLada(g, l, li, c) {
     const individer = _rfLadIndivider(c.figur, l, c.dold, ys);
     // Individpunkter nedsamplas som punktlager: var k:te av de individer som återstår (små är redan borta).
     // Lådor räknas alltid ur alla återstående individer.
-    const steg = (alla || l.form === 'regnmoln') && individer.length > SCATTER_MAX_POINTS ? Math.ceil(individer.length / SCATTER_MAX_POINTS) : 1;
+    const steg = (alla || l.form === 'regnmoln') && individer.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(individer.length / PUNKTMOLN_MAX_PUNKTER) : 1;
     const grupper = new Map();
     individer.forEach((o, n) => {
         if (n % steg) return;
@@ -569,7 +569,7 @@ function _rfLada(g, l, li, c) {
             const moln = g.append('path').attr('data-marke', 'lada').attr('data-form', 'regnmoln').attr('data-l', li).attr('data-i', punkter[0].i)
                 .attr('d', d3.area().y(p => ys(p.v)).x0(() => mitt + kant).x1(p => mitt + kant + p.t * (halv - kant)).curve(d3.curveMonotoneY)(kurva) || '')
                 .attr('fill', farg).attr('fill-opacity', 0.3).attr('stroke', farg).attr('stroke-width', 1.5);
-            if (punkter.some(p => p.d.liten)) moln.attr('stroke', PALETTE.semantic.neutral).attr('stroke-dasharray', '3 2');
+            if (punkter.some(p => p.d.liten)) moln.attr('stroke', PALETT.semantic.neutral).attr('stroke-dasharray', '3 2');
             const streck = (marke, v, tjock) => g.append('line').attr('data-marke', marke).attr('pointer-events', 'none')
                 .attr('x1', mitt + kant).attr('x2', mitt + kant + bredd(v)).attr('y1', ys(v)).attr('y2', ys(v)).attr('stroke', farg).attr('stroke-width', tjock);
             streck('kvartil', s.q1, 1); streck('kvartil', s.q3, 1); streck('median', s.median, 2.5);
@@ -578,7 +578,7 @@ function _rfLada(g, l, li, c) {
                 const m = g.append('circle').attr('data-marke', 'individ').attr('data-l', li).attr('data-i', i)
                     .attr('cx', mitt - kant - _RF.individ - (_rfSprid(n) + 0.5) * Math.max(0, halv - kant - 2 * _RF.individ)).attr('cy', ys(d.y)).attr('r', _RF.individ)
                     .attr('fill', d.farg || farg).attr('fill-opacity', 0.6);
-                if (d.liten) m.attr('stroke', PALETTE.semantic.neutral).attr('stroke-width', 1.2).attr('stroke-dasharray', '2 1.5').attr('fill-opacity', 0.15);
+                if (d.liten) m.attr('stroke', PALETT.semantic.neutral).attr('stroke-width', 1.2).attr('stroke-dasharray', '2 1.5').attr('fill-opacity', 0.15);
                 else m.attr('stroke', '#000000').attr('stroke-opacity', 0).attr('stroke-width', _RF.individTraff);
             });
             ritade += ordnade.length;
@@ -599,7 +599,7 @@ function _rfLada(g, l, li, c) {
                     const m = g.append('circle').attr('data-marke', 'kvantilpunkt').attr('data-l', li).attr('data-i', punkter[0].i).attr('data-kvantil', j)
                         .attr('cx', mitt + (n - (kol.index.length - 1) / 2) * 2 * r).attr('cy', kol.y).attr('r', Math.max(1, r - 0.6))
                         .attr('fill', farg).attr('fill-opacity', 0.85);
-                    if (liten) m.attr('stroke', PALETTE.semantic.neutral).attr('stroke-width', 1.2).attr('stroke-dasharray', '2 1.5').attr('fill-opacity', 0.2);
+                    if (liten) m.attr('stroke', PALETT.semantic.neutral).attr('stroke-width', 1.2).attr('stroke-dasharray', '2 1.5').attr('fill-opacity', 0.2);
                 });
             }
             continue;
@@ -616,7 +616,7 @@ function _rfLada(g, l, li, c) {
                 // Liten individ: nästan ihålig, med streckad neutral kant (mer än färg). Övriga får en osynlig bred
                 // kant: punkten är för liten att träffa med pekaren, och en genomskinlig kant tar emot den utan
                 // extra element (bilden ser likadan ut).
-                if (d.liten) m.attr('stroke', PALETTE.semantic.neutral).attr('stroke-width', 1.2).attr('stroke-dasharray', '2 1.5').attr('fill-opacity', 0.15);
+                if (d.liten) m.attr('stroke', PALETT.semantic.neutral).attr('stroke-width', 1.2).attr('stroke-dasharray', '2 1.5').attr('fill-opacity', 0.15);
                 else m.attr('stroke', '#000000').attr('stroke-opacity', 0).attr('stroke-width', _RF.individTraff);
             });
             ritade += ordnade.length;
@@ -637,7 +637,7 @@ function _rfLada(g, l, li, c) {
                 .attr('d', d3.area().y(p => ys(p.v)).x0(p => mitt - p.t * halv).x1(p => mitt + p.t * halv).curve(d3.curveMonotoneY)(kurva) || '')
                 .attr('fill', farg).attr('fill-opacity', 0.3).attr('stroke', farg).attr('stroke-width', 1.5);
             // En kurva som bygger på någon liten individ (bara med visaSma): streckad kant, mer än färg.
-            if (punkter.some(p => p.d.liten)) fiol.attr('stroke', PALETTE.semantic.neutral).attr('stroke-dasharray', '3 2');
+            if (punkter.some(p => p.d.liten)) fiol.attr('stroke', PALETT.semantic.neutral).attr('stroke-dasharray', '3 2');
             linje('kvartil', ys(s.q1), ys(s.q1), mitt - bredd(s.q1), mitt + bredd(s.q1), 1);
             linje('kvartil', ys(s.q3), ys(s.q3), mitt - bredd(s.q3), mitt + bredd(s.q3), 1);
             linje('median', ys(s.median), ys(s.median), mitt - bredd(s.median), mitt + bredd(s.median), 2.5);
@@ -684,9 +684,9 @@ export function _rfFargskala(fs) {
     if (!dom) return null;
     const [a, b] = dom;
     const std = {
-        sekventiell: PALETTE.sekventiell,
-        divergerande: PALETTE.divergerande,
-        tvafarg: [[0, PALETTE.kon.man], [1, PALETTE.kon.kvinna]],
+        sekventiell: PALETT.sekventiell,
+        divergerande: PALETT.divergerande,
+        tvafarg: [[0, PALETT.kon.man], [1, PALETT.kon.kvinna]],
     };
     const stopp = (Array.isArray(fs.farger) && fs.farger.length > 1 ? fs.farger : null) || std[fs.typ] || std.sekventiell;
     const mitt = _rfFargMitt(fs, dom);
@@ -769,7 +769,7 @@ function _rfRuta(g, l, li, c) {
         // Den mörka kanten kring vit text är tunnare än den vita kring mörk text: en bred mörk kant äter upp de vita tecknen.
         const vit = textfarg === FARG.vit;
         /** @type {{[k: string]: any}|null} */
-        const attr = d.liten ? { stroke: vit ? CHART_FONT.color : FARG.vit, 'stroke-width': vit ? _RF.kantMork : 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } : null;
+        const attr = d.liten ? { stroke: vit ? DIAGRAM_TYPSNITT.color : FARG.vit, 'stroke-width': vit ? _RF.kantMork : 3, 'stroke-linejoin': 'round', 'paint-order': 'stroke' } : null;
         _rfText(g, mx, my + fpx * 0.35, String(d.text), { px: fpx, ankare: 'middle', farg: textfarg, attr })
             .attr('data-marke', 'rutatext').attr('pointer-events', 'none');
     }
@@ -959,7 +959,7 @@ function _rfYta(g, l, li, c) {
         if (l.opacitet != null) r.attr('fill-opacity', l.opacitet);
         if (d.liten) _rfLitenYta(g, r, c);
         if (d.etikett == null || String(d.etikett) === '' || h < fpx + 6 || w < 28) return;
-        const f = d3.color(farg), textfarg = l.opacitet != null && l.opacitet < 0.6 ? CHART_FONT.color : _rfTextPaFarg(f ? f.formatHex() : '');
+        const f = d3.color(farg), textfarg = l.opacitet != null && l.opacitet < 0.6 ? DIAGRAM_TYPSNITT.color : _rfTextPaFarg(f ? f.formatHex() : '');
         const tecken = Math.max(3, Math.floor((w - 8) / (fpx * _RF.tecken)));
         const hel = String(d.etikett);
         _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { 'data-marke': 'ytetikett', 'pointer-events': 'none' } });

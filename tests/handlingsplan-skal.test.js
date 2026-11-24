@@ -9,7 +9,7 @@ vi.setConfig({ testTimeout: 30000 });
 
 const fonster = () => {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     w.__state.handlingsplan = {};
     w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
     return w;
@@ -31,7 +31,7 @@ const laggTill = (w, kategori, belopp, kommentar = '') => {
     return r;
 };
 /** Seedraderna i exportläget, med gruppens skillnad per rad. */
-const seedExport = w => w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
+const seedExport = w => w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
 /** En förifylld rad där gruppens skillnad (i exportläget) är över 100 kr/mån. I demot är det kandidatparen: i
  *  prioriteringens grupper har ett kön färre än minsta gruppstorlek, så de har ingen skillnad. */
 const radMedSkillnad = w => { const { nycklar, skillnader } = seedExport(w);
@@ -45,7 +45,7 @@ describe('Handlingsplan: gruppens skillnad per rad', () => {
         const w = fonster();
         const { nycklar, skillnader } = seedExport(w);
         expect(skillnader).toHaveLength(nycklar.length);
-        const prio = w.eval(`medExportLage(() => { const thr = state.prioConfig.atgardThreshold ?? -5; return computePrioritization(_selectedPrioReference()).filter(i => i.diffPct < thr).map(i => ({ n: _hpNyckel('prio', i.aid || i.yrke, i.bas), s: i.medKv && i.medMa ? Math.round(i.medMa - i.medKv) : null })); })`);
+        const prio = w.eval(`medExportLage(() => { const thr = state.prioConfig.atgardThreshold ?? -5; return raknaPrioritering(_valdPrioReferens()).filter(i => i.diffPct < thr).map(i => ({ n: _hpNyckel('prio', i.aid || i.yrke, i.bas), s: i.medKv && i.medMa ? Math.round(i.medMa - i.medKv) : null })); })`);
         expect(prio.length).toBeGreaterThan(0);
         for (const p of prio) expect(skillnader[nycklar.indexOf(p.n)]).toBe(p.s);
         const par = w.eval(`medExportLage(() => _parForRedovisning(likvardighetResultat().pairs).par.map(p => ({ n: _hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), s: Math.round(p.gapKr) })))`);
@@ -134,7 +134,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         // Sammanfattningen står också i knappens tillgängliga namn, och följer med när den räknas om.
         expect(ren(knapp(tr).getAttribute('aria-label'))).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat, ${ren(tr.cells[1].textContent)}`);
         // Står kvar efter flikbyte
-        w.__renderTabContent('dashboard'); w.__renderTabContent('handlingsplan');
+        w.__ritaFlik('dashboard'); w.__ritaFlik('handlingsplan');
         expect(ren(knapp(radMedSkillnad(w)).textContent)).toBe(`Sakliga skäl (1) · ${pct(belopp / skillnad * 100)} förklarat`);
         expect(knapp(radMedSkillnad(w)).getAttribute('aria-label')).toMatch(/^Sakliga skäl \(1\) · .* förklarat, /);
     });
@@ -291,7 +291,7 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
 describe('Handlingsplan: Att göra-punkten för rader utan val', () => {
     it('räknar förifyllda rader med rullistan tom och försvinner när alla rader har ett val', () => {
         const w = fonster();
-        const punkt = () => w.eval('buildActionChecklist()').find(p => p.id === 'hp-sakliga-skal');
+        const punkt = () => w.eval('byggAtgardslista()').find(p => p.id === 'hp-sakliga-skal');
         const n = rader(w).length;
         const titel = m => `${m} ${m === 1 ? 'grupp i handlingsplanen är inte bedömd' : 'grupper i handlingsplanen är inte bedömda'} än`;
         expect(punkt()).toMatchObject({ kategori: 'Handlingsplan', prioritet: 'medel', tab: 'handlingsplan', titel: titel(n) });
@@ -305,9 +305,9 @@ describe('Handlingsplan: Att göra-punkten för rader utan val', () => {
     });
     it('punkten finns inte utan förifyllda rader och följer inte med i sektorsöversiktens urval', () => {
         const w = createAppWindow();
-        expect(w.eval('buildActionChecklist()').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
-        w.__loadDemoData();
-        expect(w.eval('buildActionChecklist({ endastGrupper: true })').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
+        expect(w.eval('byggAtgardslista()').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
+        w.__lasInDemodata();
+        expect(w.eval('byggAtgardslista({ endastGrupper: true })').find(p => p.id === 'hp-sakliga-skal')).toBeUndefined();
     });
 });
 
@@ -318,12 +318,12 @@ describe('Handlingsplan: skälen i konfigurationsfilen', () => {
         oppna(a, radMedSkillnad(a));
         laggTill(a, 'marknad', 800, 'Svårrekryterat');
         laggTill(a, 'erfarenhet', 400);
-        const cfg = JSON.parse(a.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(a.eval('JSON.stringify(byggKonfiguration())'));
         expect(cfg.handlingsplan.find(r => r.nyckel === nyckel)).toEqual({ nyckel, sakligt: '', ansvarig: '', tidsplan: '', status: '',
             skal: [{ kategori: 'marknad', belopp: 800, kommentar: 'Svårrekryterat' }, { kategori: 'erfarenhet', belopp: 400, kommentar: '' }] });
         const b = fonster();
         b.__cfg = { ...cfg, handlingsplan: [...cfg.handlingsplan, { nyckel: 'prio|9|Z', status: 'Planerad' }] };
-        const { varningar } = b.eval('applyConfigSnapshot(window.__cfg)');
+        const { varningar } = b.eval('tillampaKonfiguration(window.__cfg)');
         expect(varningar).toEqual([]);
         expect(b.__state.handlingsplan[nyckel].skal).toEqual(cfg.handlingsplan.find(r => r.nyckel === nyckel).skal);
         expect(b.__state.handlingsplan['prio|9|Z']).toEqual({ sakligt: '', ansvarig: '', tidsplan: '', status: 'Planerad' });
@@ -334,7 +334,7 @@ describe('Handlingsplan: skälen i konfigurationsfilen', () => {
             { nyckel: 'prio|1|A', skal: [{ kategori: 'marknad', belopp: 500 }, { kategori: 'lojalitet', belopp: 500 }, { kategori: 'annat', belopp: 300000 }] },
             { nyckel: 'prio|2|B', skal: 'inte en lista' },
         ] };
-        const { varningar } = b.eval('applyConfigSnapshot(window.__cfg)');
+        const { varningar } = b.eval('tillampaKonfiguration(window.__cfg)');
         expect(varningar).toEqual(['3 sakliga skäl i filens handlingsplan gick inte att läsa och hoppas över.']);
         expect(b.__state.handlingsplan['prio|1|A']).toEqual({ sakligt: '', ansvarig: '', tidsplan: '', status: '', skal: [{ kategori: 'marknad', belopp: 500, kommentar: '' }] });
         expect(b.__state.handlingsplan['prio|2|B']).toBeUndefined();
@@ -355,7 +355,7 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
     };
     it('gruppdossiern: "Bedömning i handlingsplanen: 2 skäl, NN % av skillnaden förklarad", produktgränsen står kvar', () => {
         const { w, aid, bas, pct, grupp } = medSkal();
-        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         const d = w.document.getElementById('dossier-modal');
         const text = ren(d.textContent);
         expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
@@ -364,8 +364,8 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
     });
     it('länken stänger dossiern och visar raden i Handlingsplan med fokus på knappen Sakliga skäl', () => {
         const { w, nyckel, aid, bas } = medSkal();
-        w.__renderTabContent('dashboard');
-        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        w.__ritaFlik('dashboard');
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         [...w.document.querySelectorAll('#dossier-modal [data-hp-ga-till]')].find(a => a.dataset.hpGaTill === nyckel).click();
         expect(w.document.getElementById('dossier-modal').style.display).not.toBe('flex');
         expect(w.document.getElementById('view-handlingsplan').style.display).toBe('block');
@@ -373,13 +373,13 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
     });
     it('BAS-dossiern listar bedömningarna i intervallet med gruppen först; en grupp utan rad får ingen läs-rad', () => {
         const { w, bas, grupp, pct } = medSkal();
-        w.eval(`openBasdossier(${JSON.stringify(bas)})`);
+        w.eval(`oppnaBasdossier(${JSON.stringify(bas)})`);
         const text = ren(w.document.getElementById('basdossier-modal').textContent);
         expect(text).toContain(`${grupp} (kandidatpar): Bedömning i handlingsplanen: 2 skäl, ${pct} av skillnaden förklarad.`);
         expect(text).toContain('Dossiern dokumenterar inte sakliga skäl. Skälen dokumenterar du i Handlingsplan.');
         // En grupp som inte finns i handlingsplanen: ingen läs-rad.
-        const utan = w.eval(`gruppdossierCandidates().map(g => g.key).find(k => !_handlingsplanSeedRows().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
-        w.eval(`closeBasdossier(); openGruppdossier(${JSON.stringify(utan)})`);
+        const utan = w.eval(`gruppdossierKandidater().map(g => g.key).find(k => !_handlingsplanForifyllning().nycklar.some(n => n.split('|')[1] === k.split('|')[0] && n.split('|')[2] === k.split('|')[1]))`);
+        w.eval(`stangBasdossier(); oppnaGruppdossier(${JSON.stringify(utan)})`);
         expect(w.document.querySelector('#dossier-modal .hp-bedomningar')).toBeNull();
     });
     it('matchningen: AID eller yrke som i prioriteringens nyckel, och kandidatparet också i jämförelseyrkets dossier', () => {
@@ -395,14 +395,14 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
         // I jämförelseyrkets dossier märks raden.
         const tr = radMedSkillnad(w);
         const [, , , maAid, maBas] = knapp(tr).dataset.hpSkal.split('|');
-        w.eval(`openGruppdossier(${JSON.stringify(`${maAid}|${maBas}`)})`);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${maAid}|${maBas}`)})`);
         expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain(`${ren(tr.cells[1].textContent)} (kandidatpar, jämförelseetikett): Bedömning i handlingsplanen`);
     });
     it('en rad utan skäl: läs-raden säger att inga skäl är angivna', () => {
         const w = fonster();
         const nyckel = knapp(radMedSkillnad(w)).dataset.hpSkal;
         const [, aid, bas] = nyckel.split('|');
-        w.eval(`openGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(`${aid}|${bas}`)})`);
         expect(ren(w.document.getElementById('dossier-modal').textContent)).toContain('Bedömning i handlingsplanen: inga sakliga skäl angivna ännu.');
     });
 });
@@ -410,10 +410,10 @@ describe('Dossiererna: läs-raden pekar på bedömningen i handlingsplanen', () 
 describe('ordlistan och Om verktyget', () => {
     it('termen Sakliga skäl i ordlistan räknar upp kategorierna, och Om verktyget nämner skälen i Handlingsplan', () => {
         const w = createAppWindow();
-        const post = w.eval('GLOSSARY').find(g => g.term === 'Sakliga skäl');
+        const post = w.eval('ORDLISTA').find(g => g.term === 'Sakliga skäl');
         for (const k of w.eval('skalKategorier()')) expect(post.long).toContain(k.namn);
         expect(post.long).toContain('Lagen räknar inte upp några skäl; indelningen är verktygets.');
-        const om = w.eval('Object.values(INFO_SECTIONS).map(f => f()).join(" ")').replace(/\s+/g, ' ');
+        const om = w.eval('Object.values(OM_AVSNITT).map(f => f()).join(" ")').replace(/\s+/g, ' ');
         expect(om).toMatch(/sakliga skäl per grupp/i);
     });
 });

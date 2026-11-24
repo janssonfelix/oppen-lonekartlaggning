@@ -23,7 +23,7 @@ export function skapaRigg() {
         w.__kel = el;
         return [el.outerHTML,
             w.eval('(() => { const u = _rfExportFigur(window.__kel); return u && !u.tom ? figurTillSvg(u.figur, 1600, 900, { visaSma: u.visaSma, dolda: u.dolda }) : ""; })()'),
-            JSON.stringify(w.eval('chartExportRows(window.__kel)'))].join(' ');
+            JSON.stringify(w.eval('diagramexportRader(window.__kel)'))].join(' ');
     };
     const medData = (data, policy, fn) => {
         const s = { data: w.__state.data, policy: w.__state.policy };

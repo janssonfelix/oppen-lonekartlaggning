@@ -58,8 +58,8 @@ beforeAll(async () => {
     const shim = `
 ;try {
     Object.assign(window, {
-        __loadDemoData: loadDemoData,
-        __renderTabContent: renderTabContent,
+        __lasInDemodata: lasInDemodata,
+        __ritaFlik: ritaFlik,
         __navTabs: [...document.querySelectorAll('.nav-item')].map(b => b.getAttribute('data-tab'))
     });
 } catch (e) { window.__bootErr = e; }`;
@@ -72,8 +72,8 @@ beforeAll(async () => {
     win.document.getElementById('boot-splash')?.remove();
 
     // Demodata + rendera alla flikar så panelernas innehåll finns i DOM:en.
-    win.__loadDemoData();
-    (win.__navTabs || []).forEach(t => { if (t) { try { win.__renderTabContent(t); } catch (_e) { /* ignoreras */ } } });
+    win.__lasInDemodata();
+    (win.__navTabs || []).forEach(t => { if (t) { try { win.__ritaFlik(t); } catch (_e) { /* ignoreras */ } } });
 
     // Utforskas urvalspanel med villkor av alla slag och en öppen värdelista.
     const d = win.document;

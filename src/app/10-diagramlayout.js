@@ -13,11 +13,11 @@
 //
 // Filerna sorteras före 10-diagramtema.js. Funktionsdeklarationer syns i hela den sammanfogade app.js, men en
 // `const` på toppnivå (_RF, _RF_RANDER, _RF_MARKEN, pilfunktionerna) finns först när dess fil har lästs: de — och
-// PALETTE, CHART_FONT och d3 — får bara LÄSAS inne i funktioner, aldrig när filen laddas.
+// PALETT, DIAGRAM_TYPSNITT och d3 — får bara LÄSAS inne i funktioner, aldrig när filen laddas.
 // ====================================================================
 import { talformat } from '../lib/figur.js';
 import { _rfFargstapelMatt } from './10-diagrammarken.js';
-import { CHART_FONT } from './10-diagramtema.js';
+import { DIAGRAM_TYPSNITT } from './10-diagramtema.js';
 
 export const _RF = {
     hojd: 320, tecken: 0.58, maxEtikett: 30,
@@ -35,8 +35,8 @@ export const _RF = {
     fargB: 64, fargLuft: 12, fargStapel: 12, fargText: 16, fargH: 180, fargSteg: 3,
 };
 
-// Storleken för diagrammets minsta texter: två steg under grundstorleken, men aldrig under golvet CHART_FONT.minsta.
-export const _rfLitenPx = px => Math.max(CHART_FONT.minsta, px - 2);
+// Storleken för diagrammets minsta texter: två steg under grundstorleken, men aldrig under golvet DIAGRAM_TYPSNITT.minsta.
+export const _rfLitenPx = px => Math.max(DIAGRAM_TYPSNITT.minsta, px - 2);
 export const _rfBredd = (s, px) => String(s == null ? '' : s).length * px * _RF.tecken;
 export function _rfKorta(s, maxTecken) {
     s = String(s == null ? '' : s);
@@ -405,13 +405,13 @@ function _rfDecimaler(vard) {
 }
 // Markeringstext för ett tal: namngivet format om axeln har ett, annars svensk lokal med så många
 // decimaler att skilda markeringar ger skilda texter.
-function _rfMarkText(axel, v, dec) {
+function _rfMarkeringstext(axel, v, dec) {
     if (axel.format) return talformat(v, axel.format, { enhet: false });
     if (axel.skala === 'log') dec = _rfDecimaler([v]);   // tiopotenser: "0,01", "1", "100" — inte "100,00"
     if (!_rfNf.has(dec)) _rfNf.set(dec, new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
     return _rfNf.get(dec).format(v === 0 ? 0 : v);
 }
-function _rfMarkSida(axel, v) { return axel.format === 'pctAbs' ? Math.sign(v) : 0; }
+function _rfMarkeringssida(axel, v) { return axel.format === 'pctAbs' ? Math.sign(v) : 0; }
 // Kandidater för talmarkeringar: [{v, prio}]. Logaritmiska axlar föredrar tiopotenser, sedan 5 och 2.
 function _rfTalKandidater(axel, skala, langd, per) {
     const v = skala.ticks(Math.max(2, Math.floor(langd / per)));
@@ -442,7 +442,7 @@ function _rfValjMarkeringar(kand, storlek, lucka, inom) {
 function _rfLodratMarkningar(axel, skala, langd, px, maxB) {
     const kand = _rfTalKandidater(axel, skala, langd, 40);
     const dec = _rfDecimaler(kand.map(k => k.v));
-    const med = kand.map(k => ({ ...k, p: skala(k.v), text: _rfMarkText(axel, k.v, dec), sida: _rfMarkSida(axel, k.v) })).filter(k => _rfTal(k.p) && _rfBredd(k.text, px) <= maxB);
+    const med = kand.map(k => ({ ...k, p: skala(k.v), text: _rfMarkeringstext(axel, k.v, dec), sida: _rfMarkeringssida(axel, k.v) })).filter(k => _rfTal(k.p) && _rfBredd(k.text, px) <= maxB);
     return { alla: kand.map(k => skala(k.v)).filter(_rfTal), valda: _rfValjMarkeringar(med, () => px + 2, 0, () => true) };
 }
 
@@ -455,8 +455,8 @@ function _rfLodratMarkningar(axel, skala, langd, px, maxB) {
  */
 export function _rfText(g, x, y, text, { px, ankare = 'start', farg, fet, title, attr } = {}) {
     const t = g.append('text').attr('x', x).attr('y', y).attr('text-anchor', ankare)
-        .attr('font-family', CHART_FONT.family).attr('font-size', px || CHART_FONT.size)
-        .attr('fill', farg || CHART_FONT.color).text(text);
+        .attr('font-family', DIAGRAM_TYPSNITT.family).attr('font-size', px || DIAGRAM_TYPSNITT.size)
+        .attr('fill', farg || DIAGRAM_TYPSNITT.color).text(text);
     if (fet) t.attr('font-weight', 600);
     if (attr) for (const [k, v] of Object.entries(attr)) t.attr(k, v);
     if (title && title !== text) t.append('title').text(title);
@@ -465,7 +465,7 @@ export function _rfText(g, x, y, text, { px, ankare = 'start', farg, fet, title,
 
 // Förklaringens poster: en per serie. Texten kortas till _RF.legendText tecken (och till bildens bredd),
 // raderna är högst maxRader; finns fler poster sist "+ N till" (vanlig text, ingen knapp).
-function _rfLegendPoster(serier, px, avail, maxRader) {
+function _rfForklaringensPoster(serier, px, avail, maxRader) {
     const fler = n => `+ ${n} till`;
     const maxTecken = Math.max(3, Math.min(_RF.legendText, Math.floor((avail - 18) / (px * _RF.tecken))));
     const alla = serier.map(s => {
@@ -538,7 +538,7 @@ export function _rfLodratLayout(figurIn, val, B, H, px, syn) {
             serier.push({ serie: String(l.serie), l, li });
         }
     }
-    const legend = _rfLegendPoster(serier, px, B - 16, maxRader);
+    const legend = _rfForklaringensPoster(serier, px, B - 16, maxRader);
     const inreH = Math.max(_RF.minYta, H - topp - botten(legend.rader));
     return { xTitel, axelNer, legBas, notRader, topp, legend, inreH, xTvaRader, rubrik, fot };
 }
@@ -596,7 +596,7 @@ export function _rfVagratLayout(figurIn, syn, yAx, B, px, fargskala) {
         const sPre = _rfSkala(figurIn.x, syn.doms.x, [0, pre]);
         const kand = _rfTalKandidater(figurIn.x, sPre, pre, 80);
         const dec = _rfDecimaler(kand.map(k => k.v));
-        xHalv = kand.reduce((s, k) => Math.max(s, _rfBredd(_rfMarkText(figurIn.x, k.v, dec), px) / 2), 0);
+        xHalv = kand.reduce((s, k) => Math.max(s, _rfBredd(_rfMarkeringstext(figurIn.x, k.v, dec), px) / 2), 0);
     }
     const vanster = Math.max(vanster0, Math.ceil(xHalv) + 4);
     const y2Block = yAx.y2 ? 8 + yAx.y2B + 8 + (figurIn.y2.titel ? px + 8 : 0) : 0;
@@ -643,7 +643,7 @@ export function _rfXEtiketter(figurIn, x, panelB, utV, utH, px, tvaRader) {
         const kand = _rfTalKandidater(figurIn.x, x, panelB, 80);
         const dec = _rfDecimaler(kand.map(k => k.v));
         rutnat = kand.map(k => x(k.v)).filter(_rfTal);
-        const med = kand.map(k => ({ ...k, p: x(k.v), text: _rfMarkText(figurIn.x, k.v, dec), sida: _rfMarkSida(figurIn.x, k.v) })).filter(k => _rfTal(k.p));
+        const med = kand.map(k => ({ ...k, p: x(k.v), text: _rfMarkeringstext(figurIn.x, k.v, dec), sida: _rfMarkeringssida(figurIn.x, k.v) })).filter(k => _rfTal(k.p));
         for (const k of _rfValjMarkeringar(med, t => _rfBredd(t, px), 6, (p, s) => p - s / 2 >= -utV && p + s / 2 <= panelB + utH)) xEt.push({ p: k.p, text: k.text, hel: k.text });
     }
     return { xEt, rutnat };

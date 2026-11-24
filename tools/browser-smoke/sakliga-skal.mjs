@@ -18,8 +18,8 @@ export async function sakligaSkal() {
     // det (den har skillnaden också då), så valet görs på förifyllningens minsta könsantal. Finns ingen tas den första.
     const nyckel = await sida.evaluate(() => {
         const knappar = [...document.querySelectorAll('#handlingsplan-tbody [data-hp-skal]')];
-        /* global _handlingsplanSeedRows, _hpUtanBelopp -- globala i sidan */
-        const s = _handlingsplanSeedRows();
+        /* global _handlingsplanForifyllning, _hpUtanBelopp -- globala i sidan */
+        const s = _handlingsplanForifyllning();
         const fulla = new Set(s.nycklar.filter((n, i) => s.skillnader[i] > 0 && !_hpUtanBelopp(n, s.minsta[i])));
         const med = knappar.find(k => fulla.has(k.getAttribute('data-hp-skal'))) || knappar[0];
         return med.getAttribute('data-hp-skal');
@@ -28,7 +28,7 @@ export async function sakligaSkal() {
     await sida.click(knapp);
     await sida.waitForFunction(() => document.getElementById('skal-modal').style.display === 'flex', null, { timeout: 5000 });
     ok(true, 'knappen Sakliga skäl öppnar dialogen');
-    // Fokusfällan sätter fokus efter en kort stund (trapFocus), som i de övriga dialogerna.
+    // Fokusfällan sätter fokus efter en kort stund (fangaFokus), som i de övriga dialogerna.
     ok(await sida.waitForFunction(() => document.getElementById('skal-modal').contains(document.activeElement), null, { timeout: 2000 }).then(() => true, () => false), 'fokus står i dialogen');
     await sida.click('#skal-lagg-till');
     const sista = '#skal-body .skal-rad:last-of-type';
@@ -49,9 +49,9 @@ export async function sakligaSkal() {
     const harKommentar = /Svårrekryterat i regionen/.test(rt);
     // Felsökning när kommentaren saknas: radens skäl i tillståndet och gruppen i exportlägets förifyllning.
     const diag = harKommentar ? '' : await sida.evaluate(n => {
-        /* global medExportLage, _handlingsplanSeedRows, _hpSkalUnderlag, kInstalld, kTroskel */
+        /* global medExportLage, _handlingsplanForifyllning, _hpSkalUnderlag, kInstalld, kTroskel */
         const skal = state.handlingsplan[n]?.skal || [];
-        const ex = medExportLage(() => { const s = _handlingsplanSeedRows(); const u = _hpSkalUnderlag(s); const g = u.grupper.find(x => x.nyckel === n);
+        const ex = medExportLage(() => { const s = _handlingsplanForifyllning(); const u = _hpSkalUnderlag(s); const g = u.grupper.find(x => x.nyckel === n);
             return { iSeed: s.nycklar.includes(n), kExport: kTroskel(), grupp: g ? { utanBelopp: g.utanBelopp, nMin: g.nMin, skal: g.sammanstallning?.skal } : null }; });
         return JSON.stringify({ n, skal, kInstalld: kInstalld(), kSkarm: kTroskel(), ex });
     }, nyckel);

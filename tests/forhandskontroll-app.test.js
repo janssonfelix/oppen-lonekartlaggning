@@ -10,8 +10,9 @@ const status = w => w.document.getElementById('data-status').textContent;
 const lasIn = async (w, rader, namn = 'lonefil.csv') => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
-    w.loadStructureFile(csvFil(w, rader, namn));
-    await vanta(() => status(w) && !/läser|Läser/.test(status(w)));
+    w.lasInStrukturfil(csvFil(w, rader, namn));
+    // Bakgrundsräkningen från en tidigare inläsning kan skriva sin not på den tömda raden; den räknas inte som klar.
+    await vanta(() => { const s = status(w).replace(' · förbereder analyser i bakgrunden…', ''); return s && !/läser|Läser/.test(s); });
 };
 // CSV-mallens rubriker med 30 rader; lönen kan räknas om (årslön) och ålder skrivas som födelseår.
 const fil = ({ lon = i => 30000 + i * 10, alder = i => String(30 + i), kon = i => (i % 2 ? 'Man' : 'Kvinna'), n = 30 } = {}) => {
@@ -21,7 +22,7 @@ const fil = ({ lon = i => 30000 + i * 10, alder = i => String(30 + i), kon = i =
 };
 const avsnitt = w => w.document.getElementById('avsnitt-fi-forhandskontroll');
 const nyckel = w => w.document.getElementById('nyckel-fi-forhandskontroll').textContent;
-const punkter = w => w.eval('buildActionChecklist()').filter(p => p.id.startsWith('fk-'));
+const punkter = w => w.eval('byggAtgardslista()').filter(p => p.id.startsWith('fk-'));
 const stoppa = (w, pa = true) => {
     w.eval('oppnaInstallningar()');
     const ruta = w.document.getElementById('inst-fk-stopp');
@@ -65,8 +66,8 @@ describe('förhandskontrollen efter inläsningen', () => {
         expect(p).toHaveLength(1);
         expect(p[0]).toMatchObject({ id: 'fk-lon-arslon', kategori: 'Underlagets kvalitet', prioritet: 'hög', tab: 'filer', källa: 'Förhandskontroll av lönefilen' });
         // Att göra leder till avsnittet.
-        w.__renderTabContent('dashboard');
-        w.eval('renderActionChecklist()');
+        w.__ritaFlik('dashboard');
+        w.eval('ritaAtgardslista()');
         const lank = w.document.querySelector('#action-checklist-container a[data-go-to-anchor="avsnitt-fi-forhandskontroll"]');
         expect(lank).toBeTruthy();
         // Inläsningsrapporten länkar till avsnittet.
@@ -130,7 +131,7 @@ describe('förhandskontrollen efter inläsningen', () => {
     it('ett demo efter en fil tar bort förhandskontrollen (demot läses inte ur en fil)', async () => {
         const w = createAppWindow();
         await lasIn(w, fil());
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.forhandskontroll).toBeNull();
         expect(avsnitt(w).hidden).toBe(true);
     });
@@ -140,19 +141,19 @@ describe('Inställningar: stoppa och visa förhandskontrollen innan inläsning',
     it('är av som standard och följer med i konfigurationsfilen', () => {
         const w = createAppWindow();
         expect(w.__state.forhandskontrollStopp).toBe(false);
-        expect(w.__buildConfigSnapshot().forhandskontrollStopp).toBe(false);
+        expect(w.__byggKonfiguration().forhandskontrollStopp).toBe(false);
         stoppa(w);
         expect(w.__state.forhandskontrollStopp).toBe(true);
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.forhandskontrollStopp).toBe(true);
         const w2 = createAppWindow();
         w2.__cfg = cfg;
-        w2.eval('applyConfigSnapshot(window.__cfg)');
+        w2.eval('tillampaKonfiguration(window.__cfg)');
         expect(w2.__state.forhandskontrollStopp).toBe(true);
         w2.eval('oppnaInstallningar()');
         expect(w2.document.getElementById('inst-fk-stopp').checked).toBe(true);
         w2.__cfg = { ...cfg, forhandskontrollStopp: 'ja' };
-        expect(() => w2.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/forhandskontrollStopp/);
+        expect(() => w2.eval('tillampaKonfiguration(window.__cfg)')).toThrow(/forhandskontrollStopp/);
     });
 
     it('med den på pausas inläsningen tills Läs in klickas', async () => {
@@ -217,7 +218,7 @@ describe('Inställningar: stoppa och visa förhandskontrollen innan inläsning',
     it('demo och organisationspaket påverkas inte, och rensa all data släpper en väntande fil', async () => {
         const w = createAppWindow();
         stoppa(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.data.length).toBeGreaterThan(100);
         expect(w.__state.forhandskontroll).toBeNull();
         expect(avsnitt(w).hidden).toBe(true);
@@ -243,7 +244,7 @@ describe('en väntande fil och en fil som inte lästes in', () => {
         await lasIn(w, fil());
         expect(w.eval('_fkVantar')).toBeTruthy();
         w.confirm = () => true;
-        w.eval('clearAllData()');
+        w.eval('rensaAllData()');
         expect(w.eval('_fkVantar')).toBeNull();
         expect(w.__state.forhandskontroll).toBeNull();
         expect(avsnitt(w).hidden).toBe(true);
@@ -254,11 +255,11 @@ describe('en väntande fil och en fil som inte lästes in', () => {
         const w = createAppWindow();
         stoppa(w);
         await lasIn(w, fil());
-        expect(w.eval('_inactivityIdleTimer')).toBeTruthy();
+        expect(w.eval('_inaktivitetstimer')).toBeTruthy();
         // Vad lagras i minnet säger att en fil väntar.
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-content').textContent).toMatch(/väntar på Läs in/);
-        w.eval('_autoClearOnInactivity()');
+        w.eval('_rensaVidInaktivitet()');
         expect(w.eval('_fkVantar')).toBeNull();
         expect(w.__state.forhandskontroll).toBeNull();
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
@@ -269,8 +270,8 @@ describe('en väntande fil och en fil som inte lästes in', () => {
         await lasIn(w, fil({ kon: () => '1' }), 'b.csv');
         expect(w.__state.data.length).toBe(0);
         expect(w.__state.forhandskontroll.ejInlast).toBe(true);
-        expect(w.eval('_inactivityIdleTimer')).toBeTruthy();
-        w.eval('_autoClearOnInactivity()');
+        expect(w.eval('_inaktivitetstimer')).toBeTruthy();
+        w.eval('_rensaVidInaktivitet()');
         expect(w.__state.forhandskontroll).toBeNull();
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
     });
@@ -333,7 +334,7 @@ describe('förhandskontrollens punkter i Att göra', () => {
         const w = createAppWindow();
         // 2 av 30 rader utan BAS och en oläslig lön: Fullständighet och dq-lon säger det redan.
         await lasIn(w, fil({ lon: i => (i === 5 ? 'abc' : String(30000 + i * 10)) }).map((r, i) => (i === 1 || i === 2 ? r.replace(/^C;/, ';') : r)));
-        const ids = w.eval('buildActionChecklist()').map(p => p.id);
+        const ids = w.eval('byggAtgardslista()').map(p => p.id);
         expect(ids).toContain('dq-lon');
         expect(ids).toContain('dq-fullstandighet');
         expect(w.__state.forhandskontroll.varningar.map(v => v.kod)).toEqual(expect.arrayContaining(['bortfall-bas', 'bortfall-lon']));
@@ -343,7 +344,7 @@ describe('förhandskontrollens punkter i Att göra', () => {
     it('bortfallet blir en punkt när ingen annan punkt säger det', async () => {
         const w = createAppWindow();
         await lasIn(w, fil({ n: 120, alder: i => String(30 + (i % 30)) }).map((r, i) => (i === 1 ? r.replace(/^C;/, ';') : r)));
-        const ids = w.eval('buildActionChecklist()').map(p => p.id);
+        const ids = w.eval('byggAtgardslista()').map(p => p.id);
         expect(ids).not.toContain('dq-fullstandighet');
         expect(punkter(w).map(p => p.id)).toEqual(['fk-bortfall-bas']);
         expect(punkter(w)[0].titel).toBe('Förhandskontrollen: rader utan BAS-intervall');

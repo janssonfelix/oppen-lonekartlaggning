@@ -5,7 +5,7 @@
 //
 // För varje sorts ändring ritas alla flikar, användaren står i en annan flik, ändringen görs, och sedan öppnas varje
 // flik igen (prova). En flik som visas igen utan omritning jämförs med samma flik ritad från början
-// (renderTabContent direkt); en flik som ritades om när den öppnades är redan ritad från början. Flikbytet går genom
+// (ritaFlik direkt); en flik som ritades om när den öppnades är redan ritad från början. Flikbytet går genom
 // klickaFlik(nav, { uppskjut: true }), samma väg som användarens klick i menyn (ADR-80); ett klick från koden ritar
 // alltid.
 import { createAppWindow } from './app-harness.js';
@@ -31,7 +31,7 @@ export async function vila(w) {
 export async function byt(w, flik) { w.klickaFlik(nav(w, flik), { uppskjut: true }); await vila(w); }
 /** Flikens innehåll i sidan. Diagrammens exportmenyer numreras i den ordning de skapas; numret normaliseras. */
 export function innehall(w, flik) {
-    const paneler = w.eval(`PANEL_GROUPS[${JSON.stringify(flik)}] || [${JSON.stringify(flik)}]`);
+    const paneler = w.eval(`PANELGRUPPER[${JSON.stringify(flik)}] || [${JSON.stringify(flik)}]`);
     return paneler.map(p => w.document.getElementById('view-' + p)?.innerHTML ?? '').join('\n')
         .replace(/chart-export-\d+/g, 'chart-export-#').replace(/tip-host-[a-z0-9]+/g, 'tip-host-#');
 }
@@ -63,7 +63,7 @@ export async function jamforAlla(w) {
         await byt(w, flik);
         if (runda(w, flik) !== r) continue;
         const visad = innehall(w, flik);
-        w.__renderTabContent(flik);
+        w.__ritaFlik(flik);
         await vila(w);
         const s = skillnad(visad, innehall(w, flik));
         if (s) fel.push(`${flik}\n${s}`);
@@ -73,7 +73,7 @@ export async function jamforAlla(w) {
 /** Ritar alla flikar (som användaren) och väntar tills inget räknas i bakgrunden. */
 export async function ritaAlla(w) { for (const flik of flikar(w)) await byt(w, flik); await vila(w); }
 /** Ritar alla flikar direkt och synkront, innan något i bakgrunden hinner bli klart. */
-export function ritaAllaDirekt(w) { for (const flik of flikar(w)) w.__renderTabContent(flik); }
+export function ritaAllaDirekt(w) { for (const flik of flikar(w)) w.__ritaFlik(flik); }
 /** Ritar alla flikar, står i `fran`, gör ändringen och prövar sedan varje flik. */
 export async function prova(w, fran, gor) {
     await ritaAlla(w);
@@ -82,7 +82,7 @@ export async function prova(w, fran, gor) {
     await vila(w);
     return jamforAlla(w);
 }
-export const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+export const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 /** En lönefil med flera BAS-intervall, AID-etiketter och åldrar (påhittad). */
 export function lonefil(n = 240, bas = ['A', 'B', 'C', 'D']) {
     const rader = ['BAS;AID;Månadslön;Ålder;Kön'];
@@ -95,6 +95,6 @@ export function lonefil(n = 240, bas = ['A', 'B', 'C', 'D']) {
 export async function lasInLonefil(w, rader) {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
-    w.loadStructureFile(csvFil(w, rader, 'lonefil.csv'));
+    w.lasInStrukturfil(csvFil(w, rader, 'lonefil.csv'));
     for (let i = 0; i < 500 && !/rader/.test(w.document.getElementById('data-status').textContent); i++) await vanta(10);
 }

@@ -7,15 +7,15 @@ import { tillDirektivtecken } from '../lib/struktur.js';
 import { svPct, svTal } from '../lib/talformat.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { state } from './12-tillstand.js';
-import { klickaFlik, tabMal } from './31-navigering.js';
+import { klickaFlik, flikMal } from './31-navigering.js';
 import { _kolumnval } from './32-filinlasning.js';
 import { sidindexGaTill } from './89-sidindex.js';
 
 /** Ansvarsförbehållet (beslut 8c): samma lydelse i Om verktyget, Word/PDF, Excel och rapportunderlaget. tests/juridiksprak.test.js vaktar. */
 export const ANSVARSFORBEHALL = 'Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.';
 
-export function showLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }
-export function hideLoading() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "none"; }
+export function visaLaddning() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }
+export function doljLaddning() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "none"; }
 
 // Uträknade mått (stapelbredd i procent, läge) får inte stå som style="…" i markeringen: CSP:n har inget style-src-attr
 // (ADR-30), så en sådan stil blockeras. Mallarna skriver måttet som data-stil-bredd="42%" (också -vanster, -mvanster),
@@ -36,12 +36,12 @@ export function tillampaDataStil(rot) {
 // importerar gissaKolumnmappning under samma namn. Adaptrarna här och i 06-uppgiftsminimering.js skickar med
 // kolumnmappningen och importprofilen ur tillståndet.
 /** Kolumnmappningen och importprofilen ur tillståndet, som lib-funktionerna för kolumnvalet tar emot. */
-export function _kolumnvalIState() {
+export function _kolumnvalITillstandet() {
     return { columnMap: state.columnMap, importprofil: state.importprofil };
 }
 /** Radens värde i kolumnen som bär rollen (manuell mappning, importprofilen, namnet), eller tom sträng. */
-export function getField(row, possibleNames, role) {
-    return vardeForRoll(row, possibleNames, role, _kolumnvalIState());
+export function hamtaFalt(row, possibleNames, role) {
+    return vardeForRoll(row, possibleNames, role, _kolumnvalITillstandet());
 }
 
 // ---- Importprofiler: kända kolumnuppsättningar (src/lib/importprofiler.js) ----
@@ -95,7 +95,7 @@ export function idagDatum(datum = new Date()) {
 /** @param {number} nKv @param {number} nMa */
 export function antalText(nKv, nMa) { return `n = ${svTal(nKv + nMa, 0)}; ${svTal(nKv, 0)} kvinnor, ${svTal(nMa, 0)} män`; }
 /** Rubrikraden med antalet, som HTML; `fore` är en text före antalet (escapas). */
-export function antalCaption(nKv, nMa, fore = '') {
+export function antalRubrik(nKv, nMa, fore = '') {
     return `<caption class="text-dampad-sm ta-vanster">${fore ? `${esc(fore)} · ` : ''}${antalText(nKv, nMa)}</caption>`;
 }
 
@@ -178,7 +178,7 @@ export function uppstartHjalpfunktioner() {
     document.addEventListener('click', e => {
         const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
         if (goto) {
-            const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute('data-goto-tab')) + '"]');
+            const nav = document.querySelector('.nav-item[data-tab="' + flikMal(goto.getAttribute('data-goto-tab')) + '"]');
             const avsnitt = goto.getAttribute('data-goto-avsnitt');
             const tillAvsnitt = () => { if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt); };
             // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.

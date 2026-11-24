@@ -13,11 +13,11 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // exportmenyns block läser demodatan
+    win.__lasInDemodata();   // exportmenyns block läser demodatan
 });
 
 const nav = (w, flik) => w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); nav(w, 'utforska'); return w; };
+const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); nav(w, 'utforska'); return w; };
 const oppnaGrupp = (w, flik) => {
     const g = w.document.getElementById(`ut-alla-${flik}`);
     g.open = true;
@@ -122,7 +122,7 @@ describe('Alla diagram: grupperna och kopiorna', () => {
         expect(kopia.querySelectorAll('svg [data-marke="punkt"]').length).toBe(kalla.querySelectorAll('svg [data-marke="punkt"]').length);
         expect(kopia.querySelectorAll('svg [data-marke="punkt"]').length).toBeGreaterThan(0);
         const kort = kopia.closest('.ut-kopia');
-        expect(kort.querySelector('.ut-kopia-rubrik').textContent).toBe(w.eval('chartExportTitle')(kalla));
+        expect(kort.querySelector('.ut-kopia-rubrik').textContent).toBe(w.eval('diagramexportRubrik')(kalla));
         const lank = kort.querySelector('.ut-kopia-fran a');
         expect(kort.querySelector('.ut-kopia-fran').textContent).toBe('Från fliken Prioritering');
         expect([lank.dataset.goToTab, lank.dataset.goToAnchor]).toEqual(['prioritering', 'chart-prio-matrix']);
@@ -130,8 +130,8 @@ describe('Alla diagram: grupperna och kopiorna', () => {
         const menyer = [kort, kalla.parentElement].map(x => x.querySelector('.chart-export-meny').id);
         expect(menyer[0]).not.toBe(menyer[1]);
         expect([...kort.querySelectorAll('.diagram-urval')].map(r => r.dataset.urvalFalt)).toEqual(['bas', 'yrke', 'sektor', 'n', 'x']);
-        expect(w.eval('chartExportTitle')(kopia)).toBe(w.eval('chartExportTitle')(kalla));
-        expect(w.eval("chartExportFilename")(kopia, 'png').startsWith('DEMO_Prioritering_')).toBe(true);
+        expect(w.eval('diagramexportRubrik')(kopia)).toBe(w.eval('diagramexportRubrik')(kalla));
+        expect(w.eval("diagramexportFilnamn")(kopia, 'png').startsWith('DEMO_Prioritering_')).toBe(true);
         // Inga id:n i dokumentet förekommer två gånger.
         const ids = [...d.querySelectorAll('[id]')].map(e => e.id);
         expect(ids.length).toBe(new Set(ids).size);
@@ -184,7 +184,7 @@ describe('Alla diagram: grupperna och kopiorna', () => {
         for (const id of ['chart-prio-matrix', 'chart-la-tratt']) {
             const kopia = d.getElementById('ut-diagram-' + id);
             expect(kopia, id).toBeTruthy();
-            expect(w.__chartExportRows(kopia), id).toEqual(w.__chartExportRows(d.getElementById(id)));
+            expect(w.__diagramexportRader(kopia), id).toEqual(w.__diagramexportRader(d.getElementById(id)));
         }
         // En kopia ur Likvärdigt arbete bär källans undantag i stämpeln.
         const lv = [...d.querySelectorAll('#ut-alla-likvardighet [id^="ut-diagram-"]')];
@@ -193,12 +193,12 @@ describe('Alla diagram: grupperna och kopiorna', () => {
             // Likvärdigt arbete bygger om sina behållare när fliken ritas: källan hämtas med sitt id efter varje export.
             const kalla = () => d.getElementById(kopia.id.slice('ut-diagram-'.length));
             expect(w.eval('_kUndantagFor')(kopia, false)).toBe('Likvärdigt arbete');
-            const fran = w.__chartExportRows(kopia);
+            const fran = w.__diagramexportRader(kopia);
             expect(fran[0][0]).toContain('(undantag: Likvärdigt arbete)');
-            expect(fran).toEqual(w.__chartExportRows(kalla()));
+            expect(fran).toEqual(w.__diagramexportRader(kalla()));
         }
         // Kopiorna står kvar och ritas om på skärmen efter en export ur en kopia, med källans figur på skärmen.
-        w.__chartExportRows(d.getElementById('ut-diagram-chart-prio-matrix'));
+        w.__diagramexportRader(d.getElementById('ut-diagram-chart-prio-matrix'));
         expect(d.querySelectorAll('#ut-alla-grupper [id^="ut-diagram-"]').length).toBe(antal);
         expect(w.eval("state.kLage")).toBe('skarm');
         expect(w.eval("flikInaktuell('prioritering')")).toBe(false);
@@ -237,8 +237,8 @@ describe('Alla diagram: grupperna och kopiorna', () => {
 
     it('flikarna utan grupp har inga diagram ritade med diagramkärnan', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        for (const f of ['dashboard', 'filer', 'bestammelser', 'handlingsplan']) w.__renderTabContent(f);
+        w.__lasInDemodata();
+        for (const f of ['dashboard', 'filer', 'bestammelser', 'handlingsplan']) w.__ritaFlik(f);
         const iFlik = w.eval("[..._rfBehallare].filter(el => el.isConnected && ['dashboard', 'filer', 'bestammelser', 'handlingsplan'].includes(_egFlikFor(el))).map(el => el.id)");
         expect(iFlik).toEqual([]);
     });
@@ -247,10 +247,10 @@ describe('Alla diagram: grupperna och kopiorna', () => {
 describe('exportmeny på alla diagram', () => {
     const vanta = () => new Promise(r => setTimeout(r, 0));
     beforeAll(async () => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         for (const flik of ['matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
                             'kon', 'demografi', 'utforska', 'benchmark', 'kvalitet', 'rapport']) {
-            win.__renderTabContent(flik);
+            win.__ritaFlik(flik);
         }
         await vanta();
     });
@@ -265,7 +265,7 @@ describe('exportmeny på alla diagram', () => {
     });
 
     it('knappen läggs bara till en gång även om diagrammet ritas om', async () => {
-        win.__renderTabContent('demografi');
+        win.__ritaFlik('demografi');
         await vanta();
         const host = win.document.getElementById('chart-demo-hist').parentElement;
         expect(host.querySelectorAll(':scope > .chart-export')).toHaveLength(1);
@@ -291,12 +291,12 @@ describe('exportmeny på alla diagram', () => {
 
     it('filnamnet bygger på flik, rubrik och datum och märks i demoläget', () => {
         const gd = win.document.getElementById('chart-demo-hist');
-        expect(win.__chartExportFilename(gd, 'png', new Date(2026, 8, 24)))
+        expect(win.__diagramexportFilnamn(gd, 'png', new Date(2026, 8, 24)))
             .toBe('DEMO_Demografi_Åldersfördelning-per-5-årsintervall_2026-09-24.png');
     });
 
     it('diagramdatan börjar med rubrik och version och innehåller seriernas värden', () => {
-        const rows = win.__chartExportRows(win.document.getElementById('chart-demo-hist'));
+        const rows = win.__diagramexportRader(win.document.getElementById('chart-demo-hist'));
         expect(rows[0][0]).toMatch(/^Åldersfördelning per 5-årsintervall — Lönekartläggning \d{4}\.\d{2}\.\d{2}\. Minsta gruppstorlek för redovisning: 10\.$/);
         expect(rows[1][0]).toBe('Serie');
         expect(rows.length).toBeGreaterThan(3);
@@ -311,7 +311,7 @@ describe('exportmeny på alla diagram', () => {
         box.appendChild(gd);
         win.document.body.appendChild(box);
         expect(win.__exportTillaten(gd)).toBe(false);
-        win.__attachChartExport(gd);
+        win.__laggTillDiagramexport(gd);
         expect(box.querySelector('.chart-export')).toBeNull();
         box.remove();
         gd.remove();
@@ -322,7 +322,7 @@ describe('exportmeny på alla diagram', () => {
 
     it('[I10] varje behållare utan export i det ritade dokumentet har ett registrerat skäl', () => {
         // Alla flikar är ritade (beforeAll); Lika arbete bär den märkta behållaren.
-        win.__renderTabContent('dashboard');
+        win.__ritaFlik('dashboard');
         const skal = win.__exportSkal();
         const markta = [...win.document.querySelectorAll('[data-no-export]')];
         expect(markta.map(el => el.id).sort()).toEqual(['pag-diagram-ruta']);
@@ -335,7 +335,7 @@ describe('exportmeny på alla diagram', () => {
         // Inget ritat diagram i en märkt behållare har en meny, och ett ritat diagram i den ger ingen bild.
         for (const gd of [...win.document.querySelectorAll('[data-no-export] div')].filter(el => el._figur)) {
             expect(gd.parentElement.querySelector(':scope > .chart-export'), gd.id).toBeNull();
-            expect(win.__chartExportRows(gd), gd.id).toEqual([]);
+            expect(win.__diagramexportRader(gd), gd.id).toEqual([]);
         }
     });
 

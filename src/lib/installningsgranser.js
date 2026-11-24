@@ -3,7 +3,7 @@
 /**
  * Öppen lönekartläggning — gränserna för inställningarna, på ett ställe.
  *
- * Samma gräns gäller på tre ställen: fältet i Inställningar (appen), konfigurationsfilen (appen, applyConfigSnapshot)
+ * Samma gräns gäller på tre ställen: fältet i Inställningar (appen), konfigurationsfilen (appen, tillampaKonfiguration)
  * och organisationspaketet (src/lib/organisationspaket.js). Här står siffrorna, och de tre läser dem härifrån. Gränserna
  * är de som fälten redan använder (min/max i index.html och fältens tak i koden); en ny gräns hör inte hit utan till
  * fältet först.

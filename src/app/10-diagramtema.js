@@ -16,8 +16,8 @@ import { statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 
 // Kanonisk färgpalett. All könsfärgning och alla semantiska färger härleds
-// härifrån (se `const colors` i 12-tillstand.js, som speglar PALETTE.kon).
-export const PALETTE = {
+// härifrån (se `const farger` i 12-tillstand.js, som speglar PALETT.kon).
+export const PALETT = {
     // Kön — genomgående i hela verktyget. Plommon för kvinnor och olivgrönt för män (beslut 2026-10-17):
     // inte rosa och blått, som kopplar färgen till en stereotyp. Båda har minst 4,5:1 mot vit yta (7,1 och
     // 4,6), skiljer sig mer än det tidigare paret vid simulerad protanopi och deuteranopi, och ligger tydligt ifrån
@@ -80,7 +80,7 @@ export const PALETTE = {
 // (verktygets storleksgräns); Följ upp = minst 3 % men inte säkerställd, eller säkerställd under 3 %; Balanserat =
 // under 3 % och inte säkerställd; Går ej att bedöma = ett kön under golvet. Direktivets 5 % är ingen status utan en
 // egen markering på den ojusterade löneskillnaden (_direktivBricka i 41-lika-arbete.js).
-// Varje ord har en färg (nyckel i PALETTE.semantic och klassen ar-<farg>), en linjeikon för tabellerna (03-ikoner.js)
+// Varje ord har en färg (nyckel i PALETT.semantic och klassen ar-<farg>), en linjeikon för tabellerna (03-ikoner.js)
 // och en symbol för diagrammen, så att statusen inte bärs av färgen ensam (WCAG 1.4.1). Samma ord står i Lika arbete,
 // Ålder & karriär, Utforska och Förklaringen. «Börja här» och «Över referens» hör bara till Prioritering
 // (55-prioritering.js): det första är rangordningens översta nivå, det andra ett läge och ingen allvarlighetsgrad.
@@ -152,7 +152,7 @@ export function gapStatusNiva(niva) { return GAP_STATUS_ALLA.find(s => s.niva ==
 export function gapStatusKI(o) { return gapStatusNiva(oversiktNiva(o, statGolv())); }
 
 // Gemensamt teckensnitt/typografi för diagram (matchar appens sans-stack).
-export const CHART_FONT = {
+export const DIAGRAM_TYPSNITT = {
     family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     size: 12,
     minsta: 11,            // golvet för de minsta rollerna (punkt- och linjeetiketter, ytans andra rad, fotraden): _rfLitenPx

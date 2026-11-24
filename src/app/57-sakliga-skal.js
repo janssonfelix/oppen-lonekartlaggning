@@ -17,14 +17,14 @@ import { personOrd } from '../lib/namn.js';
 import { skalKategorier, skalSammanstallning } from '../lib/sakligaskal.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { genitiv, stor, termFras } from '../lib/termer.js';
-import { _focusTraps, announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
-import { _handlingsplanSeedRows, _hpArEgen, _hpGaTillRad, _hpLiknarPersonuppgift, _hpSatt, _hpSattSkal, _hpSkalEtikett, _hpSkalSammanfattning, _hpUtanBelopp, _hpVarden } from './56-handlingsplan.js';
-import { closeGruppdossier } from './80-gruppdossier.js';
-import { closeBasdossier } from './81-basdossier.js';
+import { _handlingsplanForifyllning, _hpArEgen, _hpGaTillRad, _hpLiknarPersonuppgift, _hpSatt, _hpSattSkal, _hpSkalEtikett, _hpSkalSammanfattning, _hpUtanBelopp, _hpVarden } from './56-handlingsplan.js';
+import { stangGruppdossier } from './80-gruppdossier.js';
+import { stangBasdossier } from './81-basdossier.js';
 
 /** @type {{nyckel: string, grupp: string, kalla: string, skillnadKr: number|null, iExport: boolean, konUnder: boolean, rader: {kategori: string, belopp: string, kommentar: string}[]}|null} */
 let _skal = null;
@@ -45,12 +45,12 @@ const _skalGiltiga = () => (_skal ? /** @type {any[]} */ (_skal.rader.map(r => (
     .filter(r => r.belopp != null)) : []);
 
 /** Öppnar dialogen för en rad i handlingsplanen, med fokus tillbaka till öppnaren när den stängs. */
-function openSkalDialog(nyckel, opener) {
+function oppnaSkalDialog(nyckel, opener) {
     const modal = document.getElementById('skal-modal');
     if (!modal || !nyckel) return;
     // Gruppens skillnad och om raden följer med i exporterna: ur förifyllningen i exportläget.
-    const iExport = medExportLage(() => _handlingsplanSeedRows());
-    const skarm = _handlingsplanSeedRows({ baraEgna: !getData().length });
+    const iExport = medExportLage(() => _handlingsplanForifyllning());
+    const skarm = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
     const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
     const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
     const egen = _hpArEgen(nyckel);
@@ -62,14 +62,14 @@ function openSkalDialog(nyckel, opener) {
         konUnder: i >= 0 && !egen && _hpUtanBelopp(nyckel, iExport.minsta[i]),
         rader: (_hpVarden(nyckel).skal || []).map(s => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || '' })),
     };
-    _skalRender();
+    _skalRita();
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal, opener || document.activeElement);
+    if (typeof fangaFokus === 'function') fangaFokus(modal, opener || document.activeElement);
 }
-function closeSkalDialog() {
+function stangSkalDialog() {
     const modal = document.getElementById('skal-modal');
     if (!modal || modal.style.display !== 'flex') return;
-    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    if (typeof slappFokus === 'function') slappFokus(modal);
     modal.style.display = 'none';
     _skal = null;
 }
@@ -115,7 +115,7 @@ function _skalAndelText(r) {
 }
 
 /** Ritar hela dialogens innehåll (vid öppning och när ett skäl läggs till eller tas bort). */
-function _skalRender() {
+function _skalRita() {
     const body = document.getElementById('skal-body');
     if (!body || !_skal) return;
     const s = _skal, fullt = s.rader.length >= 8;
@@ -133,10 +133,10 @@ function _skalRender() {
     // flytta fokus. Anroparen sätter fokus (det nya skälets kategori, Lägg till skäl); en fördröjd flytt till
     // stängknappen tog annars text som användaren hunnit börja skriva i ett fält, och kommentaren sparades inte.
     const modal = document.getElementById('skal-modal');
-    if (modal && modal.style.display === 'flex' && typeof _focusTraps !== 'undefined') {
-        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
-        if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        trapFocus(modal, opener, { flyttaFokus: false });
+    if (modal && modal.style.display === 'flex' && typeof _fokusfallor !== 'undefined') {
+        const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
+        if (trap) { modal.removeEventListener('keydown', trap.handler); _fokusfallor.delete(modal); }
+        fangaFokus(modal, opener, { flyttaFokus: false });
     }
 }
 
@@ -197,22 +197,22 @@ export function uppstartSakligaSkal() {
         const gaTill = t.closest('[data-hp-ga-till]');
         if (gaTill) {
             e.preventDefault();
-            if (typeof closeGruppdossier === 'function') closeGruppdossier();
-            if (typeof closeBasdossier === 'function') closeBasdossier();
+            if (typeof stangGruppdossier === 'function') stangGruppdossier();
+            if (typeof stangBasdossier === 'function') stangBasdossier();
             _hpGaTillRad(gaTill.getAttribute('data-hp-ga-till') || '');
             return;
         }
         const oppna = t.closest('[data-hp-skal]');
-        if (oppna) { openSkalDialog(oppna.getAttribute('data-hp-skal') || '', oppna); return; }
+        if (oppna) { oppnaSkalDialog(oppna.getAttribute('data-hp-skal') || '', oppna); return; }
         if (!t.closest('#skal-modal')) return;
-        if (t.closest('[data-skal-close]')) { closeSkalDialog(); return; }
+        if (t.closest('[data-skal-close]')) { stangSkalDialog(); return; }
         if (!_skal) return;
         if (t.closest('#skal-lagg-till')) {
             if (_skal.rader.length >= 8) return;
             const anvanda = new Set(_skal.rader.map(r => r.kategori));
             const forsta = skalKategorier().find(k => !anvanda.has(k.id)) || skalKategorier()[0];
             _skal.rader.push({ kategori: forsta.id, belopp: '', kommentar: '' });
-            _skalRender();
+            _skalRita();
             const sel = [...document.querySelectorAll('#skal-body select.skal-kategori')].at(-1);
             if (sel) /** @type {HTMLElement} */ (sel).focus();
             return;
@@ -220,9 +220,9 @@ export function uppstartSakligaSkal() {
         const bort = t.closest('[data-skal-ta-bort]');
         if (bort) {
             _skal.rader.splice(Number(bort.getAttribute('data-skal-ta-bort')), 1);
-            _skalRender();
+            _skalRita();
             document.getElementById('skal-lagg-till')?.focus();
-            if (typeof announceToScreenReader === 'function') announceToScreenReader('Skälet är borttaget.');
+            if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Skälet är borttaget.');
             return;
         }
         if (t.closest('#skal-markera')) {
@@ -235,7 +235,7 @@ export function uppstartSakligaSkal() {
             _skalUppdatera();
             document.getElementById('skal-summa')?.setAttribute('tabindex', '-1');
             document.getElementById('skal-summa')?.focus();
-            if (typeof announceToScreenReader === 'function') announceToScreenReader('Raden är markerad: sakligt skäl finns.');
+            if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Raden är markerad: sakligt skäl finns.');
         }
     });
     ['input', 'change'].forEach(typ => document.getElementById('skal-modal')?.addEventListener(typ, e => {
@@ -257,6 +257,6 @@ export function uppstartSakligaSkal() {
         _skalUppdatera();
     }));
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && document.getElementById('skal-modal')?.style.display === 'flex') closeSkalDialog();
+        if (e.key === 'Escape' && document.getElementById('skal-modal')?.style.display === 'flex') stangSkalDialog();
     });
 }

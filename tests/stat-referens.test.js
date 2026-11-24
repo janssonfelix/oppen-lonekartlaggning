@@ -170,10 +170,10 @@ describe('[B3.5] kvantilregression (IRLS) mot exakt LP-lösning (≡ quantreg::r
             expect(forlust / ref.quantreg[tau].loss - 1).toBeLessThan(1e-3);
         });
     }
-    it('runQuantileRegressionAtAllTau på råraderna ger samma könsprocent som LP-referensen för indikatormodellen (ADR-63)', () => {
+    it('korKvantilregressionAllaTau på råraderna ger samma könsprocent som LP-referensen för indikatormodellen (ADR-63)', () => {
         const w = createAppWindow();
         w.__state.data = fx.rows.map(r => ({ ...r }));
-        const ut = w.eval('runQuantileRegressionAtAllTau()');
+        const ut = w.eval('korKvantilregressionAllaTau()');
         expect(ut.n).toBe(100);
         for (const r of ut.results) {
             expect(r.error).toBeUndefined();
@@ -280,10 +280,10 @@ describe('[B3.4] Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
         expect(i).toBeCloseTo(bo.i, 10);
         expect(q + u + i).toBeCloseTo(bo.rawGapLog, 10);
     });
-    it('runBlinderOaxaca på råraderna: endowment, coefficient, interaction mot referens; summan = rågapet', () => {
+    it('korBlinderOaxaca på råraderna: endowment, coefficient, interaction mot referens; summan = rågapet', () => {
         const w = createAppWindow();
         w.__state.data = fx.rows.map(r => ({ ...r }));
-        const ut = w.eval('runBlinderOaxaca()');
+        const ut = w.eval('korBlinderOaxaca()');
         expect(ut).not.toBeNull();
         expect(ut.nKv).toBe(bo.nKv);
         expect(ut.nMa).toBe(bo.nMa);
@@ -312,7 +312,7 @@ describe('Blinder-Oaxaca på vald modell (ADR-56)', () => {
         const w = createAppWindow();
         w.__state.data = rader;
         w.__state.forklaringsmodell = modell;
-        return w.eval('runBlinderOaxaca()');
+        return w.eval('korBlinderOaxaca()');
     };
     const jamfor = (ut, bo, nycklar) => {
         expect(ut._raw.rawGapLog).toBeCloseTo(bo.rawGapLog, 10);
@@ -371,7 +371,7 @@ describe('HC3 med AID-etikett inom BAS mot statsmodels: hävstången med gruppde
         const w = createAppWindow();
         w.__state.data = fx.rows.map((r, i) => ({ ...r, yrke: yrke(i) }));
         w.__state.forklaringsmodell = { bas: true, alder: true, yrkesgrupp: true, skal: '' };
-        return w.eval('runOLSRegression()');
+        return w.eval('korOLSRegression()');
     };
     it('designen: rad 4 och 5 delar BAS och kön, så gruppen har två personer', () => {
         expect(fx.rows[4].bas).toBe(fx.rows[5].bas);

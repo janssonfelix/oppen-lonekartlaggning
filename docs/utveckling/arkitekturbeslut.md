@@ -103,13 +103,14 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-94 | Diagrammens filter står alltid utfällda | Gällande | 2026-11-22 |
 | ADR-95 | Beräkningsregistret blir spårbarhetsmatrisen | Gällande | 2026-11-23 |
 | ADR-96 | Konfigurationsfilens fält har svenska namn; äldre filer läses | Gällande | 2026-11-23 |
-| ADR-97 | Funktionerna i `src/lib/` har svenska namn | Gällande | 2026-11-23 |
+| ADR-97 | Funktionerna i `src/lib/` har svenska namn | Ändrad av ADR-104 | 2026-11-23 |
 | ADR-98 | Appen byggs från ES-moduler med esbuild | Gällande | 2026-11-23 |
 | ADR-99 | En vymodell per flik i `src/lib/` | Gällande | 2026-11-23 |
 | ADR-100 | Varje release har en signerad valideringsrapport | Gällande | 2026-11-23 |
 | ADR-101 | Releasen attesteras och bygget prövas reproducerbart | Gällande | 2026-11-23 |
 | ADR-102 | Minsta gruppstorlek är lägst 3 | Gällande | 2026-11-23 |
 | ADR-103 | Golvet för skattningar följer tröskeln bara i exportläget | Gällande | 2026-11-23 |
+| ADR-104 | Funktionerna i `src/app/` har svenska namn; tillståndets fält och DOM:ens id:n står kvar | Gällande | 2026-11-23 |
 
 ## Besluten
 
@@ -747,3 +748,30 @@ säger texten att lönerna syns under Tabeller och egna vyer och att bedömninge
 (ADR-51), och den som arbetar i verktyget har redan lönefilen. *Avvisat:* att golvet följer den inställda tröskeln
 också på skärmen (som förut): en höjd tröskel tog bort skattningar för grupper som är stora nog att pröva. *Gäller i
 dag:* `k-troskeln.md` §1 och §5.
+
+**ADR-104 — Funktionerna i `src/app/` har svenska namn; tillståndets fält och DOM:ens id:n står kvar.** Beslutat av
+underhållaren 2026-11-23. Utvidgar ADR-97 till appen. Toppnivånamnen i `src/app/` (funktioner, konstanter och `let`)
+som har en engelsk del byts mot svenska, en grupp moduler i taget och utan beteendeändring: först S4 och exporten,
+sedan tillståndet och starten, flikarna och sist diagramritaren och verktygstipsen. Verben följer en ordlista (render
+blir rita, compute räkna, build bygg, apply tillämpa, show visa och så vidare) och substantiven verktygets egna ord
+(diagram, tabell, prognos, kostnad, inställningar). Prefixen (`_fc`, `_st`, `_rf` …) och etablerade förkortningar (CSV,
+PNG, SVG, OLS, ZIP, JPA, KI) står kvar, liksom namn som redan är svenska (`kStampelFor`, `medExportLage`). Testernas
+alias i `tests/helpers/app-harness.js` (`__namn`) följer det nya namnet. *Byts inte:* tillståndets fält (`state.data`,
+`state.forecast` …) och `state` självt, av samma skäl som returvärdenas fält i ADR-97: de läses på många ställen i
+appen och testerna, och flera översätts till konfigurationsfilen (ADR-96); de tas upp igen när en flik ändå skrivs om.
+DOM:ens id:n och klasser, eftersom de är ett kontrakt med stilmallen, röktesterna, riggen och exportgrinden, som läser
+tabellerna med sitt id; en granskare läser dem inte. *Skäl:* den som följer en regel från vymodellen (ADR-99) till
+skärmen och exporten ska känna igen samma ord i koden, dokumenten och spårbarhetsmatrisen (ADR-95). Bygget fäller ett
+namn som krockar med ett annat eller med `window` (`bygge-och-test.md` §2). *Avvisat:* att byta tillståndets fält och
+id:n i samma ändring, som rör varje fil utan att en granskare vinner något. De äldre besluten och CHANGELOG nämner
+några av appens gamla namn; tabellen visar vad de heter nu och fylls på grupp för grupp:
+
+| Modul | Gammalt namn | Nytt namn |
+|---|---|---|
+| `13-oversikt.js` | `bootstrapCIGallande` | `bootstrapKIGallande` |
+| `31-navigering.js` | `renderTabContent` | `ritaFlik` |
+| `51-lika-arbete-regressionskort.js` | `runOLSRegression` | `korOLSRegression` |
+
+Namnen i S4 och exporten (`06-k-troskel.js`, `06-maskeringsnoter.js`, `11-diagramexport.js`, `19-konfiguration.js`,
+`22-exporthjalpare.js`, `23-exportgrind.js`, `24-excelexport.js`) nämns inte där, och inte heller de övriga i
+tillståndet och starten. *Gäller i dag:* `src/app/README.md`.

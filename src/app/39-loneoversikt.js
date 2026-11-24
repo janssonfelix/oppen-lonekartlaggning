@@ -5,14 +5,14 @@ import { stor } from '../lib/termer.js';
 import { vymodellLoneoversikt } from '../lib/vymodell-loneoversikt.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
-import { buildBaseAudit, setAudit, toggleAllGroups } from './05-tabeller-och-lankar.js';
+import { byggGrundurval, sattMetodik, vaxlaAllaGrupper } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
-import { kMaskNote } from './06-maskeringsnoter.js';
+import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
-import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
+import { hamtaBasIntervall, hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
+import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { _evidenceForRapportRow, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForRapportrad, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
 // ---- Löneöversikten (tabellen överst i Utforska) ----
@@ -20,7 +20,7 @@ export function ritaLoneoversikt() {
     const tbody = /** @type {HTMLElement} */ (document.querySelector("#rapport-table tbody"));
     tbody.innerHTML = "";
     const fmt = new Intl.NumberFormat('sv-SE', {style:'currency',currency:'SEK',maximumFractionDigits:0});
-    const vm = vymodellLoneoversikt(getData(), { bas: getBasIntervals(), k: kTroskel(), policyFor, statistik: state.statistik });
+    const vm = vymodellLoneoversikt(hamtaData(), { bas: hamtaBasIntervall(), k: kTroskel(), policyFor, statistik: state.statistik });
     const dossierBas = new Set(basdossierKandidater().map(x => x.bas));
 
     vm.block.forEach(({ bas: b, referens: pol, rader, utelamnade }) => {
@@ -58,7 +58,7 @@ export function ritaLoneoversikt() {
         }
         if (utelamnade.length) {
             const trN = document.createElement("tr");
-            trN.innerHTML = `<td colspan="8">${kMaskNote(utelamnade, 'grupp i detta BAS|grupper i detta BAS')}</td>`;
+            trN.innerHTML = `<td colspan="8">${kMaskNot(utelamnade, 'grupp i detta BAS|grupper i detta BAS')}</td>`;
             tbody.appendChild(trN);
         }
     });
@@ -70,7 +70,7 @@ export function ritaLoneoversikt() {
             const tr = btn.closest('tr');
             const payload = tr?._rapportRow;
             if (!payload) return;
-            _openEvidenceModal(_evidenceForRapportRow(payload));
+            _oppnaBevisruta(_bevisForRapportrad(payload));
         });
     });
 
@@ -79,8 +79,8 @@ export function ritaLoneoversikt() {
     if (!/** @type {HTMLInputElement} */ (document.getElementById('search-rapport'))?.value) _rapportTillampaHopfallning();
 
     // Audit
-    const base = buildBaseAudit();
-    setAudit('rapport', {
+    const base = byggGrundurval();
+    sattMetodik('rapport', {
         title: 'Löneöversikt',
         ...base,
         usedInAnalysis: base.afterFilter,
@@ -119,8 +119,8 @@ export function rapportGlomHopfallning() { _rapportHopfallda = null; }
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartLoneoversikt() {
     // Löneöversikten: fäll in/ut alla
-    document.getElementById('rapport-collapse-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', true));
-    document.getElementById('rapport-expand-all')?.addEventListener('click', () => toggleAllGroups('rapport-table', false));
+    document.getElementById('rapport-collapse-all')?.addEventListener('click', () => vaxlaAllaGrupper('rapport-table', true));
+    document.getElementById('rapport-expand-all')?.addEventListener('click', () => vaxlaAllaGrupper('rapport-table', false));
     document.querySelector('#rapport-table tbody')?.addEventListener('click', e => {
         if (!/** @type {HTMLElement} */ (e.target).closest('tr.group-header')) return;
         // Raden fälls av tabellens gemensamma lyssnare; här noteras bara läget när den har gjort sitt.
@@ -141,7 +141,7 @@ export function uppstartLoneoversikt() {
     });
     // Export Excel (bara Löneöversikten)
     document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
-        const wb = tableToCleanBook('rapport-table', 'Rapport');
-        if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _showExportSensitivityToast(); }
+        const wb = tabellTillBok('rapport-table', 'Rapport');
+        if (wb) { _laggTillMetodblad(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _visaExportvarning(); }
     }));
 }

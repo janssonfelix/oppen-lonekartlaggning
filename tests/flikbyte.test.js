@@ -2,7 +2,7 @@
  * Flikbytet: rita först, räkna sedan (ADR-80, 31-navigering.js). Användarens eget flikbyte visar fliken och låter
  * sidan målas innan fliken räknas, och tunga block ritas efter flikens övre del, vart och ett i en egen uppgift.
  * Vaktar det som inte får hända: att en flik som användaren redan lämnat ritas, att ett block ritar ett resultat ur
- * en tröskel som inte längre gäller, och att exportläget och direkta anrop av renderTabContent slutar rita synkront.
+ * en tröskel som inte längre gäller, och att exportläget och direkta anrop av ritaFlik slutar rita synkront.
  *
  * Ett klick från koden (el.click()) är inte användarens eget och ritar synkront som förut, så testerna byter flik
  * med klickaFlik(nav, { uppskjut: true }), samma väg som ett klick i menyn tar.
@@ -31,7 +31,7 @@ function spionera(w, namn) {
 
 describe('Flikbytet: rita först, räkna sedan', () => {
     it('fliken syns och markeras som räknas innan den ritas; sedan ritas den och markeringen går bort', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document, fore = runda(w, 'struktur');
         byt(w, 'struktur');
         const panel = d.getElementById('view-struktur');
@@ -51,7 +51,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('ett andra flikbyte under väntan avbryter det första: bara den sist valda fliken ritas', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const struktur = runda(w, 'struktur'), rapport = runda(w, 'rapporttext');
         byt(w, 'struktur');
         byt(w, 'rapporttext');
@@ -63,11 +63,11 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('ett block som väntar ritar inget när användaren har gått vidare, och fliken räknas då som inte ritad', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'rapporttext').click();
-        const anrop = spionera(w, 'renderRapportunderlag');
+        const anrop = spionera(w, 'ritaRapportunderlag');
         // Fliken ritas som från ett flikbyte: rapportunderlaget får en platshållare och väntar.
-        w.eval('_uppskjutNasta = "rapporttext"; renderTabContent("rapporttext")');
+        w.eval('_uppskjutNasta = "rapporttext"; ritaFlik("rapporttext")');
         const host = w.document.getElementById('rapportunderlag-innehall');
         expect(host.getAttribute('aria-busy')).toBe('true');
         expect(host.querySelector('.block-raknas')).not.toBeNull();
@@ -80,10 +80,10 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('en ändrad tröskel under väntan ger inget resultat ur den gamla tröskeln', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'dokumentera').click();
-        const anrop = spionera(w, 'renderExportBesked');
-        w.eval('_uppskjutNasta = "dokumentera"; renderTabContent("dokumentera")');
+        const anrop = spionera(w, 'ritaExportBesked');
+        w.eval('_uppskjutNasta = "dokumentera"; ritaFlik("dokumentera")');
         expect(w.document.querySelector('#besked-excel .block-raknas')).not.toBeNull();
         // Tröskeln ändras utan omritning (som en anropare som ritar själv senare): blocket ritar inget ur den gamla
         // tröskeln, utan fliken ritas om från början med den nya.
@@ -96,10 +96,10 @@ describe('Flikbytet: rita först, räkna sedan', () => {
     });
 
     it('en ändrad tröskel med omritning tar över: det väntande blocket ritar inget', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         nav(w, 'dokumentera').click();
-        w.eval('_uppskjutNasta = "dokumentera"; renderTabContent("dokumentera")');
-        const anrop = spionera(w, 'renderExportBesked');
+        w.eval('_uppskjutNasta = "dokumentera"; ritaFlik("dokumentera")');
+        const anrop = spionera(w, 'ritaExportBesked');
         w.eval('sattKTroskel(13, { fraga: false })');   // ritar om den öppna fliken direkt
         expect(anrop.map(a => a.k)).toEqual([13]);
         await vantaKlart(w);
@@ -107,17 +107,17 @@ describe('Flikbytet: rita först, räkna sedan', () => {
         expect(w.document.getElementById('besked-excel').textContent).toMatch(/färre än 13 /);
     });
 
-    it('exportläget, direkta anrop av renderTabContent och klick från koden ritar synkront som förut', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+    it('exportläget, direkta anrop av ritaFlik och klick från koden ritar synkront som förut', () => {
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         nav(w, 'rapporttext').click();
         expect(d.getElementById('view-rapporttext').hasAttribute('aria-busy')).toBe(false);
         expect(d.querySelector('#rapportunderlag-innehall .ru-block')).not.toBeNull();
         d.getElementById('rapportunderlag-innehall').innerHTML = '';
-        w.eval('medExportLage(() => renderTabContent("rapporttext"))');
+        w.eval('medExportLage(() => ritaFlik("rapporttext"))');
         expect(d.querySelector('#rapportunderlag-innehall .ru-block')).not.toBeNull();
         expect(d.querySelector('[aria-busy="true"]')).toBeNull();
-        w.__renderTabContent('dokumentera');
+        w.__ritaFlik('dokumentera');
         expect(d.getElementById('besked-excel').textContent).toMatch(/Innehåller/);
         nav(w, 'struktur').click();
         expect(d.getElementById('regression-card').innerHTML).not.toBe('');

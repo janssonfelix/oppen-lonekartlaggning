@@ -1,7 +1,7 @@
 /**
  * Vakt: versionsstämpeln får bara finnas på ETT ställe.
  *
- * Bakgrund: APP_VERSION/APP_BUILD_DATE var hårdkodade i 60-print-init.js (nu 60-utskrift.js m.fl.) och
+ * Bakgrund: APP_VERSION/APP_BYGGDATUM var hårdkodade i 60-print-init.js (nu 60-utskrift.js m.fl.) och
  * hade glidit isär från VERSION — app:en stämplade 2026.07.22 (och benchmark-
  * exporten 2026.05.09) medan bygget var 2026.10.04. APP_VERSION är det
  * användaren ser i rapportens sidfot och i Excel-/Word-metadata, så en
@@ -30,12 +30,12 @@ describe('versionsstämpel', () => {
         expect(readVersion()).toMatch(/^\d{4}\.\d{2}\.\d{2}$/);
     });
 
-    it('APP_BUILD_DATE härleds ur versionen (inte systemklockan)', () => {
+    it('APP_BYGGDATUM härleds ur versionen (inte systemklockan)', () => {
         // Byte-reproducerbarheten hänger på detta: ett `new Date()` i
         // generatorn hade gett ny SHA-256 vid varje bygge.
         const v = readVersion();
         const src = readFileSync(join(srcDir, '08-version.js'), 'utf8');
-        expect(src).toContain(`const APP_BUILD_DATE = '${buildDateFor(v)}';`);
+        expect(src).toContain(`const APP_BYGGDATUM = '${buildDateFor(v)}';`);
         expect(buildDateFor('2026.10.04')).toBe('2026-10-04');
     });
 

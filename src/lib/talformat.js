@@ -11,7 +11,7 @@
  *
  * Mellan talet och enheten står ett hårt mellanslag (U+00A0), som Intl redan skriver mellan tusentalen: då bryts
  * «36 262 kr» och «73 %» aldrig isär i en smal kolumn, på skärmen eller i utskriften. Excel-exporten gör det hårda
- * mellanslaget till ett vanligt (src/app/22-exporthjalpare.js), liksom CSV och urklipp (_tableCellText i
+ * mellanslaget till ett vanligt (src/app/22-exporthjalpare.js), liksom CSV och urklipp (_tabellcellText i
  * src/app/12-tillstand.js), så där står talen som förut. Word-utkastet gör om allt blanktecken till vanligt
  * mellanslag (src/app/62-word-utkast.js); där hålls ett belopp ihop av kolumnbredden, som src/lib/docx.js räknar så
  * att talet ryms på en rad.

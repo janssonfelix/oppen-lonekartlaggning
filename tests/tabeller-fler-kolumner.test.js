@@ -19,7 +19,7 @@ const TABELLER = [
     { flik: 'matrix', id: 'aidbas-lika-tabell', nyckel: 'aidbasLika', dolda: ['nedre', 'ovre', 'direktiv'], forst: [] },
     { flik: 'likvardighet', id: 'aidbas-likvardigt-tabell', nyckel: 'aidbasLikvardigt', dolda: ['nationellt', 'brukar', 'spridning'], forst: [] }
 ];
-const rita = (flik) => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent(flik); return w; };
+const rita = (flik) => { const w = createAppWindow(); w.__lasInDemodata(); w.__ritaFlik(flik); return w; };
 const rubriker = (w, id) => [...w.document.querySelectorAll(`#${id} thead th`)];
 const knapp = (w, id) => w.document.querySelector(`[data-fler-kolumner="${id}"]`);
 const spann = td => +(td.getAttribute('colspan')) || 1;
@@ -59,16 +59,16 @@ describe('Fler kolumner: grundvyn och full vy', () => {
             const w = rita(t.flik);
             expect(rubriker(w, t.id).slice(0, t.forst.length).map(th => th.getAttribute('data-kol'))).toEqual(t.forst);
             knapp(w, t.id).click();
-            w.__renderTabContent(t.flik);
+            w.__ritaFlik(t.flik);
             expect(knapp(w, t.id).getAttribute('aria-pressed')).toBe('true');
             expect(rubriker(w, t.id).some(th => th.hidden)).toBe(false);
         });
         it(`${t.id}: kopian och CSV-underlaget har alla kolumner i båda vyerna`, async () => {
             const w = rita(t.flik);
             const alla = rubriker(w, t.id).length;
-            const grund = w.__tableToMatrix(t.id);
+            const grund = w.__tabellTillMatris(t.id);
             knapp(w, t.id).click();
-            const full = w.__tableToMatrix(t.id);
+            const full = w.__tabellTillMatris(t.id);
             expect(grund).toEqual(full);
             const huvud = grund.findIndex(r => r.length > 1);
             for (const rad of grund.slice(huvud)) expect(rad.length).toBe(grund[huvud].length);
@@ -80,11 +80,11 @@ describe('Fler kolumner: grundvyn och full vy', () => {
             Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: s => { kopia = s; return Promise.resolve(); } } });
             w.document.querySelector(`[data-copy-table="${t.id}"]`).click();
             await new Promise(r => setTimeout(r, 0));
-            const dolda = rubriker(w, t.id).filter(th => th.hidden).map(th => w.eval('_tableCellText')(th));
+            const dolda = rubriker(w, t.id).filter(th => th.hidden).map(th => w.eval('_tabellcellText')(th));
             expect(dolda.length).toBe(t.dolda.length);
             for (const r of dolda) expect(kopia).toContain(r);
             // Arbetsbokens kopia: inga gömda celler och hela colspan.
-            const klon = w.__cloneTable(t.id);
+            const klon = w.__tabellkopia(t.id);
             expect(klon.querySelectorAll('[hidden], [data-fler-dold], [data-hel-colspan]')).toHaveLength(0);
             expect(rubriker(w, t.id).filter(th => th.hidden)).toHaveLength(t.dolda.length);   // skärmens tabell är orörd
         });
@@ -147,7 +147,7 @@ describe('Fler kolumner: de gömda talen finns i beviset', () => {
     it('Prioritering: beviset har Kv/Mä, median, referens, avvikelsen i kronor, kostnaden per person och bristyrket', () => {
         const w = rita('prioritering');
         const it0 = w.document.querySelector('#prio-table tbody tr')._prioItem;
-        const b = w.eval('_evidenceForPrioItem')(it0, 'stallningstagande');
+        const b = w.eval('_bevisForPrioPost')(it0, 'stallningstagande');
         const etiketter = b.rows.map(r => r.label);
         for (const e of ['Antal anställda i gruppen', 'Median månadslön', 'Avvikelse', 'Kostnad per person', 'Bristyrke-multiplikator']) expect(etiketter).toContain(e);
         expect(etiketter.some(e => /^Referens/.test(e))).toBe(true);
@@ -157,7 +157,7 @@ describe('Fler kolumner: de gömda talen finns i beviset', () => {
         const w = rita('prioritering');
         const it0 = w.document.querySelector('#prio-table tbody tr')._prioItem;
         expect(typeof it0.sevScore).toBe('number');
-        const b = w.eval('_evidenceForPrioItem')({ ...it0, sevScore: 12.5 }, 'stallningstagande');
+        const b = w.eval('_bevisForPrioPost')({ ...it0, sevScore: 12.5 }, 'stallningstagande');
         const rad = namn => b.rows.find(r => r.label === namn);
         expect(rad('Avvikelse-poäng (sev)').value).toBe('12,5');
         expect(rad('Avvikelse-poäng (sev)').note).toMatch(/^min\(30, \|.+\|\) \/ 30 × 100 · vikt /);
@@ -170,7 +170,7 @@ describe('Fler kolumner: de gömda talen finns i beviset', () => {
         const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')].filter(tr => tr._euRow);
         expect(rader.every(tr => tr.querySelector('.btn-evidence[data-eu-row]'))).toBe(true);
         for (const tr of rader) {
-            const b = w.eval('_evidenceForEUMatrixRow')(tr._euRow);
+            const b = w.eval('_bevisForEUMatrisrad')(tr._euRow);
             const etiketter = b.rows.map(r => r.label);
             expect(etiketter).toContain('Könsdominans');
             expect(etiketter).toContain('Andel kvinnor nationellt');

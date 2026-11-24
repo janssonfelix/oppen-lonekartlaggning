@@ -20,7 +20,7 @@ const vantaPaInlasning = w => vanta(() => status(w) && !/läser|Läser/.test(sta
 const lasIn = async (w, rader, namn = 'lonefil.csv') => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
-    w.loadStructureFile(csvFil(w, rader, namn));
+    w.lasInStrukturfil(csvFil(w, rader, namn));
     await vantaPaInlasning(w);
 };
 // 30 påhittade rader; rad 5 och 19 i filen (i = 3 och 17) har ett namn i fältet för AID-etikett.
@@ -41,7 +41,7 @@ const vantadRapportrad = rad => {
     expect(rad.textContent.replace(/\s+/g, ' ')).toMatch(/Personnamn i fältet för AID-etikett: rad 5 och 19/);
 };
 const avsnitt = w => w.document.getElementById('avsnitt-fi-forhandskontroll');
-const punkt = w => w.eval('buildActionChecklist()').find(p => p.id === 'fk-yrke-namn');
+const punkt = w => w.eval('byggAtgardslista()').find(p => p.id === 'fk-yrke-namn');
 const rapport = w => w.document.getElementById('data-validation-report');
 const UTAN_NAMN = /Anna|Andersson|Berg|Lisa/;
 
@@ -58,7 +58,7 @@ describe('namn i fältet för AID-etikett: demona', () => {
     });
     it('ett inläst demo ger ingen varning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(rapport(w).querySelector('[data-dvr="yrke-namn"]')).toBeNull();
         expect(punkt(w)).toBeUndefined();
     });
@@ -130,7 +130,7 @@ describe('[B9.5] namn i fältet för AID-etikett: inläsningen', () => {
         X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(tabell()), 'Blad1');
         const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
         w.document.getElementById('data-status').textContent = '';
-        w.loadStructureFile(new w.File([buf], 'lonefil.xlsx'));
+        w.lasInStrukturfil(new w.File([buf], 'lonefil.xlsx'));
         await vantaPaInlasning(w);
         expect(w.__state.data).toHaveLength(30);
         expect(w.__state.dataAudit.yrkeNamn).toBe(2);

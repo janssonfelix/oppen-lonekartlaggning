@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Två lägen ----
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 /**
  * Vägledande läge är verktyget som det är: varje flik förklarar sig och "nästa steg" står sist. Kompakt läge är för
  * den som kan verktyget: förklaringarna är undanfällda och sidorna tätare (style.css, klassen lage-kompakt på sidan).
@@ -24,7 +24,7 @@ function sattLage(nytt) {
         const k = document.getElementById(id);
         if (k) k.setAttribute('aria-pressed', String(l === namn));
     }
-    if (andrat && typeof announceToScreenReader === 'function') announceToScreenReader(l === 'kompakt' ? 'Kompakt läge: förklaringarna är undanfällda.' : 'Vägledande läge: förklaringarna visas.');
+    if (andrat && typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(l === 'kompakt' ? 'Kompakt läge: förklaringarna är undanfällda.' : 'Vägledande läge: förklaringarna visas.');
 }
 
 // ---- Flikens inledning: en rad, resten bakom «Visa mer» ----

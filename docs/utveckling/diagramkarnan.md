@@ -152,7 +152,7 @@ och finns till för `tips`.
   yttersta värdet inom 1,5 kvartilavstånd) ur de individer som ritas i kategorin. Flera lådlager i samma
   panel delar kategorins band sida vid sida. Har lådans alla ritade individer samma `farg` får lådan den färgen
   (ett lager med en färg per kategori); annars lagrets.
-- Punktlager, och lådlager med `punkter: 'alla'` eller `'svarm'`, med fler än 8 000 ritbara punkter (`SCATTER_MAX_POINTS`)
+- Punktlager, och lådlager med `punkter: 'alla'` eller `'svarm'`, med fler än 8 000 ritbara punkter (`PUNKTMOLN_MAX_PUNKTER`)
   ritar var k:te. Små punkter tas bort före urvalet. Lådor räknas alltid ur alla.
 
 ### Färgskala
@@ -250,7 +250,7 @@ eller visar serien; posten står kvar, nedtonad. Högst fyra rader, namn kortas 
 `<title>`), därefter "+ N till". Rader tas bort om ritytan annars blir lägre än 40 px.
 
 **Notisen om urval.** Har ritaren nedsamplat står antalen i en rad under diagrammet
-(`_setScatterSampleNote`). Antalen räknar inte dolda punkter.
+(`_sattPunkturvalsnot`). Antalen räknar inte dolda punkter.
 
 **Filterraderna för figurens `urval`.** Har figuren `urval` och behållaren ett id lägger `ritaFigur` en rad
 `<div class="diagram-urval" role="group" data-urval-falt="<falt>">` per dimension, i figurens ordning — för en
@@ -334,11 +334,11 @@ listar vilka diagram som har urvalet och vilka som inte har det.
 AID-etikett och huvudområde efter BAS: prioriteringens två diagram, trattdiagrammet, statistikläget, spannen och
 skillnaden mot statistiken och överblickens bild (AID-etikett och huvudområde), bandkartan (AID-etikett) och krav mot lön
 (huvudområde). Huvudområdet är `sektorsnamn(aid)`, samma namn som i översikten per huvudområde. Övriga:
-- Lön mot ålder (`_konScatterFigur`): BAS (bara när hela urvalet visas), AID-etikett, ålder och lön. Punkterna bär `alder`
+- Lön mot ålder (`_konPunktmolnFigur`): BAS (bara när hela urvalet visas), AID-etikett, ålder och lön. Punkterna bär `alder`
   och `lon` (samma tal som tipset) i stället för att filtren läser `x` och `y`: trendlinjerna och statistikens median har
   också `x` och `y` men ska inte döljas av dem. Trendlinjerna per kön, deras konfidensband och trenden för hela urvalet
   är härledda lager med `minN = kTroskel()` och samma funktioner som vyn (`Stat.linjarRegression`,
-  `linearRegressionCI`, med bandet ur `src/lib/osakerhet.js`, `_konScatterTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
+  `linjarRegressionKI`, med bandet ur `src/lib/osakerhet.js`, `_konPunktmolnTrend`), över de synliga punkternas åldersspann. Färgas punkterna efter BAS eller
   AID-etikett är källan alla punktlager och `villkor` väljer könet. Hela urvalets trend byter R² i namnet. Utan filter
   är bilden byte för byte densamma som förut. Lön mot ålder per BAS-intervall har samma filter, men trendlinjen i en
   panel räknas inte om (en mening per panel i noten); den gäller alla i intervallet och döljs med sitt BAS-intervall.
@@ -479,10 +479,10 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   `linjepunkt`, `litenpunkt`, `intervall`, `individ`, `ruta` och `lada` (lådans `data-i` är den första ritade
   individen i kategorin). Banorna `linje` och `band` har bara `data-l`.
 - Ett `<text>` har ett `<title>` bara när den visade texten har kortats.
-- Texten har grundstorleken 12 px (`CHART_FONT.size`): axlarna, axeltitlarna och förklaringen. Stapel- och
+- Texten har grundstorleken 12 px (`DIAGRAM_TYPSNITT.size`): axlarna, axeltitlarna och förklaringen. Stapel- och
   rutetexter, noten och ytans etikett är ett steg mindre, rubriken och paneltiteln större. De minsta rollerna —
   punktetiketter, referenslinjernas etiketter, ytans andra rad och exportens fotrad — har `_rfLitenPx`, som aldrig
-  går under golvet 11 px (`CHART_FONT.minsta`). Ingen text i en figur är alltså mindre än 11 px. Exporten ritar med
+  går under golvet 11 px (`DIAGRAM_TYPSNITT.minsta`). Ingen text i en figur är alltså mindre än 11 px. Exporten ritar med
   samma storlekar i den logiska bredden och skalas sedan (avsnitt 6).
 - Det finns två slags inre `<svg>`: panelen (`data-del="panel"`) och ränderna i en liten yta
   (`data-marke="rander"`). Diagrammets egen svg är `:scope > svg` i behållaren.
@@ -527,7 +527,7 @@ SVG:n läses som bild från en `data:`-adress (inte en blob — WebKit har vägr
 ritas på en canvas med samma mått som SVG:n. Okänt format, ogiltig figur, en bild som inte går att läsa
 eller en canvas som ger en tom bild avvisas.
 
-**Exportmenyn** (`11-diagramexport.js`) läggs till av `ritaFigur`. `chartExportRun` bestämmer underlaget en
+**Exportmenyn** (`11-diagramexport.js`) läggs till av `ritaFigur`. `exporteraDiagram` bestämmer underlaget en
 gång (`_rfExportFigur`: figuren, svaret från `exportMedSma`, de dolda serierna) och ger samma underlag till
 bilden, diagramdatan och stämpeln.
 - Bilden ritas ur originalfiguren med `visaSma` enligt svaret och utan de serier användaren dolt.
@@ -641,13 +641,13 @@ Tabellernas radgrafik (`_laOversiktGrafik`, `_pagAvvikelseGrafik`) ritas med van
 utsmyckning av talet i cellen bredvid (`aria-hidden`), har ingen export och bär inga värden som inte står i raden.
 ADR-39 gäller för allt som är ett diagram.
 
-**Färg** (`PALETTE` i `10-diagramtema.js`). Färgen väljs efter vad den ska säga:
+**Färg** (`PALETT` i `10-diagramtema.js`). Färgen väljs efter vad den ska säga:
 
 - **Kön:** två färger, plommon för kvinnor och olivgrönt för män — inte rosa och blått, som knyter färgen till en stereotyp. Båda har minst 4,5:1 mot vitt, skiljer sig vid simulerad protanopi och deuteranopi och ligger ifrån status- och seriefärgerna (`tests/farger.test.js`). Används bara för kön, och kön står alltid också med ord i legenden.
 - **Serier:** en fast ordning av tydligt olika färger; en serie behåller sin färg när andra döljs.
 - **Storlek:** en nyans, ljus till mörk. **Avvikelse:** två nyanser kring neutralt grått.
 - **Uppdelning av en skillnad** (trapporna i *Var uppstår löneskillnaden?* och *Vad blir kvar av löneskillnaden?*):
-  `PALETTE.uppdelning`. Färgen säger vad delen betyder, inte åt vilket håll den går: helheten neutral och mörk, det som
+  `PALETT.uppdelning`. Färgen säger vad delen betyder, inte åt vilket håll den går: helheten neutral och mörk, det som
   förklaras av var kvinnor och män arbetar (struktur) blått, det som blir kvar inom samma grupp (lönesättningen)
   orange. Förklaringen under diagrammet säger det i ord, och kortens färgrutor har samma färger.
 - **Status:** bara för status, och alltid tillsammans med form eller ord. En skillnad som bedöms mot 3- och
@@ -667,7 +667,7 @@ ett moln (trattdiagrammet, prioriteringsmatrisen) undviker punkterna och varandr
 värde vid änden av en stapel står utanför stapeln (datapunktens `etikettLage`, trapporna). Pröva det med det stora
 demot: ett namn som täcker en annan punkt går inte att knyta till sin egen.
 
-**Förbehåll under diagrammet.** Ett metodförbehåll står i en egen not under diagrammet (`_setDiagramMetodNot` i
+**Förbehåll under diagrammet.** Ett metodförbehåll står i en egen not under diagrammet (`_sattDiagramMetodNot` i
 `06-k-troskel.js`), efter k-noten och utan att skriva över den, och samma mening står under
 diagrammet i Word och PDF (`metodNot` i `RM_DIAGRAM`). Trattdiagrammet med färre än tio grupper har ett
 (`LA_TRATT_GLEST`). Under ett diagram där två punkter med var sitt konfidensintervall jämförs ska det stå att

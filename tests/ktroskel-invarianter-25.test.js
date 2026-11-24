@@ -27,8 +27,8 @@ describe('[I8] sakliga skäl på en rad under tröskeln lämnar inte verktyget',
         const w = fonsterKon(10);
         // Gruppen 7002 i BAS X (fyra personer) hamnar under referensen: en rad i handlingsplanen bara på skärmen.
         w.eval("state.policy.find(p => p.bas === 'X').med = 90000");
-        const skarm = w.eval('_handlingsplanSeedRows().nycklar');
-        const { nycklar: ut, minsta } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, minsta: s.minsta }; })');
+        const skarm = w.eval('_handlingsplanForifyllning().nycklar');
+        const { nycklar: ut, minsta } = w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, minsta: s.minsta }; })');
         const under = skarm.find(n => !ut.includes(n));
         const over = ut.find((n, i) => !n.startsWith('egen|') && minsta[i] >= 10);
         const konUnder = ut.find((n, i) => !n.startsWith('egen|') && minsta[i] < 10);

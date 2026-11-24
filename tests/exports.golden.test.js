@@ -64,9 +64,9 @@ beforeAll(() => {
         __state: state,
         __appVersion: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''),
         __XLSX: XLSX,
-        __docDraftHtml: _buildDocumentationDraftHtml,
-        __docxDocumentXml: () => docxDelar(_utkastTillBlock(_buildDocumentationDraftHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
-        __buildPrintReport: buildPrintReport,
+        __docDraftHtml: _byggWordUtkastHtml,
+        __docxDocumentXml: () => docxDelar(_utkastTillBlock(_byggWordUtkastHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
+        __byggUtskriftsrapport: byggUtskriftsrapport,
         __excelBlad: () => ({ besked: excelAlltBlad(), bok: _excelAlltBok().SheetNames }),
         __loadFixture: function(utanAlder) {
             window.__resetSeed();
@@ -101,14 +101,14 @@ beforeAll(() => {
                 { aid: '2000', bas: 'C', median: 36500, andelKv: 15, aidFull: '2000 Ingenjör' }
             ];
             if (state.likvardighet) state.likvardighet.result = null;
-            _deriveArbetsvarderingFromData();
+            _harledArbetsvarderingUrData();
             // Rendera vyerna som exporterna plockar tabeller ur
             ritaLoneoversikt();
             ritaLoneskillnadPerBas(lsBasVymodell());
             ritaLikaArbete(laVymodell());
-            renderPrioritering();
-            generateBenchmark();
-            renderStructure();
+            ritaPrioritering();
+            byggJamforelse();
+            ritaStruktur();
             _hpDemoSkal();   // demots sakliga skäl på tre rader: tabellerna och bladet Sakliga skäl låses också
             return rows.length;
         },
@@ -117,12 +117,12 @@ beforeAll(() => {
             window.__exportErrors = [];
             window.__alerts.length = 0;
             const safe = (name, fn) => { try { fn(); } catch (e) { window.__exportErrors.push(name + ': ' + (e && e.message || e)); } };
-            safe('jpa', exportJPAProtocol);
-            safe('alla-flikar', exportAllToExcel);
+            safe('jpa', exportJPAProtokoll);
+            safe('alla-flikar', exportAlltTillExcel);
             safe('handlingsplan', exportHandlingsplan);
-            safe('eu-rapport', exportEuReport);
+            safe('eu-rapport', exportEuRapport);
             safe('likvardighet', exportLikvardighet);
-            safe('jamforelse', exportBenchmarkExcel);
+            safe('jamforelse', exportJamforelseExcel);
             // Exporternas interna felhantering rapporterar via alert — lyft in dem.
             for (const a of window.__alerts) window.__exportErrors.push('alert: ' + a);
             return Object.keys(window.__captured);
@@ -316,7 +316,7 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
             rows.push({ bas: 'B', yrke: '5301 Undersköterska', aid: '5301', yrkeLabel: 'Undersköterska', lon, alder: 30 + i * 2, kon, poang: null, enhet: '1234' });
         win.__state.data = rows;
         win.__state.dataAudit = { totalRaw: rows.length, excludedNoBas: 0, excludedZeroLon: 0 };
-        win.eval('_deriveArbetsvarderingFromData(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell()); ritaLikaArbete(laVymodell()); renderStructure(); window.__captured = {}; exportEuReport(); exportAllToExcel();');
+        win.eval('_harledArbetsvarderingUrData(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell()); ritaLikaArbete(laVymodell()); ritaStruktur(); window.__captured = {}; exportEuRapport(); exportAlltTillExcel();');
         eu = win.__captured[Object.keys(win.__captured).find(f => /eu_lonerapport/.test(f))];
         alla = win.__captured[Object.keys(win.__captured).find(f => /lonekartlaggning_komplett/.test(f))];
         expect(eu && alla).toBeTruthy();
@@ -365,7 +365,7 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
 /**
  * Golden-lås för Word-utkastet (§§ 8–14) — verktygets mest centrala juridiska
  * leverans. En formatregression (borttappad §-sektion, trasig tabell, försvunnen
- * [HR fyller i]) får inte passera CI, så här snapshot-låses hela `_buildDocumentationDraftHtml()`-utdatan
+ * [HR fyller i]) får inte passera CI, så här snapshot-låses hela `_byggWordUtkastHtml()`-utdatan
  * på det fasta 62-raders-datasetet, normaliserad för datum/tid/version/år.
  */
 describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
@@ -446,12 +446,12 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
     it('bladet Lönepolitik finns bara med ett ställningstagande, och metodbladet säger då vad det bär', () => {
         win.__loadFixture();
         const X = win.__XLSX, text = wb => wb.SheetNames.map(n => X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true }).map(r => r.join(' | ')).join('\n')).join('\n');
-        win.eval('window.__captured = {}; exportAllToExcel();');
+        win.eval('window.__captured = {}; exportAlltTillExcel();');
         const med = Object.values(win.__captured)[0];
         expect(med.SheetNames).toContain('Lönepolitik');
         expect(text(med)).toMatch(/Bladet Lönepolitik \| Läget i referensens lönespann/);
         win.__state.policy = [];
-        win.eval('window.__captured = {}; exportAllToExcel();');
+        win.eval('window.__captured = {}; exportAlltTillExcel();');
         const utan = Object.values(win.__captured)[0];
         expect(utan.SheetNames).not.toContain('Lönepolitik');
         expect(text(utan)).not.toContain('Bladet Lönepolitik');
@@ -459,13 +459,13 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
 });
 
 /**
- * Golden-lås för PDF-/print-rapporten (`buildPrintReport`) — den sista oskyddade
+ * Golden-lås för PDF-/print-rapporten (`byggUtskriftsrapport`) — den sista oskyddade
  * HTML-leveransen. Det var här (i struktur-sektionen) andelKv-buggen "5000 %" också
  * satt, sida vid sida med Word-utkastet. Vi kör hela den asynkrona funktionen på det
  * fasta datasetet (window.print är stubbad), fångar det den skriver
  * till `#print-report` och låser innehållet per mall, normaliserat för datum/tid/version.
  */
-describe('golden: PDF/print-rapporten (buildPrintReport) på fast dataset', () => {
+describe('golden: PDF/print-rapporten (byggUtskriftsrapport) på fast dataset', () => {
     const normalize = html => {
         let s = html
             .replace(/\d{4}-\d{2}-\d{2}/g, '<DATUM>')
@@ -477,12 +477,12 @@ describe('golden: PDF/print-rapporten (buildPrintReport) på fast dataset', () =
     };
 
     // Ren start per anrop: __loadFixture nollställer seed + § 3:10-cachen och renderar
-    // om vyerna. buildPrintReport konsumerar Math.random (regression, bootstrap-CI).
+    // om vyerna. byggUtskriftsrapport konsumerar Math.random (regression, bootstrap-CI).
     const renderPrint = async (template) => {
         win.__loadFixture();
         { const f = win.document.getElementById('kl-org-name'); f.value = 'Testorganisationen'; f.dispatchEvent(new win.Event('change')); }
         win.eval(`sattRapportUrval(${JSON.stringify(template === 'komplett' ? 'hela' : template)})`);   // mallarna är urval ur rapportmodellen
-        await win.__buildPrintReport();
+        await win.__byggUtskriftsrapport();
         expect(win.__bootErr, 'boot-fel: ' + win.__bootErr).toBeUndefined();
         return win.document.getElementById('print-report').innerHTML;
     };
@@ -565,7 +565,7 @@ describe('golden: lönefil utan ålder (ADR-64)', () => {
     it('PDF-rapporten (komplett) byggs utan fel och matchar facit', async () => {
         win.__loadFixture(true);
         win.eval("sattRapportUrval('hela')");
-        await win.__buildPrintReport();
+        await win.__byggUtskriftsrapport();
         const html = normalize(win.document.getElementById('print-report').innerHTML);
         expect(html.length).toBeGreaterThan(200);
         expect(html).toContain('Att ålder räknas bort är ett metodval');
@@ -594,7 +594,7 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
             bocker = { ...win.__captured };
             // Arbetsböckerna utanför de sex ovan: Löneöversikten, prioriteringslistan, löneöversynen och ZIP-filens bok.
             win.document.getElementById('forecast-budget-value').value = '2';   // utan pott finns ingen prognos att exportera
-            win.eval('ritaPrognos(); exportForecast()');
+            win.eval('ritaPrognos(); exportPrognos()');
             win.document.getElementById('btn-export-excel').click();
             win.document.getElementById('btn-export-prio-excel').click();
             Object.assign(bocker, win.__captured, { 'ZIP-filens Excel-fil': win.eval('_excelAlltBok()') });
@@ -614,7 +614,7 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
         expect(blad('[Huvud]', 'Reserv')).toBe('Reserv');
     });
     it('protokollets blad om lika arbete heter "2. Lika arbete (AID)"', () => {
-        // Samma namn som exportJPAProtocol skriver.
+        // Samma namn som exportJPAProtokoll skriver.
         const prot = bocker[`lonekartlaggning_protokoll_gemensam_lonebedomning_${win.eval("idagDatum()")}.xlsx`];
         expect(prot, Object.keys(bocker).join(', ')).toBeTruthy();
         expect(prot.SheetNames).toContain('2. Lika arbete (AID)');

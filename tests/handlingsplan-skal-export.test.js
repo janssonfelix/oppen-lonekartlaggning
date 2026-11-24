@@ -9,7 +9,7 @@ import { laddaXlsx, fangaBocker } from './helpers/ktroskel-rigg.js';
 vi.setConfig({ testTimeout: 60000 });
 
 const ren = t => String(t).replace(/\s+/g, ' ').trim();
-const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const medSkal = w => Object.entries(w.__state.handlingsplan).filter(([, v]) => v.skal && v.skal.length);
 const atgarder = w => w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'atgarder');
 
@@ -18,7 +18,7 @@ describe('demot: förifyllda skäl på tre rader', () => {
         const w = demo();
         const rader = medSkal(w);
         expect(rader).toHaveLength(3);
-        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
+        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
         for (const [n, v] of rader) {
             expect(nycklar).toContain(n);
             for (const s of v.skal) { expect(Number.isInteger(s.belopp)).toBe(true); expect(s.kommentar).not.toMatch(/\d/); }
@@ -31,7 +31,7 @@ describe('demot: förifyllda skäl på tre rader', () => {
     });
     it('det stora demot får också tre rader med skäl', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
+        w.eval('lasInStortDemo()');
         expect(medSkal(w)).toHaveLength(3);
     });
     it('förifyllningen skriver inte över skäl som redan finns', () => {
@@ -79,7 +79,7 @@ describe('rapportmodellen: handlingsplanens avsnitt', () => {
     });
     it('Rapporttext visar tabellerna', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const text = ren(w.document.getElementById('view-rapporttext').textContent);
         expect(text).toContain('Sakliga skäl per grupp');
         expect(text).toContain('Sammanställning per kategori');
@@ -90,14 +90,14 @@ describe('Excel: bladet Sakliga skäl och handlingsplanens kolumner', () => {
     it('"Excel (alla flikar)" får bladet Sakliga skäl när någon rad har skäl, och förhandsbeskedet säger det', async () => {
         const w = demo();
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(bok).toContain('[Sakliga skäl]');
         expect(w.eval('excelAlltBlad()')).toContain('Sakliga skäl');
         const blad = bok.slice(bok.indexOf('[Sakliga skäl]'));
         expect(blad).toContain('Sammanställning per kategori');
         w.__state.handlingsplan = {};
         expect(w.eval('excelAlltBlad()')).not.toContain('Sakliga skäl');
-        const utan = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const utan = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(utan).not.toContain('[Sakliga skäl]');
     });
     it('handlingsplansunderlaget får kolumnerna Sakliga skäl och Förklarad andel', async () => {
@@ -120,20 +120,20 @@ describe('demot följer inte med till en riktig fil', () => {
         const { fileURLToPath } = await import('node:url');
         const w = createAppWindow();
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const demoNycklar = medSkal(w).map(([n]) => n);
         expect(demoNycklar).toHaveLength(3);
         // En riktig fil med demots personer: samma AID och BAS, så att nycklarna går att matcha.
         const rader = ['BAS;Månadslön;Ålder;Kön;AID', ...w.__state.data.map(r => `${r.bas};${r.lon};${r.alder};${r.kon === 'man' ? 'Man' : 'Kvinna'};${r.aid}`)];
         const n = w.__state.data.length;
         w.__state.data = [];
-        w.loadStructureFile(new w.File([rader.join('\n')], 'riktig.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'riktig.csv', { type: 'text/csv' }));
         for (let i = 0; i < 200 && w.__state.data.length !== n; i++) await new Promise(r => setTimeout(r, 20));
         expect(w.__state.isDemo).toBe(false);
-        const nya = w.eval('medExportLage(() => _handlingsplanSeedRows().nycklar)');
+        const nya = w.eval('medExportLage(() => _handlingsplanForifyllning().nycklar)');
         expect(demoNycklar.some(k => nya.includes(k)), 'minst en av demots nycklar finns i den riktiga filen').toBe(true);
         expect(w.eval('medExportLage(() => _hpSkalUnderlag().grupper.length)')).toBe(0);
-        const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(w.eval('JSON.stringify(byggKonfiguration())'));
         expect((cfg.handlingsplan || []).filter(r => r.skal)).toEqual([]);
         expect(JSON.stringify(cfg)).not.toContain('Exempel i demot');
     });
@@ -147,9 +147,9 @@ describe('demot följer inte med till en riktig fil', () => {
     it('en konfigurationsfil som ersätter handlingsplanen glömmer demots nycklar: filens skäl på en demonyckel står kvar', () => {
         const w = demo();
         const [n] = medSkal(w)[0];
-        const cfg = JSON.parse(w.eval('JSON.stringify(buildConfigSnapshot())'));
+        const cfg = JSON.parse(w.eval('JSON.stringify(byggKonfiguration())'));
         cfg.handlingsplan = [{ nyckel: n, skal: [{ kategori: 'marknad', belopp: 500, kommentar: 'ur filen' }] }];
-        w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.handlingsplan[n].skal).toEqual([{ kategori: 'marknad', belopp: 500, kommentar: 'ur filen' }]);
         expect(w.eval('_hpDemoNycklar.size')).toBe(0);
         // Som när en riktig lönefil läses in efter demot.
@@ -172,7 +172,7 @@ describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget',
     /** Demots rad med skäl där ett kön är under tröskeln (prioriteringens grupp), med ett känt belopp och en känd kommentar. */
     const medKonUnder = () => {
         const w = demo();
-        const { nycklar, minsta } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, minsta: s.minsta }; })');
+        const { nycklar, minsta } = w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, minsta: s.minsta }; })');
         const nyckel = nycklar.find((n, i) => n.startsWith('prio|') && minsta[i] < 10);
         expect(nyckel, 'demot har en prioriteringsrad med ett kön under tröskeln').toBeTruthy();
         w.eval(`_hpSattSkal(${JSON.stringify(nyckel)}, [{ kategori: 'erfarenhet', belopp: 13579, kommentar: 'Hemlig 24680' }])`);
@@ -192,12 +192,12 @@ describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget',
     });
     it('Rapporttext, Excel och handlingsplansunderlaget: talen finns inte, noten gör det', async () => {
         const { w } = medKonUnder();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const rt = ren(w.document.getElementById('view-rapporttext').textContent);
         expect(rt).toContain(NOT);
         for (const v of ['13579', '13 579', '24680']) expect(rt).not.toContain(v);
         await laddaXlsx(w);
-        const alla = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const alla = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         const hp = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
         for (const bok of [alla, hp]) { for (const v of ['13579', '24680']) expect(bok).not.toContain(v); expect(bok).toContain(NOT); }
     });
@@ -214,11 +214,11 @@ describe('ett kön under minsta gruppstorlek: bara kategorin lämnar verktyget',
 describe('Rapporttext: skälen överstiger skillnaden', () => {
     it('samma mening som i rapportmodellen, med beloppen', () => {
         const w = demo();
-        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanSeedRows(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
+        const { nycklar, skillnader } = w.eval('medExportLage(() => { const s = _handlingsplanForifyllning(); return { nycklar: s.nycklar, skillnader: s.skillnader }; })');
         const i = skillnader.findIndex(s => s > 0);
         w.eval(`_hpSattSkal(${JSON.stringify(nycklar[i])}, [{ kategori: 'marknad', belopp: ${skillnader[i] + 300}, kommentar: '' }])`);
         const kr = v => w.eval(`svTal(${v}, 0)`).replace(/\s/g, ' ');
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const rt = ren(w.document.getElementById('view-rapporttext').textContent);
         expect(rt).toContain(`skälen är tillsammans större än skillnaden (${kr(skillnader[i] + 300)} kr mot ${kr(skillnader[i])} kr). Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`);
     });
@@ -241,7 +241,7 @@ describe('noten under Sammanställning per kategori', () => {
     });
     it('Rapporttext: noten står efter tabellen Sammanställning per kategori', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const rt = ren(w.document.getElementById('view-rapporttext').textContent);
         const i = rt.lastIndexOf('Sammanställning per kategori');
         expect(i).toBeGreaterThan(-1);

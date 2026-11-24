@@ -185,7 +185,7 @@ det samlade påslaget, kostnaden över perioden och den råa skillnaden. Påslag
 
 Sökningen är en halvering i intervallet 0–40 % i 22 varv; svaret är intervallets övre gräns, där målet är nått.
 Är målet redan nått, går regressionen inte att skatta eller räcker inte 40 %, sägs det i stället.
-Fältet för målet läses i `_forecastThreshold` (`_forecastLasMal`): 0 är ett mål, ett tomt fält eller något som inte är
+Fältet för målet läses i `_fcLyftMotMal` (`_fcLasMal`): 0 är ett mål, ett tomt fält eller något som inte är
 ett tal ger standardmålet, och ett tal utanför fältets gränser (0–20 %) avvisas med *Ange ett mål mellan 0 och 20 %*.
 I läget *inte signifikant* spelar fältet ingen roll. Kostnaden per månad
 är kvinnornas lönesumma gånger lyftet, utan PO. Lyftet visas bara när båda könen når tröskeln: `vymodellTroskelmal`

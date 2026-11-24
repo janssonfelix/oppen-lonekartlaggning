@@ -3,10 +3,10 @@
 import { genereraStortDemo } from '../lib/demodata.js';
 import { svTal } from '../lib/talformat.js';
 import { ordForAntal } from '../lib/termer.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, state } from './12-tillstand.js';
-import { _lasInDemounderlag, _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { hamtaBasIntervall, state } from './12-tillstand.js';
+import { _lasInDemounderlag, _ritaDemoruta } from './20-demodata-diagnostik.js';
 
 // ---- Stort demo: 5 000 påhittade personer i 100 yrken ----
 // Generatorerna (genereraStortDemo, genereraStortDemoStatistik, _sdStallningstagande) och deras konstanter står i
@@ -15,15 +15,15 @@ import { _lasInDemounderlag, _renderDemoBanner } from './20-demodata-diagnostik.
 export const STORT_DEMO_STATISTIKNAMN = 'Påhittad jämförelsestatistik (demo)';
 
 // Som det lilla demot (_lasInDemounderlag), men utan självdiagnostik: den hör till det lilla demots kända egenskaper.
-export function loadStortDemo() {
+export function lasInStortDemo() {
     if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
     /** @type {HTMLElement} */ (document.getElementById('diagnostic-results')).style.display = 'none';   // ett tidigare litet demos diagnostik gäller inte här
-    _renderDemoBanner();
-    announceToScreenReader(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+    _ritaDemoruta();
+    meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartStortDemo() {
     ['first-run-stort-demo', 'upload-demo-stort'].forEach(id =>
-        document.getElementById(id)?.addEventListener('click', loadStortDemo));
+        document.getElementById(id)?.addEventListener('click', lasInStortDemo));
 }

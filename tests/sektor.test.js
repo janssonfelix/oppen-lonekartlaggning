@@ -119,7 +119,7 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
 });
 
 describe('sektor: översikten och huvudregressionen ger samma tal på samma urval (två kopior av modellen)', () => {
-    // justeradSkillnad (regression.js) och runOLSRegression (regressionskortet) räknar samma modell var för sig. På ett
+    // justeradSkillnad (regression.js) och korOLSRegression (regressionskortet) räknar samma modell var för sig. På ett
     // urval med ett enda huvudområde ska översikten ge huvudtalet: koefficienten, gränserna, n och k.
     const LON = { A: 28000, C: 29000, D: 36000 };
     const BAS_KV = ['A', 'A', 'C', 'C', 'C', 'D'], BAS_MA = ['A', 'C', 'D', 'D'];
@@ -132,7 +132,7 @@ describe('sektor: översikten och huvudregressionen ger samma tal på samma urva
             const rader = urval(medAlder);
             const w = createAppWindow();
             w.__state.data = rader.map(r => ({ ...r }));
-            const huvud = w.eval('runOLSRegression()');
+            const huvud = w.eval('korOLSRegression()');
             expect(huvud.error).toBeUndefined();
             expect(huvud.fellBackFromFull).toBeFalsy();
             const v = sektorsTabell(rader, { k: 10 })[0];
@@ -274,8 +274,8 @@ describe('[B6.9] sektor: sammanräknade huvudområden (ADR-87)', () => {
 describe('sektorsöversikten', () => {
     it('kortet visar en rad per sektor med demot, i prefixordning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__lasInDemodata();
+        w.__ritaFlik('struktur');
         const rader = [...w.document.querySelectorAll('#sektor-table tbody tr')].map(tr => tr.querySelector('.sektor-namn').textContent.trim());
         expect(rader).toEqual(['Vård- och omsorgsarbete med mera', 'Förskole-, skol-, fritids- och annan pedagogisk verksamhet', 'Teknikarbete']);
         expect(w.document.getElementById('struktur-sektorer').textContent).toMatch(/på att kvinnor och män arbetar i olika huvudområden/);
@@ -283,10 +283,10 @@ describe('sektorsöversikten', () => {
     });
     it('lönefil utan ålder: ett justerat tal per huvudområde, rubriken säger BAS (ADR-78)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
-        w.eval('invalidateStatCaches(); populateSelects(); unlockTabs();');
-        w.__renderTabContent('struktur');
+        w.eval('tomStatistikcacher(); fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('struktur');
         const rubriker = [...w.document.querySelectorAll('#sektor-table thead th')].map(th => th.textContent.trim());
         expect(rubriker).toContain('Justerad (BAS)');
         expect(rubriker).not.toContain('Justerad (ålder, BAS)');
@@ -295,10 +295,10 @@ describe('sektorsöversikten', () => {
     });
     it('klick på en sektor öppnar Utforska med sektorn som villkor', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__lasInDemodata();
+        w.__ritaFlik('struktur');
         w.document.querySelector('#sektor-table [data-sektor="Teknikarbete"]').click();
-        const u = w.eval('explorerUrval()').urval;
+        const u = w.eval('utforskaUrval()').urval;
         expect(u.villkor).toEqual([expect.objectContaining({ falt: 'sektor', op: 'enAv', varde: ['Teknikarbete'] })]);
         expect(w.document.getElementById('explore-rad').value).toBe('aid');
     });
@@ -308,9 +308,9 @@ describe('sektorsöversiktens punkter i Att göra', () => {
     it('räknas ur samma punkter som hela listan, också likvärdighetsparen, utan att bygga hela listan', async () => {
         const { sektorsnamn } = await import('../src/lib/aid.js');
         const w = createAppWindow();
-        w.__loadDemoData();
-        const alla = w.eval('buildActionChecklist()');
-        const grupp = w.eval('buildActionChecklist({ endastGrupper: true })');
+        w.__lasInDemodata();
+        const alla = w.eval('byggAtgardslista()');
+        const grupp = w.eval('byggAtgardslista({ endastGrupper: true })');
         const medAid = alla.filter(it => it.aid);
         expect(medAid.some(it => it.id.startsWith('lv-'))).toBe(true);
         expect(grupp.map(it => it.id).sort()).toEqual(medAid.map(it => it.id).sort());

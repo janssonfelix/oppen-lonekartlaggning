@@ -17,7 +17,7 @@ describe('k-tröskeln styr varje flik', () => {
     it('höjning 10 → 25 ritar om redan ritade flikar, utan egen rendering (exportläget)', async () => {
         const w = iExport(fonster(null));
         ritaAlla(w);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(synliga(w, [...SENT_MELLAN, ...SENT_SMA])).toEqual([]);
@@ -27,12 +27,12 @@ describe('k-tröskeln styr varje flik', () => {
         const w = fonster(null);
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
         ritaAlla(w);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         w.eval('sattKTroskel(25, { fraga: false })');
         w.alert = () => {};
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         expect(Object.keys(fangat).length).toBeGreaterThan(0);
         const lackor = [];
         for (const [namn, wb] of Object.entries(fangat)) for (const blad of wb.SheetNames) {
@@ -45,14 +45,14 @@ describe('k-tröskeln styr varje flik', () => {
     });
     it('höjning 10 → 25: Utforskas export behandlar 20-personersgrupperna som små', async () => {
         const w = fonster(null);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
         w.eval('sattKTroskel(25, { fraga: false })');
         await new Promise(r => setTimeout(r, 0));
         w.document.getElementById('explore-inkludera-sma').checked = false;
         const har = rader => rader.flat().some(c => SENT_MELLAN.some(v => normalisera(String(c)).includes(String(v))));
-        expect(har(w.__tableToMatrix('explore-table'))).toBe(false);
-        expect(har(w.__chartExportRows(w.document.getElementById('chart-explore')))).toBe(false);
+        expect(har(w.__tabellTillMatris('explore-table'))).toBe(false);
+        expect(har(w.__diagramexportRader(w.document.getElementById('chart-explore')))).toBe(false);
     });
     it('vid 5 syns även de små grupperna', () => {
         const w = fonster(5);
@@ -61,16 +61,16 @@ describe('k-tröskeln styr varje flik', () => {
     });
     it('vid 5 körs ingen regression per BAS med färre än 10 av något kön', () => {
         const w = fonster(5);
-        const r = w.eval(`_computePerBasGap(getData(), ['E', 'S1'])`);
+        const r = w.eval(`_raknaPerBasGap(hamtaData(), ['E', 'S1'])`);
         expect(r.find(x => x.bas === 'E').status).toBe('too_few');
         expect(r.find(x => x.bas === 'S1').status).not.toBe('too_few');
     });
     it('10 → 25 → 10 ger samma flikar som före ändringen (inga kvarlevande cacher)', async () => {
         const w = fonster(null);
-        const bild = () => FLIKAR.map(f => { w.__renderTabContent(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
+        const bild = () => FLIKAR.map(f => { w.__ritaFlik(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.
-        w.eval('invalidateStatCaches(); renderActionChecklist(); renderProcessTracker(); renderOutliers(); renderDataValidationReport(); refreshCurrentTab();');
-        w.__renderTabContent('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
+        w.eval('tomStatistikcacher(); ritaAtgardslista(); ritaKartlaggningensSteg(); ritaExtremvarden(); ritaValideringsrapport(); uppdateraAktivFlik();');
+        w.__ritaFlik('matrix'); await w.eval('_regKvantilKlar()');   // kvantilregressionens intervall räknas i bakgrunden efter första ritningen
         const fore = bild();
         // Golvet ändras (10 → 25 → 10): bootstrap-KI och styrkan räknas om i bakgrunden efter omritningen; vänta in den.
         w.eval('sattKTroskel(25, { fraga: false })'); await w.eval('_skattningarIBakgrunden()'); bild();
@@ -106,7 +106,7 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
             alder: 25 + ((i * 11) % 40), yrke: '6001 Säkeryrke 1', aid: '6001', yrkeLabel: 'Säkeryrke 1', enhet: '' });
         w.__state.data = rader;
         w.__state.policy = ['S1', 'S2'].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         return w;
     }
     const json = v => JSON.parse(JSON.stringify(v));
@@ -122,32 +122,32 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
     it('vid 25 prövas grupperna om 20 (10 av varje kön) på skärmen men inte i exporten', () => {
         const w = fonster(25);
         const status = uttryck => w.eval(uttryck).find(p => p.bas === 'A').status;
-        expect(status(`_computePerBasGap(getData(), ['A'])`)).not.toBe('too_few');
-        expect(status(`medExportLage(() => _computePerBasGap(getData(), ['A']))`)).toBe('too_few');
-        expect(status(`_computePerBasGap(getData(), ['A'])`)).not.toBe('too_few');
+        expect(status(`_raknaPerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
+        expect(status(`medExportLage(() => _raknaPerBasGap(hamtaData(), ['A']))`)).toBe('too_few');
+        expect(status(`_raknaPerBasGap(hamtaData(), ['A'])`)).not.toBe('too_few');
         // Personer att granska (bara på skärmen): grupperna om 20 prövas; de två om 6 inte, och noten säger vad man kan göra.
-        w.eval('renderPersonerAttGranska()');
+        w.eval('ritaPersonerAttGranska()');
         expect(normalisera(w.document.getElementById('pag-innehall').textContent))
             .toMatch(/12 personer i grupper med färre än 10 personer prövades inte\. Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan\./);
     });
     it('bootstrap-KI och styrkan som räknats på skärmen följer inte med ut', () => {
         const w = fonsterObalans();
-        w.eval('invalidateStatCaches()');                                       // skärmen först (golvet 10)
+        w.eval('tomStatistikcacher()');                                       // skärmen först (golvet 10)
         expect(w.__state.bootstrapCI).not.toBeNull();
-        expect(w.eval('bootstrapCIGallande()')).toBe(w.__state.bootstrapCI);
-        expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();  // 15 kvinnor når inte 25
+        expect(w.eval('bootstrapKIGallande()')).toBe(w.__state.bootstrapCI);
+        expect(w.eval('medExportLage(() => bootstrapKIGallande())')).toBeNull();  // 15 kvinnor når inte 25
         const skarm = json(w.eval('styrkaGallande()')), ut = json(w.eval('medExportLage(() => styrkaGallande())'));
         expect(skarm).toEqual(json(styrkeanalys(w.__state.data, 10)));
         expect(ut).toEqual(json(styrkeanalys(w.__state.data, 25)));
         expect(ut).not.toEqual(skarm);
-        expect(w.eval('bootstrapCIGallande()')).toBe(w.__state.bootstrapCI);   // och skärmen har kvar sitt
+        expect(w.eval('bootstrapKIGallande()')).toBe(w.__state.bootstrapCI);   // och skärmen har kvar sitt
     });
     it('räknade i exportläget först ger de skärmen dess egna, och exporten sina', () => {
         const w = fonsterObalans();
-        w.eval('medExportLage(() => invalidateStatCaches())');                  // exporten först (golvet 25)
+        w.eval('medExportLage(() => tomStatistikcacher())');                  // exporten först (golvet 25)
         expect(w.__state.bootstrapCI).toBeNull();
-        expect(w.eval('bootstrapCIGallande()')).not.toBeNull();                 // skärmen räknar sitt
-        expect(w.eval('medExportLage(() => bootstrapCIGallande())')).toBeNull();
+        expect(w.eval('bootstrapKIGallande()')).not.toBeNull();                 // skärmen räknar sitt
+        expect(w.eval('medExportLage(() => bootstrapKIGallande())')).toBeNull();
         expect(json(w.eval('styrkaGallande()'))).toEqual(json(styrkeanalys(w.__state.data, 10)));
         expect(json(w.eval('medExportLage(() => styrkaGallande())'))).toEqual(json(styrkeanalys(w.__state.data, 25)));
     });

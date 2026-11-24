@@ -9,7 +9,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laSlutsats, laLikaGrupper } from './41-lika-arbete.js';
 
@@ -31,7 +31,7 @@ function _bes8Titel(det, n) {
     const t = det && (det.querySelector('summary .avsnitt-titel') || det.querySelector('summary'));
     return t ? t.textContent.trim() : ('Område ' + n);
 }
-function _setupBes8Assessment() {
+function _kopplaBes8Bedomning() {
     document.querySelectorAll('.bes8-assess').forEach((host, i) => {
         if (/** @type {HTMLElement} */ (host).dataset.ready) return;
         const n = i + 1;
@@ -49,7 +49,7 @@ function _setupBes8Assessment() {
 }
 
 /** Läser § 8-områdenas titel + bedömning + anteckning från DOM (sorterat). */
-export function _bes8Areas() {
+export function _bes8Omraden() {
     const out = [];
     document.querySelectorAll('[id^="bes8-status-"]').forEach(sel => {
         const n = sel.id.replace('bes8-status-', '');
@@ -64,7 +64,7 @@ export function _bes8Areas() {
 // när en konfigurationsfil lästs in och när allt rensats.
 const BES8_IKON = { 'Ingen risk identifierad': 'bock', 'Möjlig risk – utreds vidare': 'statusVarning', 'Åtgärd krävs': 'statusKritisk', 'Ej tillämplig': 'streck' };
 export function bes8Uppdatera() {
-    const omraden = _bes8Areas();
+    const omraden = _bes8Omraden();
     const antal = s => omraden.filter(a => a.status === s).length;
     const bedomda = omraden.filter(a => a.status).length, atgard = antal('Åtgärd krävs'), risk = antal('Möjlig risk – utreds vidare');
     const topp = document.getElementById('rp-slutsatser');
@@ -110,7 +110,7 @@ const BES8_STOD = {
 };
 const BES8_STOD_FLIK = { likvardighet: 'Likvärdigt arbete', matrix: 'Lika arbete', struktur: 'Lönestruktur' };
 export function bes8Stod() {
-    const d = (() => { try { return getData(); } catch (_e) { return []; } })();
+    const d = (() => { try { return hamtaData(); } catch (_e) { return []; } })();
     document.querySelectorAll('.bes8-stod[data-stod]').forEach(el => {
         const li = /** @type {HTMLElement} */ (el), flik = li.dataset.stod || '';
         if (li.dataset.fast == null) li.dataset.fast = li.innerHTML;
@@ -123,7 +123,7 @@ export function bes8Stod() {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartReglerOchPraxis() {
-    _setupBes8Assessment();
+    _kopplaBes8Bedomning();
     document.addEventListener('change', e => { if (/** @type {HTMLElement} */ (e.target).closest && /** @type {HTMLElement} */ (e.target).closest('[id^="bes8-status-"]')) bes8Uppdatera(); });
     bes8Uppdatera();
     bes8Stod();

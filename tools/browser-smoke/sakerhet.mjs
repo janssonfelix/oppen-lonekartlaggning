@@ -60,7 +60,7 @@ export async function ingenTrafik() {
         }));
         ok(injektion.every(v => !v), `injicerat skript, onclick och <img onerror> körs inte under CSP:n (körde: ${injektion})`);
         await s.close();
-        /* global renderOutliers -- funktionen nedan körs i sidan, där den finns */
+        /* global ritaExtremvarden -- funktionen nedan körs i sidan, där den finns */
         // Enskilda löner med radnummer stannar i verktyget (ADR-23): varken Personer att granska eller extremvärdeslistan
         // skrivs ut när användaren skriver ut Översikt.
         {
@@ -68,7 +68,7 @@ export async function ingenTrafik() {
             await e.goto('file://' + FIL + '?demo=1');
             await e.waitForTimeout(1500);
             await oppnaFlik(e, '.nav-item[data-tab="dashboard"]');
-            await e.evaluate(() => { const t = document.getElementById('outliers-threshold'); if (t) t.value = '2'; renderOutliers(); });
+            await e.evaluate(() => { const t = document.getElementById('outliers-threshold'); if (t) t.value = '2'; ritaExtremvarden(); });
             const rader = await e.evaluate(() => document.querySelectorAll('#outliers-table-wrap tbody tr').length);
             await e.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
             await e.emulateMedia({ media: 'print' });

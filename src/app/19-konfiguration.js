@@ -14,29 +14,29 @@ import { svPct, svTal } from '../lib/talformat.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
-import { _konFarRedovisas, _kVisaFel, _renderaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
+import { _konFarRedovisas, _kVisaFel, _ritaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { COST_DEFAULTS, jmfNamn, orgNamn, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS, sattJmfNamn, sattOrgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { PALETTE } from './10-diagramtema.js';
-import { getBasIntervals, getData, state } from './12-tillstand.js';
-import { bedomningUnderlag, populateSelects, UK_ETIKETT } from './13-oversikt.js';
-import { renderActionChecklist } from './18-atgardslista.js';
-import { _showExportSensitivityToast } from './22-exporthjalpare.js';
+import { PALETT } from './10-diagramtema.js';
+import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
+import { bedomningUnderlag, fyllValjare, UK_ETIKETT } from './13-oversikt.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
+import { _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { sattOrgTyp } from './29-organisationspaket.js';
-import { invalidateStatCaches } from './30-statistikcacher.js';
-import { refreshCurrentTab } from './31-navigering.js';
+import { tomStatistikcacher } from './30-statistikcacher.js';
+import { uppdateraAktivFlik } from './31-navigering.js';
 import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversyn.js';
 import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
 import { sattLonemanad } from './45-aid-bas-tabeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _readCostSettings } from './55-prioritering.js';
-import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _lasKostnadsinstallningar } from './55-prioritering.js';
+import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, ritaHandlingsplan } from './56-handlingsplan.js';
 import { sattRapportUrval } from './58-rapportmodell.js';
-import { _bes8Areas, bes8Uppdatera } from './61-regler-och-praxis.js';
-import { byggArsbokslutNu, renderArsjamforelse } from './73-arsbokslut.js';
+import { _bes8Omraden, bes8Uppdatera } from './61-regler-och-praxis.js';
+import { byggArsbokslutNu, ritaArsjamforelse } from './73-arsbokslut.js';
 
 // ---- #17 Spara/ladda konfiguration som JSON ----
 /** Sessionens egna importprofiler för konfigurationsfilen; inget fält alls när de saknas. */
@@ -53,7 +53,7 @@ function _konfigImportprofiler() {
  * äldre namnen står bara i namnbytenas tabell i src/lib/konfiguration.js (ADR-96).
  * @returns {Object} JSON-säker konfigurationsstruktur.
  */
-function buildConfigSnapshot() {
+function byggKonfiguration() {
     return {
         version: konfigurationVersion(),
         sparad: new Date().toISOString(),
@@ -91,7 +91,7 @@ function buildConfigSnapshot() {
             ar: state.forecast.years
         } : null,
         // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
-        // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
+        // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (tillampaKonfiguration).
         ..._konfigImportprofiler(),
         // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
         // den som läser in konfigurationen kan läsa in samma paket.
@@ -107,7 +107,7 @@ function buildConfigSnapshot() {
         // användarinitierade nedladdningen.
         // Innehåller INGA råa individrader; kan innehålla användarförfattad text
         // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
-        bes8: (typeof _bes8Areas === 'function' ? _bes8Areas() : [])
+        bes8: (typeof _bes8Omraden === 'function' ? _bes8Omraden() : [])
             .map(a => ({ n: a.n, status: a.status, anteckning: a.note })),
         // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
         handlingsplan: (typeof _hpForKonfiguration === 'function' ? _hpForKonfiguration() : []),
@@ -136,19 +136,19 @@ function buildConfigSnapshot() {
  * tillstånd (vissa fält ändrade, andra kvar) — vilket annars kan leda till
  * tysta felaktiga analyser.
  *
- * @param {Object} cfg - Snapshot från buildConfigSnapshot(), version 3, eller en äldre fil i version 2 (de gamla namnen
+ * @param {Object} cfg - Snapshot från byggKonfiguration(), version 3, eller en äldre fil i version 2 (de gamla namnen
  *   byts mot de nya före valideringen, ADR-96).
  * @returns {{varningar: string[]}} Det i filen som inte tillämpades fast filen var giltig (en tröskel under
  *   organisationspaketets golv, ADR-47).
  * @throws {Error} Med beskrivande meddelande vid valideringsfel. State opåverkat.
  */
 // En konfigurationsfil kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81).
-function applyConfigSnapshot(cfg) { try { return _applyConfigSnapshot(cfg); } finally { visningNy(); } }
+function tillampaKonfiguration(cfg) { try { return _tillampaKonfiguration(cfg); } finally { visningNy(); } }
 /**
  * @param {Object} cfg
  * @returns {{varningar: string[]}}
  */
-function _applyConfigSnapshot(cfg) {
+function _tillampaKonfiguration(cfg) {
     // ---- FAS 1: Validera + bygg upp i isolerat temp-objekt ----
     if (!cfg || typeof cfg !== 'object')
         throw new Error('Konfigurationen är inte ett giltigt objekt.');
@@ -381,7 +381,7 @@ function _applyConfigSnapshot(cfg) {
     }
     // Förklaringsmodellen (ADR-56): ett ogiltigt värde ger standard med varning, aldrig fel; utan fältet gäller standard.
     // Utan inläst lönefil prövas inte yrkesgrupp mot datat (det görs av forklaringsmodell() när filen finns).
-    const rader = getData();
+    const rader = hamtaData();
     const fm = normaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some(d => d.aid || d.yrke) });
     varningar.push(...fm.varningar);
     // Uppdelningens variabler (ADR-65): samma mönster. En äldre fil utan fältet ger standard (BAS, AID); ett ogiltigt
@@ -418,7 +418,7 @@ function _applyConfigSnapshot(cfg) {
     }
 
     // Återställ HR:s manuella arbete (endast om snapshoten bar det).
-    // Sätts före renderActionChecklist() nedan så avbockningarna slår igenom.
+    // Sätts före ritaAtgardslista() nedan så avbockningarna slår igenom.
     if (tmp.bes8) tmp.bes8.forEach(a => {
         const s = document.getElementById('bes8-status-' + a.n);
         const t = document.getElementById('bes8-note-' + a.n);
@@ -428,12 +428,12 @@ function _applyConfigSnapshot(cfg) {
     if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
     // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
     // Demots nycklar glöms: filens skäl är användarens, också på en nyckel där demot skrev skäl.
-    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear(); if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed(); }
+    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear(); if (typeof ritaHandlingsplan === 'function') ritaHandlingsplan(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
     // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.
     if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
-    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof renderArsjamforelse === 'function') medExportLage(() => renderArsjamforelse()); }
+    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof ritaArsjamforelse === 'function') medExportLage(() => ritaArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
     if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);
@@ -453,7 +453,7 @@ function _applyConfigSnapshot(cfg) {
     setIf('prio-w-jamstalldhet', state.prioWeights.jamstalldhet);
     setIf('prio-cost-months',   state.costSettings.months);
     setIf('prio-po-pct',        state.costSettings.poPct);
-    _readCostSettings();
+    _lasKostnadsinstallningar();
     if (tmp.ui) {
         ['prio-label-mode','kon-color-by'].forEach(id => {
             const el = document.getElementById(id);
@@ -470,10 +470,10 @@ function _applyConfigSnapshot(cfg) {
         sattOrgTyp(tmp.ui.organisationstyp);   // vitlistas i sattOrgTyp
         if (tmp.ui.jamforelse && typeof tmp.ui.jamforelse === 'object') jamforelseSattVal(tmp.ui.jamforelse);
     }
-    invalidateStatCaches({ recompute: false });
-    // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker refreshCurrentTab och Att göra).
-    if (kAndrad && state.data.length) { populateSelects(); _renderaOmAllaFlikar(); }
-    else { refreshCurrentTab(); renderActionChecklist(); }
+    tomStatistikcacher({ recompute: false });
+    // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker uppdateraAktivFlik och Att göra).
+    if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
+    else { uppdateraAktivFlik(); ritaAtgardslista(); }
     // Påminnelse om organisationspaketet som konfigurationen skapades med.
     const op = tmp.organisationspaket;
     if (op && !(state.paket && state.paket.organisation === op.organisation && state.paket.skapat === op.skapat)) {
@@ -488,14 +488,14 @@ function _applyConfigSnapshot(cfg) {
 
 // ---- #18 A/B-jämförelse via snapshot ----
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-export function buildAnalysisSnapshot(...a) { return medExportLage(() => _buildAnalysisSnapshotExport.apply(null, /** @type {any} */ (a))); }
-function _buildAnalysisSnapshotExport() {
-    const d = getData();
+export function byggOgonblicksbild(...a) { return medExportLage(() => _byggOgonblicksbildExport.apply(null, /** @type {any} */ (a))); }
+function _byggOgonblicksbildExport() {
+    const d = hamtaData();
     if (!d.length) return null;
     // Könsuppdelade medianer och det råa gapet sparas bara när varje kön når tröskeln (ADR-12);
     // bilden visas i jämförelsetabellen och kan ligga kvar efter att urvalet ändrats.
     const m = ogonblicksbildMatt(d, kTroskel());
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     const dq = bedomningUnderlag();
     return {
         timestamp: new Date().toISOString(),
@@ -510,17 +510,17 @@ function _buildAnalysisSnapshotExport() {
         unexplainedPValue: reg.error ? null : reg.pValue,
         underlag: dq ? UK_ETIKETT[dq.status] : null,
         avgAge: m.avgAge,
-        nBas: getBasIntervals().length
+        nBas: hamtaBasIntervall().length
     };
 }
 
-export function renderSnapshotComparison() {
+export function ritaOgonblicksbildJamforelse() {
     const wrap = document.getElementById('snapshot-comparison');
     if (!wrap) return;
     const snap = state.snapshot;
-    if (!snap) { wrap.style.display = 'none'; _snapshotLutning(null, null); return; }
-    const cur = buildAnalysisSnapshot();
-    if (!cur) { wrap.style.display = 'none'; _snapshotLutning(null, null); return; }
+    if (!snap) { wrap.style.display = 'none'; _ogonblicksbildLutning(null, null); return; }
+    const cur = byggOgonblicksbild();
+    if (!cur) { wrap.style.display = 'none'; _ogonblicksbildLutning(null, null); return; }
     // En bild sparad vid en lägre tröskel kan bära könsuppdelade mått som inte längre får visas.
     const snapKon = _konFarRedovisas(snap.nKv, snap.nMa);
     const sk = v => (snapKon ? v : null);
@@ -561,14 +561,14 @@ export function renderSnapshotComparison() {
             </table>
         </div>
     `;
-    _snapshotLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
+    _ogonblicksbildLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
 }
 // Medianlönen per kön i ögonblicksbilden och nu, en rad per kön (foreEfterFigur). Samma tal som tabellen ovanför, och samma
 // villkor: ett köns median visas bara när den får visas i båda lägena.
-function _snapshotLutning(snap, cur) {
+function _ogonblicksbildLutning(snap, cur) {
     const ruta = document.getElementById('snapshot-lutning-ruta'), el = document.getElementById('chart-snapshot-lutning');
     if (!ruta || !el) return;
-    const rader = !snap || !cur ? [] : [['Kvinnor', snap.medianKv, cur.medianKv, PALETTE.kon.kvinna], ['Män', snap.medianMa, cur.medianMa, PALETTE.kon.man]]
+    const rader = !snap || !cur ? [] : [['Kvinnor', snap.medianKv, cur.medianKv, PALETT.kon.kvinna], ['Män', snap.medianMa, cur.medianMa, PALETT.kon.man]]
         .filter(([, a, b]) => typeof a === 'number' && typeof b === 'number')
         .map(([namn, fore, efter, farg]) => ({ namn, fore: Math.round(fore), efter: Math.round(efter), farg }));
     ruta.hidden = !rader.length;
@@ -580,7 +580,7 @@ function _snapshotLutning(snap, cur) {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartKonfiguration() {
     document.getElementById('btn-config-save')?.addEventListener('click', () => {
-        const cfg = buildConfigSnapshot();
+        const cfg = byggKonfiguration();
         const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -590,7 +590,7 @@ export function uppstartKonfiguration() {
         if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
         // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,
         // inte bara inställningar. Påminn om förvaringsdisciplinen (ingen rå lönedata).
-        _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
+        _visaExportvarning(`<strong>Konfiguration sparad</strong><br>
         Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
         (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
         disk och skicka den inte via okrypterad e-post.`);
@@ -610,7 +610,7 @@ export function uppstartKonfiguration() {
         reader.onload = ev => {
             try {
                 const cfg = JSON.parse(String(/** @type {FileReader} */ (ev.target).result));
-                const { varningar } = applyConfigSnapshot(cfg);
+                const { varningar } = tillampaKonfiguration(cfg);
                 const status = document.getElementById('config-status');
                 if (status) {
                     status.textContent = 'Konfiguration laddad' + (varningar.length ? '. ' + varningar.join(' ') : '');
@@ -626,7 +626,7 @@ export function uppstartKonfiguration() {
         reader.readAsText(file);
     });
     document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
-        const snap = buildAnalysisSnapshot();
+        const snap = byggOgonblicksbild();
         if (!snap) { alert('Läs in lönefilen först.'); return; }
         // I: möjlighet att namnge scenariot
         const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
@@ -641,7 +641,7 @@ export function uppstartKonfiguration() {
         const status = document.getElementById('snapshot-status');
         if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length>1?'n':''} totalt)`;
     });
-    document.getElementById('btn-snapshot-compare')?.addEventListener('click', renderSnapshotComparison);
+    document.getElementById('btn-snapshot-compare')?.addEventListener('click', ritaOgonblicksbildJamforelse);
     document.getElementById('btn-snapshot-clear')?.addEventListener('click', () => {
         state.snapshot = null;
         /** @type {HTMLInputElement} */ (document.getElementById('btn-snapshot-compare')).disabled = true;

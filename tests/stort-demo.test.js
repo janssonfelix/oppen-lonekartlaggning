@@ -28,13 +28,13 @@ const median = l => { const s = [...l].sort((a, b) => a - b); return (s[(s.lengt
 function bevaka(w) {
     w.eval(`window.__fel = []; window.__diagnostik = 0;
         { const rf = rapporteraFel; rapporteraFel = function (plats, e) { window.__fel.push(plats + ': ' + (e && e.message)); return rf(plats, e); }; }
-        { const rd = runDiagnostics; runDiagnostics = function () { window.__diagnostik++; return rd(); }; }`);
+        { const rd = korDiagnostik; korDiagnostik = function () { window.__diagnostik++; return rd(); }; }`);
     return w;
 }
 
 describe('stort demo: inläsningen', () => {
     let w;
-    beforeAll(() => { w = bevaka(createAppWindow()); w.eval('loadStortDemo()'); });
+    beforeAll(() => { w = bevaka(createAppWindow()); w.eval('lasInStortDemo()'); });
 
     it('sätter demoläget, låser upp flikarna och kör inte självdiagnostiken', () => {
         const d = w.document;
@@ -62,7 +62,7 @@ describe('stort demo: inläsningen', () => {
     });
 
     it('Översikt och flikarna ritas utan internt fel', () => {
-        for (const flik of ['dashboard', 'filer', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'utforska']) w.__renderTabContent(flik);
+        for (const flik of ['dashboard', 'filer', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'utforska']) w.__ritaFlik(flik);
         expect(w.__fel).toEqual([]);
         expect(w.__state._interntFel || []).toEqual([]);
         expect(w.document.getElementById('internt-fel-banner').hidden).toBe(true);
@@ -123,8 +123,8 @@ describe('stort demo: inläsningen', () => {
 describe('stort demo: demots statistik byts ut', () => {
     it('en riktig lönefil efter det stora demot tar bort demots statistik', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
-        w.eval('__state.data = genereraTestdata(); _afterDataLoaded();');
+        w.eval('lasInStortDemo()');
+        w.eval('__state.data = genereraTestdata(); _efterInlastData();');
         expect(w.__state.statistik).toHaveLength(0);
         expect(w.__state.statistikKalla).toBe(null);
         expect(w.document.getElementById('upload-cell-stat').classList.contains('loaded')).toBe(false);
@@ -133,7 +133,7 @@ describe('stort demo: demots statistik byts ut', () => {
 
     it('en statistikfil efter det stora demot ersätter demots statistik', async () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
+        w.eval('lasInStortDemo()');
         w.eval(readFileSync(join(root, 'vendor', 'papaparse.min.js'), 'utf8'));
         const input = w.document.getElementById('file-input-stat');
         const fil = new w.File(['AID;BAS;Median\n401011;F;41000\n'], 'statistik.csv', { type: 'text/csv' });
@@ -194,12 +194,12 @@ describe('stort demo: ingångarna', () => {
 // Nyckeltalen lästa ur demot efter ombyggnaden till 5 000 personer. Talen ändras med avsikt när demot ändras: läs av
 // de nya värdena och skriv in dem här.
 const SD_RATT_GAP = -0.99;      // median kvinnor / median män − 1, i %
-const SD_KONPCT = -2.35;        // runOLSRegression().konPct, i %
+const SD_KONPCT = -2.35;        // korOLSRegression().konPct, i %
 const SD_SMA_GRUPPER = 101;     // grupper (AID-kod i BAS-intervallet, ADR-89) med n < 10 eller ett kön < 10
 
 describe('stort demo: nyckeltalen', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.eval('loadStortDemo()'); });
+    beforeAll(() => { w = createAppWindow(); w.eval('lasInStortDemo()'); });
 
     it('rått gap', () => {
         const d = w.__state.data;
@@ -208,7 +208,7 @@ describe('stort demo: nyckeltalen', () => {
     });
 
     it('könskoefficienten i regressionen', () => {
-        expect(Math.abs(w.eval('runOLSRegression()').konPct - SD_KONPCT)).toBeLessThanOrEqual(0.3);
+        expect(Math.abs(w.eval('korOLSRegression()').konPct - SD_KONPCT)).toBeLessThanOrEqual(0.3);
     });
 
     it('antalet små grupper', () => {
@@ -226,7 +226,7 @@ describe('stort demo: nyckeltalen', () => {
 describe('det lilla demot är oförändrat', () => {
     it('260 rader, självdiagnostiken körs och bannern nämner inget stort demo', () => {
         const w = bevaka(createAppWindow()), d = w.document;
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.data).toHaveLength(260);
         expect(w.__diagnostik).toBe(1);
         expect(d.getElementById('diagnostic-results').style.display).toBe('block');
@@ -236,16 +236,16 @@ describe('det lilla demot är oförändrat', () => {
     });
     it('det lilla demot efter det stora: 260 rader och referensen A–J', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
-        w.__loadDemoData();
+        w.eval('lasInStortDemo()');
+        w.__lasInDemodata();
         expect(w.__state.data).toHaveLength(260);
         expect(w.__state.policy).toHaveLength(10);
         expect(utanMellanrum(w.document.getElementById('demo-mode-banner').textContent)).not.toMatch(/stort demo/i);
     });
     it('det lilla demot efter det stora: ingen statistik kvar', () => {
         const w = createAppWindow();
-        w.eval('loadStortDemo()');
-        w.__loadDemoData();
+        w.eval('lasInStortDemo()');
+        w.__lasInDemodata();
         expect(w.__state.statistik).toHaveLength(0);
         expect(w.__state.statistikKalla).toBe(null);
         expect(w.document.getElementById('upload-cell-stat').classList.contains('loaded')).toBe(false);
@@ -357,11 +357,11 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
         const sektor = w.eval(`Object.fromEntries(${JSON.stringify([...new Set(data.map(r => r.aid))])}.map(a => [a, sektorsnamn(a)]))`);
         ({ varden: sentinel, block, provade } = sattSentinel(data, sektor));
         w.__sdJson = JSON.stringify(data);
-        w.eval('_lasInDemounderlag(() => JSON.parse(window.__sdJson), { stort: true })');   // som loadStortDemo, med sentinellönerna
+        w.eval('_lasInDemounderlag(() => JSON.parse(window.__sdJson), { stort: true })');   // som lasInStortDemo, med sentinellönerna
         w.alert = () => {};
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         expect(Object.keys(fangat)).toHaveLength(1);
         const wb = Object.values(fangat)[0];
         bok = wb.SheetNames.map(namn => ({ namn, rader: w.XLSX.utils.sheet_to_json(wb.Sheets[namn], { header: 1, raw: true }) }));
@@ -416,8 +416,8 @@ describe('stort demo: Excel (alla flikar) röjer ingen grupp under tröskeln', (
 describe('stort demo: Rensa all data', () => {
     it('tömmer allt, och lämnar samma tillstånd som efter det lilla demot', () => {
         const stort = createAppWindow(), litet = createAppWindow();
-        stort.eval('loadStortDemo()');
-        litet.__loadDemoData();
+        stort.eval('lasInStortDemo()');
+        litet.__lasInDemodata();
         stort.eval('_rensaAllData()');
         litet.eval('_rensaAllData()');
         expect(stort.__state.data).toHaveLength(0);

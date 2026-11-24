@@ -11,7 +11,7 @@ import { fyllTermer, skapaTermer } from '../lib/termer.js';
 //   `${n} ${termForAntal(n, T.enhet)}`                            → "1 AID-etikett", "3 AID-etiketter"
 // Fast text, som ordlistan och index.html, skrivs som mall och fylls med termText: "{Enhet.bfl} i samma {niva.en}".
 // I index.html bär elementet mallen i data-term-template (och data-term-attr när mallen gäller ett attribut, till
-// exempel data-tip); applyProfileLabels fyller dem, och standardtexten står kvar i elementet för sidan utan skript.
+// exempel data-tip); tillampaProfiletiketter fyller dem, och standardtexten står kvar i elementet för sidan utan skript.
 
 /** Den gällande uppsättningen termer. */
 export const T = skapaTermer();

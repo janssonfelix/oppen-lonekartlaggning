@@ -24,19 +24,19 @@
 //
 // Ritaren är delad i tre filer: 10-diagramlayout.js (mått och layout), 10-diagrammarken.js (märkena, färgskalan,
 // referenserna) och den här (vad som ritas, panelen, förklaringen, _rfByggSvg). Alla tre sorteras före
-// 10-diagramtema.js: PALETTE och CHART_FONT läses först vid anrop.
+// 10-diagramtema.js: PALETT och DIAGRAM_TYPSNITT läses först vid anrop.
 // ====================================================================
 import { antalPunkter, arBortvald, harleddaLager, harlettNot, kvantilpunkter, ladstatistik, namnIMening, panelerMedLager, skalDoman, talformat, underlagBeskrivning, underlagProva, underlagVarden, urvalBeskrivning, urvalEtikett, urvalLista, urvalSomLista, urvalSpann, urvalVarden, utanSmaGrupper, valideraFigur } from '../lib/figur.js';
 import { tolkaTalStrikt } from '../lib/inlasning.js';
 import { FARG } from './01-farger.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
-import { _hideChartTip, _setScatterSampleNote, _showChartTip } from './02-verktygstips.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
+import { _doljDiagramtips, _sattPunkturvalsnot, _visaDiagramtips } from './02-verktygstips.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSanktNot } from './06-k-troskel.js';
 import { _RF, _rfBredvid, _rfEtikettBeslut, _rfEtikettRum, _rfIPanel, _rfKorta, _rfLitenPx, _rfLodratLayout, _rfPunktEtikettRum, _rfSkala, _rfStapelEtikettRum, _rfTal, _rfText, _rfVagratLayout, _rfXEtiketter, _rfXOmfang, _rfYAxlar } from './10-diagramlayout.js';
 import { _RF_MARKEN, _rfEtikettKrockar, _rfFargskala, _rfFargstapel, _rfLadIndivider, _rfLadKategori, _rfMonster, _rfOfylld, _rfReferenser, _rfSymbol, _rfUndvikEtiketter } from './10-diagrammarken.js';
-import { CHART_FONT, PALETTE } from './10-diagramtema.js';
-import { _attachChartExport } from './11-diagramexport.js';
+import { DIAGRAM_TYPSNITT, PALETT } from './10-diagramtema.js';
+import { _laggTillDiagramexport } from './11-diagramexport.js';
 import { _mkTillampa, sattDiagramMarkering } from './11-markering.js';
 import { Stat } from './12-tillstand.js';
 
@@ -100,7 +100,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
     const c = {
         x, y, y2, px, figur: figurIn, fargskala: L.fargskala, texter: gt, etikettMax: L.etikettMax, etiketter: L.etiketter, panelB, inreH,
         yFor: l => (l.axel === 'y2' && y2 ? y2 : y),
-        farg: (l, li) => l.farg || PALETTE.serie[li % PALETTE.serie.length],
+        farg: (l, li) => l.farg || PALETT.serie[li % PALETT.serie.length],
         dold: syn.dold,
         bredvid: _rfBredvid(iPanel),
         lador: iPanel.filter(({ l }) => l.marke === 'lada').map(({ li }) => li),
@@ -128,7 +128,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
     }
     if (!figurIn.x.dold) g.append('line').attr('x1', 0).attr('x2', panelB).attr('y1', inreH).attr('y2', inreH).attr('stroke', FARG.blek).attr('stroke-width', 1);
     for (const k of xEt) {
-        const t = _rfText(g, k.p, inreH + px + 6, k.text, { px, ankare: 'middle', title: k.hel, farg: x.bandwidth ? undefined : CHART_FONT.dampad, attr: { 'data-axel': 'x' } });
+        const t = _rfText(g, k.p, inreH + px + 6, k.text, { px, ankare: 'middle', title: k.hel, farg: x.bandwidth ? undefined : DIAGRAM_TYPSNITT.dampad, attr: { 'data-axel': 'x' } });
         // Andra raden av ett långt kategorinamn (L.xTvaRader): en tspan under den första.
         if (k.rad2) t.append('tspan').attr('x', k.p).attr('dy', px + 2).text(k.rad2);
     }
@@ -136,7 +136,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
 }
 
 // Förklaringen (utanför bildgruppen: knapparna ska vara nåbara för hjälpmedel) och noten.
-function _rfRitaLegend(svg, L, syn, px, H, notRader) {
+function _rfRitaForklaring(svg, L, syn, px, H, notRader) {
     const legendY = L.topp + L.inreH + L.axelNer + L.legBas;
     const lg = svg.append('g').attr('data-del', 'forklaring');
     L.legend.poster.forEach(p => {
@@ -145,7 +145,7 @@ function _rfRitaLegend(svg, L, syn, px, H, notRader) {
             .attr('aria-pressed', dold_ ? 'false' : 'true').attr('aria-label', `${p.serie}, visa eller dölj serien`)
             .attr('transform', `translate(${8 + p.x},${legendY + p.rad * _RF.legendRad})`).attr('cursor', 'pointer')
             .attr('opacity', dold_ ? 0.4 : 1);
-        const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];
+        const f = p.l.farg || PALETT.serie[p.li % PALETT.serie.length];
         if (p.l.marke === 'linje') g.append('line').attr('x1', 0).attr('x2', 12).attr('y1', -4).attr('y2', -4).attr('stroke', f).attr('stroke-width', 2.5);
         else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) (p.l.ofylld ? _rfOfylld(_rfSymbol(g, p.l.symbol, 6, -4, 5, f), f) : _rfSymbol(g, p.l.symbol, 6, -4, 5, f)).attr('data-prov', 'punkt');
         else if (p.l.marke === 'punkt' && p.l.symbol === 'streck') g.append('line').attr('data-prov', 'punkt').attr('x1', 6).attr('x2', 6).attr('y1', -10).attr('y2', 2).attr('stroke', f).attr('stroke-width', 2.5);
@@ -178,7 +178,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
         if (delar) return _rfByggRadpaneler(figurIn, delar, bredd, val);
         figurIn = { ...figurIn, paneler: undefined };
     }
-    const px = CHART_FONT.size;
+    const px = DIAGRAM_TYPSNITT.size;
     const B = isFinite(+bredd) && +bredd > 0 ? +bredd : 600;
     const hv = val.hojd || figurIn.hojd || _RF.hojd;
     const H = isFinite(+hv) && +hv > 0 ? +hv : _RF.hojd;
@@ -209,12 +209,12 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     const urval = new Map();   // lager → [ritade, totalt] för nedsamplade punktlager (se _rfPunkt)
 
     // y-axlarnas markeringar och titlar
-    for (const k of L.yEt) _rfText(rot, -8, k.p + px * 0.35, k.text, { px, ankare: 'end', title: k.hel, farg: L.yBand ? undefined : CHART_FONT.dampad, attr: { 'data-axel': 'y' } });
+    for (const k of L.yEt) _rfText(rot, -8, k.p + px * 0.35, k.text, { px, ankare: 'end', title: k.hel, farg: L.yBand ? undefined : DIAGRAM_TYPSNITT.dampad, attr: { 'data-axel': 'y' } });
     if (figurIn.y.titel) {
         const t = String(figurIn.y.titel);
         _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: 'middle', title: t, attr: { transform: `translate(${-(L.vanster - px - 2)},${L.inreH / 2}) rotate(-90)` } });
     }
-    for (const k of L.y2Et) _rfText(rot, L.inreB + 8, k.p + px * 0.35, k.text, { px, farg: CHART_FONT.dampad, attr: { 'data-axel': 'y2' } });
+    for (const k of L.y2Et) _rfText(rot, L.inreB + 8, k.p + px * 0.35, k.text, { px, farg: DIAGRAM_TYPSNITT.dampad, attr: { 'data-axel': 'y2' } });
     if (L.y2 && figurIn.y2.titel) {
         const t = String(figurIn.y2.titel);
         _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: 'middle', title: t, attr: { transform: `translate(${L.inreB + L.y2Block - px + 2},${L.inreH / 2}) rotate(90)` } });
@@ -222,7 +222,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     syn.paneler.forEach((panel, pi) => _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval));
     if (L.xTitel) _rfText(rot, L.inreB / 2, L.inreH + px + 6 + px + 8 + (L.xTvaRader ? px + 2 : 0), _rfKorta(L.xTitel, L.inreB / (px * _RF.tecken)), { px, ankare: 'middle', title: L.xTitel });
     if (fargskala) _rfFargstapel(rot, figurIn.fargskala, fargskala, L.inreB + L.hoger - L.fargB + 8, L.inreH, px, L.fargB - _RF.fargLuft);
-    _rfRitaLegend(svg, L, syn, px, H, L.notRader);
+    _rfRitaForklaring(svg, L, syn, px, H, L.notRader);
     let ritade = 0, totalt = 0;
     for (const [r, t] of urval.values()) { ritade += r; totalt += t; }
     if (totalt) svg.attr('data-nedsamplat', `${ritade}/${totalt}`);
@@ -354,7 +354,7 @@ function _rfTipsHtml(rader) {
 }
 
 /**
- * Kroken som _hideChartTip (02-verktygstips.js) anropar varje gång portalen döljs och töms — av ett diagram
+ * Kroken som _doljDiagramtips (02-verktygstips.js) anropar varje gång portalen döljs och töms — av ett diagram
  * här, av Escape, rullning eller ändrad fönsterstorlek, eller av en annan del av sidan: ägaren glöms. Sitter den
  * inte längre i dokumentet (vyn har bytt ut sin behållare utan rensaFigur) rensas den också, så att figuren,
  * lyssnarna, storleksbevakningen och en väntande omritning släpps.
@@ -367,10 +367,10 @@ export function _rfTipsDolt() {
 
 /**
  * Nollställer verktygstipset oavsett vem som äger det: portalen döljs och töms, ägaren glöms och en ägare som
- * lämnat dokumentet rensas (allt görs av _hideChartTip och kroken ovan — ett ställe). Anropas när ett diagram
+ * lämnat dokumentet rensas (allt görs av _doljDiagramtips och kroken ovan — ett ställe). Anropas när ett diagram
  * döljer sitt eget tips (_rfDoljTips) och av rensningen av sidan (_rfRensaAlla).
  */
-function _rfNollstallTips() { _hideChartTip(); }
+function _rfNollstallTips() { _doljDiagramtips(); }
 
 // En ägare som lämnat dokumentet städas bort (billig koll: vid pekarrörelse, storleksändring och när ett tips döljs).
 function _rfStadaAgare() {
@@ -498,7 +498,7 @@ function _rfMeddelande(el, slag, text) {
 // räknar dolda punkter — aldrig ur el._figur.
 function _rfNotis(el, svg) {
     const m = svg ? /^(\d+)\/(\d+)$/.exec(svg.getAttribute('data-nedsamplat') || '') : null;
-    _setScatterSampleNote(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
+    _sattPunkturvalsnot(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
 }
 
 // ---- Övergångar: märkena flyttar sig mellan två ritningar av samma diagram ----
@@ -691,7 +691,7 @@ function _rfOmStorlek(el) {
     if (_rfMattBredd(el) !== el._figurBredd) _rfRitaSakert(el, { overgang: false });
 }
 
-function _rfLegendPost(el, mal) {
+function _rfForklaringspost(el, mal) {
     const post = mal && mal.closest ? mal.closest('[data-serie]') : null;
     return post && el.contains(post) ? post : null;
 }
@@ -760,14 +760,14 @@ function _rfVidRorelse(el, e) {
         k.senast = { m: t.m, html };
     }
     if (!k.senast.html) { _rfDoljTips(el); return; }
-    _showChartTip(k.senast.html, e.clientX || 0, e.clientY || 0);
+    _visaDiagramtips(k.senast.html, e.clientX || 0, e.clientY || 0);
     _rfTipsAgare = el;
 }
 
 function _rfVidKlick(el, e) {
     // Klicket som följer på att en pensling släpps hör till penslingen, inte till märket under pekaren.
     if (el._rfKoppling && el._rfKoppling.nyssPenslat) { el._rfKoppling.nyssPenslat = false; return; }
-    const post = _rfLegendPost(el, e.target);
+    const post = _rfForklaringspost(el, e.target);
     if (post) { _rfVaxla(el, post.getAttribute('data-serie')); return; }
     // Ett klick strax intill en punkt gäller punkten — men inte klicket som just tog bort ett penslat område.
     const k = el._rfKoppling, rensat = !!(k && k.nyssRensat);
@@ -782,7 +782,7 @@ function _rfVidKlick(el, e) {
 }
 
 function _rfVidTangent(el, e) {
-    const post = _rfLegendPost(el, e.target);
+    const post = _rfForklaringspost(el, e.target);
     if (post) {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();   // mellanslag ska inte rulla sidan
@@ -861,9 +861,9 @@ function _rfTangentTill(el, m, nr, antal) {
     }
     const html = _rfTipsHtml(rader);
     const r = m.getBoundingClientRect ? m.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
-    if (html) { _showChartTip(html, r.left + r.width / 2, r.top); _rfTipsAgare = el; } else _rfDoljTips(el);
+    if (html) { _visaDiagramtips(html, r.left + r.width / 2, r.top); _rfTipsAgare = el; } else _rfDoljTips(el);
     const serie = t && t.lager.serie ? `${t.lager.serie}. ` : '';
-    if (typeof announceToScreenReader === 'function') announceToScreenReader(`${serie}${_rfTipsText(rader) || 'Datapunkt'} (${nr + 1} av ${antal})`);
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`${serie}${_rfTipsText(rader) || 'Datapunkt'} (${nr + 1} av ${antal})`);
 }
 function _rfTangentSlapp(el) {
     const k = el._rfKoppling;
@@ -951,7 +951,7 @@ export function ritaFigur(id, figur, val) {
         el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === 'string' ? el._figurVal.exportBeskrivning : '';
         _rfRitaOm(el);
         _rfKoppla(el);
-        _attachChartExport(el);
+        _laggTillDiagramexport(el);
         _rfUrvalVisa(el);  // filterraderna direkt före behållaren (efter exportmenyn) och noten under den
     } catch (e) {
         _rfVisaFel(el, e);
@@ -980,7 +980,7 @@ export function rensaFigur(id) {
     if ('_figur' in el) delete el._exportBeskrivning;
     delete el._figur; delete el._figurVal; delete el._figurDolda; delete el._figurFilter; delete el._figurBredd;
     _rfUrvalTaBort(el);   // filterraderna och noten; minnet (_rfUrvalMinne) står kvar
-    _setScatterSampleNote(el, null);
+    _sattPunkturvalsnot(el, null);
     _rfPenselGlom(el);
     _rfZoomGlom(el);
     _rfOvergangAvsluta(el);

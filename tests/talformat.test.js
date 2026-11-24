@@ -2,9 +2,9 @@
  * Svenskt talformat i exporterna.
  *
  * Talformatet självt (src/lib/talformat.js) prövas utan DOM längst ned. Tre vägar ut ur verktyget prövas:
- *   1. CSV- och urklippsexporten av en tabell: talen som de står på skärmen (`tableToMatrix` och src/lib/csv.js).
+ *   1. CSV- och urklippsexporten av en tabell: talen som de står på skärmen (`tabellTillMatris` och src/lib/csv.js).
  *      Cellernas formelskydd och talformat prövas utan DOM i tests/csv.test.js.
- *   2. Jämförelseexporten (`exportBenchmarkExcel`, src/app/64-jamforelse-export.js): kronor och procent är talceller
+ *   2. Jämförelseexporten (`exportJamforelseExcel`, src/app/64-jamforelse-export.js): kronor och procent är talceller
  *      med svenskt talformat, koder är textceller, och en tom cell är tom. Arbetsboken skrivs och läses tillbaka
  *      med SheetJS, och värdena är desamma.
  *   3. Rundtur av talen: ett tal som verktyget skriver i svenskt format (svTal/svPct, som tabellerna och därmed
@@ -30,7 +30,7 @@ describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
         t.innerHTML = `<thead><tr><th>Yrke</th><th>BAS</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Tom</th></tr></thead>
             <tbody><tr><td>012345 Påhittat yrke</td><td>A</td>${tal.map(v => `<td>${v}</td>`).join('')}<td></td></tr></tbody>`;
         w.document.body.appendChild(t);
-        const rader = w.__tableToMatrix('talformat-prov');
+        const rader = w.__tabellTillMatris('talformat-prov');
         expect(rader[1]).toEqual(['012345 Påhittat yrke', 'A', `${MINUS}31 417`, '1 250,50', `${MINUS}3,25 %`, '12,5 %', '']);
         expect(w.__tillCsv(rader.slice(1))).toBe('012345 Påhittat yrke;A;-31 417;1 250,50;-3,25 %;12,5 %;');
         expect(w.__tillTsv(rader.slice(1))).toBe('012345 Påhittat yrke\tA\t-31 417\t1 250,50\t-3,25 %\t12,5 %\t');
@@ -48,14 +48,14 @@ describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)',
         t.innerHTML = `<thead><tr><th>Yrke</th><th>Kr</th><th>Pct</th></tr></thead>
             <tbody><tr><td>012345 Påhittat yrke</td><td>${w.eval('svKr(36262)')}</td><td>${w.eval('svPct(-3.25, 2)')}</td></tr></tbody>`;
         w.document.body.appendChild(t);
-        const rader = w.__tableToMatrix('talformat-enhet');
+        const rader = w.__tabellTillMatris('talformat-enhet');
         expect(rader[1]).toEqual(['012345 Påhittat yrke', '36 262 kr', `${MINUS}3,25 %`]);
         expect(w.__tillCsv(rader.slice(1))).toBe('012345 Påhittat yrke;36 262 kr;-3,25 %');
     });
     it('p-värdet hålls ihop: «p < 0,001» bryts inte mellan tecknet och talet', () => {
-        expect(w.eval('_formatPValue(0.0004)')).toBe(`p${NBSP}<${NBSP}0,001`);
-        expect(w.eval('_formatPValue(0.03)')).toBe(`p${NBSP}<${NBSP}0,05`);
-        expect(w.eval('_formatPValue(0.1234)')).toBe(`p${NBSP}=${NBSP}0,123`);
+        expect(w.eval('_formateraPVarde(0.0004)')).toBe(`p${NBSP}<${NBSP}0,001`);
+        expect(w.eval('_formateraPVarde(0.03)')).toBe(`p${NBSP}<${NBSP}0,05`);
+        expect(w.eval('_formateraPVarde(0.1234)')).toBe(`p${NBSP}=${NBSP}0,123`);
     });
     it('talinläsningen läser tillbaka samma värde', () => {
         expect(w.eval(`tolkaTalStrikt(svKr(-31417)).value`)).toBe(-31417);
@@ -130,7 +130,7 @@ describe('Jämförelseexporten: talceller med svenskt talformat, koder som text'
         })()`);
         w.__fangad = null;
         w.XLSX.writeFile = (wb, namn) => { w.__fangad = { wb, namn }; };
-        w.eval('exportBenchmarkExcel()');
+        w.eval('exportJamforelseExcel()');
         bok = w.__fangad.wb;
     });
     const blad = () => bok.Sheets['Jämförelse_alla_percentiler'];

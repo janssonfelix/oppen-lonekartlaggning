@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { FARG } from './01-farger.js';
-import { esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { INAKTIVITET_STANDARD_MIN } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { referensKalla, referensNamn, state } from './12-tillstand.js';
 import { _fkVantar } from './17-forhandskontroll.js';
-import { _rensaAllData, clearAllData } from './26-rensning.js';
+import { _rensaAllData, rensaAllData } from './26-rensning.js';
 import { stangInstallningar } from './86-installningar.js';
 
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
@@ -17,7 +17,7 @@ import { stangInstallningar } from './86-installningar.js';
  * konkret insyn i exakt vad verktyget håller i RAM.
  */
 
-export function openDataResidency() {
+export function oppnaVadLagras() {
     const modal = document.getElementById('data-residency-modal');
     const content = document.getElementById('data-residency-content');
     if (!modal || !content) return;
@@ -89,7 +89,7 @@ export function openDataResidency() {
         </div>`;
 
     modal.style.display = 'flex';   // som övriga modaler: .glossary-modal centrerar sin panel
-    if (typeof trapFocus === 'function') trapFocus(modal);
+    if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 
 // ---- Inaktivitetstimer med tvåfas-varning ----
@@ -97,31 +97,31 @@ export function openDataResidency() {
 // Lyssnar på användaraktivitet (mus/tangentbord/scroll/touch) och nollställer
 // timern. När timern når X% av timeout visas en modal som ber användaren
 // bekräfta att de fortfarande är där — om ingen reaktion inom 60 s rensas data
-// (motsvarande clearAllData utan confirm-prompt).
+// (motsvarande rensaAllData utan confirm-prompt).
 //
 // På som standard (90 minuter: dataskydd som standard enligt GDPR art. 25.2, med en tid som inte
 // avbryter ett normalt arbetspass). HR kan
 // ändra eller stänga av det i "Vad lagras?"-modalen.
 /** @type {ReturnType<typeof setTimeout>|null} */
-let _inactivityIdleTimer  = null;
+let _inaktivitetstimer  = null;
 /** @type {ReturnType<typeof setInterval>|null} */
-let _inactivityWarningTimer = null;
+let _inaktivitetsvarningTimer = null;
 /** @type {HTMLElement|null} */
-let _inactivityWarnEl     = null;
+let _inaktivitetsvarningElement     = null;
 
-function _hideInactivityWarning() {
-    if (_inactivityWarnEl) {
-        _inactivityWarnEl.remove();
-        _inactivityWarnEl = null;
+function _doljInaktivitetsvarning() {
+    if (_inaktivitetsvarningElement) {
+        _inaktivitetsvarningElement.remove();
+        _inaktivitetsvarningElement = null;
     }
-    if (_inactivityWarningTimer) {
-        clearInterval(_inactivityWarningTimer);
-        _inactivityWarningTimer = null;
+    if (_inaktivitetsvarningTimer) {
+        clearInterval(_inaktivitetsvarningTimer);
+        _inaktivitetsvarningTimer = null;
     }
 }
 
-function _showInactivityWarning() {
-    if (_inactivityWarnEl) return;  // redan visad
+function _visaInaktivitetsvarning() {
+    if (_inaktivitetsvarningElement) return;  // redan visad
     const warn = document.createElement('div');
     warn.className = 'inactivity-warn-overlay';
     warn.setAttribute('role', 'alertdialog');
@@ -141,31 +141,31 @@ function _showInactivityWarning() {
             </div>
         </div>`;
     document.body.appendChild(warn);
-    _inactivityWarnEl = warn;
+    _inaktivitetsvarningElement = warn;
 
     // 60 s nedräkning mot en sluttid: en flik som inte syns får sina intervall strypta (upp till ett tick per minut),
     // så tick räknas inte, utan tiden som gått.
     const slut = Date.now() + 60 * 1000;
     const countdownEl = warn.querySelector('#inactivity-countdown');
-    _inactivityWarningTimer = setInterval(() => {
+    _inaktivitetsvarningTimer = setInterval(() => {
         const secondsLeft = Math.max(0, Math.ceil((slut - Date.now()) / 1000));
         if (countdownEl) countdownEl.textContent = String(secondsLeft);
         if (secondsLeft <= 0) {
-            _autoClearOnInactivity();
+            _rensaVidInaktivitet();
         }
     }, 1000);
 
     warn.querySelector('#inactivity-clear-now')?.addEventListener('click', () => {
-        _autoClearOnInactivity();
+        _rensaVidInaktivitet();
     });
     warn.querySelector('#inactivity-extend')?.addEventListener('click', () => {
-        _hideInactivityWarning();
-        _resetInactivityTimer();
+        _doljInaktivitetsvarning();
+        _aterstallInaktivitetstimer();
     });
 }
 
-function _autoClearOnInactivity() {
-    _hideInactivityWarning();
+function _rensaVidInaktivitet() {
+    _doljInaktivitetsvarning();
     const hadData = state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
     // Samma rensning som knappen, utan bekräftelsefrågan (ingen finns vid datorn).
     _rensaAllData();
@@ -179,40 +179,40 @@ function _autoClearOnInactivity() {
     }
 }
 
-export function _resetInactivityTimer() {
-    if (_inactivityIdleTimer) {
-        clearTimeout(_inactivityIdleTimer);
-        _inactivityIdleTimer = null;
+export function _aterstallInaktivitetstimer() {
+    if (_inaktivitetstimer) {
+        clearTimeout(_inaktivitetstimer);
+        _inaktivitetstimer = null;
     }
     if (state.inactivityTimeoutMin <= 0) return;
     if (state.data.length === 0 && !_fkVantar && !state.forhandskontroll) return;   // en väntande fil och en förhandskontroll på skärmen rensas också
     // Visa varningen 60 s INNAN total timeout
     const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1000 - 60 * 1000);
-    _inactivityIdleTimer = setTimeout(_showInactivityWarning, warnAfterMs);
+    _inaktivitetstimer = setTimeout(_visaInaktivitetsvarning, warnAfterMs);
 }
 
 // Ett värde låst av organisationspaketet (ADR-47) gäller oavsett vad som begärs.
-export function setInactivityTimeout(minutes) {
+export function sattInaktivitetstid(minutes) {
     const last = state.paketLas.inaktivitetMin;
     state.inactivityTimeoutMin = last != null ? last : Math.max(0, parseInt(minutes, 10) || 0);
-    _hideInactivityWarning();
-    _resetInactivityTimer();
+    _doljInaktivitetsvarning();
+    _aterstallInaktivitetstimer();
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartVadLagrasInaktivitet() {
     // Knappen står i panelen Inställningar. Har rensningen gjorts stängs panelen, och Översikt visas som uppladdningssida.
     document.getElementById('btn-clear-all-data')?.addEventListener('click', () => {
-        clearAllData();
+        rensaAllData();
         if (!state.data.length && typeof stangInstallningar === 'function') stangInstallningar();
     });
-    document.getElementById('btn-data-residency')?.addEventListener('click', openDataResidency);
+    document.getElementById('btn-data-residency')?.addEventListener('click', oppnaVadLagras);
     // Tidsväljaren ritas om vid varje öppning; lyssnaren sitter på innehållet en gång och gäller hur dialogen än öppnas (även från sökningen).
     document.getElementById('data-residency-content')?.addEventListener('change', e => {
         const sel = /** @type {HTMLSelectElement} */ (e.target);
         if (sel.id !== 'inactivity-timeout-select') return;
         const min = parseInt(sel.value, 10) || 0;
-        setInactivityTimeout(min);
+        sattInaktivitetstid(min);
         const status = document.getElementById('inactivity-status');
         if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
     });
@@ -220,17 +220,17 @@ export function uppstartVadLagrasInaktivitet() {
     ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
         window.addEventListener(evt, () => {
             // Bara reset om timern är igång (annars onödig CPU)
-            if (state.inactivityTimeoutMin > 0 && !_inactivityWarnEl) _resetInactivityTimer();
+            if (state.inactivityTimeoutMin > 0 && !_inaktivitetsvarningElement) _aterstallInaktivitetstimer();
         }, { passive: true });
     });
     document.getElementById('data-residency-close')?.addEventListener('click', () => {
         const m = document.getElementById('data-residency-modal');
-        if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; }
+        if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; }
     });
     document.getElementById('data-residency-modal')?.addEventListener('click', e => {
         if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) {
             const m = document.getElementById('data-residency-modal');
-            if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; }
+            if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; }
         }
     });
 }

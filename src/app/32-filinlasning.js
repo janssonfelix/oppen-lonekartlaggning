@@ -8,41 +8,41 @@ import { filStorlekFel } from '../lib/installningsgranser.js';
 import { arKvinna, arMan } from '../lib/kon.js';
 import { tolkaPaket } from '../lib/organisationspaket.js';
 import { ordForAntal, stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
-import { _importprofilFor, _importprofilKalla, _importprofilLista, hideLoading, importprofilText, showLoading } from './03-hjalpfunktioner.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
+import { _importprofilFor, _importprofilKalla, _importprofilLista, doljLaddning, importprofilText, visaLaddning } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _hittaAnsvarKolumn, _lonefilensRubriker, extractMinimalRecord } from './06-uppgiftsminimering.js';
-import { _kopplaNamnFalt, applyProfileLabels, DEFAULT_PROFILE, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
+import { _hittaAnsvarKolumn, _lonefilensRubriker, minimeraLonerad } from './06-uppgiftsminimering.js';
+import { _kopplaNamnFalt, tillampaProfiletiketter, STANDARDPROFIL, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
-import { aterstallReferens, getBasIntervals, state } from './12-tillstand.js';
-import { computeBootstrapCI, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderOutliers } from './15-extremvarden-basrang.js';
-import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
-import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, renderForhandskontroll } from './17-forhandskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
-import { _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { aterstallReferens, hamtaBasIntervall, state } from './12-tillstand.js';
+import { raknaBootstrapKI, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { ritaExtremvarden } from './15-extremvarden-basrang.js';
+import { ritaKonsistenskontroll, ritaValideringsrapport, synkaDatakvalitetspanel } from './16-inlasningskontroll.js';
+import { _fkForFil, _fkPausa, _fkRaknaKon, _fkSlappVantande, _fkVantar, ritaForhandskontroll } from './17-forhandskontroll.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
+import { _ritaDemoruta } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
-import { updateGdprBanner } from './25-dataskyddsinfo.js';
-import { _resetInactivityTimer } from './28-vad-lagras-inaktivitet.js';
+import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
+import { _aterstallInaktivitetstimer } from './28-vad-lagras-inaktivitet.js';
 import { _paketFilnamn, _synkaOrgTyp, _tomStatistik, skapaPaketMedImportprofil } from './29-organisationspaket.js';
-import { _aktivFlik, _visaFilkortet, unlockTabs } from './31-navigering.js';
+import { _aktivFlik, _visaFilkortet, lasUppFlikar } from './31-navigering.js';
 import { _fcGlomKnappresultat, _fcRensaParMal } from './36-loneoversyn.js';
-import { renderReferensKort } from './38-referensfiler.js';
+import { ritaReferensKort } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _hpRensaDemoSkal } from './56-handlingsplan.js';
 
 // ---- File Upload: Struktur CSV ----
 // Radnummer i källfilen (Excel-numrering) på varje rårad — en Symbol, så att
-// PII-detektorn och getField inte ser den som en kolumn.
+// PII-detektorn och hamtaFalt inte ser den som en kolumn.
 const _RADNR = Symbol('radnr');
-const dataInput  = document.getElementById("file-input-data");
+const datafilFalt  = document.getElementById("file-input-data");
 export const dataStatus = /** @type {HTMLElement} */ (document.getElementById("data-status"));
 
-function setupDrop(dropId, inputId) {
+function kopplaSlappyta(dropId, inputId) {
     const drop = document.getElementById(dropId);
     const inp  = document.getElementById(inputId);
     if (!drop || !inp) return;
@@ -67,7 +67,7 @@ function setupDrop(dropId, inputId) {
  * Visar GDPR-avvisning i UI:t när hittaKansligaKolumner flaggat känsliga fält.
  * @param {Array<{col:string, reason:string}>} sensitive
  */
-function _renderSensitiveRejection(sensitive) {
+function _ritaKansligAvvisning(sensitive) {
     const list = sensitive.map(s => `<li><code>${esc(s.col)}</code> – ${esc(s.reason)}</li>`).join('');
     dataStatus.innerHTML = `<div class="bak-varning-bg-gammal ram-v-3-kritisk rund-6 lh-1_55 marg-t-10 pad-14-16">
         <strong class="f-kritisk">${ikon('stopp')} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
@@ -86,7 +86,7 @@ function _renderSensitiveRejection(sensitive) {
 // en del av samma fil som BAS, INTE en separat uppladdning. Bygger samma
 // interna struktur som § 3:10-motorn alltid använt: Map "aid|bas" → poäng.
 // Returnerar antal befattningar med poäng (0 = ingen kolumn → BAS-rank-proxy).
-export function _deriveArbetsvarderingFromData() {
+export function _harledArbetsvarderingUrData() {
     const byKey = new Map();
     let count = 0;
     for (const r of state.data) {
@@ -101,63 +101,63 @@ export function _deriveArbetsvarderingFromData() {
     return count;
 }
 
-function _afterDataLoaded() {
+function _efterInlastData() {
     // En riktig lönefil efter demot: demots namn, organisationstyp, ställningstagande och jämförelsestatistik
     // hör till den påhittade organisationen och tas bort (ADR-36).
     if (state.isDemo) {
-        state.profile = { ...DEFAULT_PROFILE };
+        state.profile = { ...STANDARDPROFIL };
         // Demots sakliga skäl hör till demots grupper: en riktig fil kan ha samma AID och BAS.
         if (typeof _hpRensaDemoSkal === 'function') _hpRensaDemoSkal();
         if (state.policyKalla === 'demo') {
             aterstallReferens();
-            resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
+            aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         }
         if (state.statistikKalla === 'demo') _tomStatistik();   // tömmer också filrutan
         if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
         if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
-        applyProfileLabels();
-        if (typeof renderReferensKort === 'function') renderReferensKort();
+        tillampaProfiletiketter();
+        if (typeof ritaReferensKort === 'function') ritaReferensKort();
     }
     state.isDemo = false;   // #9: verklig uppladdning lämnar demoläge
     state.demoStort = false;
     // Löneöversyns knappresultat (målet för skillnaden, känslighetskurvan, individnivån) gällde det förra underlaget.
     if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();
-    if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
+    if (typeof _ritaDemoruta === 'function') _ritaDemoruta();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
-    const poangCount = _deriveArbetsvarderingFromData();
+    const poangCount = _harledArbetsvarderingUrData();
     // Föreslagna riktade rader (kalla: 'par') prövas mot paren i den nya lönefilen, också när de lästs in ur en
     // konfigurationsfil innan det fanns en lönefil att pröva dem mot (ADR-69). Egna rader står kvar.
     if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
-    unlockTabs();
+    lasUppFlikar();
     ritaNyckeltal();
-    populateSelects();
+    fyllValjare();
     ritaLoneoversikt();
-    const bas = getBasIntervals();
+    const bas = hamtaBasIntervall();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
     if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
     dataStatus.className = "status-msg success";
-    markUploadLoaded('upload-cell-data', 'Inläst');
+    markeraFilrutaInlast('upload-cell-data', 'Inläst');
     ritaKravstatus();
     // Regressionen körs en gång i det här varvet och skickas vidare till underlagets kvalitet, processöversikten och
     // Att göra, som annars kör den var för sig på samma underlag (ADR-17: ett värde, ingen cache).
-    const reg = runOLSRegression();
-    renderUnderlagetsKvalitet({ reg });
-    renderProcessTracker({ reg });
-    updateGdprBanner();
+    const reg = korOLSRegression();
+    ritaUnderlagetsKvalitet({ reg });
+    ritaKartlaggningensSteg({ reg });
+    uppdateraDataskyddsbesked();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
-    if (typeof _resetInactivityTimer === 'function') _resetInactivityTimer();
-    renderConsistencyBanner();
-    renderOutliers();
-    renderDataValidationReport();
-    renderForhandskontroll();
-    syncDatakvalitetPanel({ reg });
-    announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
-    hideLoading();
+    if (typeof _aterstallInaktivitetstimer === 'function') _aterstallInaktivitetstimer();
+    ritaKonsistenskontroll();
+    ritaExtremvarden();
+    ritaValideringsrapport();
+    ritaForhandskontroll();
+    synkaDatakvalitetspanel({ reg });
+    meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
+    doljLaddning();
 
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
     // vid stora underlag. De körs EFTER att gränssnittet målats (deferrade i två steg så
     // statusnotisen hinner synas). Flikbesök renderar ändå on-demand via
-    // renderTabContent, och exporterna self-heal:ar (se exportAllToExcel).
+    // ritaFlik, och exporterna self-heal:ar (se exportAlltTillExcel).
     const DEFER_NOTE = ' · förbereder analyser i bakgrunden…';
     setTimeout(() => {
         if (dataStatus) dataStatus.textContent += DEFER_NOTE;
@@ -165,8 +165,8 @@ function _afterDataLoaded() {
             try {
                 ritaLoneskillnadPerBas(lsBasVymodell());
                 ritaAlderOchLon("__ALLA__");
-                computeBootstrapCI();
-                renderActionChecklist();
+                raknaBootstrapKI();
+                ritaAtgardslista();
             } finally {
                 if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, '');
                 visningNy();   // det som räknades i bakgrunden visas när fliken ritas om (ADR-81)
@@ -188,7 +188,7 @@ const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 
  * Läser första bladet i en XLSX-buffer till rad-objekt (samma form som
  * PapaParse header:true ger), med rubrikradssökning bland de 20 första raderna
  * (samma princip som _hittaCsvRubrik — tål försättsrader i kalkylblad).
- * Cellvärden konverteras till strängar så resten av pipelinen (getField,
+ * Cellvärden konverteras till strängar så resten av pipelinen (hamtaFalt,
  * tolkaTalStrikt, hittaKansligaKolumner) fungerar identiskt med CSV.
  *
  * @param {ArrayBuffer} buf
@@ -198,7 +198,7 @@ const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 
  * @returns {{headers:string[], rows:Array<Object<string,string>>, sheet:string}}
  * @throws {Error} om arbetsboken inte kan läsas eller saknar datarader.
  */
-function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
+function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
     if (typeof XLSX === 'undefined') throw new Error('Excelfilen kan inte läsas: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
     const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     const sheetName = wb.SheetNames[0];
@@ -261,7 +261,7 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
  *             | {ok:false, error:string}) => void} utfall
  * @param {'stallningstagande'|'jamforelsestatistik'} typ - filtypen, som bestämmer storleksgränsen (FIL_MAX)
  */
-export function readTabularFile(file, synonymGroups, utfall, typ) {
+export function lasTabellfil(file, synonymGroups, utfall, typ) {
     // En fil som blivit läst kan ändra det som visas, hur det än gick: ingen ritad flik visas igen som den är (ADR-81).
     /** @type {typeof utfall} */
     const callback = res => { try { utfall(res); } finally { visningNy(); } };
@@ -280,7 +280,7 @@ export function readTabularFile(file, synonymGroups, utfall, typ) {
                 return;
             }
             if (fmt === 'xlsx') {
-                const x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), synonymGroups);
+                const x = _xlsxTillObjekt(/** @type {ArrayBuffer} */ (buf), synonymGroups);
                 callback({ ok: true, format: `Excel (blad "${x.sheet}")`, encoding: 'XLSX', headers: x.headers, rows: x.rows });
                 return;
             }
@@ -306,16 +306,16 @@ export function readTabularFile(file, synonymGroups, utfall, typ) {
     reader.readAsArrayBuffer(file);
 }
 
-function loadStructureFile(file) {
+function lasInStrukturfil(file) {
     if (!file) return;
     // Storleken prövas innan filen läses eller tolkas: en för stor fil lämnar det som var inläst orört.
     const storlekFel = filStorlekFel(file.size, 'lonefil');
     if (storlekFel) { dataStatus.textContent = storlekFel; dataStatus.className = 'status-msg'; return; }
     const franOversikt = _aktivFlik() === 'dashboard';
     // Behåll filreferensen (endast RAM) så "Tillämpa mappning & läs in igen"
-    // alltid kan läsa om filen, även om filväljaren tömts. Nollas i clearAllData.
+    // alltid kan läsa om filen, även om filväljaren tömts. Nollas i rensaAllData.
     // Kolumnmappningen läser om den senast inlästa filen, också en som inte gav några rader; den sätts i finishLoad.
-    showLoading();
+    visaLaddning();
     _profilBesked = '';
     let capturedHeaders = null;   // #11: rubriker för kolumnmappnings-guiden
 
@@ -377,7 +377,7 @@ function loadStructureFile(file) {
     // sparas under inläsningen, för bedömningen.
     let ansvarBedomd = false;
     const ansvarVarden = [];
-    // Ansvarskolumnen sätts redan på första raden (extractMinimalRecord behöver den). Fallerar
+    // Ansvarskolumnen sätts redan på första raden (minimeraLonerad behöver den). Fallerar
     // inläsningen efteråt ska den data som redan finns behålla sin kolumn.
     const tidigareAnsvarKolumn = state.ansvarKolumn;
     // Importprofilen (src/lib/importprofiler.js) väljs på filens rubriker innan första raden läses, så att kolumnuppslaget
@@ -397,7 +397,7 @@ function loadStructureFile(file) {
         }
         if (state.ansvarKolumn) ansvarVarden.push(row[state.ansvarKolumn.namn]);
         /** @type {any} */
-        const rec = extractMinimalRecord(row, rubriker);
+        const rec = minimeraLonerad(row, rubriker);
         // Trunkera exempel-värden för att undvika att en hel rad fastnar
         const truncEx = v => {
             if (v == null) return '(tom)';
@@ -475,8 +475,8 @@ function loadStructureFile(file) {
         state.importprofil = tidigareImportprofil;
         // Nolla bufferten direkt så raw rows blir GC-bara
         sampleBuffer = null;
-        hideLoading();
-        _renderSensitiveRejection(sensitive);
+        doljLaddning();
+        _ritaKansligAvvisning(sensitive);
     }
 
     // Gemensam avslutning för CSV- och XLSX-vägen: committa state + UI.
@@ -511,8 +511,8 @@ function loadStructureFile(file) {
             fkKon.clear();
             _fkSlappVantande();
             state.forhandskontroll = { ...fkEj, ejInlast: true };
-            renderForhandskontroll();
-            _resetInactivityTimer();   // de tio raderna på skärmen rensas också vid inaktivitet
+            ritaForhandskontroll();
+            _aterstallInaktivitetstimer();   // de tio raderna på skärmen rensas också vid inaktivitet
             state.ansvarKolumn = tidigareAnsvarKolumn;
             state.importprofil = tidigareImportprofil;
             _senasteInlasningLyckades = false;
@@ -539,8 +539,8 @@ function loadStructureFile(file) {
             state.dataAudit = parseStats;
             state._dataHeaders = capturedHeaders || [];
             _senasteInlasningLyckades = true;
-            _afterDataLoaded();
-            maybeShowColumnMapping();   // #11: visa guide om obligatoriska kolumner saknas
+            _efterInlastData();
+            visaKolumnmappningOmBehov();   // #11: visa guide om obligatoriska kolumner saknas
             // #2: redovisa detekterat format (transparens)
             if (dataStatus) {
                 dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
@@ -564,7 +564,7 @@ function loadStructureFile(file) {
         namnRaknare.clear();
         state.ansvarKolumn = tidigareAnsvarKolumn;
         state.importprofil = tidigareImportprofil;
-        hideLoading();
+        doljLaddning();
         dataStatus.textContent = msg;
         dataStatus.className = 'status-msg';
     }
@@ -586,7 +586,7 @@ function loadStructureFile(file) {
           // Excel-väg: hela bladet läses (kan inte strömmas), därefter exakt
           // samma pipeline som CSV — PII-detektering på sample, sedan processRow.
           let x;
-          try { x = _xlsxToObjects(/** @type {ArrayBuffer} */ (buf), rubrikgrupper(), 2, _importprofilLista()); }
+          try { x = _xlsxTillObjekt(/** @type {ArrayBuffer} */ (buf), rubrikgrupper(), 2, _importprofilLista()); }
           catch (err) { failLoad('Kunde inte läsa Excel-filen: ' + err.message); return; }
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
@@ -664,7 +664,7 @@ function _beskedEfterOversikt(franOversikt) {
 // #11: Kolumnmappnings-guide. Visas efter inläsning om en obligatorisk roll
 // inte kunde auto-matchas mot någon CSV-rubrik (olika personalsystem döper
 // kolumner olika). Låter användaren peka ut rätt kolumn och läsa in igen.
-export const COLMAP_ROLES = [
+export const KOLUMNMAPPNING_ROLLER = [
     { role: 'bas',    label: stor(T.niva.en), required: true },
     // Fältet är AID-etiketten; kolumnen i lönefilen heter ofta något annat, och tipset säger det.
     { role: 'yrke',   label: stor(T.enhet.en), required: true, tips: 'i lönefilen ofta Yrke eller Befattning' },
@@ -682,7 +682,7 @@ export function _kolumnval(headers) {
     const auto = gissaKolumnmappning(headers), eff = {};
     const profil = _importprofilFor(headers);
     const prof = profil ? profil.mappning : {};
-    COLMAP_ROLES.forEach(({ role }) => {
+    KOLUMNMAPPNING_ROLLER.forEach(({ role }) => {
         const vald = state.columnMap && state.columnMap[role];   // en vald rubrik gäller bara om filen har den
         eff[role] = role === 'ansvar' && state.columnMap?.ansvar === '' ? '' : (vald && headers.includes(vald) ? vald : '') || prof[role] || auto[role] || '';
     });
@@ -767,7 +767,7 @@ function _importprofilRuta(missing) {
 /** De obligatoriska roller som ingen rubrik i filen svarar mot. */
 function _kolumnerSomSaknas(headers) {
     const { eff } = _kolumnval(headers);
-    return COLMAP_ROLES.filter(r => r.required && !eff[r.role]);
+    return KOLUMNMAPPNING_ROLLER.filter(r => r.required && !eff[r.role]);
 }
 /**
  * Filen gav inget underlag: obligatoriska kolumner känns inte igen, eller ingen rad gick att använda. Filkortet säger
@@ -775,7 +775,7 @@ function _kolumnerSomSaknas(headers) {
  * saknar kolumn.
  */
 function _visaEjInlast(saknas, stats) {
-    hideLoading();
+    doljLaddning();
     const harUnderlag = state.data.length > 0;
     const skal = [];
     if (saknas.length) skal.push(`filens rubriker kändes inte igen (${saknas.map(m => m.label).join(', ')} saknas)`);
@@ -798,9 +798,9 @@ function _visaEjInlast(saknas, stats) {
             badge.textContent = saknas.length ? 'Kolumnmappning behövs' : 'Inga rader lästa';
         }
     }
-    maybeShowColumnMapping();
+    visaKolumnmappningOmBehov();
     _visaKolumnmappning();
-    announceToScreenReader(dataStatus.textContent);
+    meddelaSkarmlasare(dataStatus.textContent);
 }
 /** Fäller ut kolumnmappningen, rullar den in i bild och sätter fokus i första fältet som saknar kolumn. */
 function _visaKolumnmappning() {
@@ -813,7 +813,7 @@ function _visaKolumnmappning() {
     panel.scrollIntoView?.({ block: 'center' });
     /** @type {HTMLInputElement} */ ((panel.querySelector('select.colmap-saknas') || panel.querySelector('select')))?.focus?.({ preventScroll: true });
 }
-export function maybeShowColumnMapping() {
+export function visaKolumnmappningOmBehov() {
     const headers = state._dataHeaders || [];
     let panel = document.getElementById('column-map-panel');
     // En fil som väntar på Läs in (förhandskontrollen) har inte tagit över rubrikerna: förra filens mappning visas inte.
@@ -831,9 +831,9 @@ export function maybeShowColumnMapping() {
     const esc2 = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const { auto, eff, profil } = _kolumnval(headers);
     const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc2(importprofilText(profil))}</p>` : '';
-    const missing = COLMAP_ROLES.filter(r => r.required && !eff[r.role]);
+    const missing = KOLUMNMAPPNING_ROLLER.filter(r => r.required && !eff[r.role]);
 
-    const selects = COLMAP_ROLES.map(({ role, label, required, tips }) => {
+    const selects = KOLUMNMAPPNING_ROLLER.map(({ role, label, required, tips }) => {
         const opts = ['<option value="">— ingen —</option>']
             .concat(headers.map(h => `<option value="${esc2(h)}"${eff[role] === h ? ' selected' : ''}>${esc2(h)}</option>`))
             .join('');
@@ -867,7 +867,7 @@ export function maybeShowColumnMapping() {
     panel.style.display = 'block';
 
     const namnFalt = () => /** @type {HTMLInputElement|null} */ (panel.querySelector('#colmap-profil-namn'));
-    const visaBesked = text => { _profilBesked = text; maybeShowColumnMapping(); announceToScreenReader(text); };
+    const visaBesked = text => { _profilBesked = text; visaKolumnmappningOmBehov(); meddelaSkarmlasare(text); };
     panel.querySelector('#colmap-spara-profil')?.addEventListener('click', () => {
         const r = sparaImportprofil(namnFalt()?.value);
         visaBesked(r.ok ? `Importprofilen ${r.profil.namn} är sparad för sessionen.` : r.fel);
@@ -894,21 +894,21 @@ export function maybeShowColumnMapping() {
             else if (role === 'ansvar' && auto.ansvar) map.ansvar = '';
         });
         state.columnMap = Object.keys(map).length ? map : null;
-        const f = state._lastStructureFile || (/** @type {HTMLInputElement} */ (dataInput).files && /** @type {HTMLInputElement} */ (dataInput).files?.[0]);
-        if (f) loadStructureFile(f);
+        const f = state._lastStructureFile || (/** @type {HTMLInputElement} */ (datafilFalt).files && /** @type {HTMLInputElement} */ (datafilFalt).files?.[0]);
+        if (f) lasInStrukturfil(f);
         else { dataStatus.textContent = 'Läs in filen igen för att tillämpa mappningen.'; dataStatus.className = 'status-msg'; }
     });
     panel.querySelector('#colmap-reset')?.addEventListener('click', () => {
         state.columnMap = null;
-        const f = state._lastStructureFile || (/** @type {HTMLInputElement} */ (dataInput).files && /** @type {HTMLInputElement} */ (dataInput).files?.[0]);
-        if (f) loadStructureFile(f);
+        const f = state._lastStructureFile || (/** @type {HTMLInputElement} */ (datafilFalt).files && /** @type {HTMLInputElement} */ (datafilFalt).files?.[0]);
+        if (f) lasInStrukturfil(f);
     });
 }
 
 // ============================================================
 
 // ---- Markera upload-cell som "loaded" + visuell badge ----
-export function markUploadLoaded(cellId, badgeText) {
+export function markeraFilrutaInlast(cellId, badgeText) {
     const cell = document.getElementById(cellId);
     if (!cell) return;
     cell.classList.remove('required', 'optional');
@@ -921,9 +921,9 @@ export function markUploadLoaded(cellId, badgeText) {
     }
     const inl = cell.querySelector('.upload-inlast');
     if (inl) /** @type {HTMLElement} */ (inl).hidden = false;
-    renderFilrutor();
+    ritaFilrutor();
 }
-export function resetUploadCell(cellId, originalClass, originalBadge) {
+export function aterstallFilruta(cellId, originalClass, originalBadge) {
     const cell = document.getElementById(cellId);
     if (!cell) return;
     // classList.add kastar på tokens med mellanslag ("upload-cell required") —
@@ -941,11 +941,11 @@ export function resetUploadCell(cellId, originalClass, originalBadge) {
     }
     const inl = cell.querySelector('.upload-inlast');
     if (inl) /** @type {HTMLElement} */ (inl).hidden = true;
-    renderFilrutor();
+    ritaFilrutor();
 }
 
 // Filnamnsraden i varje inläst filruta (ADR-36).
-export function renderFilrutor() {
+export function ritaFilrutor() {
     const fn = state.filnamn || {};
     const rad = (cellId, text) => {
         const el = document.querySelector(`#${cellId} .upload-filnamn`);
@@ -964,15 +964,15 @@ export function renderFilrutor() {
 }
 
 // #8: kollapsa uppladdningsraden när data lästs in så att översikten/insikterna
-// hamnar överst. Återställs av clearAllData.
+// hamnar överst. Återställs av rensaAllData.
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartFilinlasning() {
-    setupDrop("drop-area-data", "file-input-data");
+    kopplaSlappyta("drop-area-data", "file-input-data");
     // Startytan på Översikt (före inläsning) öppnar lönefilskortets filväljare: en fil därifrån läses in på samma väg.
-    setupDrop("drop-area-start", "file-input-data");
-    setupDrop("drop-area-policy", "file-input-policy");
-    setupDrop("drop-area-stat", "file-input-stat");
+    kopplaSlappyta("drop-area-start", "file-input-data");
+    kopplaSlappyta("drop-area-policy", "file-input-policy");
+    kopplaSlappyta("drop-area-stat", "file-input-stat");
     document.getElementById('btn-download-csv-template')?.addEventListener('click', () => {
         // Poang är valfri: arbetsvärderingspoäng per befattning (krav-proxy i § 3:10).
         // Lämnas tom om ingen arbetsvärdering gjorts — BAS-rank används då.
@@ -1001,17 +1001,17 @@ export function uppstartFilinlasning() {
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        announceToScreenReader('CSV-mall nedladdad: lonefil_mall.csv');
+        meddelaSkarmlasare('CSV-mall nedladdad: lonefil_mall.csv');
     });
-    /** @type {HTMLElement} */ (dataInput).addEventListener("change", e => loadStructureFile(/** @type {HTMLInputElement} */ (e.target).files?.[0]));
+    /** @type {HTMLElement} */ (datafilFalt).addEventListener("change", e => lasInStrukturfil(/** @type {HTMLInputElement} */ (e.target).files?.[0]));
     // "Byt fil" öppnar respektive filväljare direkt.
     document.addEventListener('click', e => {
         const b = /** @type {HTMLElement} */ (e.target).closest('[data-byt-fil]');
         if (b) document.getElementById(/** @type {HTMLElement} */ (b).dataset.bytFil || '')?.click();
     });
     document.getElementById('btn-kolumnmappning')?.addEventListener('click', () => {
-        // Panelen byggs av maybeShowColumnMapping; knappen fäller ut den och visar den.
-        if (typeof maybeShowColumnMapping === 'function') maybeShowColumnMapping();
+        // Panelen byggs av visaKolumnmappningOmBehov; knappen fäller ut den och visar den.
+        if (typeof visaKolumnmappningOmBehov === 'function') visaKolumnmappningOmBehov();
         _visaKolumnmappning();
     });
     _kopplaNamnFalt('org-namn', sattOrgNamn);

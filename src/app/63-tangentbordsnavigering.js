@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { klickaFlik, PANEL_GROUPS } from './31-navigering.js';
+import { klickaFlik, PANELGRUPPER } from './31-navigering.js';
 
 // ---- A11y: Sidopanels-NAVIGATION ----
 // Sidopanelen är PRIMÄR navigation, inte ett ARIA-tabs-widget: <nav> ger
@@ -9,7 +9,7 @@ import { klickaFlik, PANEL_GROUPS } from './31-navigering.js';
 // med den hopfällbara sekundärgruppens disclosure-knapp — aria-required-children,
 // ADR-10 — eftersom en tablist bara får innehålla role="tab"-barn.) Alla nav-knappar
 // ligger i naturlig Tab-ordning; pil-/Home/End-tangenter behålls som tillägg.
-export function setupTabA11y() {
+export function kopplaFlikarnasTillganglighet() {
     const tabs = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.nav-item')]);
     const syncCurrent = () => tabs.forEach(t => {
         if (t.classList.contains('active')) t.setAttribute('aria-current', 'page');
@@ -17,7 +17,7 @@ export function setupTabA11y() {
     });
     tabs.forEach(tab => {
         const target = tab.getAttribute('data-tab');
-        if (target) tab.setAttribute('aria-controls', (PANEL_GROUPS[target] || [target]).map(p => `view-${p}`).join(' '));
+        if (target) tab.setAttribute('aria-controls', (PANELGRUPPER[target] || [target]).map(p => `view-${p}`).join(' '));
         tab.addEventListener('keydown', e => {
             // Dolda flikar (t.ex. Löneläget utan statistik) och låsta flikar hoppas över.
             const enabled = tabs.filter(t => !/** @type {HTMLInputElement} */ (t).disabled && !t.hidden);
@@ -72,7 +72,7 @@ export function setupTabA11y() {
  *
  * @param {HTMLElement[]} buttons - knapparna i tablisten, i DOM-ordning.
  */
-export function _wireTablistKeys(buttons) {
+export function _kopplaFlikradensTangenter(buttons) {
     if (!Array.isArray(buttons) || buttons.length < 2) return;
     // Endast den aktiva knappen ligger i Tab-ordningen. `fallback` används när
     // ingen knapp hunnit bli aktiv (t.ex. benchmark innan data är inläst).

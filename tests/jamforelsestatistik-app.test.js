@@ -7,14 +7,14 @@ import { createAppWindow } from './helpers/app-harness.js';
 
 // Statistik per yrke och BAS i demodata: avsnittet mot statistiken ritas bara när den finns (ADR-55).
 const medPersonalStatistik = () => {
-    const w = createAppWindow(); w.__loadDemoData();
-    w.__state.statistik = [...new Set(w.__getData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
+    const w = createAppWindow(); w.__lasInDemodata();
+    w.__state.statistik = [...new Set(w.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
     w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
     return w;
 };
 
 describe('Jämförelsestatistik: tre block och filter', () => {
-    const oppna = () => { const w = medPersonalStatistik(); w.__renderTabContent('benchmark'); return w; };
+    const oppna = () => { const w = medPersonalStatistik(); w.__ritaFlik('benchmark'); return w; };
     const rubriker = w => [...w.document.querySelectorAll('#benchmark-table thead th')].map(t => t.textContent.trim());
     const rad = (w, aid, bas) => w.document.querySelector(`#benchmark-table tbody tr[data-rad="${aid}|${bas}"]`);
     it('rubrikerna har P10, median och P90 med Org, Jmf och Diff', () => {
@@ -41,16 +41,16 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const synliga = [...w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]')];
         expect(synliga.length).toBeGreaterThan(0);
         expect(synliga.every(t => t.dataset.rad.endsWith('|' + valt))).toBe(true);
-        w.eval("jamforelseSattVal({ bas: 'Z', sektor: 'Finns inte' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ bas: 'Z', sektor: 'Finns inte' }); byggJamforelse();");
         expect(w.eval('jamforelseVal()')).toMatchObject({ bas: '', sektor: '' });
     });
     it('sektorfiltret avgränsar; en sektor som försvinner ur datan faller tillbaka till Alla', () => {
         const w = oppna();
-        w.eval("jamforelseSattVal({ sektor: 'Teknikarbete' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ sektor: 'Teknikarbete' }); byggJamforelse();");
         const rader = w.eval('jamforelseUnderlag()').rader.filter(r => r.sektor === 'Teknikarbete');
         expect(w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]').length).toBe(rader.length);
         w.__state.data = w.__state.data.filter(r => !/^50/.test(r.aid));
-        w.eval('generateBenchmark()');
+        w.eval('byggJamforelse()');
         expect(w.eval('jamforelseVal()').sektor).toBe('');
     });
     it('"Inga yrken i urvalet" när BAS och sektor inte har något gemensamt yrke', () => {
@@ -59,21 +59,21 @@ describe('Jämförelsestatistik: tre block och filter', () => {
         const baser = [...new Set(alla.map(r => r.bas))], sektorer = [...new Set(alla.map(r => r.sektor))];
         const par = baser.flatMap(b => sektorer.map(s => [b, s])).find(([b, s]) => !alla.some(r => r.bas === b && r.sektor === s));
         expect(par).toBeTruthy();
-        w.eval(`jamforelseSattVal({ bas: ${JSON.stringify(par[0])}, sektor: ${JSON.stringify(par[1])} }); generateBenchmark();`);
+        w.eval(`jamforelseSattVal({ bas: ${JSON.stringify(par[0])}, sektor: ${JSON.stringify(par[1])} }); byggJamforelse();`);
         expect(w.document.getElementById('benchmark-table').textContent).toMatch(/Inga AID-etiketter i urvalet/);
     });
     it('bara ställningstagandet inläst: avsnittet säger att statistiken saknas och ritar inga rader', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('benchmark');
+        w.__lasInDemodata();
+        w.__ritaFlik('benchmark');
         expect(w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]').length).toBe(0);
         expect(w.document.getElementById('benchmark-table').textContent).toMatch(/Jämförelsestatistik saknas/);
         expect(w.document.querySelector('#jmf-diagram svg')).toBeNull();
     });
     it('utan statistik gömmer tabellen P10 och P90 som när statistik finns (Fler kolumner)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('benchmark');
+        w.__lasInDemodata();
+        w.__ritaFlik('benchmark');
         const rubrik = kol => /** @type {HTMLElement} */ (w.document.querySelector(`#benchmark-thead th[data-kol="${kol}"]`));
         for (const kol of ['p10org', 'p10jmf', 'p10diff', 'p90org', 'p90jmf', 'p90diff']) expect(rubrik(kol).hidden).toBe(true);
         expect(w.document.querySelector('[data-fler-kolumner="benchmark-table"]')).not.toBeNull();
@@ -90,10 +90,10 @@ describe('Jämförelsestatistik: tre block och filter', () => {
     it('valen följer med konfigurationsfilen; en källa i en äldre fil ignoreras; Rensa återställer', () => {
         const w = oppna();
         w.eval("jamforelseSattVal({ bas: 'C', sektor: 'Teknikarbete' })");
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.visning.jamforelse).toEqual({ bas: 'C', sektor: 'Teknikarbete' });
         const w2 = oppna();
-        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
+        w2.__tillampaKonfiguration({ ...cfg, visning: { ...cfg.visning, jamforelse: { kalla: 'stallningstagande', bas: 'C', sektor: '' } } });
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: 'C', sektor: '' });
         w2.eval('_rensaAllData()');
         expect(w2.eval('jamforelseVal()')).toEqual({ bas: '', sektor: '' });
@@ -101,7 +101,7 @@ describe('Jämförelsestatistik: tre block och filter', () => {
 });
 
 describe('Jämförelsestatistik: diagrammen', () => {
-    const oppna = () => { const w = medPersonalStatistik(); w.__renderTabContent('benchmark'); return w; };
+    const oppna = () => { const w = medPersonalStatistik(); w.__ritaFlik('benchmark'); return w; };
     it('båda diagrammen har data, rubrik och aria-label', () => {
         const w = oppna();
         for (const id of ['chart-jamforelse-spann', 'chart-jamforelse-avvikelse']) {
@@ -145,8 +145,8 @@ describe('Jämförelsestatistik: diagrammen', () => {
             data.push({ aid: String(207000 + y), yrke: `${207000 + y} Yrke ${y}`, yrkeLabel: 'Y', bas: 'C', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + y * 100 + i * 50, alder: 40 });
         w.__state.data = data;
         w.__state.statistik = Array.from({ length: 30 }, (_, y) => ({ aid: String(207000 + y), bas: 'C', median: 31000, p10: 29000, p90: 34000 }));
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('benchmark');
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('benchmark');
         expect(w.document.getElementById('chart-jamforelse-spann')._figur.y.ordning.length).toBe(25);
         expect(w.document.getElementById('jmf-spann-not').textContent).toMatch(/de 25 största AID-etiketterna av 30/);
         expect(w.document.querySelectorAll('#benchmark-table tbody tr[data-rad]').length).toBe(30);
@@ -156,11 +156,11 @@ describe('Jämförelsestatistik: diagrammen', () => {
 describe('Jämförelsestatistik: exporten namnger statistiken', () => {
     it('Excel-rubrikerna för jmf-kolumnerna namnger statistiken', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.slice(0, 1).map(r => ({ aid: r.aid, bas: r.bas, median: 30000 }));
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         // Excelexporten läser rubrikerna ur den rensade klonen (data-export-label).
-        const rubriker = () => [...w.eval("_cloneAndCleanTableForExport('benchmark-table')").querySelectorAll('thead th')].map(t => t.textContent.trim()).join(' | ');
+        const rubriker = () => [...w.eval("_tabellkopiaForExport('benchmark-table')").querySelectorAll('thead th')].map(t => t.textContent.trim()).join(' | ');
         expect(rubriker()).toMatch(/P10 jämförelsestatistiken \(kr\/mån\).*Median jämförelsestatistiken \(kr\/mån\).*P90 jämförelsestatistiken \(kr\/mån\)/);
     });
 });
@@ -174,7 +174,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — Jämförelsest
     };
     const medStatistik = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }))
             .filter((s, i, a) => a.findIndex(x => x.aid === s.aid && x.bas === s.bas) === i);
         w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
@@ -183,20 +183,20 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — Jämförelsest
     const audit = w => w.document.querySelector('[data-audit-id="benchmark"]').textContent.replace(/\s+/g, ' ');
     it('beräkningspanelen beskriver ställningstagandets matchning rätt', () => {
         const w = medStatistik();
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(audit(w)).toMatch(/AID \+ BAS, annars AID, annars BAS/);
     });
     it('filtrerat urval syns i beräkningspanelen, Excel (alla flikar) och utskriftens rubrik', async () => {
         const w = medStatistik();
         await vendor(w, 'xlsx.mini.min.js');
         w.eval("jamforelseSattVal({ bas: 'C' })");
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(w.eval('jamforelseUrvalText()')).toBe('Urval: BAS C');
         expect(audit(w)).toMatch(/Urval: BAS C/);
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
         w.alert = () => {};
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         const wb = Object.values(fangat)[0];
         const rader = w.XLSX.utils.sheet_to_json(wb.Sheets['Jämförelsestatistik'], { header: 1 }).flat();
         expect(rader).toContain('Urval: BAS C');
@@ -205,7 +205,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — Jämförelsest
     });
     it('klick i diagrammet fäller ut en hopfälld BAS-grupp', () => {
         const w = medStatistik();
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const u = w.eval('jamforelseUnderlag()').rader[0];
         const header = w.document.querySelector('#benchmark-table tbody tr.group-header');
         header.click();
@@ -225,10 +225,10 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         { aid: '207024', bas: '', median: 33000, p10: 29000, p90: 38000 },
         { aid: '207011', bas: 'E', median: 99999, p10: 90000, p90: 120000 }];
     const medMatchning = () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__state.statistik = STATISTIK.map(s => ({ ...s }));
         w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         return w;
     };
     const cellPa = (w, tabell, rubrik, radTest) => {
@@ -257,9 +257,9 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         const w = medMatchning();
         const info = () => w.document.getElementById('benchmark-matchning-info').textContent;
         expect(info()).toBe('Statistiken: 1 AID-etikett i BAS-intervall matchad på AID och BAS, 1 på endast AID, 6 utan statistik.');
-        w.eval("jamforelseSattVal({ bas: 'C' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ bas: 'C' }); byggJamforelse();");
         expect(info()).toBe('Statistiken: 0 AID-etiketter i BAS-intervall matchade på AID och BAS, 0 på endast AID, 4 utan statistik.');
-        w.eval("jamforelseSattVal({ bas: 'B' }); generateBenchmark();");
+        w.eval("jamforelseSattVal({ bas: 'B' }); byggJamforelse();");
         expect(info()).toBe('Statistiken: 0 AID-etiketter i BAS-intervall matchade på AID och BAS, 1 på endast AID, 0 utan statistik.');
     });
     it('Beräkning & urval anger antalet per matchningsnivå', () => {
@@ -268,8 +268,8 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         expect(panel).toMatch(/I urvalet: 1 AID-etikett i BAS-intervall på AID \+ BAS, 1 på endast AID, 6 utan statistik/);
     });
     it('utan statistik: ingen sammanfattning', () => {
-        const w = createAppWindow(); w.__loadDemoData();
-        w.__renderTabContent('benchmark');
+        const w = createAppWindow(); w.__lasInDemodata();
+        w.__ritaFlik('benchmark');
         expect(w.document.getElementById('benchmark-matchning-info').textContent).toBe('');
     });
     it('detaljlistan (ref-tabell) har samma kolumn med samma ord', () => {
@@ -282,8 +282,8 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         expect(th.indexOf('Matchning')).toBe(1);
     });
     it('detaljlistan utan statistik har ingen kolumn Matchning', () => {
-        const w = createAppWindow(); w.__loadDemoData();
-        w.__renderTabContent('benchmark');
+        const w = createAppWindow(); w.__lasInDemodata();
+        w.__ritaFlik('benchmark');
         expect([...w.document.querySelectorAll('#ref-tabell thead th')].map(t => t.textContent.trim())).not.toContain('Matchning');
     });
     it('rapportens tabell och den samlade jämförelseexporten bär samma märkning', async () => {
@@ -296,7 +296,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         expect(per).toMatchObject({ 402010: 'AID + BAS', 207024: 'Endast AID', 207011: '–' });
         const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportBenchmarkExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportJamforelseExcel()')))[0];
         // fangaBocker slår ihop siffror över radbrytningar (tusentalsavgränsaren): sök i hela texten.
         expect(bok).toMatch(/AID-etikett \| BAS \| Matchning \| N \(organisationen\) \| /);
         expect(bok).toMatch(/402010 Förskollärare \| A \| AID \+ BAS \| 33 \| /);
@@ -305,7 +305,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     });
     it('Excel (alla flikar) och utskriften följer tabellen', () => {
         const w = medMatchning();
-        const klon = w.eval("_cloneAndCleanTableForExport('benchmark-table')");
+        const klon = w.eval("_tabellkopiaForExport('benchmark-table')");
         expect([...klon.querySelectorAll('thead th')].map(t => t.textContent.trim())[2]).toBe('Matchning mot jämförelsestatistiken');
         expect(klon.querySelector('tbody tr[data-rad="207024|B"]').children[2].textContent).toBe('Endast AID');
     });
@@ -313,10 +313,10 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
         const w = medMatchning();
         // Medianerna ligger över varje grupps median, så att varje matchad grupp får ett lyft.
         w.__state.statistik = [{ aid: '207024', bas: '', median: 99999 }, { aid: '207011', bas: 'E', median: 99999 }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         w.__state.forecast.targets = [];
         w.document.getElementById('forecast-market-factor').value = '100';
-        w.eval('_forecastMarket()');
+        w.eval('_fcMarknad()');
         const mal = w.__state.forecast.targets.map(t => `${t.aid}|${t.bas}`);
         expect(mal).not.toContain('207011|C');   // bara en rad för BAS E: ingen marknadsnivå
         expect(mal).toEqual(['207024|B']);       // en rad utan BAS: används
@@ -324,7 +324,7 @@ describe('Statistikens matchning: märkning per rad, sammanfattning och rättels
     it('rättelse, Ålder & karriär i hela urvalet: ett uppslag per AID×BAS och medianen av de matchade', () => {
         const w = medMatchning();
         w.__state.statistik = [{ aid: '402010', bas: 'Z', median: 99999 }, { aid: '207024', bas: '', median: 40000 }, { aid: '502010', bas: 'C', median: 50000 }];
-        w.eval("populateSelects(); ritaAlderOchLon('__ALLA__')");
+        w.eval("fyllValjare(); ritaAlderOchLon('__ALLA__')");
         const linje = w.document.getElementById('chart-kon-scatter')._figur.lager.find(l => /^Median i /.test(l.serie));
         expect(linje.data.map(p => p.y)).toEqual([45000, 45000]);   // inte 50000 (med BAS Z:s 99999)
     });
@@ -339,10 +339,10 @@ describe('samlad jämförelseexport: ställningstagandet per AID och BAS som i t
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'xlsx.mini.min.js'), 'utf8'));
         w.__state.data = Array.from({ length: 12 }, (_, i) => ({ aid: '207011', yrke: '207011 Usk', yrkeLabel: 'Usk', bas: 'C', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 100, alder: 40 }));
         w.__state.policy = [{ aid: null, bas: 'C', p10: 28000, med: 31000, p90: 35000 }, { aid: '207011', bas: 'C', p10: 29000, med: 32222, p90: 36000 }];
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const fangat = {};
         w.XLSX.writeFile = (wb, namn) => { fangat[namn] = wb; };
-        w.eval('exportBenchmarkExcel()');
+        w.eval('exportJamforelseExcel()');
         const wb = Object.values(fangat)[0];
         const rad = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true })[2];
         expect(rad[20]).toBe(32222);   // ställningstagandets median (efter kolumnen Matchning)

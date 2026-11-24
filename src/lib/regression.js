@@ -12,8 +12,8 @@
  * globalt tillstånd.
  *
  * Appen får dem genom lib-speglarna (ADR-8); src/app/50-regressionsmodeller.js
- * och runOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
- * som läser getData(), statGolv() och resten av tillståndet. OLS-kärnan
+ * och korOLSRegression i 51-lika-arbete-regressionskort.js är de tunna adaptrarna
+ * som läser hamtaData(), statGolv() och resten av tillståndet. OLS-kärnan
  * (anpassaOLS, invertera, matrisprodukt, pVardeTvasidigt, tKvantil) ligger i stat.js. Ingen modell här
  * räknar BAS som ett tal; BAS-rangen (basRangordning) finns kvar i likvardighet.js för Lägre krav.
  *
@@ -159,7 +159,7 @@ export function gapPerBas(rader, basLista, { golv }) {
     // -Infinity, rader utan ålder skevar centreringen, och rader med okänt kön
     // skulle räknas som MÄN av `kon.includes('kvinna') ? 1 : 0`. Filtret hör
     // därför hemma här i stället för hos anroparen — av tre anropare skickade
-    // två in ofiltrerad getData() (JPA-exporten och gruppdossiern).
+    // två in ofiltrerad hamtaData() (JPA-exporten och gruppdossiern).
     const harAlder = harAlderIRader(rader);
     const giltiga = (rader || []).filter(d => _modellRad(d, harAlder));
     const out = [];
@@ -669,7 +669,7 @@ export const HUVUDREGRESSION_MIN_PER_KON = 5;
  * vilket intervall som blir referens.
  *
  * Allt kommer in som argument; funktionen läser inget tillstånd och sparar ingenting (ADR-17). Appens adapter är
- * runOLSRegression i 51-lika-arbete-regressionskort.js.
+ * korOLSRegression i 51-lika-arbete-regressionskort.js.
  * @param {any[]} rader lönefilens rader ({lon, kon, alder, bas, aid?, yrke?, ansvarsgrupp?}); filtreras här
  * @param {{modell?: {bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string}|null, medAlder?: boolean,
  *   kInstalld: number, golv: number}} opts

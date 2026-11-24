@@ -113,7 +113,7 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(las(w2, skapat).ok).toBe(true);
         expect(w2.eval('referensNamn()')).toBe('Lönepolitiskt ställningstagande 2026');
         expect(w2.eval('referensKortnamn()')).toBe('ställningstagandet');
-        expect(w2.eval('getData().length')).toBeGreaterThan(0);
+        expect(w2.eval('hamtaData().length')).toBeGreaterThan(0);
         w2.__ritaLonepolitik();
         expect(w2.document.getElementById('lonepolitik-rubrik').textContent).toBe('Lönerna mot Lönepolitiskt ställningstagande 2026');
         // Namnfältet på Översikt är synligt för ett paket och byter namnet
@@ -161,7 +161,7 @@ describe('organisationspaket: läs in och skapa', () => {
         d.getElementById('btn-paket-ladda-ner').click();
         expect(fangad).not.toBeNull();
         // Om verktyget nämner organisationsfilen (avsnittet med versionen)
-        w.eval("renderInfoTab('releases')");
+        w.eval("ritaOmVerktyget('releases')");
         expect(d.getElementById('view-info').textContent).toMatch(/Den här filen är en organisationsfil/);
     });
     it('en inläst paketfil ersätter det inbakade för sessionen, och Rensa all data tar det inbakade tillbaka', () => {
@@ -169,7 +169,7 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(las(w, paket({ organisation: { namn: 'Annan organisation' } })).ok).toBe(true);
         expect(w.__state.paket).toMatchObject({ organisation: 'Annan organisation', kalla: 'fil' });
         expect(w.document.getElementById('paket-info').textContent).toMatch(/ersätter det inbakade paketet/);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
         expect(w.__state.policy).toHaveLength(3);
     });
@@ -237,7 +237,7 @@ describe('organisationspaket: läs in och skapa', () => {
     it('Rensa all data tar bort paketet och återställer neutralt läge', () => {
         const w = createAppWindow();
         las(w, paket());
-        w.__clearAllData();
+        w.__rensaAllData();
         const s = w.__state;
         expect(s.paket).toBeNull();
         expect(s.profile.name).toBe('Organisationen');
@@ -251,7 +251,7 @@ describe('organisationspaket: läs in och skapa', () => {
         const w = createAppWindow();
         w.__state.data = rader();
         las(w, paket());
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.organisationspaket).toEqual({ organisation: 'Exempelregionen', skapat: '2026-10-01' });
         expect(JSON.stringify(cfg)).not.toContain('Regionens lönepolicy');
         // Yrkets namn finns i lönefilen och får stå i årsbokslutet (ADR-54); paketets egna tal får inte.
@@ -266,7 +266,7 @@ describe('organisationspaket: läs in och skapa', () => {
     });
     it('paket i demoläget avslutar demot först', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         las(w, paket());
         expect(w.__state.isDemo).toBe(false);
         expect(w.__state.data).toEqual([]);
@@ -303,13 +303,13 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
     it('referensens namn ur ett paket escapas i beräkningsbeviset och utskriften', async () => {
         const w = createAppWindow();
         w.__state.data = rader();
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         las(w, paket({ referens: { ...paket().referens, namn: XSS, kortnamn: XSS } }));
-        const it0 = w.eval("computePrioritization('stallningstagande')")[0];
-        const bevis = w.eval('_evidenceForPrioItem')(it0, 'stallningstagande');
+        const it0 = w.eval("raknaPrioritering('stallningstagande')")[0];
+        const bevis = w.eval('_bevisForPrioPost')(it0, 'stallningstagande');
         expect(bevis.intro).not.toContain('<img');
         w.print = () => {};
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         await new Promise(r => setTimeout(r, 0));
         // Inget element skapas ur namnet (inuti ett citerat attributvärde är "<" ofarligt).
         expect(w.document.querySelectorAll('#print-report img[onerror], #print-report [onerror]')).toHaveLength(0);
@@ -320,7 +320,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         las(w, paket());
         expect(w.document.getElementById('prio-po-pct').value).toBe('30');
         expect(w.document.getElementById('prio-cost-months').value).toBe('6');
-        w.eval('_readCostSettings()');
+        w.eval('_lasKostnadsinstallningar()');
         expect(w.__state.costSettings.poPct).toBe(30);
         expect(w.__state.costSettings.months).toBe(6);
     });
@@ -346,7 +346,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
     it('demot efter ett paket blandar inte in paketets verkliga delar', () => {
         const w = createAppWindow();
         las(w, paket());
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.paket).toBeNull();
         expect(w.__state.statistik).toEqual([]);
         expect(w.eval('referensNamn()')).toBe('Exempelkommunens lönepolitik');
@@ -406,17 +406,17 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
         const kl = w.document.getElementById('kl-org-name');
         kl.value = 'Ny region'; kl.dispatchEvent(new w.Event('change'));
         expect(w.eval("orgNamn()")).toBe('Ny region');
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.orgNamn).toBe('Ny region');
         expect(cfg.jmfNamn).toBe('Regionstatistiken');
         const w2 = createAppWindow();
-        w2.__applyConfigSnapshot(cfg);
+        w2.__tillampaKonfiguration(cfg);
         expect(w2.eval("orgNamn()")).toBe('Ny region');
         expect(w2.eval("jmfNamn()")).toBe('Regionstatistiken');
     });
     it('demot sätter Exempelkommunen; Rensa och ett paket ersätter', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.eval("orgNamn()")).toBe('Exempelkommunen');
         w.eval('_rensaAllData()');
         expect(w.eval("orgNamn()")).toBe('Organisationen');
@@ -433,7 +433,7 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
 describe('namnen i etiketterna', () => {
     const oppna = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.slice(0, 40).map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }));
         w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
         w.eval("sattOrgNamn('Testkommunen'); sattJmfNamn('Teststatistiken')");
@@ -442,35 +442,35 @@ describe('namnen i etiketterna', () => {
     const serier = (w, id) => ((w.document.getElementById(id)._figur || {}).lager || []).map(l => l.serie);
     it('diagramserier: Jämförelsestatistik, Lönepolitik, Ålder & karriär', () => {
         const w = oppna();
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(serier(w, 'chart-jamforelse-spann')).toEqual(expect.arrayContaining(['Testkommunen P10–P90', 'Testkommunen median', 'Teststatistiken P10–P90']));
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(serier(w, 'chart-lp-bandmap')).toContain('Testkommunen (P10–P90)');
     });
     it('tabellrubriker: Likvärdigt arbete och Jämförelsestatistik', () => {
         const w = oppna();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const lv = w.document.getElementById('likvardighet-content').textContent;
         expect(lv).toMatch(/Median Testkommunen/);
         expect(lv).toMatch(/Kvinnodom\. AID-etikett \(Testkommunen\)/);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const th = [...w.document.querySelectorAll('#benchmark-table thead th')].map(t => t.textContent.trim());
         expect(th).toContain('P10 Testkommunen');
         expect(th).toContain('Median Testkommunen');
     });
     it('utan namn: etiketterna som i dag', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval("sattOrgNamn('')");   // demot heter Exempelkommunen
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         expect(w.document.getElementById('likvardighet-content').textContent).toMatch(/Median org\./);
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(serier(w, 'chart-lp-bandmap')).toContain('Organisationen (P10–P90)');
     });
     it('namn med <, & och %{x} visas som text', () => {
         const w = oppna();
         w.eval("sattOrgNamn('A<b>&%{x}')");
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         expect(w.document.getElementById('likvardighet-content').innerHTML).not.toMatch(/<b>&/);
         expect(w.document.getElementById('likvardighet-content').textContent).toMatch(/Median A<b>&%\{x\}/);
     });
@@ -479,7 +479,7 @@ describe('namnen i etiketterna', () => {
 describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
     const medStatistik = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.statistik = w.__state.data.map(r => ({ aid: r.aid, bas: r.bas, median: 35000, p10: 31000, p90: 40000 }))
             .filter((s, i, a) => a.findIndex(x => x.aid === s.aid && x.bas === s.bas) === i);
         w.__state.statistikHasP10 = w.__state.statistikHasP90 = true;
@@ -488,12 +488,12 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
     it('namn med < och > tolkas inte i diagrammens förklaringar', () => {
         const w = medStatistik();
         w.eval("sattOrgNamn('A<b>B</b>'); sattJmfNamn('<br>X')");
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const namn = w.document.getElementById('chart-jamforelse-spann')._figur.lager.map(l => l.serie).join('|');
         expect(namn).not.toMatch(/[<>]/);
         expect(namn).toMatch(/A‹b›B‹\/b› P10–P90/);
         expect(w.document.getElementById('chart-jamforelse-spann').querySelector('b, br')).toBeNull();
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(w.document.getElementById('chart-lp-bandmap')._figur.lager.map(l => l.serie).join('|')).not.toMatch(/[<>]/);
     });
     it('namn ur ett paket kortas till 100 tecken', () => {
@@ -507,7 +507,7 @@ describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
     });
     it('ställningstagandets namn normaliseras; ett avvisat namn står inte kvar i fältet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval("_lasInReferens([{ bas: 'C', p10: 30000, med: 34000, p90: 39000 }], 'min.csv')");
         w.eval("sattReferensNamn('  Min   referens ')");
         expect(w.__state.policyNamn).toBe('Min referens');

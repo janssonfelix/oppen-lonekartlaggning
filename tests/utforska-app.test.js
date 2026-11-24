@@ -11,7 +11,7 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('punkt-sampling: stora punktmoln ritas som ett jämnt urval (perf vid stora underlag)', () => {
@@ -52,13 +52,13 @@ describe('Utforska 2.0', () => {
     const aterstall = () => {
         satt('explore-rad', 'bas'); satt('explore-kolumn', 'ingen'); satt('explore-measure', 'median');
         satt('explore-visa', 'helhet'); satt('explore-typ', 'auto'); satt('explore-inkludera-sma', false);
-        win.__explorerSetFilter({});
+        win.__utforskaSattFilter({});
     };
-    const rita = () => { win.__renderExplorer(); return $('chart-explore'); };
+    const rita = () => { win.__ritaUtforska(); return $('chart-explore'); };
     // Tomlägets rad ("Inga grupper att visa") är ingen grupp.
     const kolumn0 = () => [...$('explore-table').querySelectorAll('tbody tr')].filter(tr => !tr.querySelector('.explore-tom')).map(tr => tr.cells[0].textContent.trim());
 
-    beforeAll(() => { win.__loadDemoData(); });
+    beforeAll(() => { win.__lasInDemodata(); });
 
     it('standardvyn ritar staplar per BAS i ordningen A → Z', () => {
         aterstall();
@@ -96,7 +96,7 @@ describe('Utforska 2.0', () => {
         expect([...grupper[0].querySelectorAll('option')].map(o => o.textContent)).toEqual(['Automatisk', 'Staplar', 'Liggande staplar', 'Låddiagram', 'Grupperade staplar']);
         expect([...grupper[1].querySelectorAll('option')].map(o => o.textContent)).toEqual(['Hanteldiagram', 'Bubbeldiagram', 'Individpunkter', 'Punktsvärm', 'Regnmoln', 'Kvantilpunkter', 'Värmekarta', 'Staplade staplar']);
         // Varje typ i registret går att välja, och etiketten är densamma som i registret.
-        const typer = win.eval('EXPLORE_TYPER');
+        const typer = win.eval('UTFORSKA_TYPER');
         expect([...sel.options].map(o => o.value).filter(v => v !== 'auto').sort()).toEqual(Object.keys(typer).sort());
         for (const o of sel.options) if (o.value !== 'auto') expect(o.textContent).toBe(typer[o.value].label);
         expect(win.document.getElementById('view-utforska').textContent).not.toMatch(/Heatmap/);
@@ -163,8 +163,8 @@ describe('Utforska 2.0', () => {
 
     it('filtret begränsar urvalet och visas som etikett', () => {
         aterstall();
-        const forsta = win.__getData()[0].bas;
-        win.__explorerSetFilter({ bas: [forsta] });
+        const forsta = win.__hamtaData()[0].bas;
+        win.__utforskaSattFilter({ bas: [forsta] });
         rita();
         expect(kolumn0()).toEqual([forsta]);
         expect($('explore-filter-chips').textContent).toContain(forsta);
@@ -172,7 +172,7 @@ describe('Utforska 2.0', () => {
 
     it('ett filtervärde som inte finns i datan tas bort tyst', () => {
         aterstall();
-        win.__explorerSetFilter({ bas: ['FINNS-INTE'] });
+        win.__utforskaSattFilter({ bas: ['FINNS-INTE'] });
         rita();
         expect(kolumn0().length).toBeGreaterThan(1);
         expect($('explore-filter-chips').textContent).toBe('');
@@ -180,7 +180,7 @@ describe('Utforska 2.0', () => {
 
     it('filter som tillsammans ger noll personer visar tomläget, och Rensa filter fungerar', () => {
         aterstall();
-        const rows = win.__getData();
+        const rows = win.__hamtaData();
         const aidAv = r => win.__utGruppnyckel(r, 'aid');
         let par = null;
         for (const b of new Set(rows.map(r => r.bas))) {
@@ -189,21 +189,21 @@ describe('Utforska 2.0', () => {
             if (annan) { par = [b, annan]; break; }
         }
         expect(par).not.toBeNull();
-        win.__explorerSetFilter({ bas: [par[0]], aid: [par[1]] });
+        win.__utforskaSattFilter({ bas: [par[0]], aid: [par[1]] });
         rita();
         expect($('chart-explore').textContent).toContain('Inga personer matchar urvalet');
         $('chart-explore').querySelector('[data-explore-clear]').click();
         expect(kolumn0().length).toBeGreaterThan(1);
     });
 
-    it('tableToMatrix hoppar över rader och tömmer celler som är märkta för export', () => {
+    it('tabellTillMatris hoppar över rader och tömmer celler som är märkta för export', () => {
         const t = win.document.createElement('table');
         t.id = 'tmp-export-tabell';
         t.innerHTML = '<thead><tr><th>G</th><th>V</th></tr></thead><tbody>'
             + '<tr><td>A</td><td>1</td></tr><tr data-export-utelamna><td>B</td><td>2</td></tr>'
             + '<tr><td>C</td><td data-export-tom>3</td></tr></tbody>';
         win.document.body.appendChild(t);
-        expect(win.__tableToMatrix('tmp-export-tabell')).toEqual([['G', 'V'], ['A', '1'], ['C', '']]);
+        expect(win.__tabellTillMatris('tmp-export-tabell')).toEqual([['G', 'V'], ['A', '1'], ['C', '']]);
         t.remove();
     });
 
@@ -223,7 +223,7 @@ describe('Utforska 2.0', () => {
     it('hanteldiagram går inte att välja för gap, eller när urvalet bara har ett kön', () => {
         aterstall(); satt('explore-measure', 'gap'); rita();
         expect([...$('explore-typ').options].find(o => o.value === 'hantel').disabled).toBe(true);
-        aterstall(); win.__explorerSetFilter({ kon: ['Kvinna'] }); rita();
+        aterstall(); win.__utforskaSattFilter({ kon: ['Kvinna'] }); rita();
         const opt = [...$('explore-typ').options].find(o => o.value === 'hantel');
         expect(opt.disabled).toBe(true);
         expect(opt.title).toBe('Urvalet innehåller bara ett kön.');
@@ -249,13 +249,13 @@ describe('Utforska 2.0', () => {
         gd = rita();
         expect(gd._figur.lager[0].punkter).toBe('alla');
         const antal = gd._figur.lager.reduce((s, l) => s + l.data.length, 0);
-        expect(antal).toBe(win.__getData().filter(r => r.lon > 0).length);
+        expect(antal).toBe(win.__hamtaData().filter(r => r.lon > 0).length);
     });
 
     it('individpunkter respekterar filtret', () => {
         aterstall(); satt('explore-typ', 'punkter');
-        const forsta = win.__getData()[0].bas;
-        win.__explorerSetFilter({ bas: [forsta] });
+        const forsta = win.__hamtaData()[0].bas;
+        win.__utforskaSattFilter({ bas: [forsta] });
         const gd = rita();
         expect(gd._figur.lager.every(l => l.marke === 'lada' && l.punkter === 'alla')).toBe(true);
         expect(new Set(gd._figur.lager.flatMap(l => l.data.map(d => d.x)))).toEqual(new Set([forsta]));
@@ -266,45 +266,45 @@ describe('Utforska: klick till gruppdossiern', () => {
     const spec = over => ({ rad: 'bas', kolumn: null, matt: 'median', delaKon: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [], ...over });
     let kand;
     beforeAll(() => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         // Nollställ Utforska så att klicket tolkas mot en känd vy (rader = BAS).
         const doc = win.document;
         doc.getElementById('explore-rad').value = 'bas';
         doc.getElementById('explore-kolumn').value = 'ingen';
         doc.getElementById('explore-typ').value = 'auto';
-        win.__explorerSetFilter({});
-        win.__renderExplorer();
-        kand = win.__gruppdossierCandidates();
+        win.__utforskaSattFilter({});
+        win.__ritaUtforska();
+        kand = win.__gruppdossierKandidater();
         expect(kand.length).toBeGreaterThan(0);
     });
 
     it('BAS som rad öppnar den största gruppen i det BAS:et', () => {
         const bas = kand[0].bas;
         const storst = kand.find(c => c.bas === bas);
-        expect(win.__explorerDossierTarget(spec(), bas, null)).toEqual({ key: storst.key });
+        expect(win.__utforskaDossiermal(spec(), bas, null)).toEqual({ key: storst.key });
     });
 
     it('AID × BAS pekar ut exakt grupp', () => {
         const c = kand[0];
-        const aidEtikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
-        expect(win.__explorerDossierTarget(spec({ rad: 'aid', kolumn: 'bas' }), aidEtikett, c.bas)).toEqual({ key: c.key });
+        const aidEtikett = win.__hamtaData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
+        expect(win.__utforskaDossiermal(spec({ rad: 'aid', kolumn: 'bas' }), aidEtikett, c.bas)).toEqual({ key: c.key });
     });
 
     it('ett filter med ett enda BAS räcker tillsammans med AID som rad', () => {
         const c = kand[0];
-        const aidEtikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
-        expect(win.__explorerDossierTarget(spec({ rad: 'aid', urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [c.bas] }] } }), aidEtikett, null))
+        const aidEtikett = win.__hamtaData().map(r => win.__utGruppnyckel(r, 'aid')).find(l => l === c.aid || l.startsWith(c.aid + ' '));
+        expect(win.__utforskaDossiermal(spec({ rad: 'aid', urval: { lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [c.bas] }] } }), aidEtikett, null))
             .toEqual({ key: c.key });
     });
 
     it('varken AID eller BAS ger inget mål', () => {
-        expect(win.__explorerDossierTarget(spec({ rad: 'alder', kolumn: 'kon' }), '30–34', 'Kvinna')).toBeNull();
+        expect(win.__utforskaDossiermal(spec({ rad: 'alder', kolumn: 'kon' }), '30–34', 'Kvinna')).toBeNull();
     });
 
     it('klick öppnar modalen', () => {
-        win.__explorerHandleClick({ rad: kand[0].bas, kol: null });
+        win.__utforskaVidKlick({ rad: kand[0].bas, kol: null });
         expect(win.document.getElementById('dossier-modal').style.display).toBe('flex');
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
     });
 
     it('klick på en liten grupp öppnar dossiern: skärmen maskerar inget (ADR-51)', () => {
@@ -315,11 +315,11 @@ describe('Utforska: klick till gruppdossiern', () => {
         for (let i = 0; i < 4; i++) rader.push({ bas: 'B', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i, alder: 40,
             yrke: '200 Liten', aid: '200', yrkeLabel: 'Liten', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('utforska');
-        expect(w.__explorerDossierTarget(spec(), 'B', null)).toEqual({ key: '200|B' });
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('utforska');
+        expect(w.__utforskaDossiermal(spec(), 'B', null)).toEqual({ key: '200|B' });
         w.__state.kLage = 'export';
-        expect(w.__explorerDossierTarget(spec(), 'B', null)).toEqual({ saknas: true });
+        expect(w.__utforskaDossiermal(spec(), 'B', null)).toEqual({ saknas: true });
         w.__state.kLage = 'skarm';
     });
 });
@@ -330,9 +330,9 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
     const grund = () => {
         $('explore-rad').value = 'bas'; $('explore-kolumn').value = 'ingen'; $('explore-measure').value = 'median';
         $('explore-typ').value = 'auto'; $('explore-visa').value = 'helhet'; $('explore-inkludera-sma').checked = false;
-        win.__explorerSetFilter({});
+        win.__utforskaSattFilter({});
     };
-    beforeAll(() => { win.__loadDemoData(); grund(); win.__renderExplorer(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); win.__ritaUtforska(); });
 
     it('korstabellens export utelämnar gap där ena könet är under tröskeln', () => {
         const w = createAppWindow();
@@ -343,13 +343,13 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         for (let i = 0; i < 2; i++) rader.push(r('kvinna', 25000, '100'));
         for (let i = 0; i < 20; i++) rader.push(r(i % 2 ? 'man' : 'kvinna', 30000, '200'));   // 10 + 10
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const d = w.document;
         d.getElementById('explore-rad').value = 'bas';
         d.getElementById('explore-kolumn').value = 'aid';
         d.getElementById('explore-measure').value = 'gap';
-        w.__renderExplorer();
-        const m = w.__tableToMatrix('explore-table');
+        w.__ritaUtforska();
+        const m = w.__tabellTillMatris('explore-table');
         const kol = e => m[0].findIndex(c => String(c).startsWith(e));
         expect(kol('100')).toBeGreaterThan(0);
         expect(m[1][kol('100')]).toBe('');
@@ -360,21 +360,21 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         grund();
         // Diagramkärnan (ADR-39): klicket hör till behållaren och överlever omritningar — ett klick, ett anrop.
         const el = $('chart-explore');
-        const kand = win.__gruppdossierCandidates()[0];
-        win.__renderExplorer();
+        const kand = win.__gruppdossierKandidater()[0];
+        win.__ritaUtforska();
         await vanta();
         $('explore-measure').value = 'medel';
-        win.__renderExplorer();
+        win.__ritaUtforska();
         await vanta();
         const i = el._figur.lager[0].data.findIndex(d => d.rad === kand.bas);
         el.querySelector(`rect[data-marke="stapel"][data-i="${i}"]`).dispatchEvent(new win.Event('click', { bubbles: true }));
         expect($('dossier-modal').style.display).toBe('flex');
-        win.__closeGruppdossier();
+        win.__stangGruppdossier();
     });
 
     it('tomläget försvinner när diagrammet ritas igen', () => {
         grund();
-        const rows = win.__getData();
+        const rows = win.__hamtaData();
         const aidAv = r => win.__utGruppnyckel(r, 'aid');
         let par = null;
         for (const b of new Set(rows.map(r => r.bas))) {
@@ -382,19 +382,19 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
             const annan = rows.map(aidAv).find(a => !iB.has(a));
             if (annan) { par = [b, annan]; break; }
         }
-        win.__explorerSetFilter({ bas: [par[0]], aid: [par[1]] });
-        win.__renderExplorer();
+        win.__utforskaSattFilter({ bas: [par[0]], aid: [par[1]] });
+        win.__ritaUtforska();
         expect($('chart-explore').querySelector('.explore-tom')).not.toBeNull();
-        win.__explorerSetFilter({});
-        win.__renderExplorer();
+        win.__utforskaSattFilter({});
+        win.__ritaUtforska();
         expect($('chart-explore').querySelector('.explore-tom')).toBeNull();
     });
 
     it('diagramdatan har decimalkomma och högst två decimaler', () => {
         grund();
         $('explore-measure').value = 'medel';
-        win.__renderExplorer();
-        const celler = win.__chartExportRows($('chart-explore')).flat();
+        win.__ritaUtforska();
+        const celler = win.__diagramexportRader($('chart-explore')).flat();
         expect(celler.filter(v => typeof v === 'number' && !Number.isInteger(v))).toEqual([]);
         expect(celler.some(v => typeof v === 'string' && /^\d+,\d{1,2}$/.test(v))).toBe(true);
     });
@@ -409,10 +409,10 @@ describe('Utforska: urval med villkor', () => {
     const grund = () => {
         $('explore-rad').value = 'bas'; $('explore-kolumn').value = 'ingen'; $('explore-measure').value = 'median';
         $('explore-typ').value = 'auto'; $('explore-visa').value = 'helhet'; $('explore-inkludera-sma').checked = false;
-        win.__explorerSetFilter({});
-        win.__renderExplorer();
+        win.__utforskaSattFilter({});
+        win.__ritaUtforska();
     };
-    beforeAll(() => { win.__loadDemoData(); grund(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); });
 
     it('panelen har knappar för att lägga till person- och gruppvillkor', () => {
         expect(q('[data-urval-lagg-till="person"]')).not.toBeNull();
@@ -446,7 +446,7 @@ describe('Utforska: urval med villkor', () => {
 
     it('byte från kategori till tal tömmer värdet och ger en taljämförelse', () => {
         change(q('[data-urval-falt="0"]'), 'lon');
-        const v = win.__explorerUrval().urval.villkor[0];
+        const v = win.__utforskaUrval().urval.villkor[0];
         expect(v).toEqual({ falt: 'lon', op: 'minst', varde: null, inte: false });
         expect(q('[data-urval-tal="0"]')).not.toBeNull();
     });
@@ -455,25 +455,25 @@ describe('Utforska: urval med villkor', () => {
         const falt = q('[data-urval-tal="0"]');
         falt.value = '35000';
         falt.dispatchEvent(new win.Event('input', { bubbles: true }));
-        expect(win.__explorerUrval().urval.villkor[0].varde).toBeNull();
+        expect(win.__utforskaUrval().urval.villkor[0].varde).toBeNull();
         change(falt);
-        expect(win.__explorerUrval().urval.villkor[0].varde).toBe(35000);
+        expect(win.__utforskaUrval().urval.villkor[0].varde).toBe(35000);
         expect(q('[data-urval-tal="0"]')).toBe(falt);
     });
 
     it('mellan ger två sifferfält', () => {
         change(q('[data-urval-op="0"]'), 'mellan');
         expect(win.document.querySelectorAll('[data-urval-tal="0"]')).toHaveLength(2);
-        expect(win.__explorerUrval().urval.villkor[0]).toEqual({ falt: 'lon', op: 'mellan', varde: [null, null], inte: false });
+        expect(win.__utforskaUrval().urval.villkor[0]).toEqual({ falt: 'lon', op: 'mellan', varde: [null, null], inte: false });
     });
 
     it('alla/något styr hur villkoren kombineras', () => {
-        const rows = win.__getData();
+        const rows = win.__hamtaData();
         const [b1, b2] = [...new Set(rows.map(r => r.bas))].sort((a, b) => a.localeCompare(b, 'sv'));
-        win.__explorerSetUrval({ lage: 'alla', villkor: [
+        win.__utforskaSattUrval({ lage: 'alla', villkor: [
             { falt: 'bas', op: 'enAv', varde: [b1], inte: false },
             { falt: 'bas', op: 'enAv', varde: [b2], inte: false }] });
-        win.__renderExplorer();
+        win.__ritaUtforska();
         expect(kolumn0()).toEqual([]);
         change($('explore-urval-lage'), 'nagot');
         expect(kolumn0()).toEqual([b1, b2]);
@@ -481,7 +481,7 @@ describe('Utforska: urval med villkor', () => {
 
     it('ta bort ett villkor', () => {
         q('[data-urval-bort="person:1"]').click();
-        expect(win.__explorerUrval().urval.villkor).toHaveLength(1);
+        expect(win.__utforskaUrval().urval.villkor).toHaveLength(1);
     });
 
     it('gruppvillkor döljer grupper och noten säger hur många', () => {
@@ -498,23 +498,23 @@ describe('Utforska: urval med villkor', () => {
 
     it('diagramdatan får urvalet som rad 2', () => {
         grund();
-        win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
-        win.__renderExplorer();
-        const rader = win.__chartExportRows($('chart-explore'));
+        win.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
+        win.__ritaUtforska();
+        const rader = win.__diagramexportRader($('chart-explore'));
         expect(rader[1][0].replace(/ /g, ' ')).toBe('Urval: Alla av: Lön minst 30 000 kr');
     });
 
     it('utan villkor har diagramdatan ingen urvalsrad', () => {
         grund();
-        expect(win.__chartExportRows($('chart-explore'))[1][0]).toBe('Serie');
+        expect(win.__diagramexportRader($('chart-explore'))[1][0]).toBe('Serie');
     });
 
     it('Rensa allt tar bort alla villkor', () => {
-        win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] },
+        win.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] },
                                [{ matt: 'n', op: 'minst', varde: 5 }]);
-        win.__renderExplorer();
+        win.__ritaUtforska();
         $('explore-filter-chips').querySelector('[data-explore-clear]').click();
-        expect(win.__explorerUrval()).toEqual({ urval: { lage: 'alla', villkor: [] }, gruppVillkor: [] });
+        expect(win.__utforskaUrval()).toEqual({ urval: { lage: 'alla', villkor: [] }, gruppVillkor: [] });
     });
 
     it('sökfältet i värdelistan döljer värden som inte matchar', () => {
@@ -534,22 +534,22 @@ describe('Utforska: urval', () => {
         const w = createAppWindow();
         const rad = bas => ({ bas, kon: 'kvinna', lon: 30000, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w.__state.data = Array.from({ length: 12 }, () => rad('E'));
-        w.eval('populateSelects(); unlockTabs();');
-        w.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [], inte: false }] });
-        w.__renderExplorer();
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [], inte: false }] });
+        w.__ritaUtforska();
         w.__state.data = Array.from({ length: 12 }, () => rad('X'));
-        w.__renderExplorer();
+        w.__ritaUtforska();
         const varden = [...w.document.querySelectorAll('[data-urval-varde="0"]')].map(b => b.value);
         expect(varden).toEqual(['X']);
     });
 
     it('fokus stannar på jämförelselistan när man byter jämförelse', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="utforska"]').click();
-        w.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: null, inte: false }] },
+        w.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: null, inte: false }] },
                              [{ matt: 'gap', op: 'mindre', varde: null }]);
-        w.__renderExplorer();
+        w.__ritaUtforska();
         for (const sel of ['[data-urval-op="0"]', '[data-urval-falt="0"]', '[data-gv-op="0"]', '[data-gv-matt="0"]']) {
             const el = w.document.querySelector(sel);
             el.focus();
@@ -565,14 +565,14 @@ describe('Utforska: helhet eller per kön, fler rader, urval alltid synligt', ()
     const satt = (id, v) => { $(id).value = v; };
     // Tomlägets rad ("Inga grupper att visa") är ingen grupp.
     const kolumn0 = () => [...$('explore-table').querySelectorAll('tbody tr')].filter(tr => !tr.querySelector('.explore-tom')).map(tr => tr.cells[0].textContent.trim());
-    const rita = () => { win.__renderExplorer(); return $('chart-explore'); };
+    const rita = () => { win.__ritaUtforska(); return $('chart-explore'); };
     const grund = () => {
         satt('explore-rad', 'bas'); satt('explore-kolumn', 'ingen'); satt('explore-measure', 'median');
         satt('explore-typ', 'auto'); satt('explore-visa', 'helhet'); $('explore-inkludera-sma').checked = false;
-        win.__explorerSetFilter({});
+        win.__utforskaSattFilter({});
     };
     const opt = (id, v) => [...$(id).options].find(o => o.value === v);
-    beforeAll(() => { win.__loadDemoData(); grund(); rita(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); rita(); });
 
     it('Visa har Helhet som förval', () => {
         expect($('explore-visa').value).toBe('helhet');
@@ -656,10 +656,10 @@ describe('Utforska: helhet eller per kön, fler rader, urval alltid synligt', ()
     });
 
     it('klick på en yrkesgrupp inom BAS pekar ut exakt den gruppens dossier', () => {
-        const c = win.__gruppdossierCandidates()[0];
-        const etikett = win.__getData().map(r => win.__utGruppnyckel(r, 'aidbas')).find(l => l.startsWith(c.aid + ' ') && l.endsWith(` · BAS ${c.bas}`));
+        const c = win.__gruppdossierKandidater()[0];
+        const etikett = win.__hamtaData().map(r => win.__utGruppnyckel(r, 'aidbas')).find(l => l.startsWith(c.aid + ' ') && l.endsWith(` · BAS ${c.bas}`));
         const spec = { rad: 'aidbas', kolumn: null, matt: 'median', delaKon: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [] };
-        expect(win.__explorerDossierTarget(spec, etikett, null)).toEqual({ key: c.key });
+        expect(win.__utforskaDossiermal(spec, etikett, null)).toEqual({ key: c.key });
     });
 
     it('Urval är alltid utfällt, inte en hopfällbar panel', () => {
@@ -693,13 +693,13 @@ describe('Utforska: helhet eller per kön, fler rader, urval alltid synligt', ()
 describe('Utforska: Visa, noter, export och diagram', () => {
     const $ = id => win.document.getElementById(id);
     const satt = (id, v) => { $(id).value = v; };
-    const rita = () => { win.__renderExplorer(); return $('chart-explore'); };
+    const rita = () => { win.__ritaUtforska(); return $('chart-explore'); };
     const grund = () => {
         satt('explore-rad', 'bas'); satt('explore-kolumn', 'ingen'); satt('explore-measure', 'median');
         satt('explore-typ', 'auto'); satt('explore-visa', 'helhet'); $('explore-inkludera-sma').checked = false;
-        win.__explorerSetFilter({});
+        win.__utforskaSattFilter({});
     };
-    beforeAll(() => { win.__loadDemoData(); grund(); rita(); });
+    beforeAll(() => { win.__lasInDemodata(); grund(); rita(); });
 
     it('Visa visar det som gäller när det är låst, och ditt val kommer tillbaka', () => {
         grund(); satt('explore-visa', 'kon'); satt('explore-typ', 'bubbla'); rita();
@@ -724,12 +724,12 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         const w = createAppWindow();
         const r = (kon, i) => ({ bas: 'A', kon, lon: 30000 + i, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => r('man', i)), ...Array.from({ length: 3 }, (_, i) => r('kvinna', i))];
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const d = w.document;
         d.getElementById('explore-measure').value = 'n';
         d.getElementById('explore-visa').value = 'kon';
-        w.__renderExplorer();
-        const m = w.__tableToMatrix('explore-table');
+        w.__ritaUtforska();
+        const m = w.__tabellTillMatris('explore-table');
         expect(m[1][m[0].indexOf('Kvinnor')]).toBe('3');
     });
 
@@ -779,16 +779,16 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
     const q = sel => win.document.querySelector(sel);
     const satt = (id, v) => { $(id).value = v; };
     const vanta = () => new Promise(r => setTimeout(r, 0));
-    const rita = () => { win.__renderExplorer(); return $('chart-explore'); };
+    const rita = () => { win.__ritaUtforska(); return $('chart-explore'); };
     const grund = () => {
         satt('explore-rad', 'bas'); satt('explore-kolumn', 'ingen'); satt('explore-measure', 'median');
         satt('explore-typ', 'auto'); satt('explore-visa', 'helhet'); $('explore-inkludera-sma').checked = false;
-        win.__explorerSetFilter({});
+        win.__utforskaSattFilter({});
     };
-    const tomtUrval = () => win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mindre', varde: 1, inte: false }] });
+    const tomtUrval = () => win.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'mindre', varde: 1, inte: false }] });
     const meny = () => $('chart-explore').parentElement.querySelector('.chart-export');
     const verktyg = () => $('explore-table').closest('.table-container').previousElementSibling;
-    beforeAll(async () => { win.__loadDemoData(); win.document.querySelector('.nav-item[data-tab="utforska"]').click(); grund(); rita(); await vanta(); });
+    beforeAll(async () => { win.__lasInDemodata(); win.document.querySelector('.nav-item[data-tab="utforska"]').click(); grund(); rita(); await vanta(); });
 
     it('tomläget döljer exportmenyn och tabellverktygen, och de kommer tillbaka', () => {
         grund(); tomtUrval(); rita();
@@ -823,8 +823,8 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
         grund(); rita();
         const fore = $('explore-note').textContent;
         // En tom cell ritas inte och kan inte klickas; ett anrop utan datapunkt eller utan etikett gör ingenting.
-        win.__explorerHandleClick(null);
-        win.__explorerHandleClick({});
+        win.__utforskaVidKlick(null);
+        win.__utforskaVidKlick({});
         expect($('explore-note').textContent).toBe(fore);
         expect($('dossier-modal').style.display).not.toBe('flex');
     });
@@ -836,20 +836,20 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
 
     it('byte av talfält tömmer värdet (lön och ålder har olika enheter)', () => {
         grund();
-        win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
+        win.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
         rita();
         const f = q('[data-urval-falt="0"]'); f.value = 'alder'; f.dispatchEvent(new win.Event('change', { bubbles: true }));
-        expect(win.__explorerUrval().urval.villkor[0]).toEqual({ falt: 'alder', op: 'minst', varde: null, inte: false });
+        expect(win.__utforskaUrval().urval.villkor[0]).toEqual({ falt: 'alder', op: 'minst', varde: null, inte: false });
     });
 
     it('tabellens export börjar med urvalet när ett villkor är aktivt', () => {
         grund();
-        win.__explorerSetUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
+        win.__utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 30000, inte: false }] });
         rita();
-        const m = win.__tableToMatrix('explore-table');
+        const m = win.__tabellTillMatris('explore-table');
         expect(m[0][0].replace(/\u00a0/g, ' ')).toBe('Urval: Alla av: Lön minst 30 000 kr');
         grund(); rita();
-        expect(win.__tableToMatrix('explore-table')[0][0]).toBe('BAS-intervall');
+        expect(win.__tabellTillMatris('explore-table')[0][0]).toBe('BAS-intervall');
     });
 });
 
@@ -858,32 +858,32 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
     const p = (aid, label, n) => Array.from({ length: n }, (_, i) => ({ aid, yrke: `${aid} ${label}`, yrkeLabel: label, bas: 'C',
         kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 37, alder: 30 + i, radnr: i + 2 }));
     w.__state.data = [...p('207011', 'Usk', 24), ...p('207024', 'Vb', 5), ...p('207009', 'Usk hemtj', 7), ...p('502010', 'Sysutv', 22)];
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     const d = w.document;
     const satt = (id, v) => { d.getElementById(id).value = v; };
     it('rutan syns bara när raderna är yrkesgrupper', () => {
-        w.__renderTabContent('utforska');
-        satt('explore-rad', 'bas'); w.__renderExplorer();
+        w.__ritaFlik('utforska');
+        satt('explore-rad', 'bas'); w.__ritaUtforska();
         expect(d.getElementById('explore-sla-ihop-rad').hidden).toBe(true);
-        satt('explore-rad', 'aid'); w.__renderExplorer();
+        satt('explore-rad', 'aid'); w.__ritaUtforska();
         expect(d.getElementById('explore-sla-ihop-rad').hidden).toBe(false);
     });
     it('ikryssad: små yrken i samma AID-mellannivå visas som en grupp (i exportläget; på skärmen är inga grupper små, ADR-51)', () => {
         satt('explore-rad', 'aid'); satt('explore-kolumn', 'ingen');
         d.getElementById('explore-sla-ihop').checked = true;
         w.__state.kLage = 'export';
-        w.__renderExplorer();
+        w.__ritaUtforska();
         expect(d.getElementById('explore-table').textContent).toMatch(/Övriga i AID 2070xx \(2 AID-etiketter\)/);
         d.getElementById('explore-sla-ihop').checked = false;
-        w.__renderExplorer();
+        w.__ritaUtforska();
         expect(d.getElementById('explore-table').textContent).not.toMatch(/Övriga i/);
         w.__state.kLage = 'skarm';
     });
     it('klick på en hopslagen grupp förklarar sammanslagningen, inte "under 10"', () => {
         satt('explore-rad', 'aid'); satt('explore-kolumn', 'ingen');
         d.getElementById('explore-sla-ihop').checked = true;
-        w.__renderExplorer();
-        w.eval(`explorerHandleClick({ rad: 'Övriga i AID 2070xx (2 AID-etiketter)', kol: null })`);
+        w.__ritaUtforska();
+        w.eval(`utforskaVidKlick({ rad: 'Övriga i AID 2070xx (2 AID-etiketter)', kol: null })`);
         const not = d.getElementById('explore-note').textContent;
         expect(not).toMatch(/slagits ihop av flera små AID-etiketter/);
         expect(not).not.toMatch(/minst 10 personer/);
@@ -891,8 +891,8 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
     });
     it('Lika arbete påverkas aldrig av hopslagningen', () => {
         d.getElementById('explore-sla-ihop').checked = true;
-        w.__renderExplorer();
-        w.__renderTabContent('matrix');
+        w.__ritaUtforska();
+        w.__ritaFlik('matrix');
         expect(d.getElementById('matrix-table').textContent).not.toMatch(/Övriga i/);
     });
 });
@@ -903,17 +903,17 @@ describe('Utforska: slå ihop små yrkesgrupper', () => {
 describe('Rensa all data tömmer även Utforska', () => {
     it('inga individrader finns kvar i Utforskas minne efter rensning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('utforska');
-        expect(w.__explorerMinne().rows).toBeGreaterThan(0);
-        w.__clearAllData();
+        w.__lasInDemodata();
+        w.__ritaFlik('utforska');
+        expect(w.__utforskaMinne().rows).toBeGreaterThan(0);
+        w.__rensaAllData();
         expect(w.__state.data).toHaveLength(0);
-        expect(w.__explorerMinne()).toEqual({ rows: 0, urval: 0, exportFigur: 'undefined' });
+        expect(w.__utforskaMinne()).toEqual({ rows: 0, urval: 0, exportFigur: 'undefined' });
     });
 });
 
 describe('Löneöversikten i Utforska', () => {
-    const rita = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('utforska'); return w; };
+    const rita = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__ritaFlik('utforska'); return w; };
     it('heter Löneöversikt, och sökfältet säger vad man söker på', () => {
         const html = las('src/index.html');
         expect(html).not.toMatch(/Hierarkisk Rapport/i);
@@ -929,7 +929,7 @@ describe('Löneöversikten i Utforska', () => {
         expect(t.querySelectorAll('thead th').length).toBe(8);   // kolumnerna står kvar för exporten
         expect(las('src/style.css')).toContain('#rapport-table.utan-jamforelse :is(th, td):nth-child(n+7) { display: none; }');
         w.__state.statistik = [{ aid: '207011', bas: 'C', median: 30000 }];
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         expect(t.classList.contains('utan-jamforelse')).toBe(false);
     });
     it('lönespridningen skrivs med decimalkomma och bär talet för sortering och export', () => {
@@ -953,7 +953,7 @@ describe('Löneöversikten i Utforska', () => {
         expect(synliga(rubriker()[1]).some(Boolean)).toBe(false);
         rubriker()[1].firstElementChild.click();
         await new Promise(r => setTimeout(r, 10));
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         expect(rubriker()[1].classList.contains('collapsed')).toBe(false);
         expect(synliga(rubriker()[1]).every(Boolean)).toBe(true);
         const sok = d.getElementById('search-rapport');
@@ -965,7 +965,7 @@ describe('Löneöversikten i Utforska', () => {
     });
     it('PDF-rapportens kopia av en tabell har alla rader synliga, också hopfällda grupper och ansvarsrader', () => {
         const w = rita();
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         for (const id of ['rapport-table', 'matrix-table']) {
             const klon = w.eval(`_exportVisaAllaRader(document.getElementById('${id}').cloneNode(true))`);
             expect([...klon.querySelectorAll('tbody tr')].filter(tr => tr.hidden || tr.style.display === 'none' || tr.classList.contains('collapsed')).length, id).toBe(0);
@@ -975,7 +975,7 @@ describe('Löneöversikten i Utforska', () => {
     });
     it('i arbetsboken är också de hopfällda raderna synliga', () => {
         const w = rita();
-        const klon = w.eval("_cloneAndCleanTableForExport('rapport-table')");
+        const klon = w.eval("_tabellkopiaForExport('rapport-table')");
         expect([...klon.querySelectorAll('tbody tr')].filter(tr => tr.style.display === 'none').length).toBe(0);
         expect(w.document.querySelectorAll('#rapport-table tbody tr[style*="display: none"]').length).toBeGreaterThan(0);
     });
@@ -983,12 +983,12 @@ describe('Löneöversikten i Utforska', () => {
 
 describe('k-anonymitet, sortering, efterlevnad och dossiern — sortering', () => {
     it('utforskartabellen går att sortera även efter omritning', () => {
-        win.__loadDemoData();
-        win.__renderExplorer();
-        win.__renderExplorer();            // andra renderingen: tabellhuvudet behåller sina lyssnare
+        win.__lasInDemodata();
+        win.__ritaUtforska();
+        win.__ritaUtforska();            // andra renderingen: tabellhuvudet behåller sina lyssnare
         const th = win.document.querySelectorAll('#explore-table thead th');
         expect(th.length).toBeGreaterThan(0);
-        // enableTableSort märker sorterbara kolumner med .sortable — saknas den
+        // aktiveraSortering märker sorterbara kolumner med .sortable — saknas den
         // har lyssnarna inte registrerats om.
         expect(th[0].classList.contains('sortable')).toBe(true);
     });
@@ -1004,7 +1004,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — sortering',
             + '<tr><td>x</td><td data-sort-value="1">1</td></tr><tr><td>y</td><td data-sort-value="2">2</td></tr>'
             + '<tr><td colspan="2">not</td></tr></tbody>';
         d.body.appendChild(t);
-        w.enableTableSort('sorttest');
+        w.aktiveraSortering('sorttest');
         const th = t.querySelectorAll('th')[1];
         for (let i = 0; i < 2; i++) {
             th.click();

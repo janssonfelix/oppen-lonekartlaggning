@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`beräkningar på demodatan (låsta tal) > [B3.1] regressionen (runOLSRegression) ger samma tal > runOLSRegression 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > [B3.1] regressionen (korOLSRegression) ger samma tal > korOLSRegression 1`] = `
 {
   "R2": 0.9193716702,
   "adjR2": 0.9174595359,
@@ -257,16 +257,16 @@ exports[`beräkningar på demodatan (låsta tal) > [B3.1] regressionen (runOLSRe
 }
 `;
 
-exports[`beräkningar på demodatan (låsta tal) > extremvärdena (detectOutliers) ger samma tal > detectOutliers 1`] = `[]`;
+exports[`beräkningar på demodatan (låsta tal) > extremvärdena (hittaExtremvarden) ger samma tal > hittaExtremvarden 1`] = `[]`;
 
-exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal > _laBootstrapGapCI 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > lönegapets KI per BAS-intervall (_laBootstrapGapKI) på två påhittade lönelistor ger samma tal > _laBootstrapGapKI 1`] = `
 {
   "hi": 94.59854015,
   "lo": 88.63636364,
 }
 `;
 
-exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerAnalysis) ger samma tal > computePowerAnalysis 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > power-analysen (raknaStyrkeanalys) ger samma tal > raknaStyrkeanalys 1`] = `
 {
   "balanced": true,
   "mdePct": 2.201268033,
@@ -280,7 +280,7 @@ exports[`beräkningar på demodatan (låsta tal) > power-analysen (computePowerA
 }
 `;
 
-exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linearRegressionCI) på en påhittad serie ger samma tal > linearRegressionCI 1`] = `
+exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linjarRegressionKI) på en påhittad serie ger samma tal > linjarRegressionKI 1`] = `
 [
   {
     "hi": 2.261276634,
@@ -331,7 +331,7 @@ exports[`beräkningar på demodatan (låsta tal) > översiktens bootstrap-KI (st
 }
 `;
 
-exports[`extremvärden med en påhittad avvikare > detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan > detectOutliers med avvikare 1`] = `
+exports[`extremvärden med en påhittad avvikare > hittaExtremvarden flaggar raden som multiplicerats med fem, och snapshoten låser listan > hittaExtremvarden med avvikare 1`] = `
 [
   {
     "alder": 40,

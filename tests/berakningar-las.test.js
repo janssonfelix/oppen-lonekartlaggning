@@ -38,42 +38,42 @@ const mansLoner = [34100, 33750, 35200, 34600, 33900, 35800];
 
 describe('beräkningar på demodatan (låsta tal)', () => {
     const w = createAppWindow();
-    beforeAll(() => { w.__loadDemoData(); });
+    beforeAll(() => { w.__lasInDemodata(); });
 
-    it('[B3.1] regressionen (runOLSRegression) ger samma tal', () => {
-        expect(stabil(w.__runOLS())).toMatchSnapshot('runOLSRegression');
+    it('[B3.1] regressionen (korOLSRegression) ger samma tal', () => {
+        expect(stabil(w.__runOLS())).toMatchSnapshot('korOLSRegression');
     });
 
     it('översiktens bootstrap-KI (state.bootstrapCI utan elapsed) ger samma tal', () => {
-        w.computeBootstrapCI();
+        w.raknaBootstrapKI();
         const { elapsed: _tid, ...utanTid } = w.__state.bootstrapCI;
         expect(stabil(utanTid)).toMatchSnapshot('bootstrapCI');
     });
 
-    it('power-analysen (computePowerAnalysis) ger samma tal', () => {
-        expect(stabil(w.computePowerAnalysis())).toMatchSnapshot('computePowerAnalysis');
+    it('power-analysen (raknaStyrkeanalys) ger samma tal', () => {
+        expect(stabil(w.raknaStyrkeanalys())).toMatchSnapshot('raknaStyrkeanalys');
     });
 
-    it('extremvärdena (detectOutliers) ger samma tal', () => {
-        expect(stabil(w.detectOutliers())).toMatchSnapshot('detectOutliers');
+    it('extremvärdena (hittaExtremvarden) ger samma tal', () => {
+        expect(stabil(w.hittaExtremvarden())).toMatchSnapshot('hittaExtremvarden');
     });
 
-    it('regressionslinjens KI (linearRegressionCI) på en påhittad serie ger samma tal', () => {
+    it('regressionslinjens KI (linjarRegressionKI) på en påhittad serie ger samma tal', () => {
         const serie = [[1, 2.1], [2, 3.9], [3, 6.2], [4, 7.8], [5, 10.1], [6, 12.2], [7, 13.8], [8, 16.1]];
-        expect(stabil(w.linearRegressionCI(serie, 1, 8, 5))).toMatchSnapshot('linearRegressionCI');
+        expect(stabil(w.linjarRegressionKI(serie, 1, 8, 5))).toMatchSnapshot('linjarRegressionKI');
     });
 
-    it('lönegapets KI per BAS-intervall (_laBootstrapGapCI) på två påhittade lönelistor ger samma tal', () => {
-        expect(stabil(w._laBootstrapGapCI(kvinnoLoner, mansLoner))).toMatchSnapshot('_laBootstrapGapCI');
+    it('lönegapets KI per BAS-intervall (_laBootstrapGapKI) på två påhittade lönelistor ger samma tal', () => {
+        expect(stabil(w._laBootstrapGapKI(kvinnoLoner, mansLoner))).toMatchSnapshot('_laBootstrapGapKI');
     });
 });
 
 describe('extremvärden med en påhittad avvikare', () => {
-    it('detectOutliers flaggar raden som multiplicerats med fem, och snapshoten låser listan', () => {
-        // Eget fönster: testet ändrar data. detectOutliers läser state.data direkt (getData), så ingen cache behöver
+    it('hittaExtremvarden flaggar raden som multiplicerats med fem, och snapshoten låser listan', () => {
+        // Eget fönster: testet ändrar data. hittaExtremvarden läser state.data direkt (hamtaData), så ingen cache behöver
         // ogiltigförklaras.
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const rader = w.__state.data;
         // Det största BAS-intervallet, och i det den första raden i datan (deterministiskt val).
         const antal = {};
@@ -83,10 +83,10 @@ describe('extremvärden med en påhittad avvikare', () => {
         const forre = rader[index].lon;
         rader[index].lon = forre * 5;
 
-        const utfall = w.detectOutliers();
+        const utfall = w.hittaExtremvarden();
         expect(utfall.length).toBeGreaterThanOrEqual(1);
         const flaggad = utfall.find(o => o.bas === storst && o.lon === forre * 5);
         expect(flaggad, 'den ändrade raden ska vara flaggad').toBeDefined();
-        expect(stabil(utfall)).toMatchSnapshot('detectOutliers med avvikare');
+        expect(stabil(utfall)).toMatchSnapshot('hittaExtremvarden med avvikare');
     });
 });

@@ -139,7 +139,7 @@ describe('säkerhet: utskriftsfönstret', () => {
         let skrivet = '';
         const fonster = { document: { write: s => { skrivet += s; }, close() {}, head: null }, focus() {}, print() {} };
         w.open = () => fonster;
-        w.eval(`printScaffoldView('view-bestammelser', 'Rubrik <img src=x onerror="window.__xss=1">')`);
+        w.eval(`skrivUtMallflik('view-bestammelser', 'Rubrik <img src=x onerror="window.__xss=1">')`);
         expect(skrivet).not.toContain('<img src=x');
         expect(skrivet).toContain('&lt;img');
         expect(skrivet).toMatch(/<meta http-equiv="Content-Security-Policy" content="default-src 'none';/);
@@ -363,9 +363,9 @@ describe('diagram: beskrivning för skärmläsare, svenska talformat och Pareto'
     let w, diagram, karnans;
     beforeAll(async () => {
         w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         for (const t of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-            'handlingsplan', 'kon', 'utforska', 'benchmark']) w.__renderTabContent(t);
+            'handlingsplan', 'kon', 'utforska', 'benchmark']) w.__ritaFlik(t);
         await new Promise(r => setTimeout(r, 300));
         diagram = [...w.document.querySelectorAll('*')].filter(el => el.layout && el.data);   // ska vara tom: inget annat ritar diagram
         karnans = [...w.document.querySelectorAll('*')].filter(el => el._figur);   // ritade av diagramkärnan (ADR-39)
@@ -434,7 +434,7 @@ describe('säkerhet: inga style-attribut i markeringen (ADR-30, ADR-43)', () => 
         expect(skal.match(/\sstyle\s*=/g) || []).toEqual([]);
     });
     it('filer som skriver data-stil-* anropar tillampaDataStil, och hjälparen sätter bara bredd och läge', () => {
-        // buildBarCell (05) ger bara en cell; tabellen byggs och sätts in i 55-prioritering.js, som anropar hjälparen.
+        // byggStapelcell (05) ger bara en cell; tabellen byggs och sätts in i 55-prioritering.js, som anropar hjälparen.
         const KONSUMENT = { '05-tabeller-och-lankar.js': '55-prioritering.js' };
         const utan = [];
         for (const f of readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && f !== '03-hjalpfunktioner.js')) {
@@ -455,14 +455,14 @@ describe('säkerhet: inga style-attribut i markeringen (ADR-30, ADR-43)', () => 
 });
 
 describe('beräkningsbevisen: värden ur lönefilen escapas i bevisrutans HTML', () => {
-    // intro, formula och footer skrivs som HTML i bevisrutan (_openEvidenceModal). Ett BAS-värde ur filen med
+    // intro, formula och footer skrivs som HTML i bevisrutan (_oppnaBevisruta). Ett BAS-värde ur filen med
     // HTML-tecken ska komma ut som text, med och utan ålder i lönefilen.
     it('per-BAS-regressionens intro bär BAS escapat', () => {
         const w = createAppWindow();
         const bas = '<b>x</b>';
         for (const alder of [true, false]) {
             w.eval(`harAlder = () => ${alder};`);
-            const p = w.eval(`_evidenceForPerBasRow({ bas: ${JSON.stringify(bas)}, status: 'ok', n: 40, kvN: 20, maN: 20, gapPct: -2, ciLow: -4, ciHigh: 0, pValue: 0.2, R2: 0.1 }, null)`);
+            const p = w.eval(`_bevisForPerBasRad({ bas: ${JSON.stringify(bas)}, status: 'ok', n: 40, kvN: 20, maN: 20, gapPct: -2, ciLow: -4, ciHigh: 0, pValue: 0.2, R2: 0.1 }, null)`);
             expect(p.intro).toContain('&lt;b&gt;x&lt;/b&gt;');
             expect(p.intro).not.toContain(bas);
         }

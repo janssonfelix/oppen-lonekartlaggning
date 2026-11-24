@@ -14,7 +14,7 @@ import { fonster, normalisera } from './helpers/ktroskel-rigg.js';
 
 vi.setConfig({ testTimeout: 60000 });
 
-const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const modal = w => w.document.getElementById('basdossier-modal');
 const oppen = w => modal(w).style.display === 'flex';
 const skriv = (w, t) => { const f = w.document.getElementById('sok-grupp'); f.value = t; f.dispatchEvent(new w.Event('input', { bubbles: true })); };
@@ -53,7 +53,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
 
     it('öppnas från Lönestrukturs tabell per BAS-intervall och från gruppdossiern (Hela BAS), och leder vidare till gruppdossiern', () => {
         const w = demo(), doc = w.document;
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const knapp = doc.querySelector('#la-oversikt [data-open-basdossier="C"]');
         expect(knapp).not.toBeNull();
         knapp.click();
@@ -72,7 +72,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
         expect(doc.getElementById('dossier-modal').style.display).toBe('none');
         expect(oppen(w)).toBe(true);
         expect(doc.getElementById('basdossier-select').value).toBe('C');
-        w.eval('closeBasdossier()');
+        w.eval('stangBasdossier()');
     });
 
     it('öppnas från sökrutan: en BAS-träff har raden Öppna BAS-dossiern under sig, och tangentbordet når den', () => {
@@ -113,7 +113,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
         skriv(w, 'per intervall');
         const li = [...doc.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'BAS-dossier');
         expect(li.querySelector('.sok-under').textContent).toMatch(/kräver lönefil/);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         skriv(w, 'bas-intervall dossier');
         const li2 = [...doc.querySelectorAll('#sok-grupp-lista [data-sok-funktion]')].find(x => x.querySelector('.sok-namn').textContent === 'BAS-dossier');
         expect(li2.querySelector('.sok-under').textContent).toBe('Öppnar BAS-dossiern');
@@ -124,7 +124,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
 
     it('länken under Ålder öppnar Ålder & karriär med intervallet valt', () => {
         const w = demo(), doc = w.document;
-        w.eval("openBasdossier('D')");
+        w.eval("oppnaBasdossier('D')");
         doc.querySelector('#basdossier-body [data-bd-alder]').click();
         expect(oppen(w)).toBe(false);
         expect(doc.querySelector('.nav-item.active').dataset.tab).toBe('kon');
@@ -135,29 +135,29 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
 describe('BAS-dossiern: förra året och textversionen', () => {
     const medBokslut = (andra) => {
         const a = demo();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
         andra(cfg.arsbokslut);
-        const w = demo(); w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+        const w = demo(); w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
         return { w, cfg };
     };
 
     it('förra året visas när ett bokslut med raden finns; utan fältet eller utan bokslut säger dossiern det', () => {
         const { w, cfg } = medBokslut(ab => ab.basIntervall.forEach(r => { r.med -= 800; }));
-        const d = w.eval("buildBasdossier('C')");
+        const d = w.eval("byggBasdossier('C')");
         expect(d.forra).toMatchObject({ lage: 'ok', ar: cfg.arsbokslut.ar });
         expect(d.forra.rad.med.diff).toBeCloseTo(800, 6);
-        w.eval("openBasdossier('C')");
+        w.eval("oppnaBasdossier('C')");
         const text = w.document.getElementById('basdossier-body').textContent;
         expect(text).toMatch(new RegExp(`Förra året.*${cfg.arsbokslut.ar}`, 's'));
         expect(text).toContain('+800\u00a0kr');
-        w.eval('closeBasdossier()');
+        w.eval('stangBasdossier()');
         const { w: w2 } = medBokslut(ab => { delete ab.basIntervall; });
-        expect(w2.eval("buildBasdossier('C')").forra.lage).toBe('saknasFalt');
-        w2.eval("openBasdossier('C')");
+        expect(w2.eval("byggBasdossier('C')").forra.lage).toBe('saknasFalt');
+        w2.eval("oppnaBasdossier('C')");
         expect(w2.document.getElementById('basdossier-body').textContent).toMatch(/äldre version/);
         const w3 = demo();
-        w3.eval("openBasdossier('C')");
+        w3.eval("oppnaBasdossier('C')");
         expect(w3.document.getElementById('basdossier-body').textContent).toMatch(/konfigurationsfil/i);
     });
 
@@ -171,7 +171,7 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         expect(w.__state.kLage).toBe('skarm');
         const texter = [];
         w.navigator.clipboard = { writeText: t => { texter.push(t); return Promise.resolve(); } };
-        w.eval("openBasdossier('C')");
+        w.eval("oppnaBasdossier('C')");
         w.document.getElementById('btn-basdossier-copy').click();
         await new Promise(r => setTimeout(r, 0));
         expect(texter).toEqual([text]);
@@ -179,23 +179,23 @@ describe('BAS-dossiern: förra året och textversionen', () => {
 
     it('textbyggaren är delad: dossierns text, utkastets stycke och rapportens avsnitt byggs ur samma stycken', () => {
         const { w } = medBokslut(ab => ab.basIntervall.forEach(r => { r.med -= 800; }));
-        const stycken = w.eval("medExportLage(() => basdossierStycken(buildBasdossier('C')))");
+        const stycken = w.eval("medExportLage(() => basdossierStycken(byggBasdossier('C')))");
         expect(stycken.map(s => s.rubrik)).toEqual(['Nyckeltal', 'AID-etiketterna i intervallet', 'Likvärdigt arbete i intervallet', 'Ålder', 'Förra året']);
         expect(stycken.every(s => s.rader.length > 0 && s.rader.every(r => typeof r === 'string' && r.length > 0))).toBe(true);
         // Dossierns text är rubriken och styckena, åtskilda av en tom rad.
         const text = w.eval("basdossierText('C')");
         expect(text).toBe(['BAS-intervall C', '', ...stycken.flatMap((s, i) => [...(i ? [''] : []), s.rubrik, ...s.rader])].join('\n'));
         // Utkastets stycke för intervallet: samma rader, och raden att fylla i sist.
-        const utkast = w.eval("medExportLage(() => basintervallUtkastText(buildBasdossier('C')))");
+        const utkast = w.eval("medExportLage(() => basintervallUtkastText(byggBasdossier('C')))");
         expect(utkast.startsWith(text)).toBe(true);
         expect(utkast.split('\n').pop()).toMatch(/^\[HR fyller i\] Bedömning: /);
         // Utan bokslut har dossiern raden om hur man får ett; utkastet och rapporten hoppar över punkten.
         const u = demo();
-        expect(u.eval("medExportLage(() => basdossierStycken(buildBasdossier('C')))").map(s => s.rubrik)).toContain('Förra året');
-        expect(u.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))").map(s => s.rubrik)).not.toContain('Förra året');
+        expect(u.eval("medExportLage(() => basdossierStycken(byggBasdossier('C')))").map(s => s.rubrik)).toContain('Förra året');
+        expect(u.eval("medExportLage(() => basdossierStycken(byggBasdossier('C'), { forraBaraMedBokslut: true }))").map(s => s.rubrik)).not.toContain('Förra året');
         // Ett äldre bokslut utan fältet: raden om det står kvar också i utkastet.
         const { w: w2 } = medBokslut(ab => { delete ab.basIntervall; });
-        expect(w2.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))").map(s => s.rubrik)).toContain('Förra året');
+        expect(w2.eval("medExportLage(() => basdossierStycken(byggBasdossier('C'), { forraBaraMedBokslut: true }))").map(s => s.rubrik)).toContain('Förra året');
     });
 
     it('texten innehåller inga lönemått för en grupp under k; skärmen visar gruppen, som övriga flikar', () => {
@@ -203,8 +203,8 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         const w = fonster(null);
         const SENT = 41573;
         for (let i = 0; i < 6; i++) w.__state.data.push({ bas: 'S1', kon: i % 2 ? 'man' : 'kvinna', lon: SENT, alder: 30 + i * 5, yrke: '5999 Litet yrke', aid: '5999', yrkeLabel: 'Litet yrke', enhet: '' });
-        w.eval('invalidateStatCaches(); populateSelects();');
-        const skarm = w.eval("buildBasdossier('S1')");
+        w.eval('tomStatistikcacher(); fyllValjare();');
+        const skarm = w.eval("byggBasdossier('S1')");
         expect(skarm.yrken.some(y => y.aid === '5999')).toBe(true);
         const text = normalisera(w.eval("basdossierText('S1')"));
         expect(text).not.toContain(String(SENT));
@@ -221,11 +221,11 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         const w = demo();
         // Flytta systemutvecklarna med lön under 37 000 kr från BAS C till BAS D: AID-etiketten finns då i två intervall
         // och är två grupper i Lika arbete (ADR-89). Dossiern för C läser gruppen i C direkt: antal, medianer och status.
-        w.eval(`(() => { for (const r of state.data) if (r.aid === '502010' && r.bas === 'C' && r.lon < 37000) r.bas = 'D'; invalidateStatCaches(); populateSelects(); })()`);
-        const grupper = w.eval("laLikaGrupper(getData(), kTroskel()).grupper.filter(g => g.aid === '502010')");
+        w.eval(`(() => { for (const r of state.data) if (r.aid === '502010' && r.bas === 'C' && r.lon < 37000) r.bas = 'D'; tomStatistikcacher(); fyllValjare(); })()`);
+        const grupper = w.eval("laLikaGrupper(hamtaData(), kTroskel()).grupper.filter(g => g.aid === '502010')");
         expect(grupper.map(g => g.bas)).toEqual(['C', 'D']);
         const iC = grupper[0];
-        const d = w.eval("buildBasdossier('C')");
+        const d = w.eval("byggBasdossier('C')");
         const y = d.yrken.find(x => x.yrke === '502010 Systemutvecklare');
         expect(y.status).toBe(iC.samladMedian ? 'liten' : iC.niva);
         expect(y.tot).toBe(iC.tot);
@@ -233,12 +233,12 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         expect(y.ocksaI).toEqual(['D']);
         expect(y.helaTot).toBeUndefined();
         // Samma status som raden för intervallet i Lika arbetes tabell.
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const eu = [...w.document.querySelectorAll('#matrix-table tbody tr')].map(tr => tr._euRow).find(r => r && r.aid === '502010' && r.bas === 'C');
         expect({ granska: 'granska', folj: 'folj', balanserat: 'balanserat', ejbedomd: 'ejbedomd' }[y.status]).toBe(eu.niva);
-        w.eval("openBasdossier('C')");
+        w.eval("oppnaBasdossier('C')");
         expect(w.document.getElementById('basdossier-body').textContent).toContain('AID-etiketten finns också i BAS D, som en egen grupp i Lika arbete');
-        w.eval('closeBasdossier()');
+        w.eval('stangBasdossier()');
         expect(w.eval("basdossierText('C')")).toMatch(/Systemutvecklare: \d+ personer.*AID-etiketten finns också i BAS D, som en egen grupp i Lika arbete/);
     });
     it('sökrutans rad finns bara för intervall som går att öppna, och ett intervall som fallit bort sägs', () => {
@@ -249,13 +249,13 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         skriv(w, 'bas e');
         expect(w.document.querySelector('#sok-grupp-lista [data-sok-basdossier="E"]')).toBeNull();
         const meddelanden = [];
-        w.eval('window.announceToScreenReader = undefined');
+        w.eval('window.meddelaSkarmlasare = undefined');
         w.__ann = m => meddelanden.push(m);
-        w.eval('const _org = announceToScreenReader; announceToScreenReader = m => { window.__ann(m); }');
-        w.eval("openBasdossier('E')");
+        w.eval('const _org = meddelaSkarmlasare; meddelaSkarmlasare = m => { window.__ann(m); }');
+        w.eval("oppnaBasdossier('E')");
         expect(w.document.getElementById('basdossier-select').value).toBe('A');
         expect(meddelanden.join(' ')).toMatch(/BAS E.*visas inte.*BAS A/);
-        w.eval('closeBasdossier()');
+        w.eval('stangBasdossier()');
         w.__state.kLage = 'skarm';
     });
 });
@@ -264,12 +264,12 @@ describe('Escape med en öppen dossier', () => {
     it('stänger bara dialogen: diagrammarkeringen står kvar, i gruppdossiern och i BAS-dossiern; nästa Escape tar bort den', () => {
         const w = demo(), doc = w.document;
         w.eval("sattDiagramMarkering('bas:C')");
-        w.eval("openGruppdossier(null)");
+        w.eval("oppnaGruppdossier(null)");
         expect(doc.getElementById('dossier-modal').style.display).toBe('flex');
         tangent(w, doc.body, 'Escape');
         expect(doc.getElementById('dossier-modal').style.display).not.toBe('flex');
         expect(w.eval('diagramMarkering()')).toEqual(['bas:C']);
-        w.eval("openBasdossier('C', null)");
+        w.eval("oppnaBasdossier('C', null)");
         expect(oppen(w)).toBe(true);
         tangent(w, doc.body, 'Escape');
         expect(oppen(w)).toBe(false);

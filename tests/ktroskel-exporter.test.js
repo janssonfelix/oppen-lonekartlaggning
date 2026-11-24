@@ -16,7 +16,7 @@ describe('[I4] listan över flikar är menyns flikar', () => {
     it('FLIKAR täcker varje flik i menyn (utom Utforska, som är undantagen på skärmen)', () => {
         const w = createAppWindow();
         const meny = [...w.document.querySelectorAll('.nav-item[data-tab]')].map(e => e.getAttribute('data-tab'));
-        const tackta = new Set(FLIKAR.map(f => w.eval(`tabMal(${JSON.stringify(f)})`)));
+        const tackta = new Set(FLIKAR.map(f => w.eval(`flikMal(${JSON.stringify(f)})`)));
         expect(meny.filter(f => f !== 'utforska' && !tackta.has(f))).toEqual([]);
         expect([...tackta].filter(f => !meny.includes(f))).toEqual([]);
     });
@@ -35,8 +35,8 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000');
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = data;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
         const rader = fangaCsv(w);
         w.eval('exportLikvardighetCSV()');
         expect(rader().some(r => r.includes('Yrke 5300'))).toBe(true);
@@ -45,18 +45,18 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         const bok = Object.values(fangaBocker(w, () => w.eval('exportLikvardighet()')))[0];
         expect(bok.split('[Metod & parametrar]')[1]).toContain(`Undantag från minsta gruppstorlek | ${UNDANTAG_LV}`);
         // Övriga Excelfiler har inte raden
-        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuReport()')))[0];
+        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuRapport()')))[0];
         expect(eu).not.toContain('Undantag från minsta gruppstorlek');
     });
     it('Utforska: stämpeln säger det bara när rutan är ikryssad — tabell-CSV, urklipp och diagramdata', async () => {
         const w = fonsterKon(null);
         const d = w.document;
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         await new Promise(r => setTimeout(r, 0));
         const rader = fangaCsv(w);
         let kopierat = null;
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: t => { kopierat = t; return Promise.resolve(); } } });
-        const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w.__renderExplorer(); };
+        const kryss = pa => { d.getElementById('explore-inkludera-sma').checked = pa; w.__ritaUtforska(); };
         const csvKnapp = d.querySelector('[data-csv-table="explore-table"]'), kopieraKnapp = d.querySelector('[data-copy-table="explore-table"]');
         expect(csvKnapp).not.toBeNull();
         kryss(false);
@@ -64,13 +64,13 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         expect(rader().at(-1)).toBe('Minsta gruppstorlek för redovisning: 10.');
         kopieraKnapp.click();
         expect(kopierat).not.toContain('Minsta gruppstorlek');           // vid standard: en kopierad tabell klistras in som den är
-        expect(w.__chartExportRows(d.getElementById('chart-explore'))[0][0]).not.toContain('undantag');
+        expect(w.__diagramexportRader(d.getElementById('chart-explore'))[0][0]).not.toContain('undantag');
         kryss(true);
         csvKnapp.click();
         expect(rader().at(-1)).toBe(`Minsta gruppstorlek för redovisning: 10. ${UNDANTAG_UT}`);
         kopieraKnapp.click();
         expect(kopierat.split('\n').at(-1)).toBe(`Minsta gruppstorlek för redovisning: 10. ${UNDANTAG_UT}`);
-        expect(w.__chartExportRows(d.getElementById('chart-explore'))[0][0]).toContain(UNDANTAG_UT);
+        expect(w.__diagramexportRader(d.getElementById('chart-explore'))[0][0]).toContain(UNDANTAG_UT);
         // Löneöversikten ligger i samma flik men följer inte rutan
         expect(w.eval("_kUndantagFor(document.getElementById('rapport-table'))")).toBe('');
     });
@@ -84,12 +84,12 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         };
         const lv = gd('chart-lv-test', 'view-likvardighet');
         const annan = gd('chart-annan-test', 'view-struktur');
-        expect(w.__chartExportRows(lv)[0][0]).toContain(UNDANTAG_LV);
-        expect(w.__chartExportRows(annan)[0][0]).not.toContain('undantag');
+        expect(w.__diagramexportRader(lv)[0][0]).toContain(UNDANTAG_LV);
+        expect(w.__diagramexportRader(annan)[0][0]).not.toContain('undantag');
     });
     it('notisen efter export nämner varken aggregering eller gruppstorlek', () => {
         const w = fonsterKon(null);
-        w.eval('_showExportSensitivityToast()');
+        w.eval('_visaExportvarning()');
         const t = w.document.getElementById('export-sensitivity-toast').textContent;
         expect(t).toMatch(/Filen innehåller lönedata/);
         expect(t).not.toMatch(/aggregera|gruppstorlek|anonym/i);
@@ -101,7 +101,7 @@ describe('[I3] tröskeln står i ZIP-filens Excel-fil och i utskriftens korta ur
     it('ZIP-filens Excel-fil har bladet Metod & parametrar med raden om minsta gruppstorlek', async () => {
         const w = fonsterLitet(null);
         await laddaXlsx(w);
-        w.__renderTabContent('utforska');
+        w.__ritaFlik('utforska');
         const bocker = [];
         const skriv = w.XLSX.write;
         w.XLSX.write = (wb, opt) => { bocker.push(wb); return skriv(wb, opt); };
@@ -170,7 +170,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         expect(w.document.getElementById('k-troskel-fel').textContent).toBe('');
     });
     it('Auto-utkastet i Rapporttext: stämpeln under 10, och bara BAS som tabellen visar namnges', () => {
-        const text = k => { const w = iExport(fonster(k)); w.__renderTabContent('rapporttext'); return w.document.getElementById('struktur-narrative').value; };
+        const text = k => { const w = iExport(fonster(k)); w.__ritaFlik('rapporttext'); return w.document.getElementById('struktur-narrative').value; };
         expect(text(6).trimEnd().endsWith('Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.')).toBe(true);
         expect(text(null)).not.toContain('Minsta gruppstorlek');
         // Segregeringsmeningen jämför första och sista BAS i tabellen: vid 10 får E och F (6 personer) inte namnges.
@@ -182,9 +182,9 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         for (let i = 0; i < 40; i++) r.push(rad('C', i < 10 ? 'kvinna' : 'man', 32000 + i));            // 25 % kvinnor (högst namngivna BAS)
         for (let i = 0; i < 4; i++) r.push(rad('D', 'man', 33000 + i));                                 // 4 personer, 0 % kvinnor
         w.__state.data = r;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         iExport(w);
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const seg = w.document.getElementById('struktur-narrative').value.split('\n').find(l => l.startsWith('Vertikal könssegregering'));
         expect(seg).toMatch(/lägre betalda BAS \(B: 75\s%\)/);
         expect(seg).toMatch(/högre betalda \(C: 25\s%\)/);
@@ -198,7 +198,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
             const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
             lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
             w.__state.data = rader;
-            w.eval('populateSelects(); unlockTabs();');
+            w.eval('fyllValjare(); lasUppFlikar();');
             return w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         };
         expect(antal(5)).toBe(0);
@@ -211,8 +211,8 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
         const text = w.document.getElementById('likvardighet-content').textContent.replace(/\s+/g, ' ');
         expect(text).toContain('varav 1 grupp med n < 10');
     });
@@ -222,7 +222,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         const lagg = (n, kon, lon, bas, aid) => { for (let i = 0; i < n; i++) rader.push({ bas, kon, lon: lon + i, alder: 30 + i % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(20, 'man', 50000, 'C', '6100'); lagg(6, 'kvinna', 36421, 'C', '5300'); lagg(15, 'kvinna', 37000, 'C', '5301');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         const antal = () => w.eval('medExportLage(() => likvardighetResultat().diagnostik.organisation.kvDomMedNLessThanK)');
         expect(antal()).toBe(1);
         const par = w.eval('likvardighetResultat().pairs');
@@ -230,7 +230,7 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
         // Golvet för skattningarna står kvar (5 < 10) och flyttas (25): i inget av fallen räknas paren om.
         for (const [k, vantat] of [[5, 0], [25, 2], [10, 1]]) {
             w.eval(`sattKTroskel(${k}, { fraga: false })`);
-            w.__renderTabContent('likvardighet');
+            w.__ritaFlik('likvardighet');
             expect(antal(), `k = ${k}`).toBe(vantat);
         }
         expect(w.__lvBerakningar).toBe(0);
@@ -239,18 +239,18 @@ describe('paketformuläret, Rensa, Struktur och Likvärdigt arbete med ändrad t
 });
 
 describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om en gång när tröskeln ändras, resten töms', () => {
-    const rakna = w => w.eval('window.__antal = {}; const __orig = renderTabContent; renderTabContent = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
-    it('konfigurationsfil med annan tröskel: Översikts delar ritas av stegen (ingen flik genom renderTabContent), övriga töms, och Att göra följer den nya tröskeln', () => {
+    const rakna = w => w.eval('window.__antal = {}; const __orig = ritaFlik; ritaFlik = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
+    it('konfigurationsfil med annan tröskel: Översikts delar ritas av stegen (ingen flik genom ritaFlik), övriga töms, och Att göra följer den nya tröskeln', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(25, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const w = fonster(null);
-        w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); refreshCurrentTab();');
+        w.eval('ritaAtgardslista(); ritaKartlaggningensSteg(); ritaValideringsrapport(); uppdateraAktivFlik();');
         ritaAlla(w);
         expect(synliga(w, SENT_MELLAN).length).toBeGreaterThan(0);
         rakna(w);
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('kInstalld()')).toBe(25);
         expect(Object.entries(w.__antal).filter(([, n]) => n !== 1)).toEqual([]);
         expect(Object.keys(w.__antal).length).toBe(0);                              // den öppna fliken är Översikt, vars delar stegen ritar själva
@@ -259,11 +259,11 @@ describe('[I5] konfigurationsfil och organisationspaket: det som syns ritas om e
     });
     it('konfigurationsfil med samma tröskel: bara den öppna fliken ritas', () => {
         const a = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const w = fonster(null);
         rakna(w);
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(Object.keys(w.__antal).length).toBe(1);
     });
     it('organisationspaket med annan tröskel: ingen flik ritas mer än en gång, och ingen mellangrupp står kvar', () => {

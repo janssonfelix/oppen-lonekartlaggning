@@ -7,31 +7,31 @@
 // varje datahändelse. Vaktad: funktionen finns (13-oversikt.js) och gör inget om
 // dess container saknas.
 import { _synkaKTroskel } from './06-k-troskel.js';
-import { applyProfileLabels } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter } from './07-standardinstallningar.js';
 import { state } from './12-tillstand.js';
-import { renderProcessTracker } from './13-oversikt.js';
-import { loadDemoData } from './20-demodata-diagnostik.js';
-import { loadStortDemo } from './21-stort-demo.js';
+import { ritaKartlaggningensSteg } from './13-oversikt.js';
+import { lasInDemodata } from './20-demodata-diagnostik.js';
+import { lasInStortDemo } from './21-stort-demo.js';
 import { _paketStatus, lasInInbakatPaket } from './29-organisationspaket.js';
-import { renderReferensKort } from './38-referensfiler.js';
-import { setupTabA11y } from './63-tangentbordsnavigering.js';
+import { ritaReferensKort } from './38-referensfiler.js';
+import { kopplaFlikarnasTillganglighet } from './63-tangentbordsnavigering.js';
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartSist() {
-    if (typeof renderProcessTracker === 'function') {
-        try { renderProcessTracker(); } catch (_e) { /* icke-kritisk vid boot */ }
+    if (typeof ritaKartlaggningensSteg === 'function') {
+        try { ritaKartlaggningensSteg(); } catch (_e) { /* icke-kritisk vid boot */ }
     }
-    setupTabA11y();
-    applyProfileLabels();  // Tillämpa default-profil vid uppstart
+    kopplaFlikarnasTillganglighet();
+    tillampaProfiletiketter();  // Tillämpa default-profil vid uppstart
     _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
-    renderReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
+    ritaReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
     // Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att
     // en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
     // inget annat värde läses — adressen kan aldrig föra in data eller inställningar.
     try {
         const demoVal = new URLSearchParams(window.location.search).get('demo');
         const demo = demoVal === '1' || demoVal === 'stor';
-        if (demo && !state.data.length) (demoVal === 'stor' ? loadStortDemo : loadDemoData)();
+        if (demo && !state.data.length) (demoVal === 'stor' ? lasInStortDemo : lasInDemodata)();
         // Organisationsfil: paketet som ligger inbakat i den här filen läses in vid start — utom i demoläget,
         // som går före (organisationsfil.md §3).
         // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i

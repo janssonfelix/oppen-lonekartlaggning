@@ -29,7 +29,7 @@ const TVA_BAS = [...grupp('D', '7007', 'kvinna', 12, 30000, 150), ...grupp('D', 
 function fonster(data = UNDERLAG) {
     const w = createAppWindow();
     w.__state.data = data;
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     return w;
 }
 const tabell = (w, id) => {
@@ -50,7 +50,7 @@ async function bok(w) {
 describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på individnivå', () => {
     it('Lika arbetes grupper och status per AID-kod och BAS-intervall; på skärmen alla grupper med två av varje kön (ADR-90)', () => {
         const w = fonster([...UNDERLAG, ...TVA_BAS]);
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const t = tabell(w, 'aidbas-lika-tabell');
         expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal kvinnor', 'Antal män', 'Medianlön kvinnor', 'Medianlön män', 'Kvinnors median i % av mäns', 'Nedre gräns', 'Övre gräns', 'Status', 'Ojusterad löneskillnad ≥ 5 %']);
         // Grundvyn gömmer gränserna och direktivmarkeringen bakom Fler kolumner (F12); exporten har alla kolumner.
@@ -81,38 +81,38 @@ describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på ind
         expect(w.document.getElementById('aidbas-individ').textContent).not.toMatch(/\d{2} \d{3} kr/);
         expect(w.document.getElementById('nyckel-la-individ').textContent).toBe('4 grupper');
         // Exporten (sist: den ritar fliken i exportläget) har alla kolumner.
-        expect(w.__tableToMatrix('aidbas-lika-tabell')[0]).toEqual(t.rubriker);
+        expect(w.__tabellTillMatris('aidbas-lika-tabell')[0]).toEqual(t.rubriker);
     });
     it('lönemånaden från Inställningar står ovanför tabellerna och följer med i konfigurationsfilen', () => {
         const w = fonster();
         const falt = w.document.getElementById('lonemanad');
         falt.value = '2026-10'; falt.dispatchEvent(new w.Event('change'));
         expect(w.__state.lonemanad).toBe('2026-10');
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         expect(w.document.getElementById('aidbas-lika').textContent).toContain('Lönemånad: 2026-10');
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         expect(cfg.lonemanad).toBe('2026-10');
         expect(cfg.likvardighet.kvDomDefinition).toBe('do');
-        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, lonemanad: '2025-11', likvardighet: { ...cfg.likvardighet, kvDomDefinition: 'scb' } }) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, lonemanad: '2025-11', likvardighet: { ...cfg.likvardighet, kvDomDefinition: 'scb' } }) + ')');
         expect(w.__state.lonemanad).toBe('2025-11');
         expect(w.__state.likvardighet.kvDomDefinition).toBe('scb');
-        expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { kvDomDefinition: 'annat' } }) + ')')).toThrow(/kvDomDefinition/);
+        expect(() => w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { kvDomDefinition: 'annat' } }) + ')')).toThrow(/kvDomDefinition/);
         // Jämförelseyrkena (ADR-60): standard alla som inte är kvinnodominerade; filtret följer med och valideras.
         expect(cfg.likvardighet.jamforelse).toBe('alla');
-        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, jamforelse: 'mansdominerade' } }) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, jamforelse: 'mansdominerade' } }) + ')');
         expect(w.__state.likvardighet.jamforelse).toBe('mansdominerade');
-        expect(w.eval('buildConfigSnapshot()').likvardighet.jamforelse).toBe('mansdominerade');
-        expect(() => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { jamforelse: 'blandade' } }) + ')')).toThrow(/jamforelse/);
+        expect(w.eval('byggKonfiguration()').likvardighet.jamforelse).toBe('mansdominerade');
+        expect(() => w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { jamforelse: 'blandade' } }) + ')')).toThrow(/jamforelse/);
     });
     it('likvärdighetens fält i konfigurationsfilen: utan source, och talen prövas mot fältens gränser', () => {
         const w = fonster();
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         expect(Object.keys(cfg.likvardighet)).not.toContain('source');
         // En äldre fil med fältet source läses in utan fel; fältet hoppas över.
-        w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, source: 'statistik' } }) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, source: 'statistik' } }) + ')');
         expect(Object.keys(w.__state.likvardighet)).not.toContain('source');
         // Utanför gränserna: kvinnotröskeln 50–70, minsta skillnad 0–50, antal par minst 1. Inget ändras.
-        const fel = lv => () => w.eval('applyConfigSnapshot(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, ...lv } }) + ')');
+        const fel = lv => () => w.eval('tillampaKonfiguration(' + JSON.stringify({ ...cfg, likvardighet: { ...cfg.likvardighet, ...lv } }) + ')');
         expect(fel({ kvinnoTroskelPct: 80 })).toThrow(/kvinnoTroskelPct måste vara ett tal mellan 50 och 70/);
         expect(fel({ kvinnoTroskelPct: 45 })).toThrow(/kvinnoTroskelPct/);
         expect(fel({ minstaGapPct: -1 })).toThrow(/minstaGapPct måste vara ett tal mellan 0 och 50/);
@@ -121,9 +121,9 @@ describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på ind
         expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(60);
         // Visa alla sätter antalet par till hela listan, som kan vara fler än fältets 500; ett sparat sådant värde läses in.
         w.__state.likvardighet.topN = 750;
-        const allaPar = w.eval('buildConfigSnapshot()');
+        const allaPar = w.eval('byggKonfiguration()');
         w.__state.likvardighet.topN = 20;
-        w.eval('applyConfigSnapshot(' + JSON.stringify(allaPar) + ')');
+        w.eval('tillampaKonfiguration(' + JSON.stringify(allaPar) + ')');
         expect(w.__state.likvardighet.topN).toBe(750);
     });
 });
@@ -131,12 +131,12 @@ describe('[B5.5] Lika arbete: avsnitten Lika arbete AID x BAS och Analys på ind
 describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska jämförelsen', () => {
     it('klassningen följer vald definition: exakt 60 % kvinnor är könsblandad med *Mer än 60 %* och kvinnodominerad med *60 % eller mer*', () => {
         const w = fonster();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const t = tabell(w, 'aidbas-likvardigt-tabell');
         expect(t.rubriker).toEqual(['BAS-intervall', 'AID-kod', 'Etikettnamn', 'Antal', 'Andel kvinnor (%)', 'Andel kvinnor nationellt (%)', 'Klassning', 'Brukar anses kvinnodominerad', 'Medianlön', 'Lönespridning']);
         // Grundvyn gömmer de nationella kolumnerna och spridningen bakom Fler kolumner (F14); exporten har alla kolumner.
         expect(gomdaRubriker(w, 'aidbas-likvardigt-tabell')).toEqual(['Andel kvinnor nationellt (%)', 'Brukar anses kvinnodominerad', 'Lönespridning']);
-        expect(w.__tableToMatrix('aidbas-likvardigt-tabell')[0]).toEqual(t.rubriker);
+        expect(w.__tabellTillMatris('aidbas-likvardigt-tabell')[0]).toEqual(t.rubriker);
         const b = () => tabell(w, 'aidbas-likvardigt-tabell').rader.find(r => r[1] === '3003');
         expect(b()[4]).toBe('60,0 %'); expect(b()[6]).toBe('Könsblandad'); expect(b()[8]).toBe('–');   // 5 personer: ingen median
         expect(w.document.getElementById('aidbas-likvardigt').textContent).toContain('Kvinnodominerad vid mer än 60 % kvinnor');
@@ -156,7 +156,7 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
     });
     it('rutan Jämför bara med mansdominerade AID-etiketter sätter filtret och ritar om (ADR-60)', () => {
         const w = fonster();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const ruta = w.document.getElementById('lv-bara-mansdominerade');
         expect(ruta).not.toBeNull();
         expect(ruta.checked).toBe(false);
@@ -167,12 +167,12 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
     });
     it('den hierarkiska jämförelsen listar paret, och texten om inga par när det inte finns något', () => {
         const w = fonster();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const t = tabell(w, 'aidbas-hierarki-tabell');
         expect(t.rubriker).toEqual(['Grupp A (ej kvinnodominerad)', 'BAS A', 'Median A', 'Grupp B (kvinnodominerad)', 'BAS B', 'Median B', 'Skillnad (kr)', 'Skillnad (%)']);
         expect(t.rader).toEqual([['1001 Yrke 1001', 'A', '46 450 kr', '2002 Yrke 2002', 'E', '39 400 kr', '7 050 kr', '17,9 %']]);
         const w2 = fonster(TVA_BAS);
-        w2.__renderTabContent('likvardighet');
+        w2.__ritaFlik('likvardighet');
         expect(tabell(w2, 'aidbas-hierarki-tabell')).toBeNull();
         expect(w2.document.getElementById('aidbas-hierarki').textContent).toContain('Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.');
     });
@@ -182,7 +182,7 @@ describe('Likvärdigt arbete: avsnitten per BAS-intervall och den hierarkiska j�
             ...grupp('E', '4004', 'kvinna', 12, 37000), ...grupp('E', '4004', 'man', 2, 37500)]);
         w.__state.statistik = [{ aid: '6100', bas: 'E', median: 45000, andelKv: 20, aidFull: '6100 Jämförelseyrke' }];
         w.__state.statistikHasKon = true;
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const text = w.document.getElementById('likvardighet-content').textContent.replace(/\s+/g, ' ');
         expect(text).toContain('2 kvinnodominerade AID-etiketter (i ett BAS-intervall) hade ingen AID-etikett att jämföra med i organisationen och jämfördes i stället med jämförelsestatistiken');
         expect(text).not.toMatch(/BAS saknade/);
@@ -253,8 +253,8 @@ describe('Slumpens gränser räknar per AID-kod och BAS-intervall', () => {
         expect(rader.map(r => [r[1], r[2], r[3]])).toEqual([['D', 12, 12], ['F', 12, 12]]);
         expect(s.some(r => r[0] === '1001 Yrke 1001')).toBe(false);   // inget intervall har 10 av varje kön
         // Trattens underlag på skärmen: samma nyckel.
-        w.__renderTabContent('matrix');
-        const u = w.eval('_laTrattUnderlag(getData(), 10)');
+        w.__ritaFlik('matrix');
+        const u = w.eval('_laTrattUnderlag(hamtaData(), 10)');
         expect(u.punkter.map(p => p.nyckel).sort()).toEqual(['7007|D', '7007|F']);
     });
 });

@@ -21,10 +21,10 @@ import { skrDelText, skrKvinnoandel } from '../lib/skrreferens.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, artikel, stor, termFras } from '../lib/termer.js';
 import { justeradSaknas, kandidatparRader, kompletteraDiagnostik, kvDomUnderK, likvardighetFelresultat, lvPoang, parSakerhet, vymodellKravMotLon, vymodellLikvardigtArbete } from '../lib/vymodell-likvardigt-arbete.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { enableTableSort, flerKolumner } from './05-tabeller-och-lankar.js';
+import { aktiveraSortering, flerKolumner } from './05-tabeller-och-lankar.js';
 import { kInstalld, kTroskel } from './06-k-troskel.js';
 import { _skrDel, nationellAidKlass, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { orgNamn } from './07-standardinstallningar.js';
@@ -32,15 +32,15 @@ import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { _STS_DIR_KOLUMN, _STS_DIR_TIPS, PALETTE, URVAL } from './10-diagramtema.js';
+import { _STS_DIR_KOLUMN, _STS_DIR_TIPS, PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { addTableExportTools, getData, state } from './12-tillstand.js';
+import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
-import { _appendMethodSheet, _downloadCSV, _showExportSensitivityToast } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { _evidenceForLikvardighetPair, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForLikvardighetspar, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _laSlutsats } from './41-lika-arbete.js';
-import { aidbasDefinition, aidbasDefinitionText, aidbasGrans, jamforelseGransText, konsklassOrd, kvDomGransText, lvJamforelse, renderAidBasLikvardigt } from './45-aid-bas-tabeller.js';
+import { aidbasDefinition, aidbasDefinitionText, aidbasGrans, jamforelseGransText, konsklassOrd, kvDomGransText, lvJamforelse, ritaAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { kTroskelLank } from './86-installningar.js';
 /**
  * Likvärdighetsparen för nuvarande data och inställningar: det sparade resultatet om det
@@ -66,7 +66,7 @@ function _lvJusteradSaknasText(p) {
 }
 
 /** Metadataraden om kvinnodominerade enheter som jämfördes med jämförelsestatistiken (CSV och Excel). */
-function _lvExternFallbackText() {
+function _lvExternReservText() {
     return termText('{Enhet.fl:kvinnodominerad} (i {niva.en}) jämförda med jämförelsestatistiken');
 }
 
@@ -650,12 +650,12 @@ export function ritaLikvardigtArbete() {
     document.getElementById('lv-kv-definition')?.addEventListener('change', e => {
         state.likvardighet.kvDomDefinition = /** @type {HTMLSelectElement} */ (e.target).value === 'scb' ? 'scb' : 'do';
         state.likvardighet.result = null;
-        ritaLikvardigtArbete(); renderAidBasLikvardigt();
+        ritaLikvardigtArbete(); ritaAidBasLikvardigt();
     });
     document.getElementById('lv-bara-mansdominerade')?.addEventListener('change', e => {
         state.likvardighet.jamforelse = /** @type {HTMLInputElement} */ (e.target).checked ? 'mansdominerade' : 'alla';
         state.likvardighet.result = null;
-        ritaLikvardigtArbete(); renderAidBasLikvardigt();
+        ritaLikvardigtArbete(); ritaAidBasLikvardigt();
     });
     document.getElementById('btn-export-likvardighet')?.addEventListener('click', exportLikvardighet);
     document.getElementById('btn-export-likvardighet-csv')?.addEventListener('click', exportLikvardighetCSV);
@@ -666,17 +666,17 @@ export function ritaLikvardigtArbete() {
             const idx = parseInt(/** @type {HTMLElement} */ (btn).dataset.lvPair || '', 10);
             const p = (state.likvardighet.result?.pairs || [])[idx];
             if (!p) return;
-            _openEvidenceModal(_evidenceForLikvardighetPair(p));
+            _oppnaBevisruta(_bevisForLikvardighetspar(p));
         });
     });
 
-    if (typeof enableTableSort === 'function') enableTableSort('likvardighet-table');
-    if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-table', 'likvardighet');
+    if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-table');
+    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('likvardighet-table', 'likvardighet');
     // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset i kolumnen Bevis).
     if (typeof flerKolumner === 'function') flerKolumner('likvardighet-table', LV_DOLDA_KOLUMNER, 'likvardighet');
     if (document.getElementById('likvardighet-lagre-krav-table')) {
-        if (typeof enableTableSort === 'function') enableTableSort('likvardighet-lagre-krav-table');
-        if (typeof addTableExportTools === 'function') addTableExportTools('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
+        if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-lagre-krav-table');
+        if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
         if (typeof flerKolumner === 'function') flerKolumner('likvardighet-lagre-krav-table', LV_LAGRE_KRAV_DOLDA_KOLUMNER, 'lvLagreKrav');
     }
 
@@ -688,14 +688,14 @@ export function ritaLikvardigtArbete() {
 // ---- § 3:10: kandidatparen som bild (visualiserings-Steg 2) -----------------
 // Rena par-listan (kvinnodominerat yrke × jämförelseyrke, z = lönegap %) blir en
 // äkta 2D-matris. Tabellen finns kvar som tillgänglighetsalternativ (role="img"
-// + aria pekar dit). Färgen är enkelriktad (PALETTE.sekventiell): rödare cell =
+// + aria pekar dit). Färgen är enkelriktad (PALETT.sekventiell): rödare cell =
 // större gap = jämförelseyrket tjänar mer än det kvinnodominerade yrket.
 /** Flikens topp: urvalsraden och slutsatserna ur vymodellen. Talen är de som tabellerna i fliken visar. */
 function _lvRitaTopp(result, vm) {
     const urval = document.getElementById('lv-urval'), host = document.getElementById('lv-slutsatser');
     if (!urval || !host) return;
     if (!result) { urval.textContent = ''; host.innerHTML = ''; return; }
-    urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(getData().length, 0)} personer</span>${kTroskelLank()}`;
+    urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(hamtaData().length, 0)} personer</span>${kTroskelLank()}`;
     const { antal, storst } = vm;
     // Med arbetsvärderingspoäng jämförs bara organisationens egna (ADR-76).
     const statJmf = vm.statJamfor, poang = vm.poang;
@@ -718,9 +718,9 @@ function _lvRitaTopp(result, vm) {
 // ---- Krav mot lön: en punkt per yrkesgrupp ----------------------------------
 // Grupperna, nivån, avståndet och placeringen räknas i vymodellen (vymodellKravMotLon); här ritas de.
 const _LV_KRAV_SERIER = [
-    { dominans: 'kvinnodominerad', serie: 'Kvinnodominerad', farg: () => PALETTE.kon.kvinna, symbol: 'cirkel' },
-    { dominans: 'mansdominerad', serie: 'Mansdominerad', farg: () => PALETTE.kon.man, symbol: 'triangelHoger' },
-    { dominans: 'blandad', serie: 'Blandad', farg: () => PALETTE.semantic.neutral, symbol: 'cirkel' }
+    { dominans: 'kvinnodominerad', serie: 'Kvinnodominerad', farg: () => PALETT.kon.kvinna, symbol: 'cirkel' },
+    { dominans: 'mansdominerad', serie: 'Mansdominerad', farg: () => PALETT.kon.man, symbol: 'triangelHoger' },
+    { dominans: 'blandad', serie: 'Blandad', farg: () => PALETT.semantic.neutral, symbol: 'cirkel' }
 ];
 /** @param {any} vm vymodellKravMotLon */
 function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
@@ -737,7 +737,7 @@ function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
                     ['Andel kvinnor', talformat(d.andelKv, 'pct')], ['Antal', String(d.n)],
                     ...(medPoang ? [[d.uppskattad ? `Poäng (efter ${T.niva.bf})` : 'Arbetsvärderingspoäng', talformat(d.krav, 'antal')]] : [])]
     })).filter(l => l.data.length);
-    if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : `Nivå per ${T.niva.en}`, farg: PALETTE.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
+    if (linje.length >= 2) lager.unshift({ marke: 'linje', serie: medPoang ? 'Nivå efter kraven (trend)' : `Nivå per ${T.niva.en}`, farg: PALETT.semantic.mork, streck: 'streckad', tjocklek: 1.5, data: linje });
     return { beskrivning: `En punkt per ${T.enhet.en}: arbetets krav (${medPoang ? 'arbetsvärderingspoäng' : T.niva.en}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replaceAll('%', 'procent')}). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
         urval: [URVAL.bas, URVAL.sektor, URVAL.antal], x: medPoang ? { skala: 'linjar', titel: 'Arbetsvärderingspoäng' } : { skala: 'band', titel: `${stor(T.niva.en)} (stigande krav)`, ordning: basOrdning.map(b => 'BAS ' + b) },
         y: { skala: 'linjar', titel: 'Gruppens medianlön', format: 'kr' }, hojd: 420, lager };
@@ -786,16 +786,16 @@ function _lvParFigur(pairs, max = 14) {
         urval: [{ ...URVAL.bas, namn: termText('{Niva.en} ({enhet.en:kvinnodominerad})') }, URVAL.lonegap, LV_PAR_ANTAL],
         x: { skala: 'linjar', titel: 'Medianlön (kr/månad)', format: 'kr' }, y: { skala: 'band', ordning: rader.map(r => r.y), etikettMax: 48 },
         hojd: Math.max(160, 96 + rader.length * 32),
-        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETTE.semantic.neutral, tjocklek: 2, legend: false,
+        lager: [{ marke: 'intervall', riktning: 'liggande', serie: 'Skillnad', farg: PALETT.semantic.neutral, tjocklek: 2, legend: false,
                   data: rader.map(r => ({ y: r.y, lag: Math.round(Math.min(r.p.kvMedian, r.p.maMedian)), hog: Math.round(Math.max(r.p.kvMedian, r.p.maMedian)), p: r.p, ...parFalt(r.p) })), tips: d => tips(d) },
-                punkt(termText('{Enhet.en:kvinnodominerad}'), PALETTE.kon.kvinna, 'kvMedian'), punkt(termText('{Jamforelse.en}'), PALETTE.kon.man, 'maMedian', { etikettLage: 'hoger' })] };
+                punkt(termText('{Enhet.en:kvinnodominerad}'), PALETT.kon.kvinna, 'kvMedian'), punkt(termText('{Jamforelse.en}'), PALETT.kon.man, 'maMedian', { etikettLage: 'hoger' })] };
 }
 
 /**
  * Exporterar § 3:10-tabellen + metadatablad till Excel.
  */
 /**
- * Robust CSV-export för § 3:10. Använder _downloadCSV-helpern direkt —
+ * Robust CSV-export för § 3:10. Använder _laddaNedCSV-helpern direkt —
  * INGA beroenden på XLSX-biblioteket. Detta är PRIMÄR exportväg (Excel-versionen
  * är sekundär).
  */
@@ -861,7 +861,7 @@ function _exportLikvardighetCSVExport() {
     const poang = lvPoang(result);
     if (!poang) {   // i poängläget används jämförelsestatistiken inte (ADR-76)
         rows.push(['•varav externa (mot jämförelsestatistiken)', result.diagnostik?.jämförelse?.externaPar ?? 0]);
-        rows.push([_lvExternFallbackText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
+        rows.push([_lvExternReservText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
     }
     rows.push(['Klassificeringskälla — jämförelsestatistiken', result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
     rows.push(['Klassificeringskälla — SKR:s personalstatistik', result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
@@ -869,7 +869,7 @@ function _exportLikvardighetCSVExport() {
         : 'Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median']);
     rows.push(['Justerad för ålder', LV_JUSTERAD_METOD]);
     rows.push(['Minsta gruppstorlek', 'Tillämpas EJ i denna analys']);
-    _downloadCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
+    _laddaNedCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -974,7 +974,7 @@ function _exportLikvardighetExport() {
             ['Flaggade interna par', safe(() => diagnostik.jämförelse.internaPar, 0)],
             ...(poang ? [] : [   // i poängläget används jämförelsestatistiken inte (ADR-76)
                 ['Flaggade externa par (jämförelsestatistiken)', safe(() => diagnostik.jämförelse.externaPar, 0)],
-                [_lvExternFallbackText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]]),
+                [_lvExternReservText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]]),
             ['Par i utdata', pairs.length],
             ['', ''],
             ['— RÄTTSLIG GRUND —', ''],
@@ -997,12 +997,12 @@ function _exportLikvardighetExport() {
 
         stegnamn = 'skriv fil';
         const filename = 'lonekartlaggning_likvardighet_' + idagDatum() + '.xlsx';
-        _appendMethodSheet(wb, { undantag: 'Likvärdigt arbete' });
+        _laggTillMetodblad(wb, { undantag: 'Likvärdigt arbete' });
         XLSX.writeFile(wb, filename);
 
         stegnamn = 'efter-steg';
-        if (typeof _showExportSensitivityToast === 'function') _showExportSensitivityToast();
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('Likvärdighetsanalys exporterad: ' + pairs.length + ' par.');
+        if (typeof _visaExportvarning === 'function') _visaExportvarning();
+        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Likvärdighetsanalys exporterad: ' + pairs.length + ' par.');
     } catch (err) {
         const msg = err && err.message ? err.message : String(err);
         const stackPreview = err && err.stack ? ('\n\nStack:\n' + String(err.stack).split('\n').slice(0, 4).join('\n')) : '';
@@ -1015,7 +1015,7 @@ function _exportLikvardighetExport() {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartLikvardigtArbete() {
     // Arbetsvärdering (poäng) läses ur strukturdatans valfria Poäng-kolumn —
-    // se _deriveArbetsvarderingFromData (anropas i _afterDataLoaded); någon egen uppladdning
+    // se _harledArbetsvarderingUrData (anropas i _efterInlastData); någon egen uppladdning
     // finns inte. Ekvivalensbandet ställs in i § 3:10-fliken.
     document.getElementById('arbvard-band')?.addEventListener('change', e => {
         const v = parseFloat(/** @type {HTMLInputElement} */ (e.target).value);

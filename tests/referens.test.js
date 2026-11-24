@@ -22,7 +22,7 @@ describe('src/lib/referens.js', () => {
 describe('jämförelsestatistik: AID och BAS saneras vid inläsning', () => {
     it('ett AID-värde med "<b>" läses in utan HTML-metatecken, i både aid, aidFull och bas', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
         const input = w.document.getElementById('file-input-stat');
         const csv = 'AID;BAS;Median\n5301 <b>Undersköterska</b>;"C&";30000\n';
@@ -41,7 +41,7 @@ describe('jämförelsestatistik: AID och BAS saneras vid inläsning', () => {
 
 describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
+    beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
     const klicka = tab => w.document.querySelector(`.nav-item[data-tab="${tab}"]`).click();
 
     it('demoläget använder Exempelkommunens påhittade ställningstagande, märkt som påhittat', () => {
@@ -74,15 +74,15 @@ describe('referensen: demoläget, egen fil och rensning (ADR-28)', () => {
         w.document.getElementById('btn-referens-aterga').click();
         expect(w.__referensNamn()).toBe('Ingen referens inläst');
         w.__lasInReferens([{ bas: 'A', p10: 1, med: 2, p90: 3 }], 'x.csv');
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.policy).toEqual([]);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__lasInReferens([{ bas: 'A', p10: 1, med: 2, p90: 3 }], 'y.csv');
-        w.__autoClearOnInactivity();
+        w.__rensaVidInaktivitet();
         expect(w.__state.policy).toEqual([]);
     });
     it('en ren AID-policy med eget namn ger "saknar rader per BAS-intervall" i kompliansrutan', () => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__lasInReferens([{ aid: '123456', p10: 1, med: 2, p90: 3 }], 'AID-policy.csv');
         w.__ritaKravstatus();
         expect(w.document.getElementById('comp-pol-val').textContent).toContain('saknar rader per BAS-intervall');
@@ -95,18 +95,18 @@ describe('referensbyte ritar om allt som namnger referensen', () => {
     let w;
     const hog = [...'ABCDEFGHIJK'].map(b => ({ bas: b, p10: 90000, med: 95000, p90: 99000 }));
     const lista = () => w.document.getElementById('action-checklist-container').textContent;
-    beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
+    beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
 
     it('namnbyte syns direkt i åtgärdslistan', () => {
         w.__lasInReferens(hog, 'Egen A.csv');
-        w.eval('renderActionChecklist()');
+        w.eval('ritaAtgardslista()');
         expect(lista()).toContain('Egen A');
         w.__sattReferensNamn('Egen B');
         expect(lista()).toContain('Egen B');
         expect(lista()).not.toContain('Egen A');
     });
     it('"Återgå" rensar åtgärdslistan, uppladdningsmärket och filfältet', () => {
-        w.eval("markUploadLoaded('upload-cell-policy', 'Inläst')");
+        w.eval("markeraFilrutaInlast('upload-cell-policy', 'Inläst')");
         w.document.getElementById('btn-referens-aterga').click();
         expect(lista()).not.toContain('Egen B');
         expect(w.document.getElementById('upload-cell-policy').textContent).not.toContain('Inläst');
@@ -116,12 +116,12 @@ describe('referensbyte ritar om allt som namnger referensen', () => {
 
 describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen fördelning', () => {
     const w = createAppWindow();
-    w.__loadDemoData();
+    w.__lasInDemodata();
     const rubriker = id => [...w.document.querySelectorAll(`#${id} thead th`)].map(th => th.textContent.trim());
     const kol = (id, namn) => rubriker(id).indexOf(namn);
     it('Lika arbete: kolumnen "Kvinnor nationellt" per yrke, och underraderna följer kolumnantalet', async () => {
         const { skrKvinnoandel } = await import('../src/lib/skrreferens.js');
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const i = kol('matrix-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
@@ -139,27 +139,27 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
     });
     it('sektorsöversikten: kolumnen "Kvinnor nationellt" per sektor', async () => {
         const { skrKvinnoandelSektor } = await import('../src/lib/skrreferens.js');
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const i = kol('sektor-table', 'Kvinnor nationellt');
         expect(i).toBeGreaterThan(-1);
         const tr = [...w.document.querySelectorAll('#sektor-table tbody tr')].find(t => /Teknikarbete/.test(t.textContent));
         expect(tr.children[i].textContent.trim()).toBe(`${skrKvinnoandelSektor('Teknikarbete', { del: 'kommun' }).pct.toFixed(1).replace('.', ',')}\u00a0%`);
     });
     it('Likvärdigt arbete: organisationens yrkeslistor har "% kvinnor, SKR"', () => {
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const th = [...w.document.querySelectorAll('#likvardighet-content thead th')].map(t => t.textContent.trim());
         expect(th.filter(t => t === '% kvinnor, SKR').length).toBeGreaterThanOrEqual(1);
     });
     it('gruppdossiern visar SKR:s kvinnoandel för AID-etiketten', () => {
-        const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
-        const d = w.__buildGruppdossier(key);
+        const key = w.__gruppdossierKandidater().find(c => c.aid === '207011').key;
+        const d = w.__byggGruppdossier(key);
         expect(d.skr).toMatchObject({ niva: 'etikett' });
-        expect(w.eval(`_gdRitaInnehall(__buildGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+\s% kvinnor i kommuner</);
-        expect(w.__gruppdossierAsText(d)).toMatch(/Nationell referens: \d+\s% kvinnor/);
+        expect(w.eval(`_gdRitaInnehall(__byggGruppdossier(${JSON.stringify(key)}))`)).toMatch(/nationellt: \d+\s% kvinnor i kommuner</);
+        expect(w.__gruppdossierSomText(d)).toMatch(/Nationell referens: \d+\s% kvinnor/);
     });
     it('Om verktyget anger SKR:s personalstatistik som källa', () => {
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
+        w.eval("ritaOmVerktyget('references')");
         expect(w.document.getElementById('view-info').textContent).toMatch(/SKR, personalstatistik november 2025/);
     });
 });
@@ -167,7 +167,7 @@ describe('SKR:s kvinnoandel som referensvärde bredvid organisationens egen för
 describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', () => {
     const skr = async () => (await import('../src/lib/skrreferens.js'));
     const matrisCell = w => {
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         const i = [...w.document.querySelectorAll('#matrix-table thead th')].map(t => t.textContent.trim()).indexOf('Kvinnor nationellt');
         const tr = [...w.document.querySelectorAll('#matrix-table tbody tr')].find(t => /^207011/.test(t.children[0].textContent.trim()));
         return tr.children[i].textContent.trim();
@@ -178,37 +178,37 @@ describe('organisationstyp: kommun eller region styr SKR-referensen (ADR-34)', (
         const sel = w.document.getElementById('org-typ');
         expect([...sel.options].map(o => o.value)).toEqual(['alla', 'kommun', 'region']);
         expect(sel.value).toBe('alla');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(sel.value).toBe('kommun');
         expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'kommun' }).pct.toFixed(0)}\u00a0%`);
     });
     it('byte till region ritar om med regionernas andel och rätt text', async () => {
         const { skrKvinnoandel } = await skr();
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const sel = w.document.getElementById('org-typ');
         sel.value = 'region';
         sel.dispatchEvent(new w.Event('change'));
         expect(w.__state.profile.orgTyp).toBe('region');
         expect(matrisCell(w)).toBe(`${skrKvinnoandel('207011', { del: 'region' }).pct.toFixed(0)}\u00a0%`);
-        const key = w.__gruppdossierCandidates().find(c => c.aid === '207011').key;
-        expect(w.__gruppdossierAsText(w.__buildGruppdossier(key))).toMatch(/Nationell referens: \d+\s% kvinnor i regioner/);
+        const key = w.__gruppdossierKandidater().find(c => c.aid === '207011').key;
+        expect(w.__gruppdossierSomText(w.__byggGruppdossier(key))).toMatch(/Nationell referens: \d+\s% kvinnor i regioner/);
     });
     it('konfigurationsfilen bär organisationstypen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        const cfg = w.__buildConfigSnapshot();
+        w.__lasInDemodata();
+        const cfg = w.__byggKonfiguration();
         expect(cfg.visning.organisationstyp).toBe('kommun');
         const w2 = createAppWindow();
-        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'region' } });
+        w2.__tillampaKonfiguration({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'region' } });
         expect(w2.__state.profile.orgTyp).toBe('region');
         expect(w2.document.getElementById('org-typ').value).toBe('region');
-        w2.__applyConfigSnapshot({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'stat' } });
+        w2.__tillampaKonfiguration({ ...cfg, visning: { ...cfg.visning, organisationstyp: 'stat' } });
         expect(w2.__state.profile.orgTyp).toBe('region');   // okänt värde ignoreras
     });
     it('Rensa all data återställer till båda', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('_rensaAllData()');
         expect(w.document.getElementById('org-typ').value).toBe('alla');
     });

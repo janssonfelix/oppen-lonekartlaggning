@@ -24,22 +24,22 @@ adaptrarna, som hämtar tillståndet, anropar en funktion i lib och ger tillbaka
 ## Dataflödet från fil till export
 
 1. Filen läses i `src/app/32-filinlasning.js`: CSV eller XLSX, med kolumnmappningen och importprofilerna.
-2. Varje rad går genom `extractMinimalRecord` i `src/app/06-uppgiftsminimering.js`, en tunn adapter till
+2. Varje rad går genom `minimeraLonerad` i `src/app/06-uppgiftsminimering.js`, en tunn adapter till
    `minimeraRad` i `src/lib/inlasning.js`. Bara de godkända fälten (`TILLATNA_FALT`, också i `inlasning.js`) förs
    vidare; övriga kolumner tas inte med.
 3. `tolkaLonerad` i `src/lib/inlasning.js` tolkar talen, könet och BAS-intervallet.
-4. Raderna läggs i `state.data` (`src/app/12-tillstand.js`). Vyerna läser dem med `getData()`.
+4. Raderna läggs i `state.data` (`src/app/12-tillstand.js`). Vyerna läser dem med `hamtaData()`.
 5. Vyerna räknar genom tunna adaptrar till lib. Två exempel:
-   - `runOLSRegression` (`src/app/51-lika-arbete-regressionskort.js`) skickar tillståndet till `huvudregression` i
+   - `korOLSRegression` (`src/app/51-lika-arbete-regressionskort.js`) skickar tillståndet till `huvudregression` i
      `src/lib/regression.js`.
-   - `computePrioritization` (`src/app/55-prioritering.js`) skickar tillståndet till `prioritera` i
+   - `raknaPrioritering` (`src/app/55-prioritering.js`) skickar tillståndet till `prioritera` i
      `src/lib/prioritering.js`.
 6. Allt som lämnar verktyget går genom exportgrinden (`src/app/23-exportgrind.js`, med regeln `skaRitasForeExport` i
    `src/lib/exportgrind.js`). Grinden ser till att ingen export läser en flik som ritats med en annan tröskel än den
    som gäller nu. Exportläget räknar med den inställda minsta gruppstorleken (`kTroskel()`,
    `src/app/06-k-troskel.js`), och ett diagram lämnar bara om `exportTillaten` (`src/app/11-diagramexport.js`, med
    regeln `exportSkal` i `src/lib/figur.js`) säger ja. All export av tabeller och diagram går genom två funktioner,
-   `_cloneAndCleanTableForExport` och `_chartExportUnderlag`, som frågar grinden först.
+   `_tabellkopiaForExport` och `_diagramexportUnderlag`, som frågar grinden först.
 
 ## Beräkningskärnans moduler
 

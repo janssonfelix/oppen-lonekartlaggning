@@ -31,12 +31,12 @@ import { direktivMarkering } from '../lib/status.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, artikel, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { enableTableSort, flerKolumner } from './05-tabeller-och-lankar.js';
+import { aktiveraSortering, flerKolumner } from './05-tabeller-och-lankar.js';
 import { K_SKARM, kTroskel, LITET_UNDERLAG, statGolv } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { T, termText } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS, gapStatusNiva } from './10-diagramtema.js';
-import { addTableExportTools, getData, state } from './12-tillstand.js';
+import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { laLikaGrupper } from './41-lika-arbete.js';
 
 /** Antalet per kön (och per grupp för median och spridning) som krävs för ett lönemått. */
@@ -89,7 +89,7 @@ function _aidbasNationell(aid) {
     return r && typeof r.pct === 'number' ? r.pct : null;
 }
 /** De fyra tabellerna ur underlaget, med verktygets regler. */
-function aidbasTabeller(d = getData()) {
+function aidbasTabeller(d = hamtaData()) {
     const k = aidbasK(), golv = aidbasGolv(), definition = aidbasDefinition(), grans = aidbasGrans(), jamforelse = lvJamforelse();
     return {
         k, golv, definition, grans, jamforelse,
@@ -189,17 +189,17 @@ function _aidbasTabellHtml(id, kolumner, rader, { not = '', tom = 'Inga grupper 
  */
 function _aidbasEfter(id, dolda, nyckel) {
     if (!document.getElementById(id)) return;
-    if (typeof enableTableSort === 'function') enableTableSort(id);
-    if (typeof addTableExportTools === 'function') addTableExportTools(id, document.getElementById(id)?.getAttribute('data-aidbas-fil') || id);
+    if (typeof aktiveraSortering === 'function') aktiveraSortering(id);
+    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg(id, document.getElementById(id)?.getAttribute('data-aidbas-fil') || id);
     if (dolda && nyckel && typeof flerKolumner === 'function') flerKolumner(id, dolda, nyckel);
 }
 function _aidbasNyckel(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
 
 /** Lika arbete: tabell 1 och arbetslistan (tabell 4). */
-export function renderAidBasLika() {
+export function ritaAidBasLika() {
     const lika = document.getElementById('aidbas-lika'), individ = document.getElementById('aidbas-individ');
     if (!lika || !individ) return;
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { lika.innerHTML = ''; individ.innerHTML = ''; _aidbasNyckel('nyckel-la-aidbas', ''); _aidbasNyckel('nyckel-la-individ', ''); return; }
     const t = aidbasTabeller(d);
     lika.innerHTML = _aidbasTabellHtml('aidbas-lika-tabell', AIDBAS_KOL.lika, t.lika.rader, { not: _aidbasLikaNot(t.lika), fil: 'lika_arbete_aid_bas' })
@@ -214,10 +214,10 @@ export function renderAidBasLika() {
     _aidbasNyckel('nyckel-la-individ', t.individ.rader.length ? `${t.individ.rader.length} grupper` : '');
 }
 /** Likvärdigt arbete: tabell 2 med sammanfattningen, och den hierarkiska jämförelsen (tabell 3). */
-export function renderAidBasLikvardigt() {
+export function ritaAidBasLikvardigt() {
     const lv = document.getElementById('aidbas-likvardigt'), hi = document.getElementById('aidbas-hierarki');
     if (!lv || !hi) return;
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { lv.innerHTML = ''; hi.innerHTML = ''; _aidbasNyckel('nyckel-lv-aidbas', ''); _aidbasNyckel('nyckel-lv-hierarki', ''); return; }
     const t = aidbasTabeller(d);
     const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()} "Brukar anses kvinnodominerad" bygger på andelen kvinnor nationellt (${skrKallaKort()}) med samma definition.`;
@@ -280,7 +280,7 @@ export function _aidbasLikaBlad(lika) {
 }
 /** @returns {[string, any][]} bladets namn och kalkylblad */
 export function _aidbasExcelBlad() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return [];
     const t = aidbasTabeller(d);
     const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
@@ -319,7 +319,7 @@ export function uppstartAidBasTabeller() {
         sattLonemanad(/** @type {HTMLInputElement} */ (e.target).value);
         // Den öppna fliken ritas om direkt; övriga ritas när de öppnas.
         const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-        if (aktiv === 'matrix') renderAidBasLika();
-        if (aktiv === 'likvardighet') renderAidBasLikvardigt();
+        if (aktiv === 'matrix') ritaAidBasLika();
+        if (aktiv === 'likvardighet') ritaAidBasLikvardigt();
     });
 }

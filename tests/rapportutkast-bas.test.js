@@ -16,25 +16,25 @@ import { arsjamforelseBlock, tillText, tillWordHtml } from '../src/lib/rapportun
 
 vi.setConfig({ testTimeout: 60000 });
 
-const demo = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const demo = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const utkast = w => /** @type {HTMLTextAreaElement} */ (w.document.getElementById('struktur-narrative'));
 const valjare = w => /** @type {HTMLSelectElement} */ (w.document.getElementById('struktur-narrative-omfang'));
 const valj = (w, v) => { const s = valjare(w); s.value = v; s.dispatchEvent(new w.Event('change', { bubbles: true })); };
 /** Förra årets bokslut ur årets (konfigurationsfilen), med medianen 500 kr lägre i varje intervall. */
 const medBokslut = (andra = ab => ab.basIntervall.forEach(r => { if (typeof r.med === 'number') r.med -= 500; })) => {
     const a = demo();
-    const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+    const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
     cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
     andra(cfg.arsbokslut);
     const w = demo();
-    w.__cfg = cfg; w.eval('applyConfigSnapshot(window.__cfg)');
+    w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
     return { w, cfg };
 };
 
 describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
     it('efter helheten står PER BAS-INTERVALL med ett stycke per intervall som når k, i intervallens ordning och i dossierns form', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const t = utkast(w).value;
         expect(t.split('\n')[0]).toBe('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
         const i = t.indexOf('\nPER BAS-INTERVALL\n');
@@ -59,7 +59,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
     it('i exportläget: med k = 25 faller BAS E (23 personer) bort och nämns, utan lönemått', () => {
         const w = demo();
         w.eval('sattKTroskel(25, { fraga: false })');
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const del = utkast(w).value.split('\nPER BAS-INTERVALL\n')[1];
         expect(del.split('\n').filter(r => /^BAS-intervall [A-Z]$/.test(r))).toEqual(['BAS-intervall A', 'BAS-intervall B', 'BAS-intervall C', 'BAS-intervall D']);
         expect(del).toMatch(/BAS E .*färre än 25 personer/);
@@ -68,7 +68,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
 
     it('förra året står med när ett bokslut är inläst', () => {
         const { w, cfg } = medBokslut();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const del = utkast(w).value.split('\nPER BAS-INTERVALL\n')[1];
         expect(del).toContain('\nFörra året\n');
         expect(del).toContain(`Jämfört med ${cfg.arsbokslut.ar}:`);
@@ -77,7 +77,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
 
     it('väljaren ovanför textrutan: standard med intervallen; valet ligger i state, inte i filen, och Återskapa följer det', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const s = valjare(w);
         expect(s).not.toBeNull();
         expect([...s.options].map(o => o.textContent)).toEqual(['Hela organisationen', 'Hela organisationen + per BAS-intervall']);
@@ -91,8 +91,8 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
         expect(w.__state.utkastPerBas).toBe(false);
         expect(utkast(w).value).not.toContain('PER BAS-INTERVALL');
         expect(utkast(w).value).toContain('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
-        expect(w.__buildConfigSnapshot()).not.toHaveProperty('utkastPerBas');
-        expect(JSON.stringify(w.__buildConfigSnapshot())).not.toContain('utkastPerBas');
+        expect(w.__byggKonfiguration()).not.toHaveProperty('utkastPerBas');
+        expect(JSON.stringify(w.__byggKonfiguration())).not.toContain('utkastPerBas');
         // Ett redigerat utkast skrivs inte över av väljaren; Återskapa ritar om efter valet.
         utkast(w).value = 'Egen text'; utkast(w).dispatchEvent(new w.Event('input', { bubbles: true }));
         valj(w, 'perBas');
@@ -103,7 +103,7 @@ describe('rapportutkastet per BAS-intervall (Rapporttext)', () => {
         w.document.getElementById('struktur-narrative-regen').click();
         expect(utkast(w).value).not.toContain('PER BAS-INTERVALL');
         // Att öppna fliken igen ritar efter valet.
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         expect(utkast(w).value).not.toContain('PER BAS-INTERVALL');
         expect(w.__state.kLage).toBe('skarm');
         // Rensa all data återställer valet.
@@ -128,23 +128,23 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         const iD = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === 'BAS-intervall D');
         const c = a.delar.slice(iC + 1, iD);
         const text = c.filter(p => p.typ === 'stycke').map(p => p.text);
-        const stycken = w.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))");
+        const stycken = w.eval("medExportLage(() => basdossierStycken(byggBasdossier('C'), { forraBaraMedBokslut: true }))");
         expect(text).toEqual(stycken.flatMap(s => [s.rubrik, ...s.rader]));
         expect(c.filter(p => p.typ === 'stycke' && p.stil === 'fet').map(p => p.text)).toEqual(stycken.map(s => s.rubrik));
         // Tabellen: AID, yrke, antal per kön, medianer per kön, kvoten och status; bara yrken där båda könen når k.
         const tab = c.find(p => p.typ === 'tabell');
         expect(tab.kolumner.map(k => k.rubrik)).toEqual(['AID', 'Etikettnamn', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
-        const d = w.eval("medExportLage(() => buildBasdossier('C'))");
+        const d = w.eval("medExportLage(() => byggBasdossier('C'))");
         const delade = d.yrken.filter(y => !y.samlad);
         expect(tab.rader.map(r => r[0])).toEqual(delade.map(y => y.aid));
         for (const r of tab.rader) { expect(typeof r[3]).toBe('number'); expect(typeof r[4]).toBe('number'); expect(typeof r[5]).toBe('number'); }
         expect(c.filter(p => p.typ === 'fyllIn')).toHaveLength(1);
         expect(c.find(p => p.typ === 'fyllIn').text).toMatch(/^Bedömning/);
         // Word-utkastet och utskriften ritas ur modellen.
-        const html = w.eval('_buildDocumentationDraftHtml()');
+        const html = w.eval('_byggWordUtkastHtml()');
         expect(html).toContain('Lönekartläggning per BAS-intervall');
         expect(html).toContain('<p><strong>AID-etiketterna i intervallet</strong></p>');
-        const block = w.eval('_utkastTillBlock(_buildDocumentationDraftHtml())');
+        const block = w.eval('_utkastTillBlock(_byggWordUtkastHtml())');
         const fet = block.find(b => b.typ === 'stycke' && b.delar.length === 1 && b.delar[0].text === 'AID-etiketterna i intervallet');
         expect(fet.delar[0].fet).toBe(true);
         expect(w.__state.kLage).toBe('skarm');
@@ -174,7 +174,7 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         expect(ordning[ordning.indexOf('likvardigt') + 1]).toBe('basintervall');
         ruta.checked = false; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('basintervall');
-        expect(w.eval('_buildDocumentationDraftHtml()')).not.toContain('Lönekartläggning per BAS-intervall');
+        expect(w.eval('_byggWordUtkastHtml()')).not.toContain('Lönekartläggning per BAS-intervall');
         w.eval("sattRapportUrval('ledning')");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).not.toContain('basintervall');
         w.eval("sattRapportUrval('facklig')");
@@ -194,7 +194,7 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
     it('PDF-rapporten har avsnittet som egen sektion', async () => {
         const w = demo();
         w.eval("sattRapportUrval('hela')");
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         const s = w.document.querySelector('#print-report section[data-rm-avsnitt="basintervall"]');
         expect(s).not.toBeNull();
         expect(s.querySelector('h2').textContent).toMatch(/Lönekartläggning per BAS-intervall$/);
@@ -210,7 +210,7 @@ describe('rapportunderlaget: Per BAS-intervall', () => {
         expect(block.map(b => b.id)).toEqual(['bas:A', 'bas:B', 'bas:C', 'bas:D', 'bas:E']);
         const c = block.find(b => b.id === 'bas:C');
         expect(c.rubrik).toBe('BAS-intervall C');
-        const stycken = w.eval("medExportLage(() => basdossierStycken(buildBasdossier('C'), { forraBaraMedBokslut: true }))");
+        const stycken = w.eval("medExportLage(() => basdossierStycken(byggBasdossier('C'), { forraBaraMedBokslut: true }))");
         for (const s of stycken) for (const r of s.rader) expect(c.stycken).toContain(r);
         // Raden att fylla i efter intervallets stycken; urvalet sist, som i övriga block.
         const iBed = c.stycken.findIndex(t => /^\[HR fyller i\] Bedömning: /.test(t));
@@ -219,7 +219,7 @@ describe('rapportunderlaget: Per BAS-intervall', () => {
         expect(c.tabell.rubriker).toEqual(['AID', 'Etikettnamn', 'Kvinnor / män', 'Median kvinnor', 'Median män', 'Kvinnors median i % av mäns', 'Status']);
         expect(c.tabell.rader.length).toBeGreaterThan(0);
         expect(c.tabell.rader.every(r => r.every(x => typeof x === 'string'))).toBe(true);
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const d = w.document;
         const rubrik = [...d.querySelectorAll('#rapportunderlag-innehall .ru-grupprubrik')].find(h => h.textContent === 'Per BAS-intervall');
         expect(rubrik).toBeTruthy();
@@ -298,7 +298,7 @@ describe('förra året: tabellen per BAS-intervall i rapportunderlaget och BAS-h
         expect(w2.eval("RM_DIAGRAM.find(g => g.id === 'chart-arsjamforelse-bas').om()")).toBe(false);
         expect(alla(w2.eval('rapportModell()'))).not.toContain('chart-arsjamforelse-bas');
         // Bilden görs ur den ritade figuren (rmDiagramBild ritar fliken och läser den).
-        w.__renderTabContent('arbetet');
+        w.__ritaFlik('arbetet');
         expect(w.eval("diagramRitat(document.getElementById('chart-arsjamforelse-bas'))")).toBe(true);
     });
 
@@ -325,18 +325,18 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
     const GAMLA_12 = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
     const GAMLA_FACKLIG = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'];
     const lasIn = (w, rapportUrval) => {
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         w.__cfg = { ...cfg, rapportUrval };
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
     };
     it('ett färdigt urval sparas med fast i state och i konfigurationsfilen, och läses tillbaka som samma urval', () => {
         const w = demo();
         w.eval("sattRapportUrval('facklig')");
         expect(w.__state.rapportUrval.fast).toBe('facklig');
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.rapportUrval.fast).toBe('facklig');
         const w2 = demo();
-        w2.__cfg = cfg; w2.eval('applyConfigSnapshot(window.__cfg)');
+        w2.__cfg = cfg; w2.eval('tillampaKonfiguration(window.__cfg)');
         expect(w2.__state.rapportUrval.fast).toBe('facklig');
         expect(w2.eval('rapportUrval()').namn).toBe('Facklig dialog');
     });
@@ -374,7 +374,7 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
         ruta.checked = false; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(w.__state.rapportUrval.fast).toBeUndefined();
         expect(w.eval('rapportUrval()').namn).toMatch(/^Eget urval/);
-        expect(JSON.parse(JSON.stringify(w.__buildConfigSnapshot())).rapportUrval).not.toHaveProperty('fast');
+        expect(JSON.parse(JSON.stringify(w.__byggKonfiguration())).rapportUrval).not.toHaveProperty('fast');
     });
     it('en fil med ett okänt fast-värde avvisas inte; det hoppas över', () => {
         const w = demo();
@@ -386,7 +386,7 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
 describe('inledningen nämner ställningstagandet bara när ett är inläst (fixrunda 1)', () => {
     it('utkastet och rapportens avsnitt', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const inledning = () => utkast(w).value.split('\nPER BAS-INTERVALL\n')[1].split('\n')[0];
         const avsnitt = () => w.eval('rapportModell()').avsnitt.find(a => a.id === 'basintervall').delar[0].text;
         expect(inledning()).toContain('läget mot ställningstagandet');
@@ -405,7 +405,7 @@ describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
 
     it('redigerat och OK: frågar en gång och ritar om', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         redigera(w, 'Egen text');
         const fragor = medFragor(w, true);
         aterskapa(w);
@@ -417,7 +417,7 @@ describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
 
     it('redigerat och Avbryt: texten och markeringen är orörda', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         redigera(w, 'Egen text');
         const fragor = medFragor(w, false);
         aterskapa(w);
@@ -428,7 +428,7 @@ describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
 
     it('oredigerat: ingen fråga', () => {
         const w = demo();
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const fragor = medFragor(w, false);
         aterskapa(w);
         expect(fragor).toHaveLength(0);

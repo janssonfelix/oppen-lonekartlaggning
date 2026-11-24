@@ -9,14 +9,14 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getBasIntervals, referensKortnamn, state } from './12-tillstand.js';
-import { renderUnderlagetsKvalitet } from './13-oversikt.js';
-import { detectOutliers } from './15-extremvarden-basrang.js';
+import { hamtaBasIntervall, referensKortnamn, state } from './12-tillstand.js';
+import { ritaUnderlagetsKvalitet } from './13-oversikt.js';
+import { hittaExtremvarden } from './15-extremvarden-basrang.js';
 import { _fkRapportrad } from './17-forhandskontroll.js';
 import { harAlder } from './50-regressionsmodeller.js';
 
 // ---- Datavalideringsrapport (efter CSV-parse) ----
-export function renderDataValidationReport() {
+export function ritaValideringsrapport() {
     const wrap = document.getElementById('data-validation-report');
     if (!wrap) return;
     if (!state.data.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
@@ -38,8 +38,8 @@ export function renderDataValidationReport() {
     const used = state.data.length;
 
     // Räkna varningar
-    const outliers = detectOutliers(3);
-    const bas = getBasIntervals();
+    const outliers = hittaExtremvarden(3);
+    const bas = hamtaBasIntervall();
     const { enkonade: singleSexBas, underK: kMaskedBas } = basVarningar(state.data, bas, kInstalld());
 
     // Konsistenskontroll
@@ -118,14 +118,14 @@ export function renderDataValidationReport() {
 
 // Underlagets kvalitet (ADR-19): inläsningsrapporten är underlag i panelen;
 // statusen kommer från bedomningUnderlag().
-// Anropas efter renderDataValidationReport().
+// Anropas efter ritaValideringsrapport().
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
-export function syncDatakvalitetPanel(val) {
-    renderUnderlagetsKvalitet(val);
+export function synkaDatakvalitetspanel(val) {
+    ritaUnderlagetsKvalitet(val);
 }
 
 // ---- Konsistenscheck mellan filer ----
-export function renderConsistencyBanner() {
+export function ritaKonsistenskontroll() {
     const wrap = document.getElementById('consistency-banner-container');
     if (!wrap) return;
     if (!state.data.length) { wrap.innerHTML = ''; return; }

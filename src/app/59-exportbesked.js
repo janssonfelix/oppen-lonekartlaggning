@@ -11,7 +11,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { excelAlltBlad } from './24-excelexport.js';
 import { _laNyckel } from './41-lika-arbete.js';
 import { harAlder } from './50-regressionsmodeller.js';
@@ -32,8 +32,8 @@ function _ebAntal(n, en, flera) { return `${n} ${n === 1 ? en : flera}`; }
  * @param {{baraUrval?: boolean}} [val] baraUrval: bara urvalet i listan har ändrats. Avsnitten tas då ur rapportmodellens
  *   minne (58-rapportmodell.js) och beskedet för Excel och ZIP, som inte beror på urvalet, står kvar.
  */
-export function renderExportBesked({ baraUrval = false } = {}) {
-    const har = getData().length > 0;
+export function ritaExportBesked({ baraUrval = false } = {}) {
+    const har = hamtaData().length > 0;
     const satt = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = har ? html : ''; };
     if (!har) { ['besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'].forEach(id => satt(id, '')); _ebRitaUrval(); return; }
     /** @type {any} */ let b = null;
@@ -72,7 +72,7 @@ function _ebRitaUrval(alla) {
     // Klassen urval-rad med data-urval-id och urval-fasta avgör vilka klick som inte gör förhandsbeskedets minne ogiltigt (_rmHandelser, 58-rapportmodell.js).
     const host = document.getElementById('rapport-urval');
     if (!host) return;
-    if (!getData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
+    if (!hamtaData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
     const u = rapportUrval();
     let rubriker = {};
     try { // Lagrummet i rubriken hör till dokumentet; i gränssnittet står avsnittets namn utan paragrafhänvisning.
@@ -143,13 +143,13 @@ export function uppstartExportbesked() {
         if (!el || !el.closest || !el.closest('#rapport-perbas')) return;
         _ebLasPerBasRecept();
         const fokus = el.id;
-        renderExportBesked();
+        ritaExportBesked();
         document.getElementById(fokus)?.focus();
     });
     document.addEventListener('click', e => {
         const t = /** @type {HTMLElement} */ (e.target);
         if (!t || !t.closest) return;
-        if (t.closest('#pb-aterstall')) { state.perBasRecept = null; renderExportBesked(); return; }
+        if (t.closest('#pb-aterstall')) { state.perBasRecept = null; ritaExportBesked(); return; }
         const bort = t.closest('[data-egen-bort]'), flytta = t.closest('[data-egen-flytta]');
         if (!bort && !flytta) return;
         const id = /** @type {HTMLElement} */ (bort || flytta).closest('[data-egen-id]')?.getAttribute('data-egen-id');
@@ -158,13 +158,13 @@ export function uppstartExportbesked() {
         if (bort) lista.splice(i, 1);
         else if (flytta) { const j = i + Number(flytta.getAttribute('data-egen-flytta')); if (j < 0 || j >= lista.length) return; [lista[i], lista[j]] = [lista[j], lista[i]]; }
         state.rapportTabeller = lista;
-        renderExportBesked();
+        ritaExportBesked();
         if (flytta) /** @type {HTMLElement} */ (document.querySelector(`[data-egen-id="${id}"] [data-egen-flytta="${flytta.getAttribute('data-egen-flytta')}"]:not([disabled])`))?.focus();
     });
     document.addEventListener('click', e => {
         if (!/** @type {HTMLElement} */ (e.target).closest) return;
         const fast = /** @type {HTMLElement} */ (e.target).closest('[data-urval-fast]');
-        if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); renderExportBesked({ baraUrval: true }); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
+        if (fast) { sattRapportUrval(fast.getAttribute('data-urval-fast')); ritaExportBesked({ baraUrval: true }); /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-fast="${fast.getAttribute('data-urval-fast')}"]`))?.focus(); return; }
         const flytta = /** @type {HTMLElement} */ (e.target).closest('[data-urval-flytta]');
         if (!flytta) return;
         const id = flytta.closest('[data-urval-id]')?.getAttribute('data-urval-id') || '', steg = Number(flytta.getAttribute('data-urval-flytta'));
@@ -176,7 +176,7 @@ export function uppstartExportbesked() {
         const j = u.ordning.indexOf(granne), ordning = [...u.ordning];
         ordning.splice(i, 1); ordning.splice(j, 0, id);
         sattRapportUrval({ ordning, med: u.med });
-        renderExportBesked({ baraUrval: true });
+        ritaExportBesked({ baraUrval: true });
         /** @type {HTMLInputElement} */ (document.querySelector(`#rapport-urval [data-urval-id="${id}"] [data-urval-flytta="${steg}"]:not([disabled])`))?.focus();
     });
     document.addEventListener('change', e => {
@@ -184,7 +184,7 @@ export function uppstartExportbesked() {
         if (!ruta) return;
         const u = rapportUrval(), id = /** @type {HTMLElement} */ (ruta).getAttribute('data-urval-med');
         sattRapportUrval({ ordning: u.ordning, med: /** @type {HTMLInputElement} */ (ruta).checked ? [...u.med, id] : u.med.filter(x => x !== id) });
-        renderExportBesked({ baraUrval: true });
+        ritaExportBesked({ baraUrval: true });
         /** @type {HTMLInputElement} */ (document.querySelector(`[data-urval-med="${id}"]`))?.focus();
     });
 }

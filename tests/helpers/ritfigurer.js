@@ -28,7 +28,7 @@ const IND = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, 
 //   paneler (två, tre, tom)  → "två paneler", "tre paneler, en helt liten", "lager utan panel i två paneler"
 //   ordning                  → "x.ordning nämner en liten kategori", "kategoriordning A–E ..."
 //   logaritmisk axel         → "logaritmisk axel"
-//   nedsampling              → "punktmoln som nedsamplas" (fler än SCATTER_MAX_POINTS = 8 000 punkter, liten punkt först)
+//   nedsampling              → "punktmoln som nedsamplas" (fler än PUNKTMOLN_MAX_PUNKTER = 8 000 punkter, liten punkt först)
 //   dolda serier             → "dolda serier"
 //   not, bakgrund            → "not och bakgrund"
 //   zon på bandaxel          → "zon på bandaxel" (en zon vars gräns är en liten kategori ritas inte)
@@ -76,7 +76,7 @@ export function ritfigurer() {
         ['lager utan panel i två paneler', bas({ paneler: ['P1', 'P2'], lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 1 }, HEM('HEMLIG')] }] })],
         ['en helt liten serie bland andra', bas({ lager: [{ marke: 'stapel', serie: 'Stor', data: [{ x: 'A', y: 1 }] }, { marke: 'stapel', serie: 'HEMLIG-SERIE', data: [HEM('A')] }, { marke: 'linje', serie: 'HemligLinje', data: [HEM('A'), HEM('B')] }] })],
         ['logaritmisk axel', bas({ x: { skala: 'linjar' }, y: { skala: 'log' }, lager: [{ marke: 'punkt', data: [{ x: 1, y: 10 }, { x: 2, y: 98765, liten: true, storlek: 40 }, { x: 3, y: 100 }] }] })],
-        // Fler än SCATTER_MAX_POINTS (8 000) synliga punkter: var annan ritas. Den lilla punkten ligger först, så den ritas med visaSma.
+        // Fler än PUNKTMOLN_MAX_PUNKTER (8 000) synliga punkter: var annan ritas. Den lilla punkten ligger först, så den ritas med visaSma.
         ['punktmoln som nedsamplas', bas({ x: { skala: 'linjar' }, lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 4321, y: 98765, liten: true, storlek: 40 }, ...Array.from({ length: 8200 }, (_, i) => ({ x: (i * 37) % 1000, y: 20000 + ((i * 7919) % 30000) }))] }] })],
         ['dolda serier', bas({ lager: [{ marke: 'stapel', serie: 'Syns', data: [{ x: 'A', y: 1 }, HEM('SYNLIG-HEMLIG')] }, { marke: 'stapel', serie: 'Dold', data: [{ x: 'A', y: 2 }, HEM('HEMLIG')] }] }), { dolda: new Set(['Dold']) }],
         ['egen färg på liten punkt', bas({ lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 10 }, HEM('HEMLIG', { farg: '#abcdef' })] }] })],
@@ -111,7 +111,7 @@ export function ritfigurer() {
             lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 1, y: 10 }, { x: 60, y: 98765, liten: true, storlek: 40 }, { x: 3, y: 12 }, { x: 4, y: 13 }] }] })],
         ['referenser på kategoriaxel och höger axel', bas({ y2: { skala: 'linjar', titel: 'Antal' }, referens: [{ typ: 'linje', x: 'HEMLIG' }, { typ: 'linje', x: 'B', streck: 'prickad' }, { typ: 'linje', y: 6, axel: 'y2' }, { typ: 'zon', y0: 2, etikett: 'Över två' }],
             lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 3 }, HEM('HEMLIG'), { x: 'B', y: 4 }] }, { marke: 'linje', axel: 'y2', serie: 'N', data: [{ x: 'A', y: 5 }, HEM('HEMLIG'), { x: 'B', y: 7 }] }] })],
-        // Fler än SCATTER_MAX_POINTS (8 000) individer: var annan ritas. De små ligger först och utspridda (aldrig sist),
+        // Fler än PUNKTMOLN_MAX_PUNKTER (8 000) individer: var annan ritas. De små ligger först och utspridda (aldrig sist),
         // så både urvalet och spridningen i sidled skulle röja dem om de räknades med.
         ['individer som nedsamplas', bas({ lager: [{ marke: 'lada', punkter: 'alla', serie: 'Lön', data: [{ x: 'A', y: 98765, liten: true, nyckel: 'NYCK-HEMLIG' }, ...Array.from({ length: 8300 }, (_, i) => ({ x: A5[i % 5], y: 20000 + ((i * 7919) % 30000), ...(i % 97 === 3 ? { liten: true } : {}) })), { x: 'A', y: 25000 }] }] })],
         // 7 990 individer som ritas + 20 små = 8 010 i lagret: urvalets steg får bara räknas ur dem som ritas (då

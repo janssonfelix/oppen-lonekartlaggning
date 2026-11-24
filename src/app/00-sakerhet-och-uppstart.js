@@ -14,7 +14,7 @@
 // Effekt: om en framtida bidragare introducerar `localStorage.setItem(...)`
 // kastas ett tydligt fel direkt vid första bug-tillfället, istället för att
 // regressionen smyger sig in i en release oupptäckt.
-(function installStorageTripwire() {
+(function installeraLagringsspar() {
     try {
         if (typeof Storage !== 'undefined' && Storage.prototype) {
             // Inget undantag: inget bibliotek i verktyget skriver till lagringen.
@@ -60,7 +60,7 @@
 // Tar bort initierings-spinnern så snart app.js har parsat klart + DOM är redo.
 // Lite fördröjning så användaren faktiskt SER spinnern (annars hinner den blinka förbi
 // på snabba maskiner). Min synlighet 200ms för WCAG-friendly perception.
-(function hideBootSplash() {
+(function doljStartskarm() {
     const start = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     const hide = () => {
         const splash = document.getElementById('boot-splash');

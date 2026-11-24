@@ -3,10 +3,10 @@
 // ---- GDPR uppgiftsminimering (Art. 5(1)(c)) ----
 // Vitlistan över tillåtna datafält (TILLATNA_FALT), uppslaget av rubrikerna, bedömningen av ansvarskolumnen och
 // tolkningen av en rad bor i src/lib/inlasning.js. Här står de tunna adaptrarna som läser tillståndet: kolumnmappningen
-// och importprofilen (_kolumnvalIState i 03-hjalpfunktioner.js), den godkända ansvarskolumnen och innevarande år.
+// och importprofilen (_kolumnvalITillstandet i 03-hjalpfunktioner.js), den godkända ansvarskolumnen och innevarande år.
 // _faltIRad och _bedomAnsvarKolumn importeras under samma namn ur lib.
 import { hittaAnsvarKolumn, lonefilensRubriker, minimeraRad } from '../lib/inlasning.js';
-import { _kolumnvalIState } from './03-hjalpfunktioner.js';
+import { _kolumnvalITillstandet } from './03-hjalpfunktioner.js';
 import { state } from './12-tillstand.js';
 
 /**
@@ -16,7 +16,7 @@ import { state } from './12-tillstand.js';
  * @returns {string|null}
  */
 export function _hittaAnsvarKolumn(rubriker) {
-    return hittaAnsvarKolumn(rubriker, _kolumnvalIState());
+    return hittaAnsvarKolumn(rubriker, _kolumnvalITillstandet());
 }
 
 /**
@@ -24,7 +24,7 @@ export function _hittaAnsvarKolumn(rubriker) {
  * Slås upp en gång per fil; en ändrad mappning läser in filen på nytt.
  */
 export function _lonefilensRubriker(headers) {
-    return lonefilensRubriker(headers, _kolumnvalIState());
+    return lonefilensRubriker(headers, _kolumnvalITillstandet());
 }
 
 /**
@@ -34,6 +34,6 @@ export function _lonefilensRubriker(headers) {
  * @param {Object<string,*>} row - Rå CSV-rad (PapaParse-objekt).
  * @param {Object<string,string|undefined>} [rubriker] - Uppslaget för filen; utan det slås det upp på radens nycklar.
  */
-export function extractMinimalRecord(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
+export function minimeraLonerad(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
     return minimeraRad(row, rubriker, state.ansvarKolumn, new Date().getFullYear());
 }

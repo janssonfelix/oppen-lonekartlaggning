@@ -241,8 +241,8 @@ describe('ritaren: punkt och linje', () => {
 });
 
 describe('ritaren: stora punktmoln', () => {
-    it('fler punkter än SCATTER_MAX_POINTS nedsamplas jämnt; data-i pekar på originalets index; antalet anges', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+    it('fler punkter än PUNKTMOLN_MAX_PUNKTER nedsamplas jämnt; data-i pekar på originalets index; antalet anges', () => {
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const data = Array.from({ length: max * 3 }, (_, i) => ({ x: i, y: i % 100 }));
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', data }] });
         const p = alla(svg, '[data-marke="punkt"]');
@@ -644,7 +644,7 @@ describe('DR10: små grupper lämnar inga spår utan visaSma', () => {
         expect(ser(svg)).not.toContain('HEMLIG');
     });
     it('nedsampling ihop med små punkter: de små tas bort före urvalet och syns aldrig', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const data = Array.from({ length: max * 3 }, (_, i) => ({ x: i, y: i % 100, liten: i % 3 === 0, nyckel: 'NYCKEL-HEMLIG' }));
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', data }] });
         const p = alla(svg, '[data-marke="punkt"]');
@@ -655,8 +655,8 @@ describe('DR10: små grupper lämnar inga spår utan visaSma', () => {
 });
 
 describe('DR11: smärre rättelser', () => {
-    it('data-nedsamplat: exakt SCATTER_MAX_POINTS + 1 punkter ritar varannan och anger det som ritades', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+    it('data-nedsamplat: exakt PUNKTMOLN_MAX_PUNKTER + 1 punkter ritar varannan och anger det som ritades', () => {
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const data = Array.from({ length: max + 1 }, (_, i) => ({ x: i, y: i % 10 }));
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', data }] });
         const n = alla(svg, '[data-marke="punkt"]').length;
@@ -664,13 +664,13 @@ describe('DR11: smärre rättelser', () => {
         expect(svg.getAttribute('data-nedsamplat')).toBe(`${n}/${max + 1}`);
     });
     it('data-nedsamplat: ett lager utan panel räknas en gång även med två paneler', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const data = Array.from({ length: max * 2 }, (_, i) => ({ x: i, y: i % 10 }));
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, paneler: ['P1', 'P2'], lager: [{ marke: 'punkt', data }] });
         expect(svg.getAttribute('data-nedsamplat')).toBe(`${max}/${max * 2}`);
     });
-    it('data-nedsamplat: bara de synliga punkterna räknas — är de högst SCATTER_MAX_POINTS nedsamplas inget', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+    it('data-nedsamplat: bara de synliga punkterna räknas — är de högst PUNKTMOLN_MAX_PUNKTER nedsamplas inget', () => {
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const data = Array.from({ length: max + 100 }, (_, i) => ({ x: i, y: i % 10, liten: i < 200 }));
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', data }] });
         expect(alla(svg, '[data-marke="punkt"]')).toHaveLength(max - 100);
@@ -1309,7 +1309,7 @@ describe('Uppgift 5: färgskala och färgstapel', () => {
     it('mitt: en divergerande skala med mittvärde har mittfärgen där, också när domänen är sned', () => {
         w.__fs = { typ: 'divergerande', doman: [50, 200], mitt: 100 };
         const [vid100, vid125, lag, hog] = w.eval('(() => { const s = _rfFargskala(window.__fs); return [s(100), s(125), s(50), s(200)]; })()');
-        const mittfarg = w.eval('d3.color("#eeeeec").formatRgb()');   // PALETTE.divergerande: mittstoppet
+        const mittfarg = w.eval('d3.color("#eeeeec").formatRgb()');   // PALETT.divergerande: mittstoppet
         expect(w.eval(`d3.color(${JSON.stringify(vid100)}).formatRgb()`)).toBe(mittfarg);
         expect(vid125).not.toBe(vid100);
         expect(new Set([vid100, lag, hog]).size).toBe(3);
@@ -1657,8 +1657,8 @@ describe('Rättning 1, DV2: färgskalans domän', () => {
 describe('Rättning 1, DV3: individpunkter nedsamplas', () => {
     const manga = (n, sma) => ({ beskrivning: 'b', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [{ marke: 'lada', punkter: 'alla', serie: 'L',
         data: Array.from({ length: n }, (_, i) => ({ x: `K${i % 4}`, y: 100 + ((i * 7919) % 500), ...(sma && i % 5 === 1 ? { liten: true } : {}) })) }] });
-    it('fler individer än SCATTER_MAX_POINTS: var k:te ritas, antalet anges, data-i pekar på originalet', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+    it('fler individer än PUNKTMOLN_MAX_PUNKTER: var k:te ritas, antalet anges, data-i pekar på originalet', () => {
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const svg = rita(manga(max * 3));
         const p = alla(svg, '[data-marke="individ"]');
         expect(p).toHaveLength(max);
@@ -1668,7 +1668,7 @@ describe('Rättning 1, DV3: individpunkter nedsamplas', () => {
         expect(alla(rita(manga(max)), '[data-marke="individ"]')).toHaveLength(max);
     });
     it('små individer tas bort före urvalet; lådor (avvikare) nedsamplas aldrig', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const f = manga(max * 2, true);
         const svg = rita(f);
         const kvar = f.lager[0].data.filter(d => !d.liten).length;
@@ -1775,7 +1775,7 @@ const behallare = (id = 'chart-test', bredd = 600) => {
 const ritaI = (el, figur, val = {}) => { w.__f = figur; w.__val = val; w.__el = el; return w.eval('ritaFigur(window.__el, window.__f, window.__val)'); };
 const handelse = (typ, over = {}) => new w.MouseEvent(typ, { bubbles: true, clientX: 50, clientY: 60, ...over });
 const egenSvg = el => el.querySelector(':scope > svg');
-const tipset = () => w.document.querySelector('.chart-tip-portal');   // portalens element (_ensureChartTip): klass, inget id
+const tipset = () => w.document.querySelector('.chart-tip-portal');   // portalens element (_hamtaDiagramtips): klass, inget id
 const tipsSyns = () => !!tipset() && tipset().classList.contains('visible');
 const individer = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, y, liten: true, nyckel: `person-${x}-${i}`, namn: 'HEMLIG' } : { x, y, nyckel: `person-${x}-${i}`, namn: `N${i}` }));
 
@@ -1930,7 +1930,7 @@ describe('ritaFigur', () => {
     it('ett lager utan tips ger inget verktygstips', () => {
         const el = behallare();
         ritaI(el, staplar());
-        w.eval('_hideChartTip()');
+        w.eval('_doljDiagramtips()');
         el.querySelector('[data-marke="stapel"]').dispatchEvent(handelse('pointermove'));
         expect(tipsSyns()).toBe(false);
     });
@@ -1940,7 +1940,7 @@ describe('ritaFigur', () => {
         const f = staplar();
         f.lager[0].tips = () => { throw new Error('trasig'); };
         ritaI(el, f);
-        w.eval('_hideChartTip()');
+        w.eval('_doljDiagramtips()');
         expect(() => el.querySelector('[data-marke="stapel"]').dispatchEvent(handelse('pointermove'))).not.toThrow();
         expect(tipsSyns()).toBe(false);
         expect(w.__state._interntFel.map(x => x.plats)).toEqual(['diagramtips chart-test']);
@@ -2102,7 +2102,7 @@ describe('ritaFigur', () => {
     });
     it('stort punktmoln: notisen under diagrammet visas med ritarens antal, och försvinner när figuren byts eller rensas', () => {
         const el = behallare();
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const data = Array.from({ length: max + 10 }, (_, i) => ({ x: i, y: i % 50 }));
         const moln = { beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', data }] };
         ritaI(el, moln);
@@ -2119,7 +2119,7 @@ describe('ritaFigur', () => {
     });
     it('notisens antal räknar inte dolda små punkter (de kommer ur ritarens data-nedsamplat, inte ur figuren)', () => {
         const el = behallare();
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         // max + 10 punkter som får visas och 500 små: totalen i notisen är max + 10, inte max + 510.
         const data = [...Array.from({ length: 500 }, (_, i) => ({ x: i, y: 77777, liten: true })), ...Array.from({ length: max + 10 }, (_, i) => ({ x: i, y: i % 50 }))];
         ritaI(el, { beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', data }] });
@@ -2156,7 +2156,7 @@ describe('ritaFigur: små grupper når aldrig en hanterare', () => {
         expect(sett).toHaveLength(4);
         // Simulerat ritarfel: ett element som pekar på den dolda punkten.
         sett.length = 0;
-        w.eval('_hideChartTip()');
+        w.eval('_doljDiagramtips()');
         s[0].setAttribute('data-i', '1');
         s[0].dispatchEvent(handelse('pointermove'));
         s[0].dispatchEvent(handelse('click'));
@@ -2338,7 +2338,7 @@ describe('Uppgift 6: ritarens ändringar (DG4, DG5, smått)', () => {
         for (const a of alla(lada, '[data-marke="avvikare"]')) expect(a.hasAttribute('stroke-opacity')).toBe(false);
     });
     it('spridningens ordningsnummer räknas bland de individer som RITAS — efter urvalet, inte bland lagrets alla', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const n = max * 2 + 1;                                         // steg 3: var tredje individ ritas
         const data = Array.from({ length: n }, (_, i) => ({ x: i % 2 ? 'B' : 'A', y: 20000 + ((i * 7919) % 30000) }));
         const f = d => staplar({ y: { skala: 'linjar', doman: [0, 60000] }, lager: [{ marke: 'lada', punkter: 'alla', serie: 'L', data: d }] });
@@ -2631,7 +2631,7 @@ describe('Uppgift 6, rättning 1', () => {
     it('DF6: notisen om urval visas också under en behållare utan id, och tas bort när figuren byts eller rensas', () => {
         const el = behallare('chart-utan-id');
         el.removeAttribute('id');
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const moln = { beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', data: Array.from({ length: max + 10 }, (_, i) => ({ x: i, y: i % 50 })) }] };
         const not = () => el.parentElement.querySelectorAll('.scatter-sample-note');
         ritaI(el, moln);
@@ -2656,7 +2656,7 @@ describe('Uppgift 6, rättning 1', () => {
         const medId = behallare('chart-test');
         ritaI(medId, moln);
         expect(w.document.getElementById('chart-test-sample-note').previousElementSibling).toBe(medId);
-        w.eval('_setScatterSampleNote("chart-test", null)');
+        w.eval('_sattPunkturvalsnot("chart-test", null)');
         expect(w.document.getElementById('chart-test-sample-note')).toBeNull();
     });
 });
@@ -2688,13 +2688,13 @@ const utanSmaPunkter = f => {
 // Kör ett menyval och fångar allt som skulle lämna verktyget: bildanrop, nedladdad CSV, urklipp.
 const korMeny = async (el, menyval) => {
     const ut = { bilder: [], csv: [], urklipp: [], fel: null };
-    const org = { bild: w.figurTillBild, csv: w._downloadCSV, kopiera: w._copyMatrixToClipboard };
+    const org = { bild: w.figurTillBild, csv: w._laddaNedCSV, kopiera: w._kopieraMatrisTillUrklipp };
     w.figurTillBild = (figur, format, bredd, hojd, val) => { ut.bilder.push({ figur, format, bredd, hojd, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
-    w._downloadCSV = rader => { ut.csv.push(rader); };
-    w._copyMatrixToClipboard = rader => { ut.urklipp.push(rader); };
+    w._laddaNedCSV = rader => { ut.csv.push(rader); };
+    w._kopieraMatrisTillUrklipp = rader => { ut.urklipp.push(rader); };
     w.__el = el;
-    try { for (const v of menyval) await w.eval(`chartExportRun(window.__el, ${JSON.stringify(v)})`); } catch (e) { ut.fel = e; } finally {
-        w.figurTillBild = org.bild; w._downloadCSV = org.csv; w._copyMatrixToClipboard = org.kopiera;
+    try { for (const v of menyval) await w.eval(`exporteraDiagram(window.__el, ${JSON.stringify(v)})`); } catch (e) { ut.fel = e; } finally {
+        w.figurTillBild = org.bild; w._laddaNedCSV = org.csv; w._kopieraMatrisTillUrklipp = org.kopiera;
     }
     return ut;
 };
@@ -2767,7 +2767,7 @@ describe('export av figurer', () => {
         } finally { w.eval('sattKTroskel(10, { fraga: false })'); }
     });
     it('DG6: en nedsamplad bild säger att den visar ett urval — före meningen om sänkt tröskel, och båda ryms', () => {
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const moln = n => ({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', serie: 'P', data: [
             { x: 5, y: 77777, liten: true }, ...Array.from({ length: n }, (_, i) => ({ x: i % 97, y: i % 50 }))] }] });
         const stor = svgText(moln(2 * max + 1));
@@ -2811,7 +2811,7 @@ describe('export av figurer', () => {
         w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportBeskrivning: "BAS = A" })');
         expect(el.querySelector('svg')).not.toBeNull();                 // ritad trots bredd 0
         expect(el.querySelector('svg').textContent).toContain('Liten'); // på skärmen syns den lilla gruppen (visaSma)
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         expect(rader[0][0]).toMatch(/^Medianlön per BAS — Lönekartläggning .*Minsta gruppstorlek för redovisning: 10\.$/);
         expect(rader[1]).toEqual(['Urval: BAS = A']);
         expect(rader.slice(2)).toEqual([['Serie', 'BAS', 'Kronor/månad'], ['Alla', 'A', 30000], ['Alla', 'B', '31000,46']]);
@@ -2822,18 +2822,18 @@ describe('export av figurer', () => {
         let med = false;
         w.__el = el; w.__f = medSma(); w.__med = () => med;
         w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportMedSma: window.__med })');
-        expect(JSON.stringify(w.__chartExportRows(el))).not.toContain('77777');
-        expect(w.__chartExportRows(el)[0][0]).not.toContain('undantag');
+        expect(JSON.stringify(w.__diagramexportRader(el))).not.toContain('77777');
+        expect(w.__diagramexportRader(el)[0][0]).not.toContain('undantag');
         expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(false);
         med = true;
-        expect(JSON.stringify(w.__chartExportRows(el))).toContain('77777');
-        expect(w.__chartExportRows(el)[0][0]).toContain('Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).');
+        expect(JSON.stringify(w.__diagramexportRader(el))).toContain('77777');
+        expect(w.__diagramexportRader(el)[0][0]).toContain('Den här filen kan även innehålla grupper under tröskeln (undantag: valt i Tabeller och egna vyer).');
         expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(true);
         // En exportMedSma som kastar räknas som nej (och rapporteras) — aldrig som ja.
         w.__state._interntFel = [];
         w.__med = () => { throw new Error('trasig'); };
         w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportMedSma: window.__med })');
-        expect(JSON.stringify(w.__chartExportRows(el))).not.toContain('77777');
+        expect(JSON.stringify(w.__diagramexportRader(el))).not.toContain('77777');
         expect(w.__state._interntFel.some(f => /diagramexport chart-exp/.test(f.plats))).toBe(true);
         w.__state._interntFel = [];
         // Bara exakt `true` är ett ja: ett löfte, en sträng eller ett tal får aldrig släppa ut små grupper.
@@ -2841,7 +2841,7 @@ describe('export av figurer', () => {
             w.__med = svar;
             w.eval('ritaFigur(window.__el, window.__f, { visaSma: true, exportMedSma: window.__med })');
             expect(w.eval('_rfExportFigur(window.__el).visaSma')).toBe(false);
-            expect(JSON.stringify(w.__chartExportRows(el))).not.toMatch(/77777|undantag/);
+            expect(JSON.stringify(w.__diagramexportRader(el))).not.toMatch(/77777|undantag/);
         }
     });
     it('undantaget "Likvärdigt arbete" gäller ALLT i fliken, också ett ritat diagram vars export inte bär märkta små grupper', () => {
@@ -2855,21 +2855,21 @@ describe('export av figurer', () => {
             const omarkt = staplar({ lager: [{ marke: 'stapel', serie: 'Alla', data: [{ x: 'A', y: 30000 }, { x: 'Liten', y: 77777 }] }] });
             w.__el = el; w.__f = omarkt;
             w.eval('ritaFigur(window.__el, window.__f, {})');
-            expect(JSON.stringify(w.__chartExportRows(el))).toContain('77777');
-            expect(w.__chartExportRows(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
+            expect(JSON.stringify(w.__diagramexportRader(el))).toContain('77777');
+            expect(w.__diagramexportRader(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
             w.__f = medSma();
             w.eval('ritaFigur(window.__el, window.__f, {})');
-            expect(w.__chartExportRows(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
+            expect(w.__diagramexportRader(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
             w.eval('ritaFigur(window.__el, window.__f, { exportMedSma: () => true })');
-            expect(w.__chartExportRows(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
+            expect(w.__diagramexportRader(el)[0][0]).toContain('(undantag: Likvärdigt arbete)');
         } finally { el.closest('.card').remove(); w.document.getElementById('view-likvardighet-test')?.remove(); }
         // Utanför fliken: "valt i Tabeller och egna vyer" bara när exporten faktiskt bär små grupper.
         const annan = nyBehallare();
         w.__el = annan; w.__f = medSma();
         w.eval('ritaFigur(window.__el, window.__f, {})');
-        expect(w.__chartExportRows(annan)[0][0]).not.toContain('undantag');
+        expect(w.__diagramexportRader(annan)[0][0]).not.toContain('undantag');
         w.eval('ritaFigur(window.__el, window.__f, { exportMedSma: () => true })');
-        expect(w.__chartExportRows(annan)[0][0]).toContain('(undantag: valt i Tabeller och egna vyer)');
+        expect(w.__diagramexportRader(annan)[0][0]).toContain('(undantag: valt i Tabeller och egna vyer)');
     });
     it('exportens underlag bestäms EN gång per export: exportMedSma anropas en gång, och stämpel och innehåll följer samma svar', async () => {
         const el = nyBehallare();
@@ -2940,7 +2940,7 @@ describe('export av figurer', () => {
             // Den riktiga figurTillBild lämnar valet vidare till figurTillSvg (SVG-vägen går i jsdom).
             w.figurTillSvg = (figur, bredd, hojd, val) => { sedda.push(val.visaSma); return org(figur, bredd, hojd, val); };
             try {
-                await w.eval('chartExportRun(window.__el, "svg")');
+                await w.eval('exporteraDiagram(window.__el, "svg")');
                 expect(decodeURIComponent(href.split(',')[1]).includes('Liten')).toBe(svar);
             } finally { w.figurTillSvg = org; }
         }
@@ -3036,13 +3036,13 @@ describe('export av figurer', () => {
     });
     it('diagramdata bär alla serier (också de som dolts via förklaringen) och påverkas inte av nedsampling', () => {
         const el = nyBehallare();
-        const max = w.eval('SCATTER_MAX_POINTS');
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
         const figur = { beskrivning: 'b', x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Lön' }, lager: [
             { marke: 'punkt', serie: 'Moln', data: Array.from({ length: max + 5 }, (_, i) => ({ x: i, y: i % 7 })) },
             { marke: 'punkt', serie: 'Dold', data: [{ x: 1, y: 2 }] }] };
         ritaI(el, figur);
         el._figurDolda.add('Dold');
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         expect(rader.length).toBe(1 + 1 + max + 5 + 1);
         expect(rader[rader.length - 1]).toEqual(['Dold', 1, 2]);
     });
@@ -3051,7 +3051,7 @@ describe('export av figurer', () => {
         const loner = [30000, 31000, 32000, 33000, 34000, 35000, 36000, 37000, 38000, 39000];
         const figur = staplar({ lager: [{ marke: 'lada', serie: 'Löner', punkter: 'alla', data: [...individer('A', loner), ...individer('A', [91234], [0]), ...individer('B', [41234, 42345, 43456], [0, 1, 2])] }] });
         ritaI(el, figur, { visaSma: true });
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         const st = ladstatistik(loner);
         expect(rader.slice(1)).toEqual([['Serie', 'BAS', 'Kronor/månad', 'Undre', 'Övre'], ['Löner', 'A', st.median, st.q1, st.q3]]);
         const platt = JSON.stringify(rader);
@@ -3065,13 +3065,13 @@ describe('export av figurer', () => {
         // Det enda som kan exporteras är en figur som ritaFigur har ritat.
         const el = nyBehallare('chart-utan-figur');
         el.data = [{ type: 'bar', name: 'A', x: ['a'], y: [1] }]; el.layout = {};
-        expect(w.__chartExportRows(el)).toEqual([]);
+        expect(w.__diagramexportRader(el)).toEqual([]);
         const ut = await korMeny(el, ['svg']);
         expect(ut.bilder).toHaveLength(0);
     });
     it('utan något att exportera lämnar ingenting verktyget: behållare utan figur (felläge, rensad) och tomt läge (alla punkter små)', async () => {
         const inget = async (el, vad) => {
-            expect(w.__chartExportRows(el), vad).toEqual([]);
+            expect(w.__diagramexportRader(el), vad).toEqual([]);
             for (const v of ALLA_MENYVAL) {
                 const ut = await korMeny(el, [v]);
                 expect(ut.fel && ut.fel.message, `${vad}: ${v}`).toBe('Det finns inget att exportera i diagrammet.');
@@ -3102,7 +3102,7 @@ describe('export av figurer', () => {
         await inget(tom, 'tomt läge');
         // Säger vyn att små grupper följer med finns det något att exportera.
         ritaI(tom, baraSma(), { visaSma: true, exportMedSma: () => true });
-        expect(JSON.stringify(w.__chartExportRows(tom))).toContain('77777');
+        expect(JSON.stringify(w.__diagramexportRader(tom))).toContain('77777');
         expect((await korMeny(tom, ['svg'])).bilder).toHaveLength(1);
         // Menyn i sidan: klicket visar felraden i stället för att ladda ner något, och kastar inte.
         ritaI(tom, baraSma());
@@ -3149,13 +3149,13 @@ describe('export av figurer', () => {
 describe('[S4] export: det som lämnar verktyget är identiskt med exporten av en figur där de små punkterna tagits bort', () => {
     // Differentialtest över hela figurlistan (samma som DS1 använder för skärmen). Bilden jämförs tecken för tecken,
     // utan normalisering: den exporterade SVG:n bär inga index. Diagramdatan går den riktiga vägen (ritaFigur →
-    // chartExportRows). En läcka — ett värde, en kategori, ett serienamn, ett antal, en förskjuten geometri,
+    // diagramexportRader). En läcka — ett värde, en kategori, ett serienamn, ett antal, en förskjuten geometri,
     // en not — gör att texterna skiljer sig.
     const HEMLIGT = /HEMLIG|NYCK|ETIK|98765|91111|99333/;
     const rader = figur => {
         const el = nyBehallare();
         ritaI(el, figur);
-        const ut = w.__chartExportRows(el);
+        const ut = w.__diagramexportRader(el);
         w.__el = el; w.eval('rensaFigur(window.__el)');
         return ut;
     };
@@ -3196,7 +3196,7 @@ describe('[S4] export: det som lämnar verktyget är identiskt med exporten av e
 
 describe('Uppgift 7: verktygstipset, storleksbevakningen, notisen och registret (tillägg 3)', () => {
     const medTips = () => { const f = staplar(); f.lager[0].tips = d => [['Lön', `${d.y} kr`]]; return f; };
-    it('_hideChartTip tömmer portalen och släpper ägaren — Escape, rullning och ändrad fönsterstorlek lämnar ingen lönetext', () => {
+    it('_doljDiagramtips tömmer portalen och släpper ägaren — Escape, rullning och ändrad fönsterstorlek lämnar ingen lönetext', () => {
         const el = behallare('chart-test');
         ritaI(el, medTips());
         const stapel = () => el.querySelector('[data-marke="stapel"]');
@@ -3211,19 +3211,19 @@ describe('Uppgift 7: verktygstipset, storleksbevakningen, notisen och registret 
         visa(); w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); dolt('Escape');
         visa(); w.dispatchEvent(new w.Event('scroll')); dolt('rullning');
         visa(); w.dispatchEvent(new w.Event('resize')); dolt('fönsterstorlek');
-        visa(); w.eval('_hideChartTip()'); dolt('_hideChartTip');
+        visa(); w.eval('_doljDiagramtips()'); dolt('_doljDiagramtips');
         // Tipset kommer tillbaka vid nästa pekarrörelse på samma märke, utan att tips anropas igen (sparad per märke och ritning).
         let anrop = 0;
         const f = medTips(); f.lager[0].tips = d => { anrop++; return [['Lön', `${d.y} kr`]]; };
         ritaI(el, f);
         stapel().dispatchEvent(handelse('pointermove'));
-        w.eval('_hideChartTip()');
+        w.eval('_doljDiagramtips()');
         stapel().dispatchEvent(handelse('pointermove'));
         expect(tipset().textContent).toContain('30000 kr');
         expect(anrop).toBe(1);
-        w.eval('_hideChartTip()');
+        w.eval('_doljDiagramtips()');
     });
-    it('_hideChartTip rensar en ägare som har lämnat dokumentet; ett tömt tips visas rätt igen', () => {
+    it('_doljDiagramtips rensar en ägare som har lämnat dokumentet; ett tömt tips visas rätt igen', () => {
         const el = behallare('chart-borta');
         ritaI(el, medTips());
         el.querySelector('[data-marke="stapel"]').dispatchEvent(handelse('pointermove'));
@@ -3232,15 +3232,15 @@ describe('Uppgift 7: verktygstipset, storleksbevakningen, notisen och registret 
         expect(el._figur).toBeUndefined();
         expect(el._rfKoppling).toBeUndefined();
         expect(tipset().textContent).toBe('');
-        // _showChartTip sätter innehållet varje gång, så ett tömt tips visas rätt igen.
-        w.eval('_showChartTip("<strong>Tips 1</strong>", 10, 10)');
+        // _visaDiagramtips sätter innehållet varje gång, så ett tömt tips visas rätt igen.
+        w.eval('_visaDiagramtips("<strong>Tips 1</strong>", 10, 10)');
         expect(tipsSyns()).toBe(true);
-        w.eval('_hideChartTip()');
+        w.eval('_doljDiagramtips()');
         expect(tipset().innerHTML).toBe('');
-        w.eval('_showChartTip("<strong>Tips 2</strong>", 10, 10)');
+        w.eval('_visaDiagramtips("<strong>Tips 2</strong>", 10, 10)');
         expect(tipset().innerHTML).toBe('<strong>Tips 2</strong>');
         expect(tipsSyns()).toBe(true);
-        w.eval('_hideChartTip()');
+        w.eval('_doljDiagramtips()');
     });
     it('storleksbevakningen sätter ingen timer på en behållare som städningen just rensade', () => {
         const el = behallare('chart-borta');
@@ -3259,17 +3259,17 @@ describe('Uppgift 7: verktygstipset, storleksbevakningen, notisen och registret 
         const annans = d.createElement('p'); annans.className = 'scatter-sample-note'; annans.id = 'chart-annat-sample-note'; annans.textContent = 'annat diagrams notis';
         el.insertAdjacentElement('afterend', annans);
         w.__el = el;
-        w.eval('_setScatterSampleNote(window.__el, null)');
+        w.eval('_sattPunkturvalsnot(window.__el, null)');
         expect(annans.isConnected).toBe(true);
-        w.eval('_setScatterSampleNote(window.__el, { shown: 1, total: 2 })');
+        w.eval('_sattPunkturvalsnot(window.__el, { shown: 1, total: 2 })');
         expect(d.getElementById('chart-test-sample-note').previousElementSibling).toBe(el);
         expect(annans.textContent).toBe('annat diagrams notis');
-        w.eval('_setScatterSampleNote(window.__el, null)');
+        w.eval('_sattPunkturvalsnot(window.__el, null)');
         expect(d.getElementById('chart-test-sample-note')).toBeNull();
         expect(annans.isConnected).toBe(true);
         // Ett syskon utan id (diagrammet fick sitt id i efterhand) är fortfarande diagrammets egen notis.
         annans.removeAttribute('id');
-        w.eval('_setScatterSampleNote(window.__el, null)');
+        w.eval('_sattPunkturvalsnot(window.__el, null)');
         expect(annans.isConnected).toBe(false);
     });
     it('registret: ritaFigur lägger till, rensaFigur tar bort; en behållare som lämnat dokumentet släpps vid nästa ritaFigur', () => {
@@ -3398,13 +3398,13 @@ describe('inga råa decimaltal i någon ritad figur (DU4)', () => {
     });
     it('alla diagram som demot ritar i flikarna, också kvantilfiguren när intervallet är klart', async () => {
         const w2 = createAppWindow();
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         const flikar = [...w2.document.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab);
         expect(flikar.length).toBeGreaterThan(5);
         const hittat = [];
-        for (const t of flikar) { w2.__renderTabContent(t); hittat.push(...raa(w2.document).map(x => `${t}: ${x}`)); }
+        for (const t of flikar) { w2.__ritaFlik(t); hittat.push(...raa(w2.document).map(x => `${t}: ${x}`)); }
         await w2.eval('_regKvantilKlar()');
-        w2.__renderTabContent('matrix');
+        w2.__ritaFlik('matrix');
         expect(w2.document.getElementById('chart-reg-kvantil')._figur.lager[1].data.some(d => d.fel)).toBe(true);
         hittat.push(...raa(w2.document).map(x => `matrix: ${x}`));
         expect(hittat).toEqual([]);

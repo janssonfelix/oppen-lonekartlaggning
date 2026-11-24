@@ -3,14 +3,14 @@
 // ---- Inställningar ----
 import { importprofilerTillJson, inbyggdaProfiler } from '../lib/importprofiler.js';
 import { svTal } from '../lib/talformat.js';
-import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { _importprofilKalla } from './03-hjalpfunktioner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
-import { getData, referensNamn, state } from './12-tillstand.js';
+import { hamtaData, referensNamn, state } from './12-tillstand.js';
 import { sattMeny } from './31-navigering.js';
-import { COLMAP_ROLES, maybeShowColumnMapping, renderFilrutor } from './32-filinlasning.js';
+import { KOLUMNMAPPNING_ROLLER, visaKolumnmappningOmBehov, ritaFilrutor } from './32-filinlasning.js';
 import { _pagGrans } from './43-personer-att-granska.js';
 import { aidbasDefinition, lvJamforelse } from './45-aid-bas-tabeller.js';
 /**
@@ -31,15 +31,15 @@ export function oppnaInstallningar({ fokus = null } = {}) {
     _instRita();
     const oppnare = document.activeElement;
     m.style.display = 'flex';
-    trapFocus(m, oppnare);
+    fangaFokus(m, oppnare);
     const mal = fokus ? document.getElementById(fokus) : null;
-    // trapFocus sätter fokus på panelens första knapp efter en kort stund: det efterfrågade fältet tar över efter det.
+    // fangaFokus sätter fokus på panelens första knapp efter en kort stund: det efterfrågade fältet tar över efter det.
     if (mal) { mal.focus(); setTimeout(() => { if (installningarOppna()) mal.focus(); }, 80); }
 }
 export function stangInstallningar() {
     const m = document.getElementById('installningar-modal');
     if (!m || !installningarOppna()) return;
-    releaseFocus(m);
+    slappFokus(m);
     m.style.display = 'none';
 }
 
@@ -77,7 +77,7 @@ function _instRita() {
         { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', kraverData: true, namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
     ];
-    const utanData = !getData().length;
+    const utanData = !hamtaData().length;
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">
         <span class="inst-flik-namn"><strong>${esc(r.namn)}</strong> — ${esc(r.vad)}</span>
         <span class="inst-flik-lage">${esc(r.lage)}</span>
@@ -88,7 +88,7 @@ function _instRita() {
 // ---- Importprofiler (src/lib/importprofiler.js) ----
 /** Rollernas namn som i kolumnmappningen. */
 function _ipRollNamn(roll) {
-    const r = COLMAP_ROLES.find(x => x.role === roll);
+    const r = KOLUMNMAPPNING_ROLLER.find(x => x.role === roll);
     return r ? r.label : roll;
 }
 /** Listan i Inställningar: sessionens profiler med namn, källa och rubriker per roll, och de inbyggda med namn. */
@@ -123,7 +123,7 @@ function _ipExportera(id) {
     a.download = `importprofil-${p.id}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
+    meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
 }
 function _ipTaBort(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);
@@ -132,12 +132,12 @@ function _ipTaBort(id) {
     // Gällde profilen för den inlästa filen nollas den, så att filrutan inte nämner en borttagen profil.
     if (state.importprofil && state.importprofil.id === id) {
         state.importprofil = null;
-        if (typeof renderFilrutor === 'function') renderFilrutor();
+        if (typeof ritaFilrutor === 'function') ritaFilrutor();
     }
     _instRitaImportprofiler();
-    if (typeof maybeShowColumnMapping === 'function' && (state._dataHeaders || []).length) maybeShowColumnMapping();
+    if (typeof visaKolumnmappningOmBehov === 'function' && (state._dataHeaders || []).length) visaKolumnmappningOmBehov();
     /** @type {HTMLElement|null} */ (document.getElementById('inst-importprofiler-rubrik'))?.focus();
-    announceToScreenReader(`Importprofilen ${p.namn} är borttagen för sessionen.`);
+    meddelaSkarmlasare(`Importprofilen ${p.namn} är borttagen för sessionen.`);
 }
 
 /** Stänger panelen, går till fliken och fäller ut avsnittet där inställningen står. */

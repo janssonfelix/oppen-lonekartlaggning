@@ -9,25 +9,25 @@ import { arTal } from '../lib/htmltext.js';
 import { tillText, tillWordHtml } from '../lib/rapportunderlag.js';
 import { stor } from '../lib/termer.js';
 import { rapportunderlagDiagram, RU_GRUPPBLOCK, vymodellRapportunderlag } from '../lib/vymodell-rapportunderlag.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { _kSanktNot, kInstalld, kStampel, kTroskel, statGolv } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { T } from './09-termer.js';
-import { _chartExportImage, diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getData, state } from './12-tillstand.js';
+import { _diagramexportBild, diagramRitat, diagramTillBild } from './11-diagramexport.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag } from './13-oversikt.js';
 import { medExportLage } from './23-exportgrind.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { laLikaGrupper } from './41-lika-arbete.js';
 import { referensOverblick } from './44-referensoverblick.js';
 import { aidbasDefinition, aidbasGrans, lvJamforelse } from './45-aid-bas-tabeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _handlingsplanSeedRows, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _handlingsplanForifyllning, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 import { arsjamforelse } from './73-arsbokslut.js';
-import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, buildBasdossier } from './81-basdossier.js';
+import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, byggBasdossier } from './81-basdossier.js';
 import { _dkRitaTopp } from './85-robusthet-fardigcheck.js';
 
 // Diagram som kan kopieras som bild: id på diagrammet och fliken som ritar det.
@@ -41,11 +41,11 @@ let _rapportBlockSenast = new Map();
 let _rapportParLage = { harPar: false, exkluderade: 0 };
 
 // Maxantalet par som likvärdighetsberäkningen tar fram (samma standard som 34).
-function _ruTopN() { return (state.likvardighet && state.likvardighet.topN) ?? 100; }
+function _ruMaxPar() { return (state.likvardighet && state.likvardighet.topN) ?? 100; }
 
 function _rapportDiagramLista(harPar, exkluderade) { return rapportunderlagDiagram(RAPPORT_DIAGRAM, harPar, exkluderade); }
 
-// Handlingsplanens rader för rapportunderlaget. Förifyllningen (_handlingsplanSeedRows) tar
+// Handlingsplanens rader för rapportunderlaget. Förifyllningen (_handlingsplanForifyllning) tar
 // redan bort par med en grupp under k, så raderna används som de är — en enda regel för
 // skärmen, Excel, utskriften och underlaget.
 function _rapportHpRader(seedRows) {
@@ -57,21 +57,21 @@ function _rapportHpRader(seedRows) {
 function rapportunderlagBlock(...a) { return medExportLage(() => _rapportunderlagBlockExport.apply(null, /** @type {any} */ (a))); }
 // Blocken räknas i vymodellen (src/lib/vymodell-rapportunderlag.js); här hämtas analysernas resultat ur tillståndet.
 function _rapportunderlagBlockExport() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return [];
     const k = kTroskel();
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     /** @type {any} */ let lv = null;
     try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
-    const hpSeed = _handlingsplanSeedRows();
+    const hpSeed = _handlingsplanForifyllning();
     const vm = vymodellRapportunderlag(d, {
         k, golv: statGolv(), demo: !!state.isDemo, troskelNot: _kSanktNot(), kStampel: kStampel(),
-        reg, kvalitet: bedomningUnderlag({ reg }), lika: laLikaGrupper(d, k), lv, topN: _ruTopN(),
+        reg, kvalitet: bedomningUnderlag({ reg }), lika: laLikaGrupper(d, k), lv, topN: _ruMaxPar(),
         kvinnoTroskel: aidbasGrans(), kvDomDefinition: aidbasDefinition(), jamforelse: lvJamforelse(), gapVariabler: gapVariabler(), skrDel: _skrDel(),
         hp: { rader: _rapportHpRader(hpSeed.rows), skal: _hpSkalUnderlag(hpSeed), utanBelopp: HP_SKAL_UTAN_BELOPP, kInstalld: kInstalld(), prio: HP_UNDERLAG_PRIO, par: HP_UNDERLAG_PAR },
         referenser: referensOverblick(), harStatistik: state.statistik.length > 0, kostnad: state.costSettings, arsjamforelse: arsjamforelse(),
         basintervall: basdossierKandidater().flatMap(({ bas }) => {
-            const bd = buildBasdossier(bas);
+            const bd = byggBasdossier(bas);
             return bd ? [{ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd) }] : [];
         }),
         basBedomning: BD_BEDOMNING, recept: state.rapportTabeller || [],
@@ -80,10 +80,10 @@ function _rapportunderlagBlockExport() {
     return vm.block;
 }
 
-export function renderRapportunderlag() {
+export function ritaRapportunderlag() {
     const host = document.getElementById('rapportunderlag-innehall');
     if (!host) return;
-    if (!getData().length) {
+    if (!hamtaData().length) {
         _rapportBlockSenast = new Map();
         host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';
         if (typeof _dkRitaTopp === 'function') _dkRitaTopp({ block: null });
@@ -170,7 +170,7 @@ async function _kopieraRapportAvsnittExport() {
 function _rapportKvitto(knapp, text) {
     const k = knapp && knapp.parentElement && knapp.parentElement.querySelector('.ru-kvitto');
     if (k) k.textContent = text;
-    if (typeof announceToScreenReader === 'function') announceToScreenReader(text);
+    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(text);
 }
 
 /** Kopierar ett block som formaterad text + ren text. Reserv: markera och kopiera. */
@@ -222,7 +222,7 @@ async function _kopieraRapportDiagramExport(id) {
         || (id !== 'chart-likvardighet-heatmap' ? RAPPORT_DIAGRAM.find(g => g.id === id) : null);
     if (!def) return 'saknas';
     // Ritas alltid om: ett tidigare ritat diagram kan gälla ett annat urval än blocken.
-    try { renderTabContent(def.flik); } catch (_e) { /* ritas inte — hanteras nedan */ }
+    try { ritaFlik(def.flik); } catch (_e) { /* ritas inte — hanteras nedan */ }
     const gd = document.getElementById(id);
     if (!diagramRitat(gd)) return 'saknas';
     if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
@@ -237,7 +237,7 @@ async function _kopieraRapportDiagramExport(id) {
         } catch (_e) { /* nekat — ladda ner i stället */ }
     }
     try {
-        await _chartExportImage(gd, 'png-dokument');
+        await _diagramexportBild(gd, 'png-dokument');
         return 'nedladdat';
     } catch (_e) {
         return 'fel';

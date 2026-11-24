@@ -12,26 +12,26 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
     it('metod-appendix byggs och innehåller demo-flagga + modellspec', () => {
-        const data = JSON.stringify(win.__methodAppendixData());
+        const data = JSON.stringify(win.__metodbilaga());
         expect(data).toContain('DEMODATA');          // #9 demoläge syns
         expect(data).toContain('HC3');                // modellspec finns
     });
 
     it('§3:10- och strukturmåtten kan beräknas på demodata', () => {
         expect(() => win.__likvardighetspar()).not.toThrow();
-        expect(() => win.__stRepresentationPerBas(win.__getData())).not.toThrow();
+        expect(() => win.__stRepresentationPerBas(win.__hamtaData())).not.toThrow();
     });
 });
 
 describe('#export röktest: BAS-grupperade tabeller blir Word-block', () => {
     it('rapport-tabellen exporteras som block: titel + upprepade rubriker + tomrad per BAS', () => {
         // ritaLoneoversikt har körts av demodata-pipelinen → rapport-table har group-headers
-        const clone = win.__cloneTable('rapport-table');
+        const clone = win.__tabellkopia('rapport-table');
         expect(clone).toBeTruthy();
         const g = win.__groupedAoa(clone);
         const headers = g.aoa[g.firstHeaderRowIdx];
@@ -120,8 +120,8 @@ describe('Word-utkastet som .docx', () => {
     const text = s => String(s).replace(/\s+/g, '');
     it('HTML → block: rubriker, fyll i-rutor, tabeller och all text följer med', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        const html = w.eval('_buildDocumentationDraftHtml()');
+        w.__lasInDemodata();
+        const html = w.eval('_byggWordUtkastHtml()');
         const block = w.eval(`_utkastTillBlock(${JSON.stringify(html)})`);
         const rubriker = block.filter(b => b.typ === 'rubrik').map(b => b.delar.map(d => d.text).join(''));
         for (const n of [1, 2, 3, 4, 6, 7, 8]) expect(rubriker.some(r => r.startsWith(`${n}. `)), `avsnitt ${n}`).toBe(true);
@@ -140,9 +140,9 @@ describe('Word-utkastet som .docx', () => {
     });
     it('avsnittet om struktur bär översikten per BAS-intervall — samma rader och tal som fliken Lönestruktur visar (i exportläget)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.kLage = 'export';
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const ren = t => t.replace(/[\u00a0\u202f]/g, ' ');
         const skarm = [...w.document.querySelectorAll('#la-oversikt tbody tr')].map(tr => [...tr.children].map(c => ren(c.textContent)));
         expect(skarm.length).toBeGreaterThan(0);
@@ -169,7 +169,7 @@ describe('Word-utkastet som .docx', () => {
     });
     it('rapportmodellen: tretton avsnitt, tabeller med tal som tal, och lönegapet som kvinnors lön i procent av mäns', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const m = w.eval('rapportModell()');
         expect(m.avsnitt.map(a => a.id)).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod']);
         expect(m.demo).toBe(true);
@@ -210,7 +210,7 @@ describe('Word-utkastet som .docx', () => {
     });
     it('rapportmodellen: tröskeln tillämpas när modellen byggs, och varje avsnitt säger vad det utelämnar', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const vid = k => { w.eval(`sattKTroskel(${k}, { fraga: false })`); return w.eval('rapportModell()'); };
         const m25 = vid(25), s25 = m25.avsnitt.find(a => a.id === 'struktur');
         const tabell = s25.delar.find(p => p.typ === 'tabell');
@@ -245,7 +245,7 @@ describe('Word-utkastet som .docx', () => {
     });
     it('urvalet styr vilka avsnitt som följer med och i vilken ordning, och numreringen följer urvalet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const rubriker = () => w.eval('rapportModell()').avsnitt.map(a => a.rubrik);
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
         expect(rubriker().map(r => r.slice(0, 2))).toEqual(['1.', '2.', '3.', '4.', '5.', '6.', '7.', '8.', '9.', '10', '11', 'Bi', 'Bi']);
@@ -260,7 +260,7 @@ describe('Word-utkastet som .docx', () => {
         expect(w.eval('rapportUrval()').namn).toBe('Eget urval (3 av 14 avsnitt)');
         expect(rubriker()[0]).toMatch(/^1\. Struktur/);
         // Utkastet följer urvalet; listan med alla avsnitt gör det inte.
-        const html = w.eval('_buildDocumentationDraftHtml()');
+        const html = w.eval('_byggWordUtkastHtml()');
         expect(html).not.toMatch(/Samverkan med arbetstagarna/);
         expect(w.eval('rapportModell({ alla: true })').avsnitt).toHaveLength(14);   // med bilagan med gruppdossierer, som är förvald av
         // Rensning återställer urvalet.
@@ -269,28 +269,28 @@ describe('Word-utkastet som .docx', () => {
     });
     it('urvalet följer med i konfigurationsfilen, och en fil med fel form avvisas utan att något ändras', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval("sattRapportUrval('facklig')");
-        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
+        const cfg = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))');
         expect(cfg.rapportUrval.med).toEqual(['sammanfattning', 'regler', 'lika', 'likvardigt', 'basintervall', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod']);
         w.eval("sattRapportUrval('hela')");
-        expect(w.eval('buildConfigSnapshot().rapportUrval')).toBeNull();
+        expect(w.eval('byggKonfiguration().rapportUrval')).toBeNull();
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('rapportUrval()').namn).toBe('Facklig dialog');
         w.__cfg = { ...cfg, rapportUrval: { ordning: 'lika', med: [] } };
-        expect(() => w.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/rapportUrval/);
+        expect(() => w.eval('tillampaKonfiguration(window.__cfg)')).toThrow(/rapportUrval/);
         expect(w.eval('rapportUrval()').namn).toBe('Facklig dialog');
         // En fil utan fältet ger hela dokumentationen.
         const { rapportUrval: _bort, ...utanUrval } = cfg;
         w.__cfg = utanUrval;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
     });
     it('förhandsbeskedet säger vad filen innehåller och utelämnar, och räknas ur samma källa som filen', async () => {
         const w = createAppWindow();
         await jszip(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         const word = () => d.getElementById('besked-word').textContent;
@@ -331,7 +331,7 @@ describe('Word-utkastet som .docx', () => {
         d.querySelector('[data-urval-fast="ledning"]').click();
         let fangad = null;
         w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
-        expect(await w.eval('exportDocumentationDraft()')).toBe(true);
+        expect(await w.eval('exportWordUtkast()')).toBe(true);
         const doc = await (await w.JSZip.loadAsync(await fangad.blob.arrayBuffer())).file('word/document.xml').async('string');
         expect(doc).toContain('4. Åtgärder och tidsplan');
         expect(doc).not.toContain('Samverkan med arbetstagarna');
@@ -346,10 +346,10 @@ describe('Word-utkastet som .docx', () => {
     it('exporten ger en .docx med rätt typ; zip:en innehåller utkastet med organisationens namn', async () => {
         const w = createAppWindow();
         await jszip(w);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         let fangad = null;
         w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
-        expect(await w.eval('exportDocumentationDraft()')).toBe(true);
+        expect(await w.eval('exportWordUtkast()')).toBe(true);
         expect(fangad.namn).toMatch(/^Lonekartlaggning_\d{4}_dokumentation_UTKAST_DEMODATA_\d{4}-\d{2}-\d{2}\.docx$/);
         expect(fangad.blob.type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         const zip = await w.JSZip.loadAsync(await fangad.blob.arrayBuffer());
@@ -361,11 +361,11 @@ describe('Word-utkastet som .docx', () => {
     it('en anteckning med styrtecken och < & ger fortfarande välformad XML', async () => {
         const w = createAppWindow();
         await jszip(w);
-        w.__loadDemoData();
-        w.eval("_bes8Areas = () => [{ title: 'Löneregler', status: 'Möjlig risk', note: 'Rad 1\\u0007 <b> & rad 2' }]");
+        w.__lasInDemodata();
+        w.eval("_bes8Omraden = () => [{ title: 'Löneregler', status: 'Möjlig risk', note: 'Rad 1\\u0007 <b> & rad 2' }]");
         let fangad = null;
         w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
-        await w.eval('exportDocumentationDraft()');
+        await w.eval('exportWordUtkast()');
         const zip = await w.JSZip.loadAsync(await fangad.blob.arrayBuffer());
         const doc = await zip.file('word/document.xml').async('string');
         expect(new w.DOMParser().parseFromString(doc, 'application/xml').getElementsByTagName('parsererror').length).toBe(0);
@@ -373,12 +373,12 @@ describe('Word-utkastet som .docx', () => {
     });
     it('utan JSZip: felmeddelande, ingen nedladdning', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         delete w.JSZip;
         let meddelande = '', nerladdad = false;
         w.alert = m => { meddelande = m; };
         w._laddaNerBlob = () => { nerladdad = true; };
-        expect(await w.eval('exportDocumentationDraft()')).toBe(false);
+        expect(await w.eval('exportWordUtkast()')).toBe(false);
         expect(meddelande).toMatch(/Word-utkastet kunde inte skapas/);
         expect(nerladdad).toBe(false);
     });
@@ -388,12 +388,12 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
     const MED_DOSSIERER = w => w.eval("sattRapportUrval({ ordning: rapportUrval().ordning, med: [...RM_URVAL.hela.med, 'dossierer'] })");
     const bilaga = w => w.eval('rapportModell()').avsnitt.find(a => a.id === 'dossierer');
     it('är förvald av: hela dokumentationen, facklig dialog och ledningsbriefen saknar den; den står sist i ordningen och i urvalslistan, okryssad', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         expect(w.eval('rapportUrval()').ordning.at(-1)).toBe('dossierer');
         for (const u of ['hela', 'facklig', 'ledning']) {
             w.eval(`sattRapportUrval('${u}')`);
             expect(bilaga(w), u).toBeUndefined();
-            expect(w.eval('_buildDocumentationDraftHtml()'), u).not.toContain('Bilaga: gruppdossierer');
+            expect(w.eval('_byggWordUtkastHtml()'), u).not.toContain('Bilaga: gruppdossierer');
         }
         w.eval("sattRapportUrval('hela')");
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
@@ -409,40 +409,40 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(bilaga(w)).toBeTruthy();
     });
     it('vald: en dossier per yrkesgrupp där båda könen når k, med samma text som gruppdossierns kopia, byggd i exportläget', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         MED_DOSSIERER(w);
         const a = bilaga(w);
         expect(a.rubrik).toBe('Bilaga: gruppdossierer');
         const k = w.eval('kInstalld()');
-        const nycklar = w.eval('medExportLage(() => gruppdossierCandidates().map(g => buildGruppdossier(g.key)).filter(d => d.nKv >= kTroskel() && d.nMa >= kTroskel()).map(d => d.key))');
+        const nycklar = w.eval('medExportLage(() => gruppdossierKandidater().map(g => byggGruppdossier(g.key)).filter(d => d.nKv >= kTroskel() && d.nMa >= kTroskel()).map(d => d.key))');
         expect(nycklar.length).toBeGreaterThan(1);
         const rubriker = a.delar.filter(p => p.typ === 'rubrik');
         expect(rubriker).toHaveLength(nycklar.length);
         // Varje dossier: rubriken är textens första rad och styckena resten, rad för rad.
-        const forsta = w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(nycklar[0]))).split('\n');
+        const forsta = w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(nycklar[0]))).split('\n');
         const i = a.delar.findIndex(p => p.typ === 'rubrik' && p.text === forsta[0]);
         expect(i).toBeGreaterThan(-1);
         const resten = forsta.slice(1).map(t => t.trim()).filter(Boolean);
         expect(a.delar.slice(i + 1, i + 1 + resten.length).map(p => p.text)).toEqual(resten);
         // Word-utkastet och PDF-rapporten har avsnittet.
-        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('<h2>Bilaga: gruppdossierer</h2>');
+        expect(w.eval('_byggWordUtkastHtml()')).toContain('<h2>Bilaga: gruppdossierer</h2>');
         expect(k).toBe(10);
     });
     it('ingen grupp under k: vid k = 25 faller grupperna där ett kön har färre än 25, och de räknas i utelämnat', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.eval('sattKTroskel(25, { fraga: false })');
         MED_DOSSIERER(w);
         const a = bilaga(w);
-        const alla = w.eval('medExportLage(() => gruppdossierCandidates().map(g => buildGruppdossier(g.key)))');
+        const alla = w.eval('medExportLage(() => gruppdossierKandidater().map(g => byggGruppdossier(g.key)))');
         const med = alla.filter(d => d.nKv >= 25 && d.nMa >= 25);
         expect(alla.length).toBeGreaterThan(med.length);
         // Exakt grupperna där båda könen når 25, i kandidaternas ordning.
-        const forvantat = med.map(d => w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(d.key))).split('\n')[0]);
+        const forvantat = med.map(d => w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(d.key))).split('\n')[0]);
         expect(a.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).toEqual(forvantat);
         expect(a.utelamnat.join(' ')).toMatch(/AID-etikett(er)? där ett kön har färre än 25 personer/);
     });
     it('texten är svenska med å, ä och ö, och stämpeln om sänkt tröskel står en gång, överst i bilagan', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.eval('sattKTroskel(5, { fraga: false })');
         MED_DOSSIERER(w);
         const a = bilaga(w);
@@ -459,18 +459,18 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(iStampel).toBeGreaterThan(-1);
         expect(iStampel).toBeLessThan(iRubrik);
         // Kopian ur gruppdossiern bär fortfarande stämpeln, eftersom den kan spridas för sig.
-        const key = w.eval('gruppdossierCandidates()[0].key');
-        expect(w.medExportLage(() => w.gruppdossierAsText(w.buildGruppdossier(key)))).toContain(stampel);
+        const key = w.eval('gruppdossierKandidater()[0].key');
+        expect(w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(key)))).toContain(stampel);
     });
     it('förhandsbeskedet bygger inga dossierer men räknar utelämnat som exporten, och bilagan räknar kandidaterna en gång', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.eval('sattKTroskel(25, { fraga: false })');
         MED_DOSSIERER(w);
         const utelamnat = bilaga(w).utelamnat;
         expect(utelamnat.length).toBe(1);
         const rakna = namn => { const orig = w[namn]; const r = { n: 0 }; w[namn] = (...x) => { r.n++; return orig(...x); }; return r; };
-        const byggda = rakna('buildGruppdossier'), kandidater = rakna('gruppdossierCandidates'), prio = rakna('computePrioritization'), ki = rakna('_gdBootstrapGapCI');
-        w.eval('renderExportBesked()');
+        const byggda = rakna('byggGruppdossier'), kandidater = rakna('gruppdossierKandidater'), prio = rakna('raknaPrioritering'), ki = rakna('_gdBootstrapGapKI');
+        w.eval('ritaExportBesked()');
         expect(byggda.n).toBe(0);
         expect(w.document.getElementById('besked-word').textContent).toContain(utelamnat[0]);
         // Vid k = 10 kommer flera grupper med i bilagan.
@@ -502,8 +502,8 @@ describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
     });
     it('står i Lönestrukturs kort, i rapportmodellens avsnitt, i Word-utkastet, i utskriften, i rapportunderlaget och i Om verktyget', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('struktur');
+        w.__lasInDemodata();
+        w.__ritaFlik('struktur');
         expect(ren(w.document.getElementById('struktur-eu').textContent)).toContain(MENING);
         const struktur = w.eval('rapportModell()').avsnitt.find(a => a.id === 'struktur');
         expect(ren(JSON.stringify(struktur.delar))).toContain(MENING);
@@ -511,7 +511,7 @@ describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
         expect(ren(w.__docDraftHtml())).toContain(MENING);
         const block = w.eval('rapportunderlagBlock()');
         expect(ren(JSON.stringify(block.find(b => b.rubrik === 'Struktur och lönetransparens')))).toContain(MENING);
-        expect(ren(w.eval('INFO_SECTIONS.overview()'))).toContain(MENING);
+        expect(ren(w.eval('OM_AVSNITT.overview()'))).toContain(MENING);
     });
 });
 
@@ -524,15 +524,15 @@ describe('rapportunderlag', () => {
     };
     it('utan data visar panelen hur man kommer igång', () => {
         const w = createAppWindow();
-        w.__renderTabContent('rapporttext');   // fliken är låst utan lönefil; en direktlänk ritar den ändå
+        w.__ritaFlik('rapporttext');   // fliken är låst utan lönefil; en direktlänk ritar den ändå
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).toContain('Läs in underlag');
     });
     it('med demodata: fem avsnitt, ett block per flaggat yrke och godkänt par, tre diagram', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const block = w.__rapportunderlagBlock();
-        const flaggade = w.__ruLikaArbeteGrupper(w.__getData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
+        const flaggade = w.__ruLikaArbeteGrupper(w.__hamtaData(), { k: w.__K }).grupper.filter(g => g.flaggad).length;   // rapportunderlaget lämnar verktyget: inställd tröskel
         const typer = block.map(b => b.id.split(':')[0]);
         expect(typer.filter(t => ['sammanfattning', 'lika', 'likvardigt', 'struktur', 'handlingsplan'].includes(t)).length).toBe(5);
         expect(typer.filter(t => t === 'yrke').length).toBe(flaggade);
@@ -543,7 +543,7 @@ describe('rapportunderlag', () => {
     });
     it('tal och intervall i blockens tabeller står på en rad på skärmen (95 % KI); urklippet är fortfarande utan klasser', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const celler = [...w.document.querySelectorAll('#rapportunderlag-innehall .ru-innehall td')];
         const tal = celler.filter(td => w.eval('arTal')(td.textContent));
@@ -554,7 +554,7 @@ describe('rapportunderlag', () => {
     });
     it('Kopiera lägger ren HTML och text på urklipp', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         const fångat = stubbaUrklipp(w);
         expect(await w.__kopieraRapportBlock('sammanfattning')).toBe('urklipp');
@@ -566,7 +566,7 @@ describe('rapportunderlag', () => {
     });
     it('utan urklipps-API används reserven och blocket markeras', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
         w.document.execCommand = () => false;
@@ -575,15 +575,15 @@ describe('rapportunderlag', () => {
     });
     it('uppdelningsblocket ligger direkt efter Sammanfattning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const ids = w.__rapportunderlagBlock().map(b => b.id);
         expect(ids.slice(0, 2)).toEqual(['sammanfattning', 'uppdelning']);
     });
     it('Rensa all data tömmer panelen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.getElementById('rapportunderlag-innehall').textContent).not.toContain('Sammanfattning');
     });
 });
@@ -597,7 +597,7 @@ describe('rapportunderlag: kopiera diagram', () => {
     });
     it('ritar diagrammet först om fliken inte öppnats, och lägger PNG på urklipp', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fångat = [];
         w.ClipboardItem = class { constructor(o) { this.o = o; } };
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });
@@ -608,12 +608,12 @@ describe('rapportunderlag: kopiera diagram', () => {
     });
     it('diagram som inte finns för underlaget (inga kandidatpar i demodatan) ger saknas', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(await w.__kopieraRapportDiagram('chart-likvardighet-heatmap')).toBe('saknas');
     });
     it('utan urklippsstöd för bilder laddas diagrammet ner', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
@@ -631,11 +631,11 @@ describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
     });
     it('diagrammet ritas alltid om före kopiering (aktuellt urval)', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const anrop = [];
-        const orig = w.renderTabContent;
-        w.renderTabContent = t => { anrop.push(t); return orig(t); };
+        const orig = w.ritaFlik;
+        w.ritaFlik = t => { anrop.push(t); return orig(t); };
         w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');   // diagramkärnans bild: jsdom har ingen canvas
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
         await w.__kopieraRapportDiagram('chart-skevhet-overview');
@@ -643,7 +643,7 @@ describe('rapportunderlag: diagram, kopiering och nedladdning', () => {
     });
     it('misslyckad nedladdning ger "fel" utan att kasta', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: undefined });
         w.figurTillBild = () => Promise.reject(new Error('nej'));   // diagrammet ritas av diagramkärnan (ADR-39)
@@ -666,7 +666,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     });
     it('rapportunderlaget: förteckning med en länk per block', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         oppna(w, 'rapporttext');
         const block = w.document.querySelectorAll('#rapportunderlag-innehall .ru-block[data-block-id]');
         expect(block.length).toBeGreaterThan(0);
@@ -676,7 +676,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     });
     it('Kopiera alla avsnitt lägger avsnittens rubriker i ordning på urklipp; reserv utan urklipp', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         oppna(w, 'rapporttext');
         const fångat = [];
         w.ClipboardItem = class { constructor(o) { this.o = o; } };
@@ -697,16 +697,16 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
 describe('sortering, Att göra, kopiering och Likvärdigt arbete — kopiering', () => {
     it('att rita en annan flik (t.ex. för att kopiera ett diagram) flyttar inte sidans navigering', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
-        w.__renderTabContent('matrix');
+        w.__ritaFlik('matrix');
         expect(d.querySelectorAll('#view-regression .flow-next-bar, #view-lika-yrken .flow-next-bar, #view-skevhet .flow-next-bar').length).toBe(0);
         expect(d.getElementById('view-dashboard').classList.contains('active') || d.getElementById('view-dashboard').style.display === 'block').toBe(true);
     });
     it('kopiera diagram: urklippet begärs direkt i klicket (Safari), bilden levereras som ett löfte', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fångat = [];
         w.ClipboardItem = class { constructor(o) { this.o = o; } };
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { write: async items => { fångat.push(...items); } } });

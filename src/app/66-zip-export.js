@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { hideLoading, rapporteraFel, showLoading } from './03-hjalpfunktioner.js';
+import { doljLaddning, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
 import { _rfBehallare } from './10-diagramritare.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { exportSakraAlla, medExportLage } from './23-exportgrind.js';
 import { _excelAlltBok } from './24-excelexport.js';
-import { renderTabContent } from './31-navigering.js';
-import { renderExportBesked } from './59-exportbesked.js';
+import { ritaFlik } from './31-navigering.js';
+import { ritaExportBesked } from './59-exportbesked.js';
 import { byggWordUtkast } from './62-word-utkast.js';
 import { diagramUrval } from './74-alla-diagram.js';
 
@@ -36,9 +36,9 @@ function _zipDiagramExport() {
 function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
 async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
-    if (!getData().length) { alert('Läs in lönefilen först.'); return false; }
+    if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }
     const zip = new JSZip();
-    if (typeof showLoading === 'function') showLoading();
+    if (typeof visaLaddning === 'function') visaLaddning();
     try {
         // Excel-filen först: den byggs utan väntan, före Word-utkastets bilder.
         // Ett fel i en del stoppar inte de andra: det rapporteras, och filen får det som gick att bygga.
@@ -53,12 +53,12 @@ async function _exportZipExport() {
             if (/** @type {HTMLInputElement} */ (knapp).disabled || /** @type {HTMLElement} */ (knapp).hidden) continue;
             const flik = knapp.getAttribute('data-tab');
             if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info'].includes(flik)) continue;      // som förut: inga diagram hämtas där
-            try { renderTabContent(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
+            try { ritaFlik(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
         }
         // Jämförelsen med förra året (Spara och jämför år) har sina två hantlar när ett bokslut är inläst; panelen ritas
         // här (som rmDiagramBild gör för Word-utkastet), så att bilderna följer med också när fliken inte har öppnats.
         if (state.forraArsbokslut) {
-            try { renderTabContent('arbetet'); } catch (e) { rapporteraFel('ZIP: arbetet', e); }
+            try { ritaFlik('arbetet'); } catch (e) { rapporteraFel('ZIP: arbetet', e); }
         }
         for (const el of zipDiagram()) {
             try { const b64 = (await diagramTillBild(el, { bredd: 1920, hojd: 1080 })).split(',')[1]; zip.file(`diagram/${el.id}.png`, b64, { base64: true }); } catch (_err) { /* ett diagram som inte går att rita följer inte med */ }
@@ -68,9 +68,9 @@ async function _exportZipExport() {
         a.href = URL.createObjectURL(blob); a.download = 'lonekartlaggning_export.zip'; a.click();
         return true;
     } finally {
-        if (typeof hideLoading === 'function') hideLoading();
+        if (typeof doljLaddning === 'function') doljLaddning();
         const oppen = document.querySelector('.nav-item.active[data-tab]');
-        if (oppen && oppen.getAttribute('data-tab') === 'dokumentera' && typeof renderExportBesked === 'function') renderExportBesked();
+        if (oppen && oppen.getAttribute('data-tab') === 'dokumentera' && typeof ritaExportBesked === 'function') ritaExportBesked();
     }
 }
 

@@ -36,14 +36,14 @@ describe('[C2] Struktur per BAS visar inget könsgap när ett kön är under tr�
     const radFor = (html, bas) => { const m = html.match(new RegExp(`<tr><td>(?:<strong>)?${bas}(?:</strong>)?</td>.*?</tr>`, 's')); return m ? normalisera(m[0].replace(/&nbsp;/g, ' ').replace(/<[^>]+>/g, ' | ')) : null; };
     it('fliken Struktur på skärmen: gapet visas också mot en, två och tre män (ADR-51)', () => {
         const w = fonsterKon(null);
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const el = w.document.getElementById('struktur-representation');
         for (const bas of KON_BAS) expect(radFor(el.innerHTML, bas), bas).not.toMatch(/–[\s|]*$/);   // gapcellen är ifylld
         expect(el.textContent).not.toMatch(/ett av könen har färre än 10 personer/);
     });
     it('fliken Struktur i exportläget: raden finns kvar med samlad median, utan gap, och noten förklarar', () => {
         const w = iExport(fonsterKon(null));
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const el = w.document.getElementById('struktur-representation');
         for (const [i, bas] of KON_BAS.entries()) {
             const rad = radFor(el.innerHTML, bas);
@@ -55,7 +55,7 @@ describe('[C2] Struktur per BAS visar inget könsgap när ett kön är under tr�
     });
     it('i exportläget vid 3 (lägsta tillåtna, ADR-102) visas gapet för Y3 (3 män) men inte för Y1 och Y2', () => {
         const w = iExport(fonsterKon(3));
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const t = w.document.getElementById('struktur-representation').innerHTML;
         expect(radFor(t, 'Y3')).toContain((KON_KV[2] / KON_MA[2] * 100).toFixed(1).replace('.', ','));   // kvinnors median i % av mäns
         for (const bas of ['Y1', 'Y2']) expect(radFor(t, bas), bas).toMatch(/–[\s|]*$/);   // en och två män: under tröskeln 3
@@ -74,7 +74,7 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
         MAN.forEach((l, i) => r.push(rad('S1', 'man', l, 40 + i)));
         w.__state.data = r;
         iExport(w);   // måtten prövas så som de lämnar verktyget; skärmen maskerar inget (ADR-51)
-        w.eval('populateSelects(); unlockTabs(); refreshCurrentTab();');
+        w.eval('fyllValjare(); lasUppFlikar(); uppdateraAktivFlik();');
         return w;
     };
     const kvMed = 25295, gap = [(kvMed / MAN[1] - 1) * 100, kvMed / MAN[1] * 100].flatMap(v => [v.toFixed(1), v.toFixed(2)]).map(s => s.replace('-', ''));
@@ -100,8 +100,8 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
     });
     it('Struktur: percentiltabellen, EU-nyckeltalen och kvartilernas könsfördelning', () => {
         const w = fonster3(null);
-        w.__renderTabContent('struktur');
-        w.__renderTabContent('rapporttext');   // auto-utkastet står i Rapporttext
+        w.__ritaFlik('struktur');
+        w.__ritaFlik('rapporttext');   // auto-utkastet står i Rapporttext
         const d = w.document;
         expect(harNagon(normalisera(d.getElementById('view-struktur').textContent + d.getElementById('struktur-narrative').value), [...MAN, ...gap])).toEqual([]);
         expect(d.getElementById('struktur-distribution').textContent).toMatch(NOT);
@@ -113,13 +113,13 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
     it('EU-lönerapporten', async () => {
         const w = fonster3(null);
         await laddaXlsx(w);
-        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuReport()')))[0];
+        const eu = Object.values(fangaBocker(w, () => w.eval('exportEuRapport()')))[0];
         expect(harNagon(eu, [...MAN, ...gap])).toEqual([]);
         expect(eu).toMatch(NOT);
         expect(eu.split('[Kvartilfördelning]')[1].split('[')[0]).not.toMatch(/Q4 \|[^\n]*\| 3 \|/);
     });
     it('A/B-ögonblicksbilden bär inga könsuppdelade medianer', () => {
-        const s = fonster3(null).eval('buildAnalysisSnapshot()');
+        const s = fonster3(null).eval('byggOgonblicksbild()');
         expect(s.medianKv).toBeNull();
         expect(s.medianMa).toBeNull();
         expect(s.rawGapPct).toBeNull();
@@ -128,7 +128,7 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
     it('Löneöversyn: den råa löneskillnaden före och efter visas inte', () => {
         const w = fonster3(null);
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const t = w.document.getElementById('forecast-outcome').textContent;
         expect(harNagon(t, gap)).toEqual([]);
         expect(t).toMatch(NOT);
@@ -136,7 +136,7 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
     it('löneöversyn: en riktad rad till kvinnorna i S1 visar utfallet, men inte medianlönen i % av mäns', () => {
         const w = fonster3(null);
         w.__state.forecast.targets = [{ bas: 'S1', aid: '6000', kon: 'kvinna', lonCap: null, mode: 'kr', value: 500, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const t = normalisera(w.document.getElementById('forecast-outcome').textContent);
         expect(t).toMatch(/S1/);
         expect(harNagon(t, [...MAN, ...gap])).toEqual([]);
@@ -145,14 +145,14 @@ describe('[C3] könsuppdelade mått för hela organisationen kräver tröskeln f
     it('på skärmen redovisas måtten också med 3 män (ADR-51)', () => {
         const w = fonster3(null);
         w.__state.kLage = 'skarm';
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         expect(normalisera(w.document.getElementById('struktur-distribution').textContent)).toContain(String(MAN[1]));
     });
     it('vid 3 (männens antal) redovisas måtten', async () => {
         const w = fonster3(3);
         expect(normalisera(w.__docDraftHtml())).toContain(String(MAN[1]));
-        expect(w.eval('buildAnalysisSnapshot()').medianMa).toBe(MAN[1]);
-        w.__renderTabContent('struktur');
+        expect(w.eval('byggOgonblicksbild()').medianMa).toBe(MAN[1]);
+        w.__ritaFlik('struktur');
         expect(normalisera(w.document.getElementById('struktur-distribution').textContent)).toContain(String(MAN[1]));
     });
 });
@@ -163,7 +163,7 @@ describe('[C5] bladet Lönepolitik i Excel (alla flikar) följer tröskeln som f
     const bladet = async k => {
         const w = fonsterKon(k);
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(bok).toContain('[Lönepolitik]');
         const text = bok.split('[Lönepolitik]')[1].split('\n[')[0];
         const del = (fran, till) => text.split(fran)[1].split(till)[0];
@@ -202,7 +202,7 @@ describe('[C5] bladet Lönepolitik i Excel (alla flikar) följer tröskeln som f
         const w = fonsterKon(null);
         w.__state.policy = [];
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         expect(bok).not.toContain('[Lönepolitik]');
         expect(bok).not.toContain('Bladet Lönepolitik');
     });
@@ -222,14 +222,14 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         for (let i = 0; i < 19; i++) rader.push({ bas: 'D', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 20, alder: 30 + i, yrke: '6200 Yrke 6200', aid: '6200', yrkeLabel: 'Yrke 6200', enhet: '' });
         rader.push({ bas: 'D', kon: 'man', lon: 91357, alder: 50, yrke: '6200 Yrke 6200', aid: '6200', yrkeLabel: 'Yrke 6200', enhet: '' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs(); invalidateStatCaches();');
+        w.eval('fyllValjare(); lasUppFlikar(); tomStatistikcacher();');
         // Som efter en vanlig inläsning (32-filinlasning.js): allt på Översikt är ritat.
-        w.eval('renderActionChecklist(); renderProcessTracker(); renderDataValidationReport(); renderOutliers(); refreshCurrentTab();');
+        w.eval('ritaAtgardslista(); ritaKartlaggningensSteg(); ritaValideringsrapport(); ritaExtremvarden(); uppdateraAktivFlik();');
         return w;
     };
     const kort = w => normalisera(w.document.getElementById('action-checklist-container').textContent + w.document.getElementById('att-gora-borja').textContent);
     const csv = w => {
-        w.eval('window.__csv = null; _downloadCSV = rows => { window.__csv = rows; }');
+        w.eval('window.__csv = null; _laddaNedCSV = rows => { window.__csv = rows; }');
         w.document.getElementById('btn-export-checklist').click();
         return normalisera((w.__csv || []).map(r => r.join(' | ')).join('\n'));
     };
@@ -243,7 +243,7 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         expect(fil).not.toContain('Yrke 5300');
         expect(fil).toMatch(/1 par med en grupp under 10 personer redovisas inte här/);
         // I exportläget är steg 4 "inget att hantera": paret redovisas bara i fliken (tests/troskelbeslut.test.js).
-        w.__state.kLage = 'export'; w.eval('renderProcessTracker()');
+        w.__state.kLage = 'export'; w.eval('ritaKartlaggningensSteg()');
         expect(w.document.getElementById('process-tracker').textContent).toMatch(/Inget att hantera i Att göra: 1 par har en grupp under 10 personer/);
     });
     it('10 → 25: inläsningsrapportens antal och extremvärdeslistan', () => {
@@ -258,15 +258,15 @@ describe('[C4] allt som visar gruppmått följer tröskeln när den ändras (den
         // Extremvärdena följer golvet för skattningar: 10 på skärmen, max(inställd tröskel, 10) i exportläget (ADR-103).
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).toContain('91357');
         expect(d.getElementById('data-validation-report').textContent).not.toMatch(/Inga extremvärden/);
-        w.eval('medExportLage(() => { renderOutliers(); renderDataValidationReport(); })');
+        w.eval('medExportLage(() => { ritaExtremvarden(); ritaValideringsrapport(); })');
         expect(normalisera(d.getElementById('outliers-table-wrap').textContent)).not.toContain('91357');
         expect(d.getElementById('data-validation-report').textContent).toMatch(/Inga extremvärden/);
     });
     it('vid en ändring ritas bara den öppna fliken om, en gång; de övriga är inaktuella tills de öppnas', () => {
         const w = fonsterPar();
-        for (const f of ['matrix', 'struktur', 'prioritering']) w.__renderTabContent(f);
+        for (const f of ['matrix', 'struktur', 'prioritering']) w.__ritaFlik(f);
         oppnaFlik(w, 'struktur');
-        w.eval('window.__antal = {}; const __orig = renderTabContent; renderTabContent = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
+        w.eval('window.__antal = {}; const __orig = ritaFlik; ritaFlik = function (f) { window.__antal[f] = (window.__antal[f] || 0) + 1; return __orig(f); };');
         w.eval('sattKTroskel(10, { fraga: false })');
         expect(w.__antal).toEqual({ struktur: 1 });
         expect(w.eval("flikInaktuell('struktur')")).toBe(false);
@@ -290,20 +290,20 @@ describe('[C6] räkneexemplet i kronor per år bara när båda könen når trös
         const rad = (yrke, aid, kon, lon, i) => ({ bas: 'C', kon, lon, alder: 30 + i, yrke: `${aid} ${yrke}`, aid: String(aid), yrkeLabel: yrke, enhet: '' });
         w.__state.data = [...Array.from({ length: 12 }, (_, i) => rad('Gyrke', 8101, 'kvinna', 30000 + i * 37, i)), ...Array.from({ length: 12 }, (_, i) => rad('Gyrke', 8101, 'man', 33000 + i * 41, i)),
                           ...Array.from({ length: 12 }, (_, i) => rad('Hyrke', 8102, 'kvinna', 30000 + i * 29, i)), ...Array.from({ length: 4 }, (_, i) => rad('Hyrke', 8102, 'man', 88123 + i, i))];
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.kLage = 'export';   // dossierns text lämnar verktyget (ADR-51)
         return w;
     };
     it('dossiern och textkopian: kronsumman med prioriteringens formel för G, ingen för H', () => {
         const w = fonster(), cs = w.__state.costSettings;
-        const g = w.eval('buildGruppdossier(gruppdossierCandidates().find(c => c.key.startsWith("8101")).key)');
-        const h = w.eval('buildGruppdossier(gruppdossierCandidates().find(c => c.key.startsWith("8102")).key)');
+        const g = w.eval('byggGruppdossier(gruppdossierKandidater().find(c => c.key.startsWith("8101")).key)');
+        const h = w.eval('byggGruppdossier(gruppdossierKandidater().find(c => c.key.startsWith("8102")).key)');
         const diff = Math.round((g.gap.medMa - g.gap.medKv) / 100) * 100;
         const vantat = Math.round(diff * cs.months * (1 + cs.poPct / 100) * 12 / 1000) * 1000;
         expect(Number(/omkring ([\d\s\u00a0]+) kr per år/.exec(g.gap.arsbelopp)[1].replace(/\D/g, ''))).toBe(vantat);
-        expect(w.eval('gruppdossierAsText')(g)).toContain(g.gap.arsbelopp);
+        expect(w.eval('gruppdossierSomText')(g)).toContain(g.gap.arsbelopp);
         expect(h.gap).toBeNull();
-        const hText = w.eval('gruppdossierAsText')(h);
+        const hText = w.eval('gruppdossierSomText')(h);
         expect(hText).not.toMatch(/Räkneexempel|kr per år/);
         expect(hText).not.toMatch(/8812\d/);
     });

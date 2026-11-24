@@ -15,23 +15,23 @@ import { oversiktPerBas, vymodellLonestruktur } from '../lib/vymodell-lonestrukt
 import { esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { buildBaseAudit, flerKolumner, setAudit } from './05-tabeller-och-lankar.js';
-import { _setDiagramMetodNot, kTroskel, LITET_UNDERLAG, statGolv } from './06-k-troskel.js';
+import { byggGrundurval, flerKolumner, sattMetodik } from './05-tabeller-och-lankar.js';
+import { _sattDiagramMetodNot, kTroskel, LITET_UNDERLAG, statGolv } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
-import { _kNoteForm, _kNoteNamn, kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
+import { _kNotForm, _kNotNamn, kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
+import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatusNiva, PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getBasIntervals, getData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
 import { styrkaGallande } from './13-oversikt.js';
-import { _evidenceForEUMatrixRow, _evidenceForPaygapRow, _openEvidenceModal } from './27-berakningsbevis.js';
+import { _bevisForEUMatrisrad, _bevisForLonegapsrad, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _konTathetFigur } from './40-alder-karriar.js';
 import { _pagGrans } from './43-personer-att-granska.js';
 import { aidbasDefinition, aidbasDefinitionText, aidbasGrans } from './45-aid-bas-tabeller.js';
 import { ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, harAlder } from './50-regressionsmodeller.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { basdossierKnapp } from './81-basdossier.js';
 import { kTroskelLank } from './86-installningar.js';
 
@@ -41,7 +41,7 @@ import { kTroskelLank } from './86-installningar.js';
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
 // Intervallet är medianKvotKI i src/lib/osakerhet.js: bootstrap med B = 1000, seedad ur datat så att intervallet blir
 // detsamma varje gång; dragningarnas medianer tas ur rangräkning (_lvBootstrapMedianer, O(n) per dragning).
-export function _laBootstrapGapCI(kvLons, maLons, B) {
+export function _laBootstrapGapKI(kvLons, maLons, B) {
     return medianKvotKI(kvLons, maLons, { B });
 }
 // Översiktens rader och trattdiagrammets underlag är dyra (bootstrap respektive omkastning: på 55 000 rader 0,8 s
@@ -66,7 +66,7 @@ export function laMinneSlapp() { _laMinnen.clear(); }
  * rapportunderlaget, årsbokslutet och dossiererna. Golvet för prövningen är statGolv(), K_STANDARD på skärmen och
  * följer den inställda tröskeln i exportläget (ADR-103); minnet räknar om när golvet inte är det det räknades vid.
  */
-export function laLikaGrupper(d = getData(), k = kTroskel()) {
+export function laLikaGrupper(d = hamtaData(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), golv = statGolv();
     if (!minne.lika || minne.likaGolv !== golv) { minne.lika = likaArbeteGrupper(d, { k, golv }); minne.likaGolv = golv; }
     return minne.lika;
@@ -79,9 +79,9 @@ function _direktivBricka(markerad) {
  * Brickan inne i en talcell (med ett mellanslag före), eller ''. Klassen direktiv-inline tas bort i en tabellexport så
  * att cellen förblir ett tal i arbetsboken; markeringen står där i en egen kolumn eller en not.
  */
-export function _direktivInline(kvot) { return _direktivInlineOm(direktivMarkering(kvot)); }
-/** Som _direktivInline, med markeringen redan bestämd (vymodellen). */
-function _direktivInlineOm(markerad) {
+export function _direktivITalcell(kvot) { return _direktivITalcellOm(direktivMarkering(kvot)); }
+/** Som _direktivITalcell, med markeringen redan bestämd (vymodellen). */
+function _direktivITalcellOm(markerad) {
     return markerad ? ` <span class="direktiv-bricka direktiv-inline" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : '';
 }
 /** Direktivmarkeringens cell i en tabell: brickan, eller tom. Sorteras på markeringen. */
@@ -89,7 +89,7 @@ function _direktivCell(markerad) {
     const b = _direktivBricka(markerad);
     return `<td class="t-mitt" data-sort-value="${b ? 1 : 0}">${b}</td>`;
 }
-export function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
+export function _laOversiktRader(d, bas = hamtaBasIntervall(), k = kTroskel()) {
     const minne = _laMinneFor(d, k), nyckel = bas.join('\u0000');
     if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
     // Räkningen är oversiktPerBas i src/lib/vymodell-lonestruktur.js.
@@ -101,7 +101,7 @@ export function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
 function _laSamladNot(namn) {
     const lista = (namn || []).filter(Boolean);
     if (!lista.length) return '';
-    return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNoteNamn(lista)}. `
+    return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNotNamn(lista)}. `
         + `${lista.length === 1 ? 'Intervallet är stort' : 'Intervallen är stora'} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 /**
@@ -112,8 +112,8 @@ export function _laOversiktStatus(o) { return gapStatusKI(o); }
 
 /** Lönestrukturs vymodell för avsnitten per BAS-intervall, ur tillståndet (src/lib/vymodell-lonestruktur.js). */
 export function lsBasVymodell() {
-    const d = getData();
-    return vymodellLonestruktur(d, { bas: getBasIntervals(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
+    const d = hamtaData();
+    return vymodellLonestruktur(d, { bas: hamtaBasIntervall(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
 }
 /** Ritar avsnitten Löneskillnad per BAS-intervall och Könsfördelning per BAS-intervall i Lönestruktur ur vymodellen. */
 export function ritaLoneskillnadPerBas(vm) {
@@ -130,7 +130,7 @@ export function ritaLoneskillnadPerBas(vm) {
         // ritar som täthetskurvor, här som lådor). Ett kön under tröskeln i ett intervall ritas inte.
         const ladEl = document.getElementById('chart-skevhet-lador');
         if (ladEl) {
-            const { figur, utelamnade } = _konTathetFigur(getData(), true, kTroskel(), 'lada');
+            const { figur, utelamnade } = _konTathetFigur(hamtaData(), true, kTroskel(), 'lada');
             if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` }); else rensaFigur(ladEl);
             const not = document.getElementById('skevhet-lador-not');
             if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} ${personOrd(kTroskel())}: ${utelamnade.join(', ')}.` : ''; }
@@ -156,14 +156,14 @@ export function ritaLoneskillnadPerBas(vm) {
         const tr = document.createElement("tr");
         tr._markering = markeringFor(r.bas);   // länkade vyer; en egenskap, inte ett attribut: utskriften kopierar radernas HTML
         // Den ojusterade skillnaden bär direktivmarkeringen (≥ 5 %), ingen status (ADR-59).
-        tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivInlineOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
+        tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivITalcellOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
         tr._paygapRow = r.underlag;
         pgBody.appendChild(tr);
     }
     if (skillnad.utelamnade.length || skillnad.samlade.length) {
         const trN = document.createElement("tr");
-        trN.innerHTML = `<td colspan="6">${kMaskNote(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}`
-            + `${kSamladNote(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
+        trN.innerHTML = `<td colspan="6">${kMaskNot(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}`
+            + `${kSamladNot(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
         pgBody.appendChild(trN);
     }
 
@@ -174,7 +174,7 @@ export function ritaLoneskillnadPerBas(vm) {
             const tr = btn.closest('tr');
             const payload = tr?._paygapRow;
             if (!payload) return;
-            _openEvidenceModal(_evidenceForPaygapRow(payload));
+            _oppnaBevisruta(_bevisForLonegapsrad(payload));
         });
     });
     const skBody = /** @type {HTMLElement} */ (document.querySelector("#skevhet-table tbody"));
@@ -199,8 +199,8 @@ export function ritaLoneskillnadPerBas(vm) {
     if (skEl) { if (konsfordelning.rader.length) ritaFigur(skEl, _skevhetAndelFigur(konsfordelning.rader)); else rensaFigur(skEl); }
 
     // Audit
-    const baseS = buildBaseAudit();
-    setAudit('skevhet', {
+    const baseS = byggGrundurval();
+    sattMetodik('skevhet', {
         title: 'Löneskillnad och könsfördelning',
         ...baseS,
         usedInAnalysis: baseS.afterFilter,
@@ -289,7 +289,7 @@ const LA_DOLDA_KOLUMNER = ['dominans', 'nationellt'];
 const LA_OVERSIKT_DOLDA_KOLUMNER = ['direktiv'];
 /** Lika arbetes vymodell ur tillståndet (src/lib/vymodell-lika-arbete.js), med appens minne för de dyra delarna. */
 export function laVymodell() {
-    const d = getData();
+    const d = hamtaData();
     return vymodellLikaArbete(d, { k: kTroskel(), golv: statGolv(), sigma: styrkaGallande()?.sigma,
         dominansDefinition: aidbasDefinition(), dominansGrans: aidbasGrans(), skrDel: _skrDel(),
         lika: d.length ? laLikaGrupper(d) : undefined, tratt: d.length ? _laTrattUnderlag(d) : undefined });
@@ -362,8 +362,8 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
     });
     if (vm.utelamnade.length || vm.samlade.length) {
         const trN = document.createElement("tr");
-        trN.innerHTML = `<td colspan="11">${kMaskNote(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}`
-            + `${kSamladNote(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
+        trN.innerHTML = `<td colspan="11">${kMaskNot(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}`
+            + `${kSamladNot(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
         tbody.appendChild(trN);
     }
     if (vm.skor) {
@@ -382,17 +382,17 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
             const tr = btn.closest('tr');
             const row = tr?._euRow;
             if (!row) return;
-            _openEvidenceModal(_evidenceForEUMatrixRow(row));
+            _oppnaBevisruta(_bevisForEUMatrisrad(row));
         });
     });
 
     // Audit
-    const baseM = buildBaseAudit();
+    const baseM = byggGrundurval();
     const skippedTooFewKvOrMa = vm.ejJamforbara.length;
     const maskedYrken = vm.utelamnade.length;
-    const reg = given || runOLSRegression();
+    const reg = given || korOLSRegression();
     const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct((reg.R2*100), 1)}`;
-    setAudit('matrix', {
+    sattMetodik('matrix', {
         title: 'Lika arbete — multivariat regression',
         ...baseM,
         usedInAnalysis: rows.length,
@@ -435,9 +435,9 @@ function _skevhetFigur(bars) {
         x: { skala: 'linjar', titel: 'Kvinnors median i % av männens — 100 = lika lön',
              doman: [Math.floor(Math.min(90, ...bars.map(o => (o.ci ? o.ci.lo : o.gap))) - 2), Math.ceil(Math.max(110, ...bars.map(o => (o.ci ? o.ci.hi : o.gap))) + 2)] },
         hojd: Math.max(180, 110 + bars.length * 34),
-        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: 'Lika lön ±3 %' },
-                   { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-        lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETTE.semantic[s.farg],
+        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: 'Lika lön ±3 %' },
+                   { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+        lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg],
             data: bars.filter(o => status(o) === s).map(pkt), tips }))
             .filter(l => l.data.length) };
 }
@@ -459,13 +459,13 @@ function _kvotcellTitel(r) {
     return rad ? ` title="${esc(`${rad[0]}: ${rad[1]}`)}"` : '';
 }
 function _laOversiktGrafik(o, dom, status, bredd) {
-    const b = bredd || _LA_OV.b, h = _LA_OV.h, x = v => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETTE.semantic[status.farg], px = x(o.gap);
+    const b = bredd || _LA_OV.b, h = _LA_OV.h, x = v => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETT.semantic[status.farg], px = x(o.gap);
     const symbol = status.symbol === 'romb' ? `<path d="M${px},${m - 6}L${px + 6},${m}L${px},${m + 6}L${px - 6},${m}Z" fill="${farg}" stroke="#fff"/>`
         : status.symbol === 'kvadrat' ? `<rect x="${px - 4.5}" y="${m - 4.5}" width="9" height="9" rx="1" fill="${farg}" stroke="#fff"/>`
         : `<circle cx="${px}" cy="${m}" r="5" fill="${farg}" stroke="#fff"/>`;
     return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">`
-        + `<rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETTE.semantic.ok}" fill-opacity="0.12"/>`
-        + `<line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/>`
+        + `<rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETT.semantic.ok}" fill-opacity="0.12"/>`
+        + `<line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETT.semantic.mork}" stroke-width="1.2"/>`
         + (o.ci ? `<line x1="${x(o.ci.lo)}" x2="${x(o.ci.hi)}" y1="${m}" y2="${m}" stroke="${farg}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>` : '')
         + symbol + '</svg>';
 }
@@ -477,7 +477,7 @@ function _laOversiktTabell(ov) {
     // Tabellen har bara rader där båda könen når tröskeln. Intervallen som saknas sägs under den: hela intervallet
     // under tröskeln, eller ett kön under den (då skulle en könsjämförelse peka ut enskilda).
     const not = document.getElementById('la-oversikt-not');
-    if (not) not.innerHTML = kMaskNote(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
+    if (not) not.innerHTML = kMaskNot(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
     if (skala) skala.innerHTML = '';
     if (!bars.length) {
         tb.innerHTML = `<tr><td colspan="9" class="la-oversikt-tom">För få ${T.niva.fl} där både kvinnor och män når minsta gruppstorlek.</td></tr>`;
@@ -506,7 +506,7 @@ function _laOversiktTabell(ov) {
             + `<td><span class="la-status ar-${status.farg}" title="${esc(status.serie)}: ${esc(status.grans)}">${ikon(status.ikon)}${esc(status.serie)}</span></td>`
             + _direktivCell(o.direktiv);
         tb.appendChild(tr);
-        tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _openEvidenceModal(_evidenceForPaygapRow(o.underlag)); });
+        tr.querySelector('[data-la-bevis]')?.addEventListener('click', e => { e.stopPropagation(); _oppnaBevisruta(_bevisForLonegapsrad(o.underlag)); });
     }    flerKolumner('la-oversikt', LA_OVERSIKT_DOLDA_KOLUMNER, 'laOversikt');
 }
 
@@ -568,18 +568,18 @@ function _laTrattFigur(u, k = kTroskel()) {
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], x: { skala: 'linjar', titel: 'Antal personer i gruppen', doman: [x0, x1] },
         y: { skala: 'linjar', titel: 'Kvinnors median i % av mäns', doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
         hojd: 340,
-        referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],
-        lager: [{ marke: 'band', serie: 'Slumpens gränser (95 %)', farg: PALETTE.semantic.neutral, opacitet: 0.14, data: falt },
-                lager('Inom gränserna', PALETTE.semantic.neutral, 'cirkel', p => !p.utanfor), lager('Utanför gränserna', PALETTE.semantic.kritisk, 'romb', p => p.utanfor)].filter(l => l.data.length) };
+        referens: [{ y: 100, farg: PALETT.semantic.mork, tjocklek: 1.5, etikett: 'Lika lön' }],
+        lager: [{ marke: 'band', serie: 'Slumpens gränser (95 %)', farg: PALETT.semantic.neutral, opacitet: 0.14, data: falt },
+                lager('Inom gränserna', PALETT.semantic.neutral, 'cirkel', p => !p.utanfor), lager('Utanför gränserna', PALETT.semantic.kritisk, 'romb', p => p.utanfor)].filter(l => l.data.length) };
 }
 /** @param {any} u  vymodellens trattunderlag, null med färre än två grupper (då visas kortet inte) */
 function _laRitaTratt(u) {
     const el = document.getElementById('chart-la-tratt'), kort = document.getElementById('la-tratt-kort'), not = document.getElementById('la-tratt-not');
     if (!el) return;
     if (kort) kort.hidden = !u;
-    if (!u) { rensaFigur(el); if (not) not.textContent = ''; _setDiagramMetodNot('chart-la-tratt', null); return; }
+    if (!u) { rensaFigur(el); if (not) not.textContent = ''; _sattDiagramMetodNot('chart-la-tratt', null); return; }
     ritaFigur(el, _laTrattFigur(u));
-    _setDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
+    _sattDiagramMetodNot('chart-la-tratt', _laTrattGlesNot(u.punkter.length));
     // Diagrammet ger ingen egen status (ADR-90): statusen står i tabellerna, och gränserna är en av dess två delar.
     if (not) not.textContent = `En punkt per ${T.enhet.en} i ${artikel(T.niva)} ${T.niva.en} där både kvinnor och män når minsta gruppstorlek. Statusen per grupp står i tabellen nedan och i Lika arbete AID × BAS; en punkt utanför gränserna är en av statusens två delar, den andra är storleken (minst 3 %). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
@@ -595,8 +595,8 @@ function _skevhetAndelFigur(rader) {
         x: { skala: 'linjar', titel: 'Andel av intervallet (%)', doman: [0, 100] },
         hojd: Math.max(160, 70 + rader.length * 32),
         // Linjerna har ingen etikett: den skulle skriva över staplarnas siffror, och axeln visar 40 och 60.
-        referens: [{ x: 40, streck: 'streckad', farg: PALETTE.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: 'streckad', farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-        lager: [serie('Kvinnor', PALETTE.kon.kvinna, 'pctKv'), serie('Män', PALETTE.kon.man, 'pctMa')] };
+        referens: [{ x: 40, streck: 'streckad', farg: PALETT.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: 'streckad', farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+        lager: [serie('Kvinnor', PALETT.kon.kvinna, 'pctKv'), serie('Män', PALETT.kon.man, 'pctMa')] };
 }
 
 // ====================================================================
@@ -622,7 +622,7 @@ export function _laNyckel(id, text, kritisk) {
 }
 /** Urvalsraden: vad fliken gäller. Det markerade står i raden under den (11-markering.js), i alla flikar. */
 function _laRitaUrval() {
-    const urval = document.getElementById('la-urval'), d = getData();
+    const urval = document.getElementById('la-urval'), d = hamtaData();
     if (!urval) return;
     if (!d.length) { urval.textContent = ''; return; }
     urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(d.length, 0)} personer</span>${kTroskelLank()}`;
@@ -637,10 +637,10 @@ function _laRegFaNot(reg) {
     return fa.length ? ` Bygger på få ${fa.join(' och ')}; talet är osäkert.` : '';
 }
 /** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den, i samma varv (ADR-17) */
-export function renderLikaArbeteTopp({ reg: given } = {}) {
+export function ritaLikaArbeteTopp({ reg: given } = {}) {
     const urval = document.getElementById('la-urval'), ut = document.getElementById('la-slutsatser');
     if (!urval || !ut) return;
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) {
         urval.textContent = ''; ut.innerHTML = '';
         for (const id of ['nyckel-la-yrkesgrupper', 'nyckel-la-personer']) _laNyckel(id, '');
@@ -653,7 +653,7 @@ export function renderLikaArbeteTopp({ reg: given } = {}) {
     const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
     // Regressionen och personerna.
     /** @type {any} */ let reg = null;
-    try { reg = given || runOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
+    try { reg = given || korOLSRegression(); } catch (e) { rapporteraFel('Lika arbete: toppen', e); }
     const regOk = reg && !reg.error && typeof reg.konPct === 'number';
     /** @type {number|null} */ let personer = null;
     try { const r = flaggaIndivider(d, { minGrupp: statGolv(), grans: _pagGrans() }); personer = r.provade.kv + r.provade.ma ? r.flaggade.length : null; }
@@ -675,19 +675,19 @@ export function renderLikaArbeteTopp({ reg: given } = {}) {
 
 /**
  * Noten under Könsfördelning per BAS-intervall: intervall med färre än LITET_UNDERLAG personer får ingen rad
- * (ADR-57). Samma form som kMaskNote, men utan lönemått att tala om: det är andelarna som skulle peka ut enskilda.
+ * (ADR-57). Samma form som kMaskNot, men utan lönemått att tala om: det är andelarna som skulle peka ut enskilda.
  * @param {string[]} lista  BAS-intervallen som utelämnats.
  */
 function _skevhetNot(lista) {
     const n = lista.length, t = LITET_UNDERLAG;
-    return `<p class="k-mask-note">${n} ${esc(_kNoteForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: `
-        + `${_kNoteNamn(lista)}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, och könsfördelningen `
+    return `<p class="k-mask-note">${n} ${esc(_kNotForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: `
+        + `${_kNotNamn(lista)}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, och könsfördelningen `
         + `skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
 }
 
 /** Lönestrukturs avsnittsnyckeltal för BAS-skevheten, könsfördelningen och regressionen. Ritas efter ritaLoneskillnadPerBas och regressionskortet. */
-export function renderLonestrukturNycklar() {
-    const d = getData();
+export function ritaLonestrukturNycklar() {
+    const d = hamtaData();
     if (!d.length) { for (const id of ['nyckel-ls-bas', 'nyckel-ls-kon', 'nyckel-ls-regression']) _laNyckel(id, ''); return; }
     // Per BAS-intervall: översiktens rader (båda könen når tröskeln) med samma status som tabellen (ADR-59).
     const basKvot = _laOversiktRader(d).filter(o => isFinite(o.gap));
@@ -696,7 +696,7 @@ export function renderLonestrukturNycklar() {
     // Kolumnen Underrep. Kön är radens sista.
     const ojamna = konRader.filter(tr => { const c = /** @type {HTMLTableRowElement} */ (tr).cells; return c.length && c[c.length - 1].textContent.trim() !== '-'; }).length;
     /** @type {any} */ let reg = null;
-    try { reg = runOLSRegression(); } catch (e) { rapporteraFel('Lönestruktur: nyckeltalen', e); }
+    try { reg = korOLSRegression(); } catch (e) { rapporteraFel('Lönestruktur: nyckeltalen', e); }
     const regOk = reg && !reg.error && typeof reg.konPct === 'number';
     _laNyckel('nyckel-ls-bas', basKvot.length ? `${basOver.length} av ${basKvot.length} att granska` : '', basOver.length > 0 ? 'granska' : false);
     _laNyckel('nyckel-ls-kon', konRader.length ? `${ojamna} av ${konRader.length} ojämna` : '');

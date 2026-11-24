@@ -6,9 +6,9 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { fonster as fonsterK, fangaBocker, laddaXlsx, SENT_SMA, SMA } from './helpers/ktroskel-rigg.js';
 vi.setConfig({ testTimeout: 30000 });
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); return w; };
+const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const medStatistik = (w, { spann = true } = {}) => {
-    w.__state.statistik = [...new Set(w.__getData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return spann ? { aid, bas, median: 34000, p10: 30000, p90: 39000 } : { aid, bas, median: 34000 }; });
+    w.__state.statistik = [...new Set(w.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return spann ? { aid, bas, median: 34000, p10: 30000, p90: 39000 } : { aid, bas, median: 34000 }; });
     w.__state.statistikHasP10 = spann; w.__state.statistikHasP90 = spann;
 };
 
@@ -16,13 +16,13 @@ let win;
 
 beforeAll(() => {
     win = createAppWindow();
-    win.__loadDemoData();   // blocken nedan läser demodatan
+    win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
 describe('överblicken: löneläget och statistiken mot ställningstagandet', () => {
     it('ritas i Jämförelse med tal, tabell, hantel och statistiken mot ställningstagandet när båda referenserna finns', () => {
         const w = fonster(); medStatistik(w);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const d = w.document, host = d.getElementById('ref-overblick');
         expect(host.textContent).toMatch(/löneläget (ovanför|nedanför|inom) ställningstagandet/i);
         expect(host.textContent).not.toMatch(/ställningstagandet ligger/);
@@ -55,7 +55,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     });
     it('utan statistik visas överblicken mot ställningstagandet ensamt och säger att statistik saknas', () => {
         const w = fonster();
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const d = w.document, host = d.getElementById('ref-overblick');
         expect(host.textContent).toMatch(/Jämförelsestatistik saknas/);
         expect(d.getElementById('ref-stat-mot-stallning')).toBeNull();
@@ -64,7 +64,7 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     });
     it('statistik med bara median: inget läge mot statistiken, hanteln ritar bara strecket för den', () => {
         const w = fonster(); medStatistik(w, { spann: false });
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const f = w.document.getElementById('chart-ref-hantel')._figur;
         const stat = f.lager.filter(l => l.serie === 'Statistiken');
         expect(stat.find(l => l.marke === 'intervall').data).toHaveLength(0);
@@ -73,14 +73,14 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     });
     it('ställningstagande per BAS: alla yrken i intervallet mäts mot samma spann', () => {
         const w = fonster();
-        w.__state.policy = [...new Set(w.__getData().map(r => r.bas))].map(bas => ({ bas, p10: 25000, med: 30000, p90: 35000 }));
+        w.__state.policy = [...new Set(w.__hamtaData().map(r => r.bas))].map(bas => ({ bas, p10: 25000, med: 30000, p90: 35000 }));
         const grupper = w.eval('referensOverblick()').grupper;
         expect(grupper.length).toBeGreaterThan(0);
         expect(grupper.every(g => g.stallningstagande.p10 === 25000 && g.stallningstagande.p90 === 35000)).toBe(true);
     });
     it('grupper utanför listans bild nämns: tabellen har alla', () => {
         const w = fonster(); medStatistik(w);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         const rader = w.document.querySelectorAll('#ref-tabell tbody tr').length;
         const antal = new Set(w.document.getElementById('chart-ref-hantel')._figur.y.ordning).size;
         expect(antal).toBeLessThanOrEqual(25);
@@ -95,8 +95,8 @@ describe('Lönepolitik är avsnitt två i Löneläget', () => {
         expect(d.getElementById('view-lonepolitik')).toBeNull();
         expect(d.getElementById('tab-benchmark').hidden).toBe(false);
         expect(d.getElementById('tab-benchmark').textContent.trim()).toBe('Löneläget');
-        expect(w.eval("tabMal('lonepolitik')")).toBe('benchmark');
-        w.__renderTabContent('lonepolitik');
+        expect(w.eval("flikMal('lonepolitik')")).toBe('benchmark');
+        w.__ritaFlik('lonepolitik');
         expect([...d.querySelectorAll('#view-benchmark > details.avsnitt')].map(a => a.id)).toEqual(['avsnitt-jmf-bandkartor', 'avsnitt-jmf-stallningstagande', 'avsnitt-jmf-statistik', 'avsnitt-jmf-overblick']);
         expect(d.querySelector('#avsnitt-jmf-stallningstagande #lonepolitik-content').textContent).toMatch(/AID-etiketter mot sitt spann/);
         expect(d.querySelector('.benchmark-metric-btn')).toBeNull();
@@ -114,7 +114,7 @@ describe('Lönepolitik är avsnitt två i Löneläget', () => {
     });
     it('länkar till lonepolitik når Löneläget', () => {
         const w = fonster(); const d = w.document;
-        w.eval("navigateTo('lonepolitik')");
+        w.eval("navigeraTill('lonepolitik')");
         expect(d.getElementById('tab-benchmark').classList.contains('active')).toBe(true);
         expect(d.getElementById('page-title').textContent).toBe('Löneläget');
         const a = d.createElement('button'); a.setAttribute('data-goto-tab', 'lonepolitik'); d.body.appendChild(a);
@@ -138,7 +138,7 @@ describe('överblicken i exporterna', () => {
         w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
         const blad = w.eval('excelAlltBlad()');
         expect(blad.indexOf('Referenser')).toBe(blad.indexOf('Lönepolitik') + 1);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         const ref = bok.split('[Referenser]')[1].split('\n[')[0];
         expect(ref).toContain('Statistiken mot ställningstagandet (%)');
         // Samma kolumner som skärmen: en kolumn för läge och förslag, läget i spannet med sin skala i rubriken
@@ -153,7 +153,7 @@ describe('överblicken i exporterna', () => {
         const iBlock = JSON.stringify(w.eval('rapportunderlagBlock()').find(x => x.id === 'referenser'));
         for (const bas of SMA) { expect(iRapport).not.toContain(`BAS ${bas}"`); expect(iBlock).not.toContain(`BAS ${bas}"`); }
         for (const s of SENT_SMA) { expect(iRapport).not.toContain(String(s)); expect(iBlock).not.toContain(String(s)); }
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(w.document.getElementById('ref-tabell').textContent).toContain(namn);
         expect(w.document.getElementById('ref-tabell').textContent).toContain(`BAS ${SMA[0]}`);
     });
@@ -167,7 +167,7 @@ describe('överblicken i exporterna', () => {
         w.eval("sattRapportUrval('facklig')");
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('referenser');
         w.eval("sattRapportUrval('hela')");
-        expect(w.eval('_buildDocumentationDraftHtml()')).toContain('Lönerna mot referenserna');
+        expect(w.eval('_byggWordUtkastHtml()')).toContain('Lönerna mot referenserna');
         const avsnitt = w.eval('rapportModell()').avsnitt.find(a => a.id === 'referenser');
         expect(avsnitt.delar.some(p => p.typ === 'diagram' && p.id === 'chart-ref-hantel')).toBe(true);
     });
@@ -201,7 +201,7 @@ describe('överblicken i exporterna', () => {
     });
     it('utskriften tar med listan ur överblicken före avsnittet mot statistiken', () => {
         const w = fonster(); medStatistik(w);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         w.eval("sattRapportUrval('hela')");
         expect(w.eval('_utskriftReferenserHtml(id => { const t = document.getElementById(id); return t ? t.outerHTML : ""; })')).toMatch(/ref-tabell[^]*ref-stat-mot-stallning/);
     });
@@ -231,7 +231,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
     // Demots åtta grupper: var tredje utan P10 och P90 (ingen punkt), annars AID + BAS eller en rad utan BAS (Endast AID),
     // och spann som lägger medianen över respektive under statistikens spann.
     const medBlandad = () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const rader = w.eval('jamforelseUnderlag()').rader;
         w.__state.statistik = rader.map((r, i) => {
             const m = r.org.median;
@@ -240,7 +240,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
             return { aid: r.aid, bas: i % 3 === 1 ? '' : r.bas, p10, median: (p10 + p90) / 2, p90 };
         });
         w.__state.statistikHasP10 = true; w.__state.statistikHasP90 = true;
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         return w;
     };
     it('ordningen: Överblick, Mot ställningstagandet, Mot jämförelsestatistiken, Yrkesgrupp för yrkesgrupp; bara överblicken öppen', () => {
@@ -326,7 +326,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
     it('bara grupper som når tröskeln: i exportläget med tröskeln 25 finns bara de större grupperna', () => {
         const w = medBlandad();
         w.eval('sattKTroskel(25, { fraga: false })');
-        const { pts, rader } = w.eval("medExportLage(() => { renderStatistikLage(); return { pts: document.getElementById('chart-jmf-statlage')._figur, rader: jamforelseUnderlag() }; })");
+        const { pts, rader } = w.eval("medExportLage(() => { ritaStatistikLage(); return { pts: document.getElementById('chart-jmf-statlage')._figur, rader: jamforelseUnderlag() }; })");
         const alla = w.eval('jamforelseUnderlag()').rader;
         expect(rader.utelamnade.length).toBeGreaterThan(0);
         const visade = punkter(pts);
@@ -336,23 +336,23 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         expect(alla.some(r => r.n < 25)).toBe(true);
     });
     it('utan P10 och P90 i statistiken: ett meddelande i kortet i stället för diagrammet', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.__state.statistik = w.eval('jamforelseUnderlag()').rader.map(r => ({ aid: r.aid, bas: r.bas, median: 34000 }));
         w.__state.statistikHasP10 = false; w.__state.statistikHasP90 = false;
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(el(w, 'jmf-statlage-kort').hidden).toBe(false);
         expect(el(w, 'chart-jmf-statlage')._figur).toBeUndefined();
         expect(el(w, 'chart-jmf-statlage').textContent).toMatch(/P10 och P90/);
     });
     it('utan statistik bara bandkartan; utan ställningstagande bara statistikens spann', () => {
-        const w = createAppWindow(); w.__loadDemoData();
-        w.__renderTabContent('benchmark');
+        const w = createAppWindow(); w.__lasInDemodata();
+        w.__ritaFlik('benchmark');
         expect(el(w, 'lp-bandkarta-kort').hidden).toBe(false);
         expect(el(w, 'jmf-statlage-kort').hidden).toBe(true);
         expect(el(w, 'chart-jmf-statlage')._figur).toBeUndefined();
         const w2 = medBlandad();
         w2.__state.policy = [];
-        w2.__renderTabContent('benchmark');
+        w2.__ritaFlik('benchmark');
         expect(el(w2, 'lp-bandkarta-kort').hidden).toBe(true);
         expect(el(w2, 'chart-lp-bandmap')._figur).toBeUndefined();
         expect(el(w2, 'jmf-statlage-kort').hidden).toBe(false);
@@ -363,13 +363,13 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
 describe('Lönepolitik: organisationens band i bandkartan', () => {
     it('ett band per BAS med minst k personer, bredvid LPS-bandet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="benchmark"]').click();
         const lager = w.document.getElementById('chart-lp-bandmap')._figur.lager;   // ritat av diagramkärnan (ADR-39)
         const orgLager = lager.find(l => l.serie === `${w.eval('orgNamn()')} (P10–P90)`);   // demot heter Exempelkommunen (ADR-36)
         expect(orgLager).toBeTruthy();
         expect(orgLager.marke).toBe('intervall');
-        const d = w.__getData();
+        const d = w.__hamtaData();
         const basMedK = [...new Set(d.map(r => r.bas))].filter(b => d.filter(r => r.bas === b && r.lon > 0).length >= w.__K);
         expect(orgLager.data.length).toBe(basMedK.length);
         expect(orgLager.data.every(p => p.hog >= p.med && p.med >= p.lag)).toBe(true);
@@ -406,11 +406,11 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
         expect(win.__policyFor(null, 'D')).toBeNull();
     });
 
-    it('policyLevelLabel beskriver referensens nivå', () => {
-        expect(win.__policyLevelLabel({ aid: '1', bas: 'D' })).toBe('AID + BAS');
-        expect(win.__policyLevelLabel({ aid: '1' })).toBe('AID-specifik');
-        expect(win.__policyLevelLabel({ bas: 'D' })).toBe('BAS-intervall');
-        expect(win.__policyLevelLabel(null)).toBeNull();
+    it('policyNivaEtikett beskriver referensens nivå', () => {
+        expect(win.__policyNivaEtikett({ aid: '1', bas: 'D' })).toBe('AID + BAS');
+        expect(win.__policyNivaEtikett({ aid: '1' })).toBe('AID-specifik');
+        expect(win.__policyNivaEtikett({ bas: 'D' })).toBe('BAS-intervall');
+        expect(win.__policyNivaEtikett(null)).toBeNull();
     });
 
     it('tom policy → modellen flaggar hasPolicy=false och fliken visar tomstatus', () => {
@@ -422,8 +422,8 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
     });
 
     it('med policy byggs modellen med täckningsgrad och maskeringstrappa', () => {
-        win.__loadDemoData();
-        const bas = [...new Set(win.__getData().map(r => r.bas))];
+        win.__lasInDemodata();
+        const bas = [...new Set(win.__hamtaData().map(r => r.bas))];
         setPolicy(bas.map(b => ({ bas: b, p10: 25000, med: 32000, p90: 45000 })));
         const m = win.__lonepolitikVymodell().modell;
         expect(m.hasPolicy).toBe(true);

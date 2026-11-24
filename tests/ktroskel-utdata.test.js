@@ -15,9 +15,9 @@ vi.setConfig({ testTimeout: 30000 });
 describe('k-tröskeln under 5 i Lönepolitik', () => {
     it('mellannivån med bara antal finns inte när tröskeln är 3 (exportläget)', () => {
         const w = iExport(fonster(3));
-        expect(w.eval('_lpTier(4)')).toBe('full');
-        expect(w.eval('_lpTier(2)')).toBe('masked');
-        w.__renderTabContent('lonepolitik');
+        expect(w.eval('_lpNiva(4)')).toBe('full');
+        expect(w.eval('_lpNiva(2)')).toBe('masked');
+        w.__ritaFlik('lonepolitik');
         expect(w.document.getElementById('view-benchmark').textContent).not.toMatch(/under 5 maskeras/);
     });
 });
@@ -33,9 +33,9 @@ describe('k-tröskeln: Prioritering visar ingen könsjämförelse för ett kön 
         for (let i = 0; i < 2; i++) rader.push(rad('P', i, MA, 7000, 'Skevyrke', 'man'));
         w.__state.data = rader;
         w.__state.policy = ['F0', 'F1', 'F2', 'P'].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         iExport(w);   // så som tabellen lämnar verktyget; skärmen maskerar inget (ADR-51)
-        w.__renderTabContent('prioritering');
+        w.__ritaFlik('prioritering');
         const vy = w.document.getElementById('view-prioritering');
         const text = normalisera(vy.textContent + ' ' + [...vy.querySelectorAll('*')].map(e => Array.from(e.attributes, a => a.value).join(' ')).join(' '));
         const gapPct = (KV / MA - 1) * 100;   // tabellen visar två decimaler, hovertexten en
@@ -59,13 +59,13 @@ describe('k-tröskeln: par i likvärdigt arbete i Word-utkastet och utskriften',
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');   // jämförelseyrke
         lagg(6, 'kvinna', SENT, 'C', '5300');                                         // litet, kvinnodominerat
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         if (k !== null) w.eval(`sattKTroskel(${k}, { fraga: false })`);
         return w;
     };
     const utskrift = async w => {
         w.eval("sattRapportUrval('hela')");   // hela dokumentationen, med bilagorna
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         return normalisera(w.document.getElementById('print-report').innerHTML);
     };
     it('paret finns i beräkningen (annars prövar testet inget)', () => {
@@ -105,7 +105,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');   // jämförelseyrke
         lagg(6, 'kvinna', 36421, 'C', '5300');                                        // litet, kvinnodominerat
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         if (k !== null) w.eval(`sattKTroskel(${k}, { fraga: false })`);
         return w;
     };
@@ -123,14 +123,14 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
             .map(r => r.map(c => String(c ?? '')).join(' | ')).join('\n')).join('\n'));
     };
     const fangaCsv = w => {
-        w.eval('window.__csv = null; _downloadCSV = rows => { window.__csv = rows; }');
+        w.eval('window.__csv = null; _laddaNedCSV = rows => { window.__csv = rows; }');
         w.document.getElementById('btn-export-checklist').click();
         return normalisera((w.__csv || []).map(r => r.join(' | ')).join('\n'));
     };
     const attGora = w => {
-        w.eval('renderActionChecklist()');
+        w.eval('ritaAtgardslista()');
         return {
-            punkter: normalisera(w.eval('JSON.stringify(medExportLage(() => buildActionChecklist()))')),
+            punkter: normalisera(w.eval('JSON.stringify(medExportLage(() => byggAtgardslista()))')),
             kort: normalisera(w.document.getElementById('action-checklist-container').textContent
                 + w.document.getElementById('att-gora-borja').textContent),
             csv: fangaCsv(w),
@@ -139,7 +139,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
     const dossier = (w, nyckel) => {
         w.eval(`ritaGruppdossier('${nyckel}')`);
         return { skarm: normalisera(w.document.getElementById('dossier-body').textContent),
-                 text: normalisera(w.eval(`medExportLage(() => gruppdossierAsText(buildGruppdossier('${nyckel}')))`)) };
+                 text: normalisera(w.eval(`medExportLage(() => gruppdossierSomText(byggGruppdossier('${nyckel}')))`)) };
     };
 
     it('paret finns i beräkningen (annars prövar testet inget)', () => {
@@ -149,7 +149,7 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
 
     it('vid 10: protokollet för gemensam lönebedömning saknar paret och anger antalet', async () => {
         const w = fonsterPar(null);
-        const text = await fangaExcel(w, 'exportJPAProtocol');
+        const text = await fangaExcel(w, 'exportJPAProtokoll');
         expect(text).not.toContain(ETIKETT);
         expect(text).not.toContain(String(SENT));
         expect(text).toMatch(NOT);
@@ -166,18 +166,18 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
     });
     it('vid 10: handlingsplanens förifyllda rader visar paret på skärmen; i exportläget och i Excel saknas det, och antalet anges', async () => {
         const w = fonsterPar(null);
-        expect(w.eval('_handlingsplanSeedRows()').lvCount).toBe(1);   // skärmen maskerar inget (ADR-51)
-        const seed = w.eval('medExportLage(() => _handlingsplanSeedRows())');
+        expect(w.eval('_handlingsplanForifyllning()').lvCount).toBe(1);   // skärmen maskerar inget (ADR-51)
+        const seed = w.eval('medExportLage(() => _handlingsplanForifyllning())');
         expect(seed.lvCount).toBe(0);
         expect(JSON.stringify(seed.rows)).not.toContain('5300');
-        w.eval('renderHandlingsplanSeed()');
+        w.eval('ritaHandlingsplan()');
         expect(normalisera(w.document.getElementById('handlingsplan-tbody').textContent)).toContain('5300');
         const excel = await fangaExcel(w, 'exportHandlingsplan');
         expect(excel).not.toContain('5300');
         expect(excel).toMatch(NOT);
     });
     it('vid 10: robusthetspanelen namnger inte den lilla gruppen och anger antalet; vid 5 står den med', () => {
-        const panel = w => { w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))"); return normalisera(w.document.getElementById('robusthet-body').textContent); };
+        const panel = w => { w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))"); return normalisera(w.document.getElementById('robusthet-body').textContent); };
         const vid10 = panel(fonsterPar(null));
         expect(vid10).not.toContain(ETIKETT);
         expect(vid10).not.toContain('5300');
@@ -197,14 +197,14 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
 
     it('vid 5 (den lilla gruppens storlek är 6): paret finns i alla fyra', async () => {
         const w = fonsterPar(5);
-        const protokoll = await fangaExcel(w, 'exportJPAProtocol');
+        const protokoll = await fangaExcel(w, 'exportJPAProtokoll');
         expect(protokoll).toContain(ETIKETT);
         expect(protokoll).toContain(String(SENT));
         expect(protokoll).not.toMatch(NOT);
         const a = attGora(w);
         for (const t of [a.punkter, a.kort, a.csv]) expect(t).toContain(ETIKETT);
         expect(a.kort).not.toMatch(NOT);
-        const seed = w.eval('_handlingsplanSeedRows()');
+        const seed = w.eval('_handlingsplanForifyllning()');
         expect(seed.lvCount).toBe(1);
         expect(JSON.stringify(seed.rows)).toContain('5300');
         const d = dossier(w, '6100|C');
@@ -250,8 +250,8 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
             const w = fonsterPar(k);
             w.alert = () => {};
             Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
-            w.__renderTabContent('loneoversyn');
-            w.eval('_forecastOptimize()');
+            w.__ritaFlik('loneoversyn');
+            w.eval('_fcOptimera()');
             return { w, aid: w.__state.forecast.targets.map(t => t.aid) };
         };
         const a10 = forslag(null);
@@ -270,20 +270,20 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         lagg(40, 'man', 60000, 'C', '6100');
         for (let g = 0; g < 26; g++) lagg(g < 6 ? 6 : 12, 'kvinna', g < 6 ? 30000 : 45000 + g * 100, 'C', String(5300 + g));
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.likvardighet.topN = 100; w.__state.likvardighet.result = null;
         const par = w.eval('likvardighetResultat().pairs');
         expect(par.length).toBe(26);
         expect(par.slice(0, 20).some(p => p.kvN < 10)).toBe(true);   // annars prövar testet inget
-        const lv = w.eval("medExportLage(() => buildActionChecklist()).filter(i => i.kategori === 'Likvärdigt arbete').map(i => i.id)");
+        const lv = w.eval("medExportLage(() => byggAtgardslista()).filter(i => i.kategori === 'Likvärdigt arbete').map(i => i.id)");
         expect(lv.length).toBe(20);
         const smaAid = par.filter(p => p.kvN < 10).map(p => p.kvAid);
         expect(lv.some(id => smaAid.some(a => id.includes(`lv-${a}-`)))).toBe(false);
     });
     it('vid 6 (precis på den lilla gruppens storlek): paret finns', () => {
         const w = fonsterPar(6);
-        expect(w.eval('_handlingsplanSeedRows().lvCount')).toBe(1);
-        expect(w.eval('buildActionChecklist().some(i => i.titel.includes("Yrke 5300"))')).toBe(true);
+        expect(w.eval('_handlingsplanForifyllning().lvCount')).toBe(1);
+        expect(w.eval('byggAtgardslista().some(i => i.titel.includes("Yrke 5300"))')).toBe(true);
     });
 });
 
@@ -304,7 +304,7 @@ describe('k-tröskeln i texterna', () => {
         }
         expect(d.getElementById('explore-inkludera-sma-label').textContent).toBe('Ta med grupper under 7 i exporten');
         expect(w.eval('_kText("färre än {k}, minst {golv}")')).toBe('färre än 7, minst 10');
-        w.eval('renderGlossary("")');
+        w.eval('ritaOrdlista("")');
         const ordlista = d.body.textContent;
         expect(ordlista).not.toMatch(/\{k\}|\{golv\}/);
         expect(ordlista).toContain('färre än 7 personer');
@@ -323,7 +323,7 @@ describe('k-tröskeln i texterna', () => {
     it('beviset för en överhoppad per-BAS-regression citerar statistiska golvet (7 kvinnor vid k=5)', () => {
         const w = createAppWindow();
         w.eval('sattKTroskel(5, { fraga: false })');
-        const rad = w.eval('_evidenceForPerBasRow({ bas: "X", n: 17, kvN: 7, maN: 10, status: "too_few" })').rows;
+        const rad = w.eval('_bevisForPerBasRad({ bas: "X", n: 17, kvN: 7, maN: 10, status: "too_few" })').rows;
         const kv = rad.find(r => r.label === 'Antal kvinnor');
         expect(kv.note).toBe('Färre än 10 (golvet för skattningar)');
         expect(rad.find(r => r.label === 'Antal män').note).toBe('');
@@ -425,7 +425,7 @@ describe('k-tröskeln i gränssnittet', () => {
 describe('k-tröskeln i utdata', () => {
     const STAMPEL_10 = 'Minsta gruppstorlek för redovisning: 10.';
     const STAMPEL_6 = 'Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.';
-    const metodrad = w => w.__methodAppendixData().find(r => r[0] === 'Minsta gruppstorlek för redovisning');
+    const metodrad = w => w.__metodbilaga().find(r => r[0] === 'Minsta gruppstorlek för redovisning');
 
     it('vid standard: metodbilagan, Word-utkastet och sammanfattningen anger 10', () => {
         const w = fonsterLitet(null);
@@ -461,7 +461,7 @@ describe('k-tröskeln i utdata', () => {
         w.document.body.appendChild(gd);
         w.__el = gd; w.__f = { beskrivning: 'T', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [{ marke: 'stapel', serie: 'A', farg: '#2563eb', data: [{ x: 'a', y: 1 }] }] };
         w.eval('ritaFigur(window.__el, window.__f, {})');
-        const rader = w.__chartExportRows(gd);
+        const rader = w.__diagramexportRader(gd);
         expect(rader[0][0]).toContain(STAMPEL_6);
         expect(w.eval('_csvMedStampel')(rader).filter(r => String(r[0] || '').includes('Minsta gruppstorlek'))).toHaveLength(1);
     });
@@ -473,7 +473,7 @@ describe('k-tröskeln i utskriften', () => {
     const utskrift = async k => {
         const w = fonsterLitet(k);
         w.eval("sattRapportUrval('hela')");   // hela dokumentationen, med bilagorna
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         return w.document.getElementById('print-report').innerHTML;
     };
     it('vid 6 står meningen högt upp, före första tabellen', async () => {
@@ -489,7 +489,7 @@ describe('k-tröskeln i utskriften', () => {
             const w = fonsterLitet(k);
             let html = '';
             w.open = () => ({ document: { write: h => { html += h; }, close() {}, createElement: t => w.document.createElement(t), head: w.document.head }, focus() {}, print() {} });
-            w.eval(`printScaffoldView('${vy}', 'X')`);
+            w.eval(`skrivUtMallflik('${vy}', 'X')`);
             return html;
         };
         expect(skriv(6, 'view-handlingsplan')).toContain(MENING);
@@ -506,7 +506,7 @@ describe('k-tröskeln: motiveringsförslagen visar ingen lönepositionsslutsats 
         for (let i = 0; i < 6; i++) rows.push({ kon: 'kvinna', lon: 20000 + i, alder: 40 });
         for (let i = 0; i < 6; i++) rows.push({ kon: 'man', lon: 40000 + i, alder: 40 });
         w.__item = { _rows: rows, kvN: 6, maN: 6, n: 12, diffPct: -8, costPerPerson: 0 };
-        return w.eval('medExportLage(() => generateMotivationSuggestions(window.__item)).map(f => f.text).join(" ")');
+        return w.eval('medExportLage(() => byggMotiveringsforslag(window.__item)).map(f => f.text).join(" ")');
     };
     it('vid 10 saknas glasstaksmönstret för en grupp med 6 av varje kön', () => {
         expect(forslag(null)).not.toContain('Mönster med glastak eller klibbigt golv');
@@ -525,29 +525,29 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
     it('gruppdossierns text slutar med stämpeln vid 6 och saknar den vid 10', () => {
         for (const [k, stampel] of [[6, STAMPEL_6], [10, null]]) {
             const w = fonsterLitet(k);
-            const d = w.__buildGruppdossier(w.__gruppdossierCandidates()[0].key);
-            const txt = w.__gruppdossierAsText(d);
+            const d = w.__byggGruppdossier(w.__gruppdossierKandidater()[0].key);
+            const txt = w.__gruppdossierSomText(d);
             if (stampel) expect(txt.endsWith('\n\n' + stampel)).toBe(true);
             else expect(txt).not.toContain('Minsta gruppstorlek');
         }
     });
-    it('_downloadCSV: sista raden är stämpeln', async () => {
+    it('_laddaNedCSV: sista raden är stämpeln', async () => {
         const w = fonsterLitet(null);
         let blob = null;
         w.URL.createObjectURL = b => { blob = b; return 'blob:x'; };
         w.alert = () => {};
         w.__rader = rader;
-        w.eval("_downloadCSV(window.__rader, 'x')");
+        w.eval("_laddaNedCSV(window.__rader, 'x')");
         expect(blob).not.toBeNull();
         const text = await new Promise(res => { const fr = new w.FileReader(); fr.onload = () => res(String(fr.result)); fr.readAsText(blob); });
         expect(sistaRaden(text)).toBe(STAMPEL_10);
     });
-    it.each([[6, true], [10, false]])('_copyMatrixToClipboard vid %i: stämpel=%s', (k, med) => {
+    it.each([[6, true], [10, false]])('_kopieraMatrisTillUrklipp vid %i: stämpel=%s', (k, med) => {
         const w = fonsterLitet(k);
         let kopierat = null;
         Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: t => { kopierat = t; return Promise.resolve(); } } });
         w.__rader = rader;
-        w.eval('_copyMatrixToClipboard(window.__rader)');
+        w.eval('_kopieraMatrisTillUrklipp(window.__rader)');
         expect(kopierat).not.toBeNull();
         if (med) expect(sistaRaden(kopierat)).toBe(STAMPEL_6);
         else expect(kopierat).not.toContain('Minsta gruppstorlek');
@@ -559,7 +559,7 @@ describe('k-tröskeln i utdata: de verkliga vägarna', () => {
         w.JSZip = class { file(sokvag, xml) { delar[sokvag] = xml; } generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };
         w.URL.createObjectURL = () => 'blob:x';
         w.alert = () => {};
-        await w.eval('exportDocumentationDraft()');
+        await w.eval('exportWordUtkast()');
         const foot = Object.entries(delar).filter(([namn]) => /footer/i.test(namn)).map(([, xml]) => xml).join('');
         expect(foot).toContain('UTKAST');
         if (suffix) expect(foot).toContain(suffix);
@@ -571,50 +571,50 @@ describe('k-tröskeln i konfigurationsfilen', () => {
     it('tur och retur bär värdet', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(15, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         expect(cfg.kTroskel).toBe(15);
         const b = createAppWindow();
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.eval('kInstalld()')).toBe(15);
         expect(b.document.getElementById('k-troskel').value).toBe('15');
     });
     it('en fil utan fältet lämnar gällande värde orört (som ett organisationspaket utan fältet)', () => {
         const a = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         delete cfg.kTroskel;
         cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         b.eval('sattKTroskel(15, { fraga: false })');
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.eval('kInstalld()')).toBe(15);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');   // resten av filen läses in
     });
     it.each([1, 2, 2.5, '12', 1001, null])('ogiltigt värde %p avvisas och lämnar allt orört', v => {
         const a = createAppWindow();
         a.eval('sattKTroskel(15, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.kTroskel = v;
         cfg.orgNamn = 'Ska inte läsas in';
         a.__cfg = cfg;
         // null räknas som att fältet saknas: värdet står kvar och resten läses in.
-        if (v === null) { a.eval('applyConfigSnapshot(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
+        if (v === null) { a.eval('tillampaKonfiguration(window.__cfg)'); expect(a.eval('kInstalld()')).toBe(15); return; }
         a.eval('sattKTroskel(15, { fraga: false })');
-        expect(() => a.eval('applyConfigSnapshot(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 3 och 1000/);
+        expect(() => a.eval('tillampaKonfiguration(window.__cfg)')).toThrow(/kTroskel måste vara ett heltal mellan 3 och 1000/);
         expect(a.eval('kInstalld()')).toBe(15);
         expect(a.eval('orgNamn("")')).not.toBe('Ska inte läsas in');
     });
     it('värde under 10: nekad bekräftelse behåller värdet men läser in resten', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(6, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.orgNamn = 'Exempelorganisationen';
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return false; };
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(fragor).toBe(1);
         expect(b.eval('kInstalld()')).toBe(10);
         expect(b.eval('orgNamn("")')).toBe('Exempelorganisationen');
@@ -622,25 +622,25 @@ describe('k-tröskeln i konfigurationsfilen', () => {
     it('värde under 10: godkänd bekräftelse tillämpar värdet', () => {
         const a = createAppWindow();
         a.eval('sattKTroskel(6, { fraga: false })');
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return true; };
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(fragor).toBe(1);
         expect(b.eval('kInstalld()')).toBe(6);
     });
     it('en fil utan fältet: ett sänkt värde står också kvar, utan fråga', () => {
         const a = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(a.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         delete cfg.kTroskel;
         const b = createAppWindow();
         let fragor = 0;
         b.confirm = () => { fragor++; return true; };
         b.eval('sattKTroskel(6, { fraga: false })');
         b.__cfg = cfg;
-        b.eval('applyConfigSnapshot(window.__cfg)');
+        b.eval('tillampaKonfiguration(window.__cfg)');
         expect(b.eval('kInstalld()')).toBe(6);
         expect(fragor).toBe(0);
         expect(b.document.getElementById('k-troskel-varning').hidden).toBe(false);
@@ -727,11 +727,11 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
             }
         });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         return w;
     };
     const perBas = w => {
-        const pb = w.eval(`_computePerBasGap(getData(), ${JSON.stringify(BAS)})`);
+        const pb = w.eval(`_raknaPerBasGap(hamtaData(), ${JSON.stringify(BAS)})`);
         const q = w.eval(`bhJustera(${JSON.stringify(pb.map(b => b.pValue))})`);
         return Object.fromEntries(pb.map((b, i) => [b.bas, { ...b, q: q[i] }]));
     };
@@ -743,7 +743,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         w.alert = () => {};
         let wb = null;
         w.XLSX.writeFile = b => { wb = b; };
-        w.eval('exportJPAProtocol()');
+        w.eval('exportJPAProtokoll()');
         const blad = n => w.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true }).map(r => r.map(c => String(c ?? '')));
         return { forsatt: blad('1. Försättssida'), bas: blad('3. Likvärdigt arbete (BAS)') };
     };
@@ -792,8 +792,8 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
                 alder: 25 + ((j * 13) % 40), yrke: '7004 Yrke 4', aid: '7004', yrkeLabel: 'Yrke 4', enhet: '' });
         }
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
-        const pb = w.eval(`_computePerBasGap(getData(), ['E'])`);
+        w.eval('fyllValjare(); lasUppFlikar();');
+        const pb = w.eval(`_raknaPerBasGap(hamtaData(), ['E'])`);
         expect(pb).toHaveLength(1);
         expect(pb[0].status).toBe('ok');
         const p = pb[0].pValue;
@@ -802,7 +802,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         // Kortet: q-cellen visar talet, inte —.
         w.eval('ritaRegressionskort()');
         const rad = [...w.document.querySelectorAll('#perbas-table tbody tr')].find(tr => tr.cells[0].textContent.trim() === 'E');
-        expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formatPValue(${p})`));
+        expect(rad.cells[6].textContent.trim()).toBe(w.eval(`_formateraPVarde(${p})`));
         // Protokollet: samma q, lika med p.
         const { bas } = await protokollet(w);
         const prot = bas.slice(1).filter(r => r[1] === 'E');
@@ -832,10 +832,10 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
         R_KV.forEach((l, i) => rad('R', '7200', 'Smågrupp', 'kvinna', l, i));
         R_MA.forEach((l, i) => rad('R', '7200', 'Smågrupp', 'man', l, i));
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         return w;
     };
-    const protokollet = async (w, fn = 'exportJPAProtocol') => {
+    const protokollet = async (w, fn = 'exportJPAProtokoll') => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
@@ -903,7 +903,7 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
     for (const [k, utan] of [[null, ['7200']], [25, ['7100', '7200']]]) {
         it(`vid ${k ?? 10}: blad 2a har samma rader som bladet Lika arbete AID x BAS, och ${utan.join(' och ')} utan median`, async () => {
             const w = fonsterNiva(k);
-            const bok = await protokollet(w), alla = await protokollet(w, 'exportAllToExcel');
+            const bok = await protokollet(w), alla = await protokollet(w, 'exportAlltTillExcel');
             const blad = bok['2a. Lika arbete, alla grupper'];
             expect(blad).toEqual(alla['Lika arbete AID x BAS']);
             const rubrik = blad.findIndex(r => r.includes('Medianlön kvinnor'));
@@ -927,7 +927,7 @@ describe('[B5.5] k-tröskeln: Lika arbete AID x BAS har samma grupper som tabell
     for (const k of [10, 25]) {
         it(`tröskeln ${k}`, () => {
             const w = iExport(fonster(k));
-            w.__renderTabContent('matrix');
+            w.__ritaFlik('matrix');
             const aidbas = rader(w, 'aidbas-lika-tabell', tr => `${tr.cells[1].textContent.trim()}|${tr.cells[0].textContent.trim()}`);
             const huvud = rader(w, 'matrix-table', tr => `${tr.cells[0].textContent.trim().split(' ')[0]}|${tr.cells[1].textContent.trim()}`);
             expect(aidbas.length).toBeGreaterThan(0);

@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // ---- Statistiska cacher ----
 import { state } from './12-tillstand.js';
-import { computeBootstrapCI, computePowerAnalysis, skattningarSlapp } from './13-oversikt.js';
+import { raknaBootstrapKI, raknaStyrkeanalys, skattningarSlapp } from './13-oversikt.js';
 import { ritGenerationNy } from './23-exportgrind.js';
 import { laMinneSlapp } from './41-lika-arbete.js';
 /**
@@ -11,7 +11,7 @@ import { laMinneSlapp } from './41-lika-arbete.js';
  * Återskapar dem direkt — billigt nog att göra synkront, undviker att
  * UI:t visar inaktuella CI/MDE-värden för felaktigt urval.
  */
-export function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
+export function tomStatistikcacher({ recompute = true, likvardighet = true } = {}) {
     if (typeof ritGenerationNy === 'function') ritGenerationNy();   // det som är ritat bygger på det som nu räknas om (exportgrinden)
     state.bootstrapCI = null;
     state.powerAnalysis = null;
@@ -25,7 +25,7 @@ export function invalidateStatCaches({ recompute = true, likvardighet = true } =
     if (recompute && state.data && state.data.length) {
         // MEDVETEN DEGRADERING (inte bug-gömning):
         //
-        // computeBootstrapCI() och computePowerAnalysis() är sekundära beräkningar
+        // raknaBootstrapKI() och raknaStyrkeanalys() är sekundära beräkningar
         // av icke-kritiska sekundära aggregat (CI-suffix på rågap, MDE-kort på
         // dashboarden). Om de misslyckas pga ett edge-case (n=0,
         // saknad sigma, DOM-element ej tillgängligt vid race-condition) ska
@@ -36,11 +36,11 @@ export function invalidateStatCaches({ recompute = true, likvardighet = true } =
         // ingen risk att data hamnar i devtools-historik). Felindikering
         // sker istället implicit: CI-suffixet visas inte, MDE-kortet är dolt.
         // Dessa är cosmetiska — det skadar inte HR:s arbete om de saknas.
-        try { computeBootstrapCI(); } catch (_e) {
+        try { raknaBootstrapKI(); } catch (_e) {
             state.bootstrapCI = null;  // säkra att stale cache inte används
         }
         // Styrkeberäkningen (MDE) används av Prioriteringens detektionsvarning och
         // gruppstyrkan; Översikt visar Underlagets kvalitet (ADR-19).
-        try { state.powerAnalysis = computePowerAnalysis(); } catch (_e) { state.powerAnalysis = null; }
+        try { state.powerAnalysis = raknaStyrkeanalys(); } catch (_e) { state.powerAnalysis = null; }
     }
 }

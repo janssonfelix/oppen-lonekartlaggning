@@ -226,7 +226,7 @@ export async function flikarOchDiagram() {
     }
 
     console.log('\n── Länkade vyer: en markerad grupp framhävs i alla diagram ──');
-    /* global diagramMarkering, _chartExportRubrikFot -- funktionerna nedan körs i sidan, där de finns */
+    /* global diagramMarkering, _diagramexportRubrikFot -- funktionerna nedan körs i sidan, där de finns */
     {
         await oppnaFlik(page, '.nav-item[data-tab="struktur"]');
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
@@ -284,7 +284,7 @@ export async function flikarOchDiagram() {
         await page.click('[data-rf="pensel"] button');
         await page.waitForTimeout(300);
         const zoom = await page.evaluate(() => ({ not: (document.querySelector('[data-rf="zoom"]') || {}).textContent || '', pensel: !!document.querySelector('[data-rf="pensel"]'),
-            takt: [...document.querySelectorAll('#chart-kon-scatter [data-axel="y"]')].map(t => t.textContent).join('|'), fot: _chartExportRubrikFot(document.getElementById('chart-kon-scatter'), new Date()).fot }));
+            takt: [...document.querySelectorAll('#chart-kon-scatter [data-axel="y"]')].map(t => t.textContent).join('|'), fot: _diagramexportRubrikFot(document.getElementById('chart-kon-scatter'), new Date()).fot }));
         ok(/utsnitt/.test(zoom.not) && !zoom.pensel && zoom.takt !== taktFore && /Utsnitt av diagrammet$/.test(zoom.fot), '"Zooma hit" ritar om diagrammet som ett utsnitt, och exportens fotrad säger det');
         if (BILDER) await page.locator('#chart-kon-scatter').screenshot({ path: `${BILDER}/zoom-${NAMN}.png` });
         await page.click('[data-rf="zoom"] button');

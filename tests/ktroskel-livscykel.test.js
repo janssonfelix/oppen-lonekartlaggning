@@ -31,13 +31,13 @@ function fonster() {
     w.__state.data = r;
     w.__state.policy = NIVAER.map(([bas]) => ({ bas, p10: 22000, med: 30000, p90: 52000 }));
     w.__state.statistik = NIVAER.map(([bas]) => ({ aid: '6100', bas, median: 61700, p10: 55000, p90: 71000 }));
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     return w;
 }
 const vanta = () => new Promise(r => setTimeout(r, 30));
 // Väljer intervallet i rullistan, som användaren gör, på skärmen.
 async function valj(w, bas) {
-    w.__renderTabContent('kon');
+    w.__ritaFlik('kon');
     await vanta();
     const sel = w.document.getElementById('lifecycle-bas-select');
     sel.value = bas;
@@ -47,7 +47,7 @@ async function valj(w, bas) {
 // Kurvans tal för ett intervall: predikterad lön och bandets gränser vid varje ålder, i formerna de skrivs (heltal,
 // avrundat och avkortat, och diagramdatans två decimaler med komma).
 function kurvansTal(w, bas) {
-    const r = w.eval(`runLifecycleRegression(${JSON.stringify(bas)})`);
+    const r = w.eval(`korLivscykelregression(${JSON.stringify(bas)})`);
     const v = [...r.predKvinna, ...r.predMan].flatMap(p => [p.lon, p.lo, p.hi]);
     return [...new Set(v.flatMap(x => [String(Math.round(x)), String(Math.trunc(x)), String(Math.round(x * 100) / 100).replace('.', ',')]))];
 }
@@ -68,7 +68,7 @@ async function livscykelVagar(w) {
     const d = w.document, ut = [];
     const el = () => d.getElementById('lifecycle-chart');
     const rader = r => r.map(x => x.join(' | ')).join('\n');
-    ut.push(['diagramdata', rader(w.__chartExportRows(el()))]);
+    ut.push(['diagramdata', rader(w.__diagramexportRader(el()))]);
     await vanta();
     const svg = [];
     const orig = w.figurTillBild;
@@ -88,7 +88,7 @@ async function livscykelVagar(w) {
         await vanta();
     }
     const kopia = d.getElementById('ut-diagram-lifecycle-chart');
-    ut.push(['kopian i Alla diagram', kopia ? rader(w.medExportLage(() => w.__chartExportRows(kopia))) : '']);
+    ut.push(['kopian i Alla diagram', kopia ? rader(w.medExportLage(() => w.__diagramexportRader(kopia))) : '']);
     d.getElementById('ut-flik-egna').click();
     oppnaFlik(w, 'kon');
     await vanta();
@@ -98,13 +98,13 @@ async function livscykelVagar(w) {
 describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under tröskeln ritas inte i det som lämnar verktyget (ADR-70)', () => {
     it('fixturen: modellen skattas med alla intervall, D kan väljas i rullistan och dess kurva ligger långt över de andras', async () => {
         const w = fonster();
-        const r = w.eval('runLifecycleRegression(null)');
+        const r = w.eval('korLivscykelregression(null)');
         expect(r.ok).toBe(true);
         expect(r.basList).toEqual(['A', 'B', 'C', 'D']);
         expect(r.fixBas).not.toBe('D');
         await valj(w, 'D');
-        expect(w.eval('_lifecycleFixBas')).toBe('D');
-        const d = w.eval('runLifecycleRegression("D")');
+        expect(w.eval('_livscykelValdBas')).toBe('D');
+        const d = w.eval('korLivscykelregression("D")');
         expect(d.predKvinna[0].lon).toBeGreaterThan(2 * r.predKvinna[0].lon);
     });
 
@@ -114,7 +114,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         const el = w.document.getElementById('lifecycle-chart');
         expect(el._figur).toBeTruthy();
         expect(el.querySelector('svg')).toBeTruthy();
-        const d = w.eval('runLifecycleRegression("D")');
+        const d = w.eval('korLivscykelregression("D")');
         const linje = el._figur.lager.find(l => l.marke === 'linje');
         expect(linje.data[0].y).toBeCloseTo(d.predKvinna[0].lon, 6);
         expect(normalisera(w.document.getElementById('livscykel-content').textContent)).not.toMatch(NOT);
@@ -124,7 +124,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         const w = fonster();
         await valj(w, 'D');
         iExport(w);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         await vanta();
         const el = w.document.getElementById('lifecycle-chart');
         expect(el._figur).toBeFalsy();
@@ -141,9 +141,9 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
     it('exportläget vid 10: beräkningsbeviset för ett annat intervall skriver inte nivåfaktorn mot D', async () => {
         const w = fonster();
         await valj(w, 'D');
-        const faktor = w.eval('svTal(runLifecycleRegression("D").basFaktor.B, 3)');
+        const faktor = w.eval('svTal(korLivscykelregression("D").basFaktor.B, 3)');
         iExport(w);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         await vanta();
         w.document.querySelector('.btn-evidence[data-livscykel-bas="B"]').click();
         const modal = normalisera(w.document.getElementById('evidence-modal-content').textContent);
@@ -168,14 +168,14 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
     it('ett valt intervall över tröskeln har sin kurva i exporten som förut: diagramdatan, bilden, ZIP-filen och Alla diagram', async () => {
         const w = fonster();
         await valj(w, 'B');
-        const tal = String(Math.round(w.eval('runLifecycleRegression("B")').predKvinna[0].lon * 100) / 100).replace('.', ',');
+        const tal = String(Math.round(w.eval('korLivscykelregression("B")').predKvinna[0].lon * 100) / 100).replace('.', ',');
         const vagar = Object.fromEntries(await livscykelVagar(w));
         expect(vagar.diagramdata).toContain(tal);
         expect(vagar['kopian i Alla diagram']).toBe(vagar.diagramdata);
         expect(vagar['bilden (SVG före rastrering)']).toMatch(/<svg/);
         expect(vagar['ZIP-filens diagram']).toMatch(/lifecycle-chart/);
         iExport(w);
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         await vanta();
         expect(w.document.getElementById('lifecycle-chart')._figur).toBeTruthy();
         expect(normalisera(w.document.getElementById('livscykel-content').textContent)).not.toMatch(/Lönekurvan visas inte/);

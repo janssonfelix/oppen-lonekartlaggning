@@ -237,7 +237,7 @@ describe('minnet', () => {
     it('lönefilens inläsning anropar _rfUrvalGlom', async () => {
         const { readFileSync } = await import('node:fs');
         const kalla = readFileSync('src/app/32-filinlasning.js', 'utf8');
-        const lasIn = kalla.slice(kalla.indexOf('const lasIn = () => {'), kalla.indexOf('_afterDataLoaded();', kalla.indexOf('const lasIn = () => {')));
+        const lasIn = kalla.slice(kalla.indexOf('const lasIn = () => {'), kalla.indexOf('_efterInlastData();', kalla.indexOf('const lasIn = () => {')));
         expect(lasIn).toContain('_rfUrvalGlom()');
     });
     it('demot (litet och stort) glömmer urvalet: den gemensamma inläsningen anropar _rfUrvalGlom', () => {
@@ -249,14 +249,14 @@ describe('minnet', () => {
         w2.eval('ritaFigur(window.__el, window.__f, {})');
         el.previousElementSibling.querySelector('[data-urval="A"]').dispatchEvent(new w2.MouseEvent('click', { bubbles: true }));
         expect(el._figurFilter.kategori.get('bas').has('A')).toBe(true);
-        w2.__loadDemoData();
+        w2.__lasInDemodata();
         w2.eval('ritaFigur(window.__el, window.__f, {})');
         expect(el._figurFilter.kategori.get('bas').size).toBe(0);
         // Det stora demot går samma väg (_lasInDemounderlag), före underlaget byts.
         const kalla = w2.eval('_lasInDemounderlag.toString()');
         expect(kalla.indexOf('_rfUrvalGlom()')).toBeGreaterThan(-1);
         expect(kalla.indexOf('_rfUrvalGlom()')).toBeLessThan(kalla.indexOf('state.data = skapa()'));
-        expect(w2.eval('loadStortDemo.toString()')).toContain('_lasInDemounderlag(');
+        expect(w2.eval('lasInStortDemo.toString()')).toContain('_lasInDemounderlag(');
     });
 });
 
@@ -264,8 +264,8 @@ describe('exporten', () => {
     const fanga = async (fn) => {
         const org = w.figurTillBild, sedda = [];
         w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, format, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
-        const dl = w._downloadCSV, kop = w._copyMatrixToClipboard;
-        try { await fn(); } finally { w.figurTillBild = org; w._downloadCSV = dl; w._copyMatrixToClipboard = kop; }
+        const dl = w._laddaNedCSV, kop = w._kopieraMatrisTillUrklipp;
+        try { await fn(); } finally { w.figurTillBild = org; w._laddaNedCSV = dl; w._kopieraMatrisTillUrklipp = kop; }
         return sedda;
     };
     it('_rfExportFigur bär filtret; diagramdatan har raden Urval i diagrammet och alla datarader', () => {
@@ -273,13 +273,13 @@ describe('exporten', () => {
         const el = behallare();
         ritaI(el, basFigur(['A', 'B', 'C', 'D', 'N']));
         w.__el = el;
-        const utan = w.eval('chartExportRows(window.__el)');
+        const utan = w.eval('diagramexportRader(window.__el)');
         expect(utan.some(r => String(r[0]).startsWith('Urval i diagrammet'))).toBe(false);
         expect([...w.eval('_rfExportFigur(window.__el)').filter.kategori.get('bas')]).toEqual([]);
         klicka(knapp(el, 'BAS N'));
         klicka(knapp(el, 'BAS A'));
         expect([...w.eval('_rfExportFigur(window.__el)').filter.kategori.get('bas')].sort()).toEqual(['A', 'N']);
-        const med = w.eval('chartExportRows(window.__el)');
+        const med = w.eval('diagramexportRader(window.__el)');
         expect(med).toHaveLength(utan.length + 1);
         expect(med[1]).toEqual(['Urval i diagrammet: utan BAS A, BAS N']);
         expect(med.slice(2)).toEqual(utan.slice(1));
@@ -291,7 +291,7 @@ describe('exporten', () => {
         ritaI(el, basFigur(), { exportBeskrivning: 'Kvinnor' });
         klicka(knapp(el, 'BAS A'));
         w.__el = el;
-        const rader = w.eval('chartExportRows(window.__el)');
+        const rader = w.eval('diagramexportRader(window.__el)');
         expect(rader[1]).toEqual(['Urval: Kvinnor']);
         expect(rader[2]).toEqual(['Urval i diagrammet: utan BAS A']);
         rensa(el);
@@ -301,13 +301,13 @@ describe('exporten', () => {
         const el = behallare();
         ritaI(el, basFigur(['A', 'B', 'C', 'D', 'N']));
         w.__el = el;
-        const fore = await fanga(() => w.eval('chartExportRun(window.__el, "svg")'));
+        const fore = await fanga(() => w.eval('exporteraDiagram(window.__el, "svg")'));
         expect(fore[0].val.fot).not.toContain('Urval i diagrammet');
         klicka(knapp(el, 'BAS N'));
         klicka(knapp(el, 'BAS A'));
         const sedda = await fanga(async () => {
-            await w.eval('chartExportRun(window.__el, "png-presentation")');
-            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('exporteraDiagram(window.__el, "png-presentation")');
+            await w.eval('exporteraDiagram(window.__el, "svg")');
         });
         expect(sedda.map(s => s.format)).toEqual(['png', 'svg']);
         for (const s of sedda) {
@@ -549,17 +549,17 @@ describe('intervall och flera dimensioner', () => {
         const el = behallare();
         ritaI(el, gruppFigur());
         w.__el = el;
-        const utan = w.eval('chartExportRows(window.__el)');
+        const utan = w.eval('diagramexportRader(window.__el)');
         klicka(knapp(el, 'BAS A'));
         satt(el, 'min', '10');
         satt(el, 'max', '50');
-        const med = w.eval('chartExportRows(window.__el)');
+        const med = w.eval('diagramexportRader(window.__el)');
         expect(med[1]).toEqual(['Urval i diagrammet: utan BAS A; 10–50 personer i gruppen']);
         expect(med.slice(2)).toEqual(utan.slice(1));
         const org = w.figurTillBild, sedda = [];
         w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
         try {
-            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('exporteraDiagram(window.__el, "svg")');
             await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
         } finally { w.figurTillBild = org; }
         const [meny, rapport] = sedda;
@@ -769,11 +769,11 @@ describe('kategori som lista', () => {
         sok(el, 'yrke 1');
         markera(el, 'inga').click();
         w.__el = el;
-        expect(w.eval('chartExportRows(window.__el)')[1]).toEqual(['Urval i diagrammet: AID-etikett 30 av 40']);
+        expect(w.eval('diagramexportRader(window.__el)')[1]).toEqual(['Urval i diagrammet: AID-etikett 30 av 40']);
         const org = w.figurTillBild, sedda = [];
         w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
         try {
-            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('exporteraDiagram(window.__el, "svg")');
             await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
         } finally { w.figurTillBild = org; }
         expect(sedda[0].val.fot).toMatch(/ · Urval i diagrammet: AID-etikett 30 av 40$/);
@@ -871,7 +871,7 @@ describe('härledda lager', () => {
         const org = w.figurTillBild, sedda = [];
         w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
         try {
-            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('exporteraDiagram(window.__el, "svg")');
             await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
         } finally { w.figurTillBild = org; }
         const [meny, rapport] = sedda;
@@ -885,7 +885,7 @@ describe('härledda lager', () => {
         // Rapportens bild är byte för byte bilden av en figur utan härledda lager.
         expect(w.figurTillSvg(rapport.figur, 1600, 900, rapport.val)).toBe(w.figurTillSvg(trendFigur(false), 1600, 900, rapport.val));
         // Diagramdatan har originalets rader.
-        const rader = w.eval('chartExportRows(window.__el)');
+        const rader = w.eval('diagramexportRader(window.__el)');
         expect(rader.filter(r => r[0] === 'Kvinna (trend)').map(r => r[2])).toEqual([1, 1]);
         rensa(el);
     });
@@ -1067,8 +1067,8 @@ describe('underlag: Räkna för', () => {
         expect(urad(el)).not.toBeNull();
         expect(not(el).textContent).toMatch(/^Diagrammet är räknat för: sektor Bara kv, Mellan \(18 personer\)/);
         w.__el = el;
-        await expect(w.eval('chartExportRun(window.__el, "svg")')).rejects.toThrow(/inget att exportera/);
-        expect(w.eval('chartExportRows(window.__el)')).toEqual([]);
+        await expect(w.eval('exporteraDiagram(window.__el, "svg")')).rejects.toThrow(/inget att exportera/);
+        expect(w.eval('diagramexportRader(window.__el)')).toEqual([]);
         // Rapportens bild (hela underlaget) går fortfarande.
         expect(w.eval('diagramRitat(window.__el)')).toBe(true);
         rensa(el);
@@ -1079,17 +1079,17 @@ describe('underlag: Räkna för', () => {
         const f = underlagFigur();
         ritaI(el, f, { exportAnteckning: 'Andel kvinnor 52 %' });
         w.__el = el;
-        const hel = w.eval('chartExportRows(window.__el)');
+        const hel = w.eval('diagramexportRader(window.__el)');
         klicka(uknapp(el, 'Bara kv'));
         klicka(uknapp(el, 'Mellan'));
-        const rader = w.eval('chartExportRows(window.__el)');
+        const rader = w.eval('diagramexportRader(window.__el)');
         expect(rader[1]).toEqual(['Räknat för: sektor Stor (40 personer)']);
         expect(rader.slice(2).filter(r => r[0] === 'Antal').map(r => r[2])).toEqual([20, 20]);
         expect(hel.slice(1).filter(r => r[0] === 'Antal').map(r => r[2])).toEqual([34, 31]);
         const org = w.figurTillBild, sedda = [];
         w.figurTillBild = (figur, format, b, h, val) => { sedda.push({ figur, val }); return Promise.resolve('data:image/png;base64,AAAA'); };
         try {
-            await w.eval('chartExportRun(window.__el, "svg")');
+            await w.eval('exporteraDiagram(window.__el, "svg")');
             await w.eval('diagramTillBild(window.__el, { bredd: 1600, hojd: 900 })');
         } finally { w.figurTillBild = org; }
         const [meny, rapport] = sedda;

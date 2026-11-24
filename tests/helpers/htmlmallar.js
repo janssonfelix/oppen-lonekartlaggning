@@ -374,7 +374,7 @@ const TALNAMN = Object.fromEntries([
         + 'antalAidxBas antalOrd targetsCount prioCount lvCount egenCount klaraForra totaltForra klaraNu totaltNu personsCovered personsTotal '
         + 'groupsCovered groupsTotal utelamnade kvDomFunna ickeKvFunna kvDomMedNLessThanK kvUtanPoang gemensammaBas möjligaPar statHögre '
         + 'statLägreEllerLika internaPar externaPar basMedExternFallback leapfrog hHoga kiB'],
-    ['en persons ålder och rad i lönefilen: tal ur extractMinimalRecord (06-uppgiftsminimering.js)', 'alder radnr'],
+    ['en persons ålder och rad i lönefilen: tal ur minimeraLonerad (06-uppgiftsminimering.js)', 'alder radnr'],
     ['lönemått i kronor, räknade med Stat eller lästa som tal (tolkaTal) ur ställningstagandet och jämförelsestatistiken',
         'median med p10 p90 medTot medKv medMa kvMedian maMedian refMedian diffKr gapKr costPerPerson annualGapTotal valueKv valueMa'],
     ['procent, andelar och index som räknas', 'gapPct diffPct maKvAndel priorityIndex'],
@@ -1134,7 +1134,7 @@ function provningar(fil) {
         }
     }
     // Beräkningsbevisen (_evidenceFor…): intro, formula och footer skrivs som HTML i bevisrutan, liksom value på en
-    // rad med isHtml: true (_openEvidenceModal i 27-berakningsbevis.js). De prövas där de byggs.
+    // rad med isHtml: true (_oppnaBevisruta i 27-berakningsbevis.js). De prövas där de byggs.
     for (const f of fil.funktioner.filter(f => f.namn && f.namn.startsWith('_evidenceFor') && f.kropp.typ === 'block')) {
         for (let j = f.kropp.a; j < f.kropp.b; j++) {
             if (!ar(tok[j], 'namn') || !op(tok[j + 1], ':') || !(op(tok[j - 1], '{') || op(tok[j - 1], ','))) continue;

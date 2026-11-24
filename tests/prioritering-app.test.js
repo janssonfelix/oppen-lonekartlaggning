@@ -8,7 +8,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 // uppmärksamhetstrappan för skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat).
 describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
     const TRAPPAN = /Värt att granska|Följ upp|Balanserat/;
-    const oppna = () => { const w = createAppWindow(); w.__loadDemoData(); w.__renderTabContent('prioritering'); return w; };
+    const oppna = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__ritaFlik('prioritering'); return w; };
     it('fliken har Prioriteringens egna ord, och nyckeltalet heter Kostnad att nå referensen', () => {
         const w = oppna();
         const d = w.document;
@@ -36,7 +36,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         const w = oppna();
         const d = w.document;
         const rader = [...d.querySelectorAll('#prio-table tbody tr')].map(tr => tr._prioItem);
-        const items = w.eval('computePrioritization(_selectedPrioReference())');
+        const items = w.eval('raknaPrioritering(_valdPrioReferens())');
         expect(rader.length).toBe(items.length);
         const antal = s => rader.filter(i => i.status === s).length;
         const ruta = id => d.getElementById(id).closest('.stat-box');
@@ -54,29 +54,29 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         // Färdigcheck: alla under noll, varav Börja här och Under referens, liten grupp.
         const under = items.filter(i => i.diffPct < 0).length, varav = antal('akut') + antal('atgard');
         expect(under).toBeGreaterThan(varav); expect(varav).toBeGreaterThan(0);
-        const punkt = w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper');
+        const punkt = w.eval('byggFardigcheck()').find(p => p.id === 'flaggade-grupper');
         expect(punkt.title).toBe(`${under} grupper ligger under referensen, varav ${varav} mer än 5\u00a0% under`);
     });
     it('nyckeltalens undertexter, matrisens zoner och Färdigcheck följer inställda gränser', () => {
         const w = oppna();
         const d = w.document;
         w.eval('state.prioConfig = { atgardThreshold: -2.5, akutMinN: 30, bevakaThreshold: -1, analyseraThreshold: 3 }');
-        w.__renderTabContent('prioritering');
+        w.__ritaFlik('prioritering');
         expect(d.getElementById('prio-stat-akut-not').textContent).toBe('mer än 2,5\u00a0% under, minst 30 personer');
         expect(d.getElementById('prio-stat-under-not').textContent).toBe('mer än 2,5\u00a0% under, färre än 30 personer');
         expect(d.getElementById('prio-stat-over-not').textContent).toBe('mer än 3\u00a0% över');
-        const items = w.eval('computePrioritization(_selectedPrioReference())');
+        const items = w.eval('raknaPrioritering(_valdPrioReferens())');
         for (const [id, status] of [['prio-stat-akut', 'akut'], ['prio-stat-under', 'atgard'], ['prio-stat-over', 'analysera']]) {
             expect(d.getElementById(id).textContent).toBe(String(items.filter(i => i.status === status).length));
         }
-        const f = w.eval("_prioMatrisFigur(computePrioritization(_selectedPrioReference()), 'topp10', 'referensen', state.prioConfig)");
+        const f = w.eval("_prioMatrisFigur(raknaPrioritering(_valdPrioReferens()), 'topp10', 'referensen', state.prioConfig)");
         expect(f.referens.map(z => z.etikett)).toEqual(['MER ÄN 2,5\u00a0% UNDER', 'NÄRA REFERENS, UNDER', 'NÄRA REFERENS', 'MER ÄN 3\u00a0% ÖVER']);
-        const punkt = w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper');
+        const punkt = w.eval('byggFardigcheck()').find(p => p.id === 'flaggade-grupper');
         const varav = items.filter(i => i.status === 'akut' || i.status === 'atgard').length;
         expect(punkt.title).toBe(`${items.filter(i => i.diffPct < 0).length} grupper ligger under referensen, varav ${varav} mer än 2,5\u00a0% under`);
         // Utan grupper bortom gränsen står bara den första delen.
         w.eval('state.prioConfig = { atgardThreshold: -40, akutMinN: 10, bevakaThreshold: -2, analyseraThreshold: 5 }');
-        expect(w.eval('buildFardigcheck()').find(p => p.id === 'flaggade-grupper').title).toMatch(/^\d+ grupper ligger under referensen$/);
+        expect(w.eval('byggFardigcheck()').find(p => p.id === 'flaggade-grupper').title).toMatch(/^\d+ grupper ligger under referensen$/);
     });
     it('kolumnen Skillnad kön bär uppmärksamhetstrappans bricka efter storleken, utan prövning (ADR-71)', () => {
         const w = oppna();
@@ -100,7 +100,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         // Prioriteringen prövar inte skillnaden mot slumpen: aldrig Värt att granska.
         expect(nivaer.has('granska')).toBe(false);
         // Exporten bär talet, inte brickan.
-        const matris = w.__tableToMatrix('prio-table');
+        const matris = w.__tabellTillMatris('prio-table');
         expect(matris.flat().join(' ')).not.toMatch(/Följ upp|Balanserat|Går ej att bedöma/);
     });
     it('inställningarnas förklaringar för Prioriteringens trösklar använder samma ord', () => {
@@ -114,16 +114,16 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
     it('förslagen säger hur nära referensen gruppen ligger, utan att avfärda skillnaden', () => {
         const w = oppna();
         w.__it = { diffPct: 0.8, n: 12, kvN: 12, maN: 12, _rows: [{ lon: 1, kon: 'kvinna', alder: 40 }] };
-        const nara = w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text).join(' ');
+        const nara = w.eval('byggMotiveringsforslag(window.__it)').map(f => f.text).join(' ');
         expect(nara).toContain('Gruppens median ligger inom ±2 % av referensen.');
         expect(nara).not.toMatch(/normal variation|kräver ytterligare utredning/);
         w.__it = { ...w.__it, diffPct: 7.4 };
-        expect(w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text)).toContain('Ligger 7,4\u00a0% över referensen. Dokumentera gärna varför.');
+        expect(w.eval('byggMotiveringsforslag(window.__it)').map(f => f.text)).toContain('Ligger 7,4\u00a0% över referensen. Dokumentera gärna varför.');
     });
     it('snabb vinst säger villkoret i klarspråk, också för en stor grupp (inget "få personer")', () => {
         const w = oppna();
         w.__it = { diffPct: -4, n: 300, kvN: 150, maN: 150, costPerPerson: 1200, isQuickWin: true, _rows: [{ lon: 1, kon: 'kvinna', alder: 40 }] };
-        const txt = w.eval('generateMotivationSuggestions(window.__it)').map(f => f.text).join(' ');
+        const txt = w.eval('byggMotiveringsforslag(window.__it)').map(f => f.text).join(' ');
         expect(txt).toMatch(/Snabb vinst:<\/strong> gruppen ligger mer än 3\s%\s+under referensen, och kostnaden per person är under 1\s500\s+kr per månad \(300 personer\)\./);
         expect(txt).not.toMatch(/få personer|hanterbar/);
     });
@@ -131,7 +131,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
         const { laddaXlsx, fangaBocker } = await import('./helpers/ktroskel-rigg.js');
         const w = oppna();
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportAllToExcel()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportAlltTillExcel()')))[0];
         const blad = bok.split(/\n(?=\[)/).find(b => b.startsWith('[Prioritering]'));
         expect(blad).toBeTruthy();
         expect(blad).not.toMatch(TRAPPAN);
@@ -147,7 +147,7 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
     });
     it('Att göra kallar grupperna under referensen Löneläge mot referens, inte Värt att granska', () => {
         const w = oppna();
-        const prio = w.eval('buildActionChecklist()').filter(i => i.källa === 'Prioriteringsanalys');
+        const prio = w.eval('byggAtgardslista()').filter(i => i.källa === 'Prioriteringsanalys');
         expect(prio.length).toBeGreaterThan(0);
         expect([...new Set(prio.map(i => i.kategori))]).toEqual(['Löneläge mot referens']);
         expect(prio.map(i => i.detalj).join(' ')).not.toMatch(/kostnad att lyfta till referens/);
@@ -157,8 +157,8 @@ describe('Prioritering: egna ord och rätt rubrik (A5)', () => {
 describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
     const prio = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('prioritering');
+        w.__lasInDemodata();
+        w.__ritaFlik('prioritering');
         w.document.querySelector('.nav-item[data-tab="prioritering"]').click();   // fokus når bara en flik som visas
         return w;
     };
@@ -213,7 +213,7 @@ describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
         meny.querySelector('[data-open-dossier]').click();
         expect(meny.hidden).toBe(true);
         expect(d.getElementById('dossier-modal').style.display).toBe('flex');
-        w.eval('closeGruppdossier()');
+        w.eval('stangGruppdossier()');
         expect(d.activeElement).toBe(knapp);
     });
 });

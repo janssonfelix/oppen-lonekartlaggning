@@ -18,7 +18,7 @@ function fonster(k = null, rader = byggDataset()) {
     if (k !== null) win.eval(`sattKTroskel(${k}, { fraga: false })`);
     win.__state.data = rader;
     win.__state.policy = [...STORA, TOPP, ...MELLAN, ...SMA].map(b => ({ bas: b, p10: 22000, med: 30000, p90: 52000 }));
-    win.eval('populateSelects(); unlockTabs();');
+    win.eval('fyllValjare(); lasUppFlikar();');
     return win;
 }
 const text = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
@@ -55,7 +55,7 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
 });
 
 describe('[R5] Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräver tröskeln för varje kön', () => {
-    const resultat = w => { iExport(w); w.eval("renderTabContent('loneoversyn'); _forecastThreshold()"); return text(w.document.getElementById('forecast-threshold-result')); };
+    const resultat = w => { iExport(w); w.eval("ritaFlik('loneoversyn'); _fcLyftMotMal()"); return text(w.document.getElementById('forecast-threshold-result')); };
     it('med 6 kvinnor i urvalet: streck och meningen om utelämnat könsuppdelat mått', () => {
         const alla = byggDataset();
         const kvinnor = alla.filter(r => r.kon === 'kvinna').slice(0, 6);
@@ -84,7 +84,7 @@ function parFonster(k = 5) {
     lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
     lagg(6, 'kvinna', 36421, 'C', '5300');
     w.__state.data = rader;
-    w.eval(`populateSelects(); unlockTabs(); sattKTroskel(${k}, { fraga: false });`);
+    w.eval(`fyllValjare(); lasUppFlikar(); sattKTroskel(${k}, { fraga: false });`);
     w.alert = () => {};
     return w;
 }
@@ -92,7 +92,7 @@ function parFonster(k = 5) {
 function parFonsterMedRader() {
     const w = parFonster(5);
     Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
-    w.eval("renderTabContent('loneoversyn'); _forecastOptimize()");
+    w.eval("ritaFlik('loneoversyn'); _fcOptimera()");
     expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
     w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
     return w;
@@ -104,33 +104,33 @@ function parFonsterMedRader() {
 describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag under den inställda tröskeln rensas, också på skärmen (ADR-69)', () => {
     const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
     it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {
-        const cfg = parFonsterMedRader().eval('buildConfigSnapshot()');
+        const cfg = parFonsterMedRader().eval('byggKonfiguration()');
         expect(cfg.version).toBe(3);
         expect(cfg.loneoversyn.mal.find(t => t.aid === '5300').kalla).toBe('par');
         expect(cfg.loneoversyn.mal.find(t => t.aid === '6000').kalla).toBeUndefined();
     });
     it('spara vid 5, höj till 10, läs in: förslaget rensas, också på skärmen, och den egna raden står kvar', () => {
         const w = parFonsterMedRader();
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         delete cfg.kTroskel;   // filen ska inte sänka tröskeln igen
         w.eval('sattKTroskel(10, { fraga: false })');
         expect(aids(w)).toEqual(['6000']);
         w.__cfg = JSON.parse(JSON.stringify(cfg));
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(aids(w)).toEqual(['6000']);
         // En egen rad på en grupp under tröskeln läses in som egen och får noten.
         w.__cfg.loneoversyn.mal = [{ bas: 'C', aid: '5300', enhet: 'kr', varde: 500, fordelning: 'lowest', malniva: 'median', pott: 'övrigt' }];
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(aids(w)).toEqual(['5300']);
         expect(w.__state.forecast.targets[0].kalla).toBeUndefined();
         expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Raden berör 6 personer, färre än 10 personer/);
     });
     it('läs in vid 5 och höj sedan: raden ur filen bär kalla och rensas när tröskeln höjs', () => {
         const w = parFonsterMedRader();
-        const cfg = w.eval('buildConfigSnapshot()');
+        const cfg = w.eval('byggKonfiguration()');
         w.__state.forecast.targets = [];
         w.__cfg = JSON.parse(JSON.stringify(cfg));
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(aids(w)).toEqual(['5300', '6000']);
         expect(w.__state.forecast.targets.find(t => t.aid === '5300').kalla).toBe('par');
         w.eval('sattKTroskel(10, { fraga: false })');
@@ -146,7 +146,7 @@ describe('Prioritering: varningen "underlaget är litet" går vid minsta gruppst
         for (let i = 0; i < kvN; i++) rows.push({ kon: 'kvinna', lon: 20000 + i, alder: 40 });
         for (let i = 0; i < maN; i++) rows.push({ kon: 'man', lon: 40000 + i, alder: 40 });
         w.__item = { _rows: rows, kvN, maN, n: kvN + maN, diffPct: -8, costPerPerson: 0 };
-        return w.eval('generateMotivationSuggestions(window.__item)').filter(f => f.type === 'warn').map(f => f.text).join(' ');
+        return w.eval('byggMotiveringsforslag(window.__item)').filter(f => f.type === 'warn').map(f => f.text).join(' ');
     };
     it('vid 10 varnar den för 7 män och nämner tröskeln', () => {
         expect(forslag(null, 12, 7)).toMatch(/Underlaget är litet \(12 kvinnor \/ 7 män; minsta gruppstorlek 10\)/);
@@ -161,7 +161,7 @@ describe('Prioritering: varningen "underlaget är litet" går vid minsta gruppst
 });
 
 describe('Processöversiktens steg 4: inget att hantera när alla kandidatpar har en grupp under tröskeln', () => {
-    const steg4 = w => { w.eval('renderProcessTracker()'); return [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Likvärdigt arbete/.test(r.textContent)); };
+    const steg4 = w => { w.eval('ritaKartlaggningensSteg()'); return [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Likvärdigt arbete/.test(r.textContent)); };
     it('regeln: tillståndet inget, inte klar, med antalet par och hänvisning till fliken', async () => {
         const { stegLikvardigt } = await import('../src/lib/attgora.js');
         expect(stegLikvardigt({ analys: true, antalPar: 0, utelamnade: 2, k: 10, t: 0, d: 0 })).toEqual({ status: 'inget',
@@ -186,10 +186,10 @@ describe('Processöversiktens steg 4: inget att hantera när alla kandidatpar ha
 
 describe('Diagramdata från diagram med en punkt per person säger att filen innehåller en rad per person', () => {
     const RAD = 'Filen innehåller en rad per person (lön, kön, ålder eller grupp) och ska hanteras som personuppgifter. Text ur fältet för AID-etikett kan följa med som den står i lönefilen.';
-    const rader = (w, id) => { w.__id = id; return w.eval('chartExportRows(document.getElementById(window.__id))'); };
+    const rader = (w, id) => { w.__id = id; return w.eval('diagramexportRader(document.getElementById(window.__id))'); };
     it('spridningsdiagrammen i Ålder & karriär bär raden på rad 2, efter stämpeln; aggregerade diagram bär den inte', () => {
         const w = fonster();
-        w.eval("renderTabContent('kon')");
+        w.eval("ritaFlik('kon')");
         for (const id of ['chart-kon-scatter', 'chart-kon-multiplar']) {
             const r = rader(w, id);
             expect(r.length, id).toBeGreaterThan(3);
@@ -205,7 +205,7 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
     });
     it('färglagt efter AID-etikett blir texten ur fältet serienamn, som den står i lönefilen (ADR-85)', () => {
         const w = fonster();
-        w.eval("renderTabContent('kon')");
+        w.eval("ritaFlik('kon')");
         w.document.getElementById('kon-color-by').value = 'aid';
         w.eval("ritaAlderOchLon('__ALLA__')");
         const serier = new Set(rader(w, 'chart-kon-scatter').slice(2).map(r => r[0]));
@@ -213,16 +213,16 @@ describe('Diagramdata från diagram med en punkt per person säger att filen inn
     });
     it('raden följer med till urklipp och CSV', async () => {
         const w = fonster();
-        w.eval("renderTabContent('kon')");
+        w.eval("ritaFlik('kon')");
         const texter = [];
         w.navigator.clipboard = { writeText: t => { texter.push(t); return Promise.resolve(); } };
         w.__id = 'chart-kon-scatter';
-        await w.eval('chartExportRun(document.getElementById(window.__id), "data-kopiera")');
+        await w.eval('exporteraDiagram(document.getElementById(window.__id), "data-kopiera")');
         expect(texter.join('\n')).toContain(RAD);
         const blobbar = [];
         w.URL.createObjectURL = b => { blobbar.push(b); return 'blob:x'; };
         w.URL.revokeObjectURL = () => {};
-        await w.eval('chartExportRun(document.getElementById(window.__id), "data-csv")');
+        await w.eval('exporteraDiagram(document.getElementById(window.__id), "data-csv")');
         expect(blobbar.length).toBeGreaterThan(0);
         expect(await blobbar[0].text()).toContain(RAD);
     });
@@ -236,7 +236,7 @@ describe('autocomplete="off" på alla fält, också de som skapas efter start', 
         .map(el => `${el.tagName.toLowerCase()}#${el.id || '?'}[name=${el.name || ''}][type=${el.type || ''}]`);
     it('efter att alla flikar ritats och riktade rader lagts till saknar inget fält attributet', async () => {
         const w = fonster();
-        for (const f of FLIKAR) { try { w.eval(`renderTabContent('${f}')`); } catch (_e) { /* fliken finns inte */ } }
+        for (const f of FLIKAR) { try { w.eval(`ritaFlik('${f}')`); } catch (_e) { /* fliken finns inte */ } }
         w.__state.forecast.targets.push({ bas: 'A', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         w.eval('ritaRiktadeRader()');
         // Fält som en knapp skapar (de riktade raderna) får attributet av observatören, strax efter.
@@ -265,7 +265,7 @@ describe('motiveringsförslagen: åldersskillnaden', () => {
         for (let i = 0; i < 12; i++) rows.push({ kon: 'kvinna', lon: 30000 + i, alder: 35 });
         for (let i = 0; i < 12; i++) rows.push({ kon: 'man', lon: 32000 + i, alder: 45 });
         w.__item = { _rows: rows, kvN: 12, maN: 12, n: 24, diffPct: -6, costPerPerson: 0 };
-        const text = w.eval('generateMotivationSuggestions(window.__item)').map(f => f.text).join(' ');
+        const text = w.eval('byggMotiveringsforslag(window.__item)').map(f => f.text).join(' ');
         expect(text).toMatch(/år äldre/);
         expect(text).toContain('Stäm av om åldersskillnaden förklarar');
         expect(text).not.toContain('rekommenderas');

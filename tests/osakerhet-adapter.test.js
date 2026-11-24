@@ -25,7 +25,7 @@ const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon
 describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osakerhet.js', () => {
     const w = createAppWindow();
     let demo;
-    beforeAll(() => { w.__loadDemoData(); demo = w.__state.data.map(r => ({ ...r })); });
+    beforeAll(() => { w.__lasInDemodata(); demo = w.__state.data.map(r => ({ ...r })); });
 
     const underlag = {
         demodatan: () => demo,
@@ -45,42 +45,42 @@ describe('[B4.1] osäkerhetens adaptrar i appen ger samma tal som src/lib/osaker
                     golv = lage === 'export' ? Math.max(k, w.__K) : w.__K;
                 });
 
-                it('computeBootstrapCI', () => {
-                    w.eval('computeBootstrapCI()');
+                it('raknaBootstrapKI', () => {
+                    w.eval('raknaBootstrapKI()');
                     const { elapsed: _tid, ...app } = w.__state.bootstrapCI;
                     lika(app, organisationensKvotKI(d, golv));
                 });
-                it('computePowerAnalysis och computeGroupMDE', () => {
-                    const app = w.eval('computePowerAnalysis()');
+                it('raknaStyrkeanalys och raknaGruppMDE', () => {
+                    const app = w.eval('raknaStyrkeanalys()');
                     const lib = styrkeanalys(d, golv);
                     lika(app, lib);
                     w.__state.powerAnalysis = app;
                     for (const [nKv, nMa] of [[1, 5], [4, 9], [10, 10], [37, 12]]) {
-                        lika(w.eval(`computeGroupMDE(${nKv}, ${nMa})`), gruppMde(nKv, nMa, lib.sigma));
-                        lika(w.eval(`computeGroupMDE(${nKv}, ${nMa}, 0.08)`), gruppMde(nKv, nMa, 0.08));
+                        lika(w.eval(`raknaGruppMDE(${nKv}, ${nMa})`), gruppMde(nKv, nMa, lib.sigma));
+                        lika(w.eval(`raknaGruppMDE(${nKv}, ${nMa}, 0.08)`), gruppMde(nKv, nMa, 0.08));
                     }
                 });
-                it('detectOutliers', () => {
-                    lika(w.eval('detectOutliers()'), extremvarden(d, golv, 3));
-                    lika(w.eval('detectOutliers(2)'), extremvarden(d, golv, 2));
+                it('hittaExtremvarden', () => {
+                    lika(w.eval('hittaExtremvarden()'), extremvarden(d, golv, 3));
+                    lika(w.eval('hittaExtremvarden(2)'), extremvarden(d, golv, 2));
                 });
-                it('linearRegressionCI', () => {
+                it('linjarRegressionKI', () => {
                     const par = d.filter(r => r.alder > 0 && arKv(r)).map(r => [r.alder, r.lon]);
                     w.__par = par;
-                    lika(w.eval('linearRegressionCI(window.__par, 20, 65, 25)'), regressionslinjensBand(par, 20, 65, 25));
-                    lika(w.eval('linearRegressionCI(window.__par, 20, 65)'), regressionslinjensBand(par, 20, 65));
+                    lika(w.eval('linjarRegressionKI(window.__par, 20, 65, 25)'), regressionslinjensBand(par, 20, 65, 25));
+                    lika(w.eval('linjarRegressionKI(window.__par, 20, 65)'), regressionslinjensBand(par, 20, 65));
                     delete w.__par;
                 });
-                it('_laBootstrapGapCI och _gdBootstrapGapCI per BAS-intervall', () => {
+                it('_laBootstrapGapKI och _gdBootstrapGapKI per BAS-intervall', () => {
                     for (const bas of [...new Set(d.map(r => r.bas))].sort()) {
                         const kv = d.filter(r => r.bas === bas && arKv(r)).map(r => r.lon), ma = d.filter(r => r.bas === bas && arMa(r)).map(r => r.lon);
-                        lika(w._laBootstrapGapCI(kv, ma), medianKvotKI(kv, ma));
-                        lika(w._laBootstrapGapCI(kv, ma, 300), medianKvotKI(kv, ma, { B: 300 }));
-                        lika(w._gdBootstrapGapCI(kv, ma), medianKvotKIGiltiga(kv, ma));
+                        lika(w._laBootstrapGapKI(kv, ma), medianKvotKI(kv, ma));
+                        lika(w._laBootstrapGapKI(kv, ma, 300), medianKvotKI(kv, ma, { B: 300 }));
+                        lika(w._gdBootstrapGapKI(kv, ma), medianKvotKIGiltiga(kv, ma));
                     }
                 });
                 it('_laTrattUnderlagRakna', () => {
-                    lika(utanHalv(w.eval(`_laTrattUnderlagRakna(getData(), ${k})`)), utanHalv(trattUnderlag(d, k)));
+                    lika(utanHalv(w.eval(`_laTrattUnderlagRakna(hamtaData(), ${k})`)), utanHalv(trattUnderlag(d, k)));
                 });
                 if (k === 10) {
                     it('_regKvantilBootstrap', () => {

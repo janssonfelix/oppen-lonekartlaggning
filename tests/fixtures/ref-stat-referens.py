@@ -17,7 +17,7 @@ Behöver INTE köras i CI — resultatet är incheckat som fixtur.
     (scipy.optimize.linprog, HiGHS) — samma lösning som R quantreg::rq(method="br").
     statsmodels QuantReg (IRLS) räknas också, som kontroll av LP-lösningen.
   - Blinder-Oaxaca: två OLS (kvinnor, män) på [1, ålderC, en indikator per BAS utom referensen] (ADR-53) och
-    komponenterna endowment/coefficient/interaction enligt formeln i runBlinderOaxaca.
+    komponenterna endowment/coefficient/interaction enligt formeln i korBlinderOaxaca.
 """
 import json, os
 import numpy as np

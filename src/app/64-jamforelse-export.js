@@ -4,14 +4,14 @@
 import { jamforelseRader, matchningEtikett } from '../lib/jamforelse.js';
 import { personOrd } from '../lib/namn.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
-import { getData, policyFor, referensKalla, referensNamn, state } from './12-tillstand.js';
-import { _appendMethodSheet, _applyColumnNumFormats, _showExportSensitivityToast, SV_NUM_FORMATS } from './22-exporthjalpare.js';
+import { hamtaData, policyFor, referensKalla, referensNamn, state } from './12-tillstand.js';
+import { _laggTillMetodblad, _tillampaTalformat, _visaExportvarning, SV_TALFORMAT } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 
 /**
@@ -28,10 +28,10 @@ import { medExportLage } from './23-exportgrind.js';
  * Inte beroende av vilken metric-knapp som är vald i UI:t — alla värden exporteras alltid.
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportBenchmarkExcel(...a) { return medExportLage(() => _exportBenchmarkExcelExport.apply(null, /** @type {any} */ (a))); }
-function _exportBenchmarkExcelExport() {
+function exportJamforelseExcel(...a) { return medExportLage(() => _exportJamforelseExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportJamforelseExcelExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) { alert('Ingen lönefil är inläst. Läs in lönefilen först.'); return; }
     const hasStat = state.statistik.length > 0;
     const hasPolicy = state.policy.length > 0;
@@ -140,14 +140,14 @@ function _exportBenchmarkExcelExport() {
 
     // Applicera svenska nummerformat på data-kolumnerna.
     // Jämförelse-arket har två header-rader (group + sub) — applicera mot sub-header (rad 1).
-    _applyColumnNumFormats(sheet, SV_NUM_FORMATS, 1);
-    // P10 och P90 är kronor som medianen, men rubrikerna har inget nyckelord i SV_NUM_FORMATS (och "Bredd P90/P10"
+    _tillampaTalformat(sheet, SV_TALFORMAT, 1);
+    // P10 och P90 är kronor som medianen, men rubrikerna har inget nyckelord i SV_TALFORMAT (och "Bredd P90/P10"
     // är en kvot): de får medianens format här.
     headerRow2.forEach((rubrik, c) => {
         if (rubrik !== 'P10' && rubrik !== 'P90') return;
         for (let r = 2; r < aoa.length; r++) {
             const cell = sheet[XLSX.utils.encode_cell({ c, r })];
-            if (cell && cell.t === 'n') cell.z = SV_NUM_FORMATS.median;
+            if (cell && cell.t === 'n') cell.z = SV_TALFORMAT.median;
         }
     });
 
@@ -157,13 +157,13 @@ function _exportBenchmarkExcelExport() {
     XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');
 
     const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
-    _appendMethodSheet(wb);
+    _laggTillMetodblad(wb);
     XLSX.writeFile(wb, filename);
-    _showExportSensitivityToast();
-    announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
+    _visaExportvarning();
+    meddelaSkarmlasare(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartJamforelseExport() {
-    document.getElementById('btn-export-benchmark')?.addEventListener('click', exportBenchmarkExcel);
+    document.getElementById('btn-export-benchmark')?.addEventListener('click', exportJamforelseExcel);
 }

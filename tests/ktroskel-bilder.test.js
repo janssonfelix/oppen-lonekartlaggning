@@ -37,7 +37,7 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
         const el = ritad(w, 'chart-kon-scatter');
         w.HTMLAnchorElement.prototype.click = () => {};
         w.__el = el;
-        await w.eval("_chartExportImage(window.__el, 'png-dokument')");
+        await w.eval("_diagramexportBild(window.__el, 'png-dokument')");
         expect(bilder).toHaveLength(1);
         kontrollera(bilder[0], k);
         expect(el.textContent).not.toContain('Tröskeln är sänkt');   // diagrammet på skärmen är orört
@@ -76,7 +76,7 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
         const svg = [];
         w.figurTillBild = (figur, format, b, h, val) => { svg.push(w.figurTillSvg(figur, b, h, val)); return Promise.resolve('data:image/png;base64,AAAA'); };
         w.HTMLAnchorElement.prototype.click = () => {};
-        w.__renderTabContent('prioritering');
+        w.__ritaFlik('prioritering');
         w.document.getElementById('chart-prio-matrix').parentElement.querySelector('.chart-export [data-chart-export="png-presentation"]').click();
         await new Promise(r => setTimeout(r, 400));
         expect(svg).toHaveLength(1);

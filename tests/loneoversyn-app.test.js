@@ -6,12 +6,12 @@ import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
 // Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
-const fonster = () => { const w = createAppWindow(); w.__loadDemoData(); w.__state.handlingsplan = {}; return w; };
+const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__state.handlingsplan = {}; return w; };
 
 describe('Löneöversyn: förslaget nås från potten', () => {
     it('knappen vid potten är inaktiv utan pott, aktiv med pott, och fäller ut Riktade potter', () => {
         const w = fonster(); const d = w.document;
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const knapp = d.getElementById('forecast-optimize-pott');
         expect(knapp.textContent).toBe(d.getElementById('forecast-optimize').textContent);
         expect(knapp.disabled).toBe(true);
@@ -29,7 +29,7 @@ describe('Löneöversyn: förslaget nås från potten', () => {
     });
     it('Lönesumma per månad säger "från …" bara när summan har ändrats', () => {
         const w = fonster(); const d = w.document;
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const lonesumma = () => [...d.querySelectorAll('#lo-slutsatser > *')].find(el => /Lönesumma per månad/.test(el.textContent)).textContent;
         expect(lonesumma()).toMatch(/utgångsläget/);
         expect(lonesumma()).not.toMatch(/från/);
@@ -47,12 +47,12 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
             alder: 30 + (i * 7) % 30, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' }); };
         lagg(30, 'kvinna', 25000, 'A', '6000'); lagg(30, 'man', 25500, 'A', '6000'); lagg(6, 'kvinna', 36000, 'C', '5300');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         return w;
     };
     const rad = (w, over) => {
         w.__state.forecast.targets = [{ bas: 'A', aid: '6000', kon: 'alla', lonCap: null, mode: 'kr', value: 1000, dist: 'flat', targetLevel: 'median', pool: 'övrigt', ...over }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         return w.__state.forecast.result.alloc.perPerson;
     };
     const iA = p => p.bas === 'A';
@@ -78,7 +78,7 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
         rad(w, { kon: 'kvinna', lonCap: 26000, mode: 'till', value: 26000 });
         let rader = null;
         w.XLSX.writeFile = wb => { rader = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }); };
-        w.eval('exportForecast()');
+        w.eval('exportPrognos()');
         const r = rader.find(x => String(x[0]).startsWith('Riktad pott 1'));
         expect(r[1]).toBe('BAS A, AID 6000, bara kvinnor, löner under 26000 kr: höj till 26000 kr/mån');
     });
@@ -87,10 +87,10 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till (ers
 describe('Löneöversyn utan påslag', () => {
     it('ett tal som inte ändras sägs vara oförändrat, inte med en ensam pil', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         // En pott men inget påslag: utfallet visas, och inget tal har ändrats.
         w.__state.forecast.budget = { mode: 'pct', value: 2 };
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const text = w.document.getElementById('forecast-outcome').textContent.replace(/\s+/g, ' ');
         expect(text).toMatch(/Kvinnors medianlön i % av mäns: [\d,]+ % till [\d,]+ % oförändrat/);
         expect(text).toMatch(/Oförklarad skillnad \(regressionen\): \S+ % till \S+ % oförändrat/);
@@ -103,7 +103,7 @@ describe('Löneöversyn utan påslag', () => {
 // tests/vymodeller.test.js under [B7.13]; h\u00E4r pr\u00F6vas ordet och f\u00E4rgen i kortet.
 describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => {
     const utfall = w => {
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const el = w.document.getElementById('forecast-outcome');
         return { el, text: el.textContent.replace(/\s+/g, ' ') };
     };
@@ -111,7 +111,7 @@ describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => 
     const OFORKL = 'Of\u00F6rklarad skillnad \\(regressionen\\)', ANDEL = 'Kvinnors medianl\u00F6n i % av m\u00E4ns';
     it('generellt p\u00E5slag 2 % p\u00E5 demodatan: lika tal f\u00F6re och efter \u00E4r of\u00F6r\u00E4ndrat, utan r\u00F6d markering', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.forecast.generell = { mode: 'pct', value: 2 };
         const { el, text } = utfall(w);
         for (const etikett of [OFORKL, ANDEL]) {
@@ -127,7 +127,7 @@ describe('L\u00F6ne\u00F6versyn: riktningen f\u00F6ljer de visade talen', () => 
     });
     it('riktade p\u00E5slag till kvinnorna \u00E4ndrar den of\u00F6rklarade skillnaden, och ordet st\u00E4mmer med de visade talen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const bas = [...new Set(w.__state.data.map(r => r.bas))];
         w.__state.forecast.targets = bas.map(b => ({ bas: b, aid: '*', mode: 'pct', value: 6, dist: 'flat', kon: 'kvinna', pool: 'equity' }));
         const { el, text } = utfall(w);
@@ -185,8 +185,8 @@ describe('formulären i Löneöversyn', () => {
     });
     it('fälten styr prognosens värden', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('loneoversyn');
+        w.__lasInDemodata();
+        w.__ritaFlik('loneoversyn');
         const d = w.document;
         const satt = (id, v) => { const el = d.getElementById(id); el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); el.dispatchEvent(new w.Event('change', { bubbles: true })); };
         satt('forecast-budget-mode', 'kr'); satt('forecast-budget-value', '50000'); satt('forecast-generell-value', '1'); satt('forecast-min-n', '12');
@@ -201,10 +201,10 @@ describe('formulären i Löneöversyn', () => {
 describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
     const rita = budget => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.forecast.budget = budget;
         w.__state.forecast.generell = { mode: 'pct', value: 1 };
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const d = w.document, ruta = namn => [...d.querySelectorAll('#lo-slutsatser .slutsats')].find(e => e.querySelector('.slutsats-etikett').textContent === namn);
         return { w, d, ruta, meter: d.getElementById('forecast-meter').textContent };
     };
@@ -229,7 +229,7 @@ describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
     });
     it('scenariot utan pott säger att ingen pott är angiven, inte 0 kr', () => {
         const { w, d } = rita({ mode: 'kr', value: null });
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         expect(d.getElementById('forecast-scenarios').textContent).toContain('(ingen pott angiven, 0 riktade)');
     });
 });
@@ -238,12 +238,12 @@ describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
 // fältets min och max avvisas med en mening i stället för att tyst bli något annat.
 describe('Löneöversyn: målet i tröskelmålet', () => {
     const w = createAppWindow();
-    w.__loadDemoData();
-    w.__renderTabContent('loneoversyn');
+    w.__lasInDemodata();
+    w.__ritaFlik('loneoversyn');
     const falt = w.document.getElementById('forecast-threshold-pct'), sig = w.document.getElementById('forecast-threshold-sig');
     const resultat = (varde, signifikans = false) => {
         falt.value = varde; sig.checked = signifikans;
-        w.eval('_forecastThreshold()');
+        w.eval('_fcLyftMotMal()');
         return w.document.getElementById('forecast-threshold-result').textContent.replace(/\s+/g, ' ').trim();
     };
     it('målet 0 % räknas som 0 %, inte som standardmålet', () => {

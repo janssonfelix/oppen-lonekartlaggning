@@ -8,21 +8,21 @@ import { regressionslinjensBand } from '../lib/osakerhet.js';
 import { namnFranFil } from '../lib/referens.js';
 import { kvantil, linjarRegression, median } from '../lib/stat.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _cellSpann, enableTableSort, setupCollapsibleGroups } from './05-tabeller-och-lankar.js';
+import { _cellSpann, aktiveraSortering, kopplaHopfallbaraGrupper } from './05-tabeller-och-lankar.js';
 import { _kUndantagFor, _tsvMedStampel } from './06-k-troskel.js';
-import { COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
+import { COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
-import { PALETTE } from './10-diagramtema.js';
-import { renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
-import { renderConsistencyBanner } from './16-inlasningskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
-import { _downloadCSV } from './22-exporthjalpare.js';
+import { PALETT } from './10-diagramtema.js';
+import { ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
+import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
+import { _laddaNedCSV } from './22-exporthjalpare.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
-import { refreshCurrentTab } from './31-navigering.js';
-import { renderReferensKort } from './38-referensfiler.js';
+import { uppdateraAktivFlik } from './31-navigering.js';
+import { ritaReferensKort } from './38-referensfiler.js';
 /**
  * Appens tillstånd. Fälten som bär inlästa eller beräknade data är löst typade (`any`): deras form
  * beskrivs i respektive modul, och typkontrollen (tsconfig.app.json) vaktar i första hand null-hantering,
@@ -86,7 +86,7 @@ export const state = {
     scenarios: [],                // I: sparade scenarion (max 5)
     snapshot: null,         // för A/B-jämförelse
     forraArsbokslut: null,  // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
-    profile: { ...DEFAULT_PROFILE },
+    profile: { ...STANDARDPROFIL },
     filnamn: { data: null, policy: null, statistik: null },   // filrutornas status (ADR-36)  // #14 lokalkalibrering
     kTroskel: K_STANDARD,             // minsta gruppstorlek för redovisning (ADR-38); ändras bara av sattKTroskel()
     // Organisationspaketets låsningar (ADR-47): golv för tröskeln, låst rensningstid (minuter) och om små grupper
@@ -154,15 +154,15 @@ export const state = {
  * Returnerar hela datasetet; det finns inget enhetsfilter (se avgränsningen i docs/utveckling/mal.md).
  * @returns {Array<{bas:string, yrke:string, lon:number, alder:number, kon:string, aid?:string, yrkeLabel?:string, ansvarsgrupp?:string, [k:string]:any}>}
  */
-export function getData() {
+export function hamtaData() {
     return state.data;
 }
 /**
  * Lista av unika BAS-intervall (sorterade alfabetiskt) i aktivt dataset.
  * @returns {string[]}
  */
-export function getBasIntervals() {
-    return [...new Set(getData().map(d => d.bas))].sort();
+export function hamtaBasIntervall() {
+    return [...new Set(hamtaData().map(d => d.bas))].sort();
 }
 
 /**
@@ -197,7 +197,7 @@ export function policyFor(aid, bas) {
 }
 
 /** Vilken nivå en policyträff kom ifrån — måste visas i UI för att en avvikelse ska gå att tolka. */
-export function policyLevelLabel(pol) {
+export function policyNivaEtikett(pol) {
     if (!pol) return null;
     if (pol.aid && pol.bas) return 'AID + BAS';
     if (pol.aid) return 'AID-specifik';
@@ -244,15 +244,15 @@ export function sattReferensNamn(namn) {
 }
 // Allt som namnger eller räknar mot referensen ritas om när den byts eller döps om.
 export function ritaOmReferens() {
-    for (const fn of [renderReferensKort, refreshCurrentTab, ritaKravstatus, renderConsistencyBanner,
-                      renderActionChecklist, renderProcessTracker]) {
+    for (const fn of [ritaReferensKort, uppdateraAktivFlik, ritaKravstatus, ritaKonsistenskontroll,
+                      ritaAtgardslista, ritaKartlaggningensSteg]) {
         if (typeof fn === 'function') { try { fn(); } catch (e) { rapporteraFel(`Omritning (${fn.name})`, e); } }   // en vy får inte stoppa de andra
     }
 }
 
 // ---- Colors & Stats ----
-// Härleds ur PALETTE (10-diagramtema.js) så könsfärgerna har EN källa.
-export const colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
+// Härleds ur PALETT (10-diagramtema.js) så könsfärgerna har EN källa.
+export const farger = { kvinna: PALETT.kon.kvinna, man: PALETT.kon.man, policy: PALETT.semantic.policy };
 
 // Statistiska helpers för vyerna; en källa: src/lib/stat.js (tests/stat.test.js prövar den).
 export const Stat = { median, kvantil, linjarRegression };
@@ -269,13 +269,13 @@ export const Stat = { median, kvantil, linjarRegression };
  * @param {number} [steps=30] - antal punkter att returnera
  * @returns {null | Array<{x:number, y:number, lo:number, hi:number}>}
  */
-export function linearRegressionCI(data, minX, maxX, steps) {
+export function linjarRegressionKI(data, minX, maxX, steps) {
     return regressionslinjensBand(data, minX, maxX, steps);
 }
 
 // ---- Aktivera sortering, kollaps & export på alla huvudtabeller (en gång) ----
 // Huvudtabeller som får sortering + kopiera/CSV. Filnamn används vid CSV-export.
-const ENHANCED_TABLES = [
+const HUVUDTABELLER = [
     { id: 'rapport-table',      file: 'loneoversikt' },
     { id: 'matrix-table',       file: 'lika-arbete-eu' },
     { id: 'paygap-table',       file: 'lonegap-per-bas' },
@@ -285,20 +285,20 @@ const ENHANCED_TABLES = [
     { id: 'prio-table',         file: 'prioritering' },
     { id: 'likvardighet-table', file: 'likvardighet' }
 ];
-function initTableEnhancements() {
-    ENHANCED_TABLES.forEach(t => { enableTableSort(t.id); addTableExportTools(t.id, t.file); });
-    setupCollapsibleGroups('rapport-table');
-    setupCollapsibleGroups('benchmark-table');
+function aktiveraHuvudtabeller() {
+    HUVUDTABELLER.forEach(t => { aktiveraSortering(t.id); laggTillTabellverktyg(t.id, t.file); });
+    kopplaHopfallbaraGrupper('rapport-table');
+    kopplaHopfallbaraGrupper('benchmark-table');
 }
 
 // ---- Kopiera/CSV per tabell (visualiserings-Steg 3-komplettering) ------------
-// Sortering fanns redan (enableTableSort); det som saknades var att få UT en
+// Sortering fanns redan (aktiveraSortering); det som saknades var att få UT en
 // enskild tabell. En diskret verktygsrad placeras EN gång framför tabellens
 // container (utanför det som ritas om vid re-render), och klicken hanteras
 // delegerat så att tabellen läses LIVE — sorterad ordning och omritad tbody
-// följer med. CSV återanvänder _downloadCSV; kopiering ger TAB-separerat så
+// följer med. CSV återanvänder _laddaNedCSV; kopiering ger TAB-separerat så
 // att inklistring i Excel hamnar i kolumner.
-export function addTableExportTools(tableId, fileBase) {
+export function laggTillTabellverktyg(tableId, fileBase) {
     const table = document.getElementById(tableId);
     if (!table || table._exportToolsInit) return;
     const anchor = table.closest('.table-container') || table;
@@ -316,7 +316,7 @@ export function addTableExportTools(tableId, fileBase) {
 }
 
 // Ren text ur en cell: knappar/ikoner bort, whitespace normaliserad.
-function _tableCellText(cell) {
+function _tabellcellText(cell) {
     const clone = cell.cloneNode(true);
     clone.querySelectorAll('button, svg').forEach(e => e.remove());
     _exportText(clone);
@@ -329,8 +329,8 @@ export function _exportText(rot) {
 }
 // Tabell → rad-matris (thead + tbody), i nuvarande (ev. sorterade) DOM-ordning.
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function tableToMatrix(...a) { return medExportLage(() => _tableToMatrixExport.apply(null, /** @type {any} */ (a))); }
-function _tableToMatrixExport(tableId) {
+function tabellTillMatris(...a) { return medExportLage(() => _tabellTillMatrisExport.apply(null, /** @type {any} */ (a))); }
+function _tabellTillMatrisExport(tableId) {
     // Raderna lämnar verktyget (CSV, urklipp): exportläget, och tabellens flik ritad med det som gäller nu (ADR-51).
     const table = typeof exportElement === 'function' ? exportElement(tableId) : document.getElementById(tableId);
     if (!table) return [];
@@ -339,7 +339,7 @@ function _tableToMatrixExport(tableId) {
     const beskrivning = table.getAttribute('data-export-beskrivning');
     if (beskrivning) rows.push([`Urval: ${beskrivning}`]);
     const ths = table.querySelectorAll('thead th');
-    if (ths.length) rows.push(Array.from(ths).filter(th => !th.hasAttribute('data-export-utelamna')).map(_tableCellText));
+    if (ths.length) rows.push(Array.from(ths).filter(th => !th.hasAttribute('data-export-utelamna')).map(_tabellcellText));
     table.querySelectorAll('tbody tr').forEach(tr => {
         // Utforska märker grupper under tröskeln så att exporten utelämnar dem (ADR-14).
         if (tr.hasAttribute('data-export-utelamna')) return;
@@ -353,7 +353,7 @@ function _tableToMatrixExport(tableId) {
         cells.forEach(c => {
             if (c.hasAttribute('data-export-utelamna')) return;   // hel kolumn utelämnad (ADR-14)
             const span = _cellSpann(c);   // hela bredden, också när växeln Fler kolumner har minskat den på skärmen
-            rad.push(c.hasAttribute('data-export-tom') ? '' : _tableCellText(c));
+            rad.push(c.hasAttribute('data-export-tom') ? '' : _tabellcellText(c));
             for (let i = 1; i < span; i++) rad.push('');
         });
         rows.push(rad);
@@ -361,17 +361,17 @@ function _tableToMatrixExport(tableId) {
     return rows;
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function _copyTableToClipboard(...a) { return medExportLage(() => __copyTableToClipboardExport.apply(null, /** @type {any} */ (a))); }
-function __copyTableToClipboardExport(tableId, btn) {
-    const rows = tableToMatrix(tableId);
+function _kopieraTabellTillUrklipp(...a) { return medExportLage(() => __kopieraTabellTillUrklippExport.apply(null, /** @type {any} */ (a))); }
+function __kopieraTabellTillUrklippExport(tableId, btn) {
+    const rows = tabellTillMatris(tableId);
     if (!rows.length) { alert('Tabellen är tom, så det finns inget att kopiera.'); return; }
-    _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
+    _kopieraMatrisTillUrklipp(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
 // Rad-matris → TSV i urklipp (_tillTsv, src/lib/csv.js). Delas av tabellverktygen och diagrammens exportmeny.
-export function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
+export function _kopieraMatrisTillUrklipp(rows, btn, { undantag = '' } = {}) {
     const tsv = tillTsv(_tsvMedStampel(rows, undantag));
     const done = () => {
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('Kopierat: ' + (rows.length - 1) + ' rader.');
+        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Kopierat: ' + (rows.length - 1) + ' rader.');
         // Knappens innehåll (ikonen och texten) läggs tillbaka som det var.
         if (btn) { const o = btn.innerHTML; btn.textContent = 'Kopierad'; setTimeout(() => { btn.innerHTML = o; }, 1500); }
     };
@@ -390,14 +390,14 @@ export function _copyMatrixToClipboard(rows, btn, { undantag = '' } = {}) {
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartTillstand() {
     // Körs när DOM är klar (app.js ligger sist i body)
-    initTableEnhancements();
+    aktiveraHuvudtabeller();
     document.addEventListener('click', e => {
         const copyBtn = /** @type {HTMLElement} */ (e.target).closest('[data-copy-table]');
-        if (copyBtn) { _copyTableToClipboard(copyBtn.getAttribute('data-copy-table'), copyBtn); return; }
+        if (copyBtn) { _kopieraTabellTillUrklipp(copyBtn.getAttribute('data-copy-table'), copyBtn); return; }
         const csvBtn = /** @type {HTMLElement} */ (e.target).closest('[data-csv-table]');
         if (csvBtn) {
-            const rows = tableToMatrix(csvBtn.getAttribute('data-csv-table'));
-            if (rows.length) _downloadCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
+            const rows = tabellTillMatris(csvBtn.getAttribute('data-csv-table'));
+            if (rows.length) _laddaNedCSV(rows, csvBtn.getAttribute('data-csv-file') || 'tabell',
                 { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute('data-csv-table') || '')) });
             else alert('Tabellen är tom, så det finns inget att exportera.');
         }

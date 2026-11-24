@@ -24,12 +24,12 @@ import { artikel } from '../lib/termer.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { _rfMarkeraAlla, _rfPenselRensaAlla, _rfVisad } from './10-diagramritare.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { visningNy } from './23-exportgrind.js';
-import { renderExplorer } from './70-utforska.js';
-import { explorerSattUrval, explorerUrval } from './72-utforska-urval.js';
-import { gruppdossierCandidates, openGruppdossier } from './80-gruppdossier.js';
-import { basdossierKandidater, openBasdossier } from './81-basdossier.js';
+import { ritaUtforska } from './70-utforska.js';
+import { utforskaSattUrval, utforskaUrval } from './72-utforska-urval.js';
+import { gruppdossierKandidater, oppnaGruppdossier } from './80-gruppdossier.js';
+import { basdossierKandidater, oppnaBasdossier } from './81-basdossier.js';
 
 let _markering = [];   // de markerade gruppernas nycklar, i den ordning de markerades
 
@@ -62,7 +62,7 @@ function _mkTraffEn(nycklar, vald) {
 function _mkEtikett(nyckel) {
     if (nyckel.startsWith('bas:')) return `BAS ${nyckel.slice(4)}`;
     const [aid, bas] = nyckel.slice(6).split('|');
-    const rad = getData().find(r => r.bas === bas && String(r.yrke || '').startsWith(aid));
+    const rad = hamtaData().find(r => r.bas === bas && String(r.yrke || '').startsWith(aid));
     return `${rad ? rad.yrke : aid} · BAS ${bas}`;
 }
 
@@ -144,9 +144,9 @@ function _mkRitaRad() {
             const knapp = /** @type {HTMLElement} */ (e.target).closest('button[data-markering]');
             if (!knapp) return;
             const vad = knapp.getAttribute('data-markering');
-            if (vad === 'dossier') { const k = _mkDossierNyckel(); if (k) openGruppdossier(k); }
+            if (vad === 'dossier') { const k = _mkDossierNyckel(); if (k) oppnaGruppdossier(k); }
             else if (vad === 'borra') nedborrningTillUtforska();
-            else if (vad === 'basdossier') { const b = _mkBorrBas(); if (b != null) openBasdossier(b, knapp); }
+            else if (vad === 'basdossier') { const b = _mkBorrBas(); if (b != null) oppnaBasdossier(b, knapp); }
             else sattDiagramMarkering(null);
         });
     }
@@ -181,7 +181,7 @@ function _mkKnapp(vad, text) {
 function _mkDossierNyckel() {
     if (_markering.length !== 1 || !_markering[0].startsWith('grupp:')) return null;
     const nyckel = _markering[0].slice(6);
-    return typeof gruppdossierCandidates === 'function' && gruppdossierCandidates().some(c => c.key === nyckel) ? nyckel : null;
+    return typeof gruppdossierKandidater === 'function' && gruppdossierKandidater().some(c => c.key === nyckel) ? nyckel : null;
 }
 
 // ---- Nedborrning: från ett markerat BAS-intervall till dess yrkesgrupper i Utforska ----
@@ -192,7 +192,7 @@ function _mkDossierNyckel() {
 let _mkTillbaka = null;   // { bas, urval, gruppVillkor, rad, kolumn, flik } eller null
 
 function _mkBorrBas() {
-    return _markering.length === 1 && _markering[0].startsWith('bas:') && typeof explorerSattUrval === 'function' ? _markering[0].slice(4) : null;
+    return _markering.length === 1 && _markering[0].startsWith('bas:') && typeof utforskaSattUrval === 'function' ? _markering[0].slice(4) : null;
 }
 function nedborrningTillUtforska() {
     const bas = _mkBorrBas();
@@ -200,26 +200,26 @@ function nedborrningTillUtforska() {
     const rad = document.getElementById('explore-rad'), kolumn = document.getElementById('explore-kolumn');
     if (!rad || !kolumn) return;
     const aktiv = document.querySelector('.nav-item.active');
-    const innan = _mkTillbaka || { ...explorerUrval(), rad: /** @type {HTMLInputElement} */ (rad).value, kolumn: /** @type {HTMLInputElement} */ (kolumn).value, flik: aktiv ? aktiv.getAttribute('data-tab') : null };
+    const innan = _mkTillbaka || { ...utforskaUrval(), rad: /** @type {HTMLInputElement} */ (rad).value, kolumn: /** @type {HTMLInputElement} */ (kolumn).value, flik: aktiv ? aktiv.getAttribute('data-tab') : null };
     _mkTillbaka = { ...innan, bas };
-    explorerSattUrval({ lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [bas] }] }, []);
+    utforskaSattUrval({ lage: 'alla', villkor: [{ falt: 'bas', op: 'enAv', varde: [bas] }] }, []);
     /** @type {HTMLInputElement} */ (rad).value = 'aidbas';
     /** @type {HTMLInputElement} */ (kolumn).value = 'ingen';
     _mkBorrRad();
     const nav = document.querySelector('.nav-item[data-tab="utforska"]');
-    if (nav && nav !== aktiv) /** @type {HTMLElement} */ (nav).click(); else if (typeof renderExplorer === 'function') renderExplorer();
+    if (nav && nav !== aktiv) /** @type {HTMLElement} */ (nav).click(); else if (typeof ritaUtforska === 'function') ritaUtforska();
 }
 function nedborrningTillbaka() {
     const t = _mkTillbaka;
     if (!t) return;
     _mkTillbaka = null;
-    explorerSattUrval(t.urval, t.gruppVillkor);
+    utforskaSattUrval(t.urval, t.gruppVillkor);
     const rad = document.getElementById('explore-rad'), kolumn = document.getElementById('explore-kolumn');
     if (rad) /** @type {HTMLInputElement} */ (rad).value = t.rad;
     if (kolumn) /** @type {HTMLInputElement} */ (kolumn).value = t.kolumn;
     _mkBorrRad();
     const nav = t.flik && t.flik !== 'utforska' ? document.querySelector(`.nav-item[data-tab="${t.flik}"]`) : null;
-    if (nav) /** @type {HTMLElement} */ (nav).click(); else if (typeof renderExplorer === 'function') renderExplorer();
+    if (nav) /** @type {HTMLElement} */ (nav).click(); else if (typeof ritaUtforska === 'function') ritaUtforska();
 }
 /** Glömmer vägen tillbaka ("Rensa all data"): det sparade urvalet namnger grupper. */
 export function nedborrningGlom() { _mkTillbaka = null; _mkBorrRad(); }

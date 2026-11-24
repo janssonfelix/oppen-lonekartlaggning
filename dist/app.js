@@ -1,5 +1,5 @@
 // src/app/00-sakerhet-och-uppstart.js
-(function installStorageTripwire() {
+(function installeraLagringsspar() {
   try {
     if (typeof Storage !== "undefined" && Storage.prototype) {
       Storage.prototype.setItem = function(key) {
@@ -43,7 +43,7 @@
     console.warn("Storage tripwire kunde inte installeras:", e.message);
   }
 })();
-(function hideBootSplash() {
+(function doljStartskarm() {
   const start = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
   const hide = () => {
     const splash = document.getElementById("boot-splash");
@@ -123,8 +123,8 @@ function stangAutofyll(rot = document) {
   if (rot instanceof Element && rot.matches("input, select, textarea")) satt(rot);
   rot.querySelectorAll("input, select, textarea").forEach(satt);
 }
-var _focusTraps = /* @__PURE__ */ new Map();
-function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
+var _fokusfallor = /* @__PURE__ */ new Map();
+function fangaFokus(modalEl, openerEl, { flyttaFokus = true } = {}) {
   if (!modalEl) return;
   const focusables = modalEl.querySelectorAll(
     'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), summary'
@@ -143,33 +143,33 @@ function trapFocus(modalEl, openerEl, { flyttaFokus = true } = {}) {
     }
   };
   modalEl.addEventListener("keydown", handler);
-  _focusTraps.set(modalEl, { handler, opener: openerEl || document.activeElement });
+  _fokusfallor.set(modalEl, { handler, opener: openerEl || document.activeElement });
   if (flyttaFokus) setTimeout(() => (
     /** @type {HTMLInputElement} */
     first.focus()
   ), 50);
 }
-function releaseFocus(modalEl) {
-  const trap = _focusTraps.get(modalEl);
+function slappFokus(modalEl) {
+  const trap = _fokusfallor.get(modalEl);
   if (trap) {
     modalEl.removeEventListener("keydown", trap.handler);
     if (trap.opener && trap.opener.focus) trap.opener.focus();
-    _focusTraps.delete(modalEl);
+    _fokusfallor.delete(modalEl);
   }
 }
-var _liveRegion = null;
-function _ensureLiveRegion() {
-  if (_liveRegion) return _liveRegion;
-  _liveRegion = document.createElement("div");
-  _liveRegion.id = "aria-live-announcer";
-  _liveRegion.setAttribute("aria-live", "polite");
-  _liveRegion.setAttribute("aria-atomic", "true");
-  _liveRegion.className = "sr-only";
-  document.body.appendChild(_liveRegion);
-  return _liveRegion;
+var _skarmlasarRegion = null;
+function _hamtaSkarmlasarRegion() {
+  if (_skarmlasarRegion) return _skarmlasarRegion;
+  _skarmlasarRegion = document.createElement("div");
+  _skarmlasarRegion.id = "aria-live-announcer";
+  _skarmlasarRegion.setAttribute("aria-live", "polite");
+  _skarmlasarRegion.setAttribute("aria-atomic", "true");
+  _skarmlasarRegion.className = "sr-only";
+  document.body.appendChild(_skarmlasarRegion);
+  return _skarmlasarRegion;
 }
-function announceToScreenReader(message) {
-  const region = _ensureLiveRegion();
+function meddelaSkarmlasare(message) {
+  const region = _hamtaSkarmlasarRegion();
   region.textContent = "";
   setTimeout(() => {
     region.textContent = message;
@@ -5421,38 +5421,38 @@ function termText(mall) {
 }
 
 // src/app/06-maskeringsnoter.js
-var K_NOTE_MAX_NAMN = 12;
-function _kNoteForm(sammanhang, antal) {
+var K_NOT_MAX_NAMN = 12;
+function _kNotForm(sammanhang, antal) {
   const delar = String(sammanhang || "grupp|grupper").split("|");
   return antal === 1 ? delar[0] : delar[1] || delar[0];
 }
-function _kNoteNamn(lista) {
-  const visade = lista.slice(0, K_NOTE_MAX_NAMN).map(esc).join(", ");
-  return visade + (lista.length > K_NOTE_MAX_NAMN ? ` och ${lista.length - K_NOTE_MAX_NAMN} till` : "");
+function _kNotNamn(lista) {
+  const visade = lista.slice(0, K_NOT_MAX_NAMN).map(esc).join(", ");
+  return visade + (lista.length > K_NOT_MAX_NAMN ? ` och ${lista.length - K_NOT_MAX_NAMN} till` : "");
 }
-function kMaskNote(namn, sammanhang, trosk) {
+function kMaskNot(namn, sammanhang, trosk) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
   const n = lista.length;
   const t = trosk || kTroskel();
   const den = n === 1 ? "Den har" : "De har";
   const dess = n === 1 ? "dess" : "deras";
-  return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas inte här: ${_kNoteNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är redovisningen per grupp som utgår.</p>`;
+  return `<p class="k-mask-note">${n} ${esc(_kNotForm(sammanhang, n))} visas inte här: ${_kNotNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna — det är redovisningen per grupp som utgår.</p>`;
 }
-function _kMaskNoteText(namn, sammanhang, t, vad, dar) {
+function _kMaskNotText(namn, sammanhang, t, vad, dar) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
   const n = lista.length;
-  const visade = lista.slice(0, K_NOTE_MAX_NAMN).join(", ") + (n > K_NOTE_MAX_NAMN ? ` och ${n - K_NOTE_MAX_NAMN} till` : "");
+  const visade = lista.slice(0, K_NOT_MAX_NAMN).join(", ") + (n > K_NOT_MAX_NAMN ? ` och ${n - K_NOT_MAX_NAMN} till` : "");
   const text = n === 1 ? vad.replace(/\bderas\b/g, "dess") : vad;
-  return `${n} ${_kNoteForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNoteForm(sammanhang, 1)} som utgår.`;
+  return `${n} ${_kNotForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNotForm(sammanhang, 1)} som utgår.`;
 }
-function kSamladNote(namn, sammanhang) {
+function kSamladNot(namn, sammanhang) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
   const n = lista.length;
   const stora = n === 1 ? "Gruppen är stor nog" : "Grupperna är stora nog";
-  return `<p class="k-mask-note">${n} ${esc(_kNoteForm(sammanhang, n))} visas med gruppens samlade median i stället för könsuppdelade medianer: ${_kNoteNamn(lista)}. ${stora} att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
+  return `<p class="k-mask-note">${n} ${esc(_kNotForm(sammanhang, n))} visas med gruppens samlade median i stället för könsuppdelade medianer: ${_kNotNamn(lista)}. ${stora} att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 
 // src/lib/aidkontroll.js
@@ -6008,10 +6008,10 @@ function kravstatus(rader, { bas, k, golv, oversikt, policyFor: policyFor2, stat
 }
 
 // src/app/15-extremvarden-basrang.js
-function detectOutliers(threshold) {
-  return extremvarden(getData(), statGolv(), threshold);
+function hittaExtremvarden(threshold) {
+  return extremvarden(hamtaData(), statGolv(), threshold);
 }
-function renderOutliers() {
+function ritaExtremvarden() {
   const container = document.getElementById("outliers-container");
   const wrap = document.getElementById("outliers-table-wrap");
   const countEl = document.getElementById("outliers-count");
@@ -6025,7 +6025,7 @@ function renderOutliers() {
     /** @type {HTMLInputElement} */
     document.getElementById("outliers-threshold")?.value
   ) || 3;
-  const outs = detectOutliers(threshold);
+  const outs = hittaExtremvarden(threshold);
   if (countEl) countEl.textContent = outs.length === 0 ? `(inga minst ${threshold} standardavvikelser från medel)` : `(${outs.length} rader flaggade)`;
   if (!outs.length) {
     wrap.innerHTML = `<p class="farg-dampad pad-20 ta-mitt">Inga extremvärden med gränsen ${threshold} standardavvikelser. Datan är homogen inom BAS-grupperna.</p>`;
@@ -6064,7 +6064,7 @@ function renderOutliers() {
     </p>`;
 }
 function uppstartExtremvardenBasrang() {
-  document.getElementById("outliers-threshold")?.addEventListener("input", renderOutliers);
+  document.getElementById("outliers-threshold")?.addEventListener("input", ritaExtremvarden);
 }
 
 // src/lib/kostnad.js
@@ -6575,10 +6575,10 @@ function vymodellRegressionskort(r, { k, rader, medAlder, basEffektNot }) {
 
 // src/app/08-version.js
 var APP_VERSION = "2026.11.22";
-var APP_BUILD_DATE = "2026-11-22";
+var APP_BYGGDATUM = "2026-11-22";
 
 // src/app/10-diagramtema.js
-var PALETTE = {
+var PALETT = {
   // Kön — genomgående i hela verktyget. Plommon för kvinnor och olivgrönt för män (beslut 2026-10-17):
   // inte rosa och blått, som kopplar färgen till en stereotyp. Båda har minst 4,5:1 mot vit yta (7,1 och
   // 4,6), skiljer sig mer än det tidigare paret vid simulerad protanopi och deuteranopi, och ligger tydligt ifrån
@@ -6699,7 +6699,7 @@ function gapStatusNiva(niva) {
 function gapStatusKI(o) {
   return gapStatusNiva(oversiktNiva(o, statGolv()));
 }
-var CHART_FONT = {
+var DIAGRAM_TYPSNITT = {
   family: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
   size: 12,
   minsta: 11,
@@ -8185,7 +8185,7 @@ function vymodellLikaArbete(rader, { k, golv, sigma, dominansDefinition, dominan
 // src/app/10-diagrammarken.js
 var _RF_RANDER = { steg: 10 * Math.SQRT2, bredd: 1.6, max: 400, minst: 3 };
 function _rfLitenYta(g, rect, c) {
-  rect.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
+  rect.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
   const x0 = Math.max(0, +rect.attr("x")), y0 = Math.max(0, +rect.attr("y"));
   const x1 = Math.min(c.panelB, +rect.attr("x") + +rect.attr("width")), y1 = Math.min(c.inreH, +rect.attr("y") + +rect.attr("height"));
   const w = x1 - x0, h = y1 - y0;
@@ -8222,18 +8222,18 @@ function _rfMonsterIPanel(g, rect, c, monster2) {
   _rfMonster(g, x0, y0, x1 - x0, y1 - y0, monster2);
 }
 function _rfLitenRuta(g, rect) {
-  rect.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
+  rect.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "4 3");
   const x = +rect.attr("x"), y = +rect.attr("y"), w = +rect.attr("width"), h = +rect.attr("height");
   const s = Math.min(9, w / 2, h / 2);
   if (s < 3) return;
-  g.append("path").attr("data-marke", "rander").attr("pointer-events", "none").attr("d", `M${x + w - s},${y}H${x + w}V${y + s}Z`).attr("fill", PALETTE.semantic.neutral);
+  g.append("path").attr("data-marke", "rander").attr("pointer-events", "none").attr("d", `M${x + w - s},${y}H${x + w}V${y + s}Z`).attr("fill", PALETT.semantic.neutral);
 }
 function _rfTextPaFarg(farg) {
   const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(farg));
-  if (!m) return CHART_FONT.color;
+  if (!m) return DIAGRAM_TYPSNITT.color;
   const h = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? FARG.vit : CHART_FONT.color;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5 ? FARG.vit : DIAGRAM_TYPSNITT.color;
 }
 function _rfStapel(g, l, li, c) {
   const ligg = l.riktning === "liggande";
@@ -8311,7 +8311,7 @@ function _rfPunkt(g, l, li, c) {
   l.data.forEach((d, i) => {
     if (d && !c.dold(d)) syns.push([d, i]);
   });
-  const steg = syns.length > SCATTER_MAX_POINTS ? Math.ceil(syns.length / SCATTER_MAX_POINTS) : 1;
+  const steg = syns.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(syns.length / PUNKTMOLN_MAX_PUNKTER) : 1;
   let ritade = 0;
   syns.forEach(([d, i], n) => {
     if (n % steg) return;
@@ -8364,7 +8364,7 @@ function _rfPunkt(g, l, li, c) {
     if (d.liten) {
       if (l.symbol === "streck") m.attr("stroke-dasharray", "3 2");
       else {
-        m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 2).attr("stroke-dasharray", "2 2");
+        m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 2).attr("stroke-dasharray", "2 2");
         if (!l.symbol || l.symbol === "cirkel") m.attr("fill-opacity", 0.45);
       }
     }
@@ -8420,7 +8420,7 @@ function _rfUndvikEtiketter(c) {
   });
 }
 function _rfLitenPunkt(g, li, i, x, y) {
-  g.append("circle").attr("data-marke", "litenpunkt").attr("data-l", li).attr("data-i", i).attr("pointer-events", "none").attr("cx", x).attr("cy", y).attr("r", 5).attr("fill", "none").attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "2 2");
+  g.append("circle").attr("data-marke", "litenpunkt").attr("data-l", li).attr("data-i", i).attr("pointer-events", "none").attr("cx", x).attr("cy", y).attr("r", 5).attr("fill", "none").attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.5).attr("stroke-dasharray", "2 2");
 }
 function _rfLinje(g, l, li, c) {
   const ys = c.yFor(l);
@@ -8575,7 +8575,7 @@ function _rfLada(g, l, li, c) {
   const plats = inre.bandwidth(), bw = Math.min(plats, _RF.ladaMax), lagerfarg = c.farg(l, li);
   const svarm = l.punkter === "svarm", alla = svarm || l.punkter === "alla";
   const individer = _rfLadIndivider(c.figur, l, c.dold, ys);
-  const steg = (alla || l.form === "regnmoln") && individer.length > SCATTER_MAX_POINTS ? Math.ceil(individer.length / SCATTER_MAX_POINTS) : 1;
+  const steg = (alla || l.form === "regnmoln") && individer.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(individer.length / PUNKTMOLN_MAX_PUNKTER) : 1;
   const grupper = /* @__PURE__ */ new Map();
   individer.forEach((o, n) => {
     if (n % steg) return;
@@ -8604,7 +8604,7 @@ function _rfLada(g, l, li, c) {
         return Math.max(2, b.t * (halv - kant));
       };
       const moln = g.append("path").attr("data-marke", "lada").attr("data-form", "regnmoln").attr("data-l", li).attr("data-i", punkter[0].i).attr("d", d3.area().y((p) => ys(p.v)).x0(() => mitt + kant).x1((p) => mitt + kant + p.t * (halv - kant)).curve(d3.curveMonotoneY)(kurva) || "").attr("fill", farg).attr("fill-opacity", 0.3).attr("stroke", farg).attr("stroke-width", 1.5);
-      if (punkter.some((p) => p.d.liten)) moln.attr("stroke", PALETTE.semantic.neutral).attr("stroke-dasharray", "3 2");
+      if (punkter.some((p) => p.d.liten)) moln.attr("stroke", PALETT.semantic.neutral).attr("stroke-dasharray", "3 2");
       const streck = (marke, v, tjock) => g.append("line").attr("data-marke", marke).attr("pointer-events", "none").attr("x1", mitt + kant).attr("x2", mitt + kant + bredd(v)).attr("y1", ys(v)).attr("y2", ys(v)).attr("stroke", farg).attr("stroke-width", tjock);
       streck("kvartil", s2.q1, 1);
       streck("kvartil", s2.q3, 1);
@@ -8612,7 +8612,7 @@ function _rfLada(g, l, li, c) {
       const ordnade = [...punkter.filter((p) => !p.d.liten), ...punkter.filter((p) => p.d.liten)];
       ordnade.forEach(({ d, i }, n) => {
         const m = g.append("circle").attr("data-marke", "individ").attr("data-l", li).attr("data-i", i).attr("cx", mitt - kant - _RF.individ - (_rfSprid(n) + 0.5) * Math.max(0, halv - kant - 2 * _RF.individ)).attr("cy", ys(d.y)).attr("r", _RF.individ).attr("fill", d.farg || farg).attr("fill-opacity", 0.6);
-        if (d.liten) m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
+        if (d.liten) m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
         else m.attr("stroke", "#000000").attr("stroke-opacity", 0).attr("stroke-width", _RF.individTraff);
       });
       ritade += ordnade.length;
@@ -8630,7 +8630,7 @@ function _rfLada(g, l, li, c) {
       for (const kol of kolumner) {
         kol.index.forEach((j, n) => {
           const m = g.append("circle").attr("data-marke", "kvantilpunkt").attr("data-l", li).attr("data-i", punkter[0].i).attr("data-kvantil", j).attr("cx", mitt + (n - (kol.index.length - 1) / 2) * 2 * r).attr("cy", kol.y).attr("r", Math.max(1, r - 0.6)).attr("fill", farg).attr("fill-opacity", 0.85);
-          if (liten) m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.2);
+          if (liten) m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.2);
         });
       }
       continue;
@@ -8640,7 +8640,7 @@ function _rfLada(g, l, li, c) {
       const sidled = svarm ? _rfSvarm(ordnade.map((p) => ys(p.d.y)), ordnade.filter((p) => !p.d.liten).length, _RF.individ, Math.max(_RF.individ, plats / 2 - _RF.individ)) : null;
       ordnade.forEach(({ d, i }, n) => {
         const m = g.append("circle").attr("data-marke", "individ").attr("data-l", li).attr("data-i", i).attr("cx", mitt + (sidled ? sidled[n] : _rfSprid(n) * bw * 0.8)).attr("cy", ys(d.y)).attr("r", _RF.individ).attr("fill", d.farg || farg).attr("fill-opacity", svarm ? 0.85 : 0.6);
-        if (d.liten) m.attr("stroke", PALETTE.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
+        if (d.liten) m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
         else m.attr("stroke", "#000000").attr("stroke-opacity", 0).attr("stroke-width", _RF.individTraff);
       });
       ritade += ordnade.length;
@@ -8658,7 +8658,7 @@ function _rfLada(g, l, li, c) {
         return Math.max(2, b.t * halv);
       };
       const fiol = g.append("path").attr("data-marke", "lada").attr("data-form", "fiol").attr("data-l", li).attr("data-i", punkter[0].i).attr("d", d3.area().y((p) => ys(p.v)).x0((p) => mitt - p.t * halv).x1((p) => mitt + p.t * halv).curve(d3.curveMonotoneY)(kurva) || "").attr("fill", farg).attr("fill-opacity", 0.3).attr("stroke", farg).attr("stroke-width", 1.5);
-      if (punkter.some((p) => p.d.liten)) fiol.attr("stroke", PALETTE.semantic.neutral).attr("stroke-dasharray", "3 2");
+      if (punkter.some((p) => p.d.liten)) fiol.attr("stroke", PALETT.semantic.neutral).attr("stroke-dasharray", "3 2");
       linje("kvartil", ys(s.q1), ys(s.q1), mitt - bredd(s.q1), mitt + bredd(s.q1), 1);
       linje("kvartil", ys(s.q3), ys(s.q3), mitt - bredd(s.q3), mitt + bredd(s.q3), 1);
       linje("median", ys(s.median), ys(s.median), mitt - bredd(s.median), mitt + bredd(s.median), 2.5);
@@ -8687,9 +8687,9 @@ function _rfFargskala(fs) {
   if (!dom) return null;
   const [a, b] = dom;
   const std = {
-    sekventiell: PALETTE.sekventiell,
-    divergerande: PALETTE.divergerande,
-    tvafarg: [[0, PALETTE.kon.man], [1, PALETTE.kon.kvinna]]
+    sekventiell: PALETT.sekventiell,
+    divergerande: PALETT.divergerande,
+    tvafarg: [[0, PALETT.kon.man], [1, PALETT.kon.kvinna]]
   };
   const stopp = (Array.isArray(fs.farger) && fs.farger.length > 1 ? fs.farger : null) || std[fs.typ] || std.sekventiell;
   const mitt = _rfFargMitt(fs, dom);
@@ -8755,7 +8755,7 @@ function _rfRuta(g, l, li, c) {
     if (!medText || d.text == null) continue;
     const f = d3.color(farg), textfarg = _rfTextPaFarg(f ? f.formatHex() : "");
     const vit = textfarg === FARG.vit;
-    const attr = d.liten ? { stroke: vit ? CHART_FONT.color : FARG.vit, "stroke-width": vit ? _RF.kantMork : 3, "stroke-linejoin": "round", "paint-order": "stroke" } : null;
+    const attr = d.liten ? { stroke: vit ? DIAGRAM_TYPSNITT.color : FARG.vit, "stroke-width": vit ? _RF.kantMork : 3, "stroke-linejoin": "round", "paint-order": "stroke" } : null;
     _rfText(g, mx, my + fpx * 0.35, String(d.text), { px: fpx, ankare: "middle", farg: textfarg, attr }).attr("data-marke", "rutatext").attr("pointer-events", "none");
   }
 }
@@ -8918,7 +8918,7 @@ function _rfYta(g, l, li, c) {
     if (l.opacitet != null) r.attr("fill-opacity", l.opacitet);
     if (d.liten) _rfLitenYta(g, r, c);
     if (d.etikett == null || String(d.etikett) === "" || h < fpx + 6 || w < 28) return;
-    const f = d3.color(farg), textfarg = l.opacitet != null && l.opacitet < 0.6 ? CHART_FONT.color : _rfTextPaFarg(f ? f.formatHex() : "");
+    const f = d3.color(farg), textfarg = l.opacitet != null && l.opacitet < 0.6 ? DIAGRAM_TYPSNITT.color : _rfTextPaFarg(f ? f.formatHex() : "");
     const tecken = Math.max(3, Math.floor((w - 8) / (fpx * _RF.tecken)));
     const hel = String(d.etikett);
     _rfText(g, x + 4, y + fpx + 2, _rfKorta(hel, tecken), { px: fpx, farg: textfarg, fet: true, title: hel, attr: { "data-marke": "ytetikett", "pointer-events": "none" } });
@@ -8959,7 +8959,7 @@ var _RF = {
   fargH: 180,
   fargSteg: 3
 };
-var _rfLitenPx = (px) => Math.max(CHART_FONT.minsta, px - 2);
+var _rfLitenPx = (px) => Math.max(DIAGRAM_TYPSNITT.minsta, px - 2);
 var _rfBredd = (s, px) => String(s == null ? "" : s).length * px * _RF.tecken;
 function _rfKorta(s, maxTecken) {
   s = String(s == null ? "" : s);
@@ -9282,13 +9282,13 @@ function _rfDecimaler(vard) {
   }
   return 8;
 }
-function _rfMarkText(axel, v, dec) {
+function _rfMarkeringstext(axel, v, dec) {
   if (axel.format) return talformat(v, axel.format, { enhet: false });
   if (axel.skala === "log") dec = _rfDecimaler([v]);
   if (!_rfNf.has(dec)) _rfNf.set(dec, new Intl.NumberFormat("sv-SE", { minimumFractionDigits: dec, maximumFractionDigits: dec }));
   return _rfNf.get(dec).format(v === 0 ? 0 : v);
 }
-function _rfMarkSida(axel, v) {
+function _rfMarkeringssida(axel, v) {
   return axel.format === "pctAbs" ? Math.sign(v) : 0;
 }
 function _rfTalKandidater(axel, skala, langd, per) {
@@ -9317,17 +9317,17 @@ function _rfValjMarkeringar(kand, storlek, lucka, inom) {
 function _rfLodratMarkningar(axel, skala, langd, px, maxB) {
   const kand = _rfTalKandidater(axel, skala, langd, 40);
   const dec = _rfDecimaler(kand.map((k) => k.v));
-  const med = kand.map((k) => ({ ...k, p: skala(k.v), text: _rfMarkText(axel, k.v, dec), sida: _rfMarkSida(axel, k.v) })).filter((k) => _rfTal(k.p) && _rfBredd(k.text, px) <= maxB);
+  const med = kand.map((k) => ({ ...k, p: skala(k.v), text: _rfMarkeringstext(axel, k.v, dec), sida: _rfMarkeringssida(axel, k.v) })).filter((k) => _rfTal(k.p) && _rfBredd(k.text, px) <= maxB);
   return { alla: kand.map((k) => skala(k.v)).filter(_rfTal), valda: _rfValjMarkeringar(med, () => px + 2, 0, () => true) };
 }
 function _rfText(g, x, y, text, { px, ankare = "start", farg, fet, title, attr } = {}) {
-  const t = g.append("text").attr("x", x).attr("y", y).attr("text-anchor", ankare).attr("font-family", CHART_FONT.family).attr("font-size", px || CHART_FONT.size).attr("fill", farg || CHART_FONT.color).text(text);
+  const t = g.append("text").attr("x", x).attr("y", y).attr("text-anchor", ankare).attr("font-family", DIAGRAM_TYPSNITT.family).attr("font-size", px || DIAGRAM_TYPSNITT.size).attr("fill", farg || DIAGRAM_TYPSNITT.color).text(text);
   if (fet) t.attr("font-weight", 600);
   if (attr) for (const [k, v] of Object.entries(attr)) t.attr(k, v);
   if (title && title !== text) t.append("title").text(title);
   return t;
 }
-function _rfLegendPoster(serier, px, avail, maxRader) {
+function _rfForklaringensPoster(serier, px, avail, maxRader) {
   const fler = (n) => `+ ${n} till`;
   const maxTecken = Math.max(3, Math.min(_RF.legendText, Math.floor((avail - 18) / (px * _RF.tecken))));
   const alla = serier.map((s) => {
@@ -9404,7 +9404,7 @@ function _rfLodratLayout(figurIn, val, B, H, px, syn) {
       serier.push({ serie: String(l.serie), l, li });
     }
   }
-  const legend = _rfLegendPoster(serier, px, B - 16, maxRader);
+  const legend = _rfForklaringensPoster(serier, px, B - 16, maxRader);
   const inreH = Math.max(_RF.minYta, H - topp - botten(legend.rader));
   return { xTitel, axelNer, legBas, notRader, topp, legend, inreH, xTvaRader, rubrik, fot };
 }
@@ -9448,7 +9448,7 @@ function _rfVagratLayout(figurIn, syn, yAx, B, px, fargskala) {
     const sPre = _rfSkala(figurIn.x, syn.doms.x, [0, pre]);
     const kand = _rfTalKandidater(figurIn.x, sPre, pre, 80);
     const dec = _rfDecimaler(kand.map((k) => k.v));
-    xHalv = kand.reduce((s, k) => Math.max(s, _rfBredd(_rfMarkText(figurIn.x, k.v, dec), px) / 2), 0);
+    xHalv = kand.reduce((s, k) => Math.max(s, _rfBredd(_rfMarkeringstext(figurIn.x, k.v, dec), px) / 2), 0);
   }
   const vanster = Math.max(vanster0, Math.ceil(xHalv) + 4);
   const y2Block = yAx.y2 ? 8 + yAx.y2B + 8 + (figurIn.y2.titel ? px + 8 : 0) : 0;
@@ -9487,7 +9487,7 @@ function _rfXEtiketter(figurIn, x, panelB, utV, utH, px, tvaRader) {
     const kand = _rfTalKandidater(figurIn.x, x, panelB, 80);
     const dec = _rfDecimaler(kand.map((k) => k.v));
     rutnat = kand.map((k) => x(k.v)).filter(_rfTal);
-    const med = kand.map((k) => ({ ...k, p: x(k.v), text: _rfMarkText(figurIn.x, k.v, dec), sida: _rfMarkSida(figurIn.x, k.v) })).filter((k) => _rfTal(k.p));
+    const med = kand.map((k) => ({ ...k, p: x(k.v), text: _rfMarkeringstext(figurIn.x, k.v, dec), sida: _rfMarkeringssida(figurIn.x, k.v) })).filter((k) => _rfTal(k.p));
     for (const k of _rfValjMarkeringar(med, (t) => _rfBredd(t, px), 6, (p, s) => p - s / 2 >= -utV && p + s / 2 <= panelB + utH)) xEt.push({ p: k.p, text: k.text, hel: k.text });
   }
   return { xEt, rutnat };
@@ -9820,18 +9820,18 @@ function demodiagnostik({ rader, reg, underlag: underlag2, antalBas }, ord) {
 
 // src/app/21-stort-demo.js
 var STORT_DEMO_STATISTIKNAMN = "Påhittad jämförelsestatistik (demo)";
-function loadStortDemo() {
+function lasInStortDemo() {
   if (!_lasInDemounderlag(genereraStortDemo, { stort: true })) return;
   document.getElementById("diagnostic-results").style.display = "none";
-  _renderDemoBanner();
-  announceToScreenReader(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+  _ritaDemoruta();
+  meddelaSkarmlasare(`Stort demo inläst: ${svTal(state.data.length)} påhittade personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
 }
 function uppstartStortDemo() {
-  ["first-run-stort-demo", "upload-demo-stort"].forEach((id) => document.getElementById(id)?.addEventListener("click", loadStortDemo));
+  ["first-run-stort-demo", "upload-demo-stort"].forEach((id) => document.getElementById(id)?.addEventListener("click", lasInStortDemo));
 }
 
 // src/app/25-dataskyddsinfo.js
-function updateGdprBanner() {
+function uppdateraDataskyddsbesked() {
   const banner = document.getElementById("gdpr-banner");
   const count = document.getElementById("gdpr-banner-count");
   if (!banner || !count) return;
@@ -9850,20 +9850,20 @@ function uppstartDataskyddsinfo() {
     const m = document.getElementById("gdpr-info-modal");
     if (m) {
       m.style.display = "flex";
-      trapFocus(m);
+      fangaFokus(m);
     }
   });
   document.getElementById("gdpr-info-close")?.addEventListener("click", () => {
     const m = document.getElementById("gdpr-info-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
   document.querySelector("#gdpr-info-modal .yrke-backdrop")?.addEventListener("click", () => {
     const m = document.getElementById("gdpr-info-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -9873,7 +9873,7 @@ function uppstartDataskyddsinfo() {
         /** @type {HTMLElement} */
         document.getElementById("gdpr-info-modal")
       );
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -9940,7 +9940,7 @@ function skriptBlock(html) {
 }
 
 // src/app/30-statistikcacher.js
-function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
+function tomStatistikcacher({ recompute = true, likvardighet = true } = {}) {
   if (typeof ritGenerationNy === "function") ritGenerationNy();
   state.bootstrapCI = null;
   state.powerAnalysis = null;
@@ -9949,12 +9949,12 @@ function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
   if (likvardighet && state.likvardighet) state.likvardighet.result = null;
   if (recompute && state.data && state.data.length) {
     try {
-      computeBootstrapCI();
+      raknaBootstrapKI();
     } catch (_e) {
       state.bootstrapCI = null;
     }
     try {
-      state.powerAnalysis = computePowerAnalysis();
+      state.powerAnalysis = raknaStyrkeanalys();
     } catch (_e) {
       state.powerAnalysis = null;
     }
@@ -9963,12 +9963,12 @@ function invalidateStatCaches({ recompute = true, likvardighet = true } = {}) {
 
 // src/app/06-uppgiftsminimering.js
 function _hittaAnsvarKolumn(rubriker) {
-  return hittaAnsvarKolumn(rubriker, _kolumnvalIState());
+  return hittaAnsvarKolumn(rubriker, _kolumnvalITillstandet());
 }
 function _lonefilensRubriker(headers) {
-  return lonefilensRubriker(headers, _kolumnvalIState());
+  return lonefilensRubriker(headers, _kolumnvalITillstandet());
 }
-function extractMinimalRecord(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
+function minimeraLonerad(row, rubriker = _lonefilensRubriker(Object.keys(row))) {
   return minimeraRad(row, rubriker, state.ansvarKolumn, (/* @__PURE__ */ new Date()).getFullYear());
 }
 
@@ -10798,7 +10798,7 @@ function kandidatparRader(pairs, nyckel, max = 14) {
 // src/app/50-regressionsmodeller.js
 var _RG_STEG_BAS = stegNamn("bas");
 var _RG_STEG_YRKE = stegNamn("yrkesgrupp");
-function _computePerBasGap(rows, basList) {
+function _raknaPerBasGap(rows, basList) {
   return gapPerBas(rows, basList, { golv: statGolv() });
 }
 var _harAlderFor = (
@@ -10806,17 +10806,17 @@ var _harAlderFor = (
   { data: null, n: -1, varde: false }
 );
 function harAlder() {
-  const d = getData();
+  const d = hamtaData();
   if (_harAlderFor.data !== d || _harAlderFor.n !== d.length) _harAlderFor = { data: d, n: d.length, varde: harAlderIRader(d) };
   return _harAlderFor.varde;
 }
 var ALDER_METODVAL_TEXT = "Att ålder räknas bort är ett metodval för att skilja ut strukturella skillnader, inte ett ställningstagande om att ålder är ett sakligt skäl; det avgör ni.";
 var ALDER_SAKNAS_TEXT = "Lönefilen saknar ålder: analysen körs utan åldersjustering, och Ålder & karriär visas inte.";
 function forklaringsmodell() {
-  return normaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: getData().some((d) => d.aid || d.yrke), harAlder: harAlder() }).modell;
+  return normaliseraForklaringsmodell(state.forklaringsmodell, { harYrke: hamtaData().some((d) => d.aid || d.yrke), harAlder: harAlder() }).modell;
 }
 function sattForklaringsmodell(v, { rita = true } = {}) {
-  const harYrke = getData().some((d) => d.aid || d.yrke);
+  const harYrke = hamtaData().some((d) => d.aid || d.yrke);
   const { modell, varningar } = normaliseraForklaringsmodell(v, { harYrke, harAlder: harAlder() });
   const lagras = normaliseraForklaringsmodell(v, { harYrke }).modell;
   const ny = forklaringsmodellArStandard(lagras) ? null : lagras;
@@ -10824,20 +10824,20 @@ function sattForklaringsmodell(v, { rita = true } = {}) {
   state.forklaringsmodell = ny;
   if (andrad && rita) {
     if (typeof ritGenerationNy === "function") ritGenerationNy();
-    if (typeof _renderaOmAllaFlikar === "function") _renderaOmAllaFlikar();
+    if (typeof _ritaOmAllaFlikar === "function") _ritaOmAllaFlikar();
   }
   return { ok: true, modell, varningar, andrad };
 }
-function runBlinderOaxaca() {
-  return blinderOaxaca(getData(), { golv: statGolv(), modell: forklaringsmodell() });
+function korBlinderOaxaca() {
+  return blinderOaxaca(hamtaData(), { golv: statGolv(), modell: forklaringsmodell() });
 }
-function runQuantileRegressionAtAllTau() {
-  return kvantilregressionAllaTau(getData(), { modell: forklaringsmodell() });
+function korKvantilregressionAllaTau() {
+  return kvantilregressionAllaTau(hamtaData(), { modell: forklaringsmodell() });
 }
 
 // src/app/55-prioritering.js
-function computePrioritization(reference) {
-  return prioritera(getData(), {
+function raknaPrioritering(reference) {
+  return prioritera(hamtaData(), {
     referensFor: (aid, bas) => {
       if (reference === "stallningstagande") {
         const pol = policyFor(aid, bas);
@@ -10853,7 +10853,7 @@ function computePrioritization(reference) {
     bristAids: state.bristAids
   });
 }
-function generateMotivationSuggestions(item) {
+function byggMotiveringsforslag(item) {
   return motiveringsgrunder(item, {
     kInstalld: kInstalld(),
     kTroskel: kTroskel(),
@@ -10911,21 +10911,21 @@ function _prioPoText() {
   const po = state.costSettings.poPct;
   return po === COST_DEFAULTS.poPct ? `inkl. PO-påslag ${svPoPct(po)} (ett standardantagande; sätt organisationens eget under Inställningar)` : `inkl. PO-påslag ${svPoPct(po)} (ändras under Inställningar)`;
 }
-function _selectedPrioReference() {
+function _valdPrioReferens() {
   const r = document.querySelector('input[name="prio-ref"]:checked');
   return r ? (
     /** @type {HTMLInputElement} */
     r.value
   ) : "stallningstagande";
 }
-function _selectedPrioLabelMode() {
+function _valtPrioEtikettlage() {
   const el = document.getElementById("prio-label-mode");
   return el ? (
     /** @type {HTMLInputElement} */
     el.value
   ) : "topp10";
 }
-function _makePrioLabel(item, rank, mode) {
+function _byggPrioEtikett(item, rank, mode) {
   if (mode === "ingen") return "";
   const isTop10 = rank <= 10;
   const isAkut = item.status === "akut";
@@ -10938,21 +10938,21 @@ function _makePrioLabel(item, rank, mode) {
   if (!show) return "";
   return isTop10 ? `#${rank} ${fullLabel}` : fullLabel;
 }
-function _niceCostLevels(maxCost) {
+function _jamnaKostnadsnivaer(maxCost) {
   if (!maxCost || maxCost <= 0) return [1e4, 5e4, 1e5];
   const log10 = Math.floor(Math.log10(maxCost));
   const base = Math.pow(10, log10);
   const cap = base * Math.ceil(maxCost / base);
   return [Math.round(cap * 0.1), Math.round(cap * 0.3), Math.round(cap)];
 }
-function _fmtCost(kr2) {
+function _formateraKostnad(kr2) {
   if (kr2 >= 1e6) return svTal(kr2 / 1e6, kr2 >= 1e7 ? 0 : 1) + " Mkr";
   if (kr2 >= 1e3) return svTal(kr2 / 1e3, 0) + " tkr";
   return svKr(kr2);
 }
 var PRIO_DOLDA_KOLUMNER = ["kvma", "median", "referens", "avvikelsekr", "kostnadpers", "brist"];
-function renderPrioritering() {
-  const ref = _selectedPrioReference();
+function ritaPrioritering() {
+  const ref = _valdPrioReferens();
   const empty = document.getElementById("prio-empty");
   const content = document.getElementById("prio-content");
   if (!empty || !content) return;
@@ -10968,14 +10968,14 @@ function renderPrioritering() {
   }
   empty.style.display = "none";
   content.style.display = "block";
-  const items = computePrioritization(ref);
+  const items = raknaPrioritering(ref);
   if (!items.length) {
     content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === "stallningstagande" ? T.niva.bfl : T.kod.bfl}</code> i lönefilen matchar jämförelsefilen.</p>`;
     return;
   }
   const { akut: akutCount, atgard: underCount, analysera: overCount, totalKostnad: totalCost } = prioNyckeltal(items);
   const fmt = new Intl.NumberFormat("sv-SE");
-  const fmtMkr = _fmtCost(totalCost);
+  const fmtMkr = _formateraKostnad(totalCost);
   document.getElementById("prio-stat-akut").textContent = String(akutCount);
   document.getElementById("prio-stat-under").textContent = String(underCount);
   document.getElementById("prio-stat-over").textContent = String(overCount);
@@ -11020,7 +11020,7 @@ function renderPrioritering() {
     }
     if (paretoSummary) {
       paretoSummary.innerHTML = `
-                <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
+                <div class="farg-primary fw-700 marg-b-4">Total: ${_formateraKostnad(totalParetoCost)}</div>
                 <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPoPct(state.costSettings.poPct)}</div>
                 <div>Topp <strong>${n50}</strong> grupper = 50%</div>
                 <div>Topp <strong>${n80}</strong> grupper = 80%</div>
@@ -11033,17 +11033,17 @@ function renderPrioritering() {
     if (paretoSummary) paretoSummary.innerHTML = "";
   }
   const refLabel = ref === "stallningstagande" ? referensNamn() : "jämförelsestatistiken";
-  ritaFigur("chart-prio-matrix", _prioMatrisFigur(items, _selectedPrioLabelMode(), refLabel, state.prioConfig), { hojd: 520 });
+  ritaFigur("chart-prio-matrix", _prioMatrisFigur(items, _valtPrioEtikettlage(), refLabel, state.prioConfig), { hojd: 520 });
   const sizeMax = Math.max(...items.map((i) => Math.max(i.annualGapTotal, i.annualOverTotal, 1)));
-  const levels = _niceCostLevels(sizeMax);
+  const levels = _jamnaKostnadsnivaer(sizeMax);
   const s1 = document.getElementById("prio-legend-s1");
   const s2 = document.getElementById("prio-legend-s2");
   const s3 = document.getElementById("prio-legend-s3");
-  if (s1) s1.textContent = _fmtCost(levels[0]);
-  if (s2) s2.textContent = _fmtCost(levels[1]);
-  if (s3) s3.textContent = _fmtCost(levels[2]) + "+";
-  const baseP = buildBaseAudit();
-  const dForCount = getData();
+  if (s1) s1.textContent = _formateraKostnad(levels[0]);
+  if (s2) s2.textContent = _formateraKostnad(levels[1]);
+  if (s3) s3.textContent = _formateraKostnad(levels[2]) + "+";
+  const baseP = byggGrundurval();
+  const dForCount = hamtaData();
   let smallCount = 0, noRefCount = 0;
   const groupCheck = {};
   dForCount.forEach((r) => {
@@ -11053,7 +11053,7 @@ function renderPrioritering() {
     groupCheck[k].n++;
   });
   Object.values(groupCheck).forEach((g) => {
-    if (isKMasked(g.n)) {
+    if (kMaskerad(g.n)) {
       smallCount++;
       return;
     }
@@ -11065,7 +11065,7 @@ function renderPrioritering() {
       if (!sr) noRefCount++;
     }
   });
-  setAudit("prioritering", {
+  sattMetodik("prioritering", {
     title: "Prioriteringsanalys",
     ...baseP,
     usedInAnalysis: items.length,
@@ -11108,14 +11108,14 @@ function renderPrioritering() {
     const tr = document.createElement("tr");
     const statusInfo = PRIO_STATUS_INFO[i.status];
     const sgnKr = i.diffKr >= 0 ? "+" : "";
-    const gapBar = buildBarCell(i.gapPct, 15);
-    const diffBar = buildBarCell(i.diffPct, 25);
+    const gapBar = byggStapelcell(i.gapPct, 15);
+    const diffBar = byggStapelcell(i.diffPct, 25);
     const costTxt = i.annualGapTotal > 0 ? svKr(i.annualGapTotal) : "–";
     const costSort = i.annualGapTotal > 0 ? i.annualGapTotal : 0;
     const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : "–";
     const quickwinBadge = i.isQuickWin ? ' <span title="Snabb vinst" class="hjalpmarke hjalp-markor">' + ikon("blixt", 14) + "</span>" : "";
     const bristBadge = i.isBrist ? ' <span title="Bristyrke" class="hjalpmarke hjalp-markor">' + ikon("statusVarning", 14) + "</span>" : "";
-    const groupMDE = computeGroupMDE(i.kvN, i.maN);
+    const groupMDE = raknaGruppMDE(i.kvN, i.maN);
     const lowPower = groupMDE && (groupMDE.tooSmall || groupMDE.mdePct > Math.abs(i.diffPct));
     const powerBadge = lowPower ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? "och underlaget per kön är litet (<5)" : "större än observerad avvikelse"}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon("statusVarning", 14)}</span>` : "";
     const rowKey = `${i.aid}|${i.bas}`;
@@ -11154,7 +11154,7 @@ function renderPrioritering() {
       const tr = btn.closest("tr");
       const item = tr?._prioItem;
       if (!item) return;
-      _openEvidenceModal(_evidenceForPrioItem(item, ref));
+      _oppnaBevisruta(_bevisForPrioPost(item, ref));
     });
   });
   tbody.querySelectorAll(".btn-suggest").forEach((btn) => {
@@ -11173,7 +11173,7 @@ function renderPrioritering() {
         btn.textContent = "Motiveringsförslag";
         return;
       }
-      const suggestions = generateMotivationSuggestions(item);
+      const suggestions = byggMotiveringsforslag(item);
       const newTr = document.createElement("tr");
       newTr.classList.add("suggest-row");
       const colCount = tr.children.length;
@@ -11200,11 +11200,11 @@ function renderPrioritering() {
         e.target.checked
       ) state.bristAids.add(aid);
       else state.bristAids.delete(aid);
-      renderPrioritering();
+      ritaPrioritering();
     });
   });
 }
-function _readPrioConfigInputs() {
+function _lasPrioInstallningar() {
   const get = (id, def) => {
     const el = document.getElementById(id);
     if (!el) return def;
@@ -11224,7 +11224,7 @@ function _readPrioConfigInputs() {
   const flag = document.getElementById("prio-cfg-custom-flag");
   if (flag) flag.style.display = isCustom ? "inline" : "none";
 }
-function _readPrioWeightsInputs() {
+function _lasPrioVikter() {
   const get = (id, def) => {
     const el = document.getElementById(id);
     if (!el) return def;
@@ -11243,7 +11243,7 @@ function _readPrioWeightsInputs() {
   const sum = state.prioWeights.avvikelse + state.prioWeights.volym + state.prioWeights.jamstalldhet;
   if (sumEl) sumEl.textContent = `Summa: ${sum} (normaliseras till 100% automatiskt)`;
 }
-function _readCostSettings() {
+function _lasKostnadsinstallningar() {
   const monthsEl = document.getElementById("prio-cost-months");
   const poEl = document.getElementById("prio-po-pct");
   const months = monthsEl ? parseInt(
@@ -11266,11 +11266,11 @@ function _readCostSettings() {
   }
 }
 function _kostnadAndrad() {
-  _readCostSettings();
+  _lasKostnadsinstallningar();
   if (!state.data.length) return;
-  renderPrioritering();
+  ritaPrioritering();
   const aktiv = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-  if (aktiv && aktiv !== "prioritering" && typeof renderTabContent === "function") renderTabContent(aktiv);
+  if (aktiv && aktiv !== "prioritering" && typeof ritaFlik === "function") ritaFlik(aktiv);
 }
 var PRIO_KOSTNAD_MAX = 15;
 function _prioKostnadNot({ ovriga, ovrigaSumma: summa, total: totalt }) {
@@ -11297,7 +11297,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
       sektor: sektorsnamn(i.aid),
       n: i.n,
       kum: cumPct[n],
-      etikett: `${_fmtCost(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`,
+      etikett: `${_formateraKostnad(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`,
       markering: markeringFor(i.bas, i.yrke)
     })),
     tips: (d) => [[`${d.yrke} · BAS ${d.bas}`], ["Kostnad", `${talformat(d.x, "kr")}/år`], ["Kumulativ andel", talformat(d.kum, "pct")]]
@@ -11308,7 +11308,7 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     y: { skala: "band", ordning: y, etikettMax: 40 },
     x: { skala: "linjar", titel: "Årskostnad (kr) · procenttalet är kumulativ andel", format: "kr" },
     hojd: Math.max(170, 90 + visade.length * 28),
-    lager: [lager("Når tillsammans 80 % av kostnaden", PALETTE.serie[0], 1, inom), lager("Övriga", PALETTE.serie[0], 0.4, (n) => !inom(n))].filter((l) => l.data.length)
+    lager: [lager("Når tillsammans 80 % av kostnaden", PALETT.serie[0], 1, inom), lager("Övriga", PALETT.serie[0], 0.4, (n) => !inom(n))].filter((l) => l.data.length)
   };
 }
 function _prioZonNamn(zon, cfg) {
@@ -11333,13 +11333,13 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
   const lager = Object.keys(PRIO_STATUS_INFO).map((status) => ({
     marke: "punkt",
     serie: PRIO_STATUS_INFO[status].label,
-    farg: PALETTE.prio[status],
+    farg: PALETT.prio[status],
     opacitet: 0.72,
     kant: FARG.vit,
     tips,
     etikettLage: "undvik",
     data: items.filter((i) => i.status === status && isFinite(i.diffPct) && i.n > 0).map((i) => {
-      const etikett2 = _makePrioLabel(i, i.rank, etikettlage);
+      const etikett2 = _byggPrioEtikett(i, i.rank, etikettlage);
       return {
         x: +i.diffPct.toFixed(2),
         y: i.n,
@@ -11379,10 +11379,10 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     y: stor2 ? { skala: "log", titel: "Antal personer i gruppen (log skala)" } : { skala: "linjar", titel: "Antal personer i gruppen" },
     // Zonerna: gränserna ur inställningen ytterst, statusarnas namn i mitten (_prioZonNamn).
     referens: [
-      zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn("atgard", cfg), FARG.granska),
-      zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn("bevaka", cfg), FARG.varning),
-      zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn("ok", cfg), FARG.ok),
-      zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn("analysera", cfg), FARG.infoMork)
+      zon(xMin, tAt, PALETT.prio.akut, _prioZonNamn("atgard", cfg), FARG.granska),
+      zon(tAt, tBe, PALETT.semantic.varning, _prioZonNamn("bevaka", cfg), FARG.varning),
+      zon(tBe, tAn, PALETT.semantic.ok, _prioZonNamn("ok", cfg), FARG.ok),
+      zon(tAn, xMax, PALETT.prio.analysera, _prioZonNamn("analysera", cfg), FARG.infoMork)
     ].filter((z) => z.x1 > z.x0),
     lager
   };
@@ -11428,11 +11428,11 @@ function uppstartPrioritering() {
     if (m.bottom > y.bottom && k.top - y.top > m.height) wrap.classList.add("uppat");
   });
   document.querySelectorAll('input[name="prio-ref"]').forEach((el) => {
-    el.addEventListener("change", renderPrioritering);
+    el.addEventListener("change", ritaPrioritering);
   });
-  document.getElementById("prio-label-mode")?.addEventListener("change", renderPrioritering);
-  document.getElementById("prio-filter-quickwin")?.addEventListener("change", renderPrioritering);
-  document.getElementById("prio-filter-brist")?.addEventListener("change", renderPrioritering);
+  document.getElementById("prio-label-mode")?.addEventListener("change", ritaPrioritering);
+  document.getElementById("prio-filter-quickwin")?.addEventListener("change", ritaPrioritering);
+  document.getElementById("prio-filter-brist")?.addEventListener("change", ritaPrioritering);
   document.getElementById("btn-prio-consequence")?.addEventListener("click", () => {
     const panel = document.getElementById("prio-consequence-panel");
     if (!panel) return;
@@ -11440,8 +11440,8 @@ function uppstartPrioritering() {
       panel.style.display = "none";
       return;
     }
-    const ref = _selectedPrioReference();
-    const items = computePrioritization(ref);
+    const ref = _valdPrioReferens();
+    const items = raknaPrioritering(ref);
     if (!items.length) {
       panel.innerHTML = '<p class="farg-dampad pad-12">Ingen data att analysera.</p>';
       panel.style.display = "block";
@@ -11457,7 +11457,7 @@ function uppstartPrioritering() {
       if (checkpoints.includes(idx + 1)) {
         const pctOfTotal = totalCost > 0 ? svTal(cumCost / totalCost * 100, 0) : "0";
         const personerLyfta = items.slice(0, idx + 1).reduce((s, x) => s + x.n, 0);
-        rows += `<tr><td>Topp <strong>${idx + 1}</strong></td><td class="t-hoger">${fmt.format(personerLyfta)} pers</td><td class="t-hoger">${_fmtCost(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
+        rows += `<tr><td>Topp <strong>${idx + 1}</strong></td><td class="t-hoger">${fmt.format(personerLyfta)} pers</td><td class="t-hoger">${_formateraKostnad(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
       }
     });
     panel.innerHTML = `
@@ -11476,8 +11476,8 @@ function uppstartPrioritering() {
   });
   ["prio-cfg-atgard", "prio-cfg-akutN", "prio-cfg-bevaka", "prio-cfg-analysera"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", () => {
-      _readPrioConfigInputs();
-      renderPrioritering();
+      _lasPrioInstallningar();
+      ritaPrioritering();
     });
   });
   document.getElementById("prio-cfg-reset")?.addEventListener("click", () => {
@@ -11485,21 +11485,21 @@ function uppstartPrioritering() {
     document.getElementById("prio-cfg-akutN").value = String(PRIO_CONFIG_DEFAULTS.akutMinN);
     document.getElementById("prio-cfg-bevaka").value = String(PRIO_CONFIG_DEFAULTS.bevakaThreshold);
     document.getElementById("prio-cfg-analysera").value = String(PRIO_CONFIG_DEFAULTS.analyseraThreshold);
-    _readPrioConfigInputs();
-    renderPrioritering();
+    _lasPrioInstallningar();
+    ritaPrioritering();
   });
   ["prio-w-avvikelse", "prio-w-volym", "prio-w-jamstalldhet"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", () => {
-      _readPrioWeightsInputs();
-      renderPrioritering();
+      _lasPrioVikter();
+      ritaPrioritering();
     });
   });
   document.getElementById("prio-w-reset")?.addEventListener("click", () => {
     document.getElementById("prio-w-avvikelse").value = String(PRIO_WEIGHTS_DEFAULTS.avvikelse);
     document.getElementById("prio-w-volym").value = String(PRIO_WEIGHTS_DEFAULTS.volym);
     document.getElementById("prio-w-jamstalldhet").value = String(PRIO_WEIGHTS_DEFAULTS.jamstalldhet);
-    _readPrioWeightsInputs();
-    renderPrioritering();
+    _lasPrioVikter();
+    ritaPrioritering();
   });
   ["prio-cost-months", "prio-po-pct"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", _kostnadAndrad);
@@ -11511,24 +11511,24 @@ function uppstartPrioritering() {
     _kostnadAndrad();
   });
   setTimeout(() => {
-    _readCostSettings();
+    _lasKostnadsinstallningar();
     visningNy();
   }, 0);
   document.getElementById("btn-export-prio-excel")?.addEventListener("click", () => medExportLage(() => {
     const table = document.getElementById("prio-table");
     if (table) {
-      const wb = tableToCleanBook("prio-table", "Prioritering");
+      const wb = tabellTillBok("prio-table", "Prioritering");
       if (wb) {
-        _appendMethodSheet(wb);
+        _laggTillMetodblad(wb);
         XLSX.writeFile(wb, "prioriteringslista.xlsx");
-        _showExportSensitivityToast();
+        _visaExportvarning();
       }
     }
   }));
 }
 
 // src/app/27-berakningsbevis.js
-function _openEvidenceModal(p) {
+function _oppnaBevisruta(p) {
   const modal = document.getElementById("evidence-modal");
   const content = document.getElementById("evidence-modal-content");
   const titleEl = document.getElementById("evidence-modal-title");
@@ -11551,15 +11551,15 @@ function _openEvidenceModal(p) {
         ${p.footer ? `<p class="text-dampad-sm lh-1_55 marg-14-0-0">${p.footer}</p>` : ""}
     `;
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
-function _closeEvidenceModal() {
+function _stangBevisruta() {
   const modal = document.getElementById("evidence-modal");
   if (!modal) return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
 }
-function _evidenceForLikvardighetPair(p) {
+function _bevisForLikvardighetspar(p) {
   const fmtKr = (v) => svKr(v);
   const fmtN = (v) => v.toLocaleString("sv-SE");
   const alderText = (v) => typeof v === "number" && isFinite(v) ? svTal(v, 0) : "–";
@@ -11603,7 +11603,7 @@ function _evidenceForLikvardighetPair(p) {
     footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === "nationell" ? " SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov." : ""}`
   };
 }
-function _evidenceForPrioItem(it, _reference) {
+function _bevisForPrioPost(it, _reference) {
   const fmtKr = (v) => svKr(v);
   const fmtN = (v) => v.toLocaleString("sv-SE");
   const w = state.prioWeights;
@@ -11639,7 +11639,7 @@ function _evidenceForPrioItem(it, _reference) {
     footer: `Vikterna (${w.avvikelse}/${w.volym}/${w.jamstalldhet}) ändrar du under Inställningar. Kostnaden inkluderar arbetsgivaravgifter (PO-påslag ${svPoPct(poPct)}).`
   };
 }
-function _evidenceForEUMatrixRow(r) {
+function _bevisForEUMatrisrad(r) {
   const fmtKr = (v) => svKr(v);
   const skr = skrKvinnoandel(r.yrke, { del: _skrDel() });
   const nationellt = {
@@ -11692,7 +11692,7 @@ function _evidenceForEUMatrixRow(r) {
     footer: `Jämförelsen gäller lika arbete: samma ${T.enhet.en}, oberoende av andra egenskaper. För likvärdigt arbete (${adjektiv({ utrum: "annan", neutrum: "annat", plural: "andra" }, T.enhet)} ${T.enhet.en}, likvärdiga krav), se fliken Likvärdigt arbete.`
   };
 }
-function _evidenceForPerBasRow(p, bhCtx) {
+function _bevisForPerBasRad(p, bhCtx) {
   const fmtPct = (v) => (v >= 0 ? "+" : "") + svPct(v, 2);
   if (p.status !== "ok") {
     return {
@@ -11732,7 +11732,7 @@ function _evidenceForPerBasRow(p, bhCtx) {
     footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null && bhCtx.allM > 1 ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ""}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). ${harAlder() ? "Talet är justerat för ålder och bär därför ingen direktivmarkering. " : ""}Prövningen av sakliga skäl gör du själv, i dokumentationen.`
   };
 }
-function _evidenceForRapportRow(p) {
+function _bevisForRapportrad(p) {
   const fmtKr = (v) => svKr(v, "—");
   const r = p.rad || {};
   const n = r.n || 0;
@@ -11784,7 +11784,7 @@ function _evidenceForRapportRow(p) {
     footer: `Detta är en deskriptiv vy — inga statistiska tester eller kontroller görs här. För regressionen (oförklarad skillnad när ålder och ${T.niva.en} räknats bort), se fliken Lönestruktur.`
   };
 }
-function _evidenceForPaygapRow(p) {
+function _bevisForLonegapsrad(p) {
   const fmtKr = (v) => svKr(v, "—");
   const nKv = (p.kvLons || []).length;
   const nMa = (p.maLons || []).length;
@@ -11805,7 +11805,7 @@ function _evidenceForPaygapRow(p) {
   const ratio = kvotPct != null ? medKv / medMa : null;
   const gapPct = kvotPct;
   const diff100 = gapPct != null ? gapPct - 100 : null;
-  const ci = gapPct != null ? _laBootstrapGapCI(p.kvLons, p.maLons) : null;
+  const ci = gapPct != null ? _laBootstrapGapKI(p.kvLons, p.maLons) : null;
   const status = gapPct != null ? gapStatusKI({ gap: gapPct, ci, nKv, nMa }) : GAP_STATUS_EJ;
   return {
     title: `Beräkningen — BAS ${p.bas}`,
@@ -11833,17 +11833,17 @@ function uppstartBerakningsbevis() {
     if (
       /** @type {HTMLElement} */
       e.target.closest("[data-evidence-close]")
-    ) _closeEvidenceModal();
+    ) _stangBevisruta();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && document.getElementById("evidence-modal")?.style.display === "flex") {
-      _closeEvidenceModal();
+      _stangBevisruta();
     }
   });
 }
 
 // src/app/63-tangentbordsnavigering.js
-function setupTabA11y() {
+function kopplaFlikarnasTillganglighet() {
   const tabs = (
     /** @type {HTMLElement[]} */
     [...document.querySelectorAll(".nav-item")]
@@ -11854,7 +11854,7 @@ function setupTabA11y() {
   });
   tabs.forEach((tab) => {
     const target = tab.getAttribute("data-tab");
-    if (target) tab.setAttribute("aria-controls", (PANEL_GROUPS[target] || [target]).map((p) => `view-${p}`).join(" "));
+    if (target) tab.setAttribute("aria-controls", (PANELGRUPPER[target] || [target]).map((p) => `view-${p}`).join(" "));
     tab.addEventListener("keydown", (e) => {
       const enabled = tabs.filter((t) => !/** @type {HTMLInputElement} */
       t.disabled && !t.hidden);
@@ -11903,7 +11903,7 @@ function setupTabA11y() {
     }
   });
 }
-function _wireTablistKeys(buttons) {
+function _kopplaFlikradensTangenter(buttons) {
   if (!Array.isArray(buttons) || buttons.length < 2) return;
   const sync = (fallback) => {
     let aktiv = buttons.findIndex((b) => b.classList.contains("active"));
@@ -11967,7 +11967,7 @@ function _sidindexBred() {
 }
 function _sidindexRubriker(flik) {
   const ut = [], layout = _sidindexHarLayout();
-  for (const p of PANEL_GROUPS[flik] || [flik]) {
+  for (const p of PANELGRUPPER[flik] || [flik]) {
     const panel = document.getElementById("view-" + p);
     if (!panel || _sidindexDoltIMarkering(panel, panel.parentElement)) continue;
     panel.querySelectorAll("details.avsnitt > summary h2, details.avsnitt > summary h3, .card-header > h2").forEach((h) => {
@@ -12201,7 +12201,7 @@ function utAllaDiagramRita() {
   const behallare = document.getElementById("ut-alla-grupper");
   if (!behallare) return;
   const tom = document.getElementById("ut-alla-tom");
-  if (!getData().length) {
+  if (!hamtaData().length) {
     _utAllaRensa(behallare);
     if (tom) tom.hidden = false;
     return;
@@ -12245,7 +12245,7 @@ function utAllaGruppRita(grupp) {
       document.activeElement
     ), x = window.scrollX, y = window.scrollY;
     try {
-      renderTabContent(flik);
+      ritaFlik(flik);
     } catch (e) {
       rapporteraFel(`Alla diagram: ${flik}`, e);
     }
@@ -12263,7 +12263,7 @@ function utAllaGruppRita(grupp) {
   }
   for (const kalla of kallor) {
     const kort = fanns.get(kalla.id) || _utNyKopia(kalla, flik);
-    kort.querySelector(".ut-kopia-rubrik").textContent = chartExportTitle(kalla);
+    kort.querySelector(".ut-kopia-rubrik").textContent = diagramexportRubrik(kalla);
     yta.appendChild(kort);
     const kopia = (
       /** @type {HTMLElement} */
@@ -12348,7 +12348,7 @@ function uppstartAllaDiagram() {
       b.dataset.utUnderflik || "egna"
     ));
   });
-  _wireTablistKeys(
+  _kopplaFlikradensTangenter(
     /** @type {HTMLElement[]} */
     [...document.querySelectorAll("[data-ut-underflik]")]
   );
@@ -12375,19 +12375,19 @@ function _exportSkalFor(behallare) {
 function exportTillaten(behallare) {
   return _exportSkalFor(behallare) == null;
 }
-var CHART_EXPORT_STORLEKAR = {
+var DIAGRAMEXPORT_STORLEKAR = {
   "png-presentation": [1920, 1080],
   "png-dokument": [1600, 900],
   svg: [1600, 900]
 };
-var _chartExportSeq = 0;
-function _chartExportEl(graphDiv) {
+var _diagramexportNr = 0;
+function _diagramexportElement(graphDiv) {
   return typeof graphDiv === "string" ? document.getElementById(graphDiv) : graphDiv;
 }
-function _chartExportSlug(s) {
+function _diagramexportFilnamnsdel(s) {
   return String(s || "").normalize("NFC").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 60);
 }
-function chartExportTitle(gd) {
+function diagramexportRubrik(gd) {
   const egen = gd.closest ? gd.closest(".ut-kopia")?.querySelector(":scope > .ut-kopia-rubrik") : null;
   if (egen && egen.textContent.trim()) return egen.textContent.replace(/\s+/g, " ").trim();
   const kort = gd.closest ? gd.closest(".card") : null;
@@ -12395,33 +12395,33 @@ function chartExportTitle(gd) {
   const t = h ? h.textContent.replace(/\s+/g, " ").trim() : "";
   return t || gd.id || "Diagram";
 }
-function chartExportFilename(gd, ext, datum = /* @__PURE__ */ new Date()) {
+function diagramexportFilnamn(gd, ext, datum = /* @__PURE__ */ new Date()) {
   const kalla = typeof diagramKopiaKalla === "function" ? diagramKopiaKalla(gd) : null;
   const panel = (kalla || gd).closest ? (kalla || gd).closest(".view-panel") : null;
   const flik = panel && panel.id ? panel.id.replace(/^view-/, "") : "diagram";
   const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
   const dag = idagDatum(datum);
-  const titel = _chartExportSlug(chartExportTitle(gd)) || "Diagram";
-  return `${state.isDemo ? "DEMO_" : ""}${_chartExportSlug(Flik)}_${titel}_${dag}.${ext}`;
+  const titel = _diagramexportFilnamnsdel(diagramexportRubrik(gd)) || "Diagram";
+  return `${state.isDemo ? "DEMO_" : ""}${_diagramexportFilnamnsdel(Flik)}_${titel}_${dag}.${ext}`;
 }
-function _chartExportCell(v) {
+function _diagramexportCell(v) {
   if (typeof v !== "number" || Number.isInteger(v) || !isFinite(v)) return v;
   return String(Math.round(v * 100) / 100).replace(".", ",");
 }
-function _chartExportKarna(gd) {
+function _diagramexportKarna(gd) {
   return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
-function _chartExportAktuell(gd) {
+function _diagramexportAktuell(gd) {
   return gd && gd.isConnected === false && gd.id ? document.getElementById(gd.id) || gd : gd;
 }
-function _chartExportUnderlag(...a) {
-  return medExportLage(() => _chartExportUnderlagExport.apply(
+function _diagramexportUnderlag(...a) {
+  return medExportLage(() => _diagramexportUnderlagExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _chartExportUnderlagExport(gd) {
+function _diagramexportUnderlagExport(gd) {
   if (!exportTillaten(gd)) return null;
   if (typeof exportSakra === "function" && !exportSakra(gd)) {
     const ny = gd.isConnected === false && gd.id ? document.getElementById(gd.id) : null;
@@ -12431,25 +12431,25 @@ function _chartExportUnderlagExport(gd) {
   const ut = _rfExportFigur(gd);
   return ut && !ut.tom ? ut : null;
 }
-function _chartExportDolt(ut) {
+function _diagramexportDolt(ut) {
   return ut && ut.filter ? urvalBeskrivning(ut.figur, ut.filter, { visaSma: !!ut.visaSma }) : [];
 }
-function _chartExportHarlett(ut) {
+function _diagramexportHarlett(ut) {
   if (!ut || !ut.filter) return [];
   return harlettNot(harleddaLager(ut.bild || ut.figur, ut.filter, { visaSma: !!ut.visaSma })).utelamnade;
 }
-function chartExportRows(gd, underlag2) {
-  const ut = underlag2 === void 0 ? _chartExportUnderlag(gd) : underlag2;
+function diagramexportRader(gd, underlag2) {
+  const ut = underlag2 === void 0 ? _diagramexportUnderlag(gd) : underlag2;
   if (!ut || ut.underlag && ut.underlag.tom) return [];
-  gd = _chartExportAktuell(gd);
+  gd = _diagramexportAktuell(gd);
   const medSma = ut.visaSma;
   const kalla = ut.underlag && ut.underlag.figur ? ut.underlag.figur : ut.figur;
-  const rader = figurTillTabell(medSma ? kalla : utanSmaGrupper(kalla)).map((r) => r.map(_chartExportCell));
+  const rader = figurTillTabell(medSma ? kalla : utanSmaGrupper(kalla)).map((r) => r.map(_diagramexportCell));
   const beskrivning = typeof gd._exportBeskrivning === "string" ? gd._exportBeskrivning : "";
   const individer = ut.figur && ut.figur.individer === true;
-  const dolt = _chartExportDolt(ut);
+  const dolt = _diagramexportDolt(ut);
   return [
-    [`${chartExportTitle(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
+    [`${diagramexportRubrik(gd)} — Lönekartläggning ${APP_VERSION}. ${kStampelFor(_kUndantagFor(gd, medSma))}`],
     ...individer ? [[kIndividRad()]] : [],
     ...beskrivning ? [[`Urval: ${beskrivning}`]] : [],
     ...ut.underlag ? [[`Räknat för: ${ut.underlag.text}`]] : [],
@@ -12457,17 +12457,17 @@ function chartExportRows(gd, underlag2) {
     ...rader
   ];
 }
-function _chartExportRubrikFot(gd, datum = /* @__PURE__ */ new Date(), dolt = [], harlett = [], underlag2 = "") {
+function _diagramexportRubrikFot(gd, datum = /* @__PURE__ */ new Date(), dolt = [], harlett = [], underlag2 = "") {
   const dag = idagDatum(datum);
   const urval = typeof gd._exportBeskrivning === "string" && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : "";
   const v = !underlag2 && gd._figurVal && typeof gd._figurVal.exportAnteckning === "string" ? gd._figurVal.exportAnteckning.trim() : "";
   const underlagText = underlag2 ? ` · Räknat för: ${underlag2}` : "";
   const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join("; ")}` : "";
   const harlettText = (harlett || []).map((t) => ` · ${String(t).replace(/\.$/, "")}`).join("");
-  return { rubrik: chartExportTitle(gd), fot: `${v ? v + " · " : ""}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? " · Utsnitt av diagrammet" : ""}` };
+  return { rubrik: diagramexportRubrik(gd), fot: `${v ? v + " · " : ""}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? " · Utsnitt av diagrammet" : ""}` };
 }
 function diagramRitat(el) {
-  return !!el && !!_chartExportUnderlag(el);
+  return !!el && !!_diagramexportUnderlag(el);
 }
 function diagramTillBild(...a) {
   return medExportLage(() => _diagramTillBildExport.apply(
@@ -12480,75 +12480,75 @@ async function _diagramTillBildExport(el, val) {
   const { bredd, hojd, utanRubrik = false } = val || {};
   const skal = _exportSkalFor(el);
   if (skal) throw new Error(`Diagrammet lämnar inte verktyget: det ${skal}.`);
-  const ut = _chartExportUnderlag(el);
-  el = _chartExportAktuell(el);
+  const ut = _diagramexportUnderlag(el);
+  el = _diagramexportAktuell(el);
   if (!ut) throw new Error("Det finns inget att exportera i diagrammet.");
-  const url = await figurTillBild(ut.hel || ut.figur, "png", bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...utanRubrik ? {} : _chartExportRubrikFot(el) });
+  const url = await figurTillBild(ut.hel || ut.figur, "png", bredd, hojd, { visaSma: ut.visaSma, dolda: ut.dolda, ...utanRubrik ? {} : _diagramexportRubrikFot(el) });
   if (el._figur !== ut.figur) throw new Error("Diagrammet rensades innan exporten blev klar.");
   return url;
 }
-function _chartExportImage(...a) {
-  return medExportLage(() => __chartExportImageExport.apply(
+function _diagramexportBild(...a) {
+  return medExportLage(() => __diagramexportBildExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-async function __chartExportImageExport(gd, val, underlag2) {
-  const [width, height] = CHART_EXPORT_STORLEKAR[val];
+async function __diagramexportBildExport(gd, val, underlag2) {
+  const [width, height] = DIAGRAMEXPORT_STORLEKAR[val];
   const format = val === "svg" ? "svg" : "png";
-  const ut = underlag2 === void 0 ? _chartExportUnderlag(gd) : underlag2;
-  gd = _chartExportAktuell(gd);
+  const ut = underlag2 === void 0 ? _diagramexportUnderlag(gd) : underlag2;
+  gd = _diagramexportAktuell(gd);
   if (!ut || ut.underlag && ut.underlag.tom) throw new Error("Det finns inget att exportera i diagrammet.");
   const url = await figurTillBild(ut.bild || ut.figur, format, width, height, {
     visaSma: ut.visaSma,
     dolda: ut.dolda,
     filter: ut.filter,
-    ..._chartExportRubrikFot(gd, /* @__PURE__ */ new Date(), _chartExportDolt(ut), _chartExportHarlett(ut), ut.underlag ? ut.underlag.text : "")
+    ..._diagramexportRubrikFot(gd, /* @__PURE__ */ new Date(), _diagramexportDolt(ut), _diagramexportHarlett(ut), ut.underlag ? ut.underlag.text : "")
   });
   if (gd._figur !== ut.figur) throw new Error("Diagrammet rensades innan exporten blev klar.");
   const a = document.createElement("a");
   a.href = url;
-  a.download = chartExportFilename(gd, format);
+  a.download = diagramexportFilnamn(gd, format);
   a.style.display = "none";
   document.body.appendChild(a);
   a.click();
   a.remove();
-  if (typeof _showExportSensitivityToast === "function") _showExportSensitivityToast();
+  if (typeof _visaExportvarning === "function") _visaExportvarning();
 }
-function chartExportRun(...a) {
-  return medExportLage(() => _chartExportRunExport.apply(
+function exporteraDiagram(...a) {
+  return medExportLage(() => _exporteraDiagramExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _chartExportRunExport(gd, val) {
-  const underlag2 = _chartExportKarna(gd) ? _chartExportUnderlag(gd) : void 0;
-  gd = _chartExportAktuell(gd);
+function _exporteraDiagramExport(gd, val) {
+  const underlag2 = _diagramexportKarna(gd) ? _diagramexportUnderlag(gd) : void 0;
+  gd = _diagramexportAktuell(gd);
   if (underlag2 === null) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
   if (underlag2 && underlag2.underlag && underlag2.underlag.tom) return Promise.reject(new Error("Det finns inget att exportera i diagrammet."));
-  if (val === "data-kopiera") return Promise.resolve(_copyMatrixToClipboard(chartExportRows(gd, underlag2)));
+  if (val === "data-kopiera") return Promise.resolve(_kopieraMatrisTillUrklipp(diagramexportRader(gd, underlag2)));
   if (val === "data-csv") {
-    return Promise.resolve(_downloadCSV(chartExportRows(gd, underlag2), chartExportFilename(gd, "csv").replace(/\.csv$/, "")));
+    return Promise.resolve(_laddaNedCSV(diagramexportRader(gd, underlag2), diagramexportFilnamn(gd, "csv").replace(/\.csv$/, "")));
   }
-  return _chartExportImage(gd, val, underlag2);
+  return _diagramexportBild(gd, val, underlag2);
 }
-function _attachChartExport(graphDiv) {
-  const gd = _chartExportEl(graphDiv);
+function _laggTillDiagramexport(graphDiv) {
+  const gd = _diagramexportElement(graphDiv);
   if (!gd || gd._chartExportAttached || !gd.parentElement) return;
   if (!exportTillaten(gd)) return;
   gd._chartExportAttached = true;
   const host = gd.parentElement;
   host.classList.add("chart-export-host");
-  const menyId = `chart-export-${++_chartExportSeq}`;
+  const menyId = `chart-export-${++_diagramexportNr}`;
   const wrap = document.createElement("div");
   wrap.className = "chart-export";
-  wrap.innerHTML = `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" aria-label="Exportera diagrammet ${esc(chartExportTitle(gd))}">${ikon("laddaNed", 14)} Exportera diagrammet</button><div class="chart-export-meny" id="${menyId}" hidden><button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button><button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button><button type="button" data-chart-export="svg">SVG (vektor, skarp i Word)</button><button type="button" data-chart-export="data-kopiera">Kopiera diagramdata</button><button type="button" data-chart-export="data-csv">Ladda ner diagramdata (CSV)</button><p class="chart-export-fel" role="alert" hidden></p></div>`;
+  wrap.innerHTML = `<button type="button" class="chart-export-btn" aria-expanded="false" aria-controls="${menyId}" aria-label="Exportera diagrammet ${esc(diagramexportRubrik(gd))}">${ikon("laddaNed", 14)} Exportera diagrammet</button><div class="chart-export-meny" id="${menyId}" hidden><button type="button" data-chart-export="png-presentation">PNG, presentation (1920 × 1080)</button><button type="button" data-chart-export="png-dokument">PNG, dokument (1600 × 900)</button><button type="button" data-chart-export="svg">SVG (vektor, skarp i Word)</button><button type="button" data-chart-export="data-kopiera">Kopiera diagramdata</button><button type="button" data-chart-export="data-csv">Ladda ner diagramdata (CSV)</button><p class="chart-export-fel" role="alert" hidden></p></div>`;
   wrap._gd = gd;
   host.insertBefore(wrap, gd);
 }
-function _chartExportStang(utom) {
+function _diagramexportStang(utom) {
   document.querySelectorAll(".chart-export-meny:not([hidden])").forEach((m) => {
     if (m === utom) return;
     m.hidden = true;
@@ -12575,7 +12575,7 @@ function uppstartDiagramexport() {
         /** @type {HTMLElement} */
         meny.hidden
       );
-      _chartExportStang(meny);
+      _diagramexportStang(meny);
       meny.hidden = !oppna;
       btn.setAttribute("aria-expanded", String(oppna));
       if (oppna) meny.querySelector("button")?.focus();
@@ -12595,8 +12595,8 @@ function uppstartDiagramexport() {
         wrap.querySelector(".chart-export-fel")
       );
       fel.hidden = true;
-      chartExportRun(wrap._gd, val.getAttribute("data-chart-export")).then(() => {
-        _chartExportStang();
+      exporteraDiagram(wrap._gd, val.getAttribute("data-chart-export")).then(() => {
+        _diagramexportStang();
         wrap.querySelector(".chart-export-btn")?.focus();
       }).catch((err) => {
         fel.textContent = "Exporten misslyckades: " + (err && err.message || String(err));
@@ -12606,7 +12606,7 @@ function uppstartDiagramexport() {
     }
     if (!/** @type {HTMLElement} */
     e.target.closest(".chart-export") || /** @type {HTMLElement} */
-    e.target.closest(".tabell-export .chart-export-meny button")) _chartExportStang();
+    e.target.closest(".tabell-export .chart-export-meny button")) _diagramexportStang();
   });
   document.addEventListener("focusout", (e) => {
     const wrap = (
@@ -12621,13 +12621,13 @@ function uppstartDiagramexport() {
     )) return;
     const meny = wrap.querySelector(".chart-export-meny");
     if (meny && !/** @type {HTMLElement} */
-    meny.hidden) _chartExportStang();
+    meny.hidden) _diagramexportStang();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     const oppen = document.querySelector(".chart-export-meny:not([hidden])");
     if (!oppen) return;
-    _chartExportStang();
+    _diagramexportStang();
     /** @type {HTMLInputElement} */
     oppen.parentElement.querySelector(".chart-export-btn")?.focus();
   });
@@ -12651,11 +12651,11 @@ function ansvarsgruppNamn(g) {
 function _pagAnsvarKort(g) {
   return ansvarsgruppNamn(g).replace(/^(Inget särskilt) ansvar$/, "$1");
 }
-function renderPersonerAttGranska(visaAlla = false) {
+function ritaPersonerAttGranska(visaAlla = false) {
   const host = document.getElementById("personer-att-granska");
   const body = document.getElementById("pag-innehall");
   if (!host || !body) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     host.hidden = true;
     body.innerHTML = "";
@@ -12698,10 +12698,10 @@ function renderPersonerAttGranska(visaAlla = false) {
 function _pagAvvikelseRader(d, grans) {
   return avvikelsePerKonOchBas(d, { k: kTroskel(), minGrupp: statGolv(), grans });
 }
-var _PAG_FARG = { under: PALETTE.lage.under, over: FARG.svag };
+var _PAG_FARG = { under: PALETT.lage.under, over: FARG.svag };
 function _pagAvvikelseGrafik(o, kant) {
   const b = 200, h = 20, m = b / 2, w = (v) => +(Math.min(v, kant) / kant * (m - 2)).toFixed(1);
-  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">` + (o.under > 0 ? `<rect x="${m - w(o.under)}" y="4" width="${w(o.under)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.under}"/>` : "") + (o.over > 0 ? `<rect x="${m}" y="4" width="${w(o.over)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.over}"/>` : "") + `<line x1="${m}" x2="${m}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/></svg>`;
+  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false">` + (o.under > 0 ? `<rect x="${m - w(o.under)}" y="4" width="${w(o.under)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.under}"/>` : "") + (o.over > 0 ? `<rect x="${m}" y="4" width="${w(o.over)}" height="${h - 8}" rx="2" fill="${_PAG_FARG.over}"/>` : "") + `<line x1="${m}" x2="${m}" y1="0" y2="${h}" stroke="${PALETT.semantic.mork}" stroke-width="1.2"/></svg>`;
 }
 function _pagAvvikelseTabell(rader, grans) {
   const t = document.getElementById("pag-avvikelse-tabell");
@@ -12741,16 +12741,16 @@ function _pagRitaAvvikelse(d, grans) {
 }
 function uppstartPersonerAttGranska() {
   markeraUtanExport(document.getElementById("pag-diagram-ruta"), "individer");
-  document.getElementById("pag-grans")?.addEventListener("input", () => renderPersonerAttGranska());
+  document.getElementById("pag-grans")?.addEventListener("input", () => ritaPersonerAttGranska());
   document.getElementById("pag-grans")?.addEventListener("change", (e) => {
     e.target.value = String(_pagGrans());
-    renderPersonerAttGranska();
+    ritaPersonerAttGranska();
   });
   document.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.closest("#pag-visa-alla")
-    ) renderPersonerAttGranska(true);
+    ) ritaPersonerAttGranska(true);
   });
 }
 
@@ -12766,7 +12766,7 @@ function oppnaInstallningar({ fokus = null } = {}) {
   _instRita();
   const oppnare = document.activeElement;
   m.style.display = "flex";
-  trapFocus(m, oppnare);
+  fangaFokus(m, oppnare);
   const mal = fokus ? document.getElementById(fokus) : null;
   if (mal) {
     mal.focus();
@@ -12778,7 +12778,7 @@ function oppnaInstallningar({ fokus = null } = {}) {
 function stangInstallningar() {
   const m = document.getElementById("installningar-modal");
   if (!m || !installningarOppna()) return;
-  releaseFocus(m);
+  slappFokus(m);
   m.style.display = "none";
 }
 function kTroskelLank() {
@@ -12862,7 +12862,7 @@ function _instRita() {
       ) || 3) !== 3
     }
   ];
-  const utanData = !getData().length;
+  const utanData = !hamtaData().length;
   flikar.innerHTML = rader.map((r) => `<li class="inst-flik${r.andrad ? " ar-andrad" : ""}">
         <span class="inst-flik-namn"><strong>${esc(r.namn)}</strong> — ${esc(r.vad)}</span>
         <span class="inst-flik-lage">${esc(r.lage)}</span>
@@ -12870,7 +12870,7 @@ function _instRita() {
     </li>`).join("");
 }
 function _ipRollNamn(roll) {
-  const r = COLMAP_ROLES.find((x) => x.role === roll);
+  const r = KOLUMNMAPPNING_ROLLER.find((x) => x.role === roll);
   return r ? r.label : roll;
 }
 function _instRitaImportprofiler() {
@@ -12901,7 +12901,7 @@ function _ipExportera(id) {
   a.download = `importprofil-${p.id}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-  announceToScreenReader(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
+  meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
 }
 function _ipTaBort(id) {
   const p = (state.importprofiler || []).find((x) => x.id === id);
@@ -12909,12 +12909,12 @@ function _ipTaBort(id) {
   state.importprofiler = state.importprofiler.filter((x) => x !== p);
   if (state.importprofil && state.importprofil.id === id) {
     state.importprofil = null;
-    if (typeof renderFilrutor === "function") renderFilrutor();
+    if (typeof ritaFilrutor === "function") ritaFilrutor();
   }
   _instRitaImportprofiler();
-  if (typeof maybeShowColumnMapping === "function" && (state._dataHeaders || []).length) maybeShowColumnMapping();
+  if (typeof visaKolumnmappningOmBehov === "function" && (state._dataHeaders || []).length) visaKolumnmappningOmBehov();
   document.getElementById("inst-importprofiler-rubrik")?.focus();
-  announceToScreenReader(`Importprofilen ${p.namn} är borttagen för sessionen.`);
+  meddelaSkarmlasare(`Importprofilen ${p.namn} är borttagen för sessionen.`);
 }
 function _instGaTill(flik, avsnitt) {
   stangInstallningar();
@@ -13004,7 +13004,7 @@ function _lvJusteradSaknasText(p) {
   if (justeradSaknas(p) === "extern") return termText("Ingen åldersjustering: {jamforelse.bf} kommer från jämförelsestatistiken och saknar individdata.");
   return `Ingen åldersjustering: ${T.jamforelse.bf} har färre än ${ALDERS_GOLV_STANDARD} personer med ålder eller mindre än ${ALDERS_SPRIDNING_MIN} års åldersspridning, eller åldrar saknas i underlaget.`;
 }
-function _lvExternFallbackText() {
+function _lvExternReservText() {
   return termText("{Enhet.fl:kvinnodominerad} (i {niva.en}) jämförda med jämförelsestatistiken");
 }
 function likvardighetResultat() {
@@ -13498,14 +13498,14 @@ function ritaLikvardigtArbete() {
     e.target.value === "scb" ? "scb" : "do";
     state.likvardighet.result = null;
     ritaLikvardigtArbete();
-    renderAidBasLikvardigt();
+    ritaAidBasLikvardigt();
   });
   document.getElementById("lv-bara-mansdominerade")?.addEventListener("change", (e) => {
     state.likvardighet.jamforelse = /** @type {HTMLInputElement} */
     e.target.checked ? "mansdominerade" : "alla";
     state.likvardighet.result = null;
     ritaLikvardigtArbete();
-    renderAidBasLikvardigt();
+    ritaAidBasLikvardigt();
   });
   document.getElementById("btn-export-likvardighet")?.addEventListener("click", exportLikvardighet);
   document.getElementById("btn-export-likvardighet-csv")?.addEventListener("click", exportLikvardighetCSV);
@@ -13518,15 +13518,15 @@ function ritaLikvardigtArbete() {
       );
       const p = (state.likvardighet.result?.pairs || [])[idx];
       if (!p) return;
-      _openEvidenceModal(_evidenceForLikvardighetPair(p));
+      _oppnaBevisruta(_bevisForLikvardighetspar(p));
     });
   });
-  if (typeof enableTableSort === "function") enableTableSort("likvardighet-table");
-  if (typeof addTableExportTools === "function") addTableExportTools("likvardighet-table", "likvardighet");
+  if (typeof aktiveraSortering === "function") aktiveraSortering("likvardighet-table");
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("likvardighet-table", "likvardighet");
   if (typeof flerKolumner === "function") flerKolumner("likvardighet-table", LV_DOLDA_KOLUMNER, "likvardighet");
   if (document.getElementById("likvardighet-lagre-krav-table")) {
-    if (typeof enableTableSort === "function") enableTableSort("likvardighet-lagre-krav-table");
-    if (typeof addTableExportTools === "function") addTableExportTools("likvardighet-lagre-krav-table", "likvardighet_lagre_krav");
+    if (typeof aktiveraSortering === "function") aktiveraSortering("likvardighet-lagre-krav-table");
+    if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("likvardighet-lagre-krav-table", "likvardighet_lagre_krav");
     if (typeof flerKolumner === "function") flerKolumner("likvardighet-lagre-krav-table", LV_LAGRE_KRAV_DOLDA_KOLUMNER, "lvLagreKrav");
   }
   if (jamforOk && result.pairs.length) ritaKandidatparen(result.pairs);
@@ -13540,7 +13540,7 @@ function _lvRitaTopp(result, vm) {
     host.innerHTML = "";
     return;
   }
-  urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(getData().length, 0)} personer</span>${kTroskelLank()}`;
+  urval.innerHTML = `<span><strong>Hela urvalet</strong> · ${svTal(hamtaData().length, 0)} personer</span>${kTroskelLank()}`;
   const { antal, storst } = vm;
   const statJmf = vm.statJamfor, poang = vm.poang;
   const kallor = poang ? "bara organisationens egna (jämförelsestatistiken har inga poäng)" : "egna och ur jämförelsestatistiken";
@@ -13565,9 +13565,9 @@ function _lvRitaTopp(result, vm) {
   ) : "");
 }
 var _LV_KRAV_SERIER = [
-  { dominans: "kvinnodominerad", serie: "Kvinnodominerad", farg: () => PALETTE.kon.kvinna, symbol: "cirkel" },
-  { dominans: "mansdominerad", serie: "Mansdominerad", farg: () => PALETTE.kon.man, symbol: "triangelHoger" },
-  { dominans: "blandad", serie: "Blandad", farg: () => PALETTE.semantic.neutral, symbol: "cirkel" }
+  { dominans: "kvinnodominerad", serie: "Kvinnodominerad", farg: () => PALETT.kon.kvinna, symbol: "cirkel" },
+  { dominans: "mansdominerad", serie: "Mansdominerad", farg: () => PALETT.kon.man, symbol: "triangelHoger" },
+  { dominans: "blandad", serie: "Blandad", farg: () => PALETT.semantic.neutral, symbol: "cirkel" }
 ];
 function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
   const kr2 = (v) => talformat(v, "kr");
@@ -13606,7 +13606,7 @@ function _lvKravFigur({ medPoang, basOrdning, linje: hornen, punkter }) {
       ...medPoang ? [[d.uppskattad ? `Poäng (efter ${T.niva.bf})` : "Arbetsvärderingspoäng", talformat(d.krav, "antal")]] : []
     ]
   })).filter((l) => l.data.length);
-  if (linje.length >= 2) lager.unshift({ marke: "linje", serie: medPoang ? "Nivå efter kraven (trend)" : `Nivå per ${T.niva.en}`, farg: PALETTE.semantic.mork, streck: "streckad", tjocklek: 1.5, data: linje });
+  if (linje.length >= 2) lager.unshift({ marke: "linje", serie: medPoang ? "Nivå efter kraven (trend)" : `Nivå per ${T.niva.en}`, farg: PALETT.semantic.mork, streck: "streckad", tjocklek: 1.5, data: linje });
   return {
     beskrivning: `En punkt per ${T.enhet.en}: arbetets krav (${medPoang ? "arbetsvärderingspoäng" : T.niva.en}) mot gruppens medianlön, med form och färg efter könsdominans (kvinnodominerad vid ${kvDomGransText().replaceAll("%", "procent")}). Den streckade linjen är nivån kraven brukar ge i organisationen.`,
     urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
@@ -13669,14 +13669,14 @@ function _lvParFigur(pairs, max = 14) {
         marke: "intervall",
         riktning: "liggande",
         serie: "Skillnad",
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: rader.map((r) => ({ y: r.y, lag: Math.round(Math.min(r.p.kvMedian, r.p.maMedian)), hog: Math.round(Math.max(r.p.kvMedian, r.p.maMedian)), p: r.p, ...parFalt(r.p) })),
         tips: (d) => tips(d)
       },
-      punkt(termText("{Enhet.en:kvinnodominerad}"), PALETTE.kon.kvinna, "kvMedian"),
-      punkt(termText("{Jamforelse.en}"), PALETTE.kon.man, "maMedian", { etikettLage: "hoger" })
+      punkt(termText("{Enhet.en:kvinnodominerad}"), PALETT.kon.kvinna, "kvMedian"),
+      punkt(termText("{Jamforelse.en}"), PALETT.kon.man, "maMedian", { etikettLage: "hoger" })
     ]
   };
 }
@@ -13772,14 +13772,14 @@ function _exportLikvardighetCSVExport() {
   const poang = lvPoang(result);
   if (!poang) {
     rows.push(["•varav externa (mot jämförelsestatistiken)", result.diagnostik?.jämförelse?.externaPar ?? 0]);
-    rows.push([_lvExternFallbackText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
+    rows.push([_lvExternReservText(), result.diagnostik?.jämförelse?.basMedExternFallback ?? 0]);
   }
   rows.push(["Klassificeringskälla — jämförelsestatistiken", result.diagnostik?.statistik?.klassKalla?.lokal ?? 0]);
   rows.push(["Klassificeringskälla — SKR:s personalstatistik", result.diagnostik?.statistik?.klassKalla?.nationell ?? 0]);
   rows.push(["KI-metod", poang ? "Bootstrap B=1000 på bägge individurvalen" : "Bootstrap B=1000; intern = bägge individurvalen, extern = org-löner mot jämförelsestatistikens median"]);
   rows.push(["Justerad för ålder", LV_JUSTERAD_METOD]);
   rows.push(["Minsta gruppstorlek", "Tillämpas EJ i denna analys"]);
-  _downloadCSV(rows, "lonekartlaggning_likvardighet_" + idagDatum(), { undantag: "Likvärdigt arbete" });
+  _laddaNedCSV(rows, "lonekartlaggning_likvardighet_" + idagDatum(), { undantag: "Likvärdigt arbete" });
 }
 function exportLikvardighet(...a) {
   return medExportLage(() => _exportLikvardighetExport.apply(
@@ -13892,7 +13892,7 @@ function _exportLikvardighetExport() {
       ...poang ? [] : [
         // i poängläget används jämförelsestatistiken inte (ADR-76)
         ["Flaggade externa par (jämförelsestatistiken)", safe(() => diagnostik.jämförelse.externaPar, 0)],
-        [_lvExternFallbackText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]
+        [_lvExternReservText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]
       ],
       ["Par i utdata", pairs.length],
       ["", ""],
@@ -13909,11 +13909,11 @@ function _exportLikvardighetExport() {
     XLSX.utils.book_append_sheet(wb, metaSheet, "Metadata");
     stegnamn = "skriv fil";
     const filename = "lonekartlaggning_likvardighet_" + idagDatum() + ".xlsx";
-    _appendMethodSheet(wb, { undantag: "Likvärdigt arbete" });
+    _laggTillMetodblad(wb, { undantag: "Likvärdigt arbete" });
     XLSX.writeFile(wb, filename);
     stegnamn = "efter-steg";
-    if (typeof _showExportSensitivityToast === "function") _showExportSensitivityToast();
-    if (typeof announceToScreenReader === "function") announceToScreenReader("Likvärdighetsanalys exporterad: " + pairs.length + " par.");
+    if (typeof _visaExportvarning === "function") _visaExportvarning();
+    if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Likvärdighetsanalys exporterad: " + pairs.length + " par.");
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
     const stackPreview = err && err.stack ? "\n\nStack:\n" + String(err.stack).split("\n").slice(0, 4).join("\n") : "";
@@ -14151,7 +14151,7 @@ function ritaAlderOchLon(bas) {
   const k = kTroskel();
   const trendAlla = !!/** @type {HTMLInputElement|null} */
   document.getElementById("kon-trend-alla")?.checked;
-  const vm = vymodellAlderOchLon(getData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
+  const vm = vymodellAlderOchLon(hamtaData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
   if (!vm) return;
   const { isAll, df, dataKv, dataMa, kvOk, maOk, konOk, kvot, trendKv, trendMa } = vm;
   const unadjGap = kvot != null ? svPct(kvot, 1) : "–";
@@ -14159,7 +14159,7 @@ function ritaAlderOchLon(bas) {
   const urvalText = document.getElementById("ak-urval-text");
   if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
   _laNyckel("nyckel-ak-fordelning", kvot != null ? `Kvinnors median ${unadjGap} av mäns` : "");
-  _laNyckel("nyckel-ak-alla", `${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}`);
+  _laNyckel("nyckel-ak-alla", `${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}`);
   document.getElementById("kon-kpi-n").textContent = svTal(df.length, 0);
   {
     const u = document.getElementById("kon-kpi-n-under");
@@ -14196,7 +14196,7 @@ function ritaAlderOchLon(bas) {
   const scope2 = isAll ? "hela urvalet" : `${T.niva.en} ${bas}`;
   const { utan } = vm;
   const skal = `färre än ${k} ${personOrd(k)} av ${kvOk || maOk ? "könet" : "vartdera könet"} finns i urvalet`;
-  ritaFigur("chart-kon-scatter", _konScatterFigur({
+  ritaFigur("chart-kon-scatter", _konPunktmolnFigur({
     df,
     dataKv,
     dataMa,
@@ -14224,19 +14224,19 @@ function ritaAlderOchLon(bas) {
       rita: (rader, { beskrivning }) => _konLadFigurFor(ladaPerKon(rader, k), `${scope2}, ${beskrivning}`, k)
     } }, { hojd: 420 });
   } else if (boxEl) rensaFigur(boxEl);
-  _setDiagramKNot("chart-kon-scatter", [
+  _sattDiagramKNot("chart-kon-scatter", [
     utan ? `Trendlinje och konfidensband visas inte för ${utan}: ${skal}.` : "",
     trendAlla && !vm.trendAllaOk ? _demoTrendNot(df.length) : "",
     _individNot(vm.dolda)
   ].filter(Boolean).join(" "));
-  _setDiagramKNot("chart-kon-boxplot", utan ? `Lådan visas inte för ${utan}: ${skal}.` : "");
+  _sattDiagramKNot("chart-kon-boxplot", utan ? `Lådan visas inte för ${utan}: ${skal}.` : "");
   ritaKonMultiplar();
   ritaKonHistogram(vm, scope2);
   _ritaTungtBlock("kon", ["chart-kon-aldergap", "kon-aldergap-not"], () => ritaAlderGap(dataKv, dataMa, scope2));
 }
 function _konTathetFigur(rader, perKon, k = kTroskel(), form = "fiol") {
   const { punkter, utelamnade, ordning } = lonefordelningPerBas(rader, perKon, k);
-  const serier = perKon ? [["Kvinna", PALETTE.kon.kvinna], ["Man", PALETTE.kon.man]] : [["Alla", PALETTE.serie[0]]];
+  const serier = perKon ? [["Kvinna", PALETT.kon.kvinna], ["Man", PALETT.kon.man]] : [["Alla", PALETT.serie[0]]];
   const lager = serier.map(([namn, farg]) => ({
     marke: "lada",
     ...form === "fiol" ? { form: "fiol" } : form === "kvantiler" ? { form: "kvantiler", antal: 20 } : { avvikare: false },
@@ -14295,7 +14295,7 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
     x: { skala: "band", titel: "Månadslön (tusen kronor)", ordning: klasser.map(namn) },
     y: { skala: "linjar", titel: "Andel av könet (%)" },
     hojd: 340,
-    lager: [serie("Kvinnor", PALETTE.kon.kvinna, "nKv", nKv), serie("Män", PALETTE.kon.man, "nMa", nMa)]
+    lager: [serie("Kvinnor", PALETT.kon.kvinna, "nKv", nKv), serie("Män", PALETT.kon.man, "nMa", nMa)]
   };
 }
 function _konAlderGapFigur(rader, scope) {
@@ -14327,14 +14327,14 @@ function _konAlderGapFigur(rader, scope) {
     y: { skala: "band", ordning: rader.map((o) => o.namn) },
     x: { skala: "linjar", titel: "Kvinnors median i % av mäns — 100 = lika lön", doman: [Math.floor(Math.min(90, ...alla) - 2), Math.ceil(Math.max(105, ...alla) + 2)] },
     hojd: Math.max(180, 110 + rader.length * 34),
-    referens: [{ typ: "zon", x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: "±3 %" }, { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
+    referens: [{ typ: "zon", x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: "±3 %" }, { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
     lager: _SKEVHET_STATUS.map((s) => ({
       marke: "punkt",
       riktning: "liggande",
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       data: rader.filter((o) => status(o) === s).map(pkt),
       tips
     })).filter((l) => l.data.length)
@@ -14392,13 +14392,13 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
   const lager = [];
   for (const { bas: b, punkter, trend } of paneler) {
     const panel = "BAS " + b;
-    for (const [namn, farg] of [["Kvinna", PALETTE.kon.kvinna], ["Man", PALETTE.kon.man]]) {
+    for (const [namn, farg] of [["Kvinna", PALETT.kon.kvinna], ["Man", PALETT.kon.man]]) {
       const data = punkter.filter((p) => p.kon === namn).map(({ rad: r, liten: l }) => ({ x: r.alder, y: r.lon, yrke: r.yrke, bas: r.bas, alder: r.alder, lon: r.lon, kon: namn, ...l ? { liten: true } : {}, markering: markeringFor(r.bas, r.yrke) }));
       if (data.length) lager.push({ marke: "punkt", serie: namn, farg, storlek: 2.5, opacitet: 0.6, panel, data, tips: _punktTips });
     }
     if (trend) {
       const { reg, a0, a1 } = trend;
-      lager.push({ marke: "linje", serie: "Trend (alla i intervallet)", farg: PALETTE.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
+      lager.push({ marke: "linje", serie: "Trend (alla i intervallet)", farg: PALETT.semantic.mork, tjocklek: 1.5, panel, data: [{ x: a0, y: reg.m * a0 + reg.b, bas: b }, { x: a1, y: reg.m * a1 + reg.b, bas: b }] });
     }
   }
   return { utanfor, nedsamplade: paneler.filter((p) => p.nedsamplad).map((p) => "BAS " + p.bas), figur: {
@@ -14415,7 +14415,7 @@ function _konMultiplarFigur(rader, liten, k = kTroskel()) {
 function ritaKonMultiplar() {
   const el = document.getElementById("chart-kon-multiplar");
   if (!el) return;
-  const d = getData();
+  const d = hamtaData();
   const { figur, utanfor, nedsamplade } = _konMultiplarFigur(d, individLitenFor(d));
   if (figur.paneler.length) ritaFigur(el, figur);
   else rensaFigur(el);
@@ -14438,7 +14438,7 @@ var _punktTips = (d) => [
   ["Lön", talformat(d.y, "kr")]
 ];
 var _vagratLinje = (serie, farg, y, a0, a1, val = {}) => ({ marke: "linje", serie, farg, data: [{ x: a0, y }, { x: a1, y }], ...val });
-function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
+function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
   const punkt = (d, medKon) => ({
     x: d.alder,
     y: d.lon,
@@ -14462,10 +14462,10 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
     lager.push(l);
     harledda.push([l, kon]);
   };
-  band("Kvinna 95 % KI", PALETTE.kon.kvinna, ciKv, "Kvinna");
-  band("Man 95 % KI", PALETTE.kon.man, ciMa, "Man");
+  band("Kvinna 95 % KI", PALETT.kon.kvinna, ciKv, "Kvinna");
+  band("Man 95 % KI", PALETT.kon.man, ciMa, "Man");
   if (colorBy === "kon") {
-    lager.push(punktlager("Kvinna", PALETTE.kon.kvinna, dataKv, false), punktlager("Man", PALETTE.kon.man, dataMa, false));
+    lager.push(punktlager("Kvinna", PALETT.kon.kvinna, dataKv, false), punktlager("Man", PALETT.kon.man, dataMa, false));
   } else {
     const nyckel = (d) => colorBy === "bas" ? d.bas : d.yrke;
     const antal = {};
@@ -14481,7 +14481,7 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
       grupper.get(k).push(d);
     });
     [...grupper].forEach(([namn, rader], i) => lager.push(
-      punktlager(colorBy === "bas" ? `BAS-${namn}` : namn, PALETTE.serie[i % PALETTE.serie.length], rader, true)
+      punktlager(colorBy === "bas" ? `BAS-${namn}` : namn, PALETT.serie[i % PALETT.serie.length], rader, true)
     ));
   }
   const trend = (serie, farg, reg, kon) => {
@@ -14494,17 +14494,17 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
     lager.push(l);
     harledda.push([l, kon]);
   };
-  trend("Kvinna (trend)", PALETTE.kon.kvinna, trendKv, "Kvinna");
-  trend("Man (trend)", PALETTE.kon.man, trendMa, "Man");
+  trend("Kvinna (trend)", PALETT.kon.kvinna, trendKv, "Kvinna");
+  trend("Man (trend)", PALETT.kon.man, trendMa, "Man");
   const allaNamn = (reg) => `Hela urvalet (trend, R² = ${svTal(reg.r2, 2)})`;
   if (trendAlla) lager.push({
-    ..._vagratLinje(allaNamn(trendAlla), PALETTE.semantic.trend, 0, minAlder, maxAlder, {
+    ..._vagratLinje(allaNamn(trendAlla), PALETT.semantic.trend, 0, minAlder, maxAlder, {
       tjocklek: 2,
       streck: "streckad",
       data: [{ x: minAlder, y: trendAlla.m * minAlder + trendAlla.b }, { x: maxAlder, y: trendAlla.m * maxAlder + trendAlla.b }]
     }),
     harleddAv: { lager: kallor(), minN: kTroskel(), namn: "trendlinjen för hela urvalet", berakna: (p) => {
-      const t = _konScatterTrend(p);
+      const t = _konPunktmolnTrend(p);
       return t ? { data: t.linje, serie: allaNamn(t.reg) } : [];
     } }
   });
@@ -14514,12 +14514,12 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
       minN: kTroskel(),
       namn: konNamn(kon),
       berakna: (p) => {
-        const t = _konScatterTrend(p, l.marke === "band");
+        const t = _konPunktmolnTrend(p, l.marke === "band");
         return t ? l.marke === "band" ? t.band : t.linje : [];
       }
     };
   }
-  if (statMedian != null) lager.push(_vagratLinje(`Median i ${plotNamn(jmfNamn("jämförelsestatistiken"))}`, PALETTE.serie[10], statMedian, minAlder, maxAlder, { streck: "streckad" }));
+  if (statMedian != null) lager.push(_vagratLinje(`Median i ${diagramNamn(jmfNamn("jämförelsestatistiken"))}`, PALETT.serie[10], statMedian, minAlder, maxAlder, { streck: "streckad" }));
   return {
     beskrivning,
     individer: true,
@@ -14528,18 +14528,18 @@ function _konScatterFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAld
     y: { skala: "linjar", titel: "Månadslön", format: "kr" },
     lager,
     referens: pol ? [
-      { typ: "zon", y0: pol.p10, y1: pol.p90, farg: PALETTE.semantic.neutral, opacitet: 0.15 },
-      { y: pol.med, streck: "streckad", farg: PALETTE.semantic.neutral, tjocklek: 2 }
+      { typ: "zon", y0: pol.p10, y1: pol.p90, farg: PALETT.semantic.neutral, opacitet: 0.15 },
+      { y: pol.med, streck: "streckad", farg: PALETT.semantic.neutral, tjocklek: 2 }
     ] : []
   };
 }
-function _konScatterTrend(punkter, medBand = false) {
+function _konPunktmolnTrend(punkter, medBand = false) {
   const par = punkter.map((d) => [d.x, d.y]), aldrar = par.map((p) => p[0]);
   const [a0, a1] = omfang(aldrar);
   if (!(a1 > a0)) return null;
   const reg = Stat.linjarRegression(par);
   if (!reg || !isFinite(reg.m) || !isFinite(reg.b)) return null;
-  const ci = medBand ? linearRegressionCI(par, a0, a1, 25) : null;
+  const ci = medBand ? linjarRegressionKI(par, a0, a1, 25) : null;
   return {
     reg,
     linje: [{ x: a0, y: reg.m * a0 + reg.b }, { x: a1, y: reg.m * a1 + reg.b }],
@@ -14556,7 +14556,7 @@ function _konLadFigurFor({ lonKv, lonMa, nKv, nMa, utan }, scope, k) {
   });
 }
 function _konLadFigur({ lonKv, lonMa, beskrivning }) {
-  const data = [...(lonKv || []).map((y) => ({ x: "Kvinna", y, farg: PALETTE.kon.kvinna })), ...(lonMa || []).map((y) => ({ x: "Man", y, farg: PALETTE.kon.man }))];
+  const data = [...(lonKv || []).map((y) => ({ x: "Kvinna", y, farg: PALETT.kon.kvinna })), ...(lonMa || []).map((y) => ({ x: "Man", y, farg: PALETT.kon.man }))];
   return {
     beskrivning,
     legend: false,
@@ -14570,20 +14570,20 @@ function _konLadFigur({ lonKv, lonMa, beskrivning }) {
     }]
   };
 }
-var konSel = document.getElementById("bas-select-kon");
-var demoSel = document.getElementById("bas-select-demo");
+var konValjare = document.getElementById("bas-select-kon");
+var demoValjare = document.getElementById("bas-select-demo");
 function _akValj(varde, kalla) {
-  for (const sel of [konSel, demoSel]) {
+  for (const sel of [konValjare, demoValjare]) {
     if (sel && sel !== kalla && [.../** @type {HTMLSelectElement} */
     sel.options].some((o) => o.value === varde)) sel.value = varde;
   }
-  if (konSel) ritaAlderOchLon(
+  if (konValjare) ritaAlderOchLon(
     /** @type {HTMLInputElement} */
-    konSel.value
+    konValjare.value
   );
-  if (demoSel) ritaAldersstruktur(
+  if (demoValjare) ritaAldersstruktur(
     /** @type {HTMLInputElement} */
-    demoSel.value
+    demoValjare.value
   );
 }
 function ritaAldersstruktur(bas) {
@@ -14591,7 +14591,7 @@ function ritaAldersstruktur(bas) {
     _akTomUtanAlder();
     return;
   }
-  const vm = vymodellAldersstruktur(getData(), { bas, k: kTroskel(), alla: state.data });
+  const vm = vymodellAldersstruktur(hamtaData(), { bas, k: kTroskel(), alla: state.data });
   if (!vm) return;
   const { isAll, n, pctKv, pctMa, andel60, andelU40, alderDiff, orgMedian } = vm;
   const scopeShort = isAll ? "urvalet" : T.niva.bf;
@@ -14636,7 +14636,7 @@ function ritaAldersstruktur(bas) {
   ritaFigur("chart-demo-hist", _demoHistFigur({ pctKv, pctMa, refPct: vm.refPct, isAll }), { hojd: 340 });
   if (document.getElementById("chart-demo-pyramid")) ritaFigur("chart-demo-pyramid", _demoPyramidFigur({ pctKv, pctMa, isAll }));
   const pol = isAll ? null : policyFor(null, bas);
-  ritaFigur("chart-demo-agecurve", _demoAgecurveFigur(vm.kurvaKv, vm.kurvaMa), { hojd: 300 });
+  ritaFigur("chart-demo-agecurve", _demoAlderskurvaFigur(vm.kurvaKv, vm.kurvaMa), { hojd: 300 });
   {
     const f = vm.band ? _demoBandFigur(vm.df, kTroskel(), pol, vm.aLo, vm.aHi, vm.band) : null;
     if (f) ritaFigur("chart-demo-spread", f, { hojd: 320 });
@@ -14662,12 +14662,12 @@ function _demoHistFigur({ pctKv, pctMa, refPct, isAll }) {
     x: { skala: "band", titel: "Åldersgrupp", ordning: ALDERSKLASSER.slice() },
     y: { skala: "linjar", titel: isAll ? "Andel av organisationen (%)" : `Andel av ${T.niva.en} (%)` },
     lager: [
-      serie("Kvinna", PALETTE.kon.kvinna, pctKv),
-      serie("Man", PALETTE.kon.man, pctMa),
+      serie("Kvinna", PALETT.kon.kvinna, pctKv),
+      serie("Man", PALETT.kon.man, pctMa),
       {
         marke: "linje",
         serie: "Sveriges sysselsatta (SCB AKU 2023)",
-        farg: PALETTE.semantic.referens,
+        farg: PALETT.semantic.referens,
         streck: "prickad",
         punkter: true,
         data: ALDERSKLASSER.map((x, i) => ({ x, y: refPct[i] })),
@@ -14696,10 +14696,10 @@ function _demoPyramidFigur({ pctKv, pctMa, isAll }) {
     y: { skala: "band", titel: "Åldersgrupp", ordning: grupper },
     x: { skala: "linjar", titel: `Kvinnor åt vänster · andel av ${isAll ? "organisationen" : T.niva.bf} (%) · Män åt höger`, format: "pctAbs", doman: [-grans, grans], nollinje: true },
     hojd: Math.max(300, 70 + grupper.length * 24),
-    lager: [serie("Kvinna", PALETTE.kon.kvinna, pctKv, -1), serie("Man", PALETTE.kon.man, pctMa, 1)]
+    lager: [serie("Kvinna", PALETT.kon.kvinna, pctKv, -1), serie("Man", PALETT.kon.man, pctMa, 1)]
   };
 }
-function _demoAgecurveFigur(kv, ma) {
+function _demoAlderskurvaFigur(kv, ma) {
   const kurva = (serie, farg, c, vilka) => ({
     marke: "linje",
     serie,
@@ -14714,14 +14714,14 @@ function _demoAgecurveFigur(kv, ma) {
     urval: [URVAL.alder],
     x: { skala: "linjar", titel: "Ålder" },
     y: { skala: "linjar", titel: "Andel av könet (%)" },
-    lager: [kurva("Kvinna", PALETTE.kon.kvinna, kv, "kvinnorna"), kurva("Man", PALETTE.kon.man, ma, "männen")]
+    lager: [kurva("Kvinna", PALETT.kon.kvinna, kv, "kvinnorna"), kurva("Man", PALETT.kon.man, ma, "männen")]
   };
 }
 function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
   if (!rader) return null;
   const kr2 = (v) => `${talformat(v, "kr")}/mån`;
   const tips = (d) => [[d.namn], ["P90", kr2(d.r.p90)], ["P75", kr2(d.r.p75)], ["Median", kr2(d.r.p50)], ["P25", kr2(d.r.p25)], ["P10", kr2(d.r.p10)], ["Antal", String(d.r.n)]];
-  const band = (serie, lag, hog, opacitet) => ({ marke: "band", serie, farg: PALETTE.serie[0], opacitet, data: rader.map((r) => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, alder: r.alder, r })), tips });
+  const band = (serie, lag, hog, opacitet) => ({ marke: "band", serie, farg: PALETT.serie[0], opacitet, data: rader.map((r) => ({ x: r.x, lag: r[lag], hog: r[hog], namn: r.namn, alder: r.alder, r })), tips });
   return {
     beskrivning: `Lönespridning över ålder: medianlön per femårsgrupp, med band för mittersta hälften (P25–P75) och för P10–P90. Åldersgrupper med färre än ${k} ${personOrd(k)} visas inte.`,
     urval: [URVAL.alder],
@@ -14730,11 +14730,11 @@ function _demoBandFigur(df, k, pol, aLo, aHi, rader = alderBandRader(df, k)) {
     lager: [
       band("P10–P90", "p10", "p90", 0.16),
       band("Mittersta hälften (P25–P75)", "p25", "p75", 0.3),
-      { marke: "linje", serie: "Median", farg: PALETTE.serie[0], tjocklek: 2.5, punkter: true, data: rader.map((r) => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
+      { marke: "linje", serie: "Median", farg: PALETT.serie[0], tjocklek: 2.5, punkter: true, data: rader.map((r) => ({ x: r.x, y: r.p50, namn: r.namn, alder: r.alder, r })), tips },
       ...pol ? [
-        _vagratLinje("Ställn. P10", colors.policy, pol.p10, aLo, aHi, { streck: "streckad", tjocklek: 1 }),
-        _vagratLinje("Ställn. Median", colors.policy, pol.med, aLo, aHi, { streck: "streckad", tjocklek: 1.5 }),
-        _vagratLinje("Ställn. P90", colors.policy, pol.p90, aLo, aHi, { streck: "streckad", tjocklek: 1 })
+        _vagratLinje("Ställn. P10", farger.policy, pol.p10, aLo, aHi, { streck: "streckad", tjocklek: 1 }),
+        _vagratLinje("Ställn. Median", farger.policy, pol.med, aLo, aHi, { streck: "streckad", tjocklek: 1.5 }),
+        _vagratLinje("Ställn. P90", farger.policy, pol.p90, aLo, aHi, { streck: "streckad", tjocklek: 1 })
       ] : []
     ]
   };
@@ -14747,10 +14747,10 @@ function uppstartAlderKarriar() {
     );
     if (s) ritaAlderOchLon(s.value);
   });
-  if (konSel) konSel.addEventListener("change", (e) => _akValj(
+  if (konValjare) konValjare.addEventListener("change", (e) => _akValj(
     /** @type {HTMLInputElement} */
     e.target.value,
-    konSel
+    konValjare
   ));
   document.getElementById("kon-color-by")?.addEventListener("change", () => {
     const s = document.getElementById("bas-select-kon");
@@ -14759,19 +14759,19 @@ function uppstartAlderKarriar() {
       s.value
     );
   });
-  if (demoSel) demoSel.addEventListener("change", (e) => _akValj(
+  if (demoValjare) demoValjare.addEventListener("change", (e) => _akValj(
     /** @type {HTMLInputElement} */
     e.target.value,
-    demoSel
+    demoValjare
   ));
 }
 
 // src/app/52-livscykel.js
-var _lifecycleFixBas = null;
+var _livscykelValdBas = null;
 function ritaLivscykel(given) {
   const wrap = document.getElementById("livscykel-content") || document.getElementById("lifecycle-content");
   if (!wrap) return;
-  const result = runLifecycleRegression(_lifecycleFixBas);
+  const result = korLivscykelregression(_livscykelValdBas);
   if (result.error) {
     wrap.innerHTML = `<div class="insight-box warn pad-18">
             <strong>${ikon("statusVarning")} Livscykelanalysen kunde inte köras</strong>
@@ -14780,11 +14780,11 @@ function ritaLivscykel(given) {
         </div>`;
     return;
   }
-  _lifecycleFixBas = result.fixBas;
-  const primary = given || runOLSRegression();
+  _livscykelValdBas = result.fixBas;
+  const primary = given || korOLSRegression();
   const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
   const h = vm.huvud;
-  const modellCaption = !h || vm.sammaUrval ? antalCaption(result.kvN, result.maN) : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
+  const modellCaption = !h || vm.sammaUrval ? antalRubrik(result.kvN, result.maN) : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
   const sigBadge = (p) => p < 1e-3 ? `<span class="farg-kritisk">***</span>` : p < 0.01 ? `<span class="farg-kritisk">**</span>` : p < 0.05 ? `<span class="farg-varning">*</span>` : "";
   const sakerOrd = (p) => samspelSakerstallt(p) ? "säkerställd" : '<span class="f-dampad">inte säkerställd</span>';
   const pText = (p) => p < 1e-3 ? "< 0,001" : svTal(p, 3);
@@ -14907,7 +14907,7 @@ function ritaLivscykel(given) {
                             </tr>`).join("")}
                     </tbody>
                 </table>
-                ${kMaskNote(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+                ${kMaskNot(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
                     <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
@@ -14950,9 +14950,9 @@ function ritaLivscykel(given) {
             Modellen bygger på ${svTal(result.n, 0)} personer och tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
     `;
-  const baseL = buildBaseAudit();
+  const baseL = byggGrundurval();
   const utanfor = Math.max(0, baseL.afterFilter - result.n);
-  setAudit("livscykel", {
+  sattMetodik("livscykel", {
     title: "Ålder & karriär — livscykelmodellen",
     ...baseL,
     usedInAnalysis: result.n,
@@ -14973,13 +14973,13 @@ function ritaLivscykel(given) {
   state._lifecycleCache = { result, basRows: vm.basRader };
   const behallare = document.getElementById("lifecycle-chart");
   if (kurvaUtelamnad || !behallare) {
-  } else if (typeof iExportLage === "function" && iExportLage()) _renderLifecycleChart(result, behallare);
+  } else if (typeof iExportLage === "function" && iExportLage()) _ritaLivscykelDiagram(result, behallare);
   else requestAnimationFrame(() => {
-    if (behallare.isConnected) _renderLifecycleChart(result, behallare);
+    if (behallare.isConnected) _ritaLivscykelDiagram(result, behallare);
   });
   const sel = document.getElementById("lifecycle-bas-select");
   if (sel) sel.addEventListener("change", () => {
-    _lifecycleFixBas = /** @type {HTMLInputElement} */
+    _livscykelValdBas = /** @type {HTMLInputElement} */
     sel.value;
     ritaLivscykel();
   });
@@ -14991,13 +14991,13 @@ function ritaLivscykel(given) {
       );
       const row = (state._lifecycleCache?.basRows || []).find((r) => r.bas === bas);
       if (!row) return;
-      if (isKMasked(row.n)) return;
+      if (kMaskerad(row.n)) return;
       const c = state._lifecycleCache;
-      _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
+      _oppnaBevisruta(_bevisForLivscykelBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
     });
   });
 }
-function _evidenceForLifecycleBas(row, result, utanKurva = false) {
+function _bevisForLivscykelBas(row, result, utanKurva = false) {
   const fmtKr = (v) => svKr(v, "—");
   const fmtPct = (v) => v == null || !isFinite(v) ? "—" : (v >= 0 ? "+" : "") + svPct(v, 1);
   return {
@@ -15030,10 +15030,10 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
     footer: `Livscykelmodellen låter skillnaden variera med åldern (via samspelet mellan kön och ålder). Är samspelet inte signifikant (p minst 0,10) är skillnaden i praktiken densamma, och då räcker huvudregressionen. Är det signifikant behöver du överväga åtgärder som rör karriären.`
   };
 }
-function _renderLifecycleChart(r, el) {
-  ritaFigur(el || "lifecycle-chart", _lifecycleFigur(r), { hojd: 380 });
+function _ritaLivscykelDiagram(r, el) {
+  ritaFigur(el || "lifecycle-chart", _livscykelFigur(r), { hojd: 380 });
 }
-function _lifecycleFigur(r) {
+function _livscykelFigur(r) {
   const band = (serie, farg, pred) => ({ marke: "band", serie, farg, opacitet: 0.18, legend: false, data: pred.map((p) => ({ x: p.age, lag: p.lo, hog: p.hi })) });
   const kurva = (serie, kon, farg, pred, streck) => ({
     marke: "linje",
@@ -15049,20 +15049,20 @@ function _lifecycleFigur(r) {
     x: { skala: "linjar", titel: `Ålder — predikterad lönekurva för BAS ${r.fixBas} (valt intervall)` },
     y: { skala: "linjar", titel: "Predikterad månadslön (kr)", format: "kr" },
     lager: [
-      band("Kvinna 95 % KI", PALETTE.kon.kvinna, r.predKvinna),
-      band("Man 95 % KI", PALETTE.kon.man, r.predMan),
-      kurva("Kvinna (predikterad lön)", "Kvinna", PALETTE.kon.kvinna, r.predKvinna, "hel"),
-      kurva("Man (predikterad lön)", "Man", PALETTE.kon.man, r.predMan, "streckad")
+      band("Kvinna 95 % KI", PALETT.kon.kvinna, r.predKvinna),
+      band("Man 95 % KI", PALETT.kon.man, r.predMan),
+      kurva("Kvinna (predikterad lön)", "Kvinna", PALETT.kon.kvinna, r.predKvinna, "hel"),
+      kurva("Man (predikterad lön)", "Man", PALETT.kon.man, r.predMan, "streckad")
     ]
   };
 }
-function runLifecycleRegression(fixBas) {
-  return livscykelRegression(getData(), { fixBas, golv: statGolv() });
+function korLivscykelregression(fixBas) {
+  return livscykelRegression(hamtaData(), { fixBas, golv: statGolv() });
 }
 
 // src/app/51-lika-arbete-regressionskort.js
-function runOLSRegression() {
-  return huvudregression(getData(), regressionsval());
+function korOLSRegression() {
+  return huvudregression(hamtaData(), regressionsval());
 }
 function regressionsval() {
   return {
@@ -15076,13 +15076,13 @@ function regressionsval() {
     // regressionerna per BAS-intervall och ansvarssteget
   };
 }
-function _formatPValue(p) {
+function _formateraPVarde(p) {
   if (p < 1e-3) return "p < 0,001";
   if (p < 0.01) return "p < 0,01";
   if (p < 0.05) return "p < 0,05";
   return "p = " + svTal(p, 3);
 }
-function _sigPlainText(p) {
+function _sigKlartext(p) {
   if (p < 1e-3) return "Extremt signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 1 000 fall. Mycket starkt stöd för en verklig löneskillnad.";
   if (p < 0.01) return "Mycket signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 100 fall. Starkt stöd för en verklig skillnad.";
   if (p < 0.05) return 'Signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 5 av 100 fall. Den vanliga tröskeln för en "statistiskt säkerställd" skillnad.';
@@ -15117,7 +15117,7 @@ function _budgetOrdningNot(budget) {
 function _budgetEtikett() {
   return { bas: "Förklaras av BAS-placering", alder: "Förklaras av ålder", yrke: `Förklaras av ${T.enhet.en} inom BAS` };
 }
-function _renderPerBasGapChart(perBas, bhQByBas) {
+function _ritaPerBasGapDiagram(perBas, bhQByBas) {
   const el = document.getElementById("chart-perbas-gap");
   if (!el) return;
   const ok = (perBas || []).filter((p) => p.status === "ok" && isFinite(p.gapPct));
@@ -15169,7 +15169,7 @@ function _perBasFigur(sorted, bhQByBas) {
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       data: sorted.filter((p) => status(p) === s).map(pkt),
       tips
     })).filter((l) => l.data.length)
@@ -15199,16 +15199,16 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
       {
         marke: "intervall",
         serie: "Ojusterad skillnad",
-        farg: PALETTE.uppdelning.helhet,
+        farg: PALETT.uppdelning.helhet,
         tjocklek: 44,
         data: [helhet("Ojusterad skillnad", forst.gapPct)],
         tips: (d) => [[d.x], ["Löneskillnad", pct(d.varde)]]
       },
-      { marke: "intervall", serie: "Förklaras av", farg: PALETTE.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
+      { marke: "intervall", serie: "Förklaras av", farg: PALETT.uppdelning.struktur, tjocklek: 44, data: steg, tips: stegTips },
       {
         marke: "intervall",
         serie: "Oförklarad skillnad",
-        farg: PALETTE.uppdelning.lonesattning,
+        farg: PALETT.uppdelning.lonesattning,
         tjocklek: 44,
         data: [helhet("Oförklarad skillnad", sist.gapPct)],
         tips: (d) => [[d.x], ["Löneskillnad", pct(d.varde)]]
@@ -15217,7 +15217,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
       ...yrke ? [{
         marke: "intervall",
         serie: "Utöver huvudtalet",
-        farg: PALETTE.uppdelning.strukturLjus,
+        farg: PALETT.uppdelning.strukturLjus,
         tjocklek: 44,
         data: [{ x: _REG_TRAPPSTEG[_RG_STEG_YRKE], lag: Math.min(sist.gapPct, yrke.gapPct), hog: Math.max(sist.gapPct, yrke.gapPct), fore: sist.gapPct, efter: yrke.gapPct, andring: yrke.gapPct - sist.gapPct }],
         tips: (d) => [[d.x], ["Ändrar skillnaden med", pp(d.andring)], ["Skillnad före", pct(d.fore)], [`Kvar efter ${T.enhet.bf}`, pct(d.efter)], ["Ingår inte i huvudtalet", ""]]
@@ -15228,7 +15228,7 @@ function _regTrappaFigur(seqOk, yrkesSteg = null, fras = `ålder och ${T.niva.en
         symbol: "streck",
         serie: "Skillnad efter steget",
         legend: false,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         storlek: 11,
         data: [
           niva("Ojusterad skillnad", forst.gapPct),
@@ -15248,7 +15248,7 @@ function _regKvantilKlar() {
   return _regKvantilBakgrund || Promise.resolve();
 }
 function _regKvantilBerakna({ direkt = false } = {}) {
-  const qr = runQuantileRegressionAtAllTau();
+  const qr = korKvantilregressionAllaTau();
   if (!qr) return null;
   const results = qr.results.map((r) => ({ ...r, ki: null }));
   const diff = { varde: qr.diffP90P10, ki: null };
@@ -15256,7 +15256,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
     return { results, diff, n: qr.n, nKv: qr.nKv, nMa: qr.nMa, kiB: 0, kiUtelamnad: `Konfidensintervallet räknas inte vid fler än ${svTal(REG_KVANTIL_KI_MAX_N, 0)} personer (tiden för ${REG_KVANTIL_KI_B} omsamplingar).` };
   }
   const modell = forklaringsmodell();
-  const raw = kvantilDesign(getData(), modell).rader;
+  const raw = kvantilDesign(hamtaData(), modell).rader;
   const arKv2 = arKvinna;
   const nyckel = `${froAvTal(raw.filter(arKv2).map((d) => d.lon), raw.filter((d) => !arKv2(d)).map((d) => d.lon), raw.map((d) => d.alder || 0))}|${raw.length}|${qr.kolumner.join(",")}|${results.map((r) => r.konPct).join(",")}`;
   if (_regKvantilMinne && _regKvantilMinne.nyckel === nyckel) return _regKvantilMinne.ut;
@@ -15305,14 +15305,14 @@ function _regKvantilFigur(resultat) {
     x: { skala: "linjar", titel: "Löneskillnad (%), negativt = kvinnor lägre", nollinje: true, doman: [lag - luft, hog + luft] },
     hojd: 200,
     lager: [
-      { marke: "intervall", riktning: "liggande", serie: "Avstånd från noll", farg: PALETTE.serie[0], opacitet: 0.5, tjocklek: 3, data: data.map((d) => ({ y: d.y, lag: Math.min(0, d.x), hog: Math.max(0, d.x) })) },
+      { marke: "intervall", riktning: "liggande", serie: "Avstånd från noll", farg: PALETT.serie[0], opacitet: 0.5, tjocklek: 3, data: data.map((d) => ({ y: d.y, lag: Math.min(0, d.x), hog: Math.max(0, d.x) })) },
       // Liggande: punktens intervall (`fel`) ligger längs värdeaxeln x. Utan riktning lästes gränserna som
       // kategorier på bandaxeln och skrevs ut som råa tal (U4, ADR-63).
       {
         marke: "punkt",
         riktning: "liggande",
         serie: "Löneskillnad",
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         storlek: 6,
         etikettLage: "vanster",
         data: data.map((d) => ({ ...d, etikett: pct(d.x) })),
@@ -15379,7 +15379,7 @@ function ritaForklaringsmodellPanel(r) {
             ${r.modellVarning ? `<p class="k-mask-note" role="note">${esc(r.modellVarning)}</p>` : ""}
             ${r.fellBackFromFull ? `<p class="k-mask-note" role="note">Den valda modellen kunde inte skattas (multikollinearitet); verktyget räknar på ${esc(r.modelDesc)}.</p>` : ""}
             <table class="data-table st-09 marg-t-10">
-                ${antalCaption(r.nKvAnalysed, r.nMaAnalysed, "Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)")}
+                ${antalRubrik(r.nKvAnalysed, r.nMaAnalysed, "Vad varje variabel tillför, räknat mot fullmodellen (ändras inte av valet)")}
                 <thead><tr><th>Variabel</th><th class="t-hoger" title="Hur mycket förklaringsgraden (R²) ökar när variabeln läggs till sist">Tillför i förklaringsgrad</th><th class="t-hoger" title="Löneskillnaden utan variabeln, sedan med variabeln">Flyttar skillnaden</th><th>Bedömning</th></tr></thead>
                 <tbody>${rader}</tbody>
             </table>
@@ -15418,7 +15418,7 @@ function ritaForklaringsmodellPanel(r) {
       }
       if (not) not.hidden = true;
       sattForklaringsmodell({ ...nu, skal: inp.value.trim() }, { rita: false });
-      ritaForklaringsmodellPanel(runOLSRegression());
+      ritaForklaringsmodellPanel(korOLSRegression());
     }
   };
   wrap.onclick = (e) => {
@@ -15443,7 +15443,7 @@ function ritaForklaringsmodellPanel(r) {
 function ritaRegressionskort() {
   const wrap = document.getElementById("regression-card");
   if (!wrap) return;
-  const r = runOLSRegression();
+  const r = korOLSRegression();
   ritaForklaringsmodellPanel(r);
   const fmT = _fmTexter(r.error ? normaliseraForklaringsmodell(null).modell : r.modell);
   const fmRubrik = document.querySelector("[data-fm-rubrik]"), fmInledning = document.querySelector("[data-fm-inledning]");
@@ -15469,9 +15469,9 @@ function ritaRegressionskort() {
   }
   const vm = (
     /** @type {NonNullable<ReturnType<typeof vymodellRegressionskort>>} */
-    vymodellRegressionskort(r, { k: kTroskel(), rader: getData(), medAlder: harAlder(), basEffektNot: (u) => _basEffektNot(u, kTroskel()) })
+    vymodellRegressionskort(r, { k: kTroskel(), rader: hamtaData(), medAlder: harAlder(), basEffektNot: (u) => _basEffektNot(u, kTroskel()) })
   );
-  const sig = _formatPValue(r.pValue);
+  const sig = _formateraPVarde(r.pValue);
   const isSig = vm.sakerstalld;
   const sign = r.konPct >= 0 ? "+" : "";
   let verdict;
@@ -15633,16 +15633,16 @@ function ritaRegressionskort() {
     const sigNiva = p.niva;
     const flag = sigNiva === "titta" ? ikon("nal") : sigNiva === "dokumentera" ? ikon("oga") : p.ejEfterKorrigering ? ikon("statusVarning") + ' <span class="text-dampad-xs">(ej efter korr.)</span>' : "";
     const cellKlass = sigNiva === "titta" ? " farg-granska fet" : "";
-    const qCell = q != null ? _formatPValue(q) : '<span class="f-dampad">—</span>';
+    const qCell = q != null ? _formateraPVarde(q) : '<span class="f-dampad">—</span>';
     const signal = sigNiva === "titta" ? { txt: ikon("statusKritisk") + " Titta närmare", title: "Statistiskt säkerställd även efter korrigering och minst 3 % (verktygets storleksgräns). Pröva om skillnaden har sakliga skäl." } : sigNiva === "dokumentera" ? { txt: ikon("statusVarning") + " Dokumentera", title: "Statistiskt säkerställd efter korrigering, men under 3 % (verktygets storleksgräns). Dokumentera sakliga skäl och följ upp." } : sigNiva === "osakert" ? { txt: ikon("statusOsaker") + " Osäkert utslag", title: "Ser signifikant ut i råa p-värdet men håller inte efter korrigering för multipel jämförelse. Presentera inte som säkerställt." } : { txt: ikon("statusIngen") + " Inget utslag", title: `Ingen statistiskt säkerställd oförklarad skillnad i ${T.niva.bf}.` };
-    return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td><td class="t-tal${cellKlass}" data-sort-value="${p.gapPct}">${sgn}${svPct(p.gapPct, 1)}</td><td class="ta-mitt ingen-radbrytning" title="${esc(signal.title)}">${signal.txt}</td><td class="col-stat tabelltal ta-mitt">${_formatPValue(p.pValue)}</td><td class="col-stat tabelltal ta-mitt">${qCell} ${flag}</td><td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon("sok")}</button></td></tr>`;
+    return `<tr><td>${esc(p.bas)}</td><td class="t-hoger">${p.n}</td><td class="t-mitt">${p.kvN}/${p.maN}</td><td class="t-tal${cellKlass}" data-sort-value="${p.gapPct}">${sgn}${svPct(p.gapPct, 1)}</td><td class="ta-mitt ingen-radbrytning" title="${esc(signal.title)}">${signal.txt}</td><td class="col-stat tabelltal ta-mitt">${_formateraPVarde(p.pValue)}</td><td class="col-stat tabelltal ta-mitt">${qCell} ${flag}</td><td class="t-mitt"><button class="btn-evidence" data-bas-evidence="${esc(p.bas)}" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa bevis för BAS ${esc(p.bas)}">${ikon("sok")}</button></td></tr>`;
   }).join("");
   const triedRow = r.triedSteps.map((s) => {
     const sym = s.status === "ok" ? `<span class="farg-ok">${ikon("bock", 14)}</span>` : `<span class="f-dampad">${ikon("kryss", 14)}</span>`;
     const note = s.status === "singular" ? " (multikollinearitet)" : s.status === "too_few" ? " (för få obs)" : "";
     return `${sym} <code class="fs-xs">${esc(s.desc)}</code><span class="text-dampad-xs">${note}</span>`;
   }).join(" &nbsp;|&nbsp; ");
-  const ki = bootstrapCIGallande(), rawCIsuffix = ki ? fmtCI(ki.gapPct) : "";
+  const ki = bootstrapKIGallande(), rawCIsuffix = ki ? formateraKI(ki.gapPct) : "";
   const tolkning = isSig ? vm.niva === "titta" ? `Enligt modellen tjänar kvinnor <strong class="f-kritisk">${svPct(Math.abs(r.konPct), 1)} mindre</strong> än män ${fmT.fras ? `${esc(fmT.samma)}, alltså även efter att skillnader i ${esc(fmT.forklarasAv)} räknats bort. Detta är <em>oförklarad</em> löneskillnad — den kan <strong>inte</strong> motiveras med ${esc(fmT.motiv)}.` : "utan att något räknats bort: det är hela skillnaden, inte en oförklarad del av den."} Skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). Pröva om den har sakliga skäl.` : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under verktygets storleksgräns på 3 %. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.` : `<strong>Den råa löneskillnaden (${_raGapText(r, (v) => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : "är statistiskt obetydligt redan utan kontroller"}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
   const tf = vm.tillforlitlighet;
   const _obsPerParam = tf.obsPerParam;
@@ -15680,7 +15680,7 @@ function ritaRegressionskort() {
                         <strong>Troligt spann (95 % konfidensintervall):</strong> ${svPct(r.konPctLow, 1)} till ${svPct(r.konPctHigh, 1)}
                         <span class="info-tip" data-tooltip="95 % konfidensintervall (robusta standardfel, HC3). Intervallet visar hur säker skattningen är: upprepade man undersökningen många gånger skulle 95 % av intervallen innehålla det sanna värdet. Smalt intervall = säker skattning, brett = osäker. Klassiskt intervall för jämförelse: ${svPct(r.konPctLowClassical, 1)} till ${svPct(r.konPctHighClassical, 1)}.">${ikon("info", 14)}</span><br>
                         <strong>Statistiskt säkerställd:</strong>
-                        <span title="${esc(_sigPlainText(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? "Ja" : "Nej"} (${sig})</span><br>
+                        <span title="${esc(_sigKlartext(r.pValue))}" class="ram-b-1-prickad-dampad hjalpmarke hjalp-markor">${isSig ? "Ja" : "Nej"} (${sig})</span><br>
                         <span class="reg-hero-kvot">Samma sak som att kvinnors lön är ${svPct(r.konKvot, 1)} av mäns ${esc(fmT.nar)} — talet i nyckeltalsraden överst i fliken.</span>
                     </div>
                 </div>
@@ -15785,7 +15785,7 @@ function ritaRegressionskort() {
                     </p>
                     <div class="rulla-x">
                         <div class="chart-container"><div id="chart-reg-kvantil"></div></div>
-                        <table class="data-table fs-sm marg-t-8">${antalCaption(qr.nKv, qr.nMa)}
+                        <table class="data-table fs-sm marg-t-8">${antalRubrik(qr.nKv, qr.nMa)}
                             <thead><tr><th>Position i lönefördelningen</th><th class="t-hoger">Oförklarad skillnad</th><th>95 % KI (bootstrap)</th><th>Tolkning</th></tr></thead>
                             <tbody>
                                 ${fmtRow("<strong>P10 — Klibbigt golv</strong>", "Löneskillnaden bland de lägst betalda", p10)}
@@ -15858,14 +15858,14 @@ function ritaRegressionskort() {
                     ${r.ageEffect != null ? `<h3>Ålderseffekt</h3>
                     <table class="reg-tech-table">
                         <tr><th>Procentuell löneförändring per levnadsår</th><td>${r.ageEffect >= 0 ? "+" : ""}${svPct(r.ageEffect, 3)}</td></tr>
-                        <tr><th>p-värde</th><td>${_formatPValue(r.ageP)}</td></tr>
+                        <tr><th>p-värde</th><td>${_formateraPVarde(r.ageP)}</td></tr>
                     </table>` : ""}
                     ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
                     <p>Varje ${T.niva.en} har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
-                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalCaption(r.nKvAnalysed, r.nMaAnalysed)}
+                    ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalRubrik(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
-                        ${basEffUt.effekter.map((e) => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? "+" : ""}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formatPValue(e.p)}</td></tr>`).join("")}
+                        ${basEffUt.effekter.map((e) => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? "+" : ""}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formateraPVarde(e.p)}</td></tr>`).join("")}
                     </table>` : ""}
                     ${basEffUt.not ? `<p class="k-mask-note">${esc(basEffUt.not)}</p>` : ""}
                     ` : ""}
@@ -15877,7 +15877,7 @@ function ritaRegressionskort() {
     `;
   tillampaDataStil(wrap);
   ritaLivscykel(r);
-  _renderPerBasGapChart(r.perBas, bhQByBas);
+  _ritaPerBasGapDiagram(r.perBas, bhQByBas);
   const trappa = document.getElementById("chart-reg-trappa");
   if (trappa) ritaFigur(trappa, _regTrappaFigur(seqOk, yrkeVisas ? r.yrkesSteg : null, fmT.fras));
   const kvantil2 = document.getElementById("chart-reg-kvantil");
@@ -15899,12 +15899,12 @@ function ritaRegressionskort() {
       const p = (r.perBas || []).find((x) => x.bas === basName);
       if (!p) return;
       const q = bhQByBas[p.bas];
-      _openEvidenceModal(_evidenceForPerBasRow(p, { q, allM }));
+      _oppnaBevisruta(_bevisForPerBasRad(p, { q, allM }));
     });
   });
   return r;
 }
-function renderBlinderOaxacaCard(reg) {
+function ritaBlinderOaxacaKort(reg) {
   const wrap = document.getElementById("blinder-oaxaca-card");
   if (!wrap) return;
   const modell = forklaringsmodell();
@@ -15912,7 +15912,7 @@ function renderBlinderOaxacaCard(reg) {
     wrap.innerHTML = "";
     return;
   }
-  const r = runBlinderOaxaca();
+  const r = korBlinderOaxaca();
   if (!r) {
     wrap.innerHTML = `<div class="card">
             <h3 class="marg-0-0-8">Förklarad och oförklarad löneskillnad</h3>
@@ -15979,7 +15979,7 @@ function renderBlinderOaxacaCard(reg) {
             <details open>
                 <summary class="farg-text pekare fw-600">Visa uppdelning per variabel</summary>
                 <div class="marg-t-10">
-                    <table class="data-table st-09">${antalCaption(r.nKv, r.nMa)}
+                    <table class="data-table st-09">${antalRubrik(r.nKv, r.nMa)}
                         <thead>
                             <tr>
                                 <th>Variabel</th>
@@ -16012,7 +16012,7 @@ function renderBlinderOaxacaCard(reg) {
 }
 
 // src/app/36-loneoversyn.js
-function _forecastReadControls() {
+function _fcLasReglage() {
   const bm = document.getElementById("forecast-budget-mode");
   const bv = document.getElementById("forecast-budget-value");
   const gm = document.getElementById("forecast-generell-mode");
@@ -16059,8 +16059,8 @@ function _forecastReadControls() {
     state.forecast.years = isFinite(v) && v >= 1 ? v : 1;
   }
 }
-function _forecastAidsForBas(bas) {
-  const seen = /* @__PURE__ */ new Map(), iBas = getData().filter((r) => r.bas === bas);
+function _fcAidForBas(bas) {
+  const seen = /* @__PURE__ */ new Map(), iBas = hamtaData().filter((r) => r.bas === bas);
   const namnrad = namnrader(iBas, (r) => r.aid);
   iBas.forEach((r) => {
     let g = seen.get(r.aid);
@@ -16075,17 +16075,17 @@ function _forecastAidsForBas(bas) {
 function ritaRiktadeRader() {
   const host = document.getElementById("forecast-targets");
   if (!host) return;
-  const basList = getBasIntervals();
+  const basList = hamtaBasIntervall();
   const t = state.forecast.targets;
   if (!t.length) {
     host.innerHTML = '<p class="text-dampad-sm marg-4-0">Inga riktade potter tillagda. Lägg till en grupp eller använd förslagsknappen.</p>';
     return;
   }
-  const dAll = getData();
+  const dAll = hamtaData();
   host.innerHTML = t.map((tg, i) => {
     const info = riktadRadInfo(dAll, tg, { roundStep: state.forecast.roundStep, k: kInstalld() });
     const basOpts = basList.map((b) => `<option value="${esc(b)}"${tg.bas === b ? " selected" : ""}>${esc(b)}</option>`).join("");
-    const aids = _forecastAidsForBas(tg.bas || basList[0]);
+    const aids = _fcAidForBas(tg.bas || basList[0]);
     const aidOpts = `<option value="*"${tg.aid === "*" ? " selected" : ""}>Hela BAS (alla ${T.enhet.fl})</option>` + aids.map((a) => `<option value="${esc(a.aid)}"${tg.aid === a.aid ? " selected" : ""}>${esc(a.label)} (n=${a.n})</option>`).join("");
     const distOpts = [["flat", "Lika % till alla"], ["lowest", "Lyft lägst betalda först"], ["target", "Lyft mot målnivå"]].map(([v, l]) => `<option value="${v}"${tg.dist === v ? " selected" : ""}>${l}</option>`).join("");
     const lvlOpts = [["median", "BAS-median"], ["p25", "BAS P25"]].map(([v, l]) => `<option value="${v}"${tg.targetLevel === v ? " selected" : ""}>${l}</option>`).join("");
@@ -16132,7 +16132,7 @@ function ritaRiktadeRader() {
         else tg[field] = /** @type {HTMLInputElement} */
         ctrl.value;
         if (field === "bas") {
-          tg.aid = (_forecastAidsForBas(tg.bas)[0] || {}).aid || "";
+          tg.aid = (_fcAidForBas(tg.bas)[0] || {}).aid || "";
           ritaRiktadeRader();
         }
         if (field === "dist" || field === "mode" || field === "kon" || field === "lonCap") ritaRiktadeRader();
@@ -16163,7 +16163,7 @@ var _fcGruppnamn = (g) => `BAS ${g.bas} · ${g.aid}`;
 function _fcUtfallsNot(utfall, K) {
   const a = utfall.sma.length;
   if (!a) return "";
-  const lista = (gs) => gs.slice(0, K_NOTE_MAX_NAMN).map(_fcGruppnamn).join(", ") + (gs.length > K_NOTE_MAX_NAMN ? ` och ${gs.length - K_NOTE_MAX_NAMN} till` : "");
+  const lista = (gs) => gs.slice(0, K_NOT_MAX_NAMN).map(_fcGruppnamn).join(", ") + (gs.length > K_NOT_MAX_NAMN ? ` och ${gs.length - K_NOT_MAX_NAMN} till` : "");
   let t = `${a} ${a === 1 ? "grupp" : "grupper"} med färre än ${K} ${personOrd(K)} ingår i summorna, men ${a === 1 ? "dess" : "deras"} medianer och kostnad redovisas inte per grupp.`;
   if (utfall.invikta.length) t += ` Medianerna och kostnaden för ${lista(utfall.invikta)} redovisas inte heller per grupp: grupperna under tröskeln har tillsammans färre än ${K} ${personOrd(K)}, och annars skulle deras kostnad gå att räkna fram ur summorna.`;
   t += utfall.samlad.kostnad != null ? ` Kostnaden för ${utfall.maskerade.length === 1 ? "gruppen" : `de ${utfall.maskerade.length} grupperna`} står samlad på raden Kostnad för grupper under tröskeln, så att kostnaderna summerar till det använda.` : ` Grupperna med påslag har tillsammans färre än ${K} ${personOrd(K)}, så ingen kostnad redovisas per grupp; den står bara i summorna.`;
@@ -16185,9 +16185,9 @@ function ritaPrognos() {
   const meterEl = document.getElementById("forecast-meter");
   const outEl = document.getElementById("forecast-outcome");
   if (!meterEl && !outEl) return;
-  _forecastReadControls();
+  _fcLasReglage();
   _fcUppdateraForslagPott();
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     if (meterEl) meterEl.innerHTML = "";
     {
@@ -16237,7 +16237,7 @@ function ritaPrognos() {
         <strong class="block-mb6">Lönespann per BAS (P25 / median / P75)</strong>
         ${bandVisade.length ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th class="t-hoger">n</th><th class="t-hoger">P25</th><th class="t-hoger">Median</th><th class="t-hoger">P75</th></tr></thead>
         <tbody>${bandVisade.map((b) => `<tr><td>${esc(b.bas)}</td><td class="t-hoger">${b.n}</td><td class="t-hoger">${kr2(b.p25)}</td><td class="t-hoger">${kr2(b.median)}</td><td class="t-hoger">${kr2(b.p75)}</td></tr>`).join("")}</tbody></table>` : ""}
-        ${kMaskNote(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kMaskNot(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
         <p class="text-dampad-xs marg-6-0-0">Läget mot BAS-medianen i tabellen nedan är gruppens nya median delad med BAS-medianen: över 1,10 märks «över», under 0,90 märks «under».</p>
     </div>` : "";
   const { perPott: poolCost, potter: poolRows } = vm.potter;
@@ -16336,7 +16336,7 @@ function foreEfterFigur({ rader, titel, beskrivning, format = "pct", kolumner = 
     y: { skala: "band", ordning: rader.map((r) => r.namn), etikettMax: 36 },
     x: { skala: "linjar", titel, ...kvot ? {} : { format }, doman: kvot ? [Math.floor(Math.min(lag, 95) - 1), Math.ceil(Math.max(hog, 100) + 1)] : [lag - luft, hog + luft * 1.6] },
     hojd: Math.max(160, 96 + rader.length * 32),
-    ...kvot ? { referens: [{ x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }] } : {},
+    ...kvot ? { referens: [{ x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }] } : {},
     lager: [
       {
         marke: "intervall",
@@ -16347,11 +16347,11 @@ function foreEfterFigur({ rader, titel, beskrivning, format = "pct", kolumner = 
         data: rader.map((r) => ({ y: r.namn, lag: Math.min(r.fore, r.efter), hog: Math.max(r.fore, r.efter), farg: r.farg, r, ...m(r) })),
         tips
       },
-      { marke: "punkt", symbol: "streck", serie: a, farg: PALETTE.semantic.neutral, storlek: 6, data: rader.map((r) => ({ y: r.namn, x: r.fore, r, ...m(r) })), tips },
+      { marke: "punkt", symbol: "streck", serie: a, farg: PALETT.semantic.neutral, storlek: 6, data: rader.map((r) => ({ y: r.namn, x: r.fore, r, ...m(r) })), tips },
       {
         marke: "punkt",
         serie: b,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         storlek: 6,
         etikettLage: "hoger",
         data: rader.map((r) => ({ y: r.namn, x: r.efter, farg: r.farg, etikett: p(r.efter), r, ...m(r) })),
@@ -16361,7 +16361,7 @@ function foreEfterFigur({ rader, titel, beskrivning, format = "pct", kolumner = 
   };
 }
 function _lutningRader(d, sim, niva) {
-  const farg = (r) => ({ "-1": PALETTE.semantic.ok, 0: PALETTE.semantic.neutral, 1: PALETTE.semantic.kritisk })[riktning(r.fore, r.efter, 100)];
+  const farg = (r) => ({ "-1": PALETT.semantic.ok, 0: PALETT.semantic.neutral, 1: PALETT.semantic.kritisk })[riktning(r.fore, r.efter, 100)];
   return lutningRader(d, sim, niva, { k: kTroskel(), markering: markeringFor }).map((r) => ({ ...r, farg: farg(r) }));
 }
 function _ritaLutningTabell(rader, niva) {
@@ -16424,9 +16424,9 @@ function ritaLoneoversyn() {
 }
 var _fcKnappresultat = /* @__PURE__ */ new Set();
 function _fcRitaOmKnappresultat() {
-  if (_fcKnappresultat.has("forecast-threshold-result")) _forecastThreshold();
-  if (_fcKnappresultat.has("forecast-sensitivity")) _forecastSensitivity();
-  if (_fcKnappresultat.has("forecast-rem-result")) _forecastRemediation();
+  if (_fcKnappresultat.has("forecast-threshold-result")) _fcLyftMotMal();
+  if (_fcKnappresultat.has("forecast-sensitivity")) _fcKanslighet();
+  if (_fcKnappresultat.has("forecast-rem-result")) _fcAtgard();
 }
 function _fcGlomKnappresultat() {
   for (const id of _fcKnappresultat) {
@@ -16492,8 +16492,8 @@ function _fcUppdateraForslagPott() {
   const v = state.forecast && state.forecast.budget ? state.forecast.budget.value : null;
   knapp.disabled = !(typeof v === "number" && isFinite(v) && v > 0);
 }
-function _forecastOptimizeFranPott() {
-  _forecastOptimize();
+function _fcOptimeraFranPott() {
+  _fcOptimera();
   const avsnitt = (
     /** @type {HTMLDetailsElement|null} */
     document.getElementById("avsnitt-lo-riktade")
@@ -16505,10 +16505,10 @@ function _forecastOptimizeFranPott() {
   } catch (_e) {
   }
 }
-function _forecastOptimize() {
-  const d = getData();
+function _fcOptimera() {
+  const d = hamtaData();
   if (!d.length) return;
-  _forecastReadControls();
+  _fcLasReglage();
   const cand = _fcKandidater();
   const targets = forslagUrPotten(d, { budget: state.forecast.budget, generell: state.forecast.generell, kandidater: cand, minN: state.forecast.minGroupN || 0 });
   if (!targets.length) {
@@ -16555,10 +16555,10 @@ function _fcRensaParMal() {
   }
   return sakert + forsiktigt;
 }
-function _forecastAddByCriteria() {
-  const d = getData();
+function _fcLaggTillEfterVillkor() {
+  const d = hamtaData();
   if (!d.length) return;
-  _forecastReadControls();
+  _fcLasReglage();
   const matcher = (
     /** @type {HTMLInputElement} */
     document.getElementById("forecast-rule-match")?.value || "kvdom"
@@ -16597,10 +16597,10 @@ function _forecastAddByCriteria() {
   ritaPrognos();
   if (added === 0) alert("Grupperna finns redan bland de riktade raderna.");
 }
-function _forecastClosure() {
-  const d = getData();
+function _fcStangGap() {
+  const d = hamtaData();
   if (!d.length) return;
-  _forecastReadControls();
+  _fcLasReglage();
   const fracPct = parseFloat(
     /** @type {HTMLInputElement} */
     document.getElementById("forecast-closure-pct")?.value
@@ -16619,8 +16619,8 @@ function _forecastClosure() {
   ritaRiktadeRader();
   ritaPrognos();
 }
-function _forecastSaveScenario(slot) {
-  const d = getData();
+function _fcSparaScenario(slot) {
+  const d = hamtaData();
   if (!state.forecast.result || !d.length) {
     alert("Det finns ingen prognos att spara. Ange en pott först.");
     return;
@@ -16645,7 +16645,7 @@ function _ritaScenariojamforelse() {
   }
   const kr2 = (n) => svKr(n);
   const pc = (n) => n == null ? "–" : (n >= 0 ? "+" : "") + svPct(n, 1);
-  const vm = scenariojamforelse(sc, { nu: konAntal(getData()), k: kTroskel(), arKvDom: kvDomAv(_fcKostnadsval()) });
+  const vm = scenariojamforelse(sc, { nu: konAntal(hamtaData()), k: kTroskel(), arKvDom: kvDomAv(_fcKostnadsval()) });
   const maskerat = vm.maskerat;
   const col = (r) => r ? `<td class="t-hoger">${kr2(r.anvant)}</td><td class="t-hoger">${kr2(r.totalKostnad)}</td><td class="t-hoger">${andelAvMan(r.raEfter)}</td><td class="t-hoger">${pc(r.oforklaratEfter)}</td><td class="t-hoger">${kr2(r.tillKvDom)}</td><td class="t-hoger">${r.omkorningar}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
   host.innerHTML = `<table class="data-table fs-sm">
@@ -16655,7 +16655,7 @@ function _ritaScenariojamforelse() {
             <tr><td><strong>B</strong> ${sc.B ? `<span class="f-dampad">(${esc(sc.B.budgetTxt)}, ${sc.B.targetsCount} riktade)</span>` : ""}</td>${col(vm.B)}</tr>
         </tbody></table>${maskerat ? `<p class="k-mask-note">Kvinnors median i procent av mäns visas inte: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>` : ""}`;
 }
-function _forecastLasMal(falt, standard) {
+function _fcLasMal(falt, standard) {
   const min = parseFloat(falt?.min ?? ""), max = parseFloat(falt?.max ?? "");
   const lo = isFinite(min) ? min : 0, hi = isFinite(max) ? max : Infinity;
   const text = String(falt?.value ?? "").trim().replace(",", ".");
@@ -16663,9 +16663,9 @@ function _forecastLasMal(falt, standard) {
   if (!isFinite(v)) return { ok: true, pct: standard, min: lo, max: hi };
   return { ok: v >= lo && v <= hi, pct: v, min: lo, max: hi };
 }
-function _forecastThreshold() {
+function _fcLyftMotMal() {
   const host = document.getElementById("forecast-threshold-result");
-  const d = getData();
+  const d = hamtaData();
   if (!host) return;
   _fcKnappresultat.add("forecast-threshold-result");
   if (!d.length) {
@@ -16675,7 +16675,7 @@ function _forecastThreshold() {
   const { STANDARD_PCT, MAX_LYFT_PCT, SIGNIFIKANS_P } = troskelmalKonstanter();
   const useSig = !!/** @type {HTMLInputElement} */
   document.getElementById("forecast-threshold-sig")?.checked;
-  const mal = _forecastLasMal(
+  const mal = _fcLasMal(
     /** @type {HTMLInputElement|null} */
     document.getElementById("forecast-threshold-pct"),
     STANDARD_PCT
@@ -16720,10 +16720,10 @@ function _forecastThreshold() {
         <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
     </div>`;
 }
-function _forecastMarket() {
-  const d = getData();
+function _fcMarknad() {
+  const d = hamtaData();
   if (!d.length) return;
-  _forecastReadControls();
+  _fcLasReglage();
   const f = (parseFloat(
     /** @type {HTMLInputElement} */
     document.getElementById("forecast-market-factor")?.value
@@ -16750,16 +16750,16 @@ function _forecastMarket() {
   ritaPrognos();
   if (!added) alert("Grupperna finns redan bland de riktade raderna.");
 }
-function _forecastSensitivity() {
+function _fcKanslighet() {
   const host = document.getElementById("forecast-sensitivity");
-  const d = getData();
+  const d = hamtaData();
   if (!host) return;
   _fcKnappresultat.add("forecast-sensitivity");
   if (!d.length) {
     host.innerHTML = "";
     return;
   }
-  _forecastReadControls();
+  _fcLasReglage();
   const cand = _fcKandidater();
   if (!cand.length) {
     host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>';
@@ -16773,9 +16773,9 @@ function _forecastSensitivity() {
     </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur den råa skillnaden och kostnaden utvecklas när skillnaderna i likvärdigt arbete minskar allt mer.${_fcParNot ? " " + esc(_fcParNot) : ""}</p>`;
   tillampaDataStil(host);
 }
-function _forecastRemediation() {
+function _fcAtgard() {
   const host = document.getElementById("forecast-rem-result");
-  const d = getData();
+  const d = hamtaData();
   if (!host) return;
   _fcKnappresultat.add("forecast-rem-result");
   if (!d.length) {
@@ -16803,7 +16803,7 @@ function _forecastRemediation() {
         ${rowsHtml ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th>${stor(T.kod.en)}</th><th class="t-hoger">Antal</th><th class="t-hoger">Kostnad</th></tr></thead><tbody>${rowsHtml}</tbody></table>` : ""}${doldaNot}
         <p class="text-dampad-xs marg-6-0-0">Jämförelsevärdet är mäns median med samma ${T.enhet.en} i samma ${T.niva.en} när minst ${K} män finns där, annars mäns median i BAS (också minst ${K} män). Endast aggregat visas. Den slutliga bedömningen av sakliga skäl görs manuellt.</p>`;
 }
-function _forecastRemediationSeed() {
+function _fcAtgardTillRader() {
   const rem = state.forecast._remediation;
   if (!rem || !rem.perGroup.length) {
     alert("Klicka på Analysera först.");
@@ -16825,27 +16825,27 @@ function _forecastRemediationSeed() {
   ritaPrognos();
   if (!added) alert("Grupperna finns redan bland de riktade raderna.");
 }
-function exportForecast(...a) {
-  return medExportLage(() => _exportForecastExport.apply(
+function exportPrognos(...a) {
+  return medExportLage(() => _exportPrognosExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportForecastExport() {
+function _exportPrognosExport() {
   if (typeof XLSX === "undefined") {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  if (!state.forecast.result || !getData().length) {
+  if (!state.forecast.result || !hamtaData().length) {
     alert("Det finns ingen prognos att exportera. Ange en pott först.");
     return;
   }
-  const out = _fcBeraknaUtfall(getData());
+  const out = _fcBeraknaUtfall(hamtaData());
   _fcKandidater();
   const kr2 = (n) => Math.round(n);
   const K = kTroskel();
-  const konOk = _konFarRedovisasFor(getData());
+  const konOk = _konFarRedovisasFor(hamtaData());
   const vy = utfallsvy(out, K, kvDomAv(_fcKostnadsval()));
   const { utfall, varavKvDom: varavKvDom2 } = vy;
   const meta = [
@@ -16898,9 +16898,9 @@ function _exportForecastExport() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), "Sammanfattning");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), "Fördelning");
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
-  if (typeof announceToScreenReader === "function") announceToScreenReader("Löneöversynens prognosunderlag exporterat.");
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Löneöversynens prognosunderlag exporterat.");
 }
 function uppstartLoneoversyn() {
   document.getElementById("forecast-lutning-niva")?.addEventListener("change", () => ritaPrognos());
@@ -16912,27 +16912,27 @@ function uppstartLoneoversyn() {
         el.addEventListener("change", ritaPrognos);
       }
     });
-    document.getElementById("forecast-closure")?.addEventListener("click", _forecastClosure);
-    document.getElementById("forecast-market-btn")?.addEventListener("click", _forecastMarket);
-    document.getElementById("forecast-threshold-btn")?.addEventListener("click", _forecastThreshold);
-    document.getElementById("forecast-sensitivity-btn")?.addEventListener("click", _forecastSensitivity);
-    document.getElementById("forecast-rem-btn")?.addEventListener("click", _forecastRemediation);
-    document.getElementById("forecast-rem-seed")?.addEventListener("click", _forecastRemediationSeed);
-    document.getElementById("forecast-save-a")?.addEventListener("click", () => _forecastSaveScenario("A"));
-    document.getElementById("forecast-save-b")?.addEventListener("click", () => _forecastSaveScenario("B"));
+    document.getElementById("forecast-closure")?.addEventListener("click", _fcStangGap);
+    document.getElementById("forecast-market-btn")?.addEventListener("click", _fcMarknad);
+    document.getElementById("forecast-threshold-btn")?.addEventListener("click", _fcLyftMotMal);
+    document.getElementById("forecast-sensitivity-btn")?.addEventListener("click", _fcKanslighet);
+    document.getElementById("forecast-rem-btn")?.addEventListener("click", _fcAtgard);
+    document.getElementById("forecast-rem-seed")?.addEventListener("click", _fcAtgardTillRader);
+    document.getElementById("forecast-save-a")?.addEventListener("click", () => _fcSparaScenario("A"));
+    document.getElementById("forecast-save-b")?.addEventListener("click", () => _fcSparaScenario("B"));
     document.getElementById("forecast-add-target")?.addEventListener("click", () => {
-      const basList = getBasIntervals();
+      const basList = hamtaBasIntervall();
       const bas = basList[0] || "";
-      const aid = (_forecastAidsForBas(bas)[0] || {}).aid || "";
+      const aid = (_fcAidForBas(bas)[0] || {}).aid || "";
       state.forecast.targets.push({ bas, aid, kon: "alla", lonCap: null, mode: "kr", value: null, dist: "lowest", targetLevel: "median", pool: "övrigt" });
       ritaRiktadeRader();
       ritaPrognos();
     });
-    document.getElementById("forecast-add-criteria")?.addEventListener("click", _forecastAddByCriteria);
-    document.getElementById("forecast-optimize")?.addEventListener("click", _forecastOptimize);
-    document.getElementById("forecast-optimize-pott")?.addEventListener("click", _forecastOptimizeFranPott);
+    document.getElementById("forecast-add-criteria")?.addEventListener("click", _fcLaggTillEfterVillkor);
+    document.getElementById("forecast-optimize")?.addEventListener("click", _fcOptimera);
+    document.getElementById("forecast-optimize-pott")?.addEventListener("click", _fcOptimeraFranPott);
     _fcUppdateraForslagPott();
-    document.getElementById("forecast-export")?.addEventListener("click", exportForecast);
+    document.getElementById("forecast-export")?.addEventListener("click", exportPrognos);
     document.getElementById("forecast-reset")?.addEventListener("click", () => {
       state.forecast = { budget: { mode: "pct", value: null }, generell: { mode: "pct", value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
       ["forecast-budget-value", "forecast-generell-value"].forEach((id) => {
@@ -17864,7 +17864,7 @@ function _hpLaggTillEgen() {
   if (!state.handlingsplan) state.handlingsplan = {};
   const nyckel = _hpNyckel("egen", Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
   state.handlingsplan[nyckel] = { egen: true, atgard: "", grupp: "", sakligt: "", ansvarig: "", tidsplan: "", status: "" };
-  renderHandlingsplanSeed();
+  ritaHandlingsplan();
   const forsta = [...document.querySelectorAll("#handlingsplan-tbody .hp-falt")].find((el) => (
     /** @type {HTMLElement} */
     el.dataset.hpNyckel === nyckel
@@ -17875,10 +17875,10 @@ function _hpLaggTillEgen() {
 function _hpTaBortEgen(nyckel) {
   if (!_hpArEgen(nyckel) || !state.handlingsplan || !state.handlingsplan[nyckel]) return;
   delete state.handlingsplan[nyckel];
-  renderHandlingsplanSeed();
-  if (typeof announceToScreenReader === "function") announceToScreenReader("Raden är borttagen.");
+  ritaHandlingsplan();
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Raden är borttagen.");
 }
-function _handlingsplanSeedRows({ baraEgna = false } = {}) {
+function _handlingsplanForifyllning({ baraEgna = false } = {}) {
   const rows = [], nycklar = [], skillnader = [], minsta = [];
   let prioCount = 0, lvCount = 0, parUtelamnade = 0;
   const lagg = (nyckel, atgard, grupp, underlag2, kostnad, antal, skillnad, nMin) => {
@@ -17889,11 +17889,11 @@ function _handlingsplanSeedRows({ baraEgna = false } = {}) {
     minsta.push(Number.isFinite(nMin) ? nMin : null);
   };
   if (!baraEgna) try {
-    const ref = typeof _selectedPrioReference === "function" ? _selectedPrioReference() : "stallningstagande";
+    const ref = typeof _valdPrioReferens === "function" ? _valdPrioReferens() : "stallningstagande";
     const hasRef = ref === "stallningstagande" ? state.policy.length : state.statistik.length;
     if (hasRef) {
       const thr = state.prioConfig && state.prioConfig.atgardThreshold != null ? state.prioConfig.atgardThreshold : -5;
-      computePrioritization(ref).filter((i) => i.diffPct < thr).forEach((i) => {
+      raknaPrioritering(ref).filter((i) => i.diffPct < thr).forEach((i) => {
         lagg(_hpNyckel("prio", i.aid || i.yrke, i.bas), "Granska löneläge och väg mot sakliga skäl", _hpGrupp(i.aid, i.yrke, i.bas), HP_UNDERLAG_PRIO, Math.round(i.annualGapTotal), i.n, gruppSkillnadKr(i, kInstalld()), Math.min(i.kvN, i.maN));
         prioCount++;
       });
@@ -17974,7 +17974,7 @@ function _hpSkalKnapp(nyckel, grupp, skillnadKr) {
   return `<button type="button" class="btn-table-tool hp-skal" data-hp-skal="${esc(nyckel)}" data-hp-grupp="${esc(grupp)}" data-hp-skillnad="${skillnadKr == null ? "" : esc(String(skillnadKr))}" data-noprint aria-label="${esc(_hpSkalEtikett(nyckel, grupp, skillnadKr))}"><span class="hp-skal-sammanfattning">${esc(_hpSkalSammanfattning(nyckel, skillnadKr))}</span></button>`;
 }
 function _hpBedomningar(passar) {
-  const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
+  const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
   return seed.nycklar.map((nyckel, i) => ({ nyckel, i, roll: _hpArEgen(nyckel) ? "" : passar(nyckel.split("|")) })).filter((x) => x.roll).map(({ nyckel, i, roll }) => {
     const s = skalSammanstallning(_hpVarden(nyckel).skal || [], seed.skillnader[i]);
     return { nyckel, grupp: seed.rows[i][1], kalla: nyckel.split("|")[0], roll, antal: s.antal, summa: s.summa, andel: s.forklaradAndel };
@@ -17997,7 +17997,7 @@ function _hpBedomningHtml(lista, { medGrupp = false } = {}) {
   return `<ul class="gd-list hp-bedomningar">${lista.map((b) => `<li>${medGrupp ? `${esc(b.grupp)}${markning(b)}: ` : ""}${esc(_hpBedomningText(b))}. <a href="#" data-hp-ga-till="${esc(b.nyckel)}" aria-label="${esc(`Gå till raden i Handlingsplan: ${b.grupp}`)}">Gå till raden</a></li>`).join("")}</ul>`;
 }
 function _hpGaTillRad(nyckel) {
-  navigateTo("handlingsplan");
+  navigeraTill("handlingsplan");
   const fokus = () => {
     const b = [...document.querySelectorAll("#handlingsplan-tbody [data-hp-skal]")].find((el) => (
       /** @type {HTMLElement} */
@@ -18012,7 +18012,7 @@ function _hpGaTillRad(nyckel) {
   setTimeout(fokus, 120);
 }
 function _hpSkalUnderlag(seed) {
-  const s = seed || _handlingsplanSeedRows();
+  const s = seed || _handlingsplanForifyllning();
   return skalUnderlag(s.nycklar.map((nyckel, i) => ({
     nyckel,
     grupp: s.rows[i][1] || "Egen rad",
@@ -18049,7 +18049,7 @@ function _hpRensaDemoSkal() {
   _hpDemoNycklar.clear();
 }
 function _hpDemoSkal() {
-  const seed = medExportLage(() => _handlingsplanSeedRows());
+  const seed = medExportLage(() => _handlingsplanForifyllning());
   const kand = seed.nycklar.map((nyckel, i) => ({ nyckel, s: seed.skillnader[i] })).filter((x) => !_hpArEgen(x.nyckel));
   const ordning = [...kand.filter((x) => x.s > 0), ...kand.filter((x) => !(x.s > 0))].slice(0, HP_DEMO_SKAL.length);
   ordning.forEach(({ nyckel, s }, j) => {
@@ -18062,13 +18062,13 @@ function _hpDemoSkal() {
     })));
   });
 }
-function renderHandlingsplanSeed() {
+function ritaHandlingsplan() {
   document.querySelectorAll("[data-dok-klick]").forEach((b) => {
-    b.disabled = !getData().length;
+    b.disabled = !hamtaData().length;
   });
   const tbody = document.getElementById("handlingsplan-tbody");
   if (!tbody) return;
-  const seed = _handlingsplanSeedRows({ baraEgna: !getData().length });
+  const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
   const fmtKr = (n) => n ? svKr(n) : "";
   const lista = (id, nyckel, falt, val, alt, etikett2) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett2)}">` + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? " selected" : ""}>${esc(l)}</option>`).join("") + "</select>";
   const text = (id, nyckel, falt, val, platshallare, etikett2) => `<input type="text" id="${id}" class="hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" value="${esc(val)}" maxlength="${HP_MAX_TEXT}" autocomplete="off" placeholder="${esc(platshallare)}" aria-label="${esc(etikett2)}">`;
@@ -18155,7 +18155,7 @@ function _exportHandlingsplanExport() {
     "Sakliga skäl (kategori och belopp)",
     "Förklarad andel av skillnaden (%)"
   ];
-  const seed = _handlingsplanSeedRows();
+  const seed = _handlingsplanForifyllning();
   const prioCount = seed.prioCount, lvCount = seed.lvCount;
   const rows = seed.rows.map((r, i) => {
     const sum = skalForRad(_hpVarden(seed.nycklar[i]).skal || [], { egen: _hpArEgen(seed.nycklar[i]), nMin: seed.minsta[i], skillnadKr: seed.skillnader[i] }, kInstalld()).sammanstallning;
@@ -18178,9 +18178,9 @@ function _exportHandlingsplanExport() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), "Handlingsplan");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), "Vägledning");
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
-  if (typeof announceToScreenReader === "function") announceToScreenReader("Handlingsplansunderlag exporterat.");
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Handlingsplansunderlag exporterat.");
 }
 function uppstartHandlingsplan() {
   ["input", "change"].forEach((typ) => document.getElementById("handlingsplan-tbody")?.addEventListener(typ, (e) => {
@@ -18476,13 +18476,13 @@ function vymodellLonepolitik(rader, { policyFor: policyFor2, nivaEtikett, k, har
 }
 
 // src/app/75-lonepolitik.js
-function _lpTier(n) {
+function _lpNiva(n) {
   return maskeringsniva(n, kTroskel());
 }
 function lonepolitikVymodell() {
-  return vymodellLonepolitik(getData(), {
+  return vymodellLonepolitik(hamtaData(), {
     policyFor,
-    nivaEtikett: policyLevelLabel,
+    nivaEtikett: policyNivaEtikett,
     k: kTroskel(),
     harPolicy: (state.policy || []).length > 0
   });
@@ -18525,21 +18525,21 @@ function ritaLonepolitik() {
             ${innehall}</details>`;
   };
   const lage2 = _lpRitaTopp(vm);
-  const [konsposition, efterlevnad] = _lpChartShellsHtml();
+  const [konsposition, efterlevnad] = _lpDiagramskalHtml();
   wrap.innerHTML = avsnitt(
     "tabell",
     `${stor(T.enhet.fl)} mot sitt spann`,
     "Var varje grupps median ligger i spannet, och hur många som ligger under",
     `${lage2.provade} ${ordForAntal(lage2.provade, T.enhet)} i ${T.niva.en}`,
-    _lpTableHtml(vm)
-  ) + avsnitt("kon", "Könsposition i bandet", "Placeras kvinnor lägre i samma lönespann än män?", "", konsposition) + avsnitt("efterlevnad", "Efterlevnad", `Andel under, inom eller över eget spann per ${T.niva.en}`, "", efterlevnad) + avsnitt("tackning", "Täckningsgrad", "Hur mycket av personalen har en policyreferens?", svPct(vm.modell.coverage.personsPct, 0), _lpCoverageHtml(vm));
+    _lpTabellHtml(vm)
+  ) + avsnitt("kon", "Könsposition i bandet", "Placeras kvinnor lägre i samma lönespann än män?", "", konsposition) + avsnitt("efterlevnad", "Efterlevnad", `Andel under, inom eller över eget spann per ${T.niva.en}`, "", efterlevnad) + avsnitt("tackning", "Täckningsgrad", "Hur mycket av personalen har en policyreferens?", svPct(vm.modell.coverage.personsPct, 0), _lpTackningHtml(vm));
   _lpRitaKonPosition(vm);
   _lpRitaKonLagen(vm);
   _lpRitaEfterlevnad(vm);
-  if (typeof enableTableSort === "function") enableTableSort("lonepolitik-table");
-  if (typeof addTableExportTools === "function") addTableExportTools("lonepolitik-table", "lonepolitik");
+  if (typeof aktiveraSortering === "function") aktiveraSortering("lonepolitik-table");
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("lonepolitik-table", "lonepolitik");
 }
-function _lpCoverageHtml(vm) {
+function _lpTackningHtml(vm) {
   const c = vm.modell.coverage;
   const pct = vm.tackning.pct;
   const farg = vm.tackning.status;
@@ -18575,7 +18575,7 @@ function _lpBandkartaKort(vm) {
   }
   _lpRitaBandkarta(vm.bandkarta);
 }
-function _lpChartShellsHtml() {
+function _lpDiagramskalHtml() {
   return [`
     <div class="card mb-16">
         <p class="reg-caveat-inline">Ett lägre läge i bandet är ett <strong>fynd att förklara</strong> — inte ett konstaterat fel.
@@ -18592,8 +18592,8 @@ function _lpChartShellsHtml() {
         <div class="rad-bryt-mitt gap-12 slutjusterad marg-b-8">
             <span><label for="lp-komplians-vy" class="fs-sm marg-h-6">Uppställning</label>
             <select id="lp-komplians-vy" class="form-select pad-4-8 bredd-auto">
-                <option value="staplad"${_lpKompliansVy === "staplad" ? " selected" : ""}>Hela fördelningen (100 %)</option>
-                <option value="mitt"${_lpKompliansVy === "mitt" ? " selected" : ""}>Avvikelserna kring en mittlinje</option>
+                <option value="staplad"${_lpEfterlevnadVy === "staplad" ? " selected" : ""}>Hela fördelningen (100 %)</option>
+                <option value="mitt"${_lpEfterlevnadVy === "mitt" ? " selected" : ""}>Avvikelserna kring en mittlinje</option>
             </select></span>
         </div>
         <div id="chart-lp-compliance"></div>
@@ -18624,14 +18624,14 @@ function _lpRitaBandkarta(karta) {
   ritaFigur(el, _lpBandkartaFigur(karta), { hojd: 460 });
 }
 function _lpKonsdominans() {
-  return [["Kvinnodominerad", PALETTE.kon.kvinna, (a) => konsklassNu(a) === "kvinnodominerad"], ["Mansdominerad", PALETTE.kon.man, (a) => konsklassNu(a) === "mansdominerad"], ["Blandad", PALETTE.semantic.neutral, (a) => konsklassNu(a) === "blandad"]];
+  return [["Kvinnodominerad", PALETT.kon.kvinna, (a) => konsklassNu(a) === "kvinnodominerad"], ["Mansdominerad", PALETT.kon.man, (a) => konsklassNu(a) === "mansdominerad"], ["Blandad", PALETT.semantic.neutral, (a) => konsklassNu(a) === "blandad"]];
 }
 function _lpForskjutning(aid, bas) {
   return (froAvText(aid + "|" + bas) % 1e3 / 1e3 - 0.5) * 0.36;
 }
 function _lpBandkartaFigur({ bas, punkter }) {
   const x = (b) => "BAS " + b.bas, kr2 = (v) => talformat(v, "kr"), utanKr = (v) => talformat(v, "kr", { enhet: false });
-  const refNamn = referensKortnamn(), org = plotNamn(orgNamn());
+  const refNamn = referensKortnamn(), org = diagramNamn(orgNamn());
   const refMed = (b) => b.pol.med > 0 ? b.pol.med : (b.pol.p10 + b.pol.p90) / 2;
   const medOrgBand = bas.filter((b) => b.orgBand);
   const pts = punkter.map((p) => ({
@@ -18655,7 +18655,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
       {
         marke: "intervall",
         serie: `${refNamn} (P10–P90)`,
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 14,
         data: bas.map((b) => ({ x: x(b), lag: b.pol.p10, hog: b.pol.p90, bas: b.bas, markering: markeringFor(b.bas) })),
         tips: (d) => [[d.x], [refNamn, `P10 ${utanKr(d.lag)} · P90 ${kr2(d.hog)}`]]
@@ -18664,7 +18664,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
         marke: "punkt",
         symbol: "streck",
         serie: `${refNamn} median`,
-        farg: PALETTE.semantic.referens,
+        farg: PALETT.semantic.referens,
         storlek: 4.5,
         legend: false,
         data: bas.map((b) => ({ x: x(b), y: refMed(b), bas: b.bas })),
@@ -18673,7 +18673,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
       {
         marke: "intervall",
         serie: `${org} (P10–P90)`,
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         opacitet: 0.55,
         tjocklek: 6,
         // Spannets antal heter `antal`, inte `n`: `n` är en yrkesgrupps antal, som filtret Antal personer i gruppen läser.
@@ -18710,24 +18710,24 @@ function _lpFigurKonHantel(rows) {
     y: { skala: "band", ordning: rows.map(y) },
     x: { skala: "linjar", titel: "Position i spannet (%) — 0 = P10, 100 = P90", doman: [Math.min(0, ...alla) - 4, Math.max(100, ...alla) + 4] },
     hojd: Math.max(170, 100 + rows.length * 34),
-    referens: [{ x: 50, streck: "prickad", farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: "Mitten" }],
+    referens: [{ x: 50, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: "Mitten" }],
     lager: [
-      { marke: "intervall", riktning: "liggande", serie: "Policyns spann", farg: PALETTE.semantic.spann, tjocklek: 12, data: rows.map((b) => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: (d) => [[d.y], ["Spann", "P10–P90"]] },
+      { marke: "intervall", riktning: "liggande", serie: "Policyns spann", farg: PALETT.semantic.spann, tjocklek: 12, data: rows.map((b) => ({ y: y(b), lag: 0, hog: 100, bas: b.bas })), tips: (d) => [[d.y], ["Spann", "P10–P90"]] },
       {
         marke: "intervall",
         riktning: "liggande",
         serie: "Skillnad",
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: rows.map((b) => ({ y: y(b), lag: Math.min(pos(b, "kvPos"), pos(b, "maPos")), hog: Math.max(pos(b, "kvPos"), pos(b, "maPos")), bas: b.bas }))
       },
-      punkt("Kvinnor", PALETTE.kon.kvinna, "kvPos"),
-      punkt("Män", PALETTE.kon.man, "maPos")
+      punkt("Kvinnor", PALETT.kon.kvinna, "kvPos"),
+      punkt("Män", PALETT.kon.man, "maPos")
     ]
   };
 }
-var _LP_LAGEN = [["Under spannet", PALETTE.lage.under], ["Nedre tredjedelen", PALETTE.lage.nedre], ["Mellersta tredjedelen", PALETTE.lage.inom], ["Övre tredjedelen", PALETTE.lage.ovre], ["Över spannet", PALETTE.lage.over]];
+var _LP_LAGEN = [["Under spannet", PALETT.lage.under], ["Nedre tredjedelen", PALETT.lage.nedre], ["Mellersta tredjedelen", PALETT.lage.inom], ["Övre tredjedelen", PALETT.lage.ovre], ["Över spannet", PALETT.lage.over]];
 function _lpFigurKonLagen(sum) {
   const rader = [["Kvinnor", sum.kv, sum.nKv], ["Män", sum.ma, sum.nMa]];
   return {
@@ -18763,8 +18763,8 @@ function _lpRitaKonLagen(vm) {
   const pct = (a, n) => svPct(100 * (a[0] + a[1]) / n, 0);
   if (not) not.textContent = `${pct(sum.kv, sum.nKv)} av kvinnorna och ${pct(sum.ma, sum.nMa)} av männen ligger i nedre tredjedelen eller under spannet. ${svTal(sum.nKv, 0)} kvinnor och ${svTal(sum.nMa, 0)} män med policyspann ingår.`;
 }
-var _LP_LAGE = PALETTE.lage;
-function _lpFigurKomplians(rows) {
+var _LP_LAGE = PALETT.lage;
+function _lpFigurEfterlevnad(rows) {
   const pct = (v, n) => +(v / n * 100).toFixed(1);
   const serie = (namn, farg, falt) => ({
     marke: "stapel",
@@ -18788,8 +18788,8 @@ function _lpFigurKomplians(rows) {
     ]
   };
 }
-var _lpKompliansVy = "staplad";
-function _lpFigurKompliansMitt(rows) {
+var _lpEfterlevnadVy = "staplad";
+function _lpFigurEfterlevnadMitt(rows) {
   const pct = (v, n) => +(v / n * 100).toFixed(1);
   const sorterade = rows.slice().sort((a, b) => (b.compliance.under + b.compliance.over) / b.compliance.n - (a.compliance.under + a.compliance.over) / a.compliance.n);
   const serie = (namn, farg, falt, tecken) => ({
@@ -18852,11 +18852,11 @@ function _lpRitaEfterlevnad(vm) {
     _lpIngetDiagram(el, vm.efterlevnad.harSpann ? `Samtliga ${T.niva.fl} med policyspann har färre än ${kTroskel()} ${personOrd(kTroskel())} och kan därför inte redovisas.` : "Ingen BAS har användbara bandgränser i policyn.");
     return;
   }
-  ritaFigur(el, _lpKompliansVy === "mitt" ? _lpFigurKompliansMitt(rows) : _lpFigurKomplians(rows));
+  ritaFigur(el, _lpEfterlevnadVy === "mitt" ? _lpFigurEfterlevnadMitt(rows) : _lpFigurEfterlevnad(rows));
   if (dolda.length) {
     const note = document.createElement("div");
     note.setAttribute("data-lp-not", "komplians");
-    note.innerHTML = kMaskNote(dolda, `${T.niva.en}|${T.niva.fl}`);
+    note.innerHTML = kMaskNot(dolda, `${T.niva.en}|${T.niva.fl}`);
     el.insertAdjacentElement("afterend", note);
   }
 }
@@ -18870,7 +18870,7 @@ function _lpBenamning(g) {
   const rest = yrke.slice(aid.length);
   return rest === "" || /^\s/.test(rest) ? rest.trim() : yrke;
 }
-function _lpTableHtml(vm) {
+function _lpTabellHtml(vm) {
   const kr2 = (v) => svKr(v);
   const rows = [];
   vm.tabell.forEach(({ b, rader, utelamnade }) => {
@@ -18891,7 +18891,7 @@ function _lpTableHtml(vm) {
       rows.push(`<tr><td>${name}</td><td class="t-hoger">${g.n}</td><td class="tabelltal ta-hoger" data-sort-value="${s.median}">${kr2(s.median)}</td><td class="t-tal">${kr2(g.pol.p10)}–${kr2(g.pol.p90)}</td><td class="t-tal${posKlass}" data-sort-value="${posPct == null ? "" : posPct}">${posPct == null ? "Spann för smalt" : svPct(posPct, 0)}</td><td class="t-mitt" data-sort-value="${c ? c.under : 0}">${c ? `${c.under} av ${c.n}` : "–"}</td><td class="t-mitt">${esc(g.level || "–")}</td></tr>`);
     });
     if (utelamnade.length) {
-      rows.push(`<tr><td colspan="7">${kMaskNote(utelamnade.map(_lpGruppnamn), `${T.enhet.en}|${T.enhet.fl}`, vm.antalMin)}</td></tr>`);
+      rows.push(`<tr><td colspan="7">${kMaskNot(utelamnade.map(_lpGruppnamn), `${T.enhet.en}|${T.enhet.fl}`, vm.antalMin)}</td></tr>`);
     }
   });
   return `
@@ -18987,7 +18987,7 @@ function uppstartLonepolitik() {
   document.addEventListener("change", (e) => {
     if (!e.target || /** @type {HTMLElement} */
     e.target.id !== "lp-komplians-vy") return;
-    _lpKompliansVy = /** @type {HTMLInputElement} */
+    _lpEfterlevnadVy = /** @type {HTMLInputElement} */
     e.target.value === "mitt" ? "mitt" : "staplad";
     if (typeof ritaLonepolitik === "function") ritaLonepolitik();
   });
@@ -19003,7 +19003,7 @@ function jamforelseSattVal({ bas, sektor } = {}) {
   if (sektor !== void 0) _jmfVal.sektor = typeof sektor === "string" ? sektor : "";
 }
 function jamforelseUnderlag() {
-  return jamforelseRader(getData(), { statistik: state.statistik, policyFor, k: kTroskel() });
+  return jamforelseRader(hamtaData(), { statistik: state.statistik, policyFor, k: kTroskel() });
 }
 function _jmfKallaNamn(kalla) {
   return kalla === "stallningstagande" ? referensKortnamn() : jmfNamn("jämförelsestatistiken");
@@ -19040,11 +19040,11 @@ function jamforelseMarkeraRad(aid, bas) {
   return true;
 }
 var JMF_DOLDA_KOLUMNER = ["p10org", "p10jmf", "p10diff", "p90org", "p90jmf", "p90diff"];
-function generateBenchmark() {
+function byggJamforelse() {
   const tbody = document.querySelector("#benchmark-table tbody");
   const infoEl = document.getElementById("benchmark-metric-info");
   if (!tbody) return;
-  const d = getData();
+  const d = hamtaData();
   if (!state.statistik.length || !d.length) {
     tbody.innerHTML = `<tr><td colspan="13" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon("tomLada", 32)}</div><h2>Jämförelsestatistik saknas</h2>
@@ -19125,9 +19125,9 @@ function generateBenchmark() {
   const antal = matchningAntal(rader);
   const grupper = (n) => `${n} ${ordForAntal(n, T.enhet)} i ${T.niva.en}`;
   const urval = jamforelseUrvalText();
-  setAudit("benchmark", {
+  sattMetodik("benchmark", {
     title: "Jämförelsestatistik",
-    ...buildBaseAudit(),
+    ...byggGrundurval(),
     usedInAnalysis: rader.length,
     analysisExclusions: [
       ...urval ? [[esc(urval), ""]] : [],
@@ -19194,7 +19194,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
   const etikett2 = _jmfEtikett, ref = (r) => r[kalla];
   const harBand = (v) => v.p10 != null && v.p90 != null;
   const kr2 = (v) => talformat(v, "kr");
-  const refNamn = plotNamn(namn), org = plotNamn(orgNamn());
+  const refNamn = diagramNamn(namn), org = diagramNamn(orgNamn());
   return {
     beskrivning: `Organisationens lönespann från P10 till P90 per ${T.enhet.en}, med medianen som prick, ovanpå spannet i ${namnLitet}. Samma värden står i tabellen nedan.`,
     urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.antal],
@@ -19208,7 +19208,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         marke: "intervall",
         riktning: "liggande",
         serie: `${refNamn} P10–P90`,
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 14,
         data: visa.filter((r) => harBand(ref(r))).map((r) => ({ y: etikett2(r), lag: ref(r).p10, hog: ref(r).p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
         tips: (d) => [[d.y], [`${refNamn} P10–P90`, `${talformat(d.lag, "kr", { enhet: false })}–${kr2(d.hog)}`]]
@@ -19217,7 +19217,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         marke: "intervall",
         riktning: "liggande",
         serie: `${org} P10–P90`,
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         tjocklek: 7,
         data: visa.map((r) => ({ y: etikett2(r), lag: r.org.p10, hog: r.org.p90, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
         tips: (d) => [[d.y], ["Organisationen", `${talformat(d.lag, "kr", { enhet: false })}–${kr2(d.hog)}`]]
@@ -19226,7 +19226,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
         marke: "punkt",
         symbol: "streck",
         serie: `${refNamn} median`,
-        farg: PALETTE.semantic.linje,
+        farg: PALETT.semantic.linje,
         storlek: 5,
         data: visa.filter((r) => ref(r).median != null).map((r) => ({ y: etikett2(r), x: ref(r).median, ..._jmfUrvalFalt(r) })),
         tips: (d) => [[d.y], [`${refNamn} median`, kr2(d.x)]]
@@ -19234,7 +19234,7 @@ function _jmfSpannFigur(visa, kalla, namn, namnLitet) {
       {
         marke: "punkt",
         serie: `${org} median`,
-        farg: PALETTE.semantic.trend,
+        farg: PALETT.semantic.trend,
         storlek: 4.5,
         data: visa.map((r) => ({ y: etikett2(r), x: r.org.median, ..._jmfUrvalFalt(r), markering: markeringFor(r.bas, r.aid) })),
         tips: (d) => [[d.y], ["Organisationen median", kr2(d.x)]]
@@ -19284,7 +19284,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
         marke: "intervall",
         riktning: "liggande",
         serie: "Spann P10–P90",
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 4,
         legend: false,
         data: visa.filter((r) => varden(r).length > 1).map((r) => ({ ...bas(r), lag: Math.min(...varden(r)), hog: Math.max(...varden(r)), r })),
@@ -19295,7 +19295,7 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
       {
         marke: "punkt",
         serie: "Medianens värde",
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         storlek: 6,
         opacitet: 0,
         etikettLage: "hoger",
@@ -19304,11 +19304,11 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
         data: visa.filter((r) => diff(r, "median") != null).map((r) => ({ y: _jmfEtikett(r), x: Math.max(...varden(r)), ..._jmfUrvalFalt(r), etikett: _jmfPct(diff(r, "median")) }))
       },
       streck("Skillnad i P10", FARG.blek, "p10"),
-      streck("Skillnad i P90", PALETTE.semantic.mork, "p90"),
+      streck("Skillnad i P90", PALETT.semantic.mork, "p90"),
       {
         marke: "punkt",
         serie: "Skillnad i median",
-        farg: PALETTE.serie[0],
+        farg: PALETT.serie[0],
         storlek: 6,
         data: visa.filter((r) => diff(r, "median") != null).map((r) => ({ ...bas(r), x: diff(r, "median"), r })),
         tips: (d) => tipsRad(d.r)
@@ -19316,10 +19316,10 @@ function _jmfAvvikelseFigur(visa, kalla, namn) {
     ].filter((l) => l.data.length)
   };
 }
-function renderStatistikLage() {
+function ritaStatistikLage() {
   const kort = document.getElementById("jmf-statlage-kort"), el = document.getElementById("chart-jmf-statlage");
   if (!kort || !el) return;
-  if (!state.statistik.length || !getData().length) {
+  if (!state.statistik.length || !hamtaData().length) {
     rensaFigur(el);
     kort.hidden = true;
     return;
@@ -19372,7 +19372,7 @@ function _jmfStatlageFigur(rader) {
       tips
     }))
   ));
-  const linje = (y, etikett2) => ({ typ: "linje", y, streck: "streckad", farg: PALETTE.semantic.referens, tjocklek: 1, etikett: etikett2, textfarg: PALETTE.semantic.referens });
+  const linje = (y, etikett2) => ({ typ: "linje", y, streck: "streckad", farg: PALETT.semantic.referens, tjocklek: 1, etikett: etikett2, textfarg: PALETT.semantic.referens });
   return {
     beskrivning: `Var varje ${genitiv(T.enhet.en)} medianlön ligger i jämförelsestatistikens spann per ${T.niva.en}: 0 är statistikens P10 och 100 dess P90. Fylld punkt: statistiken matchad på AID och BAS. Ofylld punkt: endast AID. Hela underlaget, oberoende av filtren under Mot jämförelsestatistiken; läget räknas ur P10, median och P90 i tabellen där.`,
     urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.matchning, URVAL.konsdominans, URVAL.antal],
@@ -19384,7 +19384,7 @@ function _jmfStatlageFigur(rader) {
       {
         marke: "intervall",
         serie: "Statistikens spann (P10–P90)",
-        farg: PALETTE.semantic.spann,
+        farg: PALETT.semantic.spann,
         tjocklek: 14,
         legend: false,
         utanData: true,
@@ -19400,14 +19400,14 @@ function uppstartJamforelse() {
       /** @type {HTMLInputElement} */
       e.target.value
     ) });
-    generateBenchmark();
+    byggJamforelse();
   });
   document.getElementById("jmf-sektor")?.addEventListener("change", (e) => {
     jamforelseSattVal({ sektor: (
       /** @type {HTMLInputElement} */
       e.target.value
     ) });
-    generateBenchmark();
+    byggJamforelse();
   });
 }
 
@@ -19576,7 +19576,7 @@ function perBasUtelamnat(pb) {
 
 // src/app/04-ordlista.js
 var AID_METODTEXT = "AID är ett klassificeringssystem för att gruppera arbetsuppgifter, som SKR och de fackliga organisationerna använder gemensamt för lönestatistik. {Enhet.art} {enhet.en} består av {kod.art} {kod.en:sexsiffrig} och {namn.art} {namn.en} och står för ett arbetsområde. {Enhet.bf} väljs efter den huvudsakliga arbetsuppgiften, inte efter utbildning, titel eller arbetsplatsens verksamhet. AID är inte ett arbetsvärderingssystem och är inte avsett att avgöra vilka arbeten som är lika eller likvärdiga; för det behöver AID kompletteras. {Enhet.bfl} är därför en utgångspunkt för lika arbete, som arbetsgivaren bekräftar; för likvärdigt arbete kompletterar {niva.bfl} eller en egen arbetsvärdering. Källa: SKR, Arbetsidentifikation (AID) — Handbok för kodning (2020).";
-var GLOSSARY = [
+var ORDLISTA = [
   // Statistik
   { cat: "Statistik", term: "Median (P50)", short: "Mittersta värdet av sorterad lista", long: "Den lön där exakt hälften av gruppen tjänar mer och hälften tjänar mindre. Påverkas mindre än medelvärdet av enstaka mycket höga eller låga löner." },
   { cat: "Statistik", term: "P10 (10:e percentilen)", short: "Värdet där 10 % av gruppen tjänar mindre", long: 'Speglar lönenivån för de lägst betalda i gruppen. Används som "lägsta önskad nivå" i lönepolitiska ställningstaganden.' },
@@ -19648,7 +19648,7 @@ var GLOSSARY = [
   { cat: "GDPR", term: "Content Security Policy (CSP)", short: "Webbläsar-policy som blockerar nätverksanrop", long: "En meta-tagg i HTML-filen som instruerar webbläsaren att förbjuda alla utgående nätverksanslutningar (connect-src 'none'). Hård teknisk spärr mot att data förs ut: även om en framtida bug skulle försöka göra fetch/XHR/WebSocket blockeras anropet." },
   { cat: "GDPR", term: "Beräkning och urval", short: "Spårbarhet från lönefil till analys", long: 'I flera analysflikar finns en panel "Beräkning och urval" som redovisar exakt hur många rader som ingår, vilka som exkluderats och varför. Möjliggör kvalitetssäkring och svar på frågan "Stämmer denna siffra?".' }
 ];
-function _normalizeTerm(s) {
+function _normaliseraTerm(s) {
   return s.toLowerCase().replace(/[åä]/g, "a").replace(/ö/g, "o").replace(/[^a-z0-9]/g, "");
 }
 var STATISTIK_101 = `
@@ -19693,12 +19693,12 @@ var STATISTIK_101 = `
     </div>
 </details>
 `;
-function renderGlossary(filterText = "") {
+function ritaOrdlista(filterText = "") {
   const wrap = document.getElementById("glossary-content");
   if (!wrap) return;
-  const filter = _normalizeTerm(filterText.trim());
-  const lista = GLOSSARY.map((g) => ({ ...g, term: termText(g.term), short: termText(_kText(g.short)), long: termText(_kText(g.long)) }));
-  const matches = filter ? lista.filter((g) => _normalizeTerm(g.term + " " + g.short + " " + g.long + " " + (g.sok || "")).includes(filter)) : lista;
+  const filter = _normaliseraTerm(filterText.trim());
+  const lista = ORDLISTA.map((g) => ({ ...g, term: termText(g.term), short: termText(_kText(g.short)), long: termText(_kText(g.long)) }));
+  const matches = filter ? lista.filter((g) => _normaliseraTerm(g.term + " " + g.short + " " + g.long + " " + (g.sok || "")).includes(filter)) : lista;
   if (!matches.length) {
     wrap.innerHTML = `<div class="glossary-empty">Inga termer matchar "${esc(filterText)}".</div>`;
     return;
@@ -19723,50 +19723,50 @@ function renderGlossary(filterText = "") {
   });
   wrap.innerHTML = html;
 }
-function openGlossary() {
+function oppnaOrdlista() {
   const m = document.getElementById("glossary-modal");
   if (!m) return;
   m.style.display = "flex";
-  renderGlossary("");
-  trapFocus(m);
+  ritaOrdlista("");
+  fangaFokus(m);
 }
-function closeGlossary() {
+function stangOrdlista() {
   const m = document.getElementById("glossary-modal");
   if (m) {
-    releaseFocus(m);
+    slappFokus(m);
     m.style.display = "none";
   }
 }
 function uppstartOrdlista() {
-  document.getElementById("btn-open-glossary")?.addEventListener("click", openGlossary);
-  document.getElementById("glossary-close")?.addEventListener("click", closeGlossary);
-  document.querySelector("#glossary-modal .glossary-backdrop")?.addEventListener("click", closeGlossary);
-  document.getElementById("glossary-search")?.addEventListener("input", (e) => renderGlossary(
+  document.getElementById("btn-open-glossary")?.addEventListener("click", oppnaOrdlista);
+  document.getElementById("glossary-close")?.addEventListener("click", stangOrdlista);
+  document.querySelector("#glossary-modal .glossary-backdrop")?.addEventListener("click", stangOrdlista);
+  document.getElementById("glossary-search")?.addEventListener("input", (e) => ritaOrdlista(
     /** @type {HTMLInputElement} */
     e.target.value
   ));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && /** @type {HTMLElement} */
-    document.getElementById("glossary-modal").style.display === "flex") closeGlossary();
+    document.getElementById("glossary-modal").style.display === "flex") stangOrdlista();
   });
   document.getElementById("btn-open-symbols")?.addEventListener("click", () => {
     const m = document.getElementById("symbols-modal");
     if (m) {
       m.style.display = "flex";
-      trapFocus(m);
+      fangaFokus(m);
     }
   });
   document.getElementById("symbols-close")?.addEventListener("click", () => {
     const m = document.getElementById("symbols-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
   document.querySelector("#symbols-modal .glossary-backdrop")?.addEventListener("click", () => {
     const m = document.getElementById("symbols-modal");
     if (m) {
-      releaseFocus(m);
+      slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -19781,7 +19781,7 @@ function uppstartOrdlista() {
 var _RR_MAX = 25;
 function referensOverblick() {
   const harStatistik = state.statistik.length > 0, harStallningstagande = state.policy.length > 0;
-  if (!getData().length || !harStatistik && !harStallningstagande) return null;
+  if (!hamtaData().length || !harStatistik && !harStallningstagande) return null;
   return referensOverblickUr(jamforelseUnderlag().rader, {
     harStatistik,
     harStallningstagande,
@@ -19851,9 +19851,9 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
 }
 function _rrHantelFigur(rader, { harStatistik }) {
   const serier = [
-    { namn: "Ställningstagandet", nyckel: "stallningstagande", farg: PALETTE.semantic.neutral },
-    ...harStatistik ? [{ namn: "Statistiken", nyckel: "statistik", farg: PALETTE.semantic.trend }] : [],
-    { namn: "Organisationen", nyckel: "org", farg: PALETTE.semantic.mork }
+    { namn: "Ställningstagandet", nyckel: "stallningstagande", farg: PALETT.semantic.neutral },
+    ...harStatistik ? [{ namn: "Statistiken", nyckel: "statistik", farg: PALETT.semantic.trend }] : [],
+    { namn: "Organisationen", nyckel: "org", farg: PALETT.semantic.mork }
   ];
   const steg = serier.length === 3 ? 0.27 : 0.2;
   const kr2 = (v) => talformat(v, "kr");
@@ -19941,7 +19941,7 @@ function _rrRitaTopp(o, { harStatistik, harStallningstagande }) {
     harStatistik && harStallningstagande ? "Ställningstagandet är referenspunkten" : "Bara den referensen är inläst"
   ) + (harStallningstagande ? _laSlutsats("Löneläget utanför ställningstagandet", grupper(antal((g) => g.monster.lonelage === "ovanför" || g.monster.lonelage === "nedanför")), `av ${o.tal.antalGrupper}`) : "") + (harStatistik && harStallningstagande ? _laSlutsats("Statistiken över ställningstagandet", grupper(antal((g) => g.monster.statistik === "över")), `av ${o.tal.antalGrupper}`) : "");
 }
-function renderReferensOverblick() {
+function ritaReferensOverblick() {
   const host = document.getElementById("ref-overblick");
   if (!host) return;
   rensaFigur("chart-ref-hantel");
@@ -19968,9 +19968,9 @@ function renderReferensOverblick() {
   } catch (e) {
     rapporteraFel("Löneläget: överblickens bild", e);
   }
-  addTableExportTools("ref-tabell", "referenser");
-  enableTableSort("ref-tabell");
-  enableTableSort("ref-stat-mot-stallning");
+  laggTillTabellverktyg("ref-tabell", "referenser");
+  aktiveraSortering("ref-tabell");
+  aktiveraSortering("ref-stat-mot-stallning");
 }
 
 // src/app/61-regler-och-praxis.js
@@ -19985,7 +19985,7 @@ function _bes8Titel(det, n) {
   const t = det && (det.querySelector("summary .avsnitt-titel") || det.querySelector("summary"));
   return t ? t.textContent.trim() : "Område " + n;
 }
-function _setupBes8Assessment() {
+function _kopplaBes8Bedomning() {
   document.querySelectorAll(".bes8-assess").forEach((host, i) => {
     if (
       /** @type {HTMLElement} */
@@ -19998,7 +19998,7 @@ function _setupBes8Assessment() {
     host.dataset.ready = "1";
   });
 }
-function _bes8Areas() {
+function _bes8Omraden() {
   const out = [];
   document.querySelectorAll('[id^="bes8-status-"]').forEach((sel) => {
     const n = sel.id.replace("bes8-status-", "");
@@ -20015,7 +20015,7 @@ function _bes8Areas() {
 }
 var BES8_IKON = { "Ingen risk identifierad": "bock", "Möjlig risk – utreds vidare": "statusVarning", "Åtgärd krävs": "statusKritisk", "Ej tillämplig": "streck" };
 function bes8Uppdatera() {
-  const omraden = _bes8Areas();
+  const omraden = _bes8Omraden();
   const antal = (s) => omraden.filter((a) => a.status === s).length;
   const bedomda = omraden.filter((a) => a.status).length, atgard = antal("Åtgärd krävs"), risk = antal("Möjlig risk – utreds vidare");
   const topp = document.getElementById("rp-slutsatser");
@@ -20053,7 +20053,7 @@ var BES8_STOD_FLIK = { likvardighet: "Likvärdigt arbete", matrix: "Lika arbete"
 function bes8Stod() {
   const d = (() => {
     try {
-      return getData();
+      return hamtaData();
     } catch (_e) {
       return [];
     }
@@ -20075,7 +20075,7 @@ function bes8Stod() {
   });
 }
 function uppstartReglerOchPraxis() {
-  _setupBes8Assessment();
+  _kopplaBes8Bedomning();
   document.addEventListener("change", (e) => {
     if (
       /** @type {HTMLElement} */
@@ -20088,24 +20088,24 @@ function uppstartReglerOchPraxis() {
 }
 
 // src/app/80-gruppdossier.js
-function _gdBootstrapGapCI(kvLons, maLons, B) {
+function _gdBootstrapGapKI(kvLons, maLons, B) {
   return medianKvotKIGiltiga(kvLons, maLons, { B });
 }
-function gruppdossierCandidates() {
-  return gruppdossierGrupper(getData(), kTroskel());
+function gruppdossierKandidater() {
+  return gruppdossierGrupper(hamtaData(), kTroskel());
 }
 function _gdKon(rows) {
   return { kv: rows.filter((r) => arKvinna(r)), ma: rows.filter((r) => arMan(r)) };
 }
 function gruppdossierDelat({ text = false } = {}) {
-  return { kandidater: gruppdossierCandidates(), perBas: /* @__PURE__ */ new Map(), prio: /* @__PURE__ */ new Map(), text };
+  return { kandidater: gruppdossierKandidater(), perBas: /* @__PURE__ */ new Map(), prio: /* @__PURE__ */ new Map(), text };
 }
-function buildGruppdossier(key, delat = null) {
-  const g = (delat ? delat.kandidater : gruppdossierCandidates()).find((x) => x.key === key);
+function byggGruppdossier(key, delat = null) {
+  const g = (delat ? delat.kandidater : gruppdossierKandidater()).find((x) => x.key === key);
   if (!g) return null;
   let justerat = null;
   if (harAlder()) try {
-    const rakna = () => _computePerBasGap(getData(), [g.bas]);
+    const rakna = () => _raknaPerBasGap(hamtaData(), [g.bas]);
     let perBas;
     if (!delat) perBas = rakna();
     else {
@@ -20124,16 +20124,16 @@ function buildGruppdossier(key, delat = null) {
   }
   let prio = null, forslag2 = [];
   try {
-    const ref = typeof _selectedPrioReference === "function" ? _selectedPrioReference() : "statistik";
+    const ref = typeof _valdPrioReferens === "function" ? _valdPrioReferens() : "statistik";
     let alla;
-    if (!delat) alla = computePrioritization(ref);
+    if (!delat) alla = raknaPrioritering(ref);
     else {
-      if (!delat.prio.has(ref)) delat.prio.set(ref, computePrioritization(ref));
+      if (!delat.prio.has(ref)) delat.prio.set(ref, raknaPrioritering(ref));
       alla = delat.prio.get(ref);
     }
     prio = (alla || []).find((i) => i.aid === g.aid && i.bas === g.bas) || null;
-    if (prio && typeof generateMotivationSuggestions === "function") {
-      forslag2 = generateMotivationSuggestions(prio) || [];
+    if (prio && typeof byggMotiveringsforslag === "function") {
+      forslag2 = byggMotiveringsforslag(prio) || [];
     }
   } catch (e) {
     rapporteraFel("Gruppdossier: prioriteringen", e);
@@ -20144,7 +20144,7 @@ function buildGruppdossier(key, delat = null) {
     ki: !(delat && delat.text),
     kostnad: state.costSettings,
     referens,
-    referensNiva: policyLevelLabel(referens),
+    referensNiva: policyNivaEtikett(referens),
     par,
     statistik: state.statistik,
     skrDel: _skrDel(),
@@ -20153,24 +20153,24 @@ function buildGruppdossier(key, delat = null) {
     forslag: forslag2
   });
 }
-function openGruppdossier(preselectKey) {
+function oppnaGruppdossier(preselectKey) {
   const modal = document.getElementById("dossier-modal");
   if (!modal) return;
   ritaGruppdossier(preselectKey);
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
-function closeGruppdossier() {
+function stangGruppdossier() {
   const modal = document.getElementById("dossier-modal");
   if (!modal) return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
 }
 function ritaGruppdossier(preselectKey) {
   const sel = document.getElementById("dossier-select");
   const body = document.getElementById("dossier-body");
   if (!sel || !body) return;
-  const cands = gruppdossierCandidates();
+  const cands = gruppdossierKandidater();
   if (!cands.length) {
     sel.innerHTML = "";
     body.innerHTML = `<div class="flik-empty-state"><div class="empty-icon">${ikon("tomLada")}</div>
@@ -20184,7 +20184,7 @@ function ritaGruppdossier(preselectKey) {
     (g) => `<option value="${esc(g.key)}">${esc(gruppNamn(g))} — BAS ${esc(g.bas)} (n=${g.rows.length})</option>`
   ).join("");
   sel.value = cands.some((g) => g.key === wanted) ? wanted : cands[0].key;
-  const d = buildGruppdossier(
+  const d = byggGruppdossier(
     /** @type {HTMLInputElement} */
     sel.value
   );
@@ -20195,8 +20195,8 @@ function ritaGruppdossier(preselectKey) {
   body.innerHTML = _gdRitaInnehall(d);
   const modal = document.getElementById("dossier-modal");
   if (modal && modal.style.display === "flex") {
-    if (typeof releaseFocus === "function") releaseFocus(modal);
-    if (typeof trapFocus === "function") trapFocus(modal);
+    if (typeof slappFokus === "function") slappFokus(modal);
+    if (typeof fangaFokus === "function") fangaFokus(modal);
   }
 }
 function gruppNamn(g) {
@@ -20225,7 +20225,7 @@ function _gdRitaInnehall(d) {
         <p class="gd-ansvar">Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} män ·
             Särskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} män</p>` : ""}`;
   const gapKlass = d.gap && d.gap.pct != null ? { granska: "farg-granska", folj: "fg-varning", balanserat: "fg-ok" }[gapStatusKI({ gap: d.gap.pct, ci: d.gap.ci, nKv: d.nKv, nMa: d.nMa }).niva] || "f-dampad" : "";
-  const gapInner = d.gap && d.gap.pct != null ? `<div class="gd-big ${gapKlass}">${pct(d.gap.pct, 1)}${_direktivInline(d.gap.pct)}</div>
+  const gapInner = d.gap && d.gap.pct != null ? `<div class="gd-big ${gapKlass}">${pct(d.gap.pct, 1)}${_direktivITalcell(d.gap.pct)}</div>
            <p>Kvinnors median som andel av männens. Kvinnor ${kr2(d.gap.medKv)} · Män ${kr2(d.gap.medMa)}.</p>
            ${d.gap.arsbelopp ? `<p class="gd-note">${esc(d.gap.arsbelopp)}</p>` : ""}
            ${d.gap.ci ? `<p class="gd-note">95 % bootstrap-KI: ${pct(d.gap.ci.lo)} – ${pct(d.gap.ci.hi)}${d.gap.ci.lo <= 100 && d.gap.ci.hi >= 100 ? " — intervallet rymmer 100 %, skillnaden är inte säkerställd." : ""}</p>` : ""}` : missing(`Kräver minst ${kTroskel()} av varje kön i gruppen (här ${d.nKv} kv / ${d.nMa} mä).`);
@@ -20263,7 +20263,7 @@ function _gdRitaInnehall(d) {
             ${card("Frågor att undersöka", hypInner, "Regelbaserade uppslag, inte färdiga motiveringar. Ingen AI är inblandad.")}
         </div>`;
 }
-function gruppdossierAsText(d, { stampel = true } = {}) {
+function gruppdossierSomText(d, { stampel = true } = {}) {
   const kr2 = (v) => v == null || !isFinite(v) ? "–" : Math.round(v).toLocaleString("sv-SE") + " kr";
   const L = [];
   L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
@@ -20293,31 +20293,31 @@ function uppstartGruppdossier() {
       e.target.closest("[data-open-dossier]")
     );
     if (btn) {
-      openGruppdossier(btn.getAttribute("data-open-dossier"));
+      oppnaGruppdossier(btn.getAttribute("data-open-dossier"));
       return;
     }
     if (
       /** @type {HTMLElement} */
       e.target.closest("[data-dossier-close]")
-    ) closeGruppdossier();
+    ) stangGruppdossier();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && document.getElementById("dossier-modal")?.style.display === "flex") {
-      closeGruppdossier();
+      stangGruppdossier();
     }
   });
   document.addEventListener("click", (e) => {
     if (!/** @type {HTMLElement} */
     e.target.closest("#btn-dossier-copy")) return;
     const sel = document.getElementById("dossier-select");
-    const d = sel ? medExportLage(() => buildGruppdossier(
+    const d = sel ? medExportLage(() => byggGruppdossier(
       /** @type {HTMLInputElement} */
       sel.value
     )) : null;
     if (!d) return;
-    const txt = medExportLage(() => gruppdossierAsText(d));
+    const txt = medExportLage(() => gruppdossierSomText(d));
     const done = () => {
-      if (typeof announceToScreenReader === "function") announceToScreenReader("Dossier kopierad.");
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Dossier kopierad.");
     };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {
     });
@@ -20576,7 +20576,7 @@ function rmBasintervallAvsnitt(k, bi) {
   const delar = [stycke(`Ett avsnitt per ${T.niva.en} med minst ${k} ${personOrd(k)}, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? "läget mot ställningstagandet, " : ""}${T.enhet.bfl} med status enligt Lika arbete, likvärdigt arbete${harAlder() ? ", ålder" : ""} och förra året när ett bokslut är inläst. Tabellen har ${T.enhet.bfl} där både kvinnor och män når minsta gruppstorlek.`, "dampad")];
   let smaYrken = 0;
   for (const { bas } of kand) {
-    const d = buildBasdossier(bas);
+    const d = byggBasdossier(bas);
     if (!d) continue;
     smaYrken += d.yrkenUtelamnade.length;
     delar.push({ typ: "rubrik", niva: 3, text: `${stor(T.niva.en)} ${d.bas}` });
@@ -20659,12 +20659,12 @@ function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
   if (besked) return avsnitt;
   const dossierer = (
     /** @type {any[]} */
-    medGrupper.map((g) => buildGruppdossier(g.key, delat)).filter(Boolean)
+    medGrupper.map((g) => byggGruppdossier(g.key, delat)).filter(Boolean)
   );
   avsnitt.delar.push({ typ: "stycke", stil: "dampad", text: `En dossier per ${T.enhet.en} i ${T.niva.en} där både kvinnor och män är minst ${k}, störst först — samma text som gruppdossierns kopia. ${stor(T.niva.bfl)} står i avsnittet Lönekartläggning per ${T.niva.en}.` });
   if (_kSanktNot()) avsnitt.delar.push({ typ: "stycke", text: _kSanktNot() });
   for (const d of dossierer) {
-    const rader = gruppdossierAsText(d, { stampel: false }).split("\n");
+    const rader = gruppdossierSomText(d, { stampel: false }).split("\n");
     avsnitt.delar.push({ typ: "rubrik", niva: 3, text: rader[0] });
     for (const r of rader.slice(1)) if (r.trim()) avsnitt.delar.push({ typ: "stycke", text: r.trim() });
   }
@@ -20786,7 +20786,7 @@ function _rmMinnesNyckel() {
   return [
     _rmHandelser,
     state.data.length,
-    getData().length,
+    hamtaData().length,
     kTroskel(),
     state.policy,
     state.statistik,
@@ -20795,7 +20795,7 @@ function _rmMinnesNyckel() {
     state.perBasRecept,
     state.forklaringsmodell,
     state.gapUppdelning,
-    bootstrapCIGallande(),
+    bootstrapKIGallande(),
     styrkaGallande(),
     state.likvardighet && state.likvardighet.result,
     state.isDemo
@@ -20829,16 +20829,16 @@ function _rapportModellExport({ alla = false, bada = false, besked = false, ater
   return bada ? { urval: modell(false), alla: modell(true) } : modell(alla);
 }
 function _rmAvsnittenUtanUrval() {
-  const d = getData();
+  const d = hamtaData();
   const year = (/* @__PURE__ */ new Date()).getFullYear(), today = (/* @__PURE__ */ new Date()).toLocaleDateString("sv-SE");
   const k = kTroskel();
   const urval = "Hela organisationen";
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   const lvRes = likvardighetResultat();
   const vm = vymodellRapport(d, {
     k,
     golv: statGolv(),
-    bas: getBasIntervals(),
+    bas: hamtaBasIntervall(),
     reg,
     lika: laLikaGrupper(d, k),
     lvPar: lvRes && lvRes.pairs,
@@ -20878,7 +20878,7 @@ function _rmAvsnittenUtanUrval() {
     const { topp, botten } = vm.representation.iakttagelse;
     regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda ${T.niva.fl} (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}). Det kan tyda på att kvinnor och män är ojämnt fördelade mellan ${T.niva.bfl}, och det är värt att ta med i granskningen av regler och praxis.`));
   }
-  const bes8 = _bes8Areas();
+  const bes8 = _bes8Omraden();
   if (bes8.length) {
     regler.delar.push({
       typ: "tabell",
@@ -20897,7 +20897,7 @@ function _rmAvsnittenUtanUrval() {
     lika.delar.push({ typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: [
       // Det råa gapet är ett beskrivande könsuppdelat mått och följer tröskeln (_raGapText).
       ["Kvinnors medianlön i procent av mäns", _raGapText(reg, (v) => rmAndelAvMan(v, 1))],
-      [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : "Löneskillnad, inget räknat bort", { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formatPValue(reg.pValue)})`, fet: true }],
+      [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : "Löneskillnad, inget räknat bort", { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formateraPVarde(reg.pValue)})`, fet: true }],
       ["Modell", `log(lön) ~ ${reg.modelDesc} · ${reg.n} obs · R² ${svPct(reg.R2 * 100, 1)}`]
     ] });
     lika.delar.push(dampad(`Löneskillnaden ${reg.fras ? `efter ${reg.fras}` : "utan kontroller"} anges som en skillnad i procent: negativ när kvinnor ligger lägre.`));
@@ -20969,7 +20969,7 @@ function _rmAvsnittenUtanUrval() {
   }
   likvardigt.delar.push(...diagram("likvardigt"));
   likvardigt.delar.push(fyllIn(`Avgör, utifrån befattningsbeskrivning eller arbetsvärdering, om ${genitiv(T.jamforelse.bf)} krav verkligen är likvärdiga eller lägre. Ange sakligt skäl eller åtgärd för varje par som står kvar.`));
-  const repNot = [_rmNotText(kMaskNote(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNote(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
+  const repNot = [_rmNotText(kMaskNot(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNot(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
   const oversikt = vm.oversikt;
   const struktur = repVisade.length || repNot.length ? {
     id: "struktur",
@@ -21031,7 +21031,7 @@ function _rmAvsnittenUtanUrval() {
   const referenser = d.length ? rmReferenserAvsnitt(diagram) : null;
   const egna = rmEgnaAvsnitt(vm.egna, k);
   const arsjamf = d.length ? rmArsjamforelseAvsnitt(diagram) : null;
-  const hpSeed = _handlingsplanSeedRows();
+  const hpSeed = _handlingsplanForifyllning();
   const hp = hpSeed.rows;
   const hpSkal = _hpSkalUnderlag(hpSeed);
   const hpFalt = (v) => v || { text: "[HR fyller i]", fyllIn: true };
@@ -21065,12 +21065,12 @@ function _rmAvsnittenUtanUrval() {
       nyckel([
         ["Antal observationer", `${reg.n} (kvinnor: ${reg.nKvAnalysed}, män: ${reg.nMaAnalysed})`],
         ["Kvinnors medianlön i procent av mäns", _raGapText(reg, (v) => rmAndelAvMan(v, 1))],
-        [`Oförklarad skillnad${kritisk ? " (statistiskt säkerställd och minst 3 %)" : ""}`, { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formatPValue(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
+        [`Oförklarad skillnad${kritisk ? " (statistiskt säkerställd och minst 3 %)" : ""}`, { text: `${rmCell(reg.konPct, "tecken2")} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formateraPVarde(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
         ...reg.ageEffect != null ? [["Ålderseffekt", `${rmCell(reg.ageEffect, "tecken2")} per år`]] : [],
         ["R² / justerad R²", `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
         ...reg.basRef != null && !reg.modell.yrkesgrupp ? [[`${stor(T.niva.fl)} i modellen`, `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : [],
         ...reg.modell.yrkesgrupp && reg.yrkesSteg ? [[`${stor(T.enhet.fl)} i modellen`, `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : [],
-        ...basEffUt.effekter?.length ? [["BAS-effekter", `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map((e) => `${e.bas} ${rmCell(e.pct, "tecken2")} (${_formatPValue(e.p)})`).join("; ")}`]] : []
+        ...basEffUt.effekter?.length ? [["BAS-effekter", `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map((e) => `${e.bas} ${rmCell(e.pct, "tecken2")} (${_formateraPVarde(e.p)})`).join("; ")}`]] : []
       ])
     );
     if (basEffUt.not) {
@@ -21099,7 +21099,7 @@ function _rmAvsnittenUtanUrval() {
       {
         typ: "tabell",
         kolumner: [{ rubrik: "BAS", typ: "text" }, { rubrik: "N", typ: "antal" }, { rubrik: "Kvinnor / män", typ: "text" }, { rubrik: "Oförklarad skillnad", typ: "tecken2" }, { rubrik: "Signifikans", typ: "text" }, { rubrik: "Säkerställd, minst 3 %", typ: "text" }],
-        rader: perBas.map((pb) => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formatPValue(pb.pValue), pb.sakerstalld ? "ja" : ""])
+        rader: perBas.map((pb) => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formateraPVarde(pb.pValue), pb.sakerstalld ? "ja" : ""])
       }
     );
   } else if (reg && reg.error) {
@@ -21111,7 +21111,7 @@ function _rmAvsnittenUtanUrval() {
   const regressionAvsnitt = regression.delar.length ? regression : null;
   const metod = { id: "metod", rubrik: "Bilaga: Metod och parametrar", utelamnat: [], delar: [
     dampad("Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte."),
-    { typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: _methodAppendixData().map(([n, v]) => [String(n), String(v)]) },
+    { typ: "tabell", nyckel: true, kolumner: [{ rubrik: "", typ: "text" }, { rubrik: "", typ: "text" }], rader: _metodbilaga().map(([n, v]) => [String(n), String(v)]) },
     // Metodreservationen om ålder (S7, ADR-64), oavsett om lönefilen har ålder.
     dampad(`${ALDER_METODVAL_TEXT}${harAlder() ? "" : ` ${ALDER_SAKNAS_TEXT}`}`)
   ] };
@@ -21162,7 +21162,7 @@ async function rmDiagramBild(del, ritade = /* @__PURE__ */ new Set()) {
     if (del.flik && !ritade.has(del.flik)) {
       ritade.add(del.flik);
       try {
-        renderTabContent(del.flik);
+        ritaFlik(del.flik);
       } catch (_e) {
       }
     }
@@ -21190,7 +21190,7 @@ function _konfigImportprofiler() {
   const egna = (state.importprofiler || []).filter((p) => p.kalla === "konfiguration").map((p) => ({ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken }));
   return egna.length ? { importprofiler: egna } : {};
 }
-function buildConfigSnapshot() {
+function byggKonfiguration() {
   return {
     version: konfigurationVersion(),
     sparad: (/* @__PURE__ */ new Date()).toISOString(),
@@ -21245,7 +21245,7 @@ function buildConfigSnapshot() {
       ar: state.forecast.years
     } : null,
     // Egna importprofiler (src/lib/importprofiler.js): bara rubriknamn. Organisationspaketets följer paketet och bärs inte.
-    // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (applyConfigSnapshot).
+    // En tom lista skrivs inte, så att filen inte tömmer en annan sessions profiler (tillampaKonfiguration).
     ..._konfigImportprofiler(),
     // Organisationspaketet (ADR-28) bärs inte — bara vilket paket som användes, så att
     // den som läser in konfigurationen kan läsa in samma paket.
@@ -21272,7 +21272,7 @@ function buildConfigSnapshot() {
     // användarinitierade nedladdningen.
     // Innehåller INGA råa individrader; kan innehålla användarförfattad text
     // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
-    bes8: (typeof _bes8Areas === "function" ? _bes8Areas() : []).map((a) => ({ n: a.n, status: a.status, anteckning: a.note })),
+    bes8: (typeof _bes8Omraden === "function" ? _bes8Omraden() : []).map((a) => ({ n: a.n, status: a.status, anteckning: a.note })),
     // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
     handlingsplan: typeof _hpForKonfiguration === "function" ? _hpForKonfiguration() : [],
     attGoraKlara: Array.from(state._actionChecklistDone || []),
@@ -21289,14 +21289,14 @@ function buildConfigSnapshot() {
     })()
   };
 }
-function applyConfigSnapshot(cfg) {
+function tillampaKonfiguration(cfg) {
   try {
-    return _applyConfigSnapshot(cfg);
+    return _tillampaKonfiguration(cfg);
   } finally {
     visningNy();
   }
 }
-function _applyConfigSnapshot(cfg) {
+function _tillampaKonfiguration(cfg) {
   if (!cfg || typeof cfg !== "object")
     throw new Error("Konfigurationen är inte ett giltigt objekt.");
   const versionFel = konfigurationVersionFel(
@@ -21504,7 +21504,7 @@ function _applyConfigSnapshot(cfg) {
     if (typeof cfg.perBasRecept !== "object") throw new Error("perBasRecept måste vara ett objekt.");
     tmp.perBasRecept = valideraPerBasRecept(cfg.perBasRecept);
   }
-  const rader = getData();
+  const rader = hamtaData();
   const fm = normaliseraForklaringsmodell(cfg.forklaringsmodell, { harYrke: !rader.length || rader.some((d) => d.aid || d.yrke) });
   varningar.push(...fm.varningar);
   const guRa = cfg.gapUppdelning;
@@ -21551,13 +21551,13 @@ function _applyConfigSnapshot(cfg) {
   if (tmp.handlingsplan) {
     state.handlingsplan = tmp.handlingsplan;
     if (typeof _hpDemoNycklar !== "undefined") _hpDemoNycklar.clear();
-    if (typeof renderHandlingsplanSeed === "function") renderHandlingsplanSeed();
+    if (typeof ritaHandlingsplan === "function") ritaHandlingsplan();
   }
   if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
   if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter((p) => p.kalla !== "konfiguration"), ...tmp.importprofiler];
   if (tmp.arsbokslut) {
     state.forraArsbokslut = tmp.arsbokslut;
-    if (typeof renderArsjamforelse === "function") medExportLage(() => renderArsjamforelse());
+    if (typeof ritaArsjamforelse === "function") medExportLage(() => ritaArsjamforelse());
   }
   if (tmp.orgName) sattOrgNamn(tmp.orgName);
   if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);
@@ -21581,7 +21581,7 @@ function _applyConfigSnapshot(cfg) {
   setIf("prio-w-jamstalldhet", state.prioWeights.jamstalldhet);
   setIf("prio-cost-months", state.costSettings.months);
   setIf("prio-po-pct", state.costSettings.poPct);
-  _readCostSettings();
+  _lasKostnadsinstallningar();
   if (tmp.ui) {
     ["prio-label-mode", "kon-color-by"].forEach((id) => {
       const el = document.getElementById(id);
@@ -21597,13 +21597,13 @@ function _applyConfigSnapshot(cfg) {
     sattOrgTyp(tmp.ui.organisationstyp);
     if (tmp.ui.jamforelse && typeof tmp.ui.jamforelse === "object") jamforelseSattVal(tmp.ui.jamforelse);
   }
-  invalidateStatCaches({ recompute: false });
+  tomStatistikcacher({ recompute: false });
   if (kAndrad && state.data.length) {
-    populateSelects();
-    _renderaOmAllaFlikar();
+    fyllValjare();
+    _ritaOmAllaFlikar();
   } else {
-    refreshCurrentTab();
-    renderActionChecklist();
+    uppdateraAktivFlik();
+    ritaAtgardslista();
   }
   const op = tmp.organisationspaket;
   if (op && !(state.paket && state.paket.organisation === op.organisation && state.paket.skapat === op.skapat)) {
@@ -21615,18 +21615,18 @@ function _applyConfigSnapshot(cfg) {
   }
   return { varningar };
 }
-function buildAnalysisSnapshot(...a) {
-  return medExportLage(() => _buildAnalysisSnapshotExport.apply(
+function byggOgonblicksbild(...a) {
+  return medExportLage(() => _byggOgonblicksbildExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _buildAnalysisSnapshotExport() {
-  const d = getData();
+function _byggOgonblicksbildExport() {
+  const d = hamtaData();
   if (!d.length) return null;
   const m = ogonblicksbildMatt(d, kTroskel());
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   const dq = bedomningUnderlag();
   return {
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -21641,22 +21641,22 @@ function _buildAnalysisSnapshotExport() {
     unexplainedPValue: reg.error ? null : reg.pValue,
     underlag: dq ? UK_ETIKETT[dq.status] : null,
     avgAge: m.avgAge,
-    nBas: getBasIntervals().length
+    nBas: hamtaBasIntervall().length
   };
 }
-function renderSnapshotComparison() {
+function ritaOgonblicksbildJamforelse() {
   const wrap = document.getElementById("snapshot-comparison");
   if (!wrap) return;
   const snap = state.snapshot;
   if (!snap) {
     wrap.style.display = "none";
-    _snapshotLutning(null, null);
+    _ogonblicksbildLutning(null, null);
     return;
   }
-  const cur = buildAnalysisSnapshot();
+  const cur = byggOgonblicksbild();
   if (!cur) {
     wrap.style.display = "none";
-    _snapshotLutning(null, null);
+    _ogonblicksbildLutning(null, null);
     return;
   }
   const snapKon = _konFarRedovisas(snap.nKv, snap.nMa);
@@ -21698,12 +21698,12 @@ function renderSnapshotComparison() {
             </table>
         </div>
     `;
-  _snapshotLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
+  _ogonblicksbildLutning({ ...snap, medianKv: sk(snap.medianKv), medianMa: sk(snap.medianMa) }, cur);
 }
-function _snapshotLutning(snap, cur) {
+function _ogonblicksbildLutning(snap, cur) {
   const ruta = document.getElementById("snapshot-lutning-ruta"), el = document.getElementById("chart-snapshot-lutning");
   if (!ruta || !el) return;
-  const rader = !snap || !cur ? [] : [["Kvinnor", snap.medianKv, cur.medianKv, PALETTE.kon.kvinna], ["Män", snap.medianMa, cur.medianMa, PALETTE.kon.man]].filter(([, a, b]) => typeof a === "number" && typeof b === "number").map(([namn, fore, efter, farg]) => ({ namn, fore: Math.round(fore), efter: Math.round(efter), farg }));
+  const rader = !snap || !cur ? [] : [["Kvinnor", snap.medianKv, cur.medianKv, PALETT.kon.kvinna], ["Män", snap.medianMa, cur.medianMa, PALETT.kon.man]].filter(([, a, b]) => typeof a === "number" && typeof b === "number").map(([namn, fore, efter, farg]) => ({ namn, fore: Math.round(fore), efter: Math.round(efter), farg }));
   ruta.hidden = !rader.length;
   if (!rader.length) {
     rensaFigur(el);
@@ -21719,7 +21719,7 @@ function _snapshotLutning(snap, cur) {
 }
 function uppstartKonfiguration() {
   document.getElementById("btn-config-save")?.addEventListener("click", () => {
-    const cfg = buildConfigSnapshot();
+    const cfg = byggKonfiguration();
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -21731,7 +21731,7 @@ function uppstartKonfiguration() {
       status.style.color = FARG.ok;
       setTimeout(() => status.textContent = "", 3e3);
     }
-    _showExportSensitivityToast(`<strong>Konfiguration sparad</strong><br>
+    _visaExportvarning(`<strong>Konfiguration sparad</strong><br>
         Filen innehåller dina inställningar och <em>dina bedömningar och anteckningar</em>
         (bedömningar av regler och praxis, handlingsplan, narrativ) — men ingen rå lönedata. Förvara på behörighetsstyrd
         disk och skicka den inte via okrypterad e-post.`);
@@ -21759,7 +21759,7 @@ function uppstartKonfiguration() {
           /** @type {FileReader} */
           ev.target.result
         ));
-        const { varningar } = applyConfigSnapshot(cfg);
+        const { varningar } = tillampaKonfiguration(cfg);
         const status2 = document.getElementById("config-status");
         if (status2) {
           status2.textContent = "Konfiguration laddad" + (varningar.length ? ". " + varningar.join(" ") : "");
@@ -21778,7 +21778,7 @@ function uppstartKonfiguration() {
     reader.readAsText(file);
   });
   document.getElementById("btn-snapshot-save")?.addEventListener("click", () => {
-    const snap = buildAnalysisSnapshot();
+    const snap = byggOgonblicksbild();
     if (!snap) {
       alert("Läs in lönefilen först.");
       return;
@@ -21794,7 +21794,7 @@ function uppstartKonfiguration() {
     const status = document.getElementById("snapshot-status");
     if (status) status.textContent = `Ögonblicksbild "${name}" sparad (${state.scenarios.length} scenario${state.scenarios.length > 1 ? "n" : ""} totalt)`;
   });
-  document.getElementById("btn-snapshot-compare")?.addEventListener("click", renderSnapshotComparison);
+  document.getElementById("btn-snapshot-compare")?.addEventListener("click", ritaOgonblicksbildJamforelse);
   document.getElementById("btn-snapshot-clear")?.addEventListener("click", () => {
     state.snapshot = null;
     document.getElementById("btn-snapshot-compare").disabled = true;
@@ -21808,9 +21808,9 @@ function uppstartKonfiguration() {
 function byggArsbokslutNu() {
   if (!state.data.length || typeof byggArsbokslut !== "function") return null;
   return medExportLage(() => {
-    const d = getData();
+    const d = hamtaData();
     const k = kTroskel();
-    const bild = buildAnalysisSnapshot();
+    const bild = byggOgonblicksbild();
     const lika = typeof laLikaGrupper === "function" ? laLikaGrupper(d, k) : { grupper: [] };
     let lv = null;
     try {
@@ -21820,7 +21820,7 @@ function byggArsbokslutNu() {
     }
     const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
     const klara = state._actionChecklistDone || /* @__PURE__ */ new Set();
-    const punkter = typeof buildActionChecklist === "function" ? buildActionChecklist() : [];
+    const punkter = typeof byggAtgardslista === "function" ? byggAtgardslista() : [];
     return byggArsbokslut({
       ar: (/* @__PURE__ */ new Date()).getFullYear(),
       skapat: idagDatum(),
@@ -21840,7 +21840,7 @@ function byggArsbokslutNu() {
       },
       grupper: bokslutGrupper(lika.grupper, d, k),
       punkter: punkter.map((p) => ({ id: p.id, titel: p.titel, kategori: p.kategori, klar: klara.has(p.id) })),
-      basIntervall: getBasIntervals().map((b) => bokslutBasRad(d, b, k)).filter(Boolean),
+      basIntervall: hamtaBasIntervall().map((b) => bokslutBasRad(d, b, k)).filter(Boolean),
       bedomningar: _abBedomningarNu()
     });
   });
@@ -21867,7 +21867,7 @@ function arsjamforelse() {
 function _abHantelFigur(j, forraAr, nuAr) {
   const { rader } = hantelRader(j);
   if (!rader.length) return null;
-  const farg = { mot: PALETTE.semantic.ok, fran: PALETTE.semantic.varning, lika: PALETTE.semantic.neutral };
+  const farg = { mot: PALETT.semantic.ok, fran: PALETT.semantic.varning, lika: PALETT.semantic.neutral };
   const namnAv = (g) => g.bas ? `${g.yrke} (BAS ${g.bas})` : g.yrke;
   const antal = new Map([...j.grupper.kvar, ...j.grupper.nya, ...j.grupper.borta].map((g) => [namnAv(g), g.nKv != null && g.nMa != null ? g.nKv + g.nMa : null]));
   const fig = foreEfterFigur({
@@ -21901,7 +21901,7 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
   const { rader } = basHantelRader(j);
   if (!rader.length) return null;
   const fig = foreEfterFigur({
-    rader: rader.map((r) => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETTE.semantic.linje, markering: markeringFor(r.bas) })),
+    rader: rader.map((r) => ({ namn: r.namn, bas: r.bas, fore: r.fore, efter: r.efter, farg: PALETT.semantic.linje, markering: markeringFor(r.bas) })),
     kolumner: [String(forraAr), String(nuAr)],
     titel: `Medianlön per ${T.niva.en}`,
     format: "kr",
@@ -21971,7 +21971,7 @@ function _abGruppAntal(g, nuAr) {
   if (g.nKv == null || g.nMa == null) return null;
   return `${g.nKv} / ${g.nMa}${g.antalAr != null && g.antalAr !== nuAr ? ` (${g.antalAr})` : ""}`;
 }
-function renderArsjamforelse() {
+function ritaArsjamforelse() {
   const host = document.getElementById("arsjamforelse");
   if (!host) return;
   const forra = state.forraArsbokslut;
@@ -22022,12 +22022,12 @@ function renderArsjamforelse() {
 
 // src/app/81-basdossier.js
 function basdossierKandidater() {
-  return basdossierIntervall(getData(), getBasIntervals(), kTroskel());
+  return basdossierIntervall(hamtaData(), hamtaBasIntervall(), kTroskel());
 }
 var BD_STATUS_TEXT = { granska: "Värt att granska", folj: "Följ upp", balanserat: "Balanserat", ejbedomd: "Går ej att bedöma", liten: "Könsuppdelningen är för liten" };
 var BD_STATUS_KLASS = { granska: ["farg-granska", "sok"], folj: ["farg-varning", "oga"], balanserat: ["farg-ok", "bock"], ejbedomd: ["f-dampad", "streck"], liten: ["f-dampad", null] };
-function buildBasdossier(bas) {
-  const k = kTroskel(), d = getData();
+function byggBasdossier(bas) {
+  const k = kTroskel(), d = hamtaData();
   let likvardighet = null;
   try {
     likvardighet = likvardighetResultat();
@@ -22036,7 +22036,7 @@ function buildBasdossier(bas) {
   }
   return vymodellBasdossier(d, bas, {
     k,
-    basIntervall: getBasIntervals(),
+    basIntervall: hamtaBasIntervall(),
     golv: statGolv(),
     kInstalld: kInstalld(),
     referens: policyFor(null, bas),
@@ -22048,17 +22048,17 @@ function buildBasdossier(bas) {
   });
 }
 var _bdVald = null;
-function openBasdossier(bas, opener) {
+function oppnaBasdossier(bas, opener) {
   const modal = document.getElementById("basdossier-modal");
   if (!modal) return;
   ritaBasdossier(bas);
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal, opener || document.activeElement);
+  if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
 }
-function closeBasdossier() {
+function stangBasdossier() {
   const modal = document.getElementById("basdossier-modal");
   if (!modal || modal.style.display !== "flex") return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
 }
 function ritaBasdossier(bas) {
@@ -22079,17 +22079,17 @@ function ritaBasdossier(bas) {
   sel.innerHTML = kand.map((x) => `<option value="${esc(x.bas)}">BAS ${esc(x.bas)} (${svTal(x.n, 0)} personer)</option>`).join("");
   sel.value = kand.some((x) => x.bas === onskat) ? onskat : kand[0].bas;
   _bdVald = sel.value;
-  if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
-  const d = buildBasdossier(sel.value);
+  if (bas && bas !== sel.value) meddelaSkarmlasare(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
+  const d = byggBasdossier(sel.value);
   body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
   const modal = document.getElementById("basdossier-modal");
   if (modal && modal.style.display === "flex") {
-    const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
+    const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
     if (trap) {
       modal.removeEventListener("keydown", trap.handler);
-      _focusTraps.delete(modal);
+      _fokusfallor.delete(modal);
     }
-    trapFocus(modal, opener, { flyttaFokus: false });
+    fangaFokus(modal, opener, { flyttaFokus: false });
   }
 }
 var _bdKr = (v) => svKr(v);
@@ -22109,8 +22109,8 @@ function _bdRitaInnehall(d) {
     const [klass, ik] = BD_STATUS_KLASS[y.status];
     return `<span class="la-status ${klass}">${ik ? ikon(ik) : ""} ${BD_STATUS_TEXT[y.status]}</span>`;
   };
-  const yrkesrad = (y) => `<tr><td>${esc(y.aid)}</td><td>${esc(String(y.yrke).replace(/^\d+\s*/, "") || y.yrke)}</td><td class="t-tal">${y.tot} (${y.nKv}/${y.nMa})</td>` + (y.samlad ? `<td colspan="3" class="t-mitt">Gruppens median ${_bdKr(y.medTot)}</td>` : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivInline(y.kvotPct)}</td>`) + `<td>${status(y)}${y.ocksaI.length ? `<br><span class="gd-note">${esc(_bdHelaYrketNot(y))}</span>` : ""}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ""}</td></tr>`;
-  const yrken = (d.yrken.length ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${stor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join("")}</tbody></table></div>` : missing(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`)) + (d.yrkenUtelamnade.length ? kMaskNote(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : "") + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(", "))}.</p>` : "");
+  const yrkesrad = (y) => `<tr><td>${esc(y.aid)}</td><td>${esc(String(y.yrke).replace(/^\d+\s*/, "") || y.yrke)}</td><td class="t-tal">${y.tot} (${y.nKv}/${y.nMa})</td>` + (y.samlad ? `<td colspan="3" class="t-mitt">Gruppens median ${_bdKr(y.medTot)}</td>` : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivITalcell(y.kvotPct)}</td>`) + `<td>${status(y)}${y.ocksaI.length ? `<br><span class="gd-note">${esc(_bdHelaYrketNot(y))}</span>` : ""}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ""}</td></tr>`;
+  const yrken = (d.yrken.length ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${stor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join("")}</tbody></table></div>` : missing(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`)) + (d.yrkenUtelamnade.length ? kMaskNot(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : "") + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(", "))}.</p>` : "");
   const parLista = (lista) => `<ul class="gd-list">${lista.map((p) => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} (BAS ${esc(p.kvBas)}) mot ${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} (BAS ${esc(p.maBas)}): ${_bdKr(p.kvMedian)} mot ${_bdKr(p.maMedian)}, skillnad ${_bdKr(p.gapKr)} (${svPct(p.gapPct, 1)})</li>`).join("")}</ul>`;
   const parNot = d.par.utelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.par.utelamnade))}</p>` : "";
   const likvardigt = d.par.kandidat.length || d.par.hierarkiska.length ? (d.par.kandidat.length ? `<p><strong>Kandidatpar där ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad" })} ligger i intervallet</strong></p>${parLista(d.par.kandidat)}` : `<p>Inga kandidatpar där ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad" })} ligger i intervallet.</p>`) + (d.par.hierarkiska.length ? `<p><strong>Lägre krav, högre lön</strong> (${T.jamforelse.bf} ligger i ett lägre intervall)</p>${parLista(d.par.hierarkiska)}` : "") + parNot : parNot || missing(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${termFras(T.enhet, "en", { adjektiv: "kvinnodominerad" })} i intervallet ingår i en jämförelse av likvärdigt arbete.`);
@@ -22194,7 +22194,7 @@ var BD_BEDOMNING = `Bedömning: har skillnaderna mellan kvinnor och män i inter
 function _bdTextRader(d, val) {
   return [`${stor(T.niva.en)} ${d.bas}`, "", ...basdossierStycken(d, val).flatMap((s, i) => [...i ? [""] : [], s.rubrik, ...s.rader])];
 }
-function basdossierAsText(d) {
+function basdossierSomText(d) {
   const L = _bdTextRader(d);
   if (_kSanktNot()) L.push("", _kSanktNot());
   return L.join("\n");
@@ -22216,13 +22216,13 @@ function basdossierYrkesrader(d) {
 }
 var BD_YRKESKOLUMNER = ["AID", stor(T.namn.en), "Kvinnor / män", "Median kvinnor", "Median män", "Kvinnors median i % av mäns", "Status"];
 function basdossierUtelamnade() {
-  const d = getData(), kand = new Set(basdossierKandidater().map((x) => x.bas));
-  return getBasIntervals().filter((b) => !kand.has(b) && d.some((r) => r.bas === b && r.lon > 0));
+  const d = hamtaData(), kand = new Set(basdossierKandidater().map((x) => x.bas));
+  return hamtaBasIntervall().filter((b) => !kand.has(b) && d.some((r) => r.bas === b && r.lon > 0));
 }
 function basdossierText(bas) {
   return medExportLage(() => {
-    const d = buildBasdossier(bas);
-    return d ? basdossierAsText(d) : null;
+    const d = byggBasdossier(bas);
+    return d ? basdossierSomText(d) : null;
   });
 }
 function basdossierKnapp(bas, { text = "BAS-dossier", ikonEndast = false } = {}) {
@@ -22243,9 +22243,9 @@ function uppstartBasdossier() {
     const bas = btn.getAttribute("data-open-basdossier") || "";
     const iGrupp = btn.closest("#dossier-modal");
     if (iGrupp) {
-      closeGruppdossier();
-      openBasdossier(bas);
-    } else openBasdossier(bas, btn);
+      stangGruppdossier();
+      oppnaBasdossier(bas);
+    } else oppnaBasdossier(bas, btn);
   }, true);
   document.addEventListener("click", (e) => {
     const t = (
@@ -22254,25 +22254,25 @@ function uppstartBasdossier() {
     );
     if (!t.closest) return;
     if (t.closest("[data-basdossier-close]")) {
-      closeBasdossier();
+      stangBasdossier();
       return;
     }
     const grupp = t.closest("[data-bd-gruppdossier]");
     if (grupp) {
-      closeBasdossier();
-      openGruppdossier(grupp.getAttribute("data-bd-gruppdossier"));
+      stangBasdossier();
+      oppnaGruppdossier(grupp.getAttribute("data-bd-gruppdossier"));
       return;
     }
     const alder = t.closest("[data-bd-alder]");
     if (alder) {
       const bas = alder.getAttribute("data-bd-alder") || "";
-      closeBasdossier();
+      stangBasdossier();
       const sel = (
         /** @type {HTMLSelectElement|null} */
         document.getElementById("bas-select-kon")
       );
       if (sel && [...sel.options].some((o) => o.value === bas)) sel.value = bas;
-      navigateTo("kon");
+      navigeraTill("kon");
       return;
     }
     if (t.closest("#btn-basdossier-copy")) {
@@ -22282,17 +22282,17 @@ function uppstartBasdossier() {
       );
       const txt = sel ? basdossierText(sel.value) : null;
       if (!txt) {
-        announceToScreenReader(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`);
+        meddelaSkarmlasare(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`);
         return;
       }
-      const klart = () => announceToScreenReader("BAS-dossiern kopierad.");
+      const klart = () => meddelaSkarmlasare("BAS-dossiern kopierad.");
       if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {
       });
       else klart();
     }
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && document.getElementById("basdossier-modal")?.style.display === "flex") closeBasdossier();
+    if (e.key === "Escape" && document.getElementById("basdossier-modal")?.style.display === "flex") stangBasdossier();
   });
 }
 
@@ -22304,7 +22304,7 @@ function ritaLoneoversikt() {
   );
   tbody.innerHTML = "";
   const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
-  const vm = vymodellLoneoversikt(getData(), { bas: getBasIntervals(), k: kTroskel(), policyFor, statistik: state.statistik });
+  const vm = vymodellLoneoversikt(hamtaData(), { bas: hamtaBasIntervall(), k: kTroskel(), policyFor, statistik: state.statistik });
   const dossierBas = new Set(basdossierKandidater().map((x) => x.bas));
   vm.block.forEach(({ bas: b, referens: pol, rader, utelamnade }) => {
     const trH = document.createElement("tr");
@@ -22334,7 +22334,7 @@ function ritaLoneoversikt() {
     }
     if (utelamnade.length) {
       const trN = document.createElement("tr");
-      trN.innerHTML = `<td colspan="8">${kMaskNote(utelamnade, "grupp i detta BAS|grupper i detta BAS")}</td>`;
+      trN.innerHTML = `<td colspan="8">${kMaskNot(utelamnade, "grupp i detta BAS|grupper i detta BAS")}</td>`;
       tbody.appendChild(trN);
     }
   });
@@ -22344,14 +22344,14 @@ function ritaLoneoversikt() {
       const tr = btn.closest("tr");
       const payload = tr?._rapportRow;
       if (!payload) return;
-      _openEvidenceModal(_evidenceForRapportRow(payload));
+      _oppnaBevisruta(_bevisForRapportrad(payload));
     });
   });
   document.getElementById("rapport-table")?.classList.toggle("utan-jamforelse", !state.statistik.length);
   if (!/** @type {HTMLInputElement} */
   document.getElementById("search-rapport")?.value) _rapportTillampaHopfallning();
-  const base = buildBaseAudit();
-  setAudit("rapport", {
+  const base = byggGrundurval();
+  sattMetodik("rapport", {
     title: "Löneöversikt",
     ...base,
     usedInAnalysis: base.afterFilter,
@@ -22391,8 +22391,8 @@ function rapportGlomHopfallning() {
   _rapportHopfallda = null;
 }
 function uppstartLoneoversikt() {
-  document.getElementById("rapport-collapse-all")?.addEventListener("click", () => toggleAllGroups("rapport-table", true));
-  document.getElementById("rapport-expand-all")?.addEventListener("click", () => toggleAllGroups("rapport-table", false));
+  document.getElementById("rapport-collapse-all")?.addEventListener("click", () => vaxlaAllaGrupper("rapport-table", true));
+  document.getElementById("rapport-expand-all")?.addEventListener("click", () => vaxlaAllaGrupper("rapport-table", false));
   document.querySelector("#rapport-table tbody")?.addEventListener("click", (e) => {
     if (!/** @type {HTMLElement} */
     e.target.closest("tr.group-header")) return;
@@ -22425,23 +22425,23 @@ function uppstartLoneoversikt() {
     });
   });
   document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
-    const wb = tableToCleanBook("rapport-table", "Rapport");
+    const wb = tabellTillBok("rapport-table", "Rapport");
     if (wb) {
-      _appendMethodSheet(wb);
+      _laggTillMetodblad(wb);
       XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx");
-      _showExportSensitivityToast();
+      _visaExportvarning();
     }
   }));
 }
 
 // src/app/32-filinlasning.js
 var _RADNR = /* @__PURE__ */ Symbol("radnr");
-var dataInput = document.getElementById("file-input-data");
+var datafilFalt = document.getElementById("file-input-data");
 var dataStatus = (
   /** @type {HTMLElement} */
   document.getElementById("data-status")
 );
-function setupDrop(dropId, inputId) {
+function kopplaSlappyta(dropId, inputId) {
   const drop = document.getElementById(dropId);
   const inp = document.getElementById(inputId);
   if (!drop || !inp) return;
@@ -22470,7 +22470,7 @@ function setupDrop(dropId, inputId) {
     }
   });
 }
-function _renderSensitiveRejection(sensitive) {
+function _ritaKansligAvvisning(sensitive) {
   const list = sensitive.map((s) => `<li><code>${esc(s.col)}</code> – ${esc(s.reason)}</li>`).join("");
   dataStatus.innerHTML = `<div class="bak-varning-bg-gammal ram-v-3-kritisk rund-6 lh-1_55 marg-t-10 pad-14-16">
         <strong class="f-kritisk">${ikon("stopp")} Filen avvisad – innehåller känsliga personuppgifter</strong><br>
@@ -22480,7 +22480,7 @@ function _renderSensitiveRejection(sensitive) {
     </div>`;
   dataStatus.className = "status-msg";
 }
-function _deriveArbetsvarderingFromData() {
+function _harledArbetsvarderingUrData() {
   const byKey = /* @__PURE__ */ new Map();
   let count = 0;
   for (const r of state.data) {
@@ -22497,49 +22497,49 @@ function _deriveArbetsvarderingFromData() {
   if (state.likvardighet) state.likvardighet.result = null;
   return count;
 }
-function _afterDataLoaded() {
+function _efterInlastData() {
   if (state.isDemo) {
-    state.profile = { ...DEFAULT_PROFILE };
+    state.profile = { ...STANDARDPROFIL };
     if (typeof _hpRensaDemoSkal === "function") _hpRensaDemoSkal();
     if (state.policyKalla === "demo") {
       aterstallReferens();
-      resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
+      aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
     }
     if (state.statistikKalla === "demo") _tomStatistik();
     if (typeof synkaNamnFalt === "function") synkaNamnFalt();
     if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
-    applyProfileLabels();
-    if (typeof renderReferensKort === "function") renderReferensKort();
+    tillampaProfiletiketter();
+    if (typeof ritaReferensKort === "function") ritaReferensKort();
   }
   state.isDemo = false;
   state.demoStort = false;
   if (typeof _fcGlomKnappresultat === "function") _fcGlomKnappresultat();
-  if (typeof _renderDemoBanner === "function") _renderDemoBanner();
+  if (typeof _ritaDemoruta === "function") _ritaDemoruta();
   document.getElementById("dashboard-summary").style.display = "grid";
-  const poangCount = _deriveArbetsvarderingFromData();
+  const poangCount = _harledArbetsvarderingUrData();
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
-  unlockTabs();
+  lasUppFlikar();
   ritaNyckeltal();
-  populateSelects();
+  fyllValjare();
   ritaLoneoversikt();
-  const bas = getBasIntervals();
+  const bas = hamtaBasIntervall();
   dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
   if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
   dataStatus.className = "status-msg success";
-  markUploadLoaded("upload-cell-data", "Inläst");
+  markeraFilrutaInlast("upload-cell-data", "Inläst");
   ritaKravstatus();
-  const reg = runOLSRegression();
-  renderUnderlagetsKvalitet({ reg });
-  renderProcessTracker({ reg });
-  updateGdprBanner();
-  if (typeof _resetInactivityTimer === "function") _resetInactivityTimer();
-  renderConsistencyBanner();
-  renderOutliers();
-  renderDataValidationReport();
-  renderForhandskontroll();
-  syncDatakvalitetPanel({ reg });
-  announceToScreenReader(`Datafil inläst: ${state.data.length} personer i ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
-  hideLoading();
+  const reg = korOLSRegression();
+  ritaUnderlagetsKvalitet({ reg });
+  ritaKartlaggningensSteg({ reg });
+  uppdateraDataskyddsbesked();
+  if (typeof _aterstallInaktivitetstimer === "function") _aterstallInaktivitetstimer();
+  ritaKonsistenskontroll();
+  ritaExtremvarden();
+  ritaValideringsrapport();
+  ritaForhandskontroll();
+  synkaDatakvalitetspanel({ reg });
+  meddelaSkarmlasare(`Datafil inläst: ${state.data.length} personer i ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}. Analyserna är nu tillgängliga i menyn.`);
+  doljLaddning();
   const DEFER_NOTE = " · förbereder analyser i bakgrunden…";
   setTimeout(() => {
     if (dataStatus) dataStatus.textContent += DEFER_NOTE;
@@ -22547,8 +22547,8 @@ function _afterDataLoaded() {
       try {
         ritaLoneskillnadPerBas(lsBasVymodell());
         ritaAlderOchLon("__ALLA__");
-        computeBootstrapCI();
-        renderActionChecklist();
+        raknaBootstrapKI();
+        ritaAtgardslista();
       } finally {
         if (dataStatus) dataStatus.textContent = dataStatus.textContent.replace(DEFER_NOTE, "");
         visningNy();
@@ -22557,7 +22557,7 @@ function _afterDataLoaded() {
   }, 0);
 }
 var CSV_MALL_RUBRIKER = ["BAS-intervall", "AID", "Manadslon", "Alder", "Kon", "Poang"];
-function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
+function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
   if (typeof XLSX === "undefined") throw new Error("Excelfilen kan inte läsas: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
   const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
   const sheetName = wb.SheetNames[0];
@@ -22616,7 +22616,7 @@ function _xlsxToObjects(buf, synonymGroups, minHits = 2, profiler = []) {
   }
   return { headers, rows, sheet: sheetName };
 }
-function readTabularFile(file, synonymGroups, utfall, typ) {
+function lasTabellfil(file, synonymGroups, utfall, typ) {
   const callback = (res) => {
     try {
       utfall(res);
@@ -22647,7 +22647,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
         return;
       }
       if (fmt === "xlsx") {
-        const x = _xlsxToObjects(
+        const x = _xlsxTillObjekt(
           /** @type {ArrayBuffer} */
           buf,
           synonymGroups
@@ -22674,7 +22674,7 @@ function readTabularFile(file, synonymGroups, utfall, typ) {
   };
   reader.readAsArrayBuffer(file);
 }
-function loadStructureFile(file) {
+function lasInStrukturfil(file) {
   if (!file) return;
   const storlekFel = filStorlekFel(file.size, "lonefil");
   if (storlekFel) {
@@ -22683,7 +22683,7 @@ function loadStructureFile(file) {
     return;
   }
   const franOversikt = _aktivFlik() === "dashboard";
-  showLoading();
+  visaLaddning();
   _profilBesked = "";
   let capturedHeaders = null;
   const SAMPLE_SIZE = 50;
@@ -22744,7 +22744,7 @@ function loadStructureFile(file) {
       state.ansvarKolumn = kol ? { namn: kol } : null;
     }
     if (state.ansvarKolumn) ansvarVarden.push(row[state.ansvarKolumn.namn]);
-    const rec = extractMinimalRecord(row, rubriker);
+    const rec = minimeraLonerad(row, rubriker);
     const truncEx = (v) => {
       if (v == null) return "(tom)";
       const s = String(v).trim();
@@ -22826,8 +22826,8 @@ function loadStructureFile(file) {
     state.ansvarKolumn = tidigareAnsvarKolumn;
     state.importprofil = tidigareImportprofil;
     sampleBuffer = null;
-    hideLoading();
-    _renderSensitiveRejection(sensitive);
+    doljLaddning();
+    _ritaKansligAvvisning(sensitive);
   }
   function finishLoad(metaText) {
     sampleBuffer = null;
@@ -22858,8 +22858,8 @@ function loadStructureFile(file) {
       fkKon.clear();
       _fkSlappVantande();
       state.forhandskontroll = { ...fkEj, ejInlast: true };
-      renderForhandskontroll();
-      _resetInactivityTimer();
+      ritaForhandskontroll();
+      _aterstallInaktivitetstimer();
       state.ansvarKolumn = tidigareAnsvarKolumn;
       state.importprofil = tidigareImportprofil;
       _senasteInlasningLyckades = false;
@@ -22884,8 +22884,8 @@ function loadStructureFile(file) {
       state.dataAudit = parseStats;
       state._dataHeaders = capturedHeaders || [];
       _senasteInlasningLyckades = true;
-      _afterDataLoaded();
-      maybeShowColumnMapping();
+      _efterInlastData();
+      visaKolumnmappningOmBehov();
       if (dataStatus) {
         dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
         if (parseStats.alderFromBirthYear > 0) {
@@ -22906,7 +22906,7 @@ function loadStructureFile(file) {
     namnRaknare.clear();
     state.ansvarKolumn = tidigareAnsvarKolumn;
     state.importprofil = tidigareImportprofil;
-    hideLoading();
+    doljLaddning();
     dataStatus.textContent = msg;
     dataStatus.className = "status-msg";
   }
@@ -22938,7 +22938,7 @@ function loadStructureFile(file) {
     if (fmt === "xlsx") {
       let x;
       try {
-        x = _xlsxToObjects(
+        x = _xlsxTillObjekt(
           /** @type {ArrayBuffer} */
           buf,
           rubrikgrupper(),
@@ -23015,7 +23015,7 @@ function _beskedEfterOversikt(franOversikt) {
   }
   if (document.querySelector("#column-map-panel select.colmap-saknas")) _visaKolumnmappning();
 }
-var COLMAP_ROLES = [
+var KOLUMNMAPPNING_ROLLER = [
   { role: "bas", label: stor(T.niva.en), required: true },
   // Fältet är AID-etiketten; kolumnen i lönefilen heter ofta något annat, och tipset säger det.
   { role: "yrke", label: stor(T.enhet.en), required: true, tips: "i lönefilen ofta Yrke eller Befattning" },
@@ -23030,7 +23030,7 @@ function _kolumnval(headers) {
   const auto = gissaKolumnmappning(headers), eff = {};
   const profil = _importprofilFor(headers);
   const prof = profil ? profil.mappning : {};
-  COLMAP_ROLES.forEach(({ role }) => {
+  KOLUMNMAPPNING_ROLLER.forEach(({ role }) => {
     const vald = state.columnMap && state.columnMap[role];
     eff[role] = role === "ansvar" && state.columnMap?.ansvar === "" ? "" : (vald && headers.includes(vald) ? vald : "") || prof[role] || auto[role] || "";
   });
@@ -23096,10 +23096,10 @@ function _importprofilRuta(missing) {
 }
 function _kolumnerSomSaknas(headers) {
   const { eff } = _kolumnval(headers);
-  return COLMAP_ROLES.filter((r) => r.required && !eff[r.role]);
+  return KOLUMNMAPPNING_ROLLER.filter((r) => r.required && !eff[r.role]);
 }
 function _visaEjInlast(saknas, stats) {
-  hideLoading();
+  doljLaddning();
   const harUnderlag = state.data.length > 0;
   const skal = [];
   if (saknas.length) skal.push(`filens rubriker kändes inte igen (${saknas.map((m) => m.label).join(", ")} saknas)`);
@@ -23122,9 +23122,9 @@ function _visaEjInlast(saknas, stats) {
       badge.textContent = saknas.length ? "Kolumnmappning behövs" : "Inga rader lästa";
     }
   }
-  maybeShowColumnMapping();
+  visaKolumnmappningOmBehov();
   _visaKolumnmappning();
-  announceToScreenReader(dataStatus.textContent);
+  meddelaSkarmlasare(dataStatus.textContent);
 }
 function _visaKolumnmappning() {
   const panel = document.getElementById("column-map-panel");
@@ -23135,7 +23135,7 @@ function _visaKolumnmappning() {
   panel.scrollIntoView?.({ block: "center" });
   (panel.querySelector("select.colmap-saknas") || panel.querySelector("select"))?.focus?.({ preventScroll: true });
 }
-function maybeShowColumnMapping() {
+function visaKolumnmappningOmBehov() {
   const headers = state._dataHeaders || [];
   let panel = document.getElementById("column-map-panel");
   if (_fkVantar) {
@@ -23158,8 +23158,8 @@ function maybeShowColumnMapping() {
   const esc2 = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const { auto, eff, profil } = _kolumnval(headers);
   const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc2(importprofilText(profil))}</p>` : "";
-  const missing = COLMAP_ROLES.filter((r) => r.required && !eff[r.role]);
-  const selects = COLMAP_ROLES.map(({ role, label, required, tips }) => {
+  const missing = KOLUMNMAPPNING_ROLLER.filter((r) => r.required && !eff[r.role]);
+  const selects = KOLUMNMAPPNING_ROLLER.map(({ role, label, required, tips }) => {
     const opts = ['<option value="">— ingen —</option>'].concat(headers.map((h) => `<option value="${esc2(h)}"${eff[role] === h ? " selected" : ""}>${esc2(h)}</option>`)).join("");
     const saknas = required && !eff[role];
     return `<label class="faltkolumn">
@@ -23191,8 +23191,8 @@ function maybeShowColumnMapping() {
   );
   const visaBesked = (text) => {
     _profilBesked = text;
-    maybeShowColumnMapping();
-    announceToScreenReader(text);
+    visaKolumnmappningOmBehov();
+    meddelaSkarmlasare(text);
   };
   panel.querySelector("#colmap-spara-profil")?.addEventListener("click", () => {
     const r = sparaImportprofil(namnFalt()?.value);
@@ -23228,9 +23228,9 @@ function maybeShowColumnMapping() {
     });
     state.columnMap = Object.keys(map).length ? map : null;
     const f = state._lastStructureFile || /** @type {HTMLInputElement} */
-    dataInput.files && /** @type {HTMLInputElement} */
-    dataInput.files?.[0];
-    if (f) loadStructureFile(f);
+    datafilFalt.files && /** @type {HTMLInputElement} */
+    datafilFalt.files?.[0];
+    if (f) lasInStrukturfil(f);
     else {
       dataStatus.textContent = "Läs in filen igen för att tillämpa mappningen.";
       dataStatus.className = "status-msg";
@@ -23239,12 +23239,12 @@ function maybeShowColumnMapping() {
   panel.querySelector("#colmap-reset")?.addEventListener("click", () => {
     state.columnMap = null;
     const f = state._lastStructureFile || /** @type {HTMLInputElement} */
-    dataInput.files && /** @type {HTMLInputElement} */
-    dataInput.files?.[0];
-    if (f) loadStructureFile(f);
+    datafilFalt.files && /** @type {HTMLInputElement} */
+    datafilFalt.files?.[0];
+    if (f) lasInStrukturfil(f);
   });
 }
-function markUploadLoaded(cellId, badgeText) {
+function markeraFilrutaInlast(cellId, badgeText) {
   const cell = document.getElementById(cellId);
   if (!cell) return;
   cell.classList.remove("required", "optional");
@@ -23257,9 +23257,9 @@ function markUploadLoaded(cellId, badgeText) {
   }
   const inl = cell.querySelector(".upload-inlast");
   if (inl) inl.hidden = false;
-  renderFilrutor();
+  ritaFilrutor();
 }
-function resetUploadCell(cellId, originalClass, originalBadge) {
+function aterstallFilruta(cellId, originalClass, originalBadge) {
   const cell = document.getElementById(cellId);
   if (!cell) return;
   const tokens = String(originalClass || "").split(/\s+/).filter(Boolean);
@@ -23274,9 +23274,9 @@ function resetUploadCell(cellId, originalClass, originalBadge) {
   }
   const inl = cell.querySelector(".upload-inlast");
   if (inl) inl.hidden = true;
-  renderFilrutor();
+  ritaFilrutor();
 }
-function renderFilrutor() {
+function ritaFilrutor() {
   const fn = state.filnamn || {};
   const rad = (cellId, text) => {
     const el = document.querySelector(`#${cellId} .upload-filnamn`);
@@ -23296,10 +23296,10 @@ function renderFilrutor() {
   }
 }
 function uppstartFilinlasning() {
-  setupDrop("drop-area-data", "file-input-data");
-  setupDrop("drop-area-start", "file-input-data");
-  setupDrop("drop-area-policy", "file-input-policy");
-  setupDrop("drop-area-stat", "file-input-stat");
+  kopplaSlappyta("drop-area-data", "file-input-data");
+  kopplaSlappyta("drop-area-start", "file-input-data");
+  kopplaSlappyta("drop-area-policy", "file-input-policy");
+  kopplaSlappyta("drop-area-stat", "file-input-stat");
   document.getElementById("btn-download-csv-template")?.addEventListener("click", () => {
     const headers = CSV_MALL_RUBRIKER;
     const examples = [
@@ -23321,9 +23321,9 @@ function uppstartFilinlasning() {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-    announceToScreenReader("CSV-mall nedladdad: lonefil_mall.csv");
+    meddelaSkarmlasare("CSV-mall nedladdad: lonefil_mall.csv");
   });
-  dataInput.addEventListener("change", (e) => loadStructureFile(
+  datafilFalt.addEventListener("change", (e) => lasInStrukturfil(
     /** @type {HTMLInputElement} */
     e.target.files?.[0]
   ));
@@ -23338,7 +23338,7 @@ function uppstartFilinlasning() {
     )?.click();
   });
   document.getElementById("btn-kolumnmappning")?.addEventListener("click", () => {
-    if (typeof maybeShowColumnMapping === "function") maybeShowColumnMapping();
+    if (typeof visaKolumnmappningOmBehov === "function") visaKolumnmappningOmBehov();
     _visaKolumnmappning();
   });
   _kopplaNamnFalt("org-namn", sattOrgNamn);
@@ -23346,43 +23346,43 @@ function uppstartFilinlasning() {
 }
 
 // src/app/71-utforska-figur.js
-function _exploreAxisTitle(matt) {
+function _utforskaAxelrubrik(matt) {
   if (matt === "gap") return "Kvinnors median (% av männens)";
   if (matt === "andelKv") return "Andel kvinnor (%)";
   if (matt === "n") return "Antal";
   if (matt === "spridning") return "P90 / P10";
   return "Kronor/månad";
 }
-function _exploreFormat(matt) {
+function _utforskaTalformat(matt) {
   if (matt === "n") return "antal";
   if (matt === "spridning") return "tal2";
   if (matt === "gap" || matt === "andelKv") return void 0;
   return "kr";
 }
-var _exploreAxel = (matt, extra) => {
-  const f = _exploreFormat(matt);
-  return { skala: "linjar", titel: _exploreAxisTitle(matt), ...f ? { format: f } : {}, ...extra };
+var _utforskaAxel = (matt, extra) => {
+  const f = _utforskaTalformat(matt);
+  return { skala: "linjar", titel: _utforskaAxelrubrik(matt), ...f ? { format: f } : {}, ...extra };
 };
-function _explorerKonVyer(model) {
+function _utforskaKonVyer(model) {
   const { matt, delaKon } = model.spec, k = kTroskel();
   const konLiten = (n) => matt !== "n" && n < k;
   return delaKon ? [
-    { namn: "Kvinnor", kort: "Kvinna", farg: PALETTE.kon.kvinna, v: (c) => c.valueKv, n: (c) => c.nKv, liten: (c) => !!(c.liten || konLiten(c.nKv)) },
-    { namn: "Män", kort: "Man", farg: PALETTE.kon.man, v: (c) => c.valueMa, n: (c) => c.nMa, liten: (c) => !!(c.liten || konLiten(c.nMa)) }
-  ] : [{ namn: null, kort: null, farg: PALETTE.serie[0], v: (c) => c.value, n: (c) => c.n, liten: (c) => !!(c.liten || matt === "gap" && c.konLiten) }];
+    { namn: "Kvinnor", kort: "Kvinna", farg: PALETT.kon.kvinna, v: (c) => c.valueKv, n: (c) => c.nKv, liten: (c) => !!(c.liten || konLiten(c.nKv)) },
+    { namn: "Män", kort: "Man", farg: PALETT.kon.man, v: (c) => c.valueMa, n: (c) => c.nMa, liten: (c) => !!(c.liten || konLiten(c.nMa)) }
+  ] : [{ namn: null, kort: null, farg: PALETT.serie[0], v: (c) => c.value, n: (c) => c.n, liten: (c) => !!(c.liten || matt === "gap" && c.konLiten) }];
 }
-var _exploreHar = (v) => v != null && isFinite(v);
-function _exploreMarkering(model, rad) {
+var _utforskaHar = (v) => v != null && isFinite(v);
+function _utforskaMarkering(model, rad) {
   const dim = model.spec.rad;
   if (dim === "bas") return { markering: markeringFor(rad) };
   if (dim === "aidbas") {
-    const u = _explorerAidBas(rad);
+    const u = _utforskaAidBas(rad);
     return u ? { markering: markeringFor(u.bas, u.aid) } : {};
   }
   return {};
 }
-var _exploreBeskrivning = (model, form) => `${form}: ${EXPLORE_MATT_LABEL[model.spec.matt] || "valt mått"} per vald grupp. Samma värden finns i tabellen nedan.`;
-function explorerFigure(model, typ, rows) {
+var _utforskaBeskrivning = (model, form) => `${form}: ${UTFORSKA_MATT_ETIKETT[model.spec.matt] || "valt mått"} per vald grupp. Samma värden finns i tabellen nedan.`;
+function utforskaFigur(model, typ, rows) {
   switch (typ) {
     case "liggande":
       return _figStaplar(model, true);
@@ -23401,7 +23401,7 @@ function explorerFigure(model, typ, rows) {
     case "kvantilpunkter":
       return _figFordelning(model, rows, "kvantiler");
     case "heatmap":
-      return _figHeatmap(model);
+      return _figVarmekarta(model);
     case "grupperade":
       return _figGrupperade(model);
     case "staplade":
@@ -23414,93 +23414,93 @@ function explorerFigure(model, typ, rows) {
       return _figStaplar(model, false);
   }
 }
-var _EXPLORE_GAPSTATUS = GAP_STATUS;
+var _UTFORSKA_GAPSTATUS = GAP_STATUS;
 function _figStaplar(model, liggande) {
   const { matt, delaKon } = model.spec, celler = model.celler;
-  const vyer = _explorerKonVyer(model);
+  const vyer = _utforskaKonVyer(model);
   const medEtikett = celler.length * vyer.length <= 12;
   const punkt = (vy, c) => ({
     ...liggande ? { y: c.rad, x: vy.v(c) } : { x: c.rad, y: vy.v(c) },
     rad: c.rad,
     kol: null,
     n: vy.n(c),
-    ..._exploreMarkering(model, c.rad),
-    ...medEtikett ? { etikett: _exploreFmt(vy.v(c), matt) } : {},
+    ..._utforskaMarkering(model, c.rad),
+    ...medEtikett ? { etikett: _utforskaFormatera(vy.v(c), matt) } : {},
     ...vy.liten(c) ? { liten: true } : {}
   });
-  const tips = (serie) => (d) => [[d.rad], [serie, _exploreFmt(liggande ? d.x : d.y, matt)], ["Antal", String(d.n)]];
+  const tips = (serie) => (d) => [[d.rad], [serie, _utforskaFormatera(liggande ? d.x : d.y, matt)], ["Antal", String(d.n)]];
   const riktning2 = liggande ? { riktning: "liggande" } : {};
   let lager;
   if (!delaKon && matt === "gap") {
     const vy = vyer[0], status = (c) => gapStatus(Math.abs(100 - vy.v(c)), false);
-    lager = _EXPLORE_GAPSTATUS.map((s) => ({
+    lager = _UTFORSKA_GAPSTATUS.map((s) => ({
       marke: "punkt",
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       ...riktning2,
-      data: celler.filter((c) => _exploreHar(vy.v(c)) && status(c) === s).map((c) => punkt(vy, c)),
-      tips: tips(EXPLORE_MATT_LABEL[matt])
+      data: celler.filter((c) => _utforskaHar(vy.v(c)) && status(c) === s).map((c) => punkt(vy, c)),
+      tips: tips(UTFORSKA_MATT_ETIKETT[matt])
     }));
   } else {
     lager = vyer.map((vy) => {
-      const serie = vy.kort || EXPLORE_MATT_LABEL[matt];
-      return { marke: "stapel", serie, farg: vy.farg, ...riktning2, data: celler.filter((c) => _exploreHar(vy.v(c))).map((c) => punkt(vy, c)), tips: tips(serie) };
+      const serie = vy.kort || UTFORSKA_MATT_ETIKETT[matt];
+      return { marke: "stapel", serie, farg: vy.farg, ...riktning2, data: celler.filter((c) => _utforskaHar(vy.v(c))).map((c) => punkt(vy, c)), tips: tips(serie) };
     });
   }
   lager = lager.filter((l) => l.data.length);
   const kategori = { skala: "band", ordning: celler.map((c) => c.rad), ...liggande ? { etikettMax: 48 } : {} };
   return {
-    beskrivning: _exploreBeskrivning(model, liggande ? "Liggande staplar" : "Staplar"),
+    beskrivning: _utforskaBeskrivning(model, liggande ? "Liggande staplar" : "Staplar"),
     legend: delaKon || matt === "gap" ? void 0 : false,
-    x: liggande ? _exploreAxel(matt) : kategori,
-    y: liggande ? kategori : _exploreAxel(matt),
+    x: liggande ? _utforskaAxel(matt) : kategori,
+    y: liggande ? kategori : _utforskaAxel(matt),
     hojd: liggande ? Math.max(260, 110 + 24 * celler.length) : 420,
-    referens: matt === "gap" ? [{ ...liggande ? { x: 100 } : { y: 100 }, streck: "prickad", farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: "Lika lön" }] : [],
+    referens: matt === "gap" ? [{ ...liggande ? { x: 100 } : { y: 100 }, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: "Lika lön" }] : [],
     lager
   };
 }
-function _figHeatmap(model) {
+function _figVarmekarta(model) {
   const { matt, delaKon } = model.spec, celler = model.celler;
-  const vyer = _explorerKonVyer(model);
+  const vyer = _utforskaKonVyer(model);
   const kols = model.kolumnEtiketter, rader = model.radEtiketter;
-  const varden = (bara) => celler.flatMap((c) => vyer.filter((vy) => !bara || !vy.liten(c)).map((vy) => vy.v(c))).filter(_exploreHar);
+  const varden = (bara) => celler.flatMap((c) => vyer.filter((vy) => !bara || !vy.liten(c)).map((vy) => vy.v(c))).filter(_utforskaHar);
   const alla = varden(true).length ? varden(true) : varden(false);
   const zmin = alla.length ? Math.min(...alla) : 0, zmax = alla.length ? Math.max(...alla) : 1;
   const diverg = matt === "gap" || matt === "andelKv", mitt = matt === "gap" ? 100 : 50;
   const spann = diverg ? Math.max(Math.abs(zmax - mitt), Math.abs(mitt - zmin), 1) : 0;
-  const format = _exploreFormat(matt);
+  const format = _utforskaTalformat(matt);
   const visaText = kols.length * vyer.length <= 12 && rader.length <= 30;
   return {
-    beskrivning: _exploreBeskrivning(model, "Värmekarta"),
+    beskrivning: _utforskaBeskrivning(model, "Värmekarta"),
     legend: false,
     x: { skala: "band", ordning: kols },
     y: { skala: "band", ordning: rader, etikettMax: 44 },
     hojd: Math.max(260, 120 + 26 * rader.length),
     ...delaKon ? { paneler: vyer.map((vy) => vy.namn) } : {},
-    fargskala: diverg ? { typ: "divergerande", doman: [mitt - spann, mitt + spann], mitt, titel: _exploreAxisTitle(matt) } : { typ: "sekventiell", farger: PALETTE.sekventiellNeutral, doman: [zmin, zmax], titel: _exploreAxisTitle(matt), ...format ? { format } : {} },
+    fargskala: diverg ? { typ: "divergerande", doman: [mitt - spann, mitt + spann], mitt, titel: _utforskaAxelrubrik(matt) } : { typ: "sekventiell", farger: PALETT.sekventiellNeutral, doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...format ? { format } : {} },
     lager: vyer.map((vy) => {
-      const serie = vy.namn ? `${EXPLORE_MATT_LABEL[matt]} · ${vy.namn}` : EXPLORE_MATT_LABEL[matt];
+      const serie = vy.namn ? `${UTFORSKA_MATT_ETIKETT[matt]} · ${vy.namn}` : UTFORSKA_MATT_ETIKETT[matt];
       return {
         marke: "ruta",
         serie,
         visaText,
         ...vy.namn ? { panel: vy.namn } : {},
-        data: celler.filter((c) => _exploreHar(vy.v(c))).map((c) => {
+        data: celler.filter((c) => _utforskaHar(vy.v(c))).map((c) => {
           const liten = vy.liten(c);
           return {
             x: c.kol,
             y: c.rad,
             varde: vy.v(c),
-            text: _exploreFmt(vy.v(c), matt) + (liten ? ` (n = ${vy.n(c)})` : ""),
+            text: _utforskaFormatera(vy.v(c), matt) + (liten ? ` (n = ${vy.n(c)})` : ""),
             rad: c.rad,
             kol: c.kol,
             n: vy.n(c),
             ...liten ? { liten: true } : {}
           };
         }),
-        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _exploreFmt(d.varde, matt)], ["Antal", String(d.n)]]
+        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _utforskaFormatera(d.varde, matt)], ["Antal", String(d.n)]]
       };
     }).filter((l) => l.data.length)
   };
@@ -23508,26 +23508,26 @@ function _figHeatmap(model) {
 function _figGrupperade(model) {
   const { matt, delaKon } = model.spec, celler = model.celler;
   const byKey = new Map(celler.map((c) => [c.rad + "\0" + c.kol, c]));
-  const vyer = _explorerKonVyer(model);
+  const vyer = _utforskaKonVyer(model);
   const rader = model.radEtiketter.filter((r) => model.kolumnEtiketter.some((kl) => byKey.has(r + "\0" + kl)));
   if (model.kolumnEtiketter.length * vyer.length > 8 && rader.length >= 2 && rader.length <= 8) {
     const lagerM = rader.flatMap((r) => vyer.map((vy) => {
-      const serie = vy.kort || EXPLORE_MATT_LABEL[matt];
+      const serie = vy.kort || UTFORSKA_MATT_ETIKETT[matt];
       return {
         marke: "stapel",
         serie,
         farg: vy.farg,
         panel: r,
-        data: model.kolumnEtiketter.map((kl) => byKey.get(r + "\0" + kl)).filter((c) => c && _exploreHar(vy.v(c))).map((c) => ({ x: c.kol, y: vy.v(c), rad: c.rad, kol: c.kol, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
-        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _exploreFmt(d.y, matt)], ["Antal", String(d.n)]]
+        data: model.kolumnEtiketter.map((kl) => byKey.get(r + "\0" + kl)).filter((c) => c && _utforskaHar(vy.v(c))).map((c) => ({ x: c.kol, y: vy.v(c), rad: c.rad, kol: c.kol, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
+        tips: (d) => [[`${d.rad} · ${d.kol}`], [serie, _utforskaFormatera(d.y, matt)], ["Antal", String(d.n)]]
       };
     })).filter((l) => l.data.length);
     return {
-      beskrivning: _exploreBeskrivning(model, "Staplar i en panel per grupp"),
+      beskrivning: _utforskaBeskrivning(model, "Staplar i en panel per grupp"),
       legend: delaKon ? void 0 : false,
       paneler: rader.filter((r) => lagerM.some((l) => l.panel === r)),
       x: { skala: "band", ordning: model.kolumnEtiketter },
-      y: _exploreAxel(matt),
+      y: _utforskaAxel(matt),
       hojd: 440,
       lager: lagerM
     };
@@ -23537,16 +23537,16 @@ function _figGrupperade(model) {
     return {
       marke: "stapel",
       serie,
-      farg: PALETTE.serie[i % PALETTE.serie.length],
+      farg: PALETT.serie[i % PALETT.serie.length],
       ...vy.kort === "Man" ? { opacitet: 0.55, legend: false } : {},
-      data: model.radEtiketter.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && _exploreHar(vy.v(c))).map((c) => ({ x: c.rad, y: vy.v(c), rad: c.rad, kol: kl, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
-      tips: (d) => [[`${d.rad} · ${serie}`], [EXPLORE_MATT_LABEL[matt], _exploreFmt(d.y, matt)], ["Antal", String(d.n)]]
+      data: model.radEtiketter.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && _utforskaHar(vy.v(c))).map((c) => ({ x: c.rad, y: vy.v(c), rad: c.rad, kol: kl, n: vy.n(c), ...vy.liten(c) ? { liten: true } : {} })),
+      tips: (d) => [[`${d.rad} · ${serie}`], [UTFORSKA_MATT_ETIKETT[matt], _utforskaFormatera(d.y, matt)], ["Antal", String(d.n)]]
     };
   })).filter((l) => l.data.length);
   return {
-    beskrivning: _exploreBeskrivning(model, "Grupperade staplar") + (delaKon ? " Mörk stapel = kvinnor, ljus = män." : ""),
+    beskrivning: _utforskaBeskrivning(model, "Grupperade staplar") + (delaKon ? " Mörk stapel = kvinnor, ljus = män." : ""),
     x: { skala: "band", ordning: model.radEtiketter, ...delaKon ? { titel: "Mörk stapel = kvinnor, ljus = män" } : {} },
-    y: _exploreAxel(matt),
+    y: _utforskaAxel(matt),
     hojd: 440,
     lager
   };
@@ -23556,15 +23556,15 @@ function _figStaplade(model, somAndel) {
   const summa = /* @__PURE__ */ new Map();
   for (const c of model.celler) summa.set(c.rad, (summa.get(c.rad) || 0) + (c.n || 0));
   const rader = model.radEtiketter.filter((r) => summa.get(r) > 0);
-  const konFarg = model.spec.kolumn === "kon" ? { Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, "Övrig/okänd": PALETTE.semantic.neutral } : {};
+  const konFarg = model.spec.kolumn === "kon" ? { Kvinna: PALETT.kon.kvinna, Man: PALETT.kon.man, "Övrig/okänd": PALETT.semantic.neutral } : {};
   const lager = model.kolumnEtiketter.map((kl, i) => ({
     marke: "stapel",
     lage: "staplad",
     serie: kl,
-    farg: konFarg[kl] || PALETTE.serie[i % PALETTE.serie.length],
+    farg: konFarg[kl] || PALETT.serie[i % PALETT.serie.length],
     data: rader.map((r) => byKey.get(r + "\0" + kl)).filter((c) => c && c.n > 0).map((c) => {
       const andel = +(100 * c.n / summa.get(c.rad)).toFixed(1);
-      return { x: c.rad, y: somAndel ? andel : c.n, rad: c.rad, kol: kl, n: c.n, andel, ...c.liten ? { liten: true } : {}, ..._exploreMarkering(model, c.rad) };
+      return { x: c.rad, y: somAndel ? andel : c.n, rad: c.rad, kol: kl, n: c.n, andel, ...c.liten ? { liten: true } : {}, ..._utforskaMarkering(model, c.rad) };
     }),
     tips: (d) => [[`${d.rad} · ${kl}`], ["Antal", String(d.n)], ["Andel av raden", talformat(d.andel, "pct")]]
   })).filter((l) => l.data.length);
@@ -23578,23 +23578,23 @@ function _figStaplade(model, somAndel) {
 }
 function _figHantel(model) {
   const { matt } = model.spec, celler = model.celler;
-  const [kv, ma] = _explorerKonVyer({ spec: { ...model.spec, delaKon: true } });
+  const [kv, ma] = _utforskaKonVyer({ spec: { ...model.spec, delaKon: true } });
   const punkt = (vy) => ({
     marke: "punkt",
     serie: vy.kort,
     farg: vy.farg,
     storlek: 6,
-    data: celler.filter((c) => _exploreHar(vy.v(c))).map((c) => ({ y: c.rad, x: vy.v(c), rad: c.rad, kol: null, n: vy.n(c), ..._exploreMarkering(model, c.rad), ...vy.liten(c) ? { liten: true } : {} })),
-    tips: (d) => [[d.rad], [vy.kort, _exploreFmt(d.x, matt)], ["Antal", String(d.n)]]
+    data: celler.filter((c) => _utforskaHar(vy.v(c))).map((c) => ({ y: c.rad, x: vy.v(c), rad: c.rad, kol: null, n: vy.n(c), ..._utforskaMarkering(model, c.rad), ...vy.liten(c) ? { liten: true } : {} })),
+    tips: (d) => [[d.rad], [vy.kort, _utforskaFormatera(d.x, matt)], ["Antal", String(d.n)]]
   });
   const streck = {
     marke: "intervall",
     riktning: "liggande",
     serie: "Skillnad kvinnor–män",
-    farg: PALETTE.semantic.neutral,
+    farg: PALETT.semantic.neutral,
     tjocklek: 2,
     legend: false,
-    data: celler.filter((c) => _exploreHar(c.valueKv) && _exploreHar(c.valueMa)).map((c) => ({
+    data: celler.filter((c) => _utforskaHar(c.valueKv) && _utforskaHar(c.valueMa)).map((c) => ({
       y: c.rad,
       lag: Math.min(c.valueKv, c.valueMa),
       hog: Math.max(c.valueKv, c.valueMa),
@@ -23604,16 +23604,16 @@ function _figHantel(model) {
     }))
   };
   return {
-    beskrivning: _exploreBeskrivning(model, "Hanteldiagram, kvinnor och män"),
+    beskrivning: _utforskaBeskrivning(model, "Hanteldiagram, kvinnor och män"),
     paneler: "auto",
-    x: _exploreAxel(matt),
+    x: _utforskaAxel(matt),
     y: { skala: "band", ordning: celler.map((c) => c.rad), etikettMax: 48 },
     hojd: Math.max(260, 110 + 24 * celler.length),
     lager: [streck, punkt(kv), punkt(ma)].filter((l) => l.data.length)
   };
 }
 function _figBubbla(model) {
-  const pts = model.celler.filter((c) => c.nKv + c.nMa > 0 && _exploreHar(c.value));
+  const pts = model.celler.filter((c) => c.nKv + c.nMa > 0 && _utforskaHar(c.value));
   const maxN = Math.max(1, ...pts.map((c) => c.n));
   const kr2 = (v) => talformat(v, "kr");
   return {
@@ -23623,11 +23623,11 @@ function _figBubbla(model) {
     y: { skala: "linjar", titel: "Median, kronor/månad", format: "kr" },
     hojd: 460,
     // 40 % och 60 %: gränserna för könsdominans som § 3:10-analysen använder.
-    referens: [40, 60].map((x) => ({ x, streck: "prickad", farg: PALETTE.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
+    referens: [40, 60].map((x) => ({ x, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
     lager: [{
       marke: "punkt",
       serie: "Grupper",
-      farg: PALETTE.serie[0],
+      farg: PALETT.serie[0],
       opacitet: 0.8,
       kant: FARG.vit,
       data: pts.map((c) => ({
@@ -23637,7 +23637,7 @@ function _figBubbla(model) {
         rad: c.rad,
         kol: null,
         n: c.n,
-        ..._exploreMarkering(model, c.rad),
+        ..._utforskaMarkering(model, c.rad),
         ...c.liten ? { liten: true } : {}
       })),
       tips: (d) => [[d.rad], ["Andel kvinnor", talformat(d.x, "pct")], ["Median", kr2(d.y)], ["Antal", String(d.n)]]
@@ -23648,7 +23648,7 @@ function _figFordelning(model, rows, allaPunkter) {
   const { rad, urval, delaKon } = model.spec, k = kTroskel();
   const nyckel = _utNycklar(rows), person = iUrvalet(urval, nyckel);
   const gruppLiten = new Map(model.celler.map((c) => [c.rad, !!c.liten]));
-  const farg = { Alla: PALETTE.serie[0], Kvinna: PALETTE.kon.kvinna, Man: PALETTE.kon.man, "Övrig/okänd": PALETTE.semantic.neutral };
+  const farg = { Alla: PALETT.serie[0], Kvinna: PALETT.kon.kvinna, Man: PALETT.kon.man, "Övrig/okänd": PALETT.semantic.neutral };
   const hinkar = /* @__PURE__ */ new Map();
   const antal = /* @__PURE__ */ new Map();
   for (const r of rows) {
@@ -23687,10 +23687,10 @@ function _figFordelning(model, rows, allaPunkter) {
 }
 
 // src/app/72-utforska-urval.js
-var _urvalState = { lage: "alla", villkor: [] };
-var _gruppState = [];
+var _urvalTillstand = { lage: "alla", villkor: [] };
+var _gruppTillstand = [];
 var _urvalSignatur = null;
-var _urvalDataRef = null;
+var _urvalData = null;
 var _URVAL_OP_KATEGORI = [["enAv", "är en av"], ["inteEnAv", "är inte en av"]];
 var _URVAL_OP_TAL = [
   ["storre", "större än"],
@@ -23712,22 +23712,22 @@ function _urvalFranOpVarde(val) {
   return { op: val, inte: false };
 }
 var _kopia = (x) => JSON.parse(JSON.stringify(x));
-function explorerUrval() {
-  return { urval: _kopia(_urvalState), gruppVillkor: _kopia(_gruppState) };
+function utforskaUrval() {
+  return { urval: _kopia(_urvalTillstand), gruppVillkor: _kopia(_gruppTillstand) };
 }
-function explorerSattUrval(urval, gruppVillkor) {
-  _urvalState = {
+function utforskaSattUrval(urval, gruppVillkor) {
+  _urvalTillstand = {
     lage: urval && urval.lage === "nagot" ? "nagot" : "alla",
     villkor: _kopia(urval && urval.villkor || []).map((v) => ({ inte: false, ...v }))
   };
-  _gruppState = _kopia(gruppVillkor || []);
+  _gruppTillstand = _kopia(gruppVillkor || []);
   _urvalSignatur = null;
 }
-function explorerNollstallUrval() {
-  explorerSattUrval({ lage: "alla", villkor: [] }, []);
+function utforskaNollstallUrval() {
+  utforskaSattUrval({ lage: "alla", villkor: [] }, []);
 }
-function explorerUrvalSlappMinne() {
-  _urvalDataRef = null;
+function utforskaUrvalSlappMinne() {
+  _urvalData = null;
   _urvalSignatur = null;
 }
 function _urvalVarden(rows, dim) {
@@ -23740,10 +23740,10 @@ function _urvalVarden(rows, dim) {
   const vals = [...set];
   return dim === "alder" ? vals.sort(jamforAldersgrupp) : vals.sort((a, b) => a.localeCompare(b, "sv"));
 }
-function explorerRensaUrval(rows) {
+function utforskaRensaUrval(rows) {
   const falt = faltInfo();
   const cache = {};
-  for (const v of _urvalState.villkor) {
+  for (const v of _urvalTillstand.villkor) {
     const f = falt[v.falt];
     if (!f || f.typ !== "kategori" || !Array.isArray(v.varde)) continue;
     cache[f.dim] = cache[f.dim] || new Set(_urvalVarden(rows, f.dim));
@@ -23753,8 +23753,8 @@ function explorerRensaUrval(rows) {
 function _urvalSignaturFor() {
   return JSON.stringify([
     state.data && state.data.length,
-    _urvalState.villkor.map((v) => [v.falt, _urvalOpVarde(v)]),
-    _gruppState.map((g) => [g.matt, g.op])
+    _urvalTillstand.villkor.map((v) => [v.falt, _urvalOpVarde(v)]),
+    _gruppTillstand.map((g) => [g.matt, g.op])
   ]);
 }
 function _urvalTalHtml(attr, i, varde, enhet, etikett2) {
@@ -23803,34 +23803,34 @@ function _urvalFokusNyckel() {
 function _urvalUppdateraMarkorer() {
   document.querySelectorAll("#explore-urval-villkor .explore-urval-rad").forEach((rad, i) => {
     const m = rad.querySelector(".explore-urval-ofullst");
-    if (m) m.hidden = villkorAktivt(_urvalState.villkor[i]);
+    if (m) m.hidden = villkorAktivt(_urvalTillstand.villkor[i]);
     const antal = rad.querySelector("[data-urval-antal]");
-    if (antal) antal.textContent = `Välj värden (${(_urvalState.villkor[i].varde || []).length})`;
+    if (antal) antal.textContent = `Välj värden (${(_urvalTillstand.villkor[i].varde || []).length})`;
   });
   document.querySelectorAll("#explore-urval-grupp .explore-urval-rad").forEach((rad, i) => {
     const m = rad.querySelector(".explore-urval-ofullst");
-    if (m) m.hidden = gruppVillkorAktivt(_gruppState[i]);
+    if (m) m.hidden = gruppVillkorAktivt(_gruppTillstand[i]);
   });
 }
-function renderExplorerUrvalUi(rows) {
+function ritaUtforskaUrval(rows) {
   const lista = document.getElementById("explore-urval-villkor");
   const grupp = document.getElementById("explore-urval-grupp");
   const lage2 = document.getElementById("explore-urval-lage");
   const chips = document.getElementById("explore-filter-chips");
   if (!lista || !grupp) return;
-  if (lage2) lage2.value = _urvalState.lage;
+  if (lage2) lage2.value = _urvalTillstand.lage;
   const sig = _urvalSignaturFor();
-  if (sig !== _urvalSignatur || _urvalDataRef !== state.data) {
+  if (sig !== _urvalSignatur || _urvalData !== state.data) {
     _urvalSignatur = sig;
-    _urvalDataRef = state.data;
+    _urvalData = state.data;
     const fokus = _urvalFokusNyckel();
-    lista.innerHTML = _urvalState.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join("");
-    grupp.innerHTML = _gruppState.map((g, i) => _gruppRadHtml(g, i)).join("");
+    lista.innerHTML = _urvalTillstand.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join("");
+    grupp.innerHTML = _gruppTillstand.map((g, i) => _gruppRadHtml(g, i)).join("");
     if (fokus) document.querySelector(`#explore-urval ${fokus}`)?.focus();
   }
   _urvalUppdateraMarkorer();
   if (chips) {
-    const text = beskrivUrval(_urvalState, _gruppState);
+    const text = beskrivUrval(_urvalTillstand, _gruppTillstand);
     chips.innerHTML = text ? `<span class="explore-urval-text">${esc(text)}</span><button type="button" class="btn-table-tool" data-explore-clear>Rensa allt</button>` : "";
   }
 }
@@ -23856,11 +23856,11 @@ function uppstartUtforskaUrval() {
       /** @type {HTMLElement} */
       t.id === "explore-urval-lage"
     ) {
-      _urvalState.lage = /** @type {HTMLInputElement} */
+      _urvalTillstand.lage = /** @type {HTMLInputElement} */
       t.value === "nagot" ? "nagot" : "alla";
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-falt")) != null) {
-      const v = _urvalState.villkor[i];
+      const v = _urvalTillstand.villkor[i];
       const fore = falt[v.falt] && falt[v.falt].typ;
       v.falt = /** @type {HTMLInputElement} */
       t.value;
@@ -23871,7 +23871,7 @@ function uppstartUtforskaUrval() {
       }
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-op")) != null) {
-      const v = _urvalState.villkor[i];
+      const v = _urvalTillstand.villkor[i];
       const var_mellan = v.op === "mellan";
       Object.assign(v, _urvalFranOpVarde(
         /** @type {HTMLInputElement} */
@@ -23880,7 +23880,7 @@ function uppstartUtforskaUrval() {
       if (v.op === "mellan" !== var_mellan) v.varde = v.op === "mellan" ? [null, null] : null;
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-varde")) != null) {
-      const v = _urvalState.villkor[i];
+      const v = _urvalTillstand.villkor[i];
       const s = new Set(v.varde || []);
       if (
         /** @type {HTMLInputElement} */
@@ -23896,25 +23896,25 @@ function uppstartUtforskaUrval() {
       v.varde = [...s];
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-urval-tal")) != null) {
-      _urvalSattTal(_urvalState.villkor[i], t);
+      _urvalSattTal(_urvalTillstand.villkor[i], t);
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-gv-matt")) != null) {
-      _gruppState[i].matt = /** @type {HTMLInputElement} */
+      _gruppTillstand[i].matt = /** @type {HTMLInputElement} */
       t.value;
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-gv-op")) != null) {
-      const g = _gruppState[i];
+      const g = _gruppTillstand[i];
       const var_mellan = g.op === "mellan";
       g.op = /** @type {HTMLInputElement} */
       t.value;
       if (g.op === "mellan" !== var_mellan) g.varde = g.op === "mellan" ? [null, null] : null;
     } else if ((i = /** @type {HTMLElement} */
     t.getAttribute("data-gv-tal")) != null) {
-      _urvalSattTal(_gruppState[i], t);
+      _urvalSattTal(_gruppTillstand[i], t);
     } else {
       return;
     }
-    renderExplorer();
+    ritaUtforska();
   });
   _urvalPanel?.addEventListener("input", (e) => {
     const t = (
@@ -23940,9 +23940,9 @@ function uppstartUtforskaUrval() {
       e.target.closest("[data-urval-lagg-till]")
     );
     if (lagg) {
-      if (lagg.getAttribute("data-urval-lagg-till") === "grupp") _gruppState.push({ matt: "gap", op: "mindre", varde: null });
-      else _urvalState.villkor.push({ falt: "bas", op: "enAv", varde: [], inte: false });
-      renderExplorer();
+      if (lagg.getAttribute("data-urval-lagg-till") === "grupp") _gruppTillstand.push({ matt: "gap", op: "mindre", varde: null });
+      else _urvalTillstand.villkor.push({ falt: "bas", op: "enAv", varde: [], inte: false });
+      ritaUtforska();
       return;
     }
     const bort = (
@@ -23951,9 +23951,9 @@ function uppstartUtforskaUrval() {
     );
     if (bort) {
       const [typ, i] = (bort.getAttribute("data-urval-bort") || "").split(":");
-      if (typ === "grupp") _gruppState.splice(Number(i), 1);
-      else _urvalState.villkor.splice(Number(i), 1);
-      renderExplorer();
+      if (typ === "grupp") _gruppTillstand.splice(Number(i), 1);
+      else _urvalTillstand.villkor.splice(Number(i), 1);
+      ritaUtforska();
     }
   });
   _urvalPanel?.addEventListener("keydown", (e) => {
@@ -23971,7 +23971,7 @@ function uppstartUtforskaUrval() {
 }
 
 // src/app/70-utforska.js
-var EXPLORE_DIM_LABEL = {
+var UTFORSKA_DIM_ETIKETT = {
   bas: stor(T.niva.en),
   aid: stor(T.enhet.en),
   alder: "Åldersgrupp",
@@ -23982,7 +23982,7 @@ var EXPLORE_DIM_LABEL = {
   sektor: stor(T.huvudomrade.en),
   aidniva: "AID-mellannivå"
 };
-var EXPLORE_MATT_LABEL = {
+var UTFORSKA_MATT_ETIKETT = {
   median: "Median månadslön",
   medel: "Medellön",
   n: "Antal (n)",
@@ -23994,7 +23994,7 @@ var EXPLORE_MATT_LABEL = {
   andelKv: "Andel kvinnor (%)",
   gap: "Kvinnors median i % av mäns"
 };
-var EXPLORE_TYPER = {
+var UTFORSKA_TYPER = {
   staplar: { label: "Staplar", dim: 1 },
   liggande: { label: "Liggande staplar", dim: 1 },
   hantel: { label: "Hanteldiagram", dim: 1 },
@@ -24008,11 +24008,11 @@ var EXPLORE_TYPER = {
   grupperade: { label: "Grupperade staplar", dim: 2 },
   staplade: { label: "Staplade staplar", dim: 2 }
 };
-var EXPLORE_STAPLADE_MAX = 12;
-var EXPLORE_LASTA_MATT = /* @__PURE__ */ new Set(["bubbla", "lada", "punkter", "svarm", "regnmoln", "kvantilpunkter"]);
-var EXPLORE_KON_MATT = /* @__PURE__ */ new Set(["andelKv", "gap"]);
-var _explorerState = null;
-function _exploreFmt(v, matt) {
+var UTFORSKA_STAPLADE_MAX = 12;
+var UTFORSKA_LASTA_MATT = /* @__PURE__ */ new Set(["bubbla", "lada", "punkter", "svarm", "regnmoln", "kvantilpunkter"]);
+var UTFORSKA_KON_MATT = /* @__PURE__ */ new Set(["andelKv", "gap"]);
+var _utforskaTillstand = null;
+function _utforskaFormatera(v, matt) {
   if (v == null || !isFinite(v)) return "–";
   if (matt === "n") return Math.round(v).toLocaleString("sv-SE");
   if (matt === "gap" || matt === "andelKv") {
@@ -24021,36 +24021,36 @@ function _exploreFmt(v, matt) {
   if (matt === "spridning") return v.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return svKr(v);
 }
-function explorerTypSkal(typ, spec, urval) {
-  const def = EXPLORE_TYPER[typ];
+function utforskaTypSkal(typ, spec, urval) {
+  const def = UTFORSKA_TYPER[typ];
   if (!def) return "Okänd diagramtyp.";
   if (def.dim === 2 && !spec.kolumn) return "Kräver att Kolumner är vald.";
   if (def.dim === 1 && spec.kolumn) return "Fungerar bara med en dimension. Välj Kolumner: Ingen.";
   if (typ === "hantel") {
-    if (EXPLORE_KON_MATT.has(spec.matt)) return "Hanteldiagrammet jämför kvinnor och män och kräver ett lönemått.";
+    if (UTFORSKA_KON_MATT.has(spec.matt)) return "Hanteldiagrammet jämför kvinnor och män och kräver ett lönemått.";
     if (spec.rad === "kon") return "Raderna är redan kön. Välj en annan dimension.";
     if (urval && (!urval.nKv || !urval.nMa)) return "Urvalet innehåller bara ett kön.";
   }
   if (typ === "bubbla" && spec.rad === "kon") return "Andel kvinnor per kön säger ingenting. Välj en annan dimension.";
   return null;
 }
-function explorerAutoTyp(spec, urval) {
+function utforskaAutoTyp(spec, urval) {
   if (spec.kolumn) return "heatmap";
-  if (spec.delaKon && !EXPLORE_KON_MATT.has(spec.matt) && spec.matt !== "n" && spec.matt !== "spridning" && !explorerTypSkal("hantel", spec, urval)) return "hantel";
+  if (spec.delaKon && !UTFORSKA_KON_MATT.has(spec.matt) && spec.matt !== "n" && spec.matt !== "spridning" && !utforskaTypSkal("hantel", spec, urval)) return "hantel";
   return "staplar";
 }
-function explorerVisaSkal(spec, typ, urval) {
+function utforskaVisaSkal(spec, typ, urval) {
   if (typ === "hantel") return { tvingad: "kon", skal: "Hanteldiagrammet visar alltid kvinnor och män." };
   if (typ === "bubbla") return { tvingad: "helhet", skal: "Bubbeldiagrammet visar andel kvinnor och är alltid en helhet." };
   if (typ === "staplade") return { tvingad: "helhet", skal: "Staplade staplar visar sammansättningen som en helhet. Välj Kön som kolumn för att dela upp på kön." };
   if (spec.rad === "kon" || spec.kolumn === "kon") return { tvingad: "helhet", skal: "Kön är redan en av dimensionerna." };
-  if (EXPLORE_KON_MATT.has(spec.matt) && !EXPLORE_LASTA_MATT.has(typ)) {
+  if (UTFORSKA_KON_MATT.has(spec.matt) && !UTFORSKA_LASTA_MATT.has(typ)) {
     return { tvingad: "helhet", skal: "Måttet jämför redan könen." };
   }
   if (urval && (!urval.nKv || !urval.nMa)) return { tvingad: "helhet", skal: "Urvalet innehåller bara ett kön." };
   return { tvingad: null, skal: null };
 }
-function _explorerVisaOnskad() {
+function _utforskaVisaOnskad() {
   const sel = document.getElementById("explore-visa");
   if (!sel) return "helhet";
   if (sel.dataset.tvingad && /** @type {HTMLInputElement} */
@@ -24069,7 +24069,7 @@ function _utNycklar(rows) {
   }
   return m.f;
 }
-function _explorerUrvalAntal(rows, urval) {
+function _utforskaUrvalAntal(rows, urval) {
   const person = iUrvalet(urval, _utNycklar(rows));
   const ut = { n: 0, nKv: 0, nMa: 0 };
   for (const r of rows) {
@@ -24081,7 +24081,7 @@ function _explorerUrvalAntal(rows, urval) {
   }
   return ut;
 }
-function _explorerSpec() {
+function _utforskaSpec() {
   const val = (id) => (
     /** @type {HTMLInputElement} */
     document.getElementById(id)?.value
@@ -24091,14 +24091,14 @@ function _explorerSpec() {
     rad: val("explore-rad") || "bas",
     kolumn: kol && kol !== "ingen" ? kol : null,
     matt: val("explore-measure") || "median",
-    delaKon: _explorerVisaOnskad() === "kon",
+    delaKon: _utforskaVisaOnskad() === "kon",
     // Hopslagning av små AID-grupper — bara i Utforska, bara när raderna är AID (ADR-33).
     slaIhop: !!/** @type {HTMLInputElement} */
     document.getElementById("explore-sla-ihop")?.checked,
-    ...explorerUrval()
+    ...utforskaUrval()
   };
 }
-function _explorerSyncControls(spec, typ, valdTyp, urval) {
+function _utforskaSynkaKontroller(spec, typ, valdTyp, urval) {
   const typSel = document.getElementById("explore-typ");
   if (typSel) {
     for (
@@ -24107,24 +24107,24 @@ function _explorerSyncControls(spec, typ, valdTyp, urval) {
       typSel.options
     ) {
       if (opt.value === "auto") continue;
-      const skal = explorerTypSkal(opt.value, spec, urval);
+      const skal = utforskaTypSkal(opt.value, spec, urval);
       opt.disabled = !!skal;
       opt.title = skal || "";
     }
-    if (valdTyp !== "auto" && explorerTypSkal(valdTyp, spec, urval)) typSel.value = "auto";
+    if (valdTyp !== "auto" && utforskaTypSkal(valdTyp, spec, urval)) typSel.value = "auto";
   }
   const matt = document.getElementById("explore-measure");
   if (matt) {
-    const last = EXPLORE_LASTA_MATT.has(typ) || typ === "staplade";
+    const last = UTFORSKA_LASTA_MATT.has(typ) || typ === "staplade";
     matt.disabled = last;
-    matt.title = last ? `${EXPLORE_TYPER[typ].label} visar alltid ${typ === "bubbla" ? "median mot andel kvinnor" : typ === "staplade" ? "antal personer" : "lönerna själva"}. Måttvalet gäller inte.` : "";
+    matt.title = last ? `${UTFORSKA_TYPER[typ].label} visar alltid ${typ === "bubbla" ? "median mot andel kvinnor" : typ === "staplade" ? "antal personer" : "lönerna själva"}. Måttvalet gäller inte.` : "";
   }
   const stapelVisa = document.getElementById("explore-stapel-visa");
   if (stapelVisa && stapelVisa.parentElement) stapelVisa.parentElement.hidden = typ !== "staplade";
   const visa = document.getElementById("explore-visa");
   if (visa) {
-    const { tvingad, skal } = explorerVisaSkal(spec, typ, urval);
-    const onskad = _explorerVisaOnskad();
+    const { tvingad, skal } = utforskaVisaSkal(spec, typ, urval);
+    const onskad = _utforskaVisaOnskad();
     if (tvingad) {
       visa.dataset.tvingad = tvingad;
       visa.dataset.onskad = onskad;
@@ -24155,9 +24155,9 @@ function _explorerSyncControls(spec, typ, valdTyp, urval) {
   const slaIhop = document.getElementById("explore-sla-ihop-rad");
   if (slaIhop) slaIhop.hidden = spec.rad !== "aid";
 }
-function _explorerTitle(spec, typ) {
+function _utforskaRubrik(spec, typ) {
   const dim = (d) => {
-    const s = EXPLORE_DIM_LABEL[d];
+    const s = UTFORSKA_DIM_ETIKETT[d];
     return /^[A-ZÅÄÖ]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1);
   };
   let fras;
@@ -24168,13 +24168,13 @@ function _explorerTitle(spec, typ) {
   if (typ === "staplade") return `${/** @type {HTMLInputElement} */
   document.getElementById("explore-stapel-visa")?.value === "andel" ? "Andel" : "Antal"} ${fras}`;
   if (typ === "punkter" || typ === "svarm" || typ === "regnmoln") return `Löner ${fras}`;
-  return `${EXPLORE_MATT_LABEL[spec.matt]} ${fras}`;
+  return `${UTFORSKA_MATT_ETIKETT[spec.matt]} ${fras}`;
 }
-function explorerSmaIExport() {
+function utforskaSmaIExport() {
   return state.paketLas.smaGrupperIExport !== false && !!/** @type {HTMLInputElement} */
   document.getElementById("explore-inkludera-sma")?.checked;
 }
-function explorerSynkaSmaLas() {
+function utforskaSynkaSmaLas() {
   const tillatet = state.paketLas.smaGrupperIExport !== false;
   const rad = document.getElementById("explore-inkludera-sma-rad");
   if (rad) rad.hidden = !tillatet;
@@ -24183,12 +24183,12 @@ function explorerSynkaSmaLas() {
   const not = document.getElementById("explore-sma-last");
   if (not) not.hidden = tillatet;
 }
-function renderExplorer() {
+function ritaUtforska() {
   if (!document.getElementById("explore-rad")) return;
-  explorerSynkaSmaLas();
-  const rows = getData();
-  explorerRensaUrval(rows);
-  const spec = _explorerSpec();
+  utforskaSynkaSmaLas();
+  const rows = hamtaData();
+  utforskaRensaUrval(rows);
+  const spec = _utforskaSpec();
   if (spec.kolumn === spec.rad) {
     document.getElementById("explore-kolumn").value = "ingen";
     spec.kolumn = null;
@@ -24197,62 +24197,62 @@ function renderExplorer() {
     /** @type {HTMLInputElement} */
     document.getElementById("explore-typ")?.value || "auto"
   );
-  const probe = { urval: _explorerUrvalAntal(rows, spec.urval) };
-  let typ = valdTyp === "auto" ? explorerAutoTyp(spec, probe.urval) : valdTyp;
-  if (explorerTypSkal(typ, spec, probe.urval)) typ = explorerAutoTyp(spec, probe.urval);
+  const probe = { urval: _utforskaUrvalAntal(rows, spec.urval) };
+  let typ = valdTyp === "auto" ? utforskaAutoTyp(spec, probe.urval) : valdTyp;
+  if (utforskaTypSkal(typ, spec, probe.urval)) typ = utforskaAutoTyp(spec, probe.urval);
   const lasTyp = valdTyp === "auto" && typ === "hantel" ? "staplar" : typ;
   const modelSpec = { ...spec };
-  if (EXPLORE_LASTA_MATT.has(typ)) modelSpec.matt = "median";
+  if (UTFORSKA_LASTA_MATT.has(typ)) modelSpec.matt = "median";
   if (typ === "staplade") modelSpec.matt = "n";
-  const { tvingad } = explorerVisaSkal(spec, lasTyp, probe.urval);
+  const { tvingad } = utforskaVisaSkal(spec, lasTyp, probe.urval);
   modelSpec.delaKon = tvingad ? tvingad === "kon" : spec.delaKon;
   const model = pivottabell(rows, modelSpec, { k: kTroskel() });
-  _explorerSyncControls(spec, lasTyp, valdTyp, model.urval);
-  renderExplorerUrvalUi(rows);
-  _explorerState = { model, typ, rows };
+  _utforskaSynkaKontroller(spec, lasTyp, valdTyp, model.urval);
+  ritaUtforskaUrval(rows);
+  _utforskaTillstand = { model, typ, rows };
   const titleEl = document.getElementById("explore-chart-title");
-  if (titleEl) titleEl.textContent = _explorerTitle(model.spec, typ);
-  const inkl = explorerSmaIExport();
-  _renderExplorerChart(model, typ, rows);
-  _renderExplorerTable(model, typ, inkl);
-  _renderExplorerNote(model);
+  if (titleEl) titleEl.textContent = _utforskaRubrik(model.spec, typ);
+  const inkl = utforskaSmaIExport();
+  _ritaUtforskaDiagram(model, typ, rows);
+  _ritaUtforskaTabell(model, typ, inkl);
+  _ritaUtforskaNot(model);
 }
-function _renderExplorerChart(model, typ, rows) {
+function _ritaUtforskaDiagram(model, typ, rows) {
   const el = document.getElementById("chart-explore");
   if (!el) return;
   const exportMeny = el.parentElement && el.parentElement.querySelector(":scope > .chart-export");
   const utanVarden = model.celler.every((c) => c.value == null && c.valueKv == null && c.valueMa == null);
-  if (!model.urval.n || !model.celler.length || utanVarden && !EXPLORE_LASTA_MATT.has(typ)) {
+  if (!model.urval.n || !model.celler.length || utanVarden && !UTFORSKA_LASTA_MATT.has(typ)) {
     if (exportMeny) exportMeny.hidden = true;
     rensaFigur(el);
     el.innerHTML = !model.urval.n ? '<p class="explore-tom">Inga personer matchar urvalet. <button type="button" class="btn-table-tool" data-explore-clear>Rensa urvalet</button></p>' : '<p class="explore-tom">Inga grupper att visa för valt urval.</p>';
     return;
   }
-  if (typ === "staplade" && model.kolumnEtiketter.length > EXPLORE_STAPLADE_MAX) {
+  if (typ === "staplade" && model.kolumnEtiketter.length > UTFORSKA_STAPLADE_MAX) {
     if (exportMeny) exportMeny.hidden = true;
     rensaFigur(el);
-    el.innerHTML = `<p class="explore-tom">Kolumnerna har ${model.kolumnEtiketter.length} värden — för många för staplade staplar (högst ${EXPLORE_STAPLADE_MAX}). Välj en annan kolumn eller diagramtypen Värmekarta.</p>`;
+    el.innerHTML = `<p class="explore-tom">Kolumnerna har ${model.kolumnEtiketter.length} värden — för många för staplade staplar (högst ${UTFORSKA_STAPLADE_MAX}). Välj en annan kolumn eller diagramtypen Värmekarta.</p>`;
     return;
   }
   if (exportMeny) exportMeny.hidden = false;
-  ritaFigur(el, explorerFigure(model, typ, rows), {
+  ritaFigur(el, utforskaFigur(model, typ, rows), {
     visaSma: true,
-    exportMedSma: () => explorerSmaIExport(),
+    exportMedSma: () => utforskaSmaIExport(),
     exportBeskrivning: beskrivUrval(model.spec.urval, model.spec.gruppVillkor),
-    vidKlick: (d) => explorerHandleClick(d),
+    vidKlick: (d) => utforskaVidKlick(d),
     tomtext: "Inga grupper att visa för valt urval."
   });
-  el.parentElement.classList.toggle("explore-klickbar", explorerKanFordjupa(model.spec));
+  el.parentElement.classList.toggle("explore-klickbar", utforskaKanFordjupa(model.spec));
 }
-function _renderExplorerTable(model, typ, inkl) {
+function _ritaUtforskaTabell(model, typ, inkl) {
   const table = document.getElementById("explore-table");
   if (!table) return;
   const { spec } = model;
   const k = kTroskel();
-  const num = (v, m, attr = "") => `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? "" : v}"${attr}>${_exploreFmt(v, m)}</td>`;
+  const num = (v, m, attr = "") => `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? "" : v}"${attr}>${_utforskaFormatera(v, m)}</td>`;
   const nTd = (c) => `<td class="t-hoger" data-sort-value="${c.n}">${c.n.toLocaleString("sv-SE")} (${c.nKv}/${c.nMa})</td>`;
   const trAttr = (c) => (c.liten ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : "") + (c.liten && !inkl ? " data-export-utelamna" : "");
-  const dimLbl = esc(EXPLORE_DIM_LABEL[spec.rad]);
+  const dimLbl = esc(UTFORSKA_DIM_ETIKETT[spec.rad]);
   let head, body;
   if (spec.kolumn) {
     const byKey = new Map(model.celler.map((c) => [c.rad + "\0" + c.kol, c]));
@@ -24266,21 +24266,21 @@ function _renderExplorerTable(model, typ, inkl) {
     const radUte = new Set(inkl ? [] : model.radEtiketter.filter((r) => !kolumner.some((d) => synlig(cellAv(r, d), d))));
     const kolUte = new Set(inkl ? [] : kolumner.filter((d) => !model.radEtiketter.some((r) => synlig(cellAv(r, d), d))));
     const ute = (d) => kolUte.has(d) ? " data-export-utelamna" : "";
-    head = `<tr><th>${dimLbl} \\ ${esc(EXPLORE_DIM_LABEL[spec.kolumn])}</th>` + kolumner.map((d) => `<th class="t-hoger"${ute(d)}>${esc(d.rubrik)}</th>`).join("") + "</tr>";
+    head = `<tr><th>${dimLbl} \\ ${esc(UTFORSKA_DIM_ETIKETT[spec.kolumn])}</th>` + kolumner.map((d) => `<th class="t-hoger"${ute(d)}>${esc(d.rubrik)}</th>`).join("") + "</tr>";
     body = model.radEtiketter.map((r) => `<tr${radUte.has(r) ? " data-export-utelamna" : ""}><td>${esc(r)}</td>` + kolumner.map((d) => {
       const c = cellAv(r, d);
       if (!c) return `<td class="t-hoger" data-sort-value=""${inkl ? "" : " data-export-tom"}${ute(d)}>–</td>`;
       const v = d.v(c), sm = liten(c, d);
       const bara_kon_liten = !c.liten && spec.matt === "n";
       const attr = (sm ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : "") + (!inkl && (sm && !bara_kon_liten || spec.matt === "gap" && c.konLiten) ? " data-export-tom" : "") + ute(d);
-      const cell = _exploreFmt(v, spec.matt) + (sm ? ` (n = ${d.n(c)})` : "");
+      const cell = _utforskaFormatera(v, spec.matt) + (sm ? ` (n = ${d.n(c)})` : "");
       return `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? "" : v}"${attr}>${esc(cell)}</td>`;
     }).join("") + "</tr>").join("");
   } else if (spec.delaKon) {
     const tom2 = (n) => n < k && !inkl && spec.matt !== "n" ? " data-export-tom" : "";
     head = `<tr><th>${dimLbl}</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">n (K/M)</th></tr>`;
     body = model.celler.map((c) => `<tr${trAttr(c)}><td>${esc(c.rad)}</td>${num(c.valueKv, spec.matt, tom2(c.nKv))}${num(c.valueMa, spec.matt, tom2(c.nMa))}${nTd(c)}</tr>`).join("");
-  } else if (EXPLORE_LASTA_MATT.has(typ)) {
+  } else if (UTFORSKA_LASTA_MATT.has(typ)) {
     head = `<tr><th>${dimLbl}</th><th class="t-hoger">Median månadslön</th><th class="t-hoger">Andel kvinnor</th><th class="t-hoger">n (K/M)</th></tr>`;
     body = model.celler.map((c) => {
       const andel = c.nKv + c.nMa ? c.nKv / (c.nKv + c.nMa) * 100 : null;
@@ -24288,7 +24288,7 @@ function _renderExplorerTable(model, typ, inkl) {
     }).join("");
   } else {
     const gapTom = (c) => spec.matt === "gap" && c.konLiten && !inkl ? " data-export-tom" : "";
-    head = `<tr><th>${dimLbl}</th><th class="t-hoger">${esc(EXPLORE_MATT_LABEL[spec.matt])}</th><th class="t-hoger">n (K/M)</th></tr>`;
+    head = `<tr><th>${dimLbl}</th><th class="t-hoger">${esc(UTFORSKA_MATT_ETIKETT[spec.matt])}</th><th class="t-hoger">n (K/M)</th></tr>`;
     body = model.celler.map((c) => `<tr${trAttr(c)}><td>${esc(c.rad)}</td>${num(c.value, spec.matt, gapTom(c))}${nTd(c)}</tr>`).join("");
   }
   const tom = !model.celler.length;
@@ -24299,13 +24299,13 @@ function _renderExplorerTable(model, typ, inkl) {
   table.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
   table.setAttribute("data-export-beskrivning", beskrivUrval(spec.urval, spec.gruppVillkor));
   table._sortInit = false;
-  if (typeof enableTableSort === "function") enableTableSort("explore-table");
-  if (typeof addTableExportTools === "function") addTableExportTools("explore-table", "utforska");
+  if (typeof aktiveraSortering === "function") aktiveraSortering("explore-table");
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg("explore-table", "utforska");
   const container = table.closest(".table-container");
   const verktyg = container && container.previousElementSibling;
   if (verktyg && verktyg.classList.contains("table-tools")) verktyg.hidden = tom;
 }
-function _renderExplorerNote(model, extra) {
+function _ritaUtforskaNot(model, extra) {
   const el = document.getElementById("explore-note");
   if (!el) return;
   const antal = model.celler.filter((c) => c.liten).length;
@@ -24316,7 +24316,7 @@ function _renderExplorerNote(model, extra) {
   const dolda = model.dolda ? `${model.dolda} ${model.dolda === 1 ? "grupp döljs" : "grupper döljs"} av gruppvillkoren.` : "";
   el.textContent = [sma, kon, dolda, extra || ""].filter(Boolean).join(" ");
 }
-function _explorerUrvalEttVarde(spec, dim) {
+function _utforskaUrvalEttVarde(spec, dim) {
   const u = spec.urval;
   if (!u || u.lage === "nagot") return null;
   const falt = dim === "alder" ? "aldersgrupp" : dim;
@@ -24325,60 +24325,60 @@ function _explorerUrvalEttVarde(spec, dim) {
   const v = pa[0];
   return v.op === "enAv" && !v.inte && v.varde.length === 1 ? v.varde[0] : null;
 }
-function _explorerAidBas(etikett2) {
+function _utforskaAidBas(etikett2) {
   const m = String(etikett2 ?? "").match(/^(.*) · BAS (.*)$/);
   return m ? { aid: m[1], bas: m[2] } : null;
 }
-function _explorerMalVarde(spec, dim, radEtikett, kolEtikett) {
+function _utforskaMalVarde(spec, dim, radEtikett, kolEtikett) {
   if (spec.rad === dim) return radEtikett;
   if (spec.kolumn === dim) return kolEtikett;
-  const ur = spec.rad === "aidbas" && _explorerAidBas(radEtikett) || spec.kolumn === "aidbas" && _explorerAidBas(kolEtikett);
+  const ur = spec.rad === "aidbas" && _utforskaAidBas(radEtikett) || spec.kolumn === "aidbas" && _utforskaAidBas(kolEtikett);
   if (ur) return ur[dim];
-  return _explorerUrvalEttVarde(spec, dim);
+  return _utforskaUrvalEttVarde(spec, dim);
 }
-function explorerKanFordjupa(spec) {
-  return spec.rad === "aidbas" || spec.kolumn === "aidbas" || ["bas", "aid"].some((d) => spec.rad === d || spec.kolumn === d || _explorerUrvalEttVarde(spec, d) != null);
+function utforskaKanFordjupa(spec) {
+  return spec.rad === "aidbas" || spec.kolumn === "aidbas" || ["bas", "aid"].some((d) => spec.rad === d || spec.kolumn === d || _utforskaUrvalEttVarde(spec, d) != null);
 }
-function explorerDossierTarget(spec, radEtikett, kolEtikett) {
-  const bas = _explorerMalVarde(spec, "bas", radEtikett, kolEtikett);
-  const aidEtikett = _explorerMalVarde(spec, "aid", radEtikett, kolEtikett);
+function utforskaDossiermal(spec, radEtikett, kolEtikett) {
+  const bas = _utforskaMalVarde(spec, "bas", radEtikett, kolEtikett);
+  const aidEtikett = _utforskaMalVarde(spec, "aid", radEtikett, kolEtikett);
   if (bas == null && aidEtikett == null) return null;
   if (aidEtikett != null && String(aidEtikett).startsWith("Övriga i ")) return { hopslagen: true };
   const aid = aidEtikett == null ? null : aidAvYrke(aidEtikett);
-  const traff = gruppdossierCandidates().find((c) => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
+  const traff = gruppdossierKandidater().find((c) => (bas == null || c.bas === bas) && (aid == null || c.aid === aid));
   return traff ? { key: traff.key } : { saknas: true };
 }
-function explorerHandleClick(d) {
-  if (!d || !_explorerState) return;
+function utforskaVidKlick(d) {
+  if (!d || !_utforskaTillstand) return;
   const radEtikett = d.rad != null ? d.rad : d.nyckel != null ? d.nyckel : d.x;
   if (radEtikett == null) return;
-  const mal = explorerDossierTarget(_explorerState.model.spec, radEtikett, d.kol ?? null);
+  const mal = utforskaDossiermal(_utforskaTillstand.model.spec, radEtikett, d.kol ?? null);
   if (!mal) return;
   if (mal.hopslagen) {
-    _renderExplorerNote(
-      _explorerState.model,
+    _ritaUtforskaNot(
+      _utforskaTillstand.model,
       `Gruppen har slagits ihop av flera små ${T.enhet.fl} och har därför ingen gruppdossier. Stäng av "Slå ihop små ${T.enhet.fl} till nästa AID-nivå" för att se dem var för sig.`
     );
     return;
   }
   if (mal.saknas) {
-    _renderExplorerNote(
-      _explorerState.model,
+    _ritaUtforskaNot(
+      _utforskaTillstand.model,
       `Gruppen har ingen gruppdossier, eftersom dossiern bara finns för grupper med minst ${kTroskel()} ${personOrd(kTroskel())}.`
     );
     return;
   }
-  openGruppdossier(mal.key);
+  oppnaGruppdossier(mal.key);
 }
-function explorerSlappMinne() {
-  _explorerState = null;
+function utforskaSlappMinne() {
+  _utforskaTillstand = null;
   const gd = document.getElementById("chart-explore");
   if (gd) rensaFigur(gd);
-  if (typeof explorerUrvalSlappMinne === "function") explorerUrvalSlappMinne();
+  if (typeof utforskaUrvalSlappMinne === "function") utforskaUrvalSlappMinne();
   if (typeof nedborrningGlom === "function") nedborrningGlom();
 }
-var _exploreVy = document.getElementById("view-utforska");
-function explorerTillRapport() {
+var _utforskaVy = document.getElementById("view-utforska");
+function utforskaTillRapport() {
   const namnEl = (
     /** @type {HTMLInputElement} */
     document.getElementById("explore-rapport-namn")
@@ -24392,11 +24392,11 @@ function explorerTillRapport() {
       status.className = `status-msg${ok ? " success" : ""}`;
     }
   };
-  if (!getData().length) {
+  if (!hamtaData().length) {
     satt("Läs in en lönefil först.", false);
     return null;
   }
-  const spec = _explorerSpec();
+  const spec = _utforskaSpec();
   const recept = nyttRecept(spec, { namn: namnEl ? namnEl.value : "", upprepa: perBas ? "bas" : null });
   if (!recept) {
     satt("Vyn går inte att spara som tabell.", false);
@@ -24409,11 +24409,11 @@ function explorerTillRapport() {
   state.rapportTabeller = [...state.rapportTabeller || [], recept];
   if (namnEl) namnEl.value = "";
   satt(`Tillagd: ${recept.namn} (${state.rapportTabeller.length} ${state.rapportTabeller.length === 1 ? "egen tabell" : "egna tabeller"}). Ordningen ändras under Exportera.`, true);
-  if (typeof announceToScreenReader === "function") announceToScreenReader(`Tabellen ${recept.namn} är tillagd i rapporten.`);
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(`Tabellen ${recept.namn} är tillagd i rapporten.`);
   return recept;
 }
 function uppstartUtforska() {
-  _exploreVy?.addEventListener("change", (e) => {
+  _utforskaVy?.addEventListener("change", (e) => {
     const t = (
       /** @type {HTMLElement} */
       e.target
@@ -24430,22 +24430,22 @@ function uppstartUtforska() {
     ].includes(
       /** @type {HTMLElement} */
       t.id
-    )) renderExplorer();
+    )) ritaUtforska();
   });
-  _exploreVy?.addEventListener("click", (e) => {
+  _utforskaVy?.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.closest("[data-explore-clear]")
     ) {
-      explorerNollstallUrval();
-      renderExplorer();
+      utforskaNollstallUrval();
+      ritaUtforska();
     }
   });
-  document.getElementById("btn-explore-till-rapport")?.addEventListener("click", explorerTillRapport);
+  document.getElementById("btn-explore-till-rapport")?.addEventListener("click", utforskaTillRapport);
   document.getElementById("explore-rapport-namn")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      explorerTillRapport();
+      utforskaTillRapport();
     }
   });
 }
@@ -24469,7 +24469,7 @@ function _synkaKostnadsfalt() {
   const man = document.getElementById("prio-cost-months");
   if (po) po.value = state.costSettings.poPct;
   if (man) man.value = String(state.costSettings.months);
-  if (typeof _readCostSettings === "function") _readCostSettings();
+  if (typeof _lasKostnadsinstallningar === "function") _lasKostnadsinstallningar();
 }
 function _tomStatistik() {
   state.statistik = [];
@@ -24478,7 +24478,7 @@ function _tomStatistik() {
   state.statistikHasP10 = false;
   state.statistikHasP90 = false;
   state.statistikHasKon = false;
-  if (typeof resetUploadCell === "function") resetUploadCell("upload-cell-stat", "upload-cell optional", "Valfritt");
+  if (typeof aterstallFilruta === "function") aterstallFilruta("upload-cell-stat", "upload-cell optional", "Valfritt");
   const ss = document.getElementById("stat-status");
   if (ss) {
     ss.textContent = "";
@@ -24492,7 +24492,7 @@ function _paketStatus(text, ok) {
   el.textContent = text;
   el.className = "status-msg" + (ok ? " success" : "");
 }
-function renderPaketInfo() {
+function ritaPaketinfo() {
   const el = document.getElementById("paket-info");
   if (!el) return;
   const p = state.paket;
@@ -24543,10 +24543,10 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
   if (state.paket) {
     state.costSettings = { ...state.costSettings, poPct: COST_DEFAULTS.poPct, months: COST_DEFAULTS.months };
     state.paketLas = _paketLasStandard();
-    setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
+    sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
     if (!referens && state.policyKalla === "paket") {
       aterstallReferens();
-      if (typeof resetUploadCell === "function") resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
+      if (typeof aterstallFilruta === "function") aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
       const ps = document.getElementById("policy-status");
       if (ps) {
         ps.textContent = "";
@@ -24555,7 +24555,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     }
     if (!statistik && state.statistikKalla === "paket") _tomStatistik();
   }
-  state.profile = { ...DEFAULT_PROFILE, ...profil };
+  state.profile = { ...STANDARDPROFIL, ...profil };
   if (installningar.poPct != null) state.costSettings.poPct = installningar.poPct;
   if (installningar.months != null) state.costSettings.months = installningar.months;
   if (installningar.jamforelse != null && state.likvardighet) {
@@ -24567,8 +24567,8 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
     smaGrupperIExport: installningar.smaGrupperIExport !== false
   };
-  if (installningar.inaktivitetMin != null) setInactivityTimeout(installningar.inaktivitetMin);
-  if (typeof explorerSynkaSmaLas === "function") explorerSynkaSmaLas();
+  if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
+  if (typeof utforskaSynkaSmaLas === "function") utforskaSynkaSmaLas();
   let kAndrad = false;
   if (installningar.kTroskel != null) {
     const kr2 = sattKTroskel(installningar.kTroskel, { rita: false });
@@ -24592,7 +24592,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     state.policyNamn = referens.namn || "Lönepolitiskt ställningstagande";
     state.policyKortnamn = referens.kortnamn || state.policyNamn;
     state.policyKalla = "paket";
-    markUploadLoaded("upload-cell-policy", "Från organisationspaketet");
+    markeraFilrutaInlast("upload-cell-policy", "Från organisationspaketet");
     const ps = document.getElementById("policy-status");
     if (ps) {
       ps.textContent = `${state.policy.length} rader ur organisationspaketet`;
@@ -24606,7 +24606,7 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     state.statistikHasP10 = state.statistik.some((x) => x.p10 > 0);
     state.statistikHasP90 = state.statistik.some((x) => x.p90 > 0);
     state.statistikHasKon = state.statistik.some((x) => x.andelKv != null);
-    markUploadLoaded("upload-cell-stat", "Från organisationspaketet");
+    markeraFilrutaInlast("upload-cell-stat", "Från organisationspaketet");
     const ss = document.getElementById("stat-status");
     if (ss) {
       ss.textContent = `${state.statistik.length} poster ur organisationspaketet`;
@@ -24614,27 +24614,27 @@ Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under $
     }
   }
   synkaJamforelseFlik();
-  applyProfileLabels();
+  tillampaProfiletiketter();
   synkaNamnFalt();
   _synkaOrgTyp();
   _synkaKostnadsfalt();
   _fyllPaketFormular();
-  invalidateStatCaches();
-  renderReferensKort();
-  renderPaketInfo();
-  renderConsistencyBanner();
+  tomStatistikcacher();
+  ritaReferensKort();
+  ritaPaketinfo();
+  ritaKonsistenskontroll();
   if (kAndrad && state.data.length) {
-    populateSelects();
-    _renderaOmAllaFlikar();
+    fyllValjare();
+    _ritaOmAllaFlikar();
   } else {
     ritaKravstatus();
-    renderActionChecklist();
-    renderProcessTracker();
-    refreshCurrentTab();
+    ritaAtgardslista();
+    ritaKartlaggningensSteg();
+    uppdateraAktivFlik();
   }
   const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.` + (varningar.length ? " " + varningar.join(" ") : "");
   _paketStatus(meddelande, true);
-  announceToScreenReader(meddelande);
+  meddelaSkarmlasare(meddelande);
   return { ok: true, meddelande };
 }
 var _paketFalt = (id) => document.getElementById(id);
@@ -24658,8 +24658,8 @@ function _fyllPaketFormular() {
   satt("paket-org", p ? p.organisation : "");
   satt("paket-utgivare", p ? p.utgivare : "");
   satt("paket-ar", p ? p.avserAr : (/* @__PURE__ */ new Date()).getFullYear());
-  satt("paket-jamf-namn", state.profile.benchmarkLabel === DEFAULT_PROFILE.benchmarkLabel ? "" : state.profile.benchmarkLabel);
-  satt("paket-jamf-genitiv", state.profile.benchmarkLabelGenitive === DEFAULT_PROFILE.benchmarkLabelGenitive ? "" : state.profile.benchmarkLabelGenitive);
+  satt("paket-jamf-namn", state.profile.benchmarkLabel === STANDARDPROFIL.benchmarkLabel ? "" : state.profile.benchmarkLabel);
+  satt("paket-jamf-genitiv", state.profile.benchmarkLabelGenitive === STANDARDPROFIL.benchmarkLabelGenitive ? "" : state.profile.benchmarkLabelGenitive);
   satt("paket-ref-namn", harReferens() ? state.policyNamn || "" : "");
   satt("paket-ref-kortnamn", harReferens() && state.policyKortnamn !== state.policyNamn ? state.policyKortnamn || "" : "");
   satt("paket-po", state.costSettings.poPct);
@@ -24876,7 +24876,7 @@ async function skapaOrganisationsfil() {
   const annanVersion = r.version && r.version !== APP_VERSION;
   const meddelande = `Organisationsfilen ${filnamn} är nedladdad: paketet från ${paket.organisation.namn} (${skapad}) inbakat i verktyget version ${r.version || "okänd"}.` + (annanVersion ? ` Observera: den utpekade filen är en annan version än den som körs (${APP_VERSION}).` : "") + " Ingen lönedata ingår.";
   _organisationsfilStatus(meddelande, true);
-  announceToScreenReader(meddelande);
+  meddelaSkarmlasare(meddelande);
   return { ok: true, meddelande };
 }
 function lasInInbakatPaket() {
@@ -24912,7 +24912,7 @@ function visaInbakatPaket() {
   const inst = obj?.installningar || {};
   content.innerHTML = `<dl>${rad("Organisation", obj?.organisation?.namn)}${rad("Utgivare", obj?.utgivare)}${rad("Skapat", obj?.skapat)}${rad("Avser år", obj?.avserAr)}${rad("Inbakat", inb.skapad)}${rad("Verktygets version", inb.verktygsversion)}${rad("Verktygsfilens kontrollsumma (SHA-256)", inb.verktygssha)}${rad("Benämning på jämförelsestatistiken", obj?.profil?.jamforelseNamn)}${rad("Minsta gruppstorlek", inst.kTroskel)}${rad("Lägsta tillåtna minsta gruppstorlek", inst.kTroskelLagst)}${rad("Rensning vid inaktivitet (min)", inst.inaktivitetMin)}${rad("Rensningstiden låst", inst.inaktivitetLast ? "ja" : null)}${rad("Små grupper i exporten från Tabeller och egna vyer", inst.smaGrupperIExport === false ? "inte tillåtet" : null)}${rad(`${stor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === "mansdominerade" ? "bara mansdominerade" : inst.jamforelse === "alla" ? "alla som inte är kvinnodominerade" : null)}</dl>${rad("Egna tabeller i rapporten", obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? "eget" : null)}` + tabell(obj?.referens?.namn || "Ställningstagandet", obj?.referens?.rader, ["aid", "bas", "p10", "med", "p90"]) + tabell(obj?.statistik?.namn || "Jämförelsestatistiken", obj?.statistik?.rader, ["aid", "bas", "median", "p10", "p90", "andelKv"]) + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
 function laddaNerInbakatPaket() {
   const inb = state.paketInbakat;
@@ -24928,12 +24928,12 @@ function laddaNerInbakatPaket() {
   a.download = _paketFilnamn(inb.organisation);
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-  announceToScreenReader(`Paketet sparat: ${a.download}`);
+  meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
 }
-var _stangPaketModal = () => {
+var _stangPaketDialog = () => {
   const m = document.getElementById("paket-modal");
   if (m) {
-    if (typeof releaseFocus === "function") releaseFocus(m);
+    if (typeof slappFokus === "function") slappFokus(m);
     m.style.display = "none";
   }
 };
@@ -24969,7 +24969,7 @@ function uppstartOrganisationspaket() {
     a.download = _paketFilnamn(paket.organisation.namn);
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-    announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
+    meddelaSkarmlasare(`Organisationspaket sparat: ${a.download}`);
   });
   document.getElementById("file-input-verktygsfil")?.addEventListener("change", (e) => {
     const inp = (
@@ -24991,12 +24991,12 @@ function uppstartOrganisationspaket() {
     if (t.closest("#btn-paket-visa")) visaInbakatPaket();
     else if (t.closest("#btn-paket-ladda-ner")) laddaNerInbakatPaket();
   });
-  document.getElementById("paket-modal-close")?.addEventListener("click", _stangPaketModal);
+  document.getElementById("paket-modal-close")?.addEventListener("click", _stangPaketDialog);
   document.getElementById("paket-modal")?.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.classList.contains("glossary-backdrop")
-    ) _stangPaketModal();
+    ) _stangPaketDialog();
   });
   document.getElementById("file-input-paket")?.addEventListener("change", (e) => {
     const file = (
@@ -25024,22 +25024,22 @@ function uppstartOrganisationspaket() {
       e.target.value
     );
     if (!state.data.length) return;
-    invalidateStatCaches();
+    tomStatistikcacher();
     ritaKravstatus();
-    renderActionChecklist();
-    refreshCurrentTab();
+    ritaAtgardslista();
+    uppdateraAktivFlik();
   });
   _fyllPaketFormular();
   _synkaOrgTyp();
 }
 
 // src/app/20-demodata-diagnostik.js
-function runDiagnostics() {
-  const reg = runOLSRegression();
+function korDiagnostik() {
+  const reg = korOLSRegression();
   return demodiagnostik(
-    { rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: getBasIntervals().length },
+    { rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },
     // regressionen skickas vidare (ADR-17)
-    { nivaFl: T.niva.fl, underlagEtikett: (s) => UK_ETIKETT[s], pText: _formatPValue }
+    { nivaFl: T.niva.fl, underlagEtikett: (s) => UK_ETIKETT[s], pText: _formateraPVarde }
   );
 }
 var DEMO_ORGANISATION = "Exempelkommunen";
@@ -25058,9 +25058,9 @@ function _lasInDemoReferens({ stort = false } = {}) {
   state.profile = { ...state.profile, name: DEMO_ORGANISATION, orgTyp: "kommun" };
   if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
   if (typeof synkaNamnFalt === "function") synkaNamnFalt();
-  if (typeof applyProfileLabels === "function") applyProfileLabels();
-  if (typeof renderReferensKort === "function") renderReferensKort();
-  if (typeof markUploadLoaded === "function") markUploadLoaded("upload-cell-policy", "Demo");
+  if (typeof tillampaProfiletiketter === "function") tillampaProfiletiketter();
+  if (typeof ritaReferensKort === "function") ritaReferensKort();
+  if (typeof markeraFilrutaInlast === "function") markeraFilrutaInlast("upload-cell-policy", "Demo");
 }
 function _lasInDemoStatistik({ stort = false } = {}) {
   if (stort) {
@@ -25068,7 +25068,7 @@ function _lasInDemoStatistik({ stort = false } = {}) {
     state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
     state.statistikKalla = "demo";
     state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
-    markUploadLoaded("upload-cell-stat", "Demo");
+    markeraFilrutaInlast("upload-cell-stat", "Demo");
   } else if (state.statistikKalla === "demo") {
     _tomStatistik();
   }
@@ -25086,7 +25086,7 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   state.data.forEach((r, i) => {
     r.radnr = i + 2;
   });
-  _deriveArbetsvarderingFromData();
+  _harledArbetsvarderingUrData();
   state.ansvarKolumn = { namn: "Ansvarskod (demo)", godkand: true, giltiga: 1 };
   state.isDemo = true;
   state.demoStort = stort;
@@ -25094,26 +25094,26 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   _lasInDemoStatistik({ stort });
   state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
   document.getElementById("dashboard-summary").style.display = "grid";
-  unlockTabs();
+  lasUppFlikar();
   ritaNyckeltal();
-  populateSelects();
+  fyllValjare();
   ritaLoneoversikt();
   ritaLoneskillnadPerBas(lsBasVymodell());
   ritaAlderOchLon("__ALLA__");
   ritaKravstatus();
-  const reg = runOLSRegression();
-  renderUnderlagetsKvalitet({ reg });
-  updateGdprBanner();
-  renderConsistencyBanner();
-  renderActionChecklist({ reg });
-  renderOutliers();
-  renderDataValidationReport();
-  syncDatakvalitetPanel({ reg });
-  renderProcessTracker({ reg });
+  const reg = korOLSRegression();
+  ritaUnderlagetsKvalitet({ reg });
+  uppdateraDataskyddsbesked();
+  ritaKonsistenskontroll();
+  ritaAtgardslista({ reg });
+  ritaExtremvarden();
+  ritaValideringsrapport();
+  synkaDatakvalitetspanel({ reg });
+  ritaKartlaggningensSteg({ reg });
   const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
   document.getElementById("data-status").innerHTML = `<span class="farg-info">${ikon("sok")} ${status}</span>`;
   document.getElementById("data-status").className = "status-msg";
-  markUploadLoaded("upload-cell-data", "Testdata");
+  markeraFilrutaInlast("upload-cell-data", "Testdata");
   if (typeof _hpDemoSkal === "function") try {
     _hpDemoSkal();
   } catch (e) {
@@ -25122,9 +25122,9 @@ function _lasInDemounderlag(skapa, { stort = false } = {}) {
   visningNy();
   return true;
 }
-function loadDemoData() {
+function lasInDemodata() {
   if (!_lasInDemounderlag(genereraDemodata)) return;
-  const tests = runDiagnostics();
+  const tests = korDiagnostik();
   const passCount = tests.filter((t) => t.pass).length;
   const failCount = tests.length - passCount;
   const wrap = (
@@ -25153,9 +25153,9 @@ function loadDemoData() {
             <p class="text-dampad-xs marg-t-8">Testdatan har 200 personer fördelade jämnt mellan kön. Modellen är konstruerad så att en oförklarad skillnad på ungefär −3 % ska finnas kvar efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger en större rå löneskillnad som delvis förklaras av strukturen.</p>
         </div>
     `;
-  _renderDemoBanner();
+  _ritaDemoruta();
 }
-function _renderDemoBanner() {
+function _ritaDemoruta() {
   const b = document.getElementById("demo-mode-banner");
   if (b) b.style.display = state.isDemo ? "flex" : "none";
   const storlek = document.getElementById("demo-mode-storlek");
@@ -25168,15 +25168,15 @@ function _renderDemoBanner() {
   if (hub) hub.style.display = state.data.length ? "block" : "none";
 }
 function uppstartDemodataDiagnostik() {
-  ["btn-test-load", "first-run-demo-link", "upload-demo-litet"].forEach((id) => document.getElementById(id)?.addEventListener("click", loadDemoData));
-  document.getElementById("btn-exit-demo")?.addEventListener("click", clearAllData);
+  ["btn-test-load", "first-run-demo-link", "upload-demo-litet"].forEach((id) => document.getElementById(id)?.addEventListener("click", lasInDemodata));
+  document.getElementById("btn-exit-demo")?.addEventListener("click", rensaAllData);
 }
 
 // src/app/26-rensning.js
-function clearAllData() {
+function rensaAllData() {
   const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length || _fkVantar || state.forhandskontroll;
   if (!hasAny) {
-    announceToScreenReader("Ingen data finns i minnet att rensa.");
+    meddelaSkarmlasare("Ingen data finns i minnet att rensa.");
     return;
   }
   if (!confirm("All data försvinner ur minnet: lönefilen, ställningstagandet, statistiken, scenarierna och ögonblicksbilden. Det går inte att ångra. Vill du fortsätta?")) return;
@@ -25226,20 +25226,20 @@ function _rensaAllData({ inbakat = true } = {}) {
   visningNy();
   if (typeof laMinneSlapp === "function") laMinneSlapp();
   _rmMinneSlapp();
-  if (typeof explorerSlappMinne === "function") explorerSlappMinne();
+  if (typeof utforskaSlappMinne === "function") utforskaSlappMinne();
   if (typeof rapportGlomHopfallning === "function") rapportGlomHopfallning();
   state.data = [];
   state.kTroskel = K_STANDARD;
   state.lonemanad = "";
   const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
   state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
-  if (inaktivitetVarLast && typeof setInactivityTimeout === "function") setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
-  if (typeof explorerSynkaSmaLas === "function") explorerSynkaSmaLas();
+  if (inaktivitetVarLast && typeof sattInaktivitetstid === "function") sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
+  if (typeof utforskaSynkaSmaLas === "function") utforskaSynkaSmaLas();
   if (typeof _kVisaFel === "function") _kVisaFel("");
   if (typeof _synkaKTroskel === "function") _synkaKTroskel();
   aterstallReferens();
-  state.profile = { ...DEFAULT_PROFILE };
-  if (typeof applyProfileLabels === "function") applyProfileLabels();
+  state.profile = { ...STANDARDPROFIL };
+  if (typeof tillampaProfiletiketter === "function") tillampaProfiletiketter();
   if (typeof _synkaOrgTyp === "function") _synkaOrgTyp();
   if (typeof synkaNamnFalt === "function") synkaNamnFalt();
   if (typeof jamforelseSattVal === "function") jamforelseSattVal({ bas: "", sektor: "" });
@@ -25251,7 +25251,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   state.statistikHasP90 = false;
   state.statistikHasKon = false;
   if (typeof _synkaKostnadsfalt === "function") _synkaKostnadsfalt();
-  if (typeof renderPaketInfo === "function") renderPaketInfo();
+  if (typeof ritaPaketinfo === "function") ritaPaketinfo();
   const paketStatus = document.getElementById("paket-status");
   if (paketStatus) {
     paketStatus.textContent = "";
@@ -25261,7 +25261,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   state.statistik = [];
   state.isDemo = false;
   state.demoStort = false;
-  if (typeof _renderDemoBanner === "function") _renderDemoBanner();
+  if (typeof _ritaDemoruta === "function") _ritaDemoruta();
   state._interntFel = [];
   if (typeof visaInterntFel === "function") visaInterntFel();
   state._lastStructureFile = null;
@@ -25328,7 +25328,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof bes8Stod === "function") bes8Stod();
   state.handlingsplan = {};
   if (typeof _hpDemoNycklar !== "undefined") _hpDemoNycklar.clear();
-  if (typeof renderHandlingsplanSeed === "function") renderHandlingsplanSeed();
+  if (typeof ritaHandlingsplan === "function") ritaHandlingsplan();
   const utkast = document.getElementById("struktur-narrative");
   if (utkast) {
     utkast.value = "";
@@ -25360,16 +25360,16 @@ function _rensaAllData({ inbakat = true } = {}) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = "";
   });
-  if (typeof resetUploadCell === "function") {
-    resetUploadCell("upload-cell-data", "upload-cell required", "Obligatorisk");
-    resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
-    resetUploadCell("upload-cell-stat", "upload-cell optional", "Valfritt");
-    resetUploadCell("upload-cell-history", "upload-cell optional", "Valfritt");
+  if (typeof aterstallFilruta === "function") {
+    aterstallFilruta("upload-cell-data", "upload-cell required", "Obligatorisk");
+    aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
+    aterstallFilruta("upload-cell-stat", "upload-cell optional", "Valfritt");
+    aterstallFilruta("upload-cell-history", "upload-cell optional", "Valfritt");
   }
   document.querySelectorAll('input[type="file"]').forEach((inp) => {
     inp.value = "";
   });
-  if (typeof renderReferensKort === "function") renderReferensKort();
+  if (typeof ritaReferensKort === "function") ritaReferensKort();
   ["data-status", "policy-status", "stat-status", "config-status"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
@@ -25387,11 +25387,11 @@ function _rensaAllData({ inbakat = true } = {}) {
   });
   if (typeof _visaJamforelseFlik === "function") _visaJamforelseFlik(false);
   state.filnamn = { data: null, policy: null, statistik: null };
-  if (typeof renderFilrutor === "function") renderFilrutor();
-  if (typeof navigateTo === "function") navigateTo("dashboard");
-  updateGdprBanner();
+  if (typeof ritaFilrutor === "function") ritaFilrutor();
+  if (typeof navigeraTill === "function") navigeraTill("dashboard");
+  uppdateraDataskyddsbesked();
   if (typeof ritaKravstatus === "function") ritaKravstatus();
-  announceToScreenReader("All data har raderats ur minnet.");
+  meddelaSkarmlasare("All data har raderats ur minnet.");
   if (inbakat && typeof lasInInbakatPaket === "function") lasInInbakatPaket();
   visningNy();
 }
@@ -25457,8 +25457,8 @@ function sattForhandsvisning(pa, { stegvis = false } = {}) {
   const banner = document.getElementById("forhandsvisning-banner");
   if (banner) banner.hidden = !pa;
   if (state.data.length) {
-    if (stegvis && typeof _renderaOmAllaFlikarStegvis === "function") _renderaOmAllaFlikarStegvis();
-    else if (typeof _renderaOmAllaFlikar === "function") _renderaOmAllaFlikar();
+    if (stegvis && typeof _ritaOmAllaFlikarStegvis === "function") _ritaOmAllaFlikarStegvis();
+    else if (typeof _ritaOmAllaFlikar === "function") _ritaOmAllaFlikar();
   }
   return true;
 }
@@ -25489,7 +25489,7 @@ function _egFlikFor(el) {
   const panel = el && el.closest ? el.closest(".view-panel") : null;
   if (!panel) return null;
   const id = panel.id.replace(/^view-/, "");
-  for (const [flik, paneler] of Object.entries(PANEL_GROUPS)) if (paneler.includes(id)) return flik;
+  for (const [flik, paneler] of Object.entries(PANELGRUPPER)) if (paneler.includes(id)) return flik;
   return id;
 }
 function exportSakra(el) {
@@ -25499,7 +25499,7 @@ function exportSakra(el) {
   if (!flik) return el.isConnected !== false;
   if (skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik), exportLage: iExportLage() })) {
     try {
-      renderTabContent(flik);
+      ritaFlik(flik);
     } catch (e) {
       rapporteraFel(`exportgrinden (${flik})`, e);
     }
@@ -25520,7 +25520,7 @@ function exportSakraAlla() {
   for (const flik of [..._ritadVid.keys()]) {
     if (!skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik) })) continue;
     try {
-      renderTabContent(flik);
+      ritaFlik(flik);
     } catch (e) {
       rapporteraFel(`exportgrinden (${flik})`, e);
     }
@@ -25596,7 +25596,7 @@ function _mkTraffEn(nycklar, vald) {
 function _mkEtikett(nyckel) {
   if (nyckel.startsWith("bas:")) return `BAS ${nyckel.slice(4)}`;
   const [aid, bas] = nyckel.slice(6).split("|");
-  const rad = getData().find((r) => r.bas === bas && String(r.yrke || "").startsWith(aid));
+  const rad = hamtaData().find((r) => r.bas === bas && String(r.yrke || "").startsWith(aid));
   return `${rad ? rad.yrke : aid} · BAS ${bas}`;
 }
 function sattDiagramMarkering(nyckel, { lagg = false } = {}) {
@@ -25676,11 +25676,11 @@ function _mkRitaRad() {
       const vad = knapp.getAttribute("data-markering");
       if (vad === "dossier") {
         const k = _mkDossierNyckel();
-        if (k) openGruppdossier(k);
+        if (k) oppnaGruppdossier(k);
       } else if (vad === "borra") nedborrningTillUtforska();
       else if (vad === "basdossier") {
         const b = _mkBorrBas();
-        if (b != null) openBasdossier(b, knapp);
+        if (b != null) oppnaBasdossier(b, knapp);
       } else sattDiagramMarkering(null);
     });
   }
@@ -25712,11 +25712,11 @@ function _mkKnapp(vad, text) {
 function _mkDossierNyckel() {
   if (_markering.length !== 1 || !_markering[0].startsWith("grupp:")) return null;
   const nyckel = _markering[0].slice(6);
-  return typeof gruppdossierCandidates === "function" && gruppdossierCandidates().some((c) => c.key === nyckel) ? nyckel : null;
+  return typeof gruppdossierKandidater === "function" && gruppdossierKandidater().some((c) => c.key === nyckel) ? nyckel : null;
 }
 var _mkTillbaka = null;
 function _mkBorrBas() {
-  return _markering.length === 1 && _markering[0].startsWith("bas:") && typeof explorerSattUrval === "function" ? _markering[0].slice(4) : null;
+  return _markering.length === 1 && _markering[0].startsWith("bas:") && typeof utforskaSattUrval === "function" ? _markering[0].slice(4) : null;
 }
 function nedborrningTillUtforska() {
   const bas = _mkBorrBas();
@@ -25724,7 +25724,7 @@ function nedborrningTillUtforska() {
   const rad = document.getElementById("explore-rad"), kolumn = document.getElementById("explore-kolumn");
   if (!rad || !kolumn) return;
   const aktiv = document.querySelector(".nav-item.active");
-  const innan = _mkTillbaka || { ...explorerUrval(), rad: (
+  const innan = _mkTillbaka || { ...utforskaUrval(), rad: (
     /** @type {HTMLInputElement} */
     rad.value
   ), kolumn: (
@@ -25732,26 +25732,26 @@ function nedborrningTillUtforska() {
     kolumn.value
   ), flik: aktiv ? aktiv.getAttribute("data-tab") : null };
   _mkTillbaka = { ...innan, bas };
-  explorerSattUrval({ lage: "alla", villkor: [{ falt: "bas", op: "enAv", varde: [bas] }] }, []);
+  utforskaSattUrval({ lage: "alla", villkor: [{ falt: "bas", op: "enAv", varde: [bas] }] }, []);
   rad.value = "aidbas";
   kolumn.value = "ingen";
   _mkBorrRad();
   const nav = document.querySelector('.nav-item[data-tab="utforska"]');
   if (nav && nav !== aktiv) nav.click();
-  else if (typeof renderExplorer === "function") renderExplorer();
+  else if (typeof ritaUtforska === "function") ritaUtforska();
 }
 function nedborrningTillbaka() {
   const t = _mkTillbaka;
   if (!t) return;
   _mkTillbaka = null;
-  explorerSattUrval(t.urval, t.gruppVillkor);
+  utforskaSattUrval(t.urval, t.gruppVillkor);
   const rad = document.getElementById("explore-rad"), kolumn = document.getElementById("explore-kolumn");
   if (rad) rad.value = t.rad;
   if (kolumn) kolumn.value = t.kolumn;
   _mkBorrRad();
   const nav = t.flik && t.flik !== "utforska" ? document.querySelector(`.nav-item[data-tab="${t.flik}"]`) : null;
   if (nav) nav.click();
-  else if (typeof renderExplorer === "function") renderExplorer();
+  else if (typeof ritaUtforska === "function") ritaUtforska();
 }
 function nedborrningGlom() {
   _mkTillbaka = null;
@@ -25790,7 +25790,7 @@ function uppstartMarkering() {
 }
 
 // src/app/41-lika-arbete.js
-function _laBootstrapGapCI(kvLons, maLons, B) {
+function _laBootstrapGapKI(kvLons, maLons, B) {
   return medianKvotKI(kvLons, maLons, { B });
 }
 var _laMinnen = /* @__PURE__ */ new Map();
@@ -25807,7 +25807,7 @@ function _laMinneFor(d, k) {
 function laMinneSlapp() {
   _laMinnen.clear();
 }
-function laLikaGrupper(d = getData(), k = kTroskel()) {
+function laLikaGrupper(d = hamtaData(), k = kTroskel()) {
   const minne = _laMinneFor(d, k), golv = statGolv();
   if (!minne.lika || minne.likaGolv !== golv) {
     minne.lika = likaArbeteGrupper(d, { k, golv });
@@ -25818,17 +25818,17 @@ function laLikaGrupper(d = getData(), k = kTroskel()) {
 function _direktivBricka(markerad) {
   return markerad ? `<span class="direktiv-bricka" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
 }
-function _direktivInline(kvot) {
-  return _direktivInlineOm(direktivMarkering(kvot));
+function _direktivITalcell(kvot) {
+  return _direktivITalcellOm(direktivMarkering(kvot));
 }
-function _direktivInlineOm(markerad) {
+function _direktivITalcellOm(markerad) {
   return markerad ? ` <span class="direktiv-bricka direktiv-inline" title="${esc(_STS_DIR_TIPS)}">${esc(_STS_DIR_ETIKETT)}</span>` : "";
 }
 function _direktivCell(markerad) {
   const b = _direktivBricka(markerad);
   return `<td class="t-mitt" data-sort-value="${b ? 1 : 0}">${b}</td>`;
 }
-function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
+function _laOversiktRader(d, bas = hamtaBasIntervall(), k = kTroskel()) {
   const minne = _laMinneFor(d, k), nyckel = bas.join("\0");
   if (minne.oversikt && minne.oversiktNyckel === nyckel) return minne.oversikt;
   const ut = oversiktPerBas(d, bas, k);
@@ -25839,14 +25839,14 @@ function _laOversiktRader(d, bas = getBasIntervals(), k = kTroskel()) {
 function _laSamladNot(namn) {
   const lista = (namn || []).filter(Boolean);
   if (!lista.length) return "";
-  return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNoteNamn(lista)}. ${lista.length === 1 ? "Intervallet är stort" : "Intervallen är stora"} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
+  return `<p class="k-mask-note">${lista.length} ${ordForAntal(lista.length, T.niva)} står inte i tabellen: ${_kNotNamn(lista)}. ${lista.length === 1 ? "Intervallet är stort" : "Intervallen är stora"} nog att redovisa, men ett av könen har färre än ${kTroskel()} ${personOrd(kTroskel())}, så en könsjämförelse skulle peka ut enskilda.</p>`;
 }
 function _laOversiktStatus(o) {
   return gapStatusKI(o);
 }
 function lsBasVymodell() {
-  const d = getData();
-  return vymodellLonestruktur(d, { bas: getBasIntervals(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
+  const d = hamtaData();
+  return vymodellLonestruktur(d, { bas: hamtaBasIntervall(), k: kTroskel(), golv: statGolv(), litetUnderlag: LITET_UNDERLAG, oversikt: _laOversiktRader(d) });
 }
 function ritaLoneskillnadPerBas(vm) {
   const fmt = new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 });
@@ -25858,7 +25858,7 @@ function ritaLoneskillnadPerBas(vm) {
     _laOversiktTabell(vm.oversikt);
     const ladEl = document.getElementById("chart-skevhet-lador");
     if (ladEl) {
-      const { figur, utelamnade } = _konTathetFigur(getData(), true, kTroskel(), "lada");
+      const { figur, utelamnade } = _konTathetFigur(hamtaData(), true, kTroskel(), "lada");
       if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.niva))} ${T.niva.en} har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` });
       else rensaFigur(ladEl);
       const not = document.getElementById("skevhet-lador-not");
@@ -25885,13 +25885,13 @@ function ritaLoneskillnadPerBas(vm) {
     const evidenceCell = `<td class="t-mitt"><button class="btn-evidence" data-paygap-row="1" type="button" title="Visa beräkningen bakom denna BAS-rad" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon("sok")}</button></td>`;
     const tr = document.createElement("tr");
     tr._markering = markeringFor(r.bas);
-    tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivInlineOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
+    tr.innerHTML = `<td>${esc(r.bas)}</td>${nCell}<td>${svPct(r.kvotPct, 1)}${_direktivITalcellOm(r.direktiv)}</td><td>${fmt.format(r.medKv)}</td><td>${fmt.format(r.medMa)}</td>${evidenceCell}`;
     tr._paygapRow = r.underlag;
     pgBody.appendChild(tr);
   }
   if (skillnad.utelamnade.length || skillnad.samlade.length) {
     const trN = document.createElement("tr");
-    trN.innerHTML = `<td colspan="6">${kMaskNote(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}${kSamladNote(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
+    trN.innerHTML = `<td colspan="6">${kMaskNot(skillnad.utelamnade, `${T.niva.en}|${T.niva.fl}`)}${kSamladNot(skillnad.samlade, `${T.niva.en}|${T.niva.fl}`)}</td>`;
     pgBody.appendChild(trN);
   }
   pgBody.querySelectorAll(".btn-evidence[data-paygap-row]").forEach((btn) => {
@@ -25900,7 +25900,7 @@ function ritaLoneskillnadPerBas(vm) {
       const tr = btn.closest("tr");
       const payload = tr?._paygapRow;
       if (!payload) return;
-      _openEvidenceModal(_evidenceForPaygapRow(payload));
+      _oppnaBevisruta(_bevisForLonegapsrad(payload));
     });
   });
   const skBody = (
@@ -25927,8 +25927,8 @@ function ritaLoneskillnadPerBas(vm) {
     if (konsfordelning.rader.length) ritaFigur(skEl, _skevhetAndelFigur(konsfordelning.rader));
     else rensaFigur(skEl);
   }
-  const baseS = buildBaseAudit();
-  setAudit("skevhet", {
+  const baseS = byggGrundurval();
+  sattMetodik("skevhet", {
     title: "Löneskillnad och könsfördelning",
     ...baseS,
     usedInAnalysis: baseS.afterFilter,
@@ -25987,7 +25987,7 @@ function _skrReferensCell(ref) {
 var LA_DOLDA_KOLUMNER = ["dominans", "nationellt"];
 var LA_OVERSIKT_DOLDA_KOLUMNER = ["direktiv"];
 function laVymodell() {
-  const d = getData();
+  const d = hamtaData();
   return vymodellLikaArbete(d, {
     k: kTroskel(),
     golv: statGolv(),
@@ -26055,7 +26055,7 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
   });
   if (vm.utelamnade.length || vm.samlade.length) {
     const trN = document.createElement("tr");
-    trN.innerHTML = `<td colspan="11">${kMaskNote(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}${kSamladNote(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
+    trN.innerHTML = `<td colspan="11">${kMaskNot(vm.utelamnade, `${T.enhet.en}|${T.enhet.fl}`)}${kSamladNot(vm.samlade, `${T.enhet.en}|${T.enhet.fl}`)}</td>`;
     tbody.appendChild(trN);
   }
   if (vm.skor) {
@@ -26070,15 +26070,15 @@ function ritaLikaArbete(vm, { reg: given } = {}) {
       const tr = btn.closest("tr");
       const row = tr?._euRow;
       if (!row) return;
-      _openEvidenceModal(_evidenceForEUMatrixRow(row));
+      _oppnaBevisruta(_bevisForEUMatrisrad(row));
     });
   });
-  const baseM = buildBaseAudit();
+  const baseM = byggGrundurval();
   const skippedTooFewKvOrMa = vm.ejJamforbara.length;
   const maskedYrken = vm.utelamnade.length;
-  const reg = given || runOLSRegression();
+  const reg = given || korOLSRegression();
   const regNote = reg.error ? `Regression: <em>${esc(reg.error)}</em>` : `Regression estimerad: <code>log(lön) ~ ${esc(reg.modelDesc)}</code> · n=${reg.n}, R²=${svPct(reg.R2 * 100, 1)}`;
-  setAudit("matrix", {
+  sattMetodik("matrix", {
     title: "Lika arbete — multivariat regression",
     ...baseM,
     usedInAnalysis: rows.length,
@@ -26132,8 +26132,8 @@ function _skevhetFigur(bars) {
     },
     hojd: Math.max(180, 110 + bars.length * 34),
     referens: [
-      { typ: "zon", x0: 97, x1: 103, farg: PALETTE.semantic.ok, opacitet: 0.08, etikett: "Lika lön ±3 %" },
-      { x: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5 }
+      { typ: "zon", x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: "Lika lön ±3 %" },
+      { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }
     ],
     lager: _SKEVHET_STATUS.map((s) => ({
       marke: "punkt",
@@ -26141,7 +26141,7 @@ function _skevhetFigur(bars) {
       symbol: s.symbol,
       storlek: 6,
       serie: s.serie,
-      farg: PALETTE.semantic[s.farg],
+      farg: PALETT.semantic[s.farg],
       data: bars.filter((o) => status(o) === s).map(pkt),
       tips
     })).filter((l) => l.data.length)
@@ -26156,9 +26156,9 @@ function _kvotcellTitel(r) {
   return rad ? ` title="${esc(`${rad[0]}: ${rad[1]}`)}"` : "";
 }
 function _laOversiktGrafik(o, dom, status, bredd) {
-  const b = bredd || _LA_OV.b, h = _LA_OV.h, x = (v) => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETTE.semantic[status.farg], px = x(o.gap);
+  const b = bredd || _LA_OV.b, h = _LA_OV.h, x = (v) => +((v - dom[0]) / (dom[1] - dom[0]) * b).toFixed(1), m = h / 2, farg = PALETT.semantic[status.farg], px = x(o.gap);
   const symbol = status.symbol === "romb" ? `<path d="M${px},${m - 6}L${px + 6},${m}L${px},${m + 6}L${px - 6},${m}Z" fill="${farg}" stroke="#fff"/>` : status.symbol === "kvadrat" ? `<rect x="${px - 4.5}" y="${m - 4.5}" width="9" height="9" rx="1" fill="${farg}" stroke="#fff"/>` : `<circle cx="${px}" cy="${m}" r="5" fill="${farg}" stroke="#fff"/>`;
-  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false"><rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETTE.semantic.ok}" fill-opacity="0.12"/><line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETTE.semantic.mork}" stroke-width="1.2"/>` + (o.ci ? `<line x1="${x(o.ci.lo)}" x2="${x(o.ci.hi)}" y1="${m}" y2="${m}" stroke="${farg}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>` : "") + symbol + "</svg>";
+  return `<svg class="la-oversikt-grafik" viewBox="0 0 ${b} ${h}" width="${b}" height="${h}" aria-hidden="true" focusable="false"><rect x="${x(97)}" y="2" width="${+(x(103) - x(97)).toFixed(1)}" height="${h - 4}" fill="${PALETT.semantic.ok}" fill-opacity="0.12"/><line x1="${x(100)}" x2="${x(100)}" y1="0" y2="${h}" stroke="${PALETT.semantic.mork}" stroke-width="1.2"/>` + (o.ci ? `<line x1="${x(o.ci.lo)}" x2="${x(o.ci.hi)}" y1="${m}" y2="${m}" stroke="${farg}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.7"/>` : "") + symbol + "</svg>";
 }
 function _laOversiktTabell(ov) {
   const tb = document.querySelector("#la-oversikt tbody"), skala = document.getElementById("la-oversikt-skala");
@@ -26166,7 +26166,7 @@ function _laOversiktTabell(ov) {
   tb.innerHTML = "";
   const bars = ov.rader;
   const not = document.getElementById("la-oversikt-not");
-  if (not) not.innerHTML = kMaskNote(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
+  if (not) not.innerHTML = kMaskNot(ov.forSma, `${T.niva.en}|${T.niva.fl}`) + _laSamladNot(ov.ettKon);
   if (skala) skala.innerHTML = "";
   if (!bars.length) {
     tb.innerHTML = `<tr><td colspan="9" class="la-oversikt-tom">För få ${T.niva.fl} där både kvinnor och män når minsta gruppstorlek.</td></tr>`;
@@ -26187,7 +26187,7 @@ function _laOversiktTabell(ov) {
     tb.appendChild(tr);
     tr.querySelector("[data-la-bevis]")?.addEventListener("click", (e) => {
       e.stopPropagation();
-      _openEvidenceModal(_evidenceForPaygapRow(o.underlag));
+      _oppnaBevisruta(_bevisForLonegapsrad(o.underlag));
     });
   }
   flerKolumner("la-oversikt", LA_OVERSIKT_DOLDA_KOLUMNER, "laOversikt");
@@ -26240,11 +26240,11 @@ function _laTrattFigur(u, k = kTroskel()) {
     x: { skala: "linjar", titel: "Antal personer i gruppen", doman: [x0, x1] },
     y: { skala: "linjar", titel: "Kvinnors median i % av mäns", doman: [Math.floor(Math.min(...ys) - 1), Math.ceil(Math.max(...ys) + 1)] },
     hojd: 340,
-    referens: [{ y: 100, farg: PALETTE.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }],
+    referens: [{ y: 100, farg: PALETT.semantic.mork, tjocklek: 1.5, etikett: "Lika lön" }],
     lager: [
-      { marke: "band", serie: "Slumpens gränser (95 %)", farg: PALETTE.semantic.neutral, opacitet: 0.14, data: falt },
-      lager("Inom gränserna", PALETTE.semantic.neutral, "cirkel", (p) => !p.utanfor),
-      lager("Utanför gränserna", PALETTE.semantic.kritisk, "romb", (p) => p.utanfor)
+      { marke: "band", serie: "Slumpens gränser (95 %)", farg: PALETT.semantic.neutral, opacitet: 0.14, data: falt },
+      lager("Inom gränserna", PALETT.semantic.neutral, "cirkel", (p) => !p.utanfor),
+      lager("Utanför gränserna", PALETT.semantic.kritisk, "romb", (p) => p.utanfor)
     ].filter((l) => l.data.length)
   };
 }
@@ -26255,11 +26255,11 @@ function _laRitaTratt(u) {
   if (!u) {
     rensaFigur(el);
     if (not) not.textContent = "";
-    _setDiagramMetodNot("chart-la-tratt", null);
+    _sattDiagramMetodNot("chart-la-tratt", null);
     return;
   }
   ritaFigur(el, _laTrattFigur(u));
-  _setDiagramMetodNot("chart-la-tratt", _laTrattGlesNot(u.punkter.length));
+  _sattDiagramMetodNot("chart-la-tratt", _laTrattGlesNot(u.punkter.length));
   if (not) not.textContent = `En punkt per ${T.enhet.en} i ${artikel(T.niva)} ${T.niva.en} där både kvinnor och män når minsta gruppstorlek. Statusen per grupp står i tabellen nedan och i Lika arbete AID × BAS; en punkt utanför gränserna är en av statusens två delar, den andra är storleken (minst 3 %). Punktens färg bygger på en omkastning av könen inom gruppen (1 000 gånger; för grupper över 300 personer en normalapproximation) och gäller gruppens egna löner och antal; det skuggade fältet är en jämn kurva för orientering, ritad för lika många kvinnor som män. Gränserna är ett stöd för bedömningen, inte ett test som friar eller fäller.`;
 }
 function _skevhetAndelFigur(rader) {
@@ -26279,8 +26279,8 @@ function _skevhetAndelFigur(rader) {
     x: { skala: "linjar", titel: "Andel av intervallet (%)", doman: [0, 100] },
     hojd: Math.max(160, 70 + rader.length * 32),
     // Linjerna har ingen etikett: den skulle skriva över staplarnas siffror, och axeln visar 40 och 60.
-    referens: [{ x: 40, streck: "streckad", farg: PALETTE.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: "streckad", farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-    lager: [serie("Kvinnor", PALETTE.kon.kvinna, "pctKv"), serie("Män", PALETTE.kon.man, "pctMa")]
+    referens: [{ x: 40, streck: "streckad", farg: PALETT.semantic.mork, tjocklek: 1.5 }, { x: 60, streck: "streckad", farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+    lager: [serie("Kvinnor", PALETT.kon.kvinna, "pctKv"), serie("Män", PALETT.kon.man, "pctMa")]
   };
 }
 function _laSlutsats(etikett2, varde, under, kritisk, tips) {
@@ -26294,7 +26294,7 @@ function _laNyckel(id, text, kritisk) {
   el.classList.toggle("ar-granska", kritisk === "granska");
 }
 function _laRitaUrval() {
-  const urval = document.getElementById("la-urval"), d = getData();
+  const urval = document.getElementById("la-urval"), d = hamtaData();
   if (!urval) return;
   if (!d.length) {
     urval.textContent = "";
@@ -26309,10 +26309,10 @@ function _laRegFaNot(reg) {
   const fa = [reg.nKvAnalysed < 10 ? `kvinnor (${reg.nKvAnalysed} i modellen)` : "", reg.nMaAnalysed < 10 ? `män (${reg.nMaAnalysed} i modellen)` : ""].filter(Boolean);
   return fa.length ? ` Bygger på få ${fa.join(" och ")}; talet är osäkert.` : "";
 }
-function renderLikaArbeteTopp({ reg: given } = {}) {
+function ritaLikaArbeteTopp({ reg: given } = {}) {
   const urval = document.getElementById("la-urval"), ut = document.getElementById("la-slutsatser");
   if (!urval || !ut) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     urval.textContent = "";
     ut.innerHTML = "";
@@ -26325,7 +26325,7 @@ function renderLikaArbeteTopp({ reg: given } = {}) {
   const storst = rader.slice().sort((a, b) => Math.abs(100 - b.kvot) - Math.abs(100 - a.kvot))[0];
   let reg = null;
   try {
-    reg = given || runOLSRegression();
+    reg = given || korOLSRegression();
   } catch (e) {
     rapporteraFel("Lika arbete: toppen", e);
   }
@@ -26362,10 +26362,10 @@ function renderLikaArbeteTopp({ reg: given } = {}) {
 }
 function _skevhetNot(lista) {
   const n = lista.length, t = LITET_UNDERLAG;
-  return `<p class="k-mask-note">${n} ${esc(_kNoteForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: ${_kNoteNamn(lista)}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och könsfördelningen skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
+  return `<p class="k-mask-note">${n} ${esc(_kNotForm(`${T.niva.en}|${T.niva.fl}`, n))} visas inte här: ${_kNotNamn(lista)}. ${n === 1 ? "Det har" : "De har"} färre än ${t} ${personOrd(t)}, och könsfördelningen skulle kunna peka ut enskilda. Personerna ingår fortfarande i underlaget och i totalsummorna.</p>`;
 }
-function renderLonestrukturNycklar() {
-  const d = getData();
+function ritaLonestrukturNycklar() {
+  const d = hamtaData();
   if (!d.length) {
     for (const id of ["nyckel-ls-bas", "nyckel-ls-kon", "nyckel-ls-regression"]) _laNyckel(id, "");
     return;
@@ -26382,7 +26382,7 @@ function renderLonestrukturNycklar() {
   }).length;
   let reg = null;
   try {
-    reg = runOLSRegression();
+    reg = korOLSRegression();
   } catch (e) {
     rapporteraFel("Lönestruktur: nyckeltalen", e);
   }
@@ -26456,7 +26456,7 @@ function _aidbasNationell(aid) {
   const r = typeof skrKvinnoandel === "function" ? skrKvinnoandel(aid, { del: _skrDel() }) : null;
   return r && typeof r.pct === "number" ? r.pct : null;
 }
-function aidbasTabeller(d = getData()) {
+function aidbasTabeller(d = hamtaData()) {
   const k = aidbasK(), golv = aidbasGolv(), definition = aidbasDefinition(), grans = aidbasGrans(), jamforelse = lvJamforelse();
   return {
     k,
@@ -26568,18 +26568,18 @@ function _aidbasTabellHtml(id, kolumner, rader, { not = "", tom = "Inga grupper 
 }
 function _aidbasEfter(id, dolda, nyckel) {
   if (!document.getElementById(id)) return;
-  if (typeof enableTableSort === "function") enableTableSort(id);
-  if (typeof addTableExportTools === "function") addTableExportTools(id, document.getElementById(id)?.getAttribute("data-aidbas-fil") || id);
+  if (typeof aktiveraSortering === "function") aktiveraSortering(id);
+  if (typeof laggTillTabellverktyg === "function") laggTillTabellverktyg(id, document.getElementById(id)?.getAttribute("data-aidbas-fil") || id);
   if (dolda && nyckel && typeof flerKolumner === "function") flerKolumner(id, dolda, nyckel);
 }
 function _aidbasNyckel(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
 }
-function renderAidBasLika() {
+function ritaAidBasLika() {
   const lika = document.getElementById("aidbas-lika"), individ = document.getElementById("aidbas-individ");
   if (!lika || !individ) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     lika.innerHTML = "";
     individ.innerHTML = "";
@@ -26597,10 +26597,10 @@ function renderAidBasLika() {
   _aidbasEfter("aidbas-individ-tabell");
   _aidbasNyckel("nyckel-la-individ", t.individ.rader.length ? `${t.individ.rader.length} grupper` : "");
 }
-function renderAidBasLikvardigt() {
+function ritaAidBasLikvardigt() {
   const lv = document.getElementById("aidbas-likvardigt"), hi = document.getElementById("aidbas-hierarki");
   if (!lv || !hi) return;
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     lv.innerHTML = "";
     hi.innerHTML = "";
@@ -26659,7 +26659,7 @@ function _aidbasLikaBlad(lika) {
   );
 }
 function _aidbasExcelBlad() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return [];
   const t = aidbasTabeller(d);
   const def = `Kvinnodominerad vid ${aidbasDefinitionText()}; mansdominerad med samma gräns för män; övriga könsblandade. ${jamforelseMening()}`;
@@ -26718,8 +26718,8 @@ function uppstartAidBasTabeller() {
       e.target.value
     );
     const aktiv = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-    if (aktiv === "matrix") renderAidBasLika();
-    if (aktiv === "likvardighet") renderAidBasLikvardigt();
+    if (aktiv === "matrix") ritaAidBasLika();
+    if (aktiv === "likvardighet") ritaAidBasLikvardigt();
   });
 }
 
@@ -26752,10 +26752,10 @@ function nationellAidKlass(aid) {
 }
 
 // src/app/37-struktur.js
-function renderStructure() {
+function ritaStruktur() {
   const wrap = document.getElementById("view-struktur");
   if (!wrap) return;
-  const d = getData();
+  const d = hamtaData();
   const repEl = document.getElementById("struktur-representation");
   const distEl = document.getElementById("struktur-distribution");
   const euEl = document.getElementById("struktur-eu");
@@ -26776,11 +26776,11 @@ function renderStructure() {
         ${repVisade.map((g) => {
     return `<tr><td><strong>${esc(g.bas)}</strong></td><td class="t-hoger">${g.n}</td><td class="t-hoger">${kr2(g.median)}</td><td class="t-hoger">${svPct(g.andelKv, 0)}</td>
             <td><div class="bak-yta-stark rund-7 hojd-14 pos-relativ"><div class="pos-botten-2 pos-absolut pos-topp-2 bredd-2 bg-dampad" data-stil-vanster="${totAndel.toFixed(1)}%" title="Snitt ${svPct(totAndel, 0)}"></div><div class="rund-7 hojd-100p bg-accent" data-stil-bredd="${g.andelKv.toFixed(1)}%"></div></div></td>
-            <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivInline(100 + g.gapPct) : ""}</td></tr>`;
+            <td class="t-hoger">${andelAvMan(g.gapPct)}${g.gapPct != null ? _direktivITalcell(100 + g.gapPct) : ""}</td></tr>`;
   }).join("")}
         </tbody></table>` : ""}
-        ${kMaskNote(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
-        ${kSamladNote(repVisade.filter((g) => g.konLitet).map((g) => g.bas), `${T.niva.en}|${T.niva.fl}`)}`;
+        ${kMaskNot(repUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+        ${kSamladNot(repVisade.filter((g) => g.konLitet).map((g) => g.bas), `${T.niva.en}|${T.niva.fl}`)}`;
   if (repEl) tillampaDataStil(repEl);
   if (distEl) {
     if (!dist.length) {
@@ -26796,7 +26796,7 @@ function renderStructure() {
       const maxG = Math.max(...dist.map((x) => Math.abs(x.gapPct || 0)), 0.01);
       distEl.innerHTML = `<p class="text-dampad-sm marg-0-0-10">Kvinnors lön i procent av mäns vid olika percentiler i fördelningen. Under 100 % betyder att kvinnor ligger lägre.</p>
             <div class="mb-10" id="chart-struktur-percentiler"></div>
-            <table class="data-table st-088">${antalCaption(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
+            <table class="data-table st-088">${antalRubrik(totKv, ma.length)}<thead><tr><th>Percentil</th><th class="t-hoger">Kvinnor</th><th class="t-hoger">Män</th><th class="t-hoger">Kvinnors lön i % av mäns</th><th class="bredd-32p"></th></tr></thead><tbody>
             ${dist.map((x) => `<tr><td>P${x.p}</td><td class="t-hoger">${kr2(x.kv)}</td><td class="t-hoger">${kr2(x.ma)}</td><td class="t-hoger">${andelAvMan(x.gapPct)}</td><td><div class="rund-5 hojd-10 min-bredd-2 bg-accent" data-stil-bredd="${(Math.abs(x.gapPct || 0) / maxG * 100).toFixed(0)}%"></div></td></tr>`).join("")}
             </tbody></table>${tolk ? `<p class="fs-sm marg-8-0-0">${tolk}</p>` : ""}`;
       tillampaDataStil(distEl);
@@ -26815,7 +26815,7 @@ function renderStructure() {
         <p class="text-dampad-sm marg-0-0-10"><strong>Lönebegrepp.</strong> ${EU_LONEBEGREPP_RESERVATION}</p>
         <div class="rutnat gap-12 kolumner-auto-180 marg-b-14">
             <div class="card m-0"><div class="text-dampad-xs">Kvinnors medellön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(meanGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(meanGap)}</div></div>
-            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivInline(100 + medGap) : ""}</div></div>
+            <div class="card m-0"><div class="text-dampad-xs">Kvinnors medianlön i procent av mäns</div><div class="fs-lg fw-700">${andelAvMan(medGap)}</div><div class="text-dampad-xs">Löneskillnad enligt direktivet: ${direktivGap(medGap)}${medGap != null ? _direktivITalcell(100 + medGap) : ""}</div></div>
         </div>
         <strong class="block-mb6">Andel kvinnor/män per lönekvartil</strong>
         <div class="mb-10" id="chart-struktur-kvartiler"></div>
@@ -26828,15 +26828,15 @@ function renderStructure() {
     { ..._strukturKvartilFigur(q, totAndel), underlag: underlag2(_strukturKvartilFor) },
     { exportAnteckning: `Andel kvinnor: ${talformat(q[0].andelKv, "pct")} i lägsta kvartilen, ${talformat(q[q.length - 1].andelKv, "pct")} i högsta` }
   );
-  renderSektorer(d);
-  renderStrukturTradkarta(d);
+  ritaSektorer(d);
+  ritaStrukturTradkarta(d);
   _stRitaTopp(d, { konOk, totAndel, medGap, q, dist, basAntal: repVisade.length });
 }
-function renderStrukturUtkast() {
+function ritaStrukturUtkast() {
   const nb = document.getElementById("struktur-narrative");
   if (!nb) return;
   _stSynkaUtkastValjare();
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     nb.value = "";
     return;
@@ -26845,7 +26845,7 @@ function renderStrukturUtkast() {
   const k = kTroskel();
   const { konOk, repVisade, totAndel, dist, q, medGap, meanGap } = strukturMatt(d, k);
   const perBas = state.utkastPerBas !== false ? _stUtkastPerBas(k) : null;
-  nb.value = _buildNarrative(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
+  nb.value = _byggSammanfattning(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
 }
 function _stSynkaUtkastValjare() {
   const sel = (
@@ -26863,7 +26863,7 @@ function _stUtkastPerBas(k) {
   const under = basdossierUtelamnade();
   if (under.length) lines.push(`BAS ${under.join(", ")} redovisas inte (färre än ${k} ${personOrd(k)}).`);
   for (const { bas } of kand) {
-    const d = buildBasdossier(bas);
+    const d = byggBasdossier(bas);
     if (d) lines.push("", basintervallUtkastText(d));
   }
   return lines.join("\n");
@@ -26904,7 +26904,7 @@ function _sektorPunkter() {
   const ut = {};
   let punkter = [];
   try {
-    punkter = buildActionChecklist({ endastGrupper: true });
+    punkter = byggAtgardslista({ endastGrupper: true });
   } catch (e) {
     rapporteraFel(`${stor(T.huvudomrade.fl)}: Att göra`, e);
   }
@@ -26971,7 +26971,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     urval: [URVAL.bas, URVAL.sektor, URVAL.antal],
     x: { skala: "linjar", doman: [0, TRADKARTA_FORM], dold: true },
     y: { skala: "linjar", doman: [0, 1], dold: true },
-    fargskala: { typ: "divergerande", doman: [0, 100], mitt: 50, titel: "Andel kvinnor (%)", farger: [[0, PALETTE.kon.man], [0.5, FARG.ytaStark], [1, PALETTE.kon.kvinna]] },
+    fargskala: { typ: "divergerande", doman: [0, 100], mitt: 50, titel: "Andel kvinnor (%)", farger: [[0, PALETT.kon.man], [0.5, FARG.ytaStark], [1, PALETT.kon.kvinna]] },
     lager: [
       {
         marke: "yta",
@@ -26993,7 +26993,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     ]
   };
 }
-function renderStrukturTradkarta(d, id = "chart-struktur-tradkarta") {
+function ritaStrukturTradkarta(d, id = "chart-struktur-tradkarta") {
   const el = document.getElementById(id);
   if (!el) return;
   let figur = null;
@@ -27038,14 +27038,14 @@ function _strukturPercentilFigur(dist, omfang2) {
         marke: "intervall",
         riktning: "liggande",
         serie: "Skillnad",
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: dist.map((x) => ({ y: namn(x), lag: Math.round(Math.min(x.kv, x.ma)), hog: Math.round(Math.max(x.kv, x.ma)), r: x, ..._kronorFalt(x.kv, x.ma) })),
         tips
       },
-      punkt("Kvinnor", PALETTE.kon.kvinna, "kv", dist.every((x) => hogst(x) === "kv") ? { etikettLage: "hoger" } : {}),
-      punkt("Män", PALETTE.kon.man, "ma", dist.every((x) => hogst(x) === "kv") ? {} : { etikettLage: "hoger" })
+      punkt("Kvinnor", PALETT.kon.kvinna, "kv", dist.every((x) => hogst(x) === "kv") ? { etikettLage: "hoger" } : {}),
+      punkt("Män", PALETT.kon.man, "ma", dist.every((x) => hogst(x) === "kv") ? {} : { etikettLage: "hoger" })
     ]
   };
 }
@@ -27068,14 +27068,14 @@ function _strukturKvartilFigur(q, totAndel, omfang2) {
     y: { skala: "band", ordning: q.slice().reverse().map(namn) },
     x: { skala: "linjar", titel: "Andel av kvartilen (%)", doman: [0, 100] },
     hojd: 240,
-    referens: [{ x: +totAndel.toFixed(1), streck: "streckad", farg: PALETTE.semantic.mork, tjocklek: 1.5 }],
-    lager: [serie("Kvinnor", PALETTE.kon.kvinna, (x) => x.andelKv, (x) => x.nKv), serie("Män", PALETTE.kon.man, (x) => 100 * x.nMa / x.n, (x) => x.nMa)]
+    referens: [{ x: +totAndel.toFixed(1), streck: "streckad", farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+    lager: [serie("Kvinnor", PALETT.kon.kvinna, (x) => x.andelKv, (x) => x.nKv), serie("Män", PALETT.kon.man, (x) => 100 * x.nMa / x.n, (x) => x.nMa)]
   };
 }
 function _sektorEjBasTitel() {
   return `Modellen med ${T.niva.en} går inte att skatta i ${T.huvudomrade.bf}: kön och ${T.niva.en} går inte att skilja åt, eller raderna är för få för så många ${T.niva.fl}. Ett tal utan ${T.niva.en} vore inte justerat för ${T.niva.en}.`;
 }
-function renderSektorer(d) {
+function ritaSektorer(d) {
   const host = document.getElementById("struktur-sektorer");
   if (!host) return;
   let tabell, andel;
@@ -27109,7 +27109,7 @@ function renderSektorer(d) {
         <th>${stor(T.enhet.fl)}</th><th>Punkter i Att göra</th>${harLedning ? "<th>Ledningsansvar kv / män</th>" : ""}</tr></thead>
         <tbody>${rader}</tbody></table>${andelText}`;
   host.querySelectorAll("[data-sektor]").forEach((b) => b.addEventListener("click", () => {
-    explorerSattUrval({ lage: "alla", villkor: [{ falt: "sektor", op: "enAv", varde: [
+    utforskaSattUrval({ lage: "alla", villkor: [{ falt: "sektor", op: "enAv", varde: [
       /** @type {HTMLElement} */
       b.dataset.sektor
     ] }] }, []);
@@ -27146,37 +27146,37 @@ function _sektorFigur(visa, justText = sektorJusteradText(visa)) {
     y: { skala: "band", ordning: visa.map((r) => r.namn), etikettMax: 64 },
     // sektornamnen är långa och ska gå att läsa
     hojd: Math.max(170, 90 + visa.length * 36),
-    referens: [{ x: 100, streck: "prickad", farg: PALETTE.semantic.referens, etikett: "Lika lön" }],
+    referens: [{ x: 100, streck: "prickad", farg: PALETT.semantic.referens, etikett: "Lika lön" }],
     // Strecket från rå till justerad visar hur mycket ålder (när lönefilen har den) och nivå förklarar: långt streck = mycket.
     lager: [
       {
         marke: "intervall",
         riktning: "liggande",
         serie: `Förklaras av ${forklaras}`,
-        farg: PALETTE.semantic.neutral,
+        farg: PALETT.semantic.neutral,
         tjocklek: 2,
         legend: false,
         data: visa.filter((r) => just(r) != null).map((r) => ({ y: r.namn, lag: +Math.min(r.kvot ?? 0, just(r) ?? 0).toFixed(1), hog: +Math.max(r.kvot ?? 0, just(r) ?? 0).toFixed(1), ra: r.kvot, ju: just(r), ...falt(r) })),
         tips: (d) => [[d.y], ["Rå", talformat(d.ra, "pct")], ["Justerad", talformat(d.ju, "pct")]]
       },
-      lager("Rå", PALETTE.semantic.neutral, (r) => r.kvot, 0),
-      lager(rubrik, PALETTE.serie[0], just, 0)
+      lager("Rå", PALETT.semantic.neutral, (r) => r.kvot, 0),
+      lager(rubrik, PALETT.serie[0], just, 0)
     ]
   };
 }
-function _buildNarrative(d, ctx) {
+function _byggSammanfattning(d, ctx) {
   const fmtPct = (n) => n == null ? "–" : (n >= 0 ? "+" : "") + svPct(n, 1);
   const lines = [];
   lines.push("LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)");
   lines.push("");
-  lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${getBasIntervals().length} ${ordForAntal(getBasIntervals().length, T.niva)}.`);
+  lines.push(`Underlaget omfattar ${d.length} anställda (${svPct(ctx.totAndel, 0)} kvinnor) fördelade på ${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}.`);
   lines.push("");
   lines.push("Löneskillnad (kvinnors lön i procent av mäns):");
   if (ctx.konOk) lines.push(`  • Kvinnors genomsnittslön är ${andelAvMan(ctx.meanGap)} av mäns, och medianlönen ${andelAvMan(ctx.medGap)} av mäns.`);
   else lines.push(`  • ${_konUtelamnatNot()}`);
   let reg = null;
   try {
-    reg = runOLSRegression();
+    reg = korOLSRegression();
   } catch (_e) {
     reg = null;
   }
@@ -27223,19 +27223,19 @@ function _buildNarrative(d, ctx) {
   }
   return lines.join("\n");
 }
-function exportEuReport(...a) {
-  return medExportLage(() => _exportEuReportExport.apply(
+function exportEuRapport(...a) {
+  return medExportLage(() => _exportEuRapportExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportEuReportExport() {
+function _exportEuRapportExport() {
   if (typeof XLSX === "undefined") {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     alert("Ingen data.");
     return;
@@ -27292,9 +27292,9 @@ function _exportEuReportExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(quart), "Kvartilfördelning");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(repArr), "Representation");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), "Skillnad i lönefördelningen");
-  _appendMethodSheet(wb, { extra: [["Löneskillnadens tecken i den här filen", DIREKTIV_METOD]] });
+  _laggTillMetodblad(wb, { extra: [["Löneskillnadens tecken i den här filen", DIREKTIV_METOD]] });
   XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
-  if (typeof announceToScreenReader === "function") announceToScreenReader("EU-lönerapport exporterad.");
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("EU-lönerapport exporterad.");
 }
 function _kvartilSpann(x, kr2) {
   if (x.undre == null) return `upp till ${kr2(x.ovre)}`;
@@ -27303,23 +27303,23 @@ function _kvartilSpann(x, kr2) {
 }
 function uppstartStruktur() {
   (function wireStructure() {
-    document.getElementById("struktur-eu-export")?.addEventListener("click", exportEuReport);
+    document.getElementById("struktur-eu-export")?.addEventListener("click", exportEuRapport);
     document.getElementById("struktur-narrative-regen")?.addEventListener("click", () => {
       const nb2 = document.getElementById("struktur-narrative");
       if (!nb2) return;
       if (nb2.dataset.dirty && !confirm("Utkastet är redigerat. Återskapa ersätter din text med ett nytt utkast. Det går inte att ångra. Vill du fortsätta?")) return;
       delete nb2.dataset.dirty;
-      medExportLage(renderStrukturUtkast);
+      medExportLage(ritaStrukturUtkast);
     });
     document.getElementById("struktur-narrative-omfang")?.addEventListener("change", (e) => {
       state.utkastPerBas = /** @type {HTMLSelectElement} */
       e.target.value !== "hela";
       const nb2 = document.getElementById("struktur-narrative");
       if (nb2 && nb2.dataset.dirty) {
-        if (typeof announceToScreenReader === "function") announceToScreenReader("Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.");
+        if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.");
         return;
       }
-      medExportLage(renderStrukturUtkast);
+      medExportLage(ritaStrukturUtkast);
     });
     document.getElementById("struktur-narrative-copy")?.addEventListener("click", () => {
       const nb2 = document.getElementById("struktur-narrative");
@@ -27363,7 +27363,7 @@ function _excelAlltBladExport() {
     EXCEL_BLAD_HUVUDOMRADEN,
     ...state.statistik.length ? ["Jämförelsestatistik"] : [],
     ..._excelSkalRader() ? ["Sakliga skäl"] : [],
-    ...getData().length ? ["Underlagets kvalitet"] : [],
+    ...hamtaData().length ? ["Underlagets kvalitet"] : [],
     "Metodik",
     "Metod & parametrar"
   ];
@@ -27403,7 +27403,7 @@ function _excelEgnaRader() {
   const tal = (v, typ) => v == null || typeof v !== "number" || !isFinite(v) ? v == null ? "" : v : typ === "kr" || typ === "antal" ? Math.round(v) : Math.round(v * 100) / 100;
   const rows = [["Egna tabeller", `byggda i Tabeller och egna vyer; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
   for (const r of recept) {
-    const tabeller = receptTillTabeller(getData(), r, { k: kTroskel() });
+    const tabeller = receptTillTabeller(hamtaData(), r, { k: kTroskel() });
     if (!tabeller.length) {
       rows.push([r.namn, "ingen grupp når minsta gruppstorlek"], []);
       continue;
@@ -27419,7 +27419,7 @@ function _excelEgnaRader() {
   return rows;
 }
 function _excelPerBasRader() {
-  const pb = typeof rmPerBasUnderlag === "function" ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+  const pb = typeof rmPerBasUnderlag === "function" ? rmPerBasUnderlag(hamtaData(), kTroskel()) : null;
   if (!pb || !pb.intervall.length) return null;
   const tal = (v) => v == null || !isFinite(v) ? "" : Math.round(v);
   const pct = (v) => v == null || !isFinite(v) ? "" : Math.round(v * 10) / 10;
@@ -27456,7 +27456,7 @@ function _excelPerBasRader() {
   return rows;
 }
 function _excelDiagramBlad() {
-  const d = getData(), k = kTroskel(), ut = [], r1 = (v) => Math.round(v * 10) / 10;
+  const d = hamtaData(), k = kTroskel(), ut = [], r1 = (v) => Math.round(v * 10) / 10;
   const bas = _laOversiktRader(d);
   if (bas.length) ut.push(["Lika arbete per BAS", [
     [`Kvinnors och mäns lön per ${T.niva.en} (översiktstabellen i Lönestruktur)`],
@@ -27495,14 +27495,14 @@ function _excelLonepolitikMetod(blad) {
   if (!blad.some((b) => b[0] === "Lönepolitik")) return [];
   return [["Bladet Lönepolitik", `Läget i referensens lönespann (0 % = P10, 100 % = P90) per ${T.enhet.en}, per kön och ${T.niva.en} samt fördelningen i spannets tredjedelar per kön och efterlevnaden per ${T.niva.en} — samma mått och samma regler för minsta gruppstorlek som avsnittet Mot ställningstagandet i fliken Löneläget: ${T.enhet.fl} under ${kTroskel()} ${personOrd(kTroskel())} utan lönemått, könsuppdelade mått bara där varje kön har minst ${kTroskel()} ${personOrd(kTroskel())}.`]];
 }
-function exportAllToExcel(...a) {
-  return medExportLage(() => _exportAllToExcelExport.apply(
+function exportAlltTillExcel(...a) {
+  return medExportLage(() => _exportAlltTillExcelExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportAllToExcelExport() {
+function _exportAlltTillExcelExport() {
   if (!state.data.length) {
     alert("Läs in lönefilen först.");
     return;
@@ -27513,7 +27513,7 @@ function _exportAllToExcelExport() {
   }
   const wb = _excelAlltBok();
   XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
-  _showExportSensitivityToast();
+  _visaExportvarning();
 }
 function _excelAlltBok(...a) {
   return medExportLage(() => __excelAlltBokExport.apply(
@@ -27534,11 +27534,11 @@ function __excelAlltBokExport() {
   ensure("#rapport-table tbody tr", ritaLoneoversikt);
   ensure("#skevhet-table tbody tr", () => ritaLoneskillnadPerBas(lsBasVymodell()));
   ensure("#matrix-table tbody tr", () => ritaLikaArbete(laVymodell()));
-  if (state.policy.length || state.statistik.length) ensure("#prio-table tbody tr", renderPrioritering);
-  if (state.statistik.length) ensure("#benchmark-table tbody tr", generateBenchmark);
+  if (state.policy.length || state.statistik.length) ensure("#prio-table tbody tr", ritaPrioritering);
+  if (state.statistik.length) ensure("#benchmark-table tbody tr", byggJamforelse);
   const wb = XLSX.utils.book_new();
   const tableToSheet = (id, fallback) => {
-    const sheet = tableToCleanSheet(id);
+    const sheet = tabellTillBlad(id);
     if (sheet) return sheet;
     return fallback ? XLSX.utils.aoa_to_sheet(fallback) : null;
   };
@@ -27560,7 +27560,7 @@ function __excelAlltBokExport() {
   const diagramBlad = _excelDiagramBlad();
   for (const [namn, rader] of diagramBlad) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rader), namn);
   for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
-  ensure("#sektor-table tbody tr", () => renderSektorer(getData()));
+  ensure("#sektor-table tbody tr", () => ritaSektorer(hamtaData()));
   const sektorSheet = tableToSheet("sektor-table");
   if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
   const bmSheet = state.statistik.length ? tableToSheet("benchmark-table") : null;
@@ -27585,7 +27585,7 @@ function __excelAlltBokExport() {
     ["Genererad", (/* @__PURE__ */ new Date()).toLocaleString("sv-SE")],
     []
   ];
-  auditPoster().forEach(([id, a]) => {
+  metodikposter().forEach(([id, a]) => {
     metRows.push([a.title || id]);
     metRows.push(["Total i datafilen", a.totalRaw]);
     [...a.parseExcl || [], ...a.analysisExclusions || []].forEach(([r, c]) => {
@@ -27609,7 +27609,7 @@ function __excelAlltBokExport() {
   for (const [rubrik, text] of _aidbasMetodRader()) metRows.push(["  " + rubrik, text]);
   metRows.push([]);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metRows), "Metodik");
-  _appendMethodSheet(wb, { extra: [
+  _laggTillMetodblad(wb, { extra: [
     ["Bladen Per BAS och Löneskillnad", `Per BAS är lönestrukturen per ${T.niva.en} som i en skriven lönekartläggning: referensen, organisationen och varje ${T.enhet.en} med P10, median, P90 och antal, per kön. Löneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per ${T.niva.en}, med antal och medianer. Samma underlag, två frågor.`],
     ..._excelLonepolitikMetod(diagramBlad),
     ..._aidbasMetodRader()
@@ -27630,14 +27630,14 @@ function _jpaNivaCeller(kv, ma, nKv, nMa) {
   return [Math.round(kv), Math.round(ma), Math.round(kv - ma), +(kv / ma * 100).toFixed(1)];
 }
 var JPA_BLAD_ALLA_GRUPPER = "2a. Lika arbete, alla grupper";
-function exportJPAProtocol(...a) {
-  return medExportLage(() => _exportJPAProtocolExport.apply(
+function exportJPAProtokoll(...a) {
+  return medExportLage(() => _exportJPAProtokollExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportJPAProtocolExport() {
+function _exportJPAProtokollExport() {
   if (!state.data.length) {
     alert("Läs in lönefilen först.");
     return;
@@ -27646,7 +27646,7 @@ function _exportJPAProtocolExport() {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  const d = getData();
+  const d = hamtaData();
   const now = /* @__PURE__ */ new Date();
   const isoDate = idagDatum(now);
   const localDate = now.toLocaleDateString("sv-SE");
@@ -27677,7 +27677,7 @@ function _exportJPAProtocolExport() {
   const yrkenExkluderadeOjamn = jamforda.filter((g) => g.niva === "folj" || g.niva === "balanserat").length;
   jpaYrken.sort((a, b) => a.gapPct - b.gapPct);
   const basList = [...new Set(d.map((r) => r.bas))].sort();
-  const perBas = _computePerBasGap(d, basList);
+  const perBas = _raknaPerBasGap(d, basList);
   const okTests = perBas.filter((b) => b.status === "ok" && isFinite(b.pValue));
   const qVarden = bhJustera(okTests.map((b) => b.pValue));
   const bhQ = new Map(okTests.map((b, i) => [b, qVarden[i]]));
@@ -27837,7 +27837,7 @@ function _exportJPAProtocolExport() {
     { wch: 22 }
   ];
   yrkenSheet["!freeze"] = { xSplit: 2, ySplit: 1 };
-  _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
+  _tillampaTalformat(yrkenSheet, SV_TALFORMAT);
   XLSX.utils.book_append_sheet(wb, yrkenSheet, _excelBladnamn(`2. Lika arbete (${T.system})`, "2. Lika arbete"));
   XLSX.utils.book_append_sheet(wb, _aidbasLikaBlad(likaArbeteTabell(lika)), JPA_BLAD_ALLA_GRUPPER);
   const basHeaderRow = [
@@ -27924,7 +27924,7 @@ function _exportJPAProtocolExport() {
     { wch: 22 }
   ];
   basSheet["!freeze"] = { xSplit: 2, ySplit: 1 };
-  _applyColumnNumFormats(basSheet, SV_NUM_FORMATS);
+  _tillampaTalformat(basSheet, SV_TALFORMAT);
   XLSX.utils.book_append_sheet(wb, basSheet, "3. Likvärdigt arbete (BAS)");
   if (lvResult && lvResult.pairs.length && !lvRedovisning.par.length) {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[lvRedovisning.not]]), "3b. Likvärdigt arbete (krav)");
@@ -28020,7 +28020,7 @@ function _exportJPAProtocolExport() {
       { wch: 22 }
     ];
     lvSheet["!freeze"] = { xSplit: 3, ySplit: 1 };
-    _applyColumnNumFormats(lvSheet, SV_NUM_FORMATS);
+    _tillampaTalformat(lvSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, lvSheet, "3b. Likvärdigt arbete (krav)");
   }
   const excludedRows = [
@@ -28119,13 +28119,13 @@ function _exportJPAProtocolExport() {
   signSheet["!cols"] = [{ wch: 32 }, { wch: 60 }];
   XLSX.utils.book_append_sheet(wb, signSheet, "6. Signaturer");
   const filename = `lonekartlaggning_protokoll_gemensam_lonebedomning_${isoDate}.xlsx`;
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, filename);
-  _showExportSensitivityToast();
-  announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
+  _visaExportvarning();
+  meddelaSkarmlasare(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 function uppstartExcelexport() {
-  document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAllToExcel);
+  document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAlltTillExcel);
 }
 
 // src/lib/vymodell-var-uppstar-gapet.js
@@ -28199,7 +28199,7 @@ function sattGapVariabler(v, { rita = true } = {}) {
   return { variabler: gapVariabler(), varningar };
 }
 function _guValbara() {
-  const harAid = getData().some((r) => r.aid);
+  const harAid = hamtaData().some((r) => r.aid);
   return gapAllaVariabler().filter((v) => (v !== "alder" || harAlder()) && (!["sektor", "aidniva"].includes(v) || harAid));
 }
 var _GU_MAX = 4;
@@ -28244,7 +28244,7 @@ function _guAndra(ny, fokus, meddelande) {
     );
     if (r) r.focus();
   }
-  if (meddelande) announceToScreenReader(meddelande);
+  if (meddelande) meddelaSkarmlasare(meddelande);
 }
 function _guKr(v, tecken = true) {
   const r = Math.round(v);
@@ -28258,7 +28258,7 @@ function ritaGapUppdelning() {
   const host = document.getElementById("gap-uppdelning");
   const body = document.getElementById("gap-uppdelning-innehall");
   if (!host || !body) return;
-  const vm = vymodellVarUppstarGapet(getData(), { k: kTroskel(), variabler: gapVariabler() });
+  const vm = vymodellVarUppstarGapet(hamtaData(), { k: kTroskel(), variabler: gapVariabler() });
   if (!vm) {
     host.hidden = true;
     body.innerHTML = "";
@@ -28276,7 +28276,7 @@ function ritaGapUppdelning() {
   const rader = vm.delar.map((d) => {
     const del = { ...d, ..._GU_ATGARD[d.variabel || "inom"] }, v = del.belopp;
     const bredd = Math.abs(v) / vm.storst * 50;
-    const farg = del.variabel === null ? PALETTE.uppdelning.lonesattning : PALETTE.uppdelning.struktur;
+    const farg = del.variabel === null ? PALETT.uppdelning.lonesattning : PALETT.uppdelning.struktur;
     const andel = del.andel === null ? "" : `<span class="gu-andel">${_guPct(del.andel, 0)} av skillnaden</span>`;
     const topp = del.topp.map((p) => `<li>${esc(p.namn)}: ${_guKr(p.kr)}</li>`).join("") + (del.ovrigaAntal ? `<li class="gu-ovriga">${esc(gapOvrigaText(del.ovrigaAntal, kTroskel()))}</li>` : "");
     return `<div class="gu-rad" data-gu-del="${del.id}">
@@ -28331,13 +28331,13 @@ function _guTrappaFigur(u) {
       {
         marke: "intervall",
         serie: _GU_SERIE.helhet,
-        farg: PALETTE.uppdelning.helhet,
+        farg: PALETT.uppdelning.helhet,
         tjocklek: 44,
         data: [{ x: _GU_SERIE.helhet, lag: Math.min(gap, 0), hog: Math.max(gap, 0), skillnadKr: gap }],
         tips: (d) => [[d.x], ["Skillnad i medellön", _guKr(d.skillnadKr)]]
       },
-      delLager(false, _GU_SERIE.struktur, PALETTE.uppdelning.struktur),
-      delLager(true, _GU_SERIE.inom, PALETTE.uppdelning.lonesattning),
+      delLager(false, _GU_SERIE.struktur, PALETT.uppdelning.struktur),
+      delLager(true, _GU_SERIE.inom, PALETT.uppdelning.lonesattning),
       // Ett streck där steget landar, och beloppet vid stapelns ände längst från noll (ett osynligt streck bär
       // etiketten). Bara markeringar: talen står redan i lagren ovan, och lagren får inga rader i diagramdatan.
       {
@@ -28346,7 +28346,7 @@ function _guTrappaFigur(u) {
         serie: "Nivå",
         legend: false,
         utanData: true,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         storlek: 11,
         data: [{ x: _GU_SERIE.helhet, y: gap }, ...steg.map((s) => ({ x: s.x, y: Math.round(s.efter) }))]
       },
@@ -28356,7 +28356,7 @@ function _guTrappaFigur(u) {
         serie: "Belopp",
         legend: false,
         utanData: true,
-        farg: PALETTE.semantic.mork,
+        farg: PALETT.semantic.mork,
         data: [
           { x: _GU_SERIE.helhet, y: gap, storlek: 0, etikett: _guKr(u.gap), etikettLage: lage2(gap, Math.min(gap, 0)) },
           ...steg.map((s) => {
@@ -28425,9 +28425,9 @@ function uppstartVarUppstarGapet() {
 
 // src/app/22-exporthjalpare.js
 var EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
-function _methodAppendixData() {
+function _metodbilaga() {
   const total = state.data && state.data.length || 0;
-  const used = typeof getData === "function" ? getData().length : total;
+  const used = typeof hamtaData === "function" ? hamtaData().length : total;
   const ver = typeof APP_VERSION !== "undefined" ? APP_VERSION : "–";
   const medAlder = harAlder();
   const modell = forklaringsmodell();
@@ -28465,9 +28465,9 @@ function _methodAppendixData() {
 function _excelBladnamn(namn, reserv) {
   return namn.length <= 31 && namn.trim() && !/[:\\/?*[\]]/.test(namn) ? namn : reserv;
 }
-function _appendMethodSheet(wb, { undantag = "", extra = [] } = {}) {
+function _laggTillMetodblad(wb, { undantag = "", extra = [] } = {}) {
   if (typeof XLSX === "undefined" || !XLSX.utils || !wb) return;
-  const rows = [["Metod & parametrar — reproducerbarhet och tolkning"], [""], ..._methodAppendixData(), ...extra];
+  const rows = [["Metod & parametrar — reproducerbarhet och tolkning"], [""], ..._metodbilaga(), ...extra];
   const ram = rows.findIndex((rad) => rad[0] === "Rättslig ram");
   rows.splice(ram < 0 ? rows.length : ram + 1, 0, ["Ansvar", ANSVARSFORBEHALL]);
   if (undantag) {
@@ -28492,14 +28492,14 @@ function _exportVisaAllaRader(klon) {
   klon.querySelectorAll("[data-open-basdossier]").forEach((b) => b.remove());
   return _flerKolumnerAlla(klon);
 }
-function _cloneAndCleanTableForExport(...a) {
-  return medExportLage(() => __cloneAndCleanTableForExportExport.apply(
+function _tabellkopiaForExport(...a) {
+  return medExportLage(() => __tabellkopiaForExportExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function __cloneAndCleanTableForExportExport(tableId) {
+function __tabellkopiaForExportExport(tableId) {
   const t = exportElement(tableId);
   if (!t || !t.querySelector("tbody tr")) return null;
   const clone = t.cloneNode(true);
@@ -28531,7 +28531,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
       td.querySelectorAll("[style]").forEach((el) => el.removeAttribute("style"));
       td.innerHTML = td.innerHTML.replace(/&nbsp;/g, " ");
     });
-    tr.querySelectorAll("td, th").forEach((td) => _exportMarkCell(td));
+    tr.querySelectorAll("td, th").forEach((td) => _exportMarkeraCell(td));
   });
   return _exportUtanSkarmkolumner(clone);
 }
@@ -28581,7 +28581,7 @@ function _exportCellVarde(td) {
   const z = p.enhet === "%" ? `0${dec}\\ "%"` : p.enhet === "kr" ? '#,##0\\ "kr"' : p.dec ? `0${dec}` : null;
   return z ? { t: "n", v, z } : { t: "n", v };
 }
-function _exportMarkCell(td) {
+function _exportMarkeraCell(td) {
   const c = _exportCellVarde(td);
   if (!c) return;
   td.setAttribute("data-t", c.t);
@@ -28589,7 +28589,7 @@ function _exportMarkCell(td) {
   if (c.z) td.setAttribute("data-z", c.z);
   td.textContent = String(c.v);
 }
-var SV_NUM_FORMATS = Object.freeze({
+var SV_TALFORMAT = Object.freeze({
   // Ordningen avgör: första träffen gäller. Rubriker som "Kvinnors median i % av männens", "P10 skillnad mot …
   // (%)" och "Avvikelse per person (kr/mån)" innehåller flera nyckelord, så enheten i parentesen prövas först.
   "(%)": '0.00\\ "%"',
@@ -28612,7 +28612,7 @@ var SV_NUM_FORMATS = Object.freeze({
   "index": "0",
   "ålder": "0"
 });
-function _groupedCloneToAoa(clone) {
+function _grupperadKopiaTillAoa(clone) {
   const headers = [...clone.querySelectorAll("thead th")].map((th) => th.textContent.replace(/\s+/g, " ").trim());
   const aoa = [];
   const merges = [];
@@ -28641,7 +28641,7 @@ function _groupedCloneToAoa(clone) {
   });
   return { aoa, merges, firstHeaderRowIdx };
 }
-function _autoColWidths(sheet) {
+function _autoKolumnbredder(sheet) {
   if (!sheet || !sheet["!ref"]) return;
   const range = XLSX.utils.decode_range(sheet["!ref"]);
   const widths = [];
@@ -28657,30 +28657,30 @@ function _autoColWidths(sheet) {
   }
   sheet["!cols"] = widths;
 }
-function tableToCleanSheet(tableId) {
-  const clone = _cloneAndCleanTableForExport(tableId);
+function tabellTillBlad(tableId) {
+  const clone = _tabellkopiaForExport(tableId);
   if (!clone) return null;
   if (
     /** @type {HTMLElement} */
     clone.querySelector("tbody tr.group-header")
   ) {
-    const g = _groupedCloneToAoa(
+    const g = _grupperadKopiaTillAoa(
       /** @type {HTMLTableElement} */
       clone
     );
     const sheet2 = XLSX.utils.aoa_to_sheet(g.aoa);
     if (g.merges.length) sheet2["!merges"] = g.merges;
-    _applyColumnNumFormats(sheet2, SV_NUM_FORMATS, g.firstHeaderRowIdx ?? 0);
-    _autoColWidths(sheet2);
+    _tillampaTalformat(sheet2, SV_TALFORMAT, g.firstHeaderRowIdx ?? 0);
+    _autoKolumnbredder(sheet2);
     return sheet2;
   }
   const sheet = XLSX.utils.table_to_sheet(clone);
-  _applyColumnNumFormats(sheet, SV_NUM_FORMATS);
-  _autoColWidths(sheet);
+  _tillampaTalformat(sheet, SV_TALFORMAT);
+  _autoKolumnbredder(sheet);
   sheet["!freeze"] = { ySplit: 1 };
   return sheet;
 }
-function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
+function _tillampaTalformat(sheet, formatMap, headerRowIdx = 0) {
   if (!sheet || !sheet["!ref"]) return;
   const range = XLSX.utils.decode_range(sheet["!ref"]);
   for (let c = range.s.c; c <= range.e.c; c++) {
@@ -28700,8 +28700,8 @@ function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
     }
   }
 }
-function tableToCleanBook(tableId, sheetName) {
-  const sheet = tableToCleanSheet(tableId);
+function tabellTillBok(tableId, sheetName) {
+  const sheet = tabellTillBlad(tableId);
   if (!sheet) return null;
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, sheetName);
@@ -28711,7 +28711,7 @@ function _csvFilnamn(namn) {
   const n = namn || "export";
   return state.isDemo && !n.startsWith("DEMO_") ? "DEMO_" + n : n;
 }
-function _downloadCSV(rows, filename, { undantag = "" } = {}) {
+function _laddaNedCSV(rows, filename, { undantag = "" } = {}) {
   if (!Array.isArray(rows) || !rows.length) {
     alert("Ingen data att exportera.");
     return;
@@ -28729,13 +28729,13 @@ function _downloadCSV(rows, filename, { undantag = "" } = {}) {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1500);
-    if (typeof _showExportSensitivityToast === "function") _showExportSensitivityToast();
-    if (typeof announceToScreenReader === "function") announceToScreenReader("CSV exporterad: " + (rows.length - 1) + " rader.");
+    if (typeof _visaExportvarning === "function") _visaExportvarning();
+    if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("CSV exporterad: " + (rows.length - 1) + " rader.");
   } catch (err) {
     alert("CSV-export misslyckades: " + (err.message || String(err)));
   }
 }
-function _showExportSensitivityToast(bodyHtml) {
+function _visaExportvarning(bodyHtml) {
   const existing = document.getElementById("export-sensitivity-toast");
   if (existing) existing.remove();
   const toast = document.createElement("div");
@@ -28752,7 +28752,7 @@ function _showExportSensitivityToast(bodyHtml) {
   }, 12e3);
 }
 function uppstartExporthjalpare() {
-  document.getElementById("btn-hub-jpa")?.addEventListener("click", () => exportJPAProtocol());
+  document.getElementById("btn-hub-jpa")?.addEventListener("click", () => exportJPAProtokoll());
   document.getElementById("btn-hub-handlingsplan")?.addEventListener("click", () => exportHandlingsplan());
 }
 
@@ -28760,10 +28760,10 @@ function uppstartExporthjalpare() {
 var _agPct = (v) => Math.abs(v).toFixed(1).replace(".", ",");
 var _agTal = (v, dec) => v.toFixed(dec).replace(".", ",");
 var _agRiktning = (v) => v < 0 ? "lägre" : "högre";
-function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
+function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
   const items = [];
   if (!state.data.length) return items;
-  const reg = endastGrupper ? null : given || (typeof runOLSRegression === "function" ? runOLSRegression() : null);
+  const reg = endastGrupper ? null : given || (typeof korOLSRegression === "function" ? korOLSRegression() : null);
   if (!endastGrupper) {
     try {
       const uk = typeof bedomningUnderlag === "function" ? bedomningUnderlag({ reg }) : null;
@@ -28806,7 +28806,7 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
       rapporteraFel("Att göra: underlagets kvalitet", e);
     }
     try {
-      const d = getData();
+      const d = hamtaData();
       const jb = new Set(jamforbaraBas(d, kInstalld()).jamforbara);
       const perBas = reg && !reg.error && reg.perBas ? reg.perBas : [];
       _laOversiktRader(d).filter((o) => jb.has(o.bas) && _laOversiktStatus(o).niva === "granska").forEach((o) => {
@@ -28846,11 +28846,11 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
   }
   try {
     if (state.policy.length || state.statistik.length) {
-      const ref = typeof _selectedPrioReference === "function" ? _selectedPrioReference() : (
+      const ref = typeof _valdPrioReferens === "function" ? _valdPrioReferens() : (
         /** @type {HTMLInputElement} */
         document.querySelector('input[name="prio-ref"]:checked')?.value || "stallningstagande"
       );
-      const prioItems = typeof computePrioritization === "function" ? computePrioritization(ref) : [];
+      const prioItems = typeof raknaPrioritering === "function" ? raknaPrioritering(ref) : [];
       prioItems.filter((i) => i.status === "akut").forEach((i) => {
         const fmt = new Intl.NumberFormat("sv-SE");
         items.push({
@@ -28923,8 +28923,8 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
       rapporteraFel("Att göra: per-BAS-regressionen", e);
     }
     try {
-      if (typeof _handlingsplanSeedRows === "function") {
-        const seed = _handlingsplanSeedRows();
+      if (typeof _handlingsplanForifyllning === "function") {
+        const seed = _handlingsplanForifyllning();
         const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
         if (utan) items.push({
           id: "hp-sakliga-skal",
@@ -28940,7 +28940,7 @@ function buildActionChecklist({ endastGrupper = false, reg: given } = {}) {
       rapporteraFel("Att göra: handlingsplanen", e);
     }
     try {
-      const life = typeof runLifecycleRegression === "function" ? runLifecycleRegression(_lifecycleFixBas) : null;
+      const life = typeof korLivscykelregression === "function" ? korLivscykelregression(_livscykelValdBas) : null;
       if (life && life.ok && livscykelMonster(life) === "växande") {
         items.push({
           id: "livscykel-vaxer",
@@ -28972,7 +28972,7 @@ function _attGoraParNot() {
     return "";
   }
 }
-function renderActionChecklist({ reg } = {}) {
+function ritaAtgardslista({ reg } = {}) {
   const wrap = document.getElementById("action-checklist-container");
   const kort = document.getElementById("att-gora");
   const borja = document.getElementById("att-gora-borja");
@@ -28984,7 +28984,7 @@ function renderActionChecklist({ reg } = {}) {
     return [];
   }
   if (kort) kort.hidden = false;
-  const items = buildActionChecklist({ reg });
+  const items = byggAtgardslista({ reg });
   const varOppen = !!/** @type {HTMLDetailsElement} */
   (wrap.querySelector("#avsnitt-ov-punkter") || {}).open;
   const somAvsnitt = (nyckel, innehall) => `<details class="avsnitt" id="avsnitt-ov-punkter"${varOppen ? " open" : ""}>
@@ -29066,25 +29066,25 @@ function renderActionChecklist({ reg } = {}) {
         cb.checked
       ) done.add(id);
       else done.delete(id);
-      renderActionChecklist();
+      ritaAtgardslista();
     });
   });
-  document.getElementById("btn-export-checklist")?.addEventListener("click", () => medExportLage(() => exportActionChecklistCSV(buildActionChecklist(), done)));
+  document.getElementById("btn-export-checklist")?.addEventListener("click", () => medExportLage(() => exportAtgardslistaCSV(byggAtgardslista(), done)));
   document.getElementById("btn-checklist-clear-done")?.addEventListener("click", () => {
     if (!confirm("Avmarkera alla " + done.size + " hanterade punkter?")) return;
     state._actionChecklistDone = /* @__PURE__ */ new Set();
-    renderActionChecklist();
+    ritaAtgardslista();
   });
   return items;
 }
-function exportActionChecklistCSV(...a) {
-  return medExportLage(() => _exportActionChecklistCSVExport.apply(
+function exportAtgardslistaCSV(...a) {
+  return medExportLage(() => _exportAtgardslistaCSVExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportActionChecklistCSVExport(items, done) {
+function _exportAtgardslistaCSVExport(items, done) {
   if (!items.length) {
     alert("Det finns inget att exportera ännu. Läs in lönefilen först.");
     return;
@@ -29117,17 +29117,17 @@ function _exportActionChecklistCSVExport(items, done) {
   rows.push(["Hanterade", items.filter((it) => done.has(it.id)).length]);
   const parNot = _attGoraParNot();
   if (parNot) rows.push(["Utelämnade par", parNot]);
-  _downloadCSV(rows, "atgardslista_" + idagDatum());
+  _laddaNedCSV(rows, "atgardslista_" + idagDatum());
 }
 
 // src/app/38-referensfiler.js
 function _lasInReferens(rader, filnamn) {
   const policy = rader.map((row) => ({
-    aid: _normaliseraPolicyAid(row.aid ?? getField(row, ["aid", "yrkeskod", "befattningskod"])),
-    bas: _normaliseraBas(row.bas ?? getField(row, ["bas", "basintervall"])),
-    p10: typeof row.p10 === "number" ? row.p10 : tolkaTal(getField(row, ["10e", "p10", "10"])),
-    med: typeof row.med === "number" ? row.med : tolkaTal(getField(row, ["median", "med"])),
-    p90: typeof row.p90 === "number" ? row.p90 : tolkaTal(getField(row, ["90e", "p90", "90"]))
+    aid: _normaliseraPolicyAid(row.aid ?? hamtaFalt(row, ["aid", "yrkeskod", "befattningskod"])),
+    bas: _normaliseraBas(row.bas ?? hamtaFalt(row, ["bas", "basintervall"])),
+    p10: typeof row.p10 === "number" ? row.p10 : tolkaTal(hamtaFalt(row, ["10e", "p10", "10"])),
+    med: typeof row.med === "number" ? row.med : tolkaTal(hamtaFalt(row, ["median", "med"])),
+    p90: typeof row.p90 === "number" ? row.p90 : tolkaTal(hamtaFalt(row, ["90e", "p90", "90"]))
   })).filter((p) => p.bas || p.aid);
   if (!policy.length) return 0;
   state.policy = policy;
@@ -29135,14 +29135,14 @@ function _lasInReferens(rader, filnamn) {
   const namn = namnFranFil(filnamn);
   state.policyNamn = namn;
   state.policyKortnamn = namn;
-  renderReferensKort();
-  if (typeof renderPaketInfo === "function") {
-    renderPaketInfo();
+  ritaReferensKort();
+  if (typeof ritaPaketinfo === "function") {
+    ritaPaketinfo();
     uppdateraPaketKnapp();
   }
   return policy.length;
 }
-function renderReferensKort() {
+function ritaReferensKort() {
   const el = document.getElementById("referens-status");
   if (!el) return;
   const har = harReferens();
@@ -29159,7 +29159,7 @@ function renderReferensKort() {
     aterga.textContent = "Ta bort referensen";
   }
 }
-var policyInput = (
+var policyFilval = (
   /** @type {HTMLElement} */
   document.getElementById("file-input-policy")
 );
@@ -29179,7 +29179,7 @@ function _visaJamforelseFlik(synlig) {
 function synkaJamforelseFlik() {
   _visaJamforelseFlik(state.data.length > 0 && (state.policy.length > 0 || state.statistik.length > 0));
 }
-var statInput = (
+var statFilval = (
   /** @type {HTMLElement} */
   document.getElementById("file-input-stat")
 );
@@ -29199,26 +29199,26 @@ function uppstartReferensfiler() {
     }
     const fil = document.getElementById("file-input-policy");
     if (fil) fil.value = "";
-    if (typeof resetUploadCell === "function") resetUploadCell("upload-cell-policy", "upload-cell optional", "Valfritt");
+    if (typeof aterstallFilruta === "function") aterstallFilruta("upload-cell-policy", "upload-cell optional", "Valfritt");
     ritaOmReferens();
   });
-  policyInput.addEventListener("change", (e) => {
+  policyFilval.addEventListener("change", (e) => {
     const file = (
       /** @type {HTMLInputElement} */
       e.target.files?.[0]
     );
     if (!file) return;
-    showLoading();
-    readTabularFile(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], (res) => {
+    visaLaddning();
+    lasTabellfil(file, [["bas"], ["aid", "yrkeskod", "befattningskod"], ["p10", "10e", "10"], ["median", "med"], ["p90", "90e", "90"]], (res) => {
       if (!res.ok) {
-        hideLoading();
+        doljLaddning();
         policyStatus.textContent = "" + res.error;
         policyStatus.className = "status-msg";
         return;
       }
       const nInlasta = _lasInReferens(res.rows, file.name);
       if (!nInlasta) {
-        hideLoading();
+        doljLaddning();
         policyStatus.textContent = "Inga giltiga rader — varje rad behöver en BAS-kolumn, en AID-kolumn eller båda.";
         policyStatus.className = "status-msg";
         return;
@@ -29228,27 +29228,27 @@ function uppstartReferensfiler() {
       policyStatus.textContent = `${state.policy.length} rader inlästa` + (nAid ? ` (${nBas} per ${T.niva.en}, ${nAid} per ${T.kod.en})` : ` (per ${T.niva.en})`) + ` · ${res.encoding === "XLSX" ? res.format : res.encoding}`;
       policyStatus.className = "status-msg success";
       synkaJamforelseFlik();
-      markUploadLoaded("upload-cell-policy", "Inläst");
+      markeraFilrutaInlast("upload-cell-policy", "Inläst");
       state.filnamn.policy = file.name;
-      renderFilrutor();
-      hideLoading();
+      ritaFilrutor();
+      doljLaddning();
       ritaKravstatus();
-      renderConsistencyBanner();
-      renderActionChecklist();
-      renderProcessTracker();
-      if (getData().length > 0) ritaLoneoversikt();
+      ritaKonsistenskontroll();
+      ritaAtgardslista();
+      ritaKartlaggningensSteg();
+      if (hamtaData().length > 0) ritaLoneoversikt();
     }, "stallningstagande");
   });
-  statInput.addEventListener("change", (e) => {
+  statFilval.addEventListener("change", (e) => {
     const file = (
       /** @type {HTMLInputElement} */
       e.target.files?.[0]
     );
     if (!file) return;
-    showLoading();
-    readTabularFile(file, [["aid", "yrkesgrupp"], ["median"]], (res) => {
+    visaLaddning();
+    lasTabellfil(file, [["aid", "yrkesgrupp"], ["median"]], (res) => {
       if (!res.ok) {
-        hideLoading();
+        doljLaddning();
         statStatus.textContent = "Fel: " + res.error;
         statStatus.className = "status-msg error";
         return;
@@ -29320,21 +29320,21 @@ function uppstartReferensfiler() {
         const src = res.encoding === "XLSX" ? res.format : res.encoding;
         statStatus.textContent = (extras.length ? `${state.statistik.length} poster inlästa (median + ${extras.join(" + ")})` : `${state.statistik.length} poster inlästa`) + ` · ${src}`;
         statStatus.className = "status-msg success";
-        markUploadLoaded("upload-cell-stat", "Inläst");
+        markeraFilrutaInlast("upload-cell-stat", "Inläst");
         state.filnamn.statistik = file.name;
-        renderFilrutor();
-        if (typeof renderPaketInfo === "function") {
-          renderPaketInfo();
+        ritaFilrutor();
+        if (typeof ritaPaketinfo === "function") {
+          ritaPaketinfo();
           uppdateraPaketKnapp();
         }
         synkaJamforelseFlik();
-        hideLoading();
+        doljLaddning();
         ritaKravstatus();
-        renderConsistencyBanner();
-        renderActionChecklist();
-        renderProcessTracker();
+        ritaKonsistenskontroll();
+        ritaAtgardslista();
+        ritaKartlaggningensSteg();
       } catch (err) {
-        hideLoading();
+        doljLaddning();
         statStatus.textContent = "Fel: " + err.message;
         statStatus.className = "status-msg error";
       }
@@ -29345,7 +29345,7 @@ function uppstartReferensfiler() {
 // src/app/07-standardinstallningar.js
 var INAKTIVITET_STANDARD_MIN = 90;
 var ORG_STANDARDNAMN = "Organisationen";
-var DEFAULT_PROFILE = Object.freeze({
+var STANDARDPROFIL = Object.freeze({
   name: ORG_STANDARDNAMN,
   benchmarkLabel: "jämförelsestatistiken",
   benchmarkLabelGenitive: "jämförelsestatistikens",
@@ -29366,7 +29366,7 @@ var DEFAULT_PROFILE = Object.freeze({
   locale: "sv-SE",
   notes: "Neutral standard. Läs in ett organisationspaket för organisationens benämningar."
 });
-function applyProfileLabels() {
+function tillampaProfiletiketter() {
   document.querySelectorAll("[data-term-template]").forEach((el) => {
     const text = termText(el.getAttribute("data-term-template") || "");
     const attr = el.getAttribute("data-term-attr");
@@ -29392,17 +29392,17 @@ function applyProfileLabels() {
 var _PERSONUPPGIFT_FEL = "Namnet liknar ett personnummer eller en e-postadress och sparades inte.";
 function orgNamn(standard = ORG_STANDARDNAMN) {
   const n = state.profile && state.profile.name;
-  return n && n !== DEFAULT_PROFILE.name ? normaliseraNamn(n) : standard;
+  return n && n !== STANDARDPROFIL.name ? normaliseraNamn(n) : standard;
 }
 function jmfNamn(standard = "Jämförelsestatistiken") {
   const n = state.profile && state.profile.benchmarkLabel;
-  return n && n !== DEFAULT_PROFILE.benchmarkLabel ? normaliseraNamn(n) : standard;
+  return n && n !== STANDARDPROFIL.benchmarkLabel ? normaliseraNamn(n) : standard;
 }
 function jmfNamnGenitiv() {
   const n = state.profile && state.profile.benchmarkLabelGenitive;
-  return n && n !== DEFAULT_PROFILE.benchmarkLabelGenitive ? normaliseraNamn(n) : DEFAULT_PROFILE.benchmarkLabelGenitive;
+  return n && n !== STANDARDPROFIL.benchmarkLabelGenitive ? normaliseraNamn(n) : STANDARDPROFIL.benchmarkLabelGenitive;
 }
-function plotNamn(text) {
+function diagramNamn(text) {
   return String(text ?? "").replace(/</g, "‹").replace(/>/g, "›");
 }
 function synkaNamnFalt() {
@@ -29416,13 +29416,13 @@ function synkaNamnFalt() {
 }
 function _namnAndrat() {
   synkaNamnFalt();
-  applyProfileLabels();
+  tillampaProfiletiketter();
   if (typeof ritaOmReferens === "function") ritaOmReferens();
 }
 function sattOrgNamn(text) {
   const n = normaliseraNamn(text);
   if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
-  state.profile = { ...state.profile, name: n || DEFAULT_PROFILE.name };
+  state.profile = { ...state.profile, name: n || STANDARDPROFIL.name };
   _namnAndrat();
   return { ok: true };
 }
@@ -29431,9 +29431,9 @@ function sattJmfNamn(text) {
   if (n && liknarPersonuppgift(n)) return { ok: false, fel: _PERSONUPPGIFT_FEL };
   state.profile = {
     ...state.profile,
-    benchmarkLabel: n || DEFAULT_PROFILE.benchmarkLabel,
-    benchmarkLabelGenitive: n ? namnGenitiv(n) : DEFAULT_PROFILE.benchmarkLabelGenitive,
-    benchmarkShort: n || DEFAULT_PROFILE.benchmarkShort
+    benchmarkLabel: n || STANDARDPROFIL.benchmarkLabel,
+    benchmarkLabelGenitive: n ? namnGenitiv(n) : STANDARDPROFIL.benchmarkLabelGenitive,
+    benchmarkShort: n || STANDARDPROFIL.benchmarkShort
   };
   _namnAndrat();
   return { ok: true };
@@ -29453,7 +29453,7 @@ function _kopplaNamnFalt(id, satt) {
     }
     if (!r.ok) {
       synkaNamnFalt();
-      if (typeof renderReferensKort === "function") renderReferensKort();
+      if (typeof ritaReferensKort === "function") ritaReferensKort();
     }
   });
 }
@@ -29462,7 +29462,7 @@ function uppstartStandardinstallningar() {
 }
 
 // src/app/28-vad-lagras-inaktivitet.js
-function openDataResidency() {
+function oppnaVadLagras() {
   const modal = document.getElementById("data-residency-modal");
   const content = document.getElementById("data-residency-content");
   if (!modal || !content) return;
@@ -29527,23 +29527,23 @@ function openDataResidency() {
             <p id="inactivity-last" class="k-mask-note" role="status"${last == null ? " hidden" : ""}>Låst till ${last} minuter av organisationspaketet${state.paket ? ` från ${esc(state.paket.organisation)}` : ""}: systemägaren har bestämt tiden, så den kan inte ändras här.</p>
         </div>`;
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal);
+  if (typeof fangaFokus === "function") fangaFokus(modal);
 }
-var _inactivityIdleTimer = null;
-var _inactivityWarningTimer = null;
-var _inactivityWarnEl = null;
-function _hideInactivityWarning() {
-  if (_inactivityWarnEl) {
-    _inactivityWarnEl.remove();
-    _inactivityWarnEl = null;
+var _inaktivitetstimer = null;
+var _inaktivitetsvarningTimer = null;
+var _inaktivitetsvarningElement = null;
+function _doljInaktivitetsvarning() {
+  if (_inaktivitetsvarningElement) {
+    _inaktivitetsvarningElement.remove();
+    _inaktivitetsvarningElement = null;
   }
-  if (_inactivityWarningTimer) {
-    clearInterval(_inactivityWarningTimer);
-    _inactivityWarningTimer = null;
+  if (_inaktivitetsvarningTimer) {
+    clearInterval(_inaktivitetsvarningTimer);
+    _inaktivitetsvarningTimer = null;
   }
 }
-function _showInactivityWarning() {
-  if (_inactivityWarnEl) return;
+function _visaInaktivitetsvarning() {
+  if (_inaktivitetsvarningElement) return;
   const warn = document.createElement("div");
   warn.className = "inactivity-warn-overlay";
   warn.setAttribute("role", "alertdialog");
@@ -29563,26 +29563,26 @@ function _showInactivityWarning() {
             </div>
         </div>`;
   document.body.appendChild(warn);
-  _inactivityWarnEl = warn;
+  _inaktivitetsvarningElement = warn;
   const slut = Date.now() + 60 * 1e3;
   const countdownEl = warn.querySelector("#inactivity-countdown");
-  _inactivityWarningTimer = setInterval(() => {
+  _inaktivitetsvarningTimer = setInterval(() => {
     const secondsLeft = Math.max(0, Math.ceil((slut - Date.now()) / 1e3));
     if (countdownEl) countdownEl.textContent = String(secondsLeft);
     if (secondsLeft <= 0) {
-      _autoClearOnInactivity();
+      _rensaVidInaktivitet();
     }
   }, 1e3);
   warn.querySelector("#inactivity-clear-now")?.addEventListener("click", () => {
-    _autoClearOnInactivity();
+    _rensaVidInaktivitet();
   });
   warn.querySelector("#inactivity-extend")?.addEventListener("click", () => {
-    _hideInactivityWarning();
-    _resetInactivityTimer();
+    _doljInaktivitetsvarning();
+    _aterstallInaktivitetstimer();
   });
 }
-function _autoClearOnInactivity() {
-  _hideInactivityWarning();
+function _rensaVidInaktivitet() {
+  _doljInaktivitetsvarning();
   const hadData = state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
   _rensaAllData();
   if (hadData) {
@@ -29595,28 +29595,28 @@ function _autoClearOnInactivity() {
     }, 3e4);
   }
 }
-function _resetInactivityTimer() {
-  if (_inactivityIdleTimer) {
-    clearTimeout(_inactivityIdleTimer);
-    _inactivityIdleTimer = null;
+function _aterstallInaktivitetstimer() {
+  if (_inaktivitetstimer) {
+    clearTimeout(_inaktivitetstimer);
+    _inaktivitetstimer = null;
   }
   if (state.inactivityTimeoutMin <= 0) return;
   if (state.data.length === 0 && !_fkVantar && !state.forhandskontroll) return;
   const warnAfterMs = Math.max(0, state.inactivityTimeoutMin * 60 * 1e3 - 60 * 1e3);
-  _inactivityIdleTimer = setTimeout(_showInactivityWarning, warnAfterMs);
+  _inaktivitetstimer = setTimeout(_visaInaktivitetsvarning, warnAfterMs);
 }
-function setInactivityTimeout(minutes) {
+function sattInaktivitetstid(minutes) {
   const last = state.paketLas.inaktivitetMin;
   state.inactivityTimeoutMin = last != null ? last : Math.max(0, parseInt(minutes, 10) || 0);
-  _hideInactivityWarning();
-  _resetInactivityTimer();
+  _doljInaktivitetsvarning();
+  _aterstallInaktivitetstimer();
 }
 function uppstartVadLagrasInaktivitet() {
   document.getElementById("btn-clear-all-data")?.addEventListener("click", () => {
-    clearAllData();
+    rensaAllData();
     if (!state.data.length && typeof stangInstallningar === "function") stangInstallningar();
   });
-  document.getElementById("btn-data-residency")?.addEventListener("click", openDataResidency);
+  document.getElementById("btn-data-residency")?.addEventListener("click", oppnaVadLagras);
   document.getElementById("data-residency-content")?.addEventListener("change", (e) => {
     const sel = (
       /** @type {HTMLSelectElement} */
@@ -29624,19 +29624,19 @@ function uppstartVadLagrasInaktivitet() {
     );
     if (sel.id !== "inactivity-timeout-select") return;
     const min = parseInt(sel.value, 10) || 0;
-    setInactivityTimeout(min);
+    sattInaktivitetstid(min);
     const status = document.getElementById("inactivity-status");
     if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : "Av";
   });
   ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"].forEach((evt) => {
     window.addEventListener(evt, () => {
-      if (state.inactivityTimeoutMin > 0 && !_inactivityWarnEl) _resetInactivityTimer();
+      if (state.inactivityTimeoutMin > 0 && !_inaktivitetsvarningElement) _aterstallInaktivitetstimer();
     }, { passive: true });
   });
   document.getElementById("data-residency-close")?.addEventListener("click", () => {
     const m = document.getElementById("data-residency-modal");
     if (m) {
-      if (typeof releaseFocus === "function") releaseFocus(m);
+      if (typeof slappFokus === "function") slappFokus(m);
       m.style.display = "none";
     }
   });
@@ -29647,7 +29647,7 @@ function uppstartVadLagrasInaktivitet() {
     ) {
       const m = document.getElementById("data-residency-modal");
       if (m) {
-        if (typeof releaseFocus === "function") releaseFocus(m);
+        if (typeof slappFokus === "function") slappFokus(m);
         m.style.display = "none";
       }
     }
@@ -29700,18 +29700,18 @@ function _fkPausa(fk, lasIn) {
   const tidigare = _fkVantar ? _fkVantar.tidigare : state.forhandskontroll;
   _fkVantar = { lasIn, tidigare };
   state.forhandskontroll = { ...fk, vantar: true };
-  hideLoading();
+  doljLaddning();
   dataStatus.textContent = "Förhandskontrollen väntar: filen är inte inläst ännu. Granska tolkningen och välj Läs in eller Avbryt.";
   dataStatus.className = "status-msg warning";
-  renderForhandskontroll();
-  maybeShowColumnMapping();
-  _resetInactivityTimer();
+  ritaForhandskontroll();
+  visaKolumnmappningOmBehov();
+  _aterstallInaktivitetstimer();
   const av = document.getElementById("avsnitt-fi-forhandskontroll");
   const filer = document.querySelector('.nav-item[data-tab="filer"]');
   if (filer && !filer.classList.contains("active")) filer.click();
   av?.scrollIntoView?.({ block: "start" });
   document.getElementById("fk-las-in")?.focus?.({ preventScroll: true });
-  announceToScreenReader(dataStatus.textContent);
+  meddelaSkarmlasare(dataStatus.textContent);
 }
 function _fkSlappVantande() {
   _fkVantar = null;
@@ -29727,17 +29727,17 @@ function _fkAvbryt() {
   if (!v) return;
   _fkVantar = null;
   state.forhandskontroll = v.tidigare || null;
-  renderForhandskontroll();
-  maybeShowColumnMapping();
+  ritaForhandskontroll();
+  visaKolumnmappningOmBehov();
   dataStatus.textContent = state.data.length ? "Inläsningen avbröts. Det tidigare inlästa underlaget ligger kvar." : "Inläsningen avbröts. Ingen lönefil är inläst.";
   dataStatus.className = "status-msg";
-  announceToScreenReader(dataStatus.textContent);
+  meddelaSkarmlasare(dataStatus.textContent);
 }
 function _fkSlapp() {
   _fkVantar = null;
   _fkRitad = null;
   state.forhandskontroll = null;
-  renderForhandskontroll();
+  ritaForhandskontroll();
 }
 var FK_TITEL = {
   "yrke-namn": "personnamn i uttaget",
@@ -29782,7 +29782,7 @@ function _fkCellHtml(cell) {
 }
 var _fkLista = (rader) => `<ul class="fk-lista">${rader.map((r) => `<li>${r}</li>`).join("")}</ul>`;
 var _fkKr = (v) => svKr(v);
-function renderForhandskontroll() {
+function ritaForhandskontroll() {
   const av = (
     /** @type {HTMLDetailsElement|null} */
     document.getElementById("avsnitt-fi-forhandskontroll")
@@ -29855,7 +29855,7 @@ function renderForhandskontroll() {
 }
 
 // src/app/16-inlasningskontroll.js
-function renderDataValidationReport() {
+function ritaValideringsrapport() {
   const wrap = document.getElementById("data-validation-report");
   if (!wrap) return;
   if (!state.data.length) {
@@ -29876,8 +29876,8 @@ function renderDataValidationReport() {
   const yrkeNamn = da.yrkeNamn || 0;
   const yrkeNamnRadnr = namnIYrkesfaltetRadnr(yrkeNamn, da.yrkeNamnRadnr);
   const used = state.data.length;
-  const outliers = detectOutliers(3);
-  const bas = getBasIntervals();
+  const outliers = hittaExtremvarden(3);
+  const bas = hamtaBasIntervall();
   const { enkonade: singleSexBas, underK: kMaskedBas } = basVarningar(state.data, bas, kInstalld());
   const dataBas = [...new Set(state.data.map((r) => r.bas))].sort();
   const dataAids = [...new Set(state.data.map((r) => sifferprefixAvYrke(r.yrke)).filter(Boolean))];
@@ -29934,10 +29934,10 @@ function renderDataValidationReport() {
         </div>
     `;
 }
-function syncDatakvalitetPanel(val) {
-  renderUnderlagetsKvalitet(val);
+function synkaDatakvalitetspanel(val) {
+  ritaUnderlagetsKvalitet(val);
 }
-function renderConsistencyBanner() {
+function ritaKonsistenskontroll() {
   const wrap = document.getElementById("consistency-banner-container");
   if (!wrap) return;
   if (!state.data.length) {
@@ -30096,12 +30096,12 @@ function _sokNorm(s) {
   return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
 }
 function sokKandidater() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return [];
   const perBas = /* @__PURE__ */ new Map();
   for (const r of d) if (r.bas != null && r.bas !== "") perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
-  const ut = [...perBas].filter(([, n]) => !isKMasked(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), "sv")).map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
-  for (const g of gruppdossierCandidates()) {
+  const ut = [...perBas].filter(([, n]) => !kMaskerad(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), "sv")).map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
+  for (const g of gruppdossierKandidater()) {
     ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${stor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
   }
   return ut;
@@ -30122,7 +30122,7 @@ function sokFunktionsTraffar(text) {
 }
 function _sokHarData() {
   try {
-    return getData().length > 0;
+    return hamtaData().length > 0;
   } catch (_e) {
     return false;
   }
@@ -30218,7 +30218,7 @@ function sokValj(i, { uppskjut = false } = {}) {
   }
   if (t.typ === "basdossier") {
     _sokStang();
-    openBasdossier(t.bas, document.getElementById("sok-grupp"));
+    oppnaBasdossier(t.bas, document.getElementById("sok-grupp"));
     return;
   }
   const nu = diagramMarkering();
@@ -30241,9 +30241,9 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
     return;
   }
   if (p.dialog === "installningar") oppnaInstallningar({ fokus: p.falt || null });
-  else if (p.dialog === "ordlista") openGlossary();
-  else if (p.dialog === "lagras") openDataResidency();
-  else if (p.dialog === "basdossier") openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById("sok-grupp"));
+  else if (p.dialog === "ordlista") oppnaOrdlista();
+  else if (p.dialog === "lagras") oppnaVadLagras();
+  else if (p.dialog === "basdossier") oppnaBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById("sok-grupp"));
   else if (p.dialog === "symboler") document.getElementById("btn-open-symbols")?.click();
   else {
     const tillAvsnitt = () => {
@@ -30255,9 +30255,9 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
       }
       window.scrollTo(0, 0);
       document.getElementById("main-content")?.focus({ preventScroll: true });
-      announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+      meddelaSkarmlasare(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
     };
-    if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
+    if (!navigeraTill(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
   }
 }
 var _sokHadeData = null;
@@ -30317,7 +30317,7 @@ function uppstartSok() {
 }
 
 // src/app/13-oversikt.js
-function setCompCard(id, count, total, valueText, cardState) {
+function sattKravkort(id, count, total, valueText, cardState) {
   const card = document.getElementById(id);
   const icon = document.getElementById(`${id}-icon`);
   const val = document.getElementById(`${id}-val`);
@@ -30329,13 +30329,13 @@ function setCompCard(id, count, total, valueText, cardState) {
 }
 function ritaKravstatus() {
   const overview = document.getElementById("compliance-overview");
-  const d = getData();
+  const d = hamtaData();
   if (!overview || !d.length) return;
   overview.style.display = "block";
   const vm = (
     /** @type {NonNullable<ReturnType<typeof kravstatus>>} */
     kravstatus(d, {
-      bas: getBasIntervals(),
+      bas: hamtaBasIntervall(),
       k: kInstalld(),
       golv: statGolv(),
       oversikt: _laOversiktRader(d),
@@ -30345,34 +30345,34 @@ function ritaKravstatus() {
   );
   const maskText = vm.maskerade ? ` · ${vm.maskerade} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : "";
   if (vm.jamforbara === 0) {
-    setCompCard("comp-gap", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
-    setCompCard("comp-skev", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
+    sattKravkort("comp-gap", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
+    sattKravkort("comp-skev", 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, "na");
   } else {
-    setCompCard("comp-gap", vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
-    setCompCard("comp-skev", vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
+    sattKravkort("comp-gap", vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
+    sattKravkort("comp-skev", vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
   }
   const polLabel = document.getElementById("comp-pol-label");
   if (polLabel) polLabel.textContent = harReferens() ? `Under P10 i ${referensKortnamn()}` : "Under ställningstagandets P10";
   const polSub = document.getElementById("comp-pol-sub");
   if (polSub) polSub.textContent = referensNamn();
   const ref = vm.referens;
-  if (!ref) setCompCard("comp-pol", 0, 0, "Kräver lönepolitiskt ställningstagande", "na");
-  else if (ref.av === 0) setCompCard("comp-pol", 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, "na");
-  else setCompCard("comp-pol", ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
+  if (!ref) sattKravkort("comp-pol", 0, 0, "Kräver lönepolitiskt ställningstagande", "na");
+  else if (ref.av === 0) sattKravkort("comp-pol", 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, "na");
+  else sattKravkort("comp-pol", ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
   const bm = vm.statistik;
   if (bm) {
     const k = kInstalld();
     const utel = bm.utelamnade ? ` · ${bm.utelamnade} ${bm.utelamnade === 1 ? T.enhet.en : T.enhet.fl} visas inte här (färre än ${k} ${personOrd(k)})` : "";
-    if (bm.av === 0) setCompCard("comp-bm", 0, 0, `Ingen matchning hittad${utel}`, "na");
-    else setCompCard("comp-bm", bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
+    if (bm.av === 0) sattKravkort("comp-bm", 0, 0, `Ingen matchning hittad${utel}`, "na");
+    else sattKravkort("comp-bm", bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
   }
   const bmLank = document.querySelector("#comp-bm .comp-lank");
   if (bmLank) bmLank.hidden = !state.statistik.length;
 }
 function bedomningUnderlag({ reg: given } = {}) {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return null;
-  const reg = given || runOLSRegression();
+  const reg = given || korOLSRegression();
   const modell = reg.error ? "fel" : reg.fellBackFromFull ? "minimal" : "full";
   const mde = reg.error ? null : mdeFranSe(reg.seKonR);
   const modellFras2 = !reg.error && reg.modell && !forklaringsmodellArStandard({ ...reg.modell, skal: "" }) ? reg.fras : void 0;
@@ -30390,7 +30390,7 @@ var UK_IKON = { ok: "bock", varning: "statusVarning", kritisk: "statusKritisk", 
 function statusMarke(status, ord = UK_ETIKETT[status]) {
   return `<span class="uk-marke uk-${status}">${ikon(UK_IKON[status], 14)} ${esc(ord)}</span>`;
 }
-function renderUnderlagetsKvalitet({ reg } = {}) {
+function ritaUnderlagetsKvalitet({ reg } = {}) {
   const host = document.getElementById("underlagets-kvalitet");
   if (!host) return;
   const b = bedomningUnderlag({ reg });
@@ -30423,7 +30423,7 @@ function renderUnderlagetsKvalitet({ reg } = {}) {
   }
   if (detaljer) detaljer.hidden = false;
 }
-function computeBootstrapCI() {
+function raknaBootstrapKI() {
   state.bootstrapCI = _skattning("bootstrapCI", statGolv());
 }
 var _golvFor = /* @__PURE__ */ new WeakMap();
@@ -30434,10 +30434,10 @@ var _nollVid = (
 var _andraGolv = /* @__PURE__ */ new Map();
 var _RAKNA = {
   bootstrapCI: (golv) => {
-    const t0 = performance.now(), ki = organisationensKvotKI(getData(), golv);
+    const t0 = performance.now(), ki = organisationensKvotKI(hamtaData(), golv);
     return ki ? { ratio: ki.ratio, gapPct: ki.gapPct, elapsed: performance.now() - t0, B: ki.B } : null;
   },
-  powerAnalysis: (golv) => styrkeanalys(getData(), golv)
+  powerAnalysis: (golv) => styrkeanalys(hamtaData(), golv)
 };
 function _skattning(falt, golv) {
   const ut = _RAKNA[falt](golv);
@@ -30469,27 +30469,27 @@ function _vidGolv(falt) {
   }
   return m[falt];
 }
-function bootstrapCIGallande() {
+function bootstrapKIGallande() {
   return _vidGolv("bootstrapCI");
 }
 function styrkaGallande() {
   return _vidGolv("powerAnalysis");
 }
-function fmtCI(ci, decimals = 1) {
+function formateraKI(ci, decimals = 1) {
   if (!ci || !isFinite(ci.lo) || !isFinite(ci.hi)) return "";
   const intervall = ci.lo < 0 || ci.hi < 0 ? `${svPct(ci.lo, decimals)} till ${svPct(ci.hi, decimals)}` : `${svTal(ci.lo, decimals)}–${svPct(ci.hi, decimals)}`;
   const B = Number(state.bootstrapCI?.B || osakerhetKonstanter().B_ORGANISATION);
   return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
-function computePowerAnalysis() {
+function raknaStyrkeanalys() {
   return _skattning("powerAnalysis", statGolv());
 }
-function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
+function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) {
   const host = document.getElementById("process-tracker");
   if (!host) return;
   const hasData = (() => {
     try {
-      return getData().length > 0;
+      return hamtaData().length > 0;
     } catch (_e) {
       return false;
     }
@@ -30504,13 +30504,13 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
       return fallback;
     }
   };
-  const punkter = Array.isArray(givna) ? givna : hasData ? safe(() => typeof buildActionChecklist === "function" ? buildActionChecklist({ reg: givenReg }) : [], []) : [];
+  const punkter = Array.isArray(givna) ? givna : hasData ? safe(() => typeof byggAtgardslista === "function" ? byggAtgardslista({ reg: givenReg }) : [], []) : [];
   const klarmarkerade = state._actionChecklistDone || /* @__PURE__ */ new Set();
   const hanterade2 = (kategorier) => hanterade(punkter, klarmarkerade, kategorier);
   const rows = [];
-  rows.push(hasData ? { n: 1, status: "klar", title: "1. Underlag inläst", tab: "dashboard", detail: `${getData().length} rader inlästa — allt nedan bygger på detta.` } : { n: 1, status: "ej", title: "1. Underlag inläst", tab: "dashboard", detail: "Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata)." });
+  rows.push(hasData ? { n: 1, status: "klar", title: "1. Underlag inläst", tab: "dashboard", detail: `${hamtaData().length} rader inlästa — allt nedan bygger på detta.` } : { n: 1, status: "ej", title: "1. Underlag inläst", tab: "dashboard", detail: "Börja här: läs in lönefilen i Kom igång överst på Översikt eller i Filer och kvalitet (eller prova med demodata)." });
   rows.push(safe(() => {
-    const areas = typeof _bes8Areas === "function" ? _bes8Areas() : [];
+    const areas = typeof _bes8Omraden === "function" ? _bes8Omraden() : [];
     const total = areas.length || 6;
     const done = areas.filter((a) => a && a.status).length;
     return {
@@ -30523,7 +30523,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
   }, { n: 2, tab: "bestammelser", title: "2. Regler & praxis", status: "ej", detail: "Gå igenom de sex granskningsområdena — kan göras direkt." }));
   rows.push(safe(() => {
     if (!hasData) return { n: 3, tab: "matrix", title: `3. Lika arbete — samma ${T.enhet.en}`, status: "ej", detail: "Kräver inläst underlag." };
-    const reg = givenReg || (typeof runOLSRegression === "function" ? runOLSRegression() : null);
+    const reg = givenReg || (typeof korOLSRegression === "function" ? korOLSRegression() : null);
     const ok = !!(reg && !reg.error);
     const { t, d } = hanterade2(["Lika arbete", "Lika arbete, fördjupning"]);
     return { n: 3, tab: "matrix", title: `3. Lika arbete — samma ${T.enhet.en}`, ...stegLikaArbete({ regressionOk: ok, t, d }) };
@@ -30538,7 +30538,7 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
   }, { n: 4, tab: "likvardighet", title: "4. Likvärdigt arbete", status: "ej", detail: "Kräver inläst underlag." }));
   rows.push(safe(() => {
     if (!hasData) return { n: 5, tab: "handlingsplan", title: "5. Handlingsplan", status: "ej", detail: "Kräver inläst underlag." };
-    const rader = typeof _handlingsplanSeedRows === "function" ? _handlingsplanSeedRows().rows : [];
+    const rader = typeof _handlingsplanForifyllning === "function" ? _handlingsplanForifyllning().rows : [];
     const t = rader.length;
     const genomforda = rader.filter((r) => r[7] === "Genomförd").length;
     const planerade = rader.filter((r) => r[7] === "Planerad" || r[7] === "Pågår").length;
@@ -30583,11 +30583,11 @@ function renderProcessTracker({ punkter: givna, reg: givenReg } = {}) {
   _laNyckel("nyckel-ov-process", hasData && autoTotal ? `Klara: ${autoDone} av ${autoTotal} steg som verktyget kan se` : "");
   ovRitaLage();
 }
-function renderFilerDelar() {
+function ritaFilerDelar() {
   const delar = [
-    ["underlagets kvalitet", () => renderUnderlagetsKvalitet()],
-    ["extremvärden", () => renderOutliers()],
-    ["inläsningsrapporten", () => renderDataValidationReport()]
+    ["underlagets kvalitet", () => ritaUnderlagetsKvalitet()],
+    ["extremvärden", () => ritaExtremvarden()],
+    ["inläsningsrapporten", () => ritaValideringsrapport()]
   ];
   for (const [namn, fn] of delar) {
     try {
@@ -30606,7 +30606,7 @@ function ovRitaLage() {
   if (!vy) return;
   const d = (() => {
     try {
-      return getData();
+      return hamtaData();
     } catch (_e) {
       return [];
     }
@@ -30632,11 +30632,11 @@ function _ovRitaFilrad(har, antal) {
   }
   rad.innerHTML = `<span><strong>Lönefil:</strong> ${svTal(antal, 0)} personer</span><span><strong>Referens:</strong> ${esc(harReferens() ? referensNamn() : "ingen inläst")}</span><span><strong>Jämförelsestatistik:</strong> ${state.statistik.length ? `${svTal(state.statistik.length, 0)} rader` : "ingen inläst"}</span>` + kTroskelLank() + `<a href="#" class="btn btn-secondary btn-sm" data-go-to-tab="filer">Filer och kvalitet</a>`;
 }
-function computeGroupMDE(nKv, nMa, sigmaLog) {
+function raknaGruppMDE(nKv, nMa, sigmaLog) {
   return gruppMde(nKv, nMa, sigmaLog || styrkaGallande()?.sigma);
 }
 function ritaNyckeltal() {
-  const vm = oversiktNyckeltal(getData(), kTroskel());
+  const vm = oversiktNyckeltal(hamtaData(), kTroskel());
   if (!vm) return;
   document.getElementById("stat-n").textContent = String(vm.n);
   const konEl = document.getElementById("stat-kon");
@@ -30658,17 +30658,17 @@ function ritaNyckeltal() {
     }
   }
 }
-function renderOversiktDelar() {
+function ritaOversiktDelar() {
   let punkter;
   let reg;
   const delar = [
     ["nyckeltal", () => ritaNyckeltal()],
     ["kompliansöversikt", () => ritaKravstatus()],
     ["Att göra", () => {
-      reg = runOLSRegression();
-      punkter = renderActionChecklist({ reg });
+      reg = korOLSRegression();
+      punkter = ritaAtgardslista({ reg });
     }],
-    ["processöversikten", () => renderProcessTracker({ punkter, reg })]
+    ["processöversikten", () => ritaKartlaggningensSteg({ punkter, reg })]
   ];
   for (const [namn, fn] of delar) {
     try {
@@ -30678,10 +30678,10 @@ function renderOversiktDelar() {
     }
   }
   const ab = document.getElementById("snapshot-comparison");
-  if (ab && ab.style.display !== "none" && typeof renderSnapshotComparison === "function") renderSnapshotComparison();
+  if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
 }
-function populateSelects() {
-  const bas = getBasIntervals();
+function fyllValjare() {
+  const bas = hamtaBasIntervall();
   ["bas-select-kon", "bas-select-demo"].forEach((selId) => {
     const sel = document.getElementById(selId);
     if (!sel) return;
@@ -30724,7 +30724,7 @@ function statGolv() {
 function provaEnskiltText() {
   return state.kLage === "export" ? "" : " Se lönerna under Tabeller och egna vyer och dokumentera bedömningen under Sakliga skäl i Handlingsplan.";
 }
-function isKMasked(n) {
+function kMaskerad(n) {
   return n < kTroskel();
 }
 function litetUnderlag() {
@@ -30743,9 +30743,9 @@ function _raGapText(reg, fmt) {
   return raGapText(reg, fmt, kTroskel());
 }
 function _basEffektNot(utelamnade, k) {
-  return _kMaskNoteText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen");
+  return _kMaskNotText(utelamnade, `${T.niva.en}|${T.niva.fl}`, k, "deras effekt i modellen skulle visa deras genomsnittliga lönenivå", "modellen");
 }
-function _setDiagramKNot(chartId, text) {
+function _sattDiagramKNot(chartId, text) {
   const chart = document.getElementById(chartId);
   if (!chart) return;
   const noteId = chartId + "-k-not";
@@ -30763,7 +30763,7 @@ function _setDiagramKNot(chartId, text) {
   }
   note.textContent = text;
 }
-function _setDiagramMetodNot(chartId, text) {
+function _sattDiagramMetodNot(chartId, text) {
   const chart = document.getElementById(chartId);
   if (!chart) return;
   const noteId = chartId + "-metod-not";
@@ -30807,7 +30807,7 @@ function _kUndantagFor(el, medSma) {
     iLikvardighet: !!(el.closest("#view-likvardighet") || kalla && kalla.closest("#view-likvardighet")),
     arFigur,
     figurMedSma: arFigur && !!(typeof medSma === "boolean" ? medSma : _rfExportFigur(el)?.visaSma),
-    utforskaMedSma: !arFigur && (el.id === "explore-table" || el.id === "chart-explore") && typeof explorerSmaIExport === "function" && !!explorerSmaIExport()
+    utforskaMedSma: !arFigur && (el.id === "explore-table" || el.id === "chart-explore") && typeof utforskaSmaIExport === "function" && !!utforskaSmaIExport()
   });
 }
 function _kSanktNot() {
@@ -30903,14 +30903,14 @@ Lönemått kommer att redovisas för grupper med ned till ${n} ${personOrd(n)}. 
   state.kTroskel = n;
   state._lifecycleCache = null;
   const golvAndrat = statGolv() !== golvFore;
-  if (golvAndrat && typeof invalidateStatCaches === "function") invalidateStatCaches({ recompute: false, likvardighet: false });
+  if (golvAndrat && typeof tomStatistikcacher === "function") tomStatistikcacher({ recompute: false, likvardighet: false });
   else if (typeof ritGenerationNy === "function") ritGenerationNy();
   if (typeof _fcRensaParMal === "function") _fcRensaParMal();
   _synkaKTroskel();
   let klar = null;
   if (rita) {
-    if (stegvis) klar = _renderaOmAllaFlikarStegvis();
-    else _renderaOmAllaFlikar();
+    if (stegvis) klar = _ritaOmAllaFlikarStegvis();
+    else _ritaOmAllaFlikar();
   }
   if (golvAndrat) {
     if (klar) klar.then(() => _skattningarIBakgrunden());
@@ -30928,20 +30928,20 @@ function _skattningarIBakgrunden() {
     try {
       if (state.data.length) {
         try {
-          computeBootstrapCI();
+          raknaBootstrapKI();
         } catch (_e) {
           state.bootstrapCI = null;
         }
         try {
-          state.powerAnalysis = computePowerAnalysis();
+          state.powerAnalysis = raknaStyrkeanalys();
         } catch (_e) {
           state.powerAnalysis = null;
         }
         if (typeof ritaNyckeltal === "function") ritaNyckeltal();
-        if (typeof renderUnderlagetsKvalitet === "function") renderUnderlagetsKvalitet();
+        if (typeof ritaUnderlagetsKvalitet === "function") ritaUnderlagetsKvalitet();
         const oppen = document.querySelector(".nav-item.active[data-tab]");
         const flik = oppen ? oppen.getAttribute("data-tab") : null;
-        if ((flik === "matrix" || flik === "prioritering") && typeof renderTabContent === "function") renderTabContent(flik);
+        if ((flik === "matrix" || flik === "prioritering") && typeof ritaFlik === "function") ritaFlik(flik);
       }
     } catch (e) {
       rapporteraFel("skattningar i bakgrunden", e);
@@ -30954,7 +30954,7 @@ function _skattningarIBakgrunden() {
   }, 0));
   return _bakgrundsrakning;
 }
-function _renderaOmAllaFlikar() {
+function _ritaOmAllaFlikar() {
   for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
   visningNy();
 }
@@ -30966,7 +30966,7 @@ function _omritningForsok(namn, fn) {
   }
 }
 function _omritningssteg() {
-  if (!state.data.length || typeof renderTabContent !== "function") return [];
+  if (!state.data.length || typeof ritaFlik !== "function") return [];
   const steg = [];
   steg.push(["flikar som inte syns", () => {
     const oppen2 = document.querySelector(".nav-item.active[data-tab]");
@@ -30986,34 +30986,34 @@ function _omritningssteg() {
   let reg;
   let regFangst = null;
   steg.push(["underlagets kvalitet", () => {
-    if (typeof renderUnderlagetsKvalitet !== "function") return;
+    if (typeof ritaUnderlagetsKvalitet !== "function") return;
     regFangst = indata();
-    reg = typeof runOLSRegression === "function" ? runOLSRegression() : void 0;
-    renderUnderlagetsKvalitet({ reg });
+    reg = typeof korOLSRegression === "function" ? korOLSRegression() : void 0;
+    ritaUnderlagetsKvalitet({ reg });
   }]);
   let punkter;
   let punktFangst = null;
   steg.push(["Att göra", () => {
-    if (typeof renderActionChecklist !== "function") return;
+    if (typeof ritaAtgardslista !== "function") return;
     punktFangst = indata();
-    punkter = renderActionChecklist({ reg: oforandrat(regFangst) ? reg : void 0 });
+    punkter = ritaAtgardslista({ reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
   steg.push(["processöversikten", () => {
-    if (typeof renderProcessTracker !== "function") return;
-    renderProcessTracker({ punkter: oforandrat(punktFangst) ? punkter : void 0, reg: oforandrat(regFangst) ? reg : void 0 });
+    if (typeof ritaKartlaggningensSteg !== "function") return;
+    ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : void 0, reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
   steg.push(["extremvärden", () => {
-    if (typeof renderOutliers === "function") renderOutliers();
+    if (typeof ritaExtremvarden === "function") ritaExtremvarden();
   }]);
   steg.push(["inläsningsrapporten", () => {
-    if (typeof renderDataValidationReport === "function") renderDataValidationReport();
+    if (typeof ritaValideringsrapport === "function") ritaValideringsrapport();
   }]);
   steg.push(["A/B-jämförelsen", () => {
     const ab = document.getElementById("snapshot-comparison");
-    if (ab && ab.style.display !== "none" && typeof renderSnapshotComparison === "function") renderSnapshotComparison();
+    if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
   }]);
   const oppen = document.querySelector(".nav-item.active[data-tab]");
-  if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), () => renderTabContent(oppen.getAttribute("data-tab"))]);
+  if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), () => ritaFlik(oppen.getAttribute("data-tab"))]);
   steg.push(["gruppdossiern", () => {
     const dossier = document.getElementById("dossier-body");
     if (dossier && dossier.innerHTML.trim() && typeof ritaGruppdossier === "function") ritaGruppdossier();
@@ -31021,7 +31021,7 @@ function _omritningssteg() {
   return steg;
 }
 var _omritningPagar = null;
-function _renderaOmAllaFlikarStegvis() {
+function _ritaOmAllaFlikarStegvis() {
   if (_omritningPagar) return _omritningPagar;
   const steg = _omritningssteg();
   if (!steg.length) return Promise.resolve();
@@ -31079,7 +31079,7 @@ function uppstartKTroskel() {
     );
     _kVisaFel(r.ok || r.nekad ? "" : r.fel);
     const sag = () => {
-      if (r.ok && typeof announceToScreenReader === "function") announceToScreenReader(`Minsta gruppstorlek är nu ${r.varde}.`);
+      if (r.ok && typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(`Minsta gruppstorlek är nu ${r.varde}.`);
     };
     if (r.klar) r.klar.then(sag);
     else sag();
@@ -31101,8 +31101,8 @@ function _ebText(delar) {
 function _ebAntal(n, en, flera) {
   return `${n} ${n === 1 ? en : flera}`;
 }
-function renderExportBesked({ baraUrval = false } = {}) {
-  const har = getData().length > 0;
+function ritaExportBesked({ baraUrval = false } = {}) {
+  const har = hamtaData().length > 0;
   const satt = (id, html) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = har ? html : "";
@@ -31158,7 +31158,7 @@ function renderExportBesked({ baraUrval = false } = {}) {
 function _ebRitaUrval(alla) {
   const host = document.getElementById("rapport-urval");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     _laNyckel("nyckel-ex-urval", "");
     return;
@@ -31232,7 +31232,7 @@ function uppstartExportbesked() {
     if (!el || !el.closest || !el.closest("#rapport-perbas")) return;
     _ebLasPerBasRecept();
     const fokus = el.id;
-    renderExportBesked();
+    ritaExportBesked();
     document.getElementById(fokus)?.focus();
   });
   document.addEventListener("click", (e) => {
@@ -31243,7 +31243,7 @@ function uppstartExportbesked() {
     if (!t || !t.closest) return;
     if (t.closest("#pb-aterstall")) {
       state.perBasRecept = null;
-      renderExportBesked();
+      ritaExportBesked();
       return;
     }
     const bort = t.closest("[data-egen-bort]"), flytta = t.closest("[data-egen-flytta]");
@@ -31261,7 +31261,7 @@ function uppstartExportbesked() {
       [lista[i], lista[j]] = [lista[j], lista[i]];
     }
     state.rapportTabeller = lista;
-    renderExportBesked();
+    ritaExportBesked();
     if (flytta) document.querySelector(`[data-egen-id="${id}"] [data-egen-flytta="${flytta.getAttribute("data-egen-flytta")}"]:not([disabled])`)?.focus();
   });
   document.addEventListener("click", (e) => {
@@ -31273,7 +31273,7 @@ function uppstartExportbesked() {
     );
     if (fast) {
       sattRapportUrval(fast.getAttribute("data-urval-fast"));
-      renderExportBesked({ baraUrval: true });
+      ritaExportBesked({ baraUrval: true });
       document.querySelector(`[data-urval-fast="${fast.getAttribute("data-urval-fast")}"]`)?.focus();
       return;
     }
@@ -31291,7 +31291,7 @@ function uppstartExportbesked() {
     ordning.splice(i, 1);
     ordning.splice(j, 0, id);
     sattRapportUrval({ ordning, med: u.med });
-    renderExportBesked({ baraUrval: true });
+    ritaExportBesked({ baraUrval: true });
     document.querySelector(`#rapport-urval [data-urval-id="${id}"] [data-urval-flytta="${steg}"]:not([disabled])`)?.focus();
   });
   document.addEventListener("change", (e) => {
@@ -31307,13 +31307,13 @@ function uppstartExportbesked() {
       /** @type {HTMLInputElement} */
       ruta.checked ? [...u.med, id] : u.med.filter((x) => x !== id)
     ) });
-    renderExportBesked({ baraUrval: true });
+    ritaExportBesked({ baraUrval: true });
     document.querySelector(`[data-urval-med="${id}"]`)?.focus();
   });
 }
 
 // src/app/65-om-verktyget.js
-var INFO_SECTIONS = {
+var OM_AVSNITT = {
   overview: () => `
         <h3>Vad är detta verktyg?</h3>
         <p class="om-ansvar"><strong>Ansvar.</strong> ${ANSVARSFORBEHALL}</p>
@@ -31381,7 +31381,7 @@ var INFO_SECTIONS = {
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
             <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
-            <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
+            <li><code>minimeraLonerad()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
@@ -31552,7 +31552,7 @@ var INFO_SECTIONS = {
     `,
   releases: () => {
     const ver = APP_VERSION;
-    const date = APP_BUILD_DATE;
+    const date = APP_BYGGDATUM;
     return `
         <h3>Aktuell version</h3>
         <div class="info-build-card">
@@ -31634,10 +31634,10 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         </ul>
     `
 };
-function renderInfoTab(section = "overview") {
+function ritaOmVerktyget(section = "overview") {
   const wrap = document.getElementById("info-tab-content");
   if (!wrap) return;
-  const renderer = INFO_SECTIONS[section] || INFO_SECTIONS.overview;
+  const renderer = OM_AVSNITT[section] || OM_AVSNITT.overview;
   wrap.innerHTML = renderer();
   document.querySelectorAll("#view-info .info-section-btn").forEach((btn) => {
     const isActive = (
@@ -31655,16 +31655,16 @@ function renderInfoTab(section = "overview") {
       mall.content.textContent.trim()
     ) : "Licenstexterna byggs in i den färdiga filen (src/licenser.txt).";
   }
-  applyProfileLabels();
+  tillampaProfiletiketter();
 }
 function uppstartOmVerktyget() {
   document.querySelectorAll("#view-info .info-section-btn").forEach((btn) => {
-    btn.addEventListener("click", () => renderInfoTab(
+    btn.addEventListener("click", () => ritaOmVerktyget(
       /** @type {HTMLElement} */
       btn.dataset.section
     ));
   });
-  _wireTablistKeys(
+  _kopplaFlikradensTangenter(
     /** @type {HTMLElement[]} */
     [...document.querySelectorAll("#view-info .info-section-btn")]
   );
@@ -31804,7 +31804,7 @@ function robusthetLikvardighet(trösklar = [55, 60, 65]) {
   return { trösklar, rows, utelamnade, not: _parUtelamnadeNot(utelamnade) };
 }
 function robusthetPrioritering(topN = 10) {
-  if (typeof computePrioritization !== "function") return null;
+  if (typeof raknaPrioritering !== "function") return null;
   const refs = [];
   if ((state.policy || []).length) refs.push("stallningstagande");
   if ((state.statistik || []).length) refs.push("statistik");
@@ -31813,7 +31813,7 @@ function robusthetPrioritering(topN = 10) {
   refs.forEach((ref) => {
     let items = [];
     try {
-      items = (computePrioritization(ref) || []).slice(0, topN);
+      items = (raknaPrioritering(ref) || []).slice(0, topN);
     } catch (_e) {
       items = [];
     }
@@ -31835,7 +31835,7 @@ function _dkRitaTopp(del) {
   Object.assign(_dkLage, del);
   const host = document.getElementById("dk-slutsatser");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     return;
   }
@@ -31850,40 +31850,40 @@ function _dkRitaTopp(del) {
   _laNyckel("nyckel-dk-robusthet", robust);
   _laNyckel("nyckel-dk-rapportunderlag", n ? `${n} avsnitt` : "");
 }
-function renderRobusthet() {
+function ritaRobusthet() {
   const host = document.getElementById("robusthet-body");
   if (!host) return;
   _dkRitaTopp({ robust: null });
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     return;
   }
-  const n = getData().length;
+  const n = hamtaData().length;
   host.innerHTML = `
         <p>Analysen kör om slutsatserna med andra rimliga inställningar och visar vad som står sig.
         Den räknar om de tyngsta stegen flera gånger${n > 5e3 ? ` — med ${n.toLocaleString("sv-SE")} rader i underlaget kan det ta en stund` : ""}.</p>
         <button type="button" class="btn btn-primary btn-sm" id="btn-run-robusthet">Kör robusthetsanalys</button>`;
 }
-function runRobusthet() {
+function korRobusthet() {
   const host = document.getElementById("robusthet-body");
-  if (!host || !getData().length) return;
+  if (!host || !hamtaData().length) return;
   host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
   setTimeout(() => {
     try {
-      _renderRobusthetResult(host);
+      _ritaRobusthetResultat(host);
     } finally {
       visningNy();
     }
   }, 30);
 }
-function _renderRobusthetResult(...a) {
-  return medExportLage(() => __renderRobusthetResultExport.apply(
+function _ritaRobusthetResultat(...a) {
+  return medExportLage(() => __ritaRobusthetResultatExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function __renderRobusthetResultExport(host) {
+function __ritaRobusthetResultatExport(host) {
   const lv = robusthetLikvardighet();
   const prio = robusthetPrioritering();
   const stabilBadge = (hits, of) => hits >= of ? '<span class="rb-stable">stabil</span>' : `<span class="rb-flip">flippar (${hits}/${of})</span>`;
@@ -31911,13 +31911,13 @@ function __renderRobusthetResultExport(host) {
   const rader = [...lv ? lv.rows : [], ...prio && !prio.tooFew ? prio.rows : []];
   _dkRitaTopp({ robust: { provade: rader.length, flippar: rader.filter((r) => r.hits < r.of).length } });
 }
-function buildFardigcheck() {
+function byggFardigcheck() {
   const out = [];
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return out;
   try {
-    const ref = typeof _selectedPrioReference === "function" ? _selectedPrioReference() : "statistik";
-    const items = computePrioritization(ref) || [];
+    const ref = typeof _valdPrioReferens === "function" ? _valdPrioReferens() : "statistik";
+    const items = raknaPrioritering(ref) || [];
     const flagged = items.filter((i) => i.diffPct < 0);
     const overGransen = items.filter((i) => i.status === "akut" || i.status === "atgard").length;
     if (flagged.length) {
@@ -31933,7 +31933,7 @@ function buildFardigcheck() {
     rapporteraFel("Färdigcheck: flaggade grupper utan åtgärd", e);
   }
   if ((state.policy || []).length && typeof policyFor === "function") {
-    const utan = getBasIntervals().filter((b) => !policyFor(null, b));
+    const utan = hamtaBasIntervall().filter((b) => !policyFor(null, b));
     if (utan.length) {
       out.push({
         id: "bas-utan-policy",
@@ -31960,7 +31960,7 @@ function buildFardigcheck() {
     rapporteraFel("Färdigcheck: BAS utan referens eller maskerade grupper", e);
   }
   try {
-    const areas = typeof _bes8Areas === "function" ? _bes8Areas() : [];
+    const areas = typeof _bes8Omraden === "function" ? _bes8Omraden() : [];
     const tomma = areas.filter((a) => !a.status);
     if (tomma.length) {
       out.push({
@@ -32005,15 +32005,15 @@ function buildFardigcheck() {
   }
   return out;
 }
-function renderFardigcheck() {
+function ritaFardigcheck() {
   const host = document.getElementById("fardigcheck-body");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     host.innerHTML = "";
     _dkRitaTopp({ fardig: null });
     return;
   }
-  const items = buildFardigcheck();
+  const items = byggFardigcheck();
   _dkRitaTopp({ fardig: items });
   if (!items.length) {
     host.innerHTML = `<div class="fc-clear">${ikon("bock")} Inga lösa trådar hittades. Kom ihåg att verktyget bara ser det som går att
@@ -32030,16 +32030,16 @@ function renderFardigcheck() {
                 ${i.tab ? `<button type="button" class="btn-table-tool" data-goto-tab="${esc(i.tab)}">Gå dit</button>` : ""}
             </li>`).join("")}</ul>`;
 }
-function renderKvalitetssakring() {
-  renderRobusthet();
-  renderFardigcheck();
+function ritaKvalitetssakring() {
+  ritaRobusthet();
+  ritaFardigcheck();
 }
 function uppstartRobusthetFardigcheck() {
   document.addEventListener("click", (e) => {
     if (
       /** @type {HTMLElement} */
       e.target.closest("#btn-run-robusthet")
-    ) runRobusthet();
+    ) korRobusthet();
   });
 }
 
@@ -32051,7 +32051,7 @@ var RAPPORT_DIAGRAM = [
 ];
 var _rapportBlockSenast = /* @__PURE__ */ new Map();
 var _rapportParLage = { harPar: false, exkluderade: 0 };
-function _ruTopN() {
+function _ruMaxPar() {
   return (state.likvardighet && state.likvardighet.topN) ?? 100;
 }
 function _rapportDiagramLista(harPar, exkluderade) {
@@ -32068,17 +32068,17 @@ function rapportunderlagBlock(...a) {
   ));
 }
 function _rapportunderlagBlockExport() {
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) return [];
   const k = kTroskel();
-  const reg = runOLSRegression();
+  const reg = korOLSRegression();
   let lv = null;
   try {
     lv = likvardighetResultat();
   } catch (_e) {
     lv = null;
   }
-  const hpSeed = _handlingsplanSeedRows();
+  const hpSeed = _handlingsplanForifyllning();
   const vm = vymodellRapportunderlag(d, {
     k,
     golv: statGolv(),
@@ -32089,7 +32089,7 @@ function _rapportunderlagBlockExport() {
     kvalitet: bedomningUnderlag({ reg }),
     lika: laLikaGrupper(d, k),
     lv,
-    topN: _ruTopN(),
+    topN: _ruMaxPar(),
     kvinnoTroskel: aidbasGrans(),
     kvDomDefinition: aidbasDefinition(),
     jamforelse: lvJamforelse(),
@@ -32101,7 +32101,7 @@ function _rapportunderlagBlockExport() {
     kostnad: state.costSettings,
     arsjamforelse: arsjamforelse(),
     basintervall: basdossierKandidater().flatMap(({ bas }) => {
-      const bd = buildBasdossier(bas);
+      const bd = byggBasdossier(bas);
       return bd ? [{ bas, stycken: basdossierStycken(bd, { forraBaraMedBokslut: true }), yrken: basdossierYrkesrader(bd) }] : [];
     }),
     basBedomning: BD_BEDOMNING,
@@ -32110,10 +32110,10 @@ function _rapportunderlagBlockExport() {
   _rapportParLage = { harPar: vm.harPar, exkluderade: vm.exkluderade };
   return vm.block;
 }
-function renderRapportunderlag() {
+function ritaRapportunderlag() {
   const host = document.getElementById("rapportunderlag-innehall");
   if (!host) return;
-  if (!getData().length) {
+  if (!hamtaData().length) {
     _rapportBlockSenast = /* @__PURE__ */ new Map();
     host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';
     if (typeof _dkRitaTopp === "function") _dkRitaTopp({ block: null });
@@ -32196,7 +32196,7 @@ async function _kopieraRapportAvsnittExport() {
 function _rapportKvitto(knapp, text) {
   const k = knapp && knapp.parentElement && knapp.parentElement.querySelector(".ru-kvitto");
   if (k) k.textContent = text;
-  if (typeof announceToScreenReader === "function") announceToScreenReader(text);
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(text);
 }
 function kopieraRapportBlock(...a) {
   return medExportLage(() => _kopieraRapportBlockExport.apply(
@@ -32258,7 +32258,7 @@ async function _kopieraRapportDiagramExport(id) {
   const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find((g) => g.id === id) || (id !== "chart-likvardighet-heatmap" ? RAPPORT_DIAGRAM.find((g) => g.id === id) : null);
   if (!def) return "saknas";
   try {
-    renderTabContent(def.flik);
+    ritaFlik(def.flik);
   } catch (_e) {
   }
   const gd = document.getElementById(id);
@@ -32274,7 +32274,7 @@ async function _kopieraRapportDiagramExport(id) {
     }
   }
   try {
-    await _chartExportImage(gd, "png-dokument");
+    await _diagramexportBild(gd, "png-dokument");
     return "nedladdat";
   } catch (_e) {
     return "fel";
@@ -32326,7 +32326,7 @@ function _visaFilkortet(kortId, inputId, text) {
   kort.classList.add("visas-nu");
   setTimeout(() => kort.classList.remove("visas-nu"), 2e3);
   document.getElementById(inputId)?.focus?.({ preventScroll: true });
-  announceToScreenReader(text);
+  meddelaSkarmlasare(text);
 }
 function visaLonefilskortet(flikNamn) {
   _visaFilkortet(
@@ -32390,14 +32390,14 @@ var _valRaknare = 0;
 var FLIK_RAKNAS_TEXT = "Räknar fram fliken …";
 var BLOCK_RAKNAS_TEXT = "Räknar …";
 function flikbyte(target, { uppskjut = false, efter = null } = {}) {
-  const val = ++_flikVal, flik = tabMal(target);
+  const val = ++_flikVal, flik = flikMal(target);
   document.querySelectorAll(".view-panel[aria-busy]").forEach((p) => _flikRaknas(
     /** @type {HTMLElement} */
     p,
     false
   ));
   if (!uppskjut) {
-    renderTabContent(target);
+    ritaFlik(target);
     if (efter) efter();
     return;
   }
@@ -32408,14 +32408,14 @@ function flikbyte(target, { uppskjut = false, efter = null } = {}) {
   }
   const paneler = (
     /** @type {HTMLElement[]} */
-    (PANEL_GROUPS[flik] || [flik]).map((p) => document.getElementById("view-" + p)).filter(Boolean)
+    (PANELGRUPPER[flik] || [flik]).map((p) => document.getElementById("view-" + p)).filter(Boolean)
   );
   paneler.forEach((p) => _flikRaknas(p, true));
   _efterMalning(() => {
     if (val !== _flikVal) return;
     _uppskjutNasta = flik;
     try {
-      renderTabContent(target);
+      ritaFlik(target);
     } catch (e) {
       rapporteraFel(`flikbytet (${flik})`, e);
     } finally {
@@ -32463,10 +32463,10 @@ function _sammaFangst(f) {
 }
 function _aktivFlik() {
   const a = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-  return a ? tabMal(a) : null;
+  return a ? flikMal(a) : null;
 }
 function _ritaTungtBlock(flik, hostIds, fn) {
-  const hosts = _ritasUppskjutet === flik && getData().length ? (
+  const hosts = _ritasUppskjutet === flik && hamtaData().length ? (
     /** @type {HTMLElement[]} */
     hostIds.map((id) => document.getElementById(id)).filter(Boolean)
   ) : [];
@@ -32564,7 +32564,7 @@ function _visasSomRitad(flik) {
 }
 function _visaRitad(flik) {
   if (_aktivFlik() === flik) {
-    renderFlowNav(flik);
+    ritaNastaSteg(flik);
     sidindexBygg(flik);
   }
   _efterRitning(flik);
@@ -32591,7 +32591,7 @@ function _efterRitning(flik) {
   if (typeof _mkTabeller === "function" && diagramMarkering()) _mkTabeller();
   if (typeof stangAutofyll === "function") stangAutofyll(document.getElementById("view-" + flik) || document);
 }
-var PANEL_GROUPS = {
+var PANELGRUPPER = {
   matrix: ["lika-yrken"],
   // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
   struktur: ["struktur", "skevhet", "regression"],
@@ -32603,11 +32603,11 @@ var PANEL_GROUPS = {
   dokumentera: ["kvalitet", "dokumentera"]
   // Exportera: färdigcheck + robusthet + export
 };
-var TAB_ALIAS = { rapport: "utforska", demografi: "kon", kvalitet: "dokumentera", lonepolitik: "benchmark", skevhet: "struktur", regression: "struktur", spara: "arbetet" };
-function tabMal(namn) {
-  return TAB_ALIAS[namn] || namn;
+var FLIKALIAS = { rapport: "utforska", demografi: "kon", kvalitet: "dokumentera", lonepolitik: "benchmark", skevhet: "struktur", regression: "struktur", spara: "arbetet" };
+function flikMal(namn) {
+  return FLIKALIAS[namn] || namn;
 }
-function unlockTabs() {
+function lasUppFlikar() {
   ["tab-kon", "tab-matrix", "tab-prioritering", "tab-loneoversyn", "tab-struktur", "tab-likvardighet", "tab-utforska", "tab-rapporttext"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -32619,8 +32619,8 @@ function unlockTabs() {
   synkaJamforelseFlik();
   synkaAlderFlik();
 }
-function renderTabContent(target) {
-  const flik = tabMal(target), yttre = !_ritasNu.has(flik);
+function ritaFlik(target) {
+  const flik = flikMal(target), yttre = !_ritasNu.has(flik);
   _ritasNu.add(flik);
   const runda = yttre ? (_flikRunda.get(flik) || 0) + 1 : _flikRunda.get(flik) || 0;
   if (yttre) {
@@ -32635,7 +32635,7 @@ function renderTabContent(target) {
     _ritasUppskjutet = flik;
   }
   try {
-    const ut = _renderTabContent(target);
+    const ut = _ritaFlik(target);
     if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) {
       _ritadVid.delete(flik);
       _visadSom.delete(flik);
@@ -32652,7 +32652,7 @@ function renderTabContent(target) {
 }
 var KRAVER_UNDERLAG = ["kon", "matrix", "prioritering", "struktur", "loneoversyn", "utforska", "benchmark", "rapporttext"];
 function _ritaIngetUnderlag(target, tomt) {
-  const vy = document.getElementById("view-" + (PANEL_GROUPS[target] || [target])[0]);
+  const vy = document.getElementById("view-" + (PANELGRUPPER[target] || [target])[0]);
   if (!vy) return;
   let rad = vy.querySelector(":scope > .inget-underlag");
   if (!tomt || !KRAVER_UNDERLAG.includes(target)) {
@@ -32667,7 +32667,7 @@ function _ritaIngetUnderlag(target, tomt) {
   vy.insertBefore(rad, vy.firstChild);
 }
 function _ritaUtanAlder(target, utan) {
-  const vy = document.getElementById("view-" + (PANEL_GROUPS[target] || [target])[0]);
+  const vy = document.getElementById("view-" + (PANELGRUPPER[target] || [target])[0]);
   if (!vy) return;
   let rad = vy.querySelector(":scope > .utan-alder");
   if (!utan) {
@@ -32681,9 +32681,9 @@ function _ritaUtanAlder(target, utan) {
   rad.textContent = "Lönefilen saknar ålder: Ålder & karriär kräver ålder i lönefilen. Analysen i de andra flikarna körs utan åldersjustering.";
   vy.insertBefore(rad, vy.firstChild);
 }
-function _renderTabContent(target) {
-  target = tabMal(target);
-  const d = getData();
+function _ritaFlik(target) {
+  target = flikMal(target);
+  const d = hamtaData();
   _ritaIngetUnderlag(target, !d.length);
   if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
   if (target === "kon" && d.length) {
@@ -32699,57 +32699,57 @@ function _renderTabContent(target) {
       s2.value
     );
   } else if (target === "benchmark" && d.length) {
-    renderReferensOverblick();
+    ritaReferensOverblick();
     ritaLonepolitik();
-    renderStatistikLage();
-    generateBenchmark();
+    ritaStatistikLage();
+    byggJamforelse();
   } else if (target === "matrix" && d.length) {
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     ritaLikaArbete(laVymodell(), { reg });
-    renderPersonerAttGranska();
-    renderAidBasLika();
-    renderLikaArbeteTopp({ reg });
-  } else if (target === "prioritering" && d.length) renderPrioritering();
+    ritaPersonerAttGranska();
+    ritaAidBasLika();
+    ritaLikaArbeteTopp({ reg });
+  } else if (target === "prioritering" && d.length) ritaPrioritering();
   else if (target === "struktur" && d.length) {
-    renderStructure();
+    ritaStruktur();
     ritaLoneskillnadPerBas(lsBasVymodell());
-    _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => renderBlinderOaxacaCard(ritaRegressionskort()));
+    _ritaTungtBlock(target, ["forklaringsmodell-panel", "regression-card", "blinder-oaxaca-card"], () => ritaBlinderOaxacaKort(ritaRegressionskort()));
     ritaGapUppdelning();
-    renderLonestrukturNycklar();
+    ritaLonestrukturNycklar();
   } else if (target === "loneoversyn" && d.length) ritaLoneoversyn();
   else if (target === "likvardighet" && (d.length || state.statistik.length)) {
     ritaLikvardigtArbete();
-    renderAidBasLikvardigt();
+    ritaAidBasLikvardigt();
   } else if (target === "utforska" && d.length) {
     ritaLoneoversikt();
-    renderExplorer();
+    ritaUtforska();
     utAllaDiagramVidRitning();
   } else if (target === "rapporttext") medExportLage(() => {
-    renderStrukturUtkast();
-    _ritaTungtBlock(target, ["rapportunderlag-innehall"], () => medExportLage(renderRapportunderlag));
+    ritaStrukturUtkast();
+    _ritaTungtBlock(target, ["rapportunderlag-innehall"], () => medExportLage(ritaRapportunderlag));
   });
   else if (target === "dokumentera") medExportLage(() => {
-    if (d.length) renderKvalitetssakring();
-    _ritaTungtBlock(target, ["rapport-urval", "besked-word", "besked-pdf", "besked-excel", "besked-zip"], () => medExportLage(() => renderExportBesked()));
+    if (d.length) ritaKvalitetssakring();
+    _ritaTungtBlock(target, ["rapport-urval", "besked-word", "besked-pdf", "besked-excel", "besked-zip"], () => medExportLage(() => ritaExportBesked()));
   });
   else if (target === "arbetet") medExportLage(() => {
-    if (typeof renderArsjamforelse === "function") renderArsjamforelse();
+    if (typeof ritaArsjamforelse === "function") ritaArsjamforelse();
   });
-  else if (target === "dashboard" && d.length) renderOversiktDelar();
-  else if (target === "filer" && d.length) renderFilerDelar();
-  else if (target === "info") renderInfoTab();
-  else if (target === "handlingsplan") renderHandlingsplanSeed();
+  else if (target === "dashboard" && d.length) ritaOversiktDelar();
+  else if (target === "filer" && d.length) ritaFilerDelar();
+  else if (target === "info") ritaOmVerktyget();
+  else if (target === "handlingsplan") ritaHandlingsplan();
   else if (target === "bestammelser") {
     if (typeof bes8Uppdatera === "function") bes8Uppdatera();
     if (typeof bes8Stod === "function") bes8Stod();
   }
-  if (target === "filer") renderForhandskontroll();
+  if (target === "filer") ritaForhandskontroll();
   const aktiv = document.querySelector(".nav-item.active")?.getAttribute("data-tab");
-  if (aktiv && tabMal(aktiv) !== target) return;
-  renderFlowNav(target);
+  if (aktiv && flikMal(aktiv) !== target) return;
+  ritaNastaSteg(target);
   sidindexBygg(target);
 }
-var FLOW_NEXT = {
+var NASTA_STEG = {
   bestammelser: { tab: "benchmark", label: "Löneläget" },
   benchmark: { tab: "matrix", label: "Lika arbete" },
   matrix: { tab: "likvardighet", label: "Likvärdigt arbete" },
@@ -32761,33 +32761,33 @@ var FLOW_NEXT = {
   handlingsplan: { tab: "rapporttext", label: "Rapporttext" },
   rapporttext: { tab: "dokumentera", label: "Exportera" }
 };
-var _FLOW_VALFRIA = ["benchmark", "kon"];
-function _flowNasta(target) {
-  let next = FLOW_NEXT[target];
-  while (next && _FLOW_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */
-  document.querySelector(`.nav-item[data-tab="${next.tab}"]`)?.disabled) next = FLOW_NEXT[next.tab];
+var _NASTA_STEG_VALFRIA = ["benchmark", "kon"];
+function _nastaSteg(target) {
+  let next = NASTA_STEG[target];
+  while (next && _NASTA_STEG_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */
+  document.querySelector(`.nav-item[data-tab="${next.tab}"]`)?.disabled) next = NASTA_STEG[next.tab];
   return next;
 }
-function renderFlowNav(target) {
+function ritaNastaSteg(target) {
   document.querySelectorAll(".flow-next-bar").forEach((el) => el.remove());
-  const next = _flowNasta(target);
-  if (!next || target !== "bestammelser" && target !== "handlingsplan" && !getData().length) return;
-  const view = document.getElementById("view-" + (PANEL_GROUPS[target] || [target]).at(-1));
+  const next = _nastaSteg(target);
+  if (!next || target !== "bestammelser" && target !== "handlingsplan" && !hamtaData().length) return;
+  const view = document.getElementById("view-" + (PANELGRUPPER[target] || [target]).at(-1));
   if (!view) return;
   const bar = document.createElement("div");
   bar.className = "flow-next-bar";
   bar.innerHTML = `<span class="flow-next-label">Klar här?</span> <span>Nästa steg i kartläggningen:</span><button type="button" class="flow-next-btn" data-flow-tab="${next.tab}">${esc(next.label)}</button>`;
   view.appendChild(bar);
 }
-function refreshCurrentTab() {
+function uppdateraAktivFlik() {
   const active = document.querySelector(".nav-item.active");
   if (!active) return;
   const target = active.getAttribute("data-tab");
   ritaNyckeltal();
-  populateSelects();
+  fyllValjare();
   ritaKravstatus();
-  renderUnderlagetsKvalitet();
-  renderTabContent(target);
+  ritaUnderlagetsKvalitet();
+  ritaFlik(target);
 }
 function oppnaHopfallda(el) {
   if (typeof utVisaUnderflikFor === "function") utVisaUnderflikFor(el);
@@ -32849,7 +32849,7 @@ function uppstartNavigering() {
         /** @type {HTMLElement} */
         v.style.display = "none"
       ));
-      (PANEL_GROUPS[target] || [target]).forEach((p) => {
+      (PANELGRUPPER[target] || [target]).forEach((p) => {
         const el = document.getElementById(`view-${p}`);
         if (el) el.style.display = "block";
       });
@@ -32901,7 +32901,7 @@ function uppstartNavigering() {
       e.target.closest("[data-flow-tab]")
     );
     if (!btn) return;
-    const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute("data-flow-tab"))}"]`);
+    const nav = document.querySelector(`.nav-item[data-tab="${flikMal(btn.getAttribute("data-flow-tab"))}"]`);
     if (!nav) return;
     const last = (
       /** @type {HTMLInputElement} */
@@ -32933,7 +32933,7 @@ function uppstartNavigering() {
       oppnaHopfallda(ankare);
       if (typeof ankare.scrollIntoView === "function") ankare.scrollIntoView({ block: "start" });
     };
-    if (!(target && typeof navigateTo === "function" && navigateTo(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
+    if (!(target && typeof navigeraTill === "function" && navigeraTill(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
   });
   document.getElementById("btn-meny")?.addEventListener("click", () => sattMeny(!menyOppen()));
   document.getElementById("meny-skugga")?.addEventListener("click", () => sattMeny(false));
@@ -32953,31 +32953,31 @@ function uppstartNavigering() {
 }
 
 // src/app/05-tabeller-och-lankar.js
-var auditRegistry = {};
-var AUDIT_ORDNING = ["rapport", "skevhet", "livscykel", "matrix", "prioritering", "benchmark"];
-function auditPoster() {
-  const ids = [...AUDIT_ORDNING.filter((id) => id in auditRegistry), ...Object.keys(auditRegistry).filter((id) => !AUDIT_ORDNING.includes(id))];
+var metodikregister = {};
+var METODIKORDNING = ["rapport", "skevhet", "livscykel", "matrix", "prioritering", "benchmark"];
+function metodikposter() {
+  const ids = [...METODIKORDNING.filter((id) => id in metodikregister), ...Object.keys(metodikregister).filter((id) => !METODIKORDNING.includes(id))];
   return ids.map((id) => (
     /** @type {[string, any]} */
-    [id, auditRegistry[id]]
+    [id, metodikregister[id]]
   ));
 }
-function buildBaseAudit() {
+function byggGrundurval() {
   const da = state.dataAudit || { totalRaw: 0, excludedNoBas: 0, excludedZeroLon: 0 };
   const totalRaw = da.totalRaw;
   const afterParse = state.data.length;
-  const afterFilter = getData().length;
+  const afterFilter = hamtaData().length;
   const parseExcl = [];
   if (da.excludedNoBas > 0) parseExcl.push([`Saknar ${T.niva.en}`, da.excludedNoBas]);
   if (da.excludedZeroLon > 0) parseExcl.push(["Lön ≤ 0 eller saknas", da.excludedZeroLon]);
   return { totalRaw, afterParse, afterFilter, parseExcl };
 }
-function setAudit(id, audit) {
-  auditRegistry[id] = audit;
+function sattMetodik(id, audit) {
+  metodikregister[id] = audit;
   const panel = document.querySelector(`details.audit-panel[data-audit-id="${id}"] .audit-content`);
-  if (panel) panel.innerHTML = renderAuditHtml(audit);
+  if (panel) panel.innerHTML = ritaMetodikHtml(audit);
 }
-function renderAuditHtml(a) {
+function ritaMetodikHtml(a) {
   const fmt = (n) => n.toLocaleString("sv-SE");
   const exclRows = [
     ...(a.parseExcl || []).map(([r, c]) => `<tr><td>− ${esc(r)}</td><td class="t-tal">${fmt(c)}</td></tr>`),
@@ -33007,26 +33007,26 @@ function renderAuditHtml(a) {
         </div>
     `;
 }
-function _parseSwedishNumber(str) {
+function _tolkaSvensktTal(str) {
   if (str == null) return NaN;
   const s = str.toString().trim().replace(/\u2212/g, "-").replace(/ /g, " ").replace(",", ".");
   const cleaned = s.replace(/[^\d.\-]/g, "");
   if (cleaned === "" || cleaned === "-" || cleaned === ".") return NaN;
   return parseFloat(cleaned);
 }
-function _compareCells(a, b, idx, dir) {
+function _jamforCeller(a, b, idx, dir) {
   const ca = a.children[idx], cb = b.children[idx];
   if (!ca || !cb) return 0;
   const va = ca.getAttribute("data-sort-value") ?? ca.textContent;
   const vb = cb.getAttribute("data-sort-value") ?? cb.textContent;
-  const na = _parseSwedishNumber(va), nb = _parseSwedishNumber(vb);
+  const na = _tolkaSvensktTal(va), nb = _tolkaSvensktTal(vb);
   const bothNum = !isNaN(na) && !isNaN(nb);
   let cmp;
   if (bothNum) cmp = na - nb;
   else cmp = va.toString().trim().localeCompare(vb.toString().trim(), "sv");
   return dir === "asc" ? cmp : -cmp;
 }
-function enableTableSort(tableId) {
+function aktiveraSortering(tableId) {
   const table = document.getElementById(tableId);
   if (!table || table._sortInit) return;
   table._sortInit = true;
@@ -33052,7 +33052,7 @@ function enableTableSort(tableId) {
             groups.push(cur);
           } else if (cur) cur.children.push(r);
         });
-        groups.forEach((g) => g.children.sort((a, b) => _compareCells(a, b, idx, dir)));
+        groups.forEach((g) => g.children.sort((a, b) => _jamforCeller(a, b, idx, dir)));
         tbody.innerHTML = "";
         const frag = document.createDocumentFragment();
         groups.forEach((g) => {
@@ -33066,7 +33066,7 @@ function enableTableSort(tableId) {
           if (r.classList.contains("la-underrad") && enheter.length) enheter[enheter.length - 1].push(r);
           else enheter.push([r]);
         });
-        enheter.sort((a, b) => _compareCells(a[0], b[0], idx, dir));
+        enheter.sort((a, b) => _jamforCeller(a[0], b[0], idx, dir));
         enheter.forEach((e) => e.forEach((r) => tbody.appendChild(r)));
       }
     });
@@ -33149,7 +33149,7 @@ function _flerKolumnerAlla(rot) {
   });
   return rot;
 }
-function setupCollapsibleGroups(tableId) {
+function kopplaHopfallbaraGrupper(tableId) {
   const tbody = document.querySelector(`#${tableId} tbody`);
   if (!tbody || tbody._collapseInit) return;
   tbody._collapseInit = true;
@@ -33167,7 +33167,7 @@ function setupCollapsibleGroups(tableId) {
     }
   });
 }
-function toggleAllGroups(tableId, collapse) {
+function vaxlaAllaGrupper(tableId, collapse) {
   const tbody = document.querySelector(`#${tableId} tbody`);
   if (!tbody) return;
   tbody.querySelectorAll("tr.group-header").forEach((row) => {
@@ -33176,8 +33176,8 @@ function toggleAllGroups(tableId, collapse) {
     else if (!collapse && isCol) row.click();
   });
 }
-function navigateTo(tabName, opts = {}) {
-  tabName = tabMal(tabName);
+function navigeraTill(tabName, opts = {}) {
+  tabName = flikMal(tabName);
   const btn = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
   if (!btn || /** @type {HTMLInputElement} */
   btn.disabled) return false;
@@ -33213,7 +33213,7 @@ function _navigeratTill(opts) {
     }, 200);
   }
 }
-function buildBarCell(percent, scaleMax = 25, options = {}) {
+function byggStapelcell(percent, scaleMax = 25, options = {}) {
   const fmt = options.format || ((p) => (p >= 0 ? "+" : "") + svPct(p, 1));
   const exportText = options.format ? "" : ` data-export-text="${(percent >= 0 ? "+" : "") + svPct(percent, 2)}"`;
   if (percent === null || percent === void 0 || isNaN(percent)) {
@@ -33244,8 +33244,8 @@ function uppstartTabellerOchLankar() {
     if (!state.flerKolumner) state.flerKolumner = {};
     state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
     tillampaFlerKolumner(tableId);
-    if (typeof announceToScreenReader === "function")
-      announceToScreenReader(state.flerKolumner[cfg.nyckel] ? "Alla kolumner visas." : "Tabellen visar färre kolumner.");
+    if (typeof meddelaSkarmlasare === "function")
+      meddelaSkarmlasare(state.flerKolumner[cfg.nyckel] ? "Alla kolumner visas." : "Tabellen visar färre kolumner.");
   });
   document.addEventListener("click", (e) => {
     const link = (
@@ -33268,11 +33268,11 @@ function uppstartTabellerOchLankar() {
       link.dataset.bas || ""
     );
     if (target === "rapport") {
-      navigateTo("rapport", { search: yrke, searchInputId: "search-rapport" });
+      navigeraTill("rapport", { search: yrke, searchInputId: "search-rapport" });
     } else if (target === "matrix") {
-      navigateTo("matrix", { highlightMatch: { tableId: "matrix-table", contains: [yrke] } });
+      navigeraTill("matrix", { highlightMatch: { tableId: "matrix-table", contains: [yrke] } });
     } else if (target === "demografi") {
-      navigateTo("demografi");
+      navigeraTill("demografi");
       setTimeout(() => {
         const sel = document.getElementById("bas-select-demo");
         if (sel) {
@@ -33331,7 +33331,7 @@ var state = {
   // för A/B-jämförelse
   forraArsbokslut: null,
   // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
-  profile: { ...DEFAULT_PROFILE },
+  profile: { ...STANDARDPROFIL },
   filnamn: { data: null, policy: null, statistik: null },
   // filrutornas status (ADR-36)  // #14 lokalkalibrering
   kTroskel: K_STANDARD,
@@ -33411,11 +33411,11 @@ var state = {
   // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
   handlingsplan: {}
 };
-function getData() {
+function hamtaData() {
   return state.data;
 }
-function getBasIntervals() {
-  return [...new Set(getData().map((d) => d.bas))].sort();
+function hamtaBasIntervall() {
+  return [...new Set(hamtaData().map((d) => d.bas))].sort();
 }
 function policyFor(aid, bas) {
   const pol = state.policy || [];
@@ -33437,7 +33437,7 @@ function policyFor(aid, bas) {
   }
   return null;
 }
-function policyLevelLabel(pol) {
+function policyNivaEtikett(pol) {
   if (!pol) return null;
   if (pol.aid && pol.bas) return "AID + BAS";
   if (pol.aid) return "AID-specifik";
@@ -33482,12 +33482,12 @@ function sattReferensNamn(namn) {
 }
 function ritaOmReferens() {
   for (const fn of [
-    renderReferensKort,
-    refreshCurrentTab,
+    ritaReferensKort,
+    uppdateraAktivFlik,
     ritaKravstatus,
-    renderConsistencyBanner,
-    renderActionChecklist,
-    renderProcessTracker
+    ritaKonsistenskontroll,
+    ritaAtgardslista,
+    ritaKartlaggningensSteg
   ]) {
     if (typeof fn === "function") {
       try {
@@ -33498,12 +33498,12 @@ function ritaOmReferens() {
     }
   }
 }
-var colors = { kvinna: PALETTE.kon.kvinna, man: PALETTE.kon.man, policy: PALETTE.semantic.policy };
+var farger = { kvinna: PALETT.kon.kvinna, man: PALETT.kon.man, policy: PALETT.semantic.policy };
 var Stat = { median, kvantil, linjarRegression };
-function linearRegressionCI(data, minX, maxX, steps) {
+function linjarRegressionKI(data, minX, maxX, steps) {
   return regressionslinjensBand(data, minX, maxX, steps);
 }
-var ENHANCED_TABLES = [
+var HUVUDTABELLER = [
   { id: "rapport-table", file: "loneoversikt" },
   { id: "matrix-table", file: "lika-arbete-eu" },
   { id: "paygap-table", file: "lonegap-per-bas" },
@@ -33513,15 +33513,15 @@ var ENHANCED_TABLES = [
   { id: "prio-table", file: "prioritering" },
   { id: "likvardighet-table", file: "likvardighet" }
 ];
-function initTableEnhancements() {
-  ENHANCED_TABLES.forEach((t) => {
-    enableTableSort(t.id);
-    addTableExportTools(t.id, t.file);
+function aktiveraHuvudtabeller() {
+  HUVUDTABELLER.forEach((t) => {
+    aktiveraSortering(t.id);
+    laggTillTabellverktyg(t.id, t.file);
   });
-  setupCollapsibleGroups("rapport-table");
-  setupCollapsibleGroups("benchmark-table");
+  kopplaHopfallbaraGrupper("rapport-table");
+  kopplaHopfallbaraGrupper("benchmark-table");
 }
-function addTableExportTools(tableId, fileBase) {
+function laggTillTabellverktyg(tableId, fileBase) {
   const table = document.getElementById(tableId);
   if (!table || table._exportToolsInit) return;
   const anchor = table.closest(".table-container") || table;
@@ -33533,7 +33533,7 @@ function addTableExportTools(tableId, fileBase) {
   anchor.parentNode.insertBefore(bar, anchor);
   table._verktygsrad = bar;
 }
-function _tableCellText(cell) {
+function _tabellcellText(cell) {
   const clone = cell.cloneNode(true);
   clone.querySelectorAll("button, svg").forEach((e) => e.remove());
   _exportText(clone);
@@ -33544,21 +33544,21 @@ function _exportText(rot) {
     el.textContent = el.getAttribute("data-export-text");
   });
 }
-function tableToMatrix(...a) {
-  return medExportLage(() => _tableToMatrixExport.apply(
+function tabellTillMatris(...a) {
+  return medExportLage(() => _tabellTillMatrisExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _tableToMatrixExport(tableId) {
+function _tabellTillMatrisExport(tableId) {
   const table = typeof exportElement === "function" ? exportElement(tableId) : document.getElementById(tableId);
   if (!table) return [];
   const rows = [];
   const beskrivning = table.getAttribute("data-export-beskrivning");
   if (beskrivning) rows.push([`Urval: ${beskrivning}`]);
   const ths = table.querySelectorAll("thead th");
-  if (ths.length) rows.push(Array.from(ths).filter((th) => !th.hasAttribute("data-export-utelamna")).map(_tableCellText));
+  if (ths.length) rows.push(Array.from(ths).filter((th) => !th.hasAttribute("data-export-utelamna")).map(_tabellcellText));
   table.querySelectorAll("tbody tr").forEach((tr) => {
     if (tr.hasAttribute("data-export-utelamna")) return;
     const cells = tr.querySelectorAll("th, td");
@@ -33567,32 +33567,32 @@ function _tableToMatrixExport(tableId) {
     cells.forEach((c) => {
       if (c.hasAttribute("data-export-utelamna")) return;
       const span = _cellSpann(c);
-      rad.push(c.hasAttribute("data-export-tom") ? "" : _tableCellText(c));
+      rad.push(c.hasAttribute("data-export-tom") ? "" : _tabellcellText(c));
       for (let i = 1; i < span; i++) rad.push("");
     });
     rows.push(rad);
   });
   return rows;
 }
-function _copyTableToClipboard(...a) {
-  return medExportLage(() => __copyTableToClipboardExport.apply(
+function _kopieraTabellTillUrklipp(...a) {
+  return medExportLage(() => __kopieraTabellTillUrklippExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function __copyTableToClipboardExport(tableId, btn) {
-  const rows = tableToMatrix(tableId);
+function __kopieraTabellTillUrklippExport(tableId, btn) {
+  const rows = tabellTillMatris(tableId);
   if (!rows.length) {
     alert("Tabellen är tom, så det finns inget att kopiera.");
     return;
   }
-  _copyMatrixToClipboard(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
+  _kopieraMatrisTillUrklipp(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
-function _copyMatrixToClipboard(rows, btn, { undantag = "" } = {}) {
+function _kopieraMatrisTillUrklipp(rows, btn, { undantag = "" } = {}) {
   const tsv = tillTsv(_tsvMedStampel(rows, undantag));
   const done = () => {
-    if (typeof announceToScreenReader === "function") announceToScreenReader("Kopierat: " + (rows.length - 1) + " rader.");
+    if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Kopierat: " + (rows.length - 1) + " rader.");
     if (btn) {
       const o = btn.innerHTML;
       btn.textContent = "Kopierad";
@@ -33624,14 +33624,14 @@ function _copyMatrixToClipboard(rows, btn, { undantag = "" } = {}) {
   }
 }
 function uppstartTillstand() {
-  initTableEnhancements();
+  aktiveraHuvudtabeller();
   document.addEventListener("click", (e) => {
     const copyBtn = (
       /** @type {HTMLElement} */
       e.target.closest("[data-copy-table]")
     );
     if (copyBtn) {
-      _copyTableToClipboard(copyBtn.getAttribute("data-copy-table"), copyBtn);
+      _kopieraTabellTillUrklipp(copyBtn.getAttribute("data-copy-table"), copyBtn);
       return;
     }
     const csvBtn = (
@@ -33639,8 +33639,8 @@ function uppstartTillstand() {
       e.target.closest("[data-csv-table]")
     );
     if (csvBtn) {
-      const rows = tableToMatrix(csvBtn.getAttribute("data-csv-table"));
-      if (rows.length) _downloadCSV(
+      const rows = tabellTillMatris(csvBtn.getAttribute("data-csv-table"));
+      if (rows.length) _laddaNedCSV(
         rows,
         csvBtn.getAttribute("data-csv-file") || "tabell",
         { undantag: _kUndantagFor(document.getElementById(csvBtn.getAttribute("data-csv-table") || "")) }
@@ -33652,11 +33652,11 @@ function uppstartTillstand() {
 
 // src/app/03-hjalpfunktioner.js
 var ANSVARSFORBEHALL = "Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.";
-function showLoading() {
+function visaLaddning() {
   const el = document.getElementById("loading-overlay");
   if (el) el.style.display = "flex";
 }
-function hideLoading() {
+function doljLaddning() {
   const el = document.getElementById("loading-overlay");
   if (el) el.style.display = "none";
 }
@@ -33671,11 +33671,11 @@ function tillampaDataStil(rot) {
     rot.querySelectorAll("[" + attr + "]").forEach(satt);
   }
 }
-function _kolumnvalIState() {
+function _kolumnvalITillstandet() {
   return { columnMap: state.columnMap, importprofil: state.importprofil };
 }
-function getField(row, possibleNames, role) {
-  return vardeForRoll(row, possibleNames, role, _kolumnvalIState());
+function hamtaFalt(row, possibleNames, role) {
+  return vardeForRoll(row, possibleNames, role, _kolumnvalITillstandet());
 }
 function _importprofilLista() {
   return [...state.importprofiler || [], ...inbyggdaProfiler()];
@@ -33703,7 +33703,7 @@ function idagDatum(datum = /* @__PURE__ */ new Date()) {
 function antalText(nKv, nMa) {
   return `n = ${svTal(nKv + nMa, 0)}; ${svTal(nKv, 0)} kvinnor, ${svTal(nMa, 0)} män`;
 }
-function antalCaption(nKv, nMa, fore = "") {
+function antalRubrik(nKv, nMa, fore = "") {
   return `<caption class="text-dampad-sm ta-vanster">${fore ? `${esc(fore)} · ` : ""}${antalText(nKv, nMa)}</caption>`;
 }
 function direktivGap(gapPct, dec = 1) {
@@ -33760,7 +33760,7 @@ function uppstartHjalpfunktioner() {
       e.target.closest("[data-goto-tab]")
     );
     if (goto) {
-      const nav = document.querySelector('.nav-item[data-tab="' + tabMal(goto.getAttribute("data-goto-tab")) + '"]');
+      const nav = document.querySelector('.nav-item[data-tab="' + flikMal(goto.getAttribute("data-goto-tab")) + '"]');
       const avsnitt = goto.getAttribute("data-goto-avsnitt");
       const tillAvsnitt = () => {
         if (nav && avsnitt && typeof sidindexGaTill === "function") sidindexGaTill(avsnitt);
@@ -33832,7 +33832,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
     panelB,
     inreH,
     yFor: (l) => l.axel === "y2" && y2 ? y2 : y,
-    farg: (l, li) => l.farg || PALETTE.serie[li % PALETTE.serie.length],
+    farg: (l, li) => l.farg || PALETT.serie[li % PALETT.serie.length],
     dold: syn.dold,
     bredvid: _rfBredvid(iPanel),
     lador: iPanel.filter(({ l }) => l.marke === "lada").map(({ li }) => li),
@@ -33857,18 +33857,18 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
   }
   if (!figurIn.x.dold) g.append("line").attr("x1", 0).attr("x2", panelB).attr("y1", inreH).attr("y2", inreH).attr("stroke", FARG.blek).attr("stroke-width", 1);
   for (const k of xEt) {
-    const t = _rfText(g, k.p, inreH + px + 6, k.text, { px, ankare: "middle", title: k.hel, farg: x.bandwidth ? void 0 : CHART_FONT.dampad, attr: { "data-axel": "x" } });
+    const t = _rfText(g, k.p, inreH + px + 6, k.text, { px, ankare: "middle", title: k.hel, farg: x.bandwidth ? void 0 : DIAGRAM_TYPSNITT.dampad, attr: { "data-axel": "x" } });
     if (k.rad2) t.append("tspan").attr("x", k.p).attr("dy", px + 2).text(k.rad2);
   }
   if (panel != null) _rfText(g, panelB / 2, -8, _rfKorta(panel, panelB / ((px + 1) * _RF.tecken)), { px: px + 1, ankare: "middle", fet: true, title: String(panel) });
 }
-function _rfRitaLegend(svg, L, syn, px, H, notRader) {
+function _rfRitaForklaring(svg, L, syn, px, H, notRader) {
   const legendY = L.topp + L.inreH + L.axelNer + L.legBas;
   const lg = svg.append("g").attr("data-del", "forklaring");
   L.legend.poster.forEach((p) => {
     const dold_ = syn.dolda.has(p.serie);
     const g = lg.append("g").attr("data-serie", p.serie).attr("role", "button").attr("tabindex", 0).attr("aria-pressed", dold_ ? "false" : "true").attr("aria-label", `${p.serie}, visa eller dölj serien`).attr("transform", `translate(${8 + p.x},${legendY + p.rad * _RF.legendRad})`).attr("cursor", "pointer").attr("opacity", dold_ ? 0.4 : 1);
-    const f = p.l.farg || PALETTE.serie[p.li % PALETTE.serie.length];
+    const f = p.l.farg || PALETT.serie[p.li % PALETT.serie.length];
     if (p.l.marke === "linje") g.append("line").attr("x1", 0).attr("x2", 12).attr("y1", -4).attr("y2", -4).attr("stroke", f).attr("stroke-width", 2.5);
     else if (p.l.marke === "punkt" && (!p.l.symbol || p.l.symbol === "cirkel" || p.l.symbol === "romb" || p.l.symbol === "kvadrat")) (p.l.ofylld ? _rfOfylld(_rfSymbol(g, p.l.symbol, 6, -4, 5, f), f) : _rfSymbol(g, p.l.symbol, 6, -4, 5, f)).attr("data-prov", "punkt");
     else if (p.l.marke === "punkt" && p.l.symbol === "streck") g.append("line").attr("data-prov", "punkt").attr("x1", 6).attr("x2", 6).attr("y1", -10).attr("y2", 2).attr("stroke", f).attr("stroke-width", 2.5);
@@ -33889,7 +33889,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     if (delar) return _rfByggRadpaneler(figurIn, delar, bredd, val);
     figurIn = { ...figurIn, paneler: void 0 };
   }
-  const px = CHART_FONT.size;
+  const px = DIAGRAM_TYPSNITT.size;
   const B = isFinite(+bredd) && +bredd > 0 ? +bredd : 600;
   const hv = val.hojd || figurIn.hojd || _RF.hojd;
   const H = isFinite(+hv) && +hv > 0 ? +hv : _RF.hojd;
@@ -33908,12 +33908,12 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
   const bild = svg.append("g").attr("data-del", "rityta").attr("role", "img").attr("aria-label", "Diagramyta");
   const rot = bild.append("g").attr("transform", `translate(${L.vanster},${L.topp})`);
   const urval = /* @__PURE__ */ new Map();
-  for (const k of L.yEt) _rfText(rot, -8, k.p + px * 0.35, k.text, { px, ankare: "end", title: k.hel, farg: L.yBand ? void 0 : CHART_FONT.dampad, attr: { "data-axel": "y" } });
+  for (const k of L.yEt) _rfText(rot, -8, k.p + px * 0.35, k.text, { px, ankare: "end", title: k.hel, farg: L.yBand ? void 0 : DIAGRAM_TYPSNITT.dampad, attr: { "data-axel": "y" } });
   if (figurIn.y.titel) {
     const t = String(figurIn.y.titel);
     _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: "middle", title: t, attr: { transform: `translate(${-(L.vanster - px - 2)},${L.inreH / 2}) rotate(-90)` } });
   }
-  for (const k of L.y2Et) _rfText(rot, L.inreB + 8, k.p + px * 0.35, k.text, { px, farg: CHART_FONT.dampad, attr: { "data-axel": "y2" } });
+  for (const k of L.y2Et) _rfText(rot, L.inreB + 8, k.p + px * 0.35, k.text, { px, farg: DIAGRAM_TYPSNITT.dampad, attr: { "data-axel": "y2" } });
   if (L.y2 && figurIn.y2.titel) {
     const t = String(figurIn.y2.titel);
     _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: "middle", title: t, attr: { transform: `translate(${L.inreB + L.y2Block - px + 2},${L.inreH / 2}) rotate(90)` } });
@@ -33921,7 +33921,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
   syn.paneler.forEach((panel, pi) => _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval));
   if (L.xTitel) _rfText(rot, L.inreB / 2, L.inreH + px + 6 + px + 8 + (L.xTvaRader ? px + 2 : 0), _rfKorta(L.xTitel, L.inreB / (px * _RF.tecken)), { px, ankare: "middle", title: L.xTitel });
   if (fargskala) _rfFargstapel(rot, figurIn.fargskala, fargskala, L.inreB + L.hoger - L.fargB + 8, L.inreH, px, L.fargB - _RF.fargLuft);
-  _rfRitaLegend(svg, L, syn, px, H, L.notRader);
+  _rfRitaForklaring(svg, L, syn, px, H, L.notRader);
   let ritade = 0, totalt = 0;
   for (const [r, t] of urval.values()) {
     ritade += r;
@@ -34014,7 +34014,7 @@ function _rfTipsDolt() {
   if (agare && !agare.isConnected) rensaFigur(agare);
 }
 function _rfNollstallTips() {
-  _hideChartTip();
+  _doljDiagramtips();
 }
 function _rfStadaAgare() {
   if (_rfTipsAgare && !_rfTipsAgare.isConnected) _rfNollstallTips();
@@ -34100,7 +34100,7 @@ function _rfMeddelande(el, slag, text) {
 }
 function _rfNotis(el, svg) {
   const m = svg ? /^(\d+)\/(\d+)$/.exec(svg.getAttribute("data-nedsamplat") || "") : null;
-  _setScatterSampleNote(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
+  _sattPunkturvalsnot(el, m ? { shown: Number(m[1]), total: Number(m[2]) } : null);
 }
 var RF_OVERGANG_MS = 200, RF_OVERGANG_MAX = 2e3;
 var _RF_OVERGANG_ATTR = { circle: ["cx", "cy", "r"], rect: ["x", "y", "width", "height"], line: ["x1", "x2", "y1", "y2"] };
@@ -34268,7 +34268,7 @@ function _rfOmStorlek(el) {
   if (!(isFinite(fast) && fast > 0) && !el.clientWidth) return;
   if (_rfMattBredd(el) !== el._figurBredd) _rfRitaSakert(el, { overgang: false });
 }
-function _rfLegendPost(el, mal) {
+function _rfForklaringspost(el, mal) {
   const post = mal && mal.closest ? mal.closest("[data-serie]") : null;
   return post && el.contains(post) ? post : null;
 }
@@ -34339,7 +34339,7 @@ function _rfVidRorelse(el, e) {
     _rfDoljTips(el);
     return;
   }
-  _showChartTip(k.senast.html, e.clientX || 0, e.clientY || 0);
+  _visaDiagramtips(k.senast.html, e.clientX || 0, e.clientY || 0);
   _rfTipsAgare = el;
 }
 function _rfVidKlick(el, e) {
@@ -34347,7 +34347,7 @@ function _rfVidKlick(el, e) {
     el._rfKoppling.nyssPenslat = false;
     return;
   }
-  const post = _rfLegendPost(el, e.target);
+  const post = _rfForklaringspost(el, e.target);
   if (post) {
     _rfVaxla(el, post.getAttribute("data-serie"));
     return;
@@ -34360,7 +34360,7 @@ function _rfVidKlick(el, e) {
   _rfAktivera(el, t.m, e);
 }
 function _rfVidTangent(el, e) {
-  const post = _rfLegendPost(el, e.target);
+  const post = _rfForklaringspost(el, e.target);
   if (post) {
     if (e.key !== "Enter" && e.key !== " ") return;
     e.preventDefault();
@@ -34437,11 +34437,11 @@ function _rfTangentTill(el, m, nr, antal) {
   const html = _rfTipsHtml(rader);
   const r = m.getBoundingClientRect ? m.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
   if (html) {
-    _showChartTip(html, r.left + r.width / 2, r.top);
+    _visaDiagramtips(html, r.left + r.width / 2, r.top);
     _rfTipsAgare = el;
   } else _rfDoljTips(el);
   const serie = t && t.lager.serie ? `${t.lager.serie}. ` : "";
-  if (typeof announceToScreenReader === "function") announceToScreenReader(`${serie}${_rfTipsText(rader) || "Datapunkt"} (${nr + 1} av ${antal})`);
+  if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(`${serie}${_rfTipsText(rader) || "Datapunkt"} (${nr + 1} av ${antal})`);
 }
 function _rfTangentSlapp(el) {
   const k = el._rfKoppling;
@@ -34530,7 +34530,7 @@ function ritaFigur(id, figur, val) {
     el._exportBeskrivning = typeof el._figurVal.exportBeskrivning === "string" ? el._figurVal.exportBeskrivning : "";
     _rfRitaOm(el);
     _rfKoppla(el);
-    _attachChartExport(el);
+    _laggTillDiagramexport(el);
     _rfUrvalVisa(el);
   } catch (e) {
     _rfVisaFel(el, e);
@@ -34557,7 +34557,7 @@ function rensaFigur(id) {
   delete el._figurFilter;
   delete el._figurBredd;
   _rfUrvalTaBort(el);
-  _setScatterSampleNote(el, null);
+  _sattPunkturvalsnot(el, null);
   _rfPenselGlom(el);
   _rfZoomGlom(el);
   _rfOvergangAvsluta(el);
@@ -35541,18 +35541,18 @@ function _rfExportFigur(gd) {
 }
 
 // src/app/02-verktygstips.js
-var _chartTipEl = null;
-function _ensureChartTip() {
-  if (_chartTipEl) return _chartTipEl;
-  _chartTipEl = document.createElement("div");
-  _chartTipEl.className = "chart-tip-portal";
-  _chartTipEl.setAttribute("role", "tooltip");
-  document.body.appendChild(_chartTipEl);
-  return _chartTipEl;
+var _diagramtipsElement = null;
+function _hamtaDiagramtips() {
+  if (_diagramtipsElement) return _diagramtipsElement;
+  _diagramtipsElement = document.createElement("div");
+  _diagramtipsElement.className = "chart-tip-portal";
+  _diagramtipsElement.setAttribute("role", "tooltip");
+  document.body.appendChild(_diagramtipsElement);
+  return _diagramtipsElement;
 }
-function _showChartTip(html, mouseX, mouseY) {
+function _visaDiagramtips(html, mouseX, mouseY) {
   if (!html) return;
-  const tip = _ensureChartTip();
+  const tip = _hamtaDiagramtips();
   tip.innerHTML = html;
   tip.classList.add("visible");
   tip.style.visibility = "hidden";
@@ -35571,15 +35571,15 @@ function _showChartTip(html, mouseX, mouseY) {
   tip.style.top = top + "px";
   tip.style.visibility = "";
 }
-function _hideChartTip() {
-  if (_chartTipEl) {
-    _chartTipEl.classList.remove("visible");
-    _chartTipEl.textContent = "";
+function _doljDiagramtips() {
+  if (_diagramtipsElement) {
+    _diagramtipsElement.classList.remove("visible");
+    _diagramtipsElement.textContent = "";
   }
   if (typeof _rfTipsDolt === "function") _rfTipsDolt();
 }
-var SCATTER_MAX_POINTS = 8e3;
-function _setScatterSampleNote(chartId, sampled) {
+var PUNKTMOLN_MAX_PUNKTER = 8e3;
+function _sattPunkturvalsnot(chartId, sampled) {
   const chart = typeof chartId === "string" ? document.getElementById(chartId) : chartId;
   if (!chart) return;
   const noteId = chart.id ? chart.id + "-sample-note" : "";
@@ -35601,19 +35601,19 @@ function _setScatterSampleNote(chartId, sampled) {
   const fmt = (n) => n.toLocaleString("sv-SE");
   note.textContent = `Visar ett representativt urval (${fmt(sampled.shown)} av ${fmt(sampled.total)} punkter) för prestanda — alla beräkningar använder fullständig data.`;
 }
-var _tipPortal = null;
-var _tipHost = null;
-function _ensureTipPortal() {
-  if (_tipPortal) return _tipPortal;
-  _tipPortal = document.createElement("div");
-  _tipPortal.className = "tip-portal";
-  _tipPortal.setAttribute("role", "tooltip");
-  _tipPortal.id = "tip-portal";
-  document.body.appendChild(_tipPortal);
-  return _tipPortal;
+var _tipsPortal = null;
+var _tipsVard = null;
+function _hamtaTipsPortal() {
+  if (_tipsPortal) return _tipsPortal;
+  _tipsPortal = document.createElement("div");
+  _tipsPortal.className = "tip-portal";
+  _tipsPortal.setAttribute("role", "tooltip");
+  _tipsPortal.id = "tip-portal";
+  document.body.appendChild(_tipsPortal);
+  return _tipsPortal;
 }
-function _positionTip(host) {
-  const tip = _tipPortal;
+function _placeraTips(host) {
+  const tip = _tipsPortal;
   if (!tip) return;
   const r = host.getBoundingClientRect();
   tip.style.visibility = "hidden";
@@ -35633,30 +35633,30 @@ function _positionTip(host) {
   tip.style.top = top + "px";
   tip.style.visibility = "";
 }
-function _showTip(host) {
-  if (!host || _tipHost === host) return;
+function _visaTips(host) {
+  if (!host || _tipsVard === host) return;
   const text = host.getAttribute("data-tooltip");
   if (!text) return;
-  if (_tipHost && _tipHost !== host) {
-    _tipHost.removeAttribute("aria-describedby");
-    _restoreTitle(_tipHost);
+  if (_tipsVard && _tipsVard !== host) {
+    _tipsVard.removeAttribute("aria-describedby");
+    _aterstallTitel(_tipsVard);
   }
-  _tipHost = host;
-  const tip = _ensureTipPortal();
+  _tipsVard = host;
+  const tip = _hamtaTipsPortal();
   tip.textContent = text;
-  _positionTip(host);
+  _placeraTips(host);
   if (!host.id) host.id = "tip-host-" + Math.random().toString(36).slice(2, 8);
   host.setAttribute("aria-describedby", tip.id);
 }
-function _hideTip() {
-  if (_tipPortal) _tipPortal.classList.remove("visible");
-  if (_tipHost) {
-    _tipHost.removeAttribute("aria-describedby");
-    _restoreTitle(_tipHost);
+function _doljTips() {
+  if (_tipsPortal) _tipsPortal.classList.remove("visible");
+  if (_tipsVard) {
+    _tipsVard.removeAttribute("aria-describedby");
+    _aterstallTitel(_tipsVard);
   }
-  _tipHost = null;
+  _tipsVard = null;
 }
-function _findTipHost(target) {
+function _hittaTipsVard(target) {
   if (!target || !target.closest) return null;
   const dt = target.closest("[data-tooltip]");
   if (dt && dt.getAttribute("data-tooltip")) return dt;
@@ -35664,7 +35664,7 @@ function _findTipHost(target) {
   if (t && !["IFRAME", "OPTION"].includes(t.tagName)) return t;
   return null;
 }
-function _stealTitle(host) {
+function _stjalTitel(host) {
   if (!host.hasAttribute("title")) return;
   const t = host.getAttribute("title");
   if (!t) return;
@@ -35675,7 +35675,7 @@ function _stealTitle(host) {
     host.setAttribute("data-tooltip-from-title", "1");
   }
 }
-function _restoreTitle(host) {
+function _aterstallTitel(host) {
   if (!host || !host.hasAttribute("data-stolen-title")) return;
   host.setAttribute("title", host.getAttribute("data-stolen-title"));
   host.removeAttribute("data-stolen-title");
@@ -35685,47 +35685,47 @@ function _restoreTitle(host) {
   }
 }
 function uppstartVerktygstips() {
-  window.addEventListener("scroll", _hideChartTip, true);
-  window.addEventListener("resize", _hideChartTip);
+  window.addEventListener("scroll", _doljDiagramtips, true);
+  window.addEventListener("resize", _doljDiagramtips);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") _hideChartTip();
+    if (e.key === "Escape") _doljDiagramtips();
   });
   document.addEventListener("mouseover", (e) => {
-    const host = _findTipHost(e.target);
+    const host = _hittaTipsVard(e.target);
     if (host) {
-      _stealTitle(host);
-      _showTip(host);
+      _stjalTitel(host);
+      _visaTips(host);
     }
   });
   document.addEventListener("mouseout", (e) => {
-    const host = _findTipHost(e.target) || /** @type {HTMLElement} */
+    const host = _hittaTipsVard(e.target) || /** @type {HTMLElement} */
     e.target.closest && /** @type {HTMLElement} */
     e.target.closest("[data-stolen-title]");
     if (host && (!e.relatedTarget || !host.contains(e.relatedTarget))) {
-      _hideTip();
-      _restoreTitle(host);
+      _doljTips();
+      _aterstallTitel(host);
     }
   });
   document.addEventListener("focusin", (e) => {
-    const host = _findTipHost(e.target);
+    const host = _hittaTipsVard(e.target);
     if (host) {
-      _stealTitle(host);
-      _showTip(host);
+      _stjalTitel(host);
+      _visaTips(host);
     }
   });
   document.addEventListener("focusout", (e) => {
-    const host = _findTipHost(e.target) || /** @type {HTMLElement} */
+    const host = _hittaTipsVard(e.target) || /** @type {HTMLElement} */
     e.target.closest && /** @type {HTMLElement} */
     e.target.closest("[data-stolen-title]");
     if (host) {
-      _hideTip();
-      _restoreTitle(host);
+      _doljTips();
+      _aterstallTitel(host);
     }
   });
-  window.addEventListener("scroll", _hideTip, true);
-  window.addEventListener("resize", _hideTip);
+  window.addEventListener("scroll", _doljTips, true);
+  window.addEventListener("resize", _doljTips);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") _hideTip();
+    if (e.key === "Escape") _doljTips();
   });
 }
 
@@ -35761,11 +35761,11 @@ var _skalGiltiga = () => _skal ? (
   /** @type {any[]} */
   _skal.rader.map((r) => ({ kategori: r.kategori, belopp: _skalBelopp(r.belopp), kommentar: r.kommentar })).filter((r) => r.belopp != null)
 ) : [];
-function openSkalDialog(nyckel, opener) {
+function oppnaSkalDialog(nyckel, opener) {
   const modal = document.getElementById("skal-modal");
   if (!modal || !nyckel) return;
-  const iExport = medExportLage(() => _handlingsplanSeedRows());
-  const skarm = _handlingsplanSeedRows({ baraEgna: !getData().length });
+  const iExport = medExportLage(() => _handlingsplanForifyllning());
+  const skarm = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
   const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
   const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
   const egen = _hpArEgen(nyckel);
@@ -35778,14 +35778,14 @@ function openSkalDialog(nyckel, opener) {
     konUnder: i >= 0 && !egen && _hpUtanBelopp(nyckel, iExport.minsta[i]),
     rader: (_hpVarden(nyckel).skal || []).map((s) => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || "" }))
   };
-  _skalRender();
+  _skalRita();
   modal.style.display = "flex";
-  if (typeof trapFocus === "function") trapFocus(modal, opener || document.activeElement);
+  if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
 }
-function closeSkalDialog() {
+function stangSkalDialog() {
   const modal = document.getElementById("skal-modal");
   if (!modal || modal.style.display !== "flex") return;
-  if (typeof releaseFocus === "function") releaseFocus(modal);
+  if (typeof slappFokus === "function") slappFokus(modal);
   modal.style.display = "none";
   _skal = null;
 }
@@ -35816,20 +35816,20 @@ function _skalAndelText(r) {
   const b = _skalBelopp(r.belopp), n = _skal && _skal.skillnadKr;
   return b != null && n && n > 0 ? _skalPct(b / n) : "–";
 }
-function _skalRender() {
+function _skalRita() {
   const body = document.getElementById("skal-body");
   if (!body || !_skal) return;
   const s = _skal, fullt = s.rader.length >= 8;
   body.innerHTML = `<h3 class="fs-lg marg-0">${esc(s.grupp)}</h3>${_skalSkillnadHtml()}` + (s.rader.length ? `<div class="table-container"><table class="data-table st-088 skal-tabell"><thead><tr><th scope="col">Kategori</th><th scope="col" class="t-hoger">Belopp (kr/mån)</th><th scope="col" class="t-hoger">Andel av skillnaden</th><th scope="col">Kommentar</th><th scope="col"><span class="sr-only">Ta bort</span></th></tr></thead><tbody>${s.rader.map(_skalRadHtml).join("")}</tbody></table></div>` : '<p class="text-dampad-sm">Inga skäl ännu. Lägg till ett skäl för varje kategori som förklarar en del av skillnaden.</p>') + `<div class="rad-bryt-mitt gap-8 marg-t-8"><button id="skal-lagg-till" class="btn btn-secondary btn-sm" type="button"${fullt ? " disabled" : ""}>Lägg till skäl</button><span class="text-dampad-sm">Högst 8 skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div><p id="skal-belopp-fel" class="handlingsplan-varning" role="status" hidden>Beloppet ska vara ett heltal mellan 0 och 200 000 kr. Skälet sparas när beloppet är giltigt.</p><p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p><div id="skal-status"></div>`;
   _skalUppdatera();
   const modal = document.getElementById("skal-modal");
-  if (modal && modal.style.display === "flex" && typeof _focusTraps !== "undefined") {
-    const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
+  if (modal && modal.style.display === "flex" && typeof _fokusfallor !== "undefined") {
+    const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
     if (trap) {
       modal.removeEventListener("keydown", trap.handler);
-      _focusTraps.delete(modal);
+      _fokusfallor.delete(modal);
     }
-    trapFocus(modal, opener, { flyttaFokus: false });
+    fangaFokus(modal, opener, { flyttaFokus: false });
   }
 }
 function _skalUppdatera() {
@@ -35901,19 +35901,19 @@ function uppstartSakligaSkal() {
     const gaTill = t.closest("[data-hp-ga-till]");
     if (gaTill) {
       e.preventDefault();
-      if (typeof closeGruppdossier === "function") closeGruppdossier();
-      if (typeof closeBasdossier === "function") closeBasdossier();
+      if (typeof stangGruppdossier === "function") stangGruppdossier();
+      if (typeof stangBasdossier === "function") stangBasdossier();
       _hpGaTillRad(gaTill.getAttribute("data-hp-ga-till") || "");
       return;
     }
     const oppna = t.closest("[data-hp-skal]");
     if (oppna) {
-      openSkalDialog(oppna.getAttribute("data-hp-skal") || "", oppna);
+      oppnaSkalDialog(oppna.getAttribute("data-hp-skal") || "", oppna);
       return;
     }
     if (!t.closest("#skal-modal")) return;
     if (t.closest("[data-skal-close]")) {
-      closeSkalDialog();
+      stangSkalDialog();
       return;
     }
     if (!_skal) return;
@@ -35922,7 +35922,7 @@ function uppstartSakligaSkal() {
       const anvanda = new Set(_skal.rader.map((r) => r.kategori));
       const forsta = skalKategorier().find((k) => !anvanda.has(k.id)) || skalKategorier()[0];
       _skal.rader.push({ kategori: forsta.id, belopp: "", kommentar: "" });
-      _skalRender();
+      _skalRita();
       const sel = [...document.querySelectorAll("#skal-body select.skal-kategori")].at(-1);
       if (sel) sel.focus();
       return;
@@ -35930,9 +35930,9 @@ function uppstartSakligaSkal() {
     const bort = t.closest("[data-skal-ta-bort]");
     if (bort) {
       _skal.rader.splice(Number(bort.getAttribute("data-skal-ta-bort")), 1);
-      _skalRender();
+      _skalRita();
       document.getElementById("skal-lagg-till")?.focus();
-      if (typeof announceToScreenReader === "function") announceToScreenReader("Skälet är borttaget.");
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Skälet är borttaget.");
       return;
     }
     if (t.closest("#skal-markera")) {
@@ -35948,7 +35948,7 @@ function uppstartSakligaSkal() {
       _skalUppdatera();
       document.getElementById("skal-summa")?.setAttribute("tabindex", "-1");
       document.getElementById("skal-summa")?.focus();
-      if (typeof announceToScreenReader === "function") announceToScreenReader("Raden är markerad: sakligt skäl finns.");
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Raden är markerad: sakligt skäl finns.");
     }
   });
   ["input", "change"].forEach((typ) => document.getElementById("skal-modal")?.addEventListener(typ, (e) => {
@@ -35974,7 +35974,7 @@ function uppstartSakligaSkal() {
     _skalUppdatera();
   }));
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && document.getElementById("skal-modal")?.style.display === "flex") closeSkalDialog();
+    if (e.key === "Escape" && document.getElementById("skal-modal")?.style.display === "flex") stangSkalDialog();
   });
 }
 
@@ -36014,19 +36014,19 @@ function _utskriftAvstavar() {
     return ja;
   });
 }
-function buildPrintReport(...a) {
-  return medExportLage(() => _buildPrintReportExport.apply(
+function byggUtskriftsrapport(...a) {
+  return medExportLage(() => _byggUtskriftsrapportExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-async function _buildPrintReportExport() {
-  if (!getData().length) {
+async function _byggUtskriftsrapportExport() {
+  if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return;
   }
-  showLoading();
+  visaLaddning();
   try {
     const bada = rapportModellBada(), modell = bada.urval;
     const ritade = /* @__PURE__ */ new Set(), bilder = /* @__PURE__ */ new Map();
@@ -36040,7 +36040,7 @@ async function _buildPrintReportExport() {
       ritaLoneoversikt();
       ritaLoneskillnadPerBas(lsBasVymodell());
       ritaLikaArbete(laVymodell());
-      if (state.statistik.length) generateBenchmark();
+      if (state.statistik.length) byggJamforelse();
       const imgs = {};
       ritaAlderOchLon("__ALLA__");
       await new Promise((r) => setTimeout(r, 250));
@@ -36071,7 +36071,7 @@ async function _buildPrintReportExport() {
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
-                ${auditPoster().map(([_id2, a]) => {
+                ${metodikposter().map(([_id2, a]) => {
         const fmtN = (n) => n.toLocaleString("sv-SE");
         const exclRows = [...a.parseExcl || [], ...a.analysisExclusions || []].map(([r, c]) => `<tr><th>− ${esc(htmlTillText(r))}</th><td>${fmtN(c)}</td></tr>`).join("");
         const used = a.usedInAnalysis !== void 0 ? a.usedInAnalysis : a.afterFilter;
@@ -36106,17 +36106,17 @@ async function _buildPrintReportExport() {
       if (arTal(td.textContent)) td.classList.add("pr-tal");
     });
     document.body.classList.add("print-mode");
-    hideLoading();
+    doljLaddning();
     await new Promise((r) => setTimeout(r, 200));
     window.print();
     setTimeout(() => document.body.classList.remove("print-mode"), 1e3);
   } catch (err) {
-    hideLoading();
+    doljLaddning();
     document.body.classList.remove("print-mode");
     alert("Fel vid PDF-generering: " + err.message);
   }
 }
-function printScaffoldView(viewId, heading) {
+function skrivUtMallflik(viewId, heading) {
   const view = document.getElementById(viewId);
   if (!view) return;
   const clone = view.cloneNode(true);
@@ -36197,14 +36197,14 @@ function _utskriftEfter() {
   });
 }
 function uppstartUtskrift() {
-  document.getElementById("btn-export-pdf")?.addEventListener("click", buildPrintReport);
+  document.getElementById("btn-export-pdf")?.addEventListener("click", byggUtskriftsrapport);
   document.addEventListener("click", (e) => {
     const btn = (
       /** @type {HTMLElement} */
       e.target.closest("[data-print-view]")
     );
     if (!btn) return;
-    printScaffoldView(btn.getAttribute("data-print-view"), btn.getAttribute("data-print-title") || "Checklista");
+    skrivUtMallflik(btn.getAttribute("data-print-view"), btn.getAttribute("data-print-title") || "Checklista");
   });
   window.addEventListener("beforeprint", _utskriftFore);
   window.addEventListener("afterprint", _utskriftEfter);
@@ -36350,7 +36350,7 @@ function docxDelar(block, { titel, sidfot, skapad }) {
 }
 
 // src/app/62-word-utkast.js
-function _buildDocumentationDraftHtml() {
+function _byggWordUtkastHtml() {
   return rmTillHtml(rapportModell());
 }
 var DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -36448,7 +36448,7 @@ async function byggWordUtkast() {
   const year = (/* @__PURE__ */ new Date()).getFullYear();
   const stamp = idagDatum();
   const demo = state.isDemo;
-  const { block } = await _utkastFyllBilder(_utkastTillBlock(_buildDocumentationDraftHtml()));
+  const { block } = await _utkastFyllBilder(_utkastTillBlock(_byggWordUtkastHtml()));
   const delar = docxDelar(block, {
     titel: `Lönekartläggning ${year} — dokumentation (utkast)`,
     sidfot: _kSidfot(`Lönekartläggning ${year} — ${demo ? "DEMODATA, UTKAST" : "UTKAST"}`),
@@ -36462,15 +36462,15 @@ async function byggWordUtkast() {
   const blob = await zip.generateAsync({ type: "blob", mimeType: DOCX_MIME, compression: "DEFLATE" });
   return { blob, namn: `Lonekartlaggning_${year}_dokumentation_UTKAST_${demo ? "DEMODATA_" : ""}${stamp}.docx` };
 }
-function exportDocumentationDraft(...a) {
-  return medExportLage(() => _exportDocumentationDraftExport.apply(
+function exportWordUtkast(...a) {
+  return medExportLage(() => _exportWordUtkastExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-async function _exportDocumentationDraftExport() {
-  if (!getData().length) {
+async function _exportWordUtkastExport() {
+  if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return false;
   }
@@ -36485,23 +36485,23 @@ async function _exportDocumentationDraftExport() {
   }
 }
 function uppstartWordUtkast() {
-  document.getElementById("btn-export-docdraft")?.addEventListener("click", exportDocumentationDraft);
+  document.getElementById("btn-export-docdraft")?.addEventListener("click", exportWordUtkast);
 }
 
 // src/app/64-jamforelse-export.js
-function exportBenchmarkExcel(...a) {
-  return medExportLage(() => _exportBenchmarkExcelExport.apply(
+function exportJamforelseExcel(...a) {
+  return medExportLage(() => _exportJamforelseExcelExport.apply(
     null,
     /** @type {any} */
     a
   ));
 }
-function _exportBenchmarkExcelExport() {
+function _exportJamforelseExcelExport() {
   if (typeof XLSX === "undefined") {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
-  const d = getData();
+  const d = hamtaData();
   if (!d.length) {
     alert("Ingen lönefil är inläst. Läs in lönefilen först.");
     return;
@@ -36667,25 +36667,25 @@ function _exportBenchmarkExcelExport() {
   ];
   const metaSheet = XLSX.utils.aoa_to_sheet(meta);
   metaSheet["!cols"] = [{ wch: 48 }, { wch: 32 }];
-  _applyColumnNumFormats(sheet, SV_NUM_FORMATS, 1);
+  _tillampaTalformat(sheet, SV_TALFORMAT, 1);
   headerRow2.forEach((rubrik, c) => {
     if (rubrik !== "P10" && rubrik !== "P90") return;
     for (let r = 2; r < aoa.length; r++) {
       const cell = sheet[XLSX.utils.encode_cell({ c, r })];
-      if (cell && cell.t === "n") cell.z = SV_NUM_FORMATS.median;
+      if (cell && cell.t === "n") cell.z = SV_TALFORMAT.median;
     }
   });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, sheet, "Jämförelse_alla_percentiler");
   XLSX.utils.book_append_sheet(wb, metaSheet, "Metadata");
   const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
-  _appendMethodSheet(wb);
+  _laggTillMetodblad(wb);
   XLSX.writeFile(wb, filename);
-  _showExportSensitivityToast();
-  announceToScreenReader(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? "" : "er"}, ${nPersoner} person${nPersoner === 1 ? "" : "er"}.`);
+  _visaExportvarning();
+  meddelaSkarmlasare(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? "" : "er"}, ${nPersoner} person${nPersoner === 1 ? "" : "er"}.`);
 }
 function uppstartJamforelseExport() {
-  document.getElementById("btn-export-benchmark")?.addEventListener("click", exportBenchmarkExcel);
+  document.getElementById("btn-export-benchmark")?.addEventListener("click", exportJamforelseExcel);
 }
 
 // src/app/66-zip-export.js
@@ -36713,12 +36713,12 @@ async function _exportZipExport() {
     alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return false;
   }
-  if (!getData().length) {
+  if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return false;
   }
   const zip = new JSZip();
-  if (typeof showLoading === "function") showLoading();
+  if (typeof visaLaddning === "function") visaLaddning();
   try {
     if (typeof XLSX !== "undefined") {
       try {
@@ -36742,14 +36742,14 @@ async function _exportZipExport() {
       const flik = knapp.getAttribute("data-tab");
       if (!flik || ["dokumentera", "rapporttext", "arbetet", "info"].includes(flik)) continue;
       try {
-        renderTabContent(flik);
+        ritaFlik(flik);
       } catch (e) {
         rapporteraFel(`ZIP: ${flik}`, e);
       }
     }
     if (state.forraArsbokslut) {
       try {
-        renderTabContent("arbetet");
+        ritaFlik("arbetet");
       } catch (e) {
         rapporteraFel("ZIP: arbetet", e);
       }
@@ -36768,9 +36768,9 @@ async function _exportZipExport() {
     a.click();
     return true;
   } finally {
-    if (typeof hideLoading === "function") hideLoading();
+    if (typeof doljLaddning === "function") doljLaddning();
     const oppen = document.querySelector(".nav-item.active[data-tab]");
-    if (oppen && oppen.getAttribute("data-tab") === "dokumentera" && typeof renderExportBesked === "function") renderExportBesked();
+    if (oppen && oppen.getAttribute("data-tab") === "dokumentera" && typeof ritaExportBesked === "function") ritaExportBesked();
   }
 }
 function uppstartZipExport() {
@@ -36793,7 +36793,7 @@ function sattLage(nytt) {
     const k = document.getElementById(id);
     if (k) k.setAttribute("aria-pressed", String(l === namn));
   }
-  if (andrat && typeof announceToScreenReader === "function") announceToScreenReader(l === "kompakt" ? "Kompakt läge: förklaringarna är undanfällda." : "Vägledande läge: förklaringarna visas.");
+  if (andrat && typeof meddelaSkarmlasare === "function") meddelaSkarmlasare(l === "kompakt" ? "Kompakt läge: förklaringarna är undanfällda." : "Vägledande läge: förklaringarna visas.");
 }
 function introRader(rot = document) {
   for (const intro of rot.querySelectorAll(".flik-intro")) {
@@ -36824,20 +36824,20 @@ function uppstartLage() {
 
 // src/app/90-uppstart.js
 function uppstartSist() {
-  if (typeof renderProcessTracker === "function") {
+  if (typeof ritaKartlaggningensSteg === "function") {
     try {
-      renderProcessTracker();
+      ritaKartlaggningensSteg();
     } catch (_e) {
     }
   }
-  setupTabA11y();
-  applyProfileLabels();
+  kopplaFlikarnasTillganglighet();
+  tillampaProfiletiketter();
   _synkaKTroskel();
-  renderReferensKort();
+  ritaReferensKort();
   try {
     const demoVal = new URLSearchParams(window.location.search).get("demo");
     const demo = demoVal === "1" || demoVal === "stor";
-    if (demo && !state.data.length) (demoVal === "stor" ? loadStortDemo : loadDemoData)();
+    if (demo && !state.data.length) (demoVal === "stor" ? lasInStortDemo : lasInDemodata)();
     const inbakat = () => {
       if (!demo && typeof lasInInbakatPaket === "function") lasInInbakatPaket();
       else if (demo && document.getElementById("inbakat-organisationspaket") && typeof _paketStatus === "function") _paketStatus("Det inbakade paketet används inte i demoläget.", false);

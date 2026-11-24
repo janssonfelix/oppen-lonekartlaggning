@@ -6,38 +6,38 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
-import { applyProfileLabels, synkaNamnFalt } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfUrvalGlom } from './10-diagramritare.js';
-import { getBasIntervals, state } from './12-tillstand.js';
-import { bedomningUnderlag, populateSelects, renderProcessTracker, renderUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderOutliers } from './15-extremvarden-basrang.js';
-import { renderConsistencyBanner, renderDataValidationReport, syncDatakvalitetPanel } from './16-inlasningskontroll.js';
+import { hamtaBasIntervall, state } from './12-tillstand.js';
+import { bedomningUnderlag, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { ritaExtremvarden } from './15-extremvarden-basrang.js';
+import { ritaKonsistenskontroll, ritaValideringsrapport, synkaDatakvalitetspanel } from './16-inlasningskontroll.js';
 import { _fkSlapp } from './17-forhandskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
 import { STORT_DEMO_STATISTIKNAMN } from './21-stort-demo.js';
 import { visningNy } from './23-exportgrind.js';
-import { updateGdprBanner } from './25-dataskyddsinfo.js';
-import { _rensaAllData, clearAllData } from './26-rensning.js';
+import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
+import { _rensaAllData, rensaAllData } from './26-rensning.js';
 import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
-import { unlockTabs } from './31-navigering.js';
-import { _deriveArbetsvarderingFromData, markUploadLoaded } from './32-filinlasning.js';
+import { lasUppFlikar } from './31-navigering.js';
+import { _harledArbetsvarderingUrData, markeraFilrutaInlast } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
-import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
+import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { _formatPValue, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _formateraPVarde, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _hpDemoSkal } from './56-handlingsplan.js';
 
 // ---- #16 Testdata + självdiagnostik ----
 // genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen importerar dem.
 
 // Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
-function runDiagnostics() {
-    const reg = runOLSRegression();
-    return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: getBasIntervals().length },   // regressionen skickas vidare (ADR-17)
-        { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formatPValue });
+function korDiagnostik() {
+    const reg = korOLSRegression();
+    return demodiagnostik({ rader: state.data, reg, underlag: bedomningUnderlag({ reg }), antalBas: hamtaBasIntervall().length },   // regressionen skickas vidare (ADR-17)
+        { nivaFl: T.niva.fl, underlagEtikett: s => UK_ETIKETT[s], pText: _formateraPVarde });
 }
 
 // Demolägets påhittade organisation och ställningstagande (ADR-28). Bara i demoläget;
@@ -62,9 +62,9 @@ function _lasInDemoReferens({ stort = false } = {}) {
     state.profile = { ...state.profile, name: DEMO_ORGANISATION, orgTyp: 'kommun' };
     if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
     if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
-    if (typeof applyProfileLabels === 'function') applyProfileLabels();
-    if (typeof renderReferensKort === 'function') renderReferensKort();
-    if (typeof markUploadLoaded === 'function') markUploadLoaded('upload-cell-policy', 'Demo');
+    if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
+    if (typeof ritaReferensKort === 'function') ritaReferensKort();
+    if (typeof markeraFilrutaInlast === 'function') markeraFilrutaInlast('upload-cell-policy', 'Demo');
 }
 // Det stora demots påhittade jämförelsestatistik (21-stort-demo.js). Det lilla demot har ingen: en kvarvarande från
 // det stora tas bort.
@@ -74,7 +74,7 @@ function _lasInDemoStatistik({ stort = false } = {}) {
         state.statistikNamn = STORT_DEMO_STATISTIKNAMN;
         state.statistikKalla = 'demo';
         state.statistikHasP10 = state.statistikHasP90 = state.statistikHasKon = true;
-        markUploadLoaded('upload-cell-stat', 'Demo');
+        markeraFilrutaInlast('upload-cell-stat', 'Demo');
     } else if (state.statistikKalla === 'demo') {
         _tomStatistik();
     }
@@ -96,7 +96,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
     _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
-    _deriveArbetsvarderingFromData();   // demodata saknar poäng → rensar ev. kvarvarande
+    _harledArbetsvarderingUrData();   // demodata saknar poäng → rensar ev. kvarvarande
     state.ansvarKolumn = { namn: 'Ansvarskod (demo)', godkand: true, giltiga: 1 };
     state.isDemo = true;   // #9: markera som demoläge — syntetisk data, aldrig verklig analys
     state.demoStort = stort;   // bannern och filraden säger vilket demo det är
@@ -104,37 +104,37 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     _lasInDemoStatistik({ stort });
     state.dataAudit = { totalRaw: state.data.length, excludedNoBas: 0, excludedZeroLon: 0 };
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
-    unlockTabs();
+    lasUppFlikar();
     ritaNyckeltal();
-    populateSelects();
+    fyllValjare();
     ritaLoneoversikt();
     ritaLoneskillnadPerBas(lsBasVymodell());
     ritaAlderOchLon('__ALLA__');
     ritaKravstatus();
-    const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
-    renderUnderlagetsKvalitet({ reg });
-    updateGdprBanner();
-    renderConsistencyBanner();
-    renderActionChecklist({ reg });
-    renderOutliers();
-    renderDataValidationReport();
-    syncDatakvalitetPanel({ reg });
-    renderProcessTracker({ reg });
+    const reg = korOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17: ett värde, ingen cache)
+    ritaUnderlagetsKvalitet({ reg });
+    uppdateraDataskyddsbesked();
+    ritaKonsistenskontroll();
+    ritaAtgardslista({ reg });
+    ritaExtremvarden();
+    ritaValideringsrapport();
+    synkaDatakvalitetspanel({ reg });
+    ritaKartlaggningensSteg({ reg });
     const status = stort ? `Syntetisk testdata, stort demo: ${svTal(state.data.length)} personer` : `Syntetisk testdata: ${state.data.length} personer`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).innerHTML = `<span class="farg-info">${ikon('sok')} ${status}</span>`;
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';
-    markUploadLoaded('upload-cell-data', 'Testdata');
+    markeraFilrutaInlast('upload-cell-data', 'Testdata');
     // Exempel på sakliga skäl på tre rader i handlingsplanen, så att tabellerna i rapporten och Excel syns.
     if (typeof _hpDemoSkal === 'function') try { _hpDemoSkal(); } catch (e) { rapporteraFel('Demot: sakliga skäl', e); }
     visningNy();   // ett nytt underlag: ingen ritad flik visas igen som den är (ADR-81)
     return true;
 }
 
-export function loadDemoData() {
+export function lasInDemodata() {
     if (!_lasInDemounderlag(genereraDemodata)) return;
 
     // Kör diagnostik
-    const tests = runDiagnostics();
+    const tests = korDiagnostik();
     const passCount = tests.filter(t => t.pass).length;
     const failCount = tests.length - passCount;
     const wrap = /** @type {HTMLElement} */ (document.getElementById('diagnostic-results'));
@@ -160,13 +160,13 @@ export function loadDemoData() {
             <p class="text-dampad-xs marg-t-8">Testdatan har 200 personer fördelade jämnt mellan kön. Modellen är konstruerad så att en oförklarad skillnad på ungefär −3 % ska finnas kvar efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger en större rå löneskillnad som delvis förklaras av strukturen.</p>
         </div>
     `;
-    _renderDemoBanner();
+    _ritaDemoruta();
 }
 
 // #9 Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata
 // aldrig förväxlas med verklig analys. Banner-elementet finns i index.html.
 // Döljer även första-intryck-hinten när data finns (anropas i alla data-lägesbyten).
-export function _renderDemoBanner() {
+export function _ritaDemoruta() {
     const b = document.getElementById('demo-mode-banner');
     if (b) b.style.display = state.isDemo ? 'flex' : 'none';
     // Det stora demot säger det i bannern; det lilla har kvar sin text.
@@ -188,6 +188,6 @@ export function uppstartDemodataDiagnostik() {
     // OCH länken i första-intryck-hinten.
     // Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
     ['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>
-        document.getElementById(id)?.addEventListener('click', loadDemoData));
-    document.getElementById('btn-exit-demo')?.addEventListener('click', clearAllData);
+        document.getElementById(id)?.addEventListener('click', lasInDemodata));
+    document.getElementById('btn-exit-demo')?.addEventListener('click', rensaAllData);
 }

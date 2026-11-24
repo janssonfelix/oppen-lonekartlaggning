@@ -26,9 +26,9 @@ const STAR = [...STOR, ...grupp('B', '6100', 12, 35000, 'kvinna'), rad('C', '620
 function fonster(data) {
     const w = createAppWindow();
     w.__state.data = data;
-    w.eval('populateSelects(); unlockTabs();');
+    w.eval('fyllValjare(); lasUppFlikar();');
     Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
-    w.__renderTabContent('loneoversyn');
+    w.__ritaFlik('loneoversyn');
     return w;
 }
 const celler = tr => [...tr.children].map(c => normalisera(c.textContent).trim());
@@ -52,7 +52,7 @@ function utfall(w) {
 describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för Varav till kvinnodominerade grupper (ADR-70)', () => {
     it('fixturen: på skärmen är Till kv-dom den ensamma kvinnans påslag', () => {
         const w = fonster(STRECK);
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         const s = scenario(w);
         expect(krTal(s['Till kv-dom'])).toBe(Math.round(0.02 * ENSAM));
         expect(utfall(w).varav).toBe(`${Math.round(0.02 * ENSAM)} kr`);
@@ -60,9 +60,9 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
 
     it('exportläget vid 10, scenariot sparat på skärmen: Varav är ett streck, och scenariotabellen ger ingen differens', () => {
         const w = fonster(STRECK);
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         iExport(w);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const u = utfall(w);
         expect(u.varav).toBe('–');
         const s = scenario(w);
@@ -77,17 +77,17 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
 
     it('exportläget vid 10, scenariot sparat i exportläget: samma streck', () => {
         const w = iExport(fonster(STRECK));
-        w.__renderTabContent('loneoversyn');
-        w.eval("_forecastSaveScenario('A')");
+        w.__ritaFlik('loneoversyn');
+        w.eval("_fcSparaScenario('A')");
         expect(scenario(w)['Till kv-dom']).toBe('–');
         expect(utfall(w).varav).toBe('–');
     });
 
     it('exportläget vid 10: när Varav står, står scenariots Till kv-dom med samma tal', () => {
         const w = fonster(STAR);
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         iExport(w);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const u = utfall(w);
         expect(u.varav).not.toBe('–');
         expect(scenario(w)['Till kv-dom']).toBe(u.varav);
@@ -95,19 +95,19 @@ describe('[B7.4] [S4] Scenariojämförelsen A/B: Till kv-dom följer regeln för
 
     it('[B7.5] övriga kolumner: Använt och total kostnad är utfallets summor, och lönegapen gäller hela organisationen', () => {
         const w = fonster(STRECK);
-        w.eval("_forecastSaveScenario('A')");
+        w.eval("_fcSparaScenario('A')");
         iExport(w);
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const s = scenario(w);
-        const o = w.eval('_fcBeraknaUtfall(getData())');
+        const o = w.eval('_fcBeraknaUtfall(hamtaData())');
         expect(krTal(s['Använt/mån'])).toBe(Math.round(o.använt));
         expect(krTal(s['Total kostnad'])).toBe(Math.round(o.totalKostnad));
     });
 
     it('scenarierna lämnar inte verktyget: konfigurationsfilen bär dem inte, och tabellen har ingen egen CSV- eller kopieringsknapp', () => {
         const w = fonster(STRECK);
-        w.eval("_forecastSaveScenario('A')");
-        const cfg = JSON.stringify(w.__buildConfigSnapshot());
+        w.eval("_fcSparaScenario('A')");
+        const cfg = JSON.stringify(w.__byggKonfiguration());
         expect(cfg).not.toMatch(/scenari/i);
         const host = w.document.getElementById('forecast-scenarios');
         expect(host.querySelector('table').id).toBe('');

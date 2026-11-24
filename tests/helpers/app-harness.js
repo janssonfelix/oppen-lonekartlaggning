@@ -100,70 +100,70 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
 ;try {
     Object.assign(window, {
         __state: (typeof state !== 'undefined' ? state : null),
-        __renderTabContent: renderTabContent,
-        __loadDemoData: loadDemoData,
+        __ritaFlik: ritaFlik,
+        __lasInDemodata: lasInDemodata,
         __likvardighetspar: likvardighetspar,
-        __methodAppendixData: _methodAppendixData,
+        __metodbilaga: _metodbilaga,
         __stRepresentationPerBas: representationPerBas,
-        __getData: getData,
-        __cloneTable: _cloneAndCleanTableForExport,
-        __groupedAoa: _groupedCloneToAoa,
-        __docDraftHtml: _buildDocumentationDraftHtml,
-        __buildConfigSnapshot: buildConfigSnapshot,
-        __applyConfigSnapshot: applyConfigSnapshot,
-        __bes8Areas: _bes8Areas,
-        __renderProcessTracker: renderProcessTracker,
-        __tableToMatrix: tableToMatrix,
+        __hamtaData: hamtaData,
+        __tabellkopia: _tabellkopiaForExport,
+        __groupedAoa: _grupperadKopiaTillAoa,
+        __docDraftHtml: _byggWordUtkastHtml,
+        __byggKonfiguration: byggKonfiguration,
+        __tillampaKonfiguration: tillampaKonfiguration,
+        __bes8Omraden: _bes8Omraden,
+        __ritaKartlaggningensSteg: ritaKartlaggningensSteg,
+        __tabellTillMatris: tabellTillMatris,
         __tillCsv: tillCsv,
-        __clearAllData: clearAllData,
-        __autoClearOnInactivity: _autoClearOnInactivity,
-        __explorerMinne: () => ({
-            rows: _explorerState ? _explorerState.rows.length : 0,
-            urval: _urvalDataRef ? _urvalDataRef.length : 0,
+        __rensaAllData: rensaAllData,
+        __rensaVidInaktivitet: _rensaVidInaktivitet,
+        __utforskaMinne: () => ({
+            rows: _utforskaTillstand ? _utforskaTillstand.rows.length : 0,
+            urval: _urvalData ? _urvalData.length : 0,
             exportFigur: typeof document.getElementById('chart-explore')?._exportFigure
         }),
         __csvFilnamn: namn => _csvFilnamn(namn),
         __tillTsv: tillTsv,
         __utGruppnyckel: gruppnyckel,
-        __explorerFigure: explorerFigure,
-        __explorerTypSkal: explorerTypSkal,
-        __explorerDossierTarget: explorerDossierTarget,
-        __explorerHandleClick: explorerHandleClick,
+        __utforskaFigur: utforskaFigur,
+        __utforskaTypSkal: utforskaTypSkal,
+        __utforskaDossiermal: utforskaDossiermal,
+        __utforskaVidKlick: utforskaVidKlick,
         // Kortform för testerna: dimension → värden, uttryckt som urval.
-        __explorerSetFilter: f => explorerSattUrval({ lage: 'alla', villkor: Object.entries(f).map(([d, v]) =>
+        __utforskaSattFilter: f => utforskaSattUrval({ lage: 'alla', villkor: Object.entries(f).map(([d, v]) =>
             ({ falt: d === 'alder' ? 'aldersgrupp' : d, op: 'enAv', varde: [...v], inte: false })) }, []),
-        __explorerSetUrval: (u, g) => explorerSattUrval(u, g || []),
-        __explorerUrval: () => explorerUrval(),
-        __renderExplorer: renderExplorer,
+        __utforskaSattUrval: (u, g) => utforskaSattUrval(u, g || []),
+        __utforskaUrval: () => utforskaUrval(),
+        __ritaUtforska: ritaUtforska,
         __policyFor: policyFor,
         __bedomningUnderlag: bedomningUnderlag, __ruLikaArbeteGrupper: likaArbeteGrupper,
-        __rapportunderlagBlock: () => rapportunderlagBlock(), __renderRapportunderlag: renderRapportunderlag,
+        __rapportunderlagBlock: () => rapportunderlagBlock(), __ritaRapportunderlag: ritaRapportunderlag,
         __kopieraRapportBlock: id => kopieraRapportBlock(id), __kopieraRapportDiagram: id => kopieraRapportDiagram(id), __dataUrlTillBlob: u => _dataUrlTillBlob(u),
         __ruTillWordHtml: tillWordHtml, __guGapUppdelning: gapUppdelning, __ifFlaggaIndivider: flaggaIndivider, __ruTillText: tillText, __dqJamforbaraBas: jamforbaraBas, __K: K_STANDARD,
         __referensNamn: referensNamn, __referensKortnamn: referensKortnamn, __referensKalla: referensKalla,
         __aterstallReferens: aterstallReferens, __sattReferensNamn: sattReferensNamn, __lasInReferens: _lasInReferens,
-        __policyLevelLabel: policyLevelLabel,
+        __policyNivaEtikett: policyNivaEtikett,
         __lonepolitikVymodell: lonepolitikVymodell,
         __ritaLonepolitik: ritaLonepolitik,
-        __gruppdossierCandidates: gruppdossierCandidates,
-        __buildGruppdossier: buildGruppdossier,
+        __gruppdossierKandidater: gruppdossierKandidater,
+        __byggGruppdossier: byggGruppdossier,
         __ritaGruppdossier: ritaGruppdossier,
-        __openGruppdossier: openGruppdossier,
-        __closeGruppdossier: closeGruppdossier,
-        __runRobusthet: runRobusthet,
-        __gruppdossierAsText: gruppdossierAsText,
+        __oppnaGruppdossier: oppnaGruppdossier,
+        __stangGruppdossier: stangGruppdossier,
+        __korRobusthet: korRobusthet,
+        __gruppdossierSomText: gruppdossierSomText,
         __robusthetLikvardighet: robusthetLikvardighet,
         __robusthetPrioritering: robusthetPrioritering,
-        __buildFardigcheck: buildFardigcheck,
-        __renderKvalitetssakring: renderKvalitetssakring,
+        __byggFardigcheck: byggFardigcheck,
+        __ritaKvalitetssakring: ritaKvalitetssakring,
         __ritaKravstatus: ritaKravstatus,
-        __runOLS: runOLSRegression,
+        __runOLS: korOLSRegression,
         __ritaRegressionskort: ritaRegressionskort,
-        __chartExportFilename: chartExportFilename,
-        __chartExportRows: chartExportRows,
-        __attachChartExport: _attachChartExport,
+        __diagramexportFilnamn: diagramexportFilnamn,
+        __diagramexportRader: diagramexportRader,
+        __laggTillDiagramexport: _laggTillDiagramexport,
         __exportSkal: () => ({ ...EXPORT_SKAL }), __exportTillaten: exportTillaten, __markeraUtanExport: markeraUtanExport,
-        SCATTER_MAX_POINTS,
+        PUNKTMOLN_MAX_PUNKTER,
         __rfMarken: () => Object.keys(_RF_MARKEN),
         __ritaFigur: ritaFigur, __rensaFigur: rensaFigur, __rfTipsAgare: () => _rfTipsAgare, __rfBehallare: () => [..._rfBehallare]
     });
@@ -193,7 +193,7 @@ export function utgangslage(w) {
 const _CACHAR = new Set(['bootstrapCI', 'powerAnalysis', 'result']);
 const _somLista = (k, v) => (_CACHAR.has(k) || /cache/i.test(k) ? undefined : v?.constructor?.name === 'Set' || v?.constructor?.name === 'Map' ? [...v] : v);
 export function tillstandsavtryck(w) {
-    const ut = { urval: JSON.stringify(w.__explorerUrval()), markering: JSON.stringify(w.eval('diagramMarkering()')), dialoger: utgangslage(w).dialoger };
+    const ut = { urval: JSON.stringify(w.__utforskaUrval()), markering: JSON.stringify(w.eval('diagramMarkering()')), dialoger: utgangslage(w).dialoger };
     for (const k of Object.keys(w.__state)) if (!/cache/i.test(k)) ut[k] = JSON.stringify(w.__state[k], _somLista);
     return ut;
 }
@@ -202,7 +202,7 @@ export function tillstandsavtryck(w) {
  * Ett fönster som testerna i gruppen delar (hela filen på toppnivå, annars en describe): skapas i beforeAll, stängs i
  * afterAll. Bara för tester som läser; afterEach fäller det test som lämnar tillståndet ändrat, så att nästa test
  * inte passerar eller faller av fel skäl. Håll dem få: varje levande fönster väger 25 MB (se _stang).
- * @param {((w: any) => any)|null} [forbered] - t.ex. `w => w.__loadDemoData()`
+ * @param {((w: any) => any)|null} [forbered] - t.ex. `w => w.__lasInDemodata()`
  * @param {() => any} [skapa] - en annan rigg än createAppWindow, t.ex. `() => fonster(25)`
  * @returns {() => any} fönstret
  */
@@ -230,7 +230,7 @@ export const MENYFLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet'
 export function delatFlikfonster() {
     const ritade = new Map();
     const flikfonster = delatFonster(w => {
-        w.__loadDemoData();
+        w.__lasInDemodata();
         for (const flik of MENYFLIKAR) {
             w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
             ritade.set(flik, {

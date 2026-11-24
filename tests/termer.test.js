@@ -198,21 +198,21 @@ describe('termerna i appen', () => {
         matrix.setAttribute('data-tip', 'x');
         const not = d.querySelector('#la-aid-bakgrund span[data-term-template]');
         not.textContent = 'x';
-        w.eval('applyProfileLabels()');
+        w.eval('tillampaProfiletiketter()');
         expect(matrix.getAttribute('data-tip')).toBe('Kvinnor och män med samma AID-etikett — skiljer sig lönen?');
         expect(matrix.textContent).not.toMatch(/AID-etikett/);
         expect(not.textContent).toBe(fyllTermer(AID_METODTEXT));
     });
     it('Löneläget: kolumnrubriken har den korta formen, exportetiketten hela termen (ADR-75)', () => {
         const w = createAppWindow(), d = w.document;
-        w.eval('applyProfileLabels()');
+        w.eval('tillampaProfiletiketter()');
         const th = d.querySelector('#benchmark-thead th');
         expect(th.textContent.trim()).toBe('AID');
         expect(th.getAttribute('data-export-label')).toBe('AID-etikett');
     });
     it('ordlistan visar posterna med termerna och hittar dem på de gamla orden (fältet sok)', () => {
         const w = createAppWindow(), d = w.document;
-        const termer = t => { w.eval(`renderGlossary(${JSON.stringify(t)})`); return [...d.querySelectorAll('#glossary-content .glossary-term')].map(e => e.textContent); };
+        const termer = t => { w.eval(`ritaOrdlista(${JSON.stringify(t)})`); return [...d.querySelectorAll('#glossary-content .glossary-term')].map(e => e.textContent); };
         const alla = termer('');
         for (const t of ['AID-etikett', 'AID-kod', 'Huvudområde', 'BAS-intervall', 'Oförklarad skillnad per BAS-intervall']) expect(alla).toContain(t);
         expect(alla).not.toContain('Yrkesgrupp');
@@ -224,7 +224,7 @@ describe('termerna i appen', () => {
     });
     it('ordlistans mallar blir hela texter också med en annan uppsättning', () => {
         const w = createAppWindow();
-        for (const g of w.eval('GLOSSARY')) {
+        for (const g of w.eval('ORDLISTA')) {
             for (const t of [STANDARDTERMER, YRKE]) {
                 for (const falt of [g.term, g.short, g.long]) expect(fyllTermer(falt, t), g.term).not.toMatch(/\{(?!k\}|golv\})[^}]*\}/);
             }
@@ -233,9 +233,9 @@ describe('termerna i appen', () => {
     it('metodtexten är fylld i Om verktyget och i Word-utkastet', () => {
         const w = createAppWindow();
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('metodik')");
+        w.eval("ritaOmVerktyget('metodik')");
         expect(w.document.getElementById('om-aid').textContent.replace(/\s+/g, ' ')).toContain(fyllTermer(AID_METODTEXT));
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const html = w.__docDraftHtml();
         expect(html).toContain('En AID-etikett består av en sexsiffrig AID-kod och ett etikettnamn');
         expect(html).not.toMatch(/\{(?:enhet|kod|namn|niva|jamforelse|huvudomrade)/i);

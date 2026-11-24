@@ -12,26 +12,26 @@ import { receptBeskrivning, receptTillTabeller } from '../lib/tabellrecept.js';
 import { adjektiv, artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { kompletterandeUndertryckningPerNyckel } from '../lib/undertryckning.js';
 import { alderGapRader } from '../lib/vymodell-alder-karriar.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
-import { auditPoster } from './05-tabeller-och-lankar.js';
+import { metodikposter } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS } from './10-diagramtema.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag, UK_ETIKETT } from './13-oversikt.js';
-import { _appendMethodSheet, _applyColumnNumFormats, _excelBladnamn, _showExportSensitivityToast, EU_LONEBEGREPP_RESERVATION, SV_NUM_FORMATS, tableToCleanSheet } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _tillampaTalformat, _excelBladnamn, _visaExportvarning, EU_LONEBEGREPP_RESERVATION, SV_TALFORMAT, tabellTillBlad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
-import { renderSektorer } from './37-struktur.js';
+import { ritaSektorer } from './37-struktur.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper, laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { generateBenchmark, jamforelseUrvalText } from './42-jamforelse.js';
+import { byggJamforelse, jamforelseUrvalText } from './42-jamforelse.js';
 import { _rrExcelBlad } from './44-referensoverblick.js';
 import { _aidbasExcelBlad, _aidbasLikaBlad, _aidbasMetodRader, AIDBAS_BLADNAMN, konsklassOrd } from './45-aid-bas-tabeller.js';
-import { _computePerBasGap, harAlder } from './50-regressionsmodeller.js';
-import { renderPrioritering } from './55-prioritering.js';
+import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
+import { ritaPrioritering } from './55-prioritering.js';
 import { _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
 import { rmPerBasUnderlag, rmPerBasUndertryckNoter } from './58-rapportmodell.js';
 import { _lpExcelBlad } from './75-lonepolitik.js';
@@ -50,7 +50,7 @@ function _excelAlltBladExport() {
     if (!state.data.length) return [];
     const harRef = state.policy.length > 0 || state.statistik.length > 0;
     return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-lönekartläggning', ...(harRef ? ['Prioritering'] : []), 'Löneskillnad', 'Könsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, EXCEL_BLAD_HUVUDOMRADEN,
-        ...(state.statistik.length ? ['Jämförelsestatistik'] : []), ...(_excelSkalRader() ? ['Sakliga skäl'] : []), ...(getData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+        ...(state.statistik.length ? ['Jämförelsestatistik'] : []), ...(_excelSkalRader() ? ['Sakliga skäl'] : []), ...(hamtaData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
 }
 
 /**
@@ -82,7 +82,7 @@ function _excelEgnaRader() {
     const tal = (v, typ) => (v == null || typeof v !== 'number' || !isFinite(v) ? (v == null ? '' : v) : (typ === 'kr' || typ === 'antal' ? Math.round(v) : Math.round(v * 100) / 100));
     const rows = [['Egna tabeller', `byggda i Tabeller och egna vyer; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
     for (const r of recept) {
-        const tabeller = receptTillTabeller(getData(), r, { k: kTroskel() });
+        const tabeller = receptTillTabeller(hamtaData(), r, { k: kTroskel() });
         if (!tabeller.length) { rows.push([r.namn, 'ingen grupp når minsta gruppstorlek'], []); continue; }
         for (const t of tabeller) {
             rows.push([t.rubrik, receptBeskrivning(r)]);
@@ -97,7 +97,7 @@ function _excelEgnaRader() {
 
 /** Raderna i bladet Per BAS, eller null utan underlag. */
 function _excelPerBasRader() {
-    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(getData(), kTroskel()) : null;
+    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(hamtaData(), kTroskel()) : null;
     if (!pb || !pb.intervall.length) return null;
     const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
     const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
@@ -144,7 +144,7 @@ function _excelPerBasRader() {
  * @returns {[string, any[][]][]} bladets namn och rader
  */
 function _excelDiagramBlad() {
-    const d = getData(), k = kTroskel(), ut = [], r1 = v => Math.round(v * 10) / 10;
+    const d = hamtaData(), k = kTroskel(), ut = [], r1 = v => Math.round(v * 10) / 10;
     const bas = _laOversiktRader(d);
     if (bas.length) ut.push(['Lika arbete per BAS', [
         [`Kvinnors och mäns lön per ${T.niva.en} (översiktstabellen i Lönestruktur)`], [],
@@ -180,13 +180,13 @@ function _excelLonepolitikMetod(blad) {
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function exportAllToExcel(...a) { return medExportLage(() => _exportAllToExcelExport.apply(null, /** @type {any} */ (a))); }
-function _exportAllToExcelExport() {
+function exportAlltTillExcel(...a) { return medExportLage(() => _exportAlltTillExcelExport.apply(null, /** @type {any} */ (a))); }
+function _exportAlltTillExcelExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
     XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
-    _showExportSensitivityToast();
+    _visaExportvarning();
 }
 
 /** Bygger arbetsboken för "Excel (alla flikar)". */
@@ -202,12 +202,12 @@ function __excelAlltBokExport() {
     ensure('#rapport-table tbody tr', ritaLoneoversikt);
     ensure('#skevhet-table tbody tr', () => ritaLoneskillnadPerBas(lsBasVymodell()));
     ensure('#matrix-table tbody tr', () => ritaLikaArbete(laVymodell()));
-    if (state.policy.length || state.statistik.length) ensure('#prio-table tbody tr', renderPrioritering);
-    if (state.statistik.length) ensure('#benchmark-table tbody tr', generateBenchmark);
+    if (state.policy.length || state.statistik.length) ensure('#prio-table tbody tr', ritaPrioritering);
+    if (state.statistik.length) ensure('#benchmark-table tbody tr', byggJamforelse);
 
     const wb = XLSX.utils.book_new();
     const tableToSheet = (id, fallback) => {
-        const sheet = tableToCleanSheet(id);
+        const sheet = tabellTillBlad(id);
         if (sheet) return sheet;
         return fallback ? XLSX.utils.aoa_to_sheet(fallback) : null;
     };
@@ -245,7 +245,7 @@ function __excelAlltBokExport() {
     for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
 
     // Bladet per AID-huvudområde (ADR-33) — samma k-regler som vyn.
-    ensure('#sektor-table tbody tr', () => renderSektorer(getData()));
+    ensure('#sektor-table tbody tr', () => ritaSektorer(hamtaData()));
     const sektorSheet = tableToSheet('sektor-table');
     if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
 
@@ -280,7 +280,7 @@ function __excelAlltBokExport() {
         ['Genererad', new Date().toLocaleString('sv-SE')],
         []
     ];
-    auditPoster().forEach(([id, a]) => {
+    metodikposter().forEach(([id, a]) => {
         metRows.push([a.title || id]);
         metRows.push(['Total i datafilen', a.totalRaw]);
         [...(a.parseExcl||[]), ...(a.analysisExclusions||[])].forEach(([r,c]) => {
@@ -308,7 +308,7 @@ function __excelAlltBokExport() {
 
     // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
     // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
-    _appendMethodSheet(wb, { extra: [
+    _laggTillMetodblad(wb, { extra: [
         ['Bladen Per BAS och Löneskillnad', `Per BAS är lönestrukturen per ${T.niva.en} som i en skriven lönekartläggning: referensen, organisationen och varje ${T.enhet.en} med P10, median, P90 och antal, per kön. Löneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per ${T.niva.en}, med antal och medianer. Samma underlag, två frågor.`],
         ..._excelLonepolitikMetod(diagramBlad), ..._aidbasMetodRader()] });
     return wb;
@@ -318,7 +318,7 @@ function __excelAlltBokExport() {
 /**
  * Etiketterna för de två "exkluderade p.g.a. minsta gruppstorlek"-raderna. Yrkesgrupperna
  * prövas mot redovisningströskeln (kTroskel()); BAS-regressionen avgörs av
- * statGolv() (se _computePerBasGap), så dess rad nämner golvet.
+ * statGolv() (se _raknaPerBasGap), så dess rad nämner golvet.
  */
 function _jpaExkluderadeTexter() {
     return {
@@ -362,12 +362,12 @@ const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
  * Output: lonekartlaggning_JPA_protokoll_YYYY-MM-DD.xlsx
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-export function exportJPAProtocol(...a) { return medExportLage(() => _exportJPAProtocolExport.apply(null, /** @type {any} */ (a))); }
-function _exportJPAProtocolExport() {
+export function exportJPAProtokoll(...a) { return medExportLage(() => _exportJPAProtokollExport.apply(null, /** @type {any} */ (a))); }
+function _exportJPAProtokollExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
 
-    const d = getData();
+    const d = hamtaData();
     const now = new Date();
     const isoDate = idagDatum(now);
     const localDate = now.toLocaleDateString('sv-SE');
@@ -404,7 +404,7 @@ function _exportJPAProtocolExport() {
     // ---- B) Identifiera JPA-grupper (likvärdigt arbete = BAS-intervall) ----
     // OLS-regression per BAS, kräver minst statGolv() av varje kön
     const basList = [...new Set(d.map(r => r.bas))].sort();
-    const perBas = _computePerBasGap(d, basList);
+    const perBas = _raknaPerBasGap(d, basList);
     // Korrigering för många samtidiga tester (Benjamini–Hochberg) över samma tester som regressionskortet och Att
     // göra: intervallen med status ok och ändligt p-värde. Ett enda test ger q = p.
     const okTests = perBas.filter(b => b.status === 'ok' && isFinite(b.pValue));
@@ -529,7 +529,7 @@ function _exportJPAProtocolExport() {
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     yrkenSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
-    _applyColumnNumFormats(yrkenSheet, SV_NUM_FORMATS);
+    _tillampaTalformat(yrkenSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, yrkenSheet, _excelBladnamn(`2. Lika arbete (${T.system})`, '2. Lika arbete'));
 
     // === Sheet 2a: Alla grupper i lika arbete (art. 10.2 a och c för alla kategorier) ===
@@ -578,7 +578,7 @@ function _exportJPAProtocolExport() {
         { wch: 50 }, { wch: 50 }, { wch: 32 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
     ];
     basSheet['!freeze'] = { xSplit: 2, ySplit: 1 };
-    _applyColumnNumFormats(basSheet, SV_NUM_FORMATS);
+    _tillampaTalformat(basSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, basSheet, '3. Likvärdigt arbete (BAS)');
 
     // === Sheet 3b: § 3:10 Likvärdighet (kv-dom yrken vs yrken som inte är kv-dom, ADR-60) ===
@@ -628,7 +628,7 @@ function _exportJPAProtocolExport() {
             { wch: 50 }, { wch: 50 }, { wch: 28 }, { wch: 40 }, { wch: 18 }, { wch: 22 }
         ];
         lvSheet['!freeze'] = { xSplit: 3, ySplit: 1 };
-        _applyColumnNumFormats(lvSheet, SV_NUM_FORMATS);
+        _tillampaTalformat(lvSheet, SV_TALFORMAT);
         // OBS: kolon är förbjudet i Excel-arknamn (SheetJS kastar) — därav "3-10".
         // Demodata saknar § 3:10-par, så arket prövas bara med riktiga par.
         XLSX.utils.book_append_sheet(wb, lvSheet, '3b. Likvärdigt arbete (krav)');
@@ -737,14 +737,14 @@ function _exportJPAProtocolExport() {
 
     // === Spara filen ===
     const filename = `lonekartlaggning_protokoll_gemensam_lonebedomning_${isoDate}.xlsx`;
-    _appendMethodSheet(wb);
+    _laggTillMetodblad(wb);
     XLSX.writeFile(wb, filename);
-    _showExportSensitivityToast();
-    announceToScreenReader(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
+    _visaExportvarning();
+    meddelaSkarmlasare(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartExcelexport() {
     // Multi-flik Excel-export
-    document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAllToExcel);
+    document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAlltTillExcel);
 }

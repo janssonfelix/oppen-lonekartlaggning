@@ -8,16 +8,16 @@ import { modellBeskrivning, stegEtikett } from '../lib/regression.js';
 import { lonebegreppReservation } from '../lib/struktur.js';
 import { adjektiv } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { _flerKolumnerAlla } from './05-tabeller-och-lankar.js';
 import { _csvMedStampel, kInstalld } from './06-k-troskel.js';
 import { skrForklaring } from './06-kvinnoandel-referens.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
-import { _exportText, getData, referensKalla, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
+import { _exportText, hamtaData, referensKalla, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
-import { exportJPAProtocol } from './24-excelexport.js';
+import { exportJPAProtokoll } from './24-excelexport.js';
 import { _RG_STEG_YRKE, forklaringsmodell, harAlder } from './50-regressionsmodeller.js';
 import { exportHandlingsplan } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
@@ -31,9 +31,9 @@ export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 // ALLA exporter, så varje flaggat resultat går att återskapa och försvara i
 // samverkan/tvist. Två format: aoa-rader (Excel) och HTML (print/rapport).
 // ============================================================
-export function _methodAppendixData() {
+export function _metodbilaga() {
     const total = (state.data && state.data.length) || 0;
-    const used  = (typeof getData === 'function' ? getData().length : total);
+    const used  = (typeof hamtaData === 'function' ? hamtaData().length : total);
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
     const medAlder = harAlder();
     // Förklaringsmodellen (ADR-56): raderna säger den modell huvudtalet räknas med. Med ålder i lönefilen och BAS som
@@ -100,9 +100,9 @@ export function _excelBladnamn(namn, reserv) {
  * @param {any} wb
  * @param {{undantag?: string, extra?: any[][]}} [val]
  */
-export function _appendMethodSheet(wb, { undantag = '', extra = [] } = {}) {
+export function _laggTillMetodblad(wb, { undantag = '', extra = [] } = {}) {
     if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
-    const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_methodAppendixData()), ...extra];
+    const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_metodbilaga()), ...extra];
     // Ansvarsförbehållet (beslut 8c) står under Rättslig ram i varje Excel-export.
     const ram = rows.findIndex(rad => rad[0] === 'Rättslig ram');
     rows.splice(ram < 0 ? rows.length : ram + 1, 0, ['Ansvar', ANSVARSFORBEHALL]);
@@ -147,8 +147,8 @@ export function _exportVisaAllaRader(klon) {
     return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
 }
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function _cloneAndCleanTableForExport(...a) { return medExportLage(() => __cloneAndCleanTableForExportExport.apply(null, /** @type {any} */ (a))); }
-function __cloneAndCleanTableForExportExport(tableId) {
+function _tabellkopiaForExport(...a) { return medExportLage(() => __tabellkopiaForExportExport.apply(null, /** @type {any} */ (a))); }
+function __tabellkopiaForExportExport(tableId) {
     // Exportläget (ADR-51): tabellen läses med den inställda tröskeln, också när anroparen inte gått in i läget.
     const t = exportElement(tableId);   // exportgrinden: tabellens flik är ritad med det som gäller nu
     if (!t || !t.querySelector('tbody tr')) return null;
@@ -195,7 +195,7 @@ function __cloneAndCleanTableForExportExport(tableId) {
         // Varje cell får sin typ bestämd här, inte av kalkylbladsläsarens gissning (ADR-30/43: tabellen är det
         // som visas, arbetsboken ska bära samma sak). Se _exportCellVarde: ett tal i cellens text blir ett tal med
         // sin enhet som talformat, allt annat blir text — också "17/17", som läsaren annars tolkar som ett datum.
-        tr.querySelectorAll('td, th').forEach(td => _exportMarkCell(td));
+        tr.querySelectorAll('td, th').forEach(td => _exportMarkeraCell(td));
     });
 
     return _exportUtanSkarmkolumner(clone);
@@ -276,7 +276,7 @@ function _exportCellVarde(td) {
 }
 
 /** Skriver cellens värde i attributen data-t/data-v/data-z, som table_to_sheet läser utan att gissa, och i texten. */
-function _exportMarkCell(td) {
+function _exportMarkeraCell(td) {
     const c = _exportCellVarde(td);
     if (!c) return;
     td.setAttribute('data-t', c.t);
@@ -286,7 +286,7 @@ function _exportMarkCell(td) {
 }
 
 /** Standard-format-map för svenska användare. Triggas av nyckelord i kolumnrubriken. */
-export const SV_NUM_FORMATS = Object.freeze({
+export const SV_TALFORMAT = Object.freeze({
     // Ordningen avgör: första träffen gäller. Rubriker som "Kvinnors median i % av männens", "P10 skillnad mot …
     // (%)" och "Avvikelse per person (kr/mån)" innehåller flera nyckelord, så enheten i parentesen prövas först.
     '(%)':      '0.00\\ "%"',
@@ -325,17 +325,17 @@ export const SV_NUM_FORMATS = Object.freeze({
  * enda långa tabell där grupptiteln blir en encellsrad mitt i datat.
  * Tal hämtas från data-sort-value (riktiga numbers → svenska talformat).
  *
- * @param {HTMLTableElement} clone - Från _cloneAndCleanTableForExport.
+ * @param {HTMLTableElement} clone - Från _tabellkopiaForExport.
  * @returns {{aoa:Array<Array>, merges:Array, firstHeaderRowIdx:number|null}}
  */
-function _groupedCloneToAoa(clone) {
+function _grupperadKopiaTillAoa(clone) {
     const headers = [...clone.querySelectorAll('thead th')]
         .map(th => th.textContent.replace(/\s+/g, ' ').trim());
     const aoa = [];
     const merges = [];
     /** @type {number|null} */ let firstHeaderRowIdx = null;
     const cellValue = td => {
-        // Cleanern (_exportMarkCell) har redan bestämt typ, värde och talformat; ett tal blir ett cellobjekt.
+        // Cleanern (_exportMarkeraCell) har redan bestämt typ, värde och talformat; ett tal blir ett cellobjekt.
         const t = td.getAttribute && td.getAttribute('data-t');
         if (t === 'n') {
             const cell = { t: 'n', v: parseFloat(td.getAttribute('data-v')) };
@@ -365,7 +365,7 @@ function _groupedCloneToAoa(clone) {
  * — så exporten är läsbar direkt utan manuell breddjustering i Excel.
  * @param {Object} sheet - XLSX worksheet.
  */
-function _autoColWidths(sheet) {
+function _autoKolumnbredder(sheet) {
     if (!sheet || !sheet['!ref']) return;
     const range = XLSX.utils.decode_range(sheet['!ref']);
     const widths = [];
@@ -384,22 +384,22 @@ function _autoColWidths(sheet) {
 
 /** Klonar+rensar och returnerar XLSX-worksheet. Tillämpar svenska number-format.
  *  BAS-grupperade tabeller (tr.group-header) exporteras som Word-vänliga block
- *  med upprepade kolumnrubriker per grupp (se _groupedCloneToAoa). */
-export function tableToCleanSheet(tableId) {
-    const clone = _cloneAndCleanTableForExport(tableId);
+ *  med upprepade kolumnrubriker per grupp (se _grupperadKopiaTillAoa). */
+export function tabellTillBlad(tableId) {
+    const clone = _tabellkopiaForExport(tableId);
     if (!clone) return null;
     if (/** @type {HTMLElement} */ (clone).querySelector('tbody tr.group-header')) {
-        const g = _groupedCloneToAoa(/** @type {HTMLTableElement} */ (clone));
+        const g = _grupperadKopiaTillAoa(/** @type {HTMLTableElement} */ (clone));
         const sheet = XLSX.utils.aoa_to_sheet(g.aoa);
         if (g.merges.length) sheet['!merges'] = g.merges;
-        _applyColumnNumFormats(sheet, SV_NUM_FORMATS, g.firstHeaderRowIdx ?? 0);
-        _autoColWidths(sheet);
+        _tillampaTalformat(sheet, SV_TALFORMAT, g.firstHeaderRowIdx ?? 0);
+        _autoKolumnbredder(sheet);
         // Ingen frusen rad — rubrikerna upprepas per block i stället.
         return sheet;
     }
     const sheet = XLSX.utils.table_to_sheet(clone);
-    _applyColumnNumFormats(sheet, SV_NUM_FORMATS);
-    _autoColWidths(sheet);
+    _tillampaTalformat(sheet, SV_TALFORMAT);
+    _autoKolumnbredder(sheet);
     // Frys första raden (header) för läsbarhet
     sheet['!freeze'] = { ySplit: 1 };
     return sheet;
@@ -412,7 +412,7 @@ export function tableToCleanSheet(tableId) {
  * Excel, "1,234" i engelska.
  *
  * Exempel:
- *   _applyColumnNumFormats(sheet, {
+ *   _tillampaTalformat(sheet, {
  *       'kr':   '#,##0\\ "kr"',       // 32 067 kr
  *       '%':    '0.0\\ "%"',          // -12.3 %
  *       'n':    '#,##0',              // 1 234
@@ -423,7 +423,7 @@ export function tableToCleanSheet(tableId) {
  * @param {Object} formatMap - { kolumnsubstring: formatString }
  * @param {number} [headerRowIdx=0] - vilken rad är headern (0-indexerad)
  */
-export function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
+export function _tillampaTalformat(sheet, formatMap, headerRowIdx = 0) {
     if (!sheet || !sheet['!ref']) return;
     const range = XLSX.utils.decode_range(sheet['!ref']);
     for (let c = range.s.c; c <= range.e.c; c++) {
@@ -445,10 +445,10 @@ export function _applyColumnNumFormats(sheet, formatMap, headerRowIdx = 0) {
 }
 
 /** Klonar+rensar och returnerar XLSX-workbook (för en-flik-export).
- *  Delegerar till tableToCleanSheet så BAS-grupperade tabeller får samma
+ *  Delegerar till tabellTillBlad så BAS-grupperade tabeller får samma
  *  Word-vänliga blockformat i alla exportvägar. */
-export function tableToCleanBook(tableId, sheetName) {
-    const sheet = tableToCleanSheet(tableId);
+export function tabellTillBok(tableId, sheetName) {
+    const sheet = tabellTillBlad(tableId);
     if (!sheet) return null;
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, sheet, sheetName);
@@ -474,7 +474,7 @@ function _csvFilnamn(namn) {
     return state.isDemo && !n.startsWith('DEMO_') ? 'DEMO_' + n : n;
 }
 // `undantag`: se _kUndantagNot (06) — exporten kan innehålla grupper under tröskeln och säger det.
-export function _downloadCSV(rows, filename, { undantag = '' } = {}) {
+export function _laddaNedCSV(rows, filename, { undantag = '' } = {}) {
     if (!Array.isArray(rows) || !rows.length) {
         alert('Ingen data att exportera.');
         return;
@@ -492,14 +492,14 @@ export function _downloadCSV(rows, filename, { undantag = '' } = {}) {
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 1500);
-        if (typeof _showExportSensitivityToast === 'function') _showExportSensitivityToast();
-        if (typeof announceToScreenReader === 'function') announceToScreenReader('CSV exporterad: ' + (rows.length - 1) + ' rader.');
+        if (typeof _visaExportvarning === 'function') _visaExportvarning();
+        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('CSV exporterad: ' + (rows.length - 1) + ' rader.');
     } catch (err) {
         alert('CSV-export misslyckades: ' + (err.message || String(err)));
     }
 }
 
-export function _showExportSensitivityToast(bodyHtml) {
+export function _visaExportvarning(bodyHtml) {
     const existing = document.getElementById('export-sensitivity-toast');
     if (existing) existing.remove();
     const toast = document.createElement('div');
@@ -524,6 +524,6 @@ export function _showExportSensitivityToast(bodyHtml) {
 export function uppstartExporthjalpare() {
     // #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
     // respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
-    document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtocol());
+    document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtokoll());
     document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());
 }

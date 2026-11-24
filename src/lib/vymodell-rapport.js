@@ -166,7 +166,7 @@ export const RM_IAKTTAGELSE_PE = 15;
  * @param {any[]} rader
  * @param {{k:number, golv:number, bas:string[], reg?:any, lika?:any, lvPar?:any[]|null, oversikt?:any[], recept?:any[],
  *   basEffektNot?:(utelamnade:string[]) => string}} val
- *   reg: regressionen (runOLSRegression); lika: Lika arbetes grupper (likaArbeteGrupper) när appen redan räknat dem;
+ *   reg: regressionen (korOLSRegression); lika: Lika arbetes grupper (likaArbeteGrupper) när appen redan räknat dem;
  *   lvPar: likvärdighetsberäkningens par; oversikt: översiktens rader per BAS-intervall (oversiktPerBas) när appen redan
  *   räknat dem; basEffektNot: noten om utelämnade BAS-effekter (appen skriver den med sina termer)
  */

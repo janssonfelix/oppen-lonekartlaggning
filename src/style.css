@@ -331,7 +331,7 @@ details.avsnitt[open]:not(.card) { padding-bottom: 20px; }
 .diagramkort-rubrik { margin: 0 0 4px; font-size: var(--fs-lg); font-weight: 600; }
 .diagramkort-forklaring { margin: 0 0 10px; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.5; }
 .diagramkort-not { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
-/* Metodförbehåll under ett diagram (_setDiagramMetodNot): dämpad text, skild från k-noten och utan dess lås. */
+/* Metodförbehåll under ett diagram (_sattDiagramMetodNot): dämpad text, skild från k-noten och utan dess lås. */
 .metod-not { margin: 6px 0 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--text-muted); font-style: italic; }
 /* Lika arbetes huvudvy: tabell med inbyggd grafik (kvoten ritad i raden mot 100 %). */
 /* Dubblerad klass: annars vinner .data-table th/td (samma specificitet, senare i filen) och cellerna får 16 px. */
@@ -793,7 +793,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 /* Tooltipen är en JS-portal, inte CSS-only via .info-tip::after: en tabell med
    overflow:auto skapar ett nytt stacking context som klipper en sådan. Ett enskilt
    .tip-portal-element läggs i body, position:fixed, och undgår all overflow.
-   Se 02-verktygstips.js _showTip / _hideTip. */
+   Se 02-verktygstips.js _visaTips / _doljTips. */
 .tip-portal {
     position: fixed;
     background: var(--text-main);
@@ -948,7 +948,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 }
 .upload-cell .file-drop-area p { font-size: var(--fs-sm); }
 /* Lönefilen krävs: kortet står först, är bredast och har ram och en större yta tills filen är inläst
-   (markUploadLoaded byter klassen required mot loaded). */
+   (markeraFilrutaInlast byter klassen required mot loaded). */
 @media (min-width: 1400px) { .upload-row { grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(0, 3fr); } }
 .upload-cell.required { border: 2px solid var(--primary); padding: 12px 14px; }
 .upload-cell.required .file-drop-area { padding: 26px 14px; border-color: var(--primary); }
@@ -2803,7 +2803,7 @@ summary:focus-visible {
 .diagram-urval-poster input[type="checkbox"] { flex: none; margin-top: 2px; }
 @media print { .diagram-filter, .diagram-urval { display: none !important; } }
 
-/* Utforska 2.0 (70/71-explorer) */
+/* Utforska 2.0 (70-utforska, 71-utforska-figur) */
 .explore-controls { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
 .explore-ctl { display: flex; flex-direction: column; gap: 4px; }
 .explore-ctl-check { display: inline-flex; align-items: center; gap: 8px; }
@@ -3375,7 +3375,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
    egen klass). Klasser i samma element rör aldrig samma egenskap; en längre ledad egenskap (margin-top) kommer efter
    sin förkortning (margin) i arket. Telefonbreddens regler längre ned väljer klasserna efter innehåll (flex, grid-template-columns,
    min-width), så en ny klass som sätter någon av dem läggs till i de listorna.
-   Utskriftsfönstret (printScaffoldView, 60-utskrift.js) hämtar samma regler ur den här stilmallen. ==== */
+   Utskriftsfönstret (skrivUtMallflik, 60-utskrift.js) hämtar samma regler ur den här stilmallen. ==== */
 .dold.dold.dold { display: none; }
 /* Sammansatta */
 /* Rad som bryter och centreras lodrätt */

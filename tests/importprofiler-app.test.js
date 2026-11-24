@@ -14,14 +14,15 @@ const status = w => w.document.getElementById('data-status').textContent;
 const lasIn = async (w, rader, namn) => {
     papa(w);
     w.document.getElementById('data-status').textContent = '';
-    w.loadStructureFile(csvFil(w, rader, namn));
-    await vanta(() => status(w) && !/läser|Läser/.test(status(w)));
+    w.lasInStrukturfil(csvFil(w, rader, namn));
+    // Bakgrundsräkningen från en tidigare inläsning kan skriva sin not på den tömda raden; den räknas inte som klar.
+    await vanta(() => { const s = status(w).replace(' · förbereder analyser i bakgrunden…', ''); return s && !/läser|Läser/.test(s); });
 };
 // Som lasIn, men väntar tills state.data bytts ut (statusraden kan stå kvar från förra filen medan den nya läses).
 const lasInNy = async (w, rader) => {
     papa(w);
     const fore = w.__state.data;
-    w.loadStructureFile(csvFil(w, rader));
+    w.lasInStrukturfil(csvFil(w, rader));
     await vanta(() => w.__state.data !== fore);
 };
 const panel = w => w.document.getElementById('column-map-panel');
@@ -73,13 +74,13 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         expect(panel(w).querySelector('#colmap-spara-profil')).toBeNull();
 
         // Konfigurationsfilen bär profilen — bara rubriknamn.
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         expect(cfg.importprofiler).toEqual([{ id: p.id, namn: p.namn, rubriker: p.rubriker, kannetecken: p.kannetecken }]);
 
         // Ny session: konfigurationen läses in, sedan samma fil.
         const w2 = createAppWindow();
         w2.__cfg = cfg;
-        const r = w2.eval('applyConfigSnapshot(window.__cfg)');
+        const r = w2.eval('tillampaKonfiguration(window.__cfg)');
         expect(r.varningar).toEqual([]);
         expect(w2.__state.importprofiler).toHaveLength(1);
         await lasIn(w2, okandaRader());
@@ -168,7 +169,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         ruta.checked = true; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
         w.eval('stangInstallningar()');
         papa(w);
-        w.loadStructureFile(csvFil(w, okandaRader()));
+        w.lasInStrukturfil(csvFil(w, okandaRader()));
         await vanta(() => w.document.getElementById('fk-las-in'));   // filen väntar på Läs in
         const fkProfil = () => w.document.querySelector('#avsnitt-fi-forhandskontroll .fk-profil').textContent;
         expect(w.document.getElementById('fk-las-in')).not.toBeNull();
@@ -181,7 +182,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
 
     it('en äldre konfigurationsfil utan profiler tar inte bort sessionens sparade profil', async () => {
         const w = createAppWindow();
-        const aldre = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const aldre = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         // En tom lista skrivs inte i konfigurationsfilen.
         expect('importprofiler' in aldre).toBe(false);
         await lasIn(w, okandaRader());
@@ -190,23 +191,23 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         panel(w).querySelector('#colmap-spara-profil').click();
         expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
         w.__cfg = aldre;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
         w.__cfg = { ...aldre, importprofiler: [] };
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.importprofiler.map(p => p.namn)).toEqual(['Personallistan']);
     });
 
     it('en konfigurationsfil med en ogiltig profil läses in med en varning, utan profilen', () => {
         const w = createAppWindow();
-        const cfg = JSON.parse(JSON.stringify(w.__buildConfigSnapshot()));
+        const cfg = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
         cfg.importprofiler = [PROFIL, { ...PROFIL, id: 'x', namn: 'Anna 19850101-1234' }];
         w.__cfg = cfg;
-        const r = w.eval('applyConfigSnapshot(window.__cfg)');
+        const r = w.eval('tillampaKonfiguration(window.__cfg)');
         expect(r.varningar.join(' ')).toMatch(/1 importprofil i filen gick inte att läsa/);
         expect(w.__state.importprofiler.map(p => p.id)).toEqual([PID]);
         cfg.importprofiler = Array.from({ length: 51 }, (_, i) => ({ ...PROFIL, id: `p-${i}` }));
-        expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.join(' ')).toMatch(/50/);
+        expect(w.eval('tillampaKonfiguration(window.__cfg)').varningar.join(' ')).toMatch(/50/);
     });
 
     it('en fil som känns igen av sig själv visar ingen sparknapp, och en inbyggd profil säger sitt namn', async () => {
@@ -246,7 +247,7 @@ describe('importprofiler: spara en gjord mappning och känna igen filen nästa g
         const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(rader), 'Blad1');
         const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
         w.document.getElementById('data-status').textContent = '';
-        w.loadStructureFile(new w.File([buf], 'personallista.xlsx'));
+        w.lasInStrukturfil(new w.File([buf], 'personallista.xlsx'));
         await vanta(() => w.__state.data.length === 30);
         expect(w.__state.data.length).toBe(30);
         expect(w.__state.importprofil?.id).toBe(PID);
@@ -411,7 +412,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         expect(w.lasInPaket(paketText(w)).ok).toBe(true);
         await lasIn(w, okandaRader());
         expect(w.__state.importprofil).not.toBeNull();
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.importprofiler).toEqual([]);
         expect(w.__state.importprofil).toBeNull();
         expect(kortet(w).hidden).toBe(true);
@@ -425,7 +426,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         expect(w.__state.importprofiler.map(p => p.kalla)).toEqual(['organisationspaket']);
         w.__p = [{ ...PROFIL, id: 'egen', namn: 'Egen lista' }];
         w.eval("state.importprofiler.push(...valideraImportprofiler(window.__p, { kalla: 'konfiguration' }).profiler)");
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.importprofiler.map(p => `${p.kalla}:${p.id}`)).toEqual(['organisationspaket:' + PID]);
     });
 
@@ -433,7 +434,7 @@ describe('importprofiler: Inställningar, rensning och demodata', () => {
         const w = createAppWindow();
         await lasIn(w, mallRader());
         expect(w.__state.importprofil).not.toBeNull();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.importprofil).toBeNull();
         expect(kortet(w).hidden).toBe(true);
     });

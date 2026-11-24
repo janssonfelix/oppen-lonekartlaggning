@@ -7,19 +7,19 @@ import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { livscykelKurvaUtelamnad, vymodellLivscykel } from '../lib/vymodell-livscykel.js';
 import { adjektiv, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { antalCaption, antalText } from './03-hjalpfunktioner.js';
+import { antalRubrik, antalText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { buildBaseAudit, setAudit } from './05-tabeller-och-lankar.js';
-import { isKMasked, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
-import { kMaskNote } from './06-maskeringsnoter.js';
+import { byggGrundurval, sattMetodik } from './05-tabeller-och-lankar.js';
+import { kMaskerad, kTroskel, provaEnskiltText, statGolv } from './06-k-troskel.js';
+import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { ritaFigur } from './10-diagramritare.js';
-import { gapStatusNiva, PALETTE } from './10-diagramtema.js';
-import { getData, state } from './12-tillstand.js';
+import { gapStatusNiva, PALETT } from './10-diagramtema.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { iExportLage } from './23-exportgrind.js';
-import { _openEvidenceModal } from './27-berakningsbevis.js';
+import { _oppnaBevisruta } from './27-berakningsbevis.js';
 import { KOHORT_FORBEHALL } from './40-alder-karriar.js';
-import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 
 // ---- Livscykelanalys (sekundär regression) ----
 /**
@@ -27,7 +27,7 @@ import { runOLSRegression } from './51-lika-arbete-regressionskort.js';
  * val inte återställs varje gång regressionskortet renderas om).
  */
 /** @type {string|null} */
-export let _lifecycleFixBas = null;
+export let _livscykelValdBas = null;
 
 /**
  * Ritar livscykelanalysen: nyckeltalen, slutsatsen, kurvorna med 95 % KI-band, översiktstabellen per BAS och
@@ -44,7 +44,7 @@ export function ritaLivscykel(given) {
     const wrap = document.getElementById('livscykel-content') || document.getElementById('lifecycle-content');
     if (!wrap) return;
 
-    const result = runLifecycleRegression(_lifecycleFixBas);
+    const result = korLivscykelregression(_livscykelValdBas);
     if (result.error) {
         wrap.innerHTML = `<div class="insight-box warn pad-18">
             <strong>${ikon('statusVarning')} Livscykelanalysen kunde inte köras</strong>
@@ -53,15 +53,15 @@ export function ritaLivscykel(given) {
         </div>`;
         return;
     }
-    _lifecycleFixBas = result.fixBas;
+    _livscykelValdBas = result.fixBas;
 
     // Jämför med primäranalysen: given från regressionskortet i samma varv, annars räknad här (ADR-17)
-    const primary = given || runOLSRegression();
+    const primary = given || korOLSRegression();
     const vm = vymodellLivscykel(result, { rader: state.data, k: kTroskel(), huvud: primary });
     const h = vm.huvud;
     // Modelljämförelsens rubrikrad: urvalet bakom modellerna. Bygger de på samma personer står det en gång.
     const modellCaption = !h || vm.sammaUrval
-        ? antalCaption(result.kvN, result.maN)
+        ? antalRubrik(result.kvN, result.maN)
         : `<caption class="text-dampad-sm ta-vanster">Huvudmodell: ${antalText(h.nKv, h.nMa)} · Livscykelmodell: ${antalText(result.kvN, result.maN)}</caption>`;
 
     // Modelljämförelsens tabell markerar säkerheten med stjärnor, som tabellens not förklarar; utan stjärna är
@@ -227,7 +227,7 @@ export function ritaLivscykel(given) {
                             </tr>`).join('')}
                     </tbody>
                 </table>
-                ${kMaskNote(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
+                ${kMaskNot(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
                     <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
@@ -272,9 +272,9 @@ export function ritaLivscykel(given) {
     `;
 
     // Modellformeln och de statistiska detaljerna står i flikens beräkningspanel (Så räknas det), inte i löptexten.
-    const baseL = buildBaseAudit();
+    const baseL = byggGrundurval();
     const utanfor = Math.max(0, baseL.afterFilter - result.n);
-    setAudit('livscykel', {
+    sattMetodik('livscykel', {
         title: 'Ålder & karriär — livscykelmodellen',
         ...baseL,
         usedInAnalysis: result.n,
@@ -303,13 +303,13 @@ export function ritaLivscykel(given) {
     // (i exportläget, där kurvan kan vara utelämnad) ritas ingenting.
     const behallare = document.getElementById('lifecycle-chart');
     if (kurvaUtelamnad || !behallare) { /* ingen figur: noten står i stället */ }
-    else if (typeof iExportLage === 'function' && iExportLage()) _renderLifecycleChart(result, behallare);
-    else requestAnimationFrame(() => { if (behallare.isConnected) _renderLifecycleChart(result, behallare); });
+    else if (typeof iExportLage === 'function' && iExportLage()) _ritaLivscykelDiagram(result, behallare);
+    else requestAnimationFrame(() => { if (behallare.isConnected) _ritaLivscykelDiagram(result, behallare); });
 
     // Koppla BAS-dropdown
     const sel = document.getElementById('lifecycle-bas-select');
     if (sel) sel.addEventListener('change', () => {
-        _lifecycleFixBas = /** @type {HTMLInputElement} */ (sel).value;
+        _livscykelValdBas = /** @type {HTMLInputElement} */ (sel).value;
         ritaLivscykel();
     });
 
@@ -319,10 +319,10 @@ export function ritaLivscykel(given) {
             const bas = /** @type {HTMLElement} */ (btn).dataset.livscykelBas;
             const row = (state._lifecycleCache?.basRows || []).find(r => r.bas === bas);
             if (!row) return;
-            if (isKMasked(row.n)) return;   // Minsta gruppstorlek: knappen ritas inte för
+            if (kMaskerad(row.n)) return;   // Minsta gruppstorlek: knappen ritas inte för
                                             // maskerade BAS, men vägen stängs även här
             const c = state._lifecycleCache;
-            _openEvidenceModal(_evidenceForLifecycleBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
+            _oppnaBevisruta(_bevisForLivscykelBas(row, c.result, livscykelKurvaUtelamnad(c.result, c.basRows, kTroskel())));
         });
     });
 }
@@ -332,7 +332,7 @@ export function ritaLivscykel(given) {
  * inte (`livscykelKurvaUtelamnad`); då skrivs ingen nivåfaktor mot det, eftersom raden delad med faktorn är det
  * intervallets lönenivå.
  */
-function _evidenceForLifecycleBas(row, result, utanKurva = false) {
+function _bevisForLivscykelBas(row, result, utanKurva = false) {
     const fmtKr = v => svKr(v, '—');
     const fmtPct = v => v == null || !isFinite(v) ? '—' : (v >= 0 ? '+' : '') + svPct(v, 1);
     return {
@@ -372,11 +372,11 @@ function _evidenceForLifecycleBas(row, result, utanKurva = false) {
  * Ritar livscykelanalysens diagram med diagramkärnan (ADR-39): två kurvor med 95 % KI som band.
  * Bandens gränser finns därmed i exporterad diagramdata.
  */
-function _renderLifecycleChart(r, el) {
-    ritaFigur(el || 'lifecycle-chart', _lifecycleFigur(r), { hojd: 380 });
+function _ritaLivscykelDiagram(r, el) {
+    ritaFigur(el || 'lifecycle-chart', _livscykelFigur(r), { hojd: 380 });
 }
 
-function _lifecycleFigur(r) {
+function _livscykelFigur(r) {
     const band = (serie, farg, pred) => ({ marke: 'band', serie, farg, opacitet: 0.18, legend: false, data: pred.map(p => ({ x: p.age, lag: p.lo, hog: p.hi })) });
     const kurva = (serie, kon, farg, pred, streck) => ({ marke: 'linje', serie, farg, tjocklek: 3, streck, data: pred.map(p => ({ x: p.age, y: p.lon })),
         tips: d => [[`${kon}, ${d.x} år`], ['Predikterad lön', talformat(d.y, 'kr')]] });
@@ -384,9 +384,9 @@ function _lifecycleFigur(r) {
             `Vid 25 år är skillnaden, kvinnor mot män, ${svTal(r.gapAt25, 1)} procent, vid 65 år ${svTal(r.gapAt65, 1)} procent. Skuggade band visar 95 % konfidensintervall.`,
         x: { skala: 'linjar', titel: `Ålder — predikterad lönekurva för BAS ${r.fixBas} (valt intervall)` },
         y: { skala: 'linjar', titel: 'Predikterad månadslön (kr)', format: 'kr' },
-        lager: [band('Kvinna 95 % KI', PALETTE.kon.kvinna, r.predKvinna), band('Man 95 % KI', PALETTE.kon.man, r.predMan),
-                kurva('Kvinna (predikterad lön)', 'Kvinna', PALETTE.kon.kvinna, r.predKvinna, 'hel'),
-                kurva('Man (predikterad lön)', 'Man', PALETTE.kon.man, r.predMan, 'streckad')] };
+        lager: [band('Kvinna 95 % KI', PALETT.kon.kvinna, r.predKvinna), band('Man 95 % KI', PALETT.kon.man, r.predMan),
+                kurva('Kvinna (predikterad lön)', 'Kvinna', PALETT.kon.kvinna, r.predKvinna, 'hel'),
+                kurva('Man (predikterad lön)', 'Man', PALETT.kon.man, r.predMan, 'streckad')] };
 }
 
 /**
@@ -404,7 +404,7 @@ function _lifecycleFigur(r) {
  * @returns {Object} { error } eller fullt resultat med predKvinna, predMan, gapPerAge, model fit
  */
 /** @param {string|null} [fixBas] BAS-intervall att fixera vid; null = det mest folkrika */
-export function runLifecycleRegression(fixBas) {
+export function korLivscykelregression(fixBas) {
     // Modellen (designmatris, OLS, HC3, prediktioner) ligger i src/lib/livscykel.js (ADR-8).
-    return livscykelRegression(getData(), { fixBas, golv: statGolv() });
+    return livscykelRegression(hamtaData(), { fixBas, golv: statGolv() });
 }

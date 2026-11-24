@@ -9,8 +9,8 @@ vi.setConfig({ testTimeout: 30000 });
 
 const fonster = () => {
     const w = createAppWindow();
-    w.__loadDemoData();
-    w.__renderTabContent('utforska');
+    w.__lasInDemodata();
+    w.__ritaFlik('utforska');
     return w;
 };
 const laggTill = (w, namn, perBas = false) => {
@@ -25,7 +25,7 @@ describe('egna tabeller: från Utforska till rapporten', () => {
     it('Lägg till i rapporten sparar ett recept, inte tal, och säger att tabellen är tillagd', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         expect(laggTill(w, 'Median per yrke')).toMatch(/Tillagd: Median per yrke \(1 egen tabell\)/);
         expect(d.getElementById('explore-rapport-namn').value).toBe('');
         const [r] = w.__state.rapportTabeller;
@@ -33,14 +33,14 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(JSON.stringify({ ...r, id: undefined })).not.toMatch(/\d{5}/);   // id:t är slumpat och kan råka innehålla siffror
         // Utan namn får tabellen sin beskrivning som namn; per BAS kräver att raderna inte redan är BAS.
         expect(laggTill(w, '', true)).toMatch(/Tillagd: Median månadslön per AID-etikett, en tabell per BAS-intervall/);
-        d.getElementById('explore-rad').value = 'bas'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'bas'; w.__ritaUtforska();
         expect(laggTill(w, 'Fel', true)).toMatch(/går inte när raderna/);
         expect(w.__state.rapportTabeller).toHaveLength(2);
     });
     it('rapportmodellen får avsnittet Egna tabeller efter avsnittet per BAS, med tröskeln tillämpad; ett tomt recept utelämnas och anges', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         laggTill(w, 'Median per yrke');
         laggTill(w, 'Yrken per BAS', true);
         const m = w.eval('rapportModell()');
@@ -71,13 +71,13 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         const { readFileSync } = await import('node:fs');
         const w = fonster();
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
-        w.document.getElementById('explore-rad').value = 'bas'; w.document.getElementById('explore-visa').value = 'kon'; w.__renderExplorer();
+        w.document.getElementById('explore-rad').value = 'bas'; w.document.getElementById('explore-visa').value = 'kon'; w.__ritaUtforska();
         laggTill(w, 'Per kön');
         expect(w.eval('excelAlltBlad()')).toContain('Egna tabeller');
         let wb = null;
         w.XLSX.writeFile = b => { wb = b; };
         w.alert = () => {};
-        w.eval('exportAllToExcel()');
+        w.eval('exportAlltTillExcel()');
         expect(wb.SheetNames).toContain('Egna tabeller');
         const rader = w.XLSX.utils.sheet_to_json(wb.Sheets['Egna tabeller'], { header: 1, raw: true });
         expect(rader[2][0]).toBe('Per kön');
@@ -93,16 +93,16 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(namn()).toEqual(['Första', 'Andra']);
         d.querySelector('#rapport-egna [data-egen-id] [data-egen-flytta="1"]').click();
         expect(namn()).toEqual(['Andra', 'Första']);
-        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
+        const cfg = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))');
         expect(cfg.rapportTabeller.map(t => t.namn)).toEqual(['Andra', 'Första']);
         d.querySelector('#rapport-egna [data-egen-id] [data-egen-bort]').click();
         expect(namn()).toEqual(['Första']);
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.rapportTabeller.map(t => t.namn)).toEqual(['Andra', 'Första']);
         // En ogiltig tabell i filen hoppas över med en varning; resten läses.
         w.__cfg = { ...cfg, rapportTabeller: [cfg.rapportTabeller[0], { spec: { rad: 'hemlig' } }] };
-        expect(w.eval('applyConfigSnapshot(window.__cfg)').varningar.join(' ')).toMatch(/1 egna tabeller i filen gick inte att läsa/);
+        expect(w.eval('tillampaKonfiguration(window.__cfg)').varningar.join(' ')).toMatch(/1 egna tabeller i filen gick inte att läsa/);
         expect(w.__state.rapportTabeller.map(t => t.namn)).toEqual(['Andra']);
         w.eval('_rensaAllData()');
         expect(w.__state.rapportTabeller).toEqual([]);
@@ -125,13 +125,13 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
         expect(tabell.kolumner.map(c => c.rubrik)).toEqual(['Grupp', 'Antal', 'P25', 'Median', 'P90']);
         expect(perbas.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).not.toContain('Löneskillnader inom likvärdigt arbete, per BAS-intervall');
         expect(perbas.delar.some(p => p.typ === 'stycke' && /–29, 30–39, 40–54, 55–/.test(p.text))).toBe(true);
-        const cfg = w.eval('JSON.parse(JSON.stringify(buildConfigSnapshot()))');
+        const cfg = w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))');
         expect(cfg.perBasRecept.matt).toEqual(['p25', 'med', 'p90']);
         d.getElementById('pb-aterstall').click();
         expect(w.__state.perBasRecept).toBeNull();
         expect(d.getElementById('pb-recept-status').textContent).toBe('Standardreceptet.');
         w.__cfg = cfg;
-        w.eval('applyConfigSnapshot(window.__cfg)');
+        w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.perBasRecept.aldersgranser).toEqual([30, 40, 55]);
     });
     it('per sektor: avsnittet heter Lönestruktur per sektor och tabellerna saknar referensrad', () => {
@@ -186,17 +186,17 @@ describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
     });
     it('Lika arbetes minne har ett rum per tröskel: ett lägesbyte räknar inte om översiktens rader', () => {
         const w = fonster();
-        expect(w.eval('const a = _laOversiktRader(getData()); medExportLage(() => _laOversiktRader(getData())); _laOversiktRader(getData()) === a')).toBe(true);
-        expect(w.eval('medExportLage(() => _laOversiktRader(getData())) === _laOversiktRader(getData())')).toBe(false);
+        expect(w.eval('const a = _laOversiktRader(hamtaData()); medExportLage(() => _laOversiktRader(hamtaData())); _laOversiktRader(hamtaData()) === a')).toBe(true);
+        expect(w.eval('medExportLage(() => _laOversiktRader(hamtaData())) === _laOversiktRader(hamtaData())')).toBe(false);
     });
     it('efter en export ritas Översikt tillbaka bara när exporten ritade den', () => {
         const w = fonster();
-        w.__renderTabContent('dashboard');
+        w.__ritaFlik('dashboard');
         let antal = 0;
         w.ritaNyckeltal = () => { antal++; };
-        w.__renderTabContent('dokumentera');                       // ritar inga andra flikar
+        w.__ritaFlik('dokumentera');                       // ritar inga andra flikar
         expect(antal).toBe(0);
-        w.eval("medExportLage(() => renderTabContent('dashboard'))");   // som ZIP-exporten
+        w.eval("medExportLage(() => ritaFlik('dashboard'))");   // som ZIP-exporten
         expect(antal).toBe(2);                                     // en gång i exportläget, en gång tillbaka
         expect(w.__state.kLage).toBe('skarm');
     });
@@ -206,7 +206,7 @@ describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
     it('varje egen tabell blir ett block med formaterade tal, under en egen rubrik, och går att kopiera', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         laggTill(w, 'Median per yrke');
         const block = w.eval('rapportunderlagBlock()').filter(b => b.id.startsWith('egen:'));
         expect(block).toHaveLength(1);
@@ -215,14 +215,14 @@ describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
         expect(block[0].tabell.rader.length).toBeGreaterThan(0);
         expect(block[0].tabell.rader[0][1]).toMatch(/^\d[\d\s ]* kr$/);
         expect(block[0].stycken.join(' ')).toMatch(/Urval: Hela organisationen/);
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         const host = d.getElementById('rapportunderlag-innehall');
         expect(host.textContent).toContain('Egna tabeller från Tabeller och egna vyer');
         expect(host.querySelector('[data-rapport-kopiera="egen:0:0"]')).not.toBeNull();
         expect(host.querySelector('.ru-toc').textContent).toContain('Median per yrke');
         // Utan recept finns varken rubrik eller block.
         w.__state.rapportTabeller = [];
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         expect(host.textContent).not.toContain('Egna tabeller från Tabeller och egna vyer');
     });
 });
@@ -233,7 +233,7 @@ describe('egna tabeller i organisationspaketet (ADR-52)', () => {
     it('ett paket med recept ersätter de egna tabellerna och receptet per BAS; ett paket utan rör dem inte', () => {
         const w = fonster();
         const d = w.document;
-        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__renderExplorer();
+        d.getElementById('explore-rad').value = 'aid'; d.getElementById('explore-measure').value = 'median'; w.__ritaUtforska();
         laggTill(w, 'Min egen');
         const recept = w.eval("nyttRecept({ rad: 'bas', matt: 'p90' }, { namn: 'Paketets tabell' })");
         const r = w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket({ tabeller: [recept], perBasRecept: { dim: 'sektor' } })))}, 'x.lonepaket.json')`);

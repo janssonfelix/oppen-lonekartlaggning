@@ -40,7 +40,7 @@ describe('Uppgift 1: kolumnmappningen', () => {
         const w = createAppWindow(), d = w.document;
         d.querySelector('.nav-item[data-tab="info"]').click();
         w.__state._dataHeaders = ['Avd', 'Befattning', 'Grundlon', 'Fodd', 'Sex'];
-        w.eval('maybeShowColumnMapping(); _visaKolumnmappning()');
+        w.eval('visaKolumnmappningOmBehov(); _visaKolumnmappning()');
         expect(d.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('filer');
         expect(d.getElementById('view-filer').contains(d.getElementById('column-map-panel'))).toBe(true);
     });
@@ -48,7 +48,7 @@ describe('Uppgift 1: kolumnmappningen', () => {
 
 describe('Uppgift 2: Lönestruktur', () => {
     it('Lönestruktur visar struktur, BAS-skevhet, regression och gapuppdelningen; Lika arbete bara yrkesgrupperna', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document, synlig = id => d.getElementById(id).style.display === 'block';
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(synlig('view-struktur') && synlig('view-skevhet') && synlig('view-regression')).toBe(true);
@@ -67,7 +67,7 @@ describe('Uppgift 2: Lönestruktur', () => {
             expect(w.eval('RM_DIAGRAM').find(r => r.id === id).flik, id).toBe('struktur');
     });
     it('Var uppstår löneskillnaden? står först i Lönestruktur och är det enda utfällda avsnittet efter inläsning', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const oppna = ['view-struktur', 'view-skevhet', 'view-regression']
@@ -78,7 +78,7 @@ describe('Uppgift 2: Lönestruktur', () => {
         expect(d.getElementById('avsnitt-ov-gap').nextElementSibling.id).toBe('avsnitt-st-representation');
     });
     it('Organisationen som karta är ett hopfällt avsnitt efter representationen, med antalet yrkesgrupper i rubriken', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const karta = d.getElementById('avsnitt-st-karta');
@@ -97,10 +97,10 @@ describe('Uppgift 2: Lönestruktur', () => {
         // Sökregistret leder till avsnittet.
         expect(w.eval('SOK_FUNKTIONER').some(r => r.avsnitt === 'avsnitt-st-karta' && r.flik === 'struktur')).toBe(true);
     });
-    it('navigateTo("skevhet") och navigateTo("regression") öppnar Lönestruktur', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+    it('navigeraTill("skevhet") och navigeraTill("regression") öppnar Lönestruktur', () => {
+        const w = createAppWindow(); w.__lasInDemodata();
         for (const alias of ['skevhet', 'regression']) {
-            w.eval(`navigateTo('${alias}')`);
+            w.eval(`navigeraTill('${alias}')`);
             expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab'), alias).toBe('struktur');
         }
     });
@@ -132,10 +132,10 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         }
     });
     it('Rapporttext och årsjämförelsen ritas i exportläge', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         w.eval(`window.__lagen = [];
-            for (const namn of ['renderStrukturUtkast', 'renderRapportunderlag', 'renderArsjamforelse']) {
+            for (const namn of ['ritaStrukturUtkast', 'ritaRapportunderlag', 'ritaArsjamforelse']) {
                 const orig = window[namn];
                 window[namn] = (...a) => { window.__lagen.push(namn + ':' + iExportLage()); return orig(...a); };
             }`);
@@ -143,17 +143,17 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(d.getElementById('page-title').textContent).toBe('Rapporttext');
         expect(d.getElementById('struktur-narrative').value).toContain('LÖNEKARTLÄGGNING');
         d.getElementById('tab-arbetet').click();
-        expect(w.__lagen).toEqual(['renderStrukturUtkast:true', 'renderRapportunderlag:true', 'renderArsjamforelse:true']);
+        expect(w.__lagen).toEqual(['ritaStrukturUtkast:true', 'ritaRapportunderlag:true', 'ritaArsjamforelse:true']);
         expect(w.eval('iExportLage()')).toBe(false);
     });
     it('Återskapa i Rapporttext nollar redigeringen och bygger utkastet på nytt i exportläge', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document, nb = d.getElementById('struktur-narrative');
         d.getElementById('tab-rapporttext').click();
         nb.value = 'Egen text';
         nb.dispatchEvent(new w.Event('input', { bubbles: true }));
         expect(nb.dataset.dirty).toBe('1');
-        w.eval(`window.__lagen = []; { const o = renderStrukturUtkast; window.renderStrukturUtkast = (...a) => { window.__lagen.push(iExportLage()); return o(...a); }; }`);
+        w.eval(`window.__lagen = []; { const o = ritaStrukturUtkast; window.ritaStrukturUtkast = (...a) => { window.__lagen.push(iExportLage()); return o(...a); }; }`);
         d.getElementById('struktur-narrative-regen').click();
         expect(nb.dataset.dirty).toBeUndefined();
         expect(nb.value).toContain('LÖNEKARTLÄGGNING');
@@ -162,9 +162,9 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(w.eval('iExportLage()')).toBe(false);
     });
     it('Rensa all data tömmer rapportutkastet, också ett redigerat', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const nb = w.document.getElementById('struktur-narrative');
-        w.__renderTabContent('rapporttext');
+        w.__ritaFlik('rapporttext');
         expect(nb.value).toContain('LÖNEKARTLÄGGNING');
         nb.dataset.dirty = '1';
         w.eval('_rensaAllData()');
@@ -172,11 +172,11 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
         expect(nb.dataset.dirty).toBeUndefined();
     });
     it('Lönestruktur bygger inte längre utkastet; årsjämförelsens bild ritas av Spara och jämför år', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(w.document.getElementById('struktur-narrative').value).toBe('');
         expect(w.eval('RM_DIAGRAM').find(r => r.id === 'chart-arsjamforelse').flik).toBe('arbetet');
-        w.eval(`navigateTo('spara')`);
+        w.eval(`navigeraTill('spara')`);
         expect(w.document.querySelector('.nav-item.active').getAttribute('data-tab')).toBe('arbetet');
     });
     it('samverkansknapparna står i Handlingsplan och leder till exporterna', () => {
@@ -201,8 +201,8 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
     });
     it('fliken säger om trösklarna är ändrade, och "Ändra" öppnar dialogen med fokus i granskningsgränsen', () => {
         const w = createAppWindow(), d = w.document;
-        w.__loadDemoData();
-        w.__renderTabContent('prioritering');
+        w.__lasInDemodata();
+        w.__ritaFlik('prioritering');
         const rad = d.getElementById('pr-installningar-rad');
         expect(rad.textContent).toMatch(/^Trösklar och viktning: standardvärden/);
         rad.querySelector('[data-oppna-installningar]').click();
@@ -216,20 +216,20 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
     });
     it('en konfigurationsfil som läses in före lönefilen sätter trösklarna i dialogen', () => {
         const w = createAppWindow(), d = w.document;
-        w.eval(`applyConfigSnapshot(${JSON.stringify({ version: 2, prioConfig: { akutMinN: 7 } })})`);
+        w.eval(`tillampaKonfiguration(${JSON.stringify({ version: 2, prioConfig: { akutMinN: 7 } })})`);
         const falt = d.getElementById('prio-cfg-akutN');
         expect(d.getElementById('installningar-modal').contains(falt)).toBe(true);
         expect(falt.value).toBe('7');
-        w.__loadDemoData();
-        w.__renderTabContent('prioritering');
+        w.__lasInDemodata();
+        w.__ritaFlik('prioritering');
         expect(w.__state.prioConfig.akutMinN).toBe(7);
         expect(d.getElementById('pr-installningar-rad').textContent).toMatch(/anpassade värden/);
     });
 });
 
 describe('Uppgift 5: menyn i rapportens ordning', () => {
-    it('menyknapparnas aria-controls nämner flikens paneler (PANEL_GROUPS), redan i index.html', () => {
-        const w = createAppWindow(), d = w.document, grupper = w.eval('PANEL_GROUPS');
+    it('menyknapparnas aria-controls nämner flikens paneler (PANELGRUPPER), redan i index.html', () => {
+        const w = createAppWindow(), d = w.document, grupper = w.eval('PANELGRUPPER');
         // 63-tangentbordsnavigering.js sätter attributet vid start; markeringen i index.html ska säga samma sak.
         const kalla = new w.DOMParser().parseFromString(readFileSync(join(__dirname, '..', 'src', 'index.html'), 'utf8'), 'text/html');
         for (const dok of [d, kalla]) {
@@ -255,7 +255,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
             ['1 · Underlag', '2 · Kartläggning', '3 · Åtgärder', '4 · Rapport', 'Arbetet', 'Hjälp']);
         expect(d.querySelector('[data-tab="benchmark"] .nav-etikett').textContent.trim()).toBe('Löneläget');
         // Demot har ett ställningstagande.
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect([...d.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab)).toEqual(MENYN);
         expect(d.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
         expect(d.querySelector('.nav-menu').textContent).toContain('4 · Rapport');
@@ -272,7 +272,7 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
     });
     it('sidhuvudet heter som menyn för varje flik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         for (const b of d.querySelectorAll('.nav-menu .nav-item')) {
             if (b.hidden || b.disabled) continue;
@@ -283,15 +283,15 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
     it('Nästa steg följer rapportens ordning; Löneläget och Ålder & karriär hoppas över när de är låsta', () => {
         const w = createAppWindow();
         const kedja = [];
-        for (let t = 'bestammelser'; w.eval('FLOW_NEXT')[t]; t = w.eval('FLOW_NEXT')[t].tab) kedja.push(w.eval('FLOW_NEXT')[t].tab);
+        for (let t = 'bestammelser'; w.eval('NASTA_STEG')[t]; t = w.eval('NASTA_STEG')[t].tab) kedja.push(w.eval('NASTA_STEG')[t].tab);
         expect(kedja).toEqual(['benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'prioritering', 'loneoversyn',
             'handlingsplan', 'rapporttext', 'dokumentera']);
-        expect(w.eval('_FLOW_VALFRIA')).toEqual(['benchmark', 'kon']);
-        w.__loadDemoData();
+        expect(w.eval('_NASTA_STEG_VALFRIA')).toEqual(['benchmark', 'kon']);
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="benchmark"]').disabled = true;
         w.document.querySelector('.nav-item[data-tab="kon"]').disabled = true;
-        expect(w.eval("_flowNasta('bestammelser').tab")).toBe('matrix');
-        expect(w.eval("_flowNasta('struktur').tab")).toBe('prioritering');
+        expect(w.eval("_nastaSteg('bestammelser').tab")).toBe('matrix');
+        expect(w.eval("_nastaSteg('struktur').tab")).toBe('prioritering');
     });
     it('utan lönefil leder Nästa steg till en låst flik som menyn gör: till lönefilen i Filer och kvalitet', () => {
         for (const [fran, mal] of [['handlingsplan', 'rapporttext'], ['bestammelser', 'matrix']]) {
@@ -310,8 +310,8 @@ describe('Uppgift 5: menyn i rapportens ordning', () => {
 
 describe('Lönestrukturens mått räknas på ett ställe', () => {
     it('strukturMatt ger fliken, rapportutkastet och EU-exporten samma mått som lib-funktionerna', () => {
-        const w = createAppWindow(); w.__loadDemoData();
-        const d = w.eval('getData()'), k = w.eval('kTroskel()');
+        const w = createAppWindow(); w.__lasInDemodata();
+        const d = w.eval('hamtaData()'), k = w.eval('kTroskel()');
         const m = w.eval('strukturMatt')(d, k);
         const arKv = r => r.kon && r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
         const kv = d.filter(arKv).map(r => r.lon), ma = d.filter(arMa).map(r => r.lon);
@@ -332,7 +332,7 @@ describe('Lönestrukturens mått räknas på ett ställe', () => {
         const kalla = readFileSync(join(__dirname, '..', 'src', 'app', '37-struktur.js'), 'utf8');
         expect(lib.match(/kv\.reduce\(\(s, x\) => s \+ x, 0\) \/ kv\.length/g)).toHaveLength(1);
         expect(kalla).not.toMatch(/\.reduce\(\(s, x\) => s \+ x, 0\)/);
-        for (const f of ['renderStructure', 'renderStrukturUtkast', '_exportEuReportExport']) {
+        for (const f of ['ritaStruktur', 'ritaStrukturUtkast', '_exportEuRapportExport']) {
             const kropp = kalla.slice(kalla.indexOf(`function ${f}(`)).split(/\n}\n/)[0];
             expect(kropp, f).toContain('strukturMatt(d, k)');
         }
@@ -342,7 +342,7 @@ describe('Lönestrukturens mått räknas på ett ställe', () => {
 describe('Struktur: representation i BAS-ordning', () => {
     it('tabellen listar BAS A–Ö', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         const bas = [...w.document.querySelectorAll('#struktur-representation tbody tr td:first-child')].map(td => td.textContent.trim());
         expect(bas.length).toBeGreaterThan(1);

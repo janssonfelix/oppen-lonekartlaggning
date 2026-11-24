@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Appens adapter för huvudtalet: runOLSRegression (51-lika-arbete-regressionskort.js) ska ge exakt samma returvärde
+ * Appens adapter för huvudtalet: korOLSRegression (51-lika-arbete-regressionskort.js) ska ge exakt samma returvärde
  * som huvudregression i src/lib/regression.js, anropad i Node med samma rader och med argument som testet räknar
  * fram självt (den valda modellen, den inställda tröskeln och golvet max(k, standard)). Jämförelsen är djup och
  * bitvis: varje tal med Object.is, varje nyckel i samma ordning. Så vaktas att adaptern skickar rätt argument.
@@ -24,10 +24,10 @@ const FALL = [
     ['standardmodellen, höjd tröskel', STD, 60],
 ];
 
-describe('[B3.1] runOLSRegression är en tunn adapter till huvudregression', () => {
+describe('[B3.1] korOLSRegression är en tunn adapter till huvudregression', () => {
     const w = createAppWindow();
     let demo;
-    beforeAll(() => { w.__loadDemoData(); demo = w.__state.data.map(r => ({ ...r })); });
+    beforeAll(() => { w.__lasInDemodata(); demo = w.__state.data.map(r => ({ ...r })); });
 
     const underlag = {
         demodatan: () => demo,

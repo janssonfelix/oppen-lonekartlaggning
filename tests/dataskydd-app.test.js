@@ -30,14 +30,14 @@ describe('säkerhet, dataskydd och HR-logik', () => {
             statistik: { namn: X('stat'), rader: [0, 1, 2, 3, 4, 5].map(g => ({ aid: g < 3 ? `10${g}` : `20${g}`, aidFull: X('aidfull' + g), bas: 'ABC'[g % 3],
                 median: 33000 + g * 1000, p10: 30000, p90: 36000, nKv: 20, nMa: 20, andelKv: g < 3 ? 80 : 20 })) } };
         w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket))}, 'x')`);
-        w.eval('populateSelects(); unlockTabs(); ritaNyckeltal(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell());');
+        w.eval('fyllValjare(); lasUppFlikar(); ritaNyckeltal(); ritaLoneoversikt(); ritaLoneskillnadPerBas(lsBasVymodell());');
     };
 
     it('skadlig text i fil och organisationspaket skapar inga element i någon flik', async () => {
         const w = createAppWindow();
         skadligtUnderlag(w);
         for (const t of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__renderTabContent(t);
+            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__ritaFlik(t);
         await new Promise(r => setTimeout(r, 300));
         const injicerat = [...w.document.querySelectorAll('img[onerror], [onerror], b.inj')]
             .map(e => `${e.closest('[id]')?.id}: ${e.outerHTML.slice(0, 60)}`);
@@ -58,9 +58,9 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         const w = createAppWindow();
         expect(lasPaket(w, inaktivitetsPaket({ inaktivitetMin: 45, inaktivitetLast: true })).ok).toBe(true);
         expect(w.__state.inactivityTimeoutMin).toBe(45);
-        w.eval('setInactivityTimeout(0)');   // ingen väg runt låsningen
+        w.eval('sattInaktivitetstid(0)');   // ingen väg runt låsningen
         expect(w.__state.inactivityTimeoutMin).toBe(45);
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         const sel = w.document.getElementById('inactivity-timeout-select');
         expect(sel.disabled).toBe(true);
         expect(sel.value).toBe('45');
@@ -72,7 +72,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         w.eval('_rensaAllData()');
         expect(w.__state.paketLas.inaktivitetMin).toBeNull();
         expect(w.__state.inactivityTimeoutMin).toBe(90);
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('inactivity-timeout-select').disabled).toBe(false);
         expect(w.document.getElementById('inactivity-last').hidden).toBe(true);
     });
@@ -80,14 +80,14 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         const w = createAppWindow();
         expect(lasPaket(w, inaktivitetsPaket({ inaktivitetMin: 60 })).ok).toBe(true);
         expect(w.__state.inactivityTimeoutMin).toBe(60);
-        w.eval('setInactivityTimeout(15)');
+        w.eval('sattInaktivitetstid(15)');
         expect(w.__state.inactivityTimeoutMin).toBe(15);
         const r = lasPaket(w, inaktivitetsPaket({ inaktivitetMin: 0, inaktivitetLast: true }));
         expect(r.ok).toBe(true);
         expect(r.meddelande).toMatch(/kan inte låsas i läget Av/);
         expect(w.__state.inactivityTimeoutMin).toBe(0);
         expect(w.__state.paketLas.inaktivitetMin).toBeNull();
-        w.eval('setInactivityTimeout(30)');
+        w.eval('sattInaktivitetstid(30)');
         expect(w.__state.inactivityTimeoutMin).toBe(30);
     });
 
@@ -98,7 +98,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         w.setInterval = fn => { tick = fn; return 1; };   // intervallet körs för hand, som när webbläsaren stryper det
         const start = w.Date.now();
         w.Date.now = () => start;
-        w.eval('_showInactivityWarning()');
+        w.eval('_visaInaktivitetsvarning()');
         expect(w.document.querySelector('.inactivity-warn-overlay')).not.toBeNull();
         w.Date.now = () => start + 30 * 1000;
         tick();
@@ -121,7 +121,7 @@ describe('säkerhet, dataskydd och HR-logik', () => {
         valj(30);
         expect(w.__state.inactivityTimeoutMin).toBe(30);
         expect(w.document.getElementById('inactivity-status').textContent).toBe('Aktiv (30 min)');
-        w.eval('openDataResidency()');
+        w.eval('oppnaVadLagras()');
         valj(0);
         expect(w.__state.inactivityTimeoutMin).toBe(0);
         expect(w.document.getElementById('inactivity-status').textContent).toBe('Av');
@@ -132,42 +132,42 @@ describe('säkerhet, dataskydd och HR-logik', () => {
 
     it('processöversikten: lika och likvärdigt arbete är inte klara medan punkter återstår i Att göra', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderProcessTracker();
+        w.__lasInDemodata();
+        w.__ritaKartlaggningensSteg();
         expect(status(w, /3\. Lika arbete/)).toBe('delvis');
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('delvis');
         expect(steg(w, /4\. Likvärdigt arbete/).textContent).toMatch(/0 av \d+ kandidatpar hanterade/);
         // När alla punkter för lika respektive likvärdigt arbete är hanterade blir stegen klara.
-        const punkter = w.eval('buildActionChecklist()');
+        const punkter = w.eval('byggAtgardslista()');
         const done = w.__state._actionChecklistDone || (w.__state._actionChecklistDone = new w.Set());
         punkter.filter(p => ['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete'].includes(p.kategori)).forEach(p => done.add(p.id));
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         expect(status(w, /3\. Lika arbete/)).toBe('klar');
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
     });
 
     it('processöversikten: inga kandidatpar betyder att likvärdigt arbete är klart', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.likvardighet.result = { pairs: [] };
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
     });
 
     it('Att göra: kandidatparen i likvärdigt arbete kommer med även utan jämförelsestatistik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__state.statistik.length).toBe(0);
-        expect(w.eval('buildActionChecklist()').filter(p => p.kategori === 'Likvärdigt arbete').length).toBeGreaterThan(0);
+        expect(w.eval('byggAtgardslista()').filter(p => p.kategori === 'Likvärdigt arbete').length).toBeGreaterThan(0);
     });
 
     it('Börja här: könsrelaterade fynd går före avvikelser mot lönepolitiken, utan dubblerad rubrik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('renderActionChecklist()');
+        w.__lasInDemodata();
+        w.eval('ritaAtgardslista()');
         const forsta = w.document.querySelector('#att-gora-borja li .att-gora-kat').textContent;
         expect(['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete']).toContain(forsta.trim());
-        expect(w.eval('buildActionChecklist()').filter(p => /^(Börja här|Värt att granska):/.test(p.titel))).toEqual([]);
+        expect(w.eval('byggAtgardslista()').filter(p => /^(Börja här|Värt att granska):/.test(p.titel))).toEqual([]);
     });
 });
 
@@ -177,8 +177,8 @@ describe('säkerhet, dataskydd och HR-logik', () => {
 // varje gruppmått (median, percentil, kvartilgräns) hamnar i samma intervall och
 // syns som "876xx" när mellanslag mellan siffror tas bort.
 describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => {
-    for (const [namn, rensa] of [['knappen Rensa all data', w => w.__clearAllData()],
-                                 ['automatisk rensning vid inaktivitet', w => w.__autoClearOnInactivity()]]) {
+    for (const [namn, rensa] of [['knappen Rensa all data', w => w.__rensaAllData()],
+                                 ['automatisk rensning vid inaktivitet', w => w.__rensaVidInaktivitet()]]) {
     it(`${namn}: inget lönevärde kvar i någon flik`, async () => {
         const w = createAppWindow();
         const rader = [];
@@ -190,15 +190,15 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         // har något att visa.
         rader.push({ bas: 'A', kon: 'man', lon: 187650, alder: 50, yrke: '100 Yrke', aid: '100', yrkeLabel: 'Yrke', enhet: '1000' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
                             'kon', 'demografi', 'benchmark', 'utforska', 'kvalitet', 'rapport', 'handlingsplan']) {
-            try { w.__renderTabContent(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }
+            try { w.__ritaFlik(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }
         }
-        w.eval('renderOutliers()');
+        w.eval('ritaExtremvarden()');
         // Utskriftsrapporten byggs i dokumentet (window.print stubbas) — även den ska rensas.
         w.print = () => {};
-        await w.eval('buildPrintReport()');
+        await w.eval('byggUtskriftsrapport()');
         await new Promise(r => setTimeout(r, 0));
         const kvar = () => {
             const ut = [];
@@ -236,7 +236,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         expect(kvar()).toContain('figur-utan-chart-id');
         rensa(w);
         expect(kvar()).toEqual([]);
-        expect(w.__explorerMinne().rows).toBe(0);
+        expect(w.__utforskaMinne().rows).toBe(0);
         // Inget av diagramkärnans minne finns kvar: ingen figur på någon behållare (inte heller den bortkopplade),
         // inga lyssnare eller storleksbevakning, tomt register, tom portal, ingen ägare.
         for (const [vad, el] of Object.entries(karnan)) {
@@ -254,11 +254,11 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
 describe('Rensa all data tömmer Dokumentera', () => {
     it('färdigcheck och robusthet är tomma efter rensning', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
-        w.__runRobusthet?.();
+        w.__korRobusthet?.();
         expect(w.document.getElementById('fardigcheck-body').textContent.trim().length, 'färdigchecken ska ha ritats').toBeGreaterThan(0);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.getElementById('fardigcheck-body').textContent.trim()).toBe('');
         expect(w.document.getElementById('robusthet-body').textContent.trim()).toBe('');
     });
@@ -310,7 +310,7 @@ describe('Rensa all data står i Inställningar', () => {
     });
     it('knappen frågar först, rensar och stänger panelen; ett nej lämnar allt orört', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.eval('oppnaInstallningar()');
         w.confirm = () => false;
         w.document.getElementById('btn-clear-all-data').click();
@@ -333,8 +333,8 @@ describe('Rensa all data står i Inställningar', () => {
 describe('«Vad lagras?»', () => {
     it('öppnas som övriga modaler (centrerad) och säger minne, inte RAM', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.eval('openDataResidency()');
+        w.__lasInDemodata();
+        w.eval('oppnaVadLagras()');
         expect(w.document.getElementById('data-residency-modal').style.display).toBe('flex');
         expect(w.document.getElementById('data-residency-modal').textContent).not.toMatch(/\bRAM\b/);
     });

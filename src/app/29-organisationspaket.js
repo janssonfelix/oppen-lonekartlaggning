@@ -11,27 +11,27 @@ import { bakaIn, filnamnForslag, normaliseraFilnamn } from '../lib/organisations
 import { byggPaket, tolkaPaket } from '../lib/organisationspaket.js';
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { idagDatum } from './03-hjalpfunktioner.js';
-import { _renderaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
+import { _ritaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
-import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { aterstallReferens, harReferens, referensNamn, state } from './12-tillstand.js';
-import { populateSelects, renderProcessTracker, ritaKravstatus } from './13-oversikt.js';
-import { renderConsistencyBanner } from './16-inlasningskontroll.js';
-import { renderActionChecklist } from './18-atgardslista.js';
+import { fyllValjare, ritaKartlaggningensSteg, ritaKravstatus } from './13-oversikt.js';
+import { ritaKonsistenskontroll } from './16-inlasningskontroll.js';
+import { ritaAtgardslista } from './18-atgardslista.js';
 import { visningNy } from './23-exportgrind.js';
 import { _rensaAllData } from './26-rensning.js';
-import { setInactivityTimeout } from './28-vad-lagras-inaktivitet.js';
-import { invalidateStatCaches } from './30-statistikcacher.js';
-import { refreshCurrentTab } from './31-navigering.js';
-import { markUploadLoaded, resetUploadCell } from './32-filinlasning.js';
-import { renderReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
+import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
+import { tomStatistikcacher } from './30-statistikcacher.js';
+import { uppdateraAktivFlik } from './31-navigering.js';
+import { markeraFilrutaInlast, aterstallFilruta } from './32-filinlasning.js';
+import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { lvJamforelse } from './45-aid-bas-tabeller.js';
-import { _readCostSettings } from './55-prioritering.js';
-import { explorerSynkaSmaLas } from './70-utforska.js';
+import { _lasKostnadsinstallningar } from './55-prioritering.js';
+import { utforskaSynkaSmaLas } from './70-utforska.js';
 
 const PAKET_MAX_FILSTORLEK = installningsGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 // Rensning vid inaktivitet i paketet: 0 (av) eller 5–120 minuter (samma gränser som i src/lib/organisationspaket.js).
@@ -57,7 +57,7 @@ export function _synkaKostnadsfalt() {
     const man = document.getElementById('prio-cost-months');
     if (po) /** @type {HTMLInputElement} */ (po).value = state.costSettings.poPct;
     if (man) /** @type {HTMLInputElement} */ (man).value = String(state.costSettings.months);
-    if (typeof _readCostSettings === 'function') _readCostSettings();
+    if (typeof _lasKostnadsinstallningar === 'function') _lasKostnadsinstallningar();
 }
 
 // Tar bort jämförelsestatistiken (när ett nytt paket saknar den eller vid rensning).
@@ -68,7 +68,7 @@ export function _tomStatistik() {
     state.statistikHasP10 = false;
     state.statistikHasP90 = false;
     state.statistikHasKon = false;
-    if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-stat', 'upload-cell optional', 'Valfritt');
+    if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-stat', 'upload-cell optional', 'Valfritt');
     const ss = document.getElementById('stat-status');
     if (ss) { ss.textContent = ''; ss.className = 'status-msg'; }
     if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
@@ -82,7 +82,7 @@ export function _paketStatus(text, ok) {
 }
 
 // Faktarutan under knappen: vilket paket som är inläst och vad det innehöll.
-export function renderPaketInfo() {
+export function ritaPaketinfo() {
     const el = document.getElementById('paket-info');
     if (!el) return;
     const p = state.paket;
@@ -143,16 +143,16 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     if (state.paket) {
         state.costSettings = { ...state.costSettings, poPct: COST_DEFAULTS.poPct, months: COST_DEFAULTS.months };
         state.paketLas = _paketLasStandard();
-        setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
+        sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
         if (!referens && state.policyKalla === 'paket') {
             aterstallReferens();
-            if (typeof resetUploadCell === 'function') resetUploadCell('upload-cell-policy', 'upload-cell optional', 'Valfritt');
+            if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
             const ps = document.getElementById('policy-status');
             if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
         }
         if (!statistik && state.statistikKalla === 'paket') _tomStatistik();
     }
-    state.profile = { ...DEFAULT_PROFILE, ...profil };
+    state.profile = { ...STANDARDPROFIL, ...profil };
     if (installningar.poPct != null) state.costSettings.poPct = installningar.poPct;
     if (installningar.months != null) state.costSettings.months = installningar.months;
     // Jämförelseetiketterna i likvärdigt arbete (ADR-60): alla som inte är kvinnodominerade, eller bara de mansdominerade.
@@ -160,8 +160,8 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     // Låsningarna (ADR-47) sätts före tröskeln, så att sattKTroskel() prövar paketets eget värde mot golvet.
     state.paketLas = { kTroskelLagst: nyttGolv, inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
                        smaGrupperIExport: installningar.smaGrupperIExport !== false };
-    if (installningar.inaktivitetMin != null) setInactivityTimeout(installningar.inaktivitetMin);
-    if (typeof explorerSynkaSmaLas === 'function') explorerSynkaSmaLas();
+    if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
+    if (typeof utforskaSynkaSmaLas === 'function') utforskaSynkaSmaLas();
     // ADR-38: frågar vid sänkning under standard; nekad bekräftelse behåller värdet.
     // Omritningen görs en gång, sist (se nedan), eftersom paketet ändrar mer än tröskeln.
     let kAndrad = false;
@@ -194,7 +194,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         state.policyNamn = referens.namn || 'Lönepolitiskt ställningstagande';
         state.policyKortnamn = referens.kortnamn || state.policyNamn;
         state.policyKalla = 'paket';
-        markUploadLoaded('upload-cell-policy', 'Från organisationspaketet');
+        markeraFilrutaInlast('upload-cell-policy', 'Från organisationspaketet');
         const ps = document.getElementById('policy-status');
         if (ps) { ps.textContent = `${state.policy.length} rader ur organisationspaketet`; ps.className = 'status-msg success'; }
     }
@@ -205,29 +205,29 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         state.statistikHasP10 = state.statistik.some(x => x.p10 > 0);
         state.statistikHasP90 = state.statistik.some(x => x.p90 > 0);
         state.statistikHasKon = state.statistik.some(x => x.andelKv != null);
-        markUploadLoaded('upload-cell-stat', 'Från organisationspaketet');
+        markeraFilrutaInlast('upload-cell-stat', 'Från organisationspaketet');
         const ss = document.getElementById('stat-status');
         if (ss) { ss.textContent = `${state.statistik.length} poster ur organisationspaketet`; ss.className = 'status-msg success'; }
     }
     synkaJamforelseFlik();
 
-    applyProfileLabels();
+    tillampaProfiletiketter();
     synkaNamnFalt();
     _synkaOrgTyp();
     _synkaKostnadsfalt();
     _fyllPaketFormular();
-    invalidateStatCaches();
-    renderReferensKort();
-    renderPaketInfo();
-    renderConsistencyBanner();
+    tomStatistikcacher();
+    ritaReferensKort();
+    ritaPaketinfo();
+    ritaKonsistenskontroll();
     // Ändrad tröskel: varje flik och hela Översikt ritas om (det täcker raderna i else-grenen).
-    if (kAndrad && state.data.length) { populateSelects(); _renderaOmAllaFlikar(); }
-    else { ritaKravstatus(); renderActionChecklist(); renderProcessTracker(); refreshCurrentTab(); }
+    if (kAndrad && state.data.length) { fyllValjare(); _ritaOmAllaFlikar(); }
+    else { ritaKravstatus(); ritaAtgardslista(); ritaKartlaggningensSteg(); uppdateraAktivFlik(); }
 
     const meddelande = `Organisationspaket från ${r.paket.organisation} inläst.`
         + (varningar.length ? ' ' + varningar.join(' ') : '');
     _paketStatus(meddelande, true);
-    announceToScreenReader(meddelande);
+    meddelaSkarmlasare(meddelande);
     return { ok: true, meddelande };
 }
 
@@ -244,8 +244,8 @@ export function _fyllPaketFormular() {
     satt('paket-org', p ? p.organisation : '');
     satt('paket-utgivare', p ? p.utgivare : '');
     satt('paket-ar', p ? p.avserAr : new Date().getFullYear());
-    satt('paket-jamf-namn', state.profile.benchmarkLabel === DEFAULT_PROFILE.benchmarkLabel ? '' : state.profile.benchmarkLabel);
-    satt('paket-jamf-genitiv', state.profile.benchmarkLabelGenitive === DEFAULT_PROFILE.benchmarkLabelGenitive ? '' : state.profile.benchmarkLabelGenitive);
+    satt('paket-jamf-namn', state.profile.benchmarkLabel === STANDARDPROFIL.benchmarkLabel ? '' : state.profile.benchmarkLabel);
+    satt('paket-jamf-genitiv', state.profile.benchmarkLabelGenitive === STANDARDPROFIL.benchmarkLabelGenitive ? '' : state.profile.benchmarkLabelGenitive);
     // Ställningstagandets namn: det som gäller nu (ur fil, paket eller namnfältet), så att paketet inte
     // tyst bär ett filnamn som "2026 lonepol.csv" vidare.
     satt('paket-ref-namn', harReferens() ? (state.policyNamn || '') : '');
@@ -458,7 +458,7 @@ async function skapaOrganisationsfil() {
         + (annanVersion ? ` Observera: den utpekade filen är en annan version än den som körs (${APP_VERSION}).` : '')
         + ' Ingen lönedata ingår.';
     _organisationsfilStatus(meddelande, true);
-    announceToScreenReader(meddelande);
+    meddelaSkarmlasare(meddelande);
     return { ok: true, meddelande };
 }
 
@@ -498,7 +498,7 @@ function visaInbakatPaket() {
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
         + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal);
+    if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 function laddaNerInbakatPaket() {
     const inb = state.paketInbakat;
@@ -511,9 +511,9 @@ function laddaNerInbakatPaket() {
     a.download = _paketFilnamn(inb.organisation);
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    announceToScreenReader(`Paketet sparat: ${a.download}`);
+    meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
 }
-const _stangPaketModal = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof releaseFocus === 'function') releaseFocus(m); m.style.display = 'none'; } };
+const _stangPaketDialog = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; } };
 
 // Organisationstypen (kommun, region eller båda) styr vilken del av SKR:s personalstatistik som
 // är referens för kvinnoandel (ADR-34). Värdet bor i profilen och följer med paket och konfiguration.
@@ -547,7 +547,7 @@ export function uppstartOrganisationspaket() {
         a.download = _paketFilnamn(paket.organisation.namn);
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        announceToScreenReader(`Organisationspaket sparat: ${a.download}`);
+        meddelaSkarmlasare(`Organisationspaket sparat: ${a.download}`);
     });
     document.getElementById('file-input-verktygsfil')?.addEventListener('change', e => {
         const inp = /** @type {HTMLInputElement} */ (e.target);
@@ -561,8 +561,8 @@ export function uppstartOrganisationspaket() {
         if (t.closest('#btn-paket-visa')) visaInbakatPaket();
         else if (t.closest('#btn-paket-ladda-ner')) laddaNerInbakatPaket();
     });
-    document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketModal);
-    document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketModal(); });
+    document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketDialog);
+    document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketDialog(); });
     document.getElementById('file-input-paket')?.addEventListener('change', e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
@@ -579,10 +579,10 @@ export function uppstartOrganisationspaket() {
     document.getElementById('org-typ')?.addEventListener('change', e => {
         sattOrgTyp(/** @type {HTMLInputElement} */ (e.target).value);
         if (!state.data.length) return;
-        invalidateStatCaches();
+        tomStatistikcacher();
         ritaKravstatus();
-        renderActionChecklist();
-        refreshCurrentTab();
+        ritaAtgardslista();
+        uppdateraAktivFlik();
     });
     _fyllPaketFormular();
     _synkaOrgTyp();

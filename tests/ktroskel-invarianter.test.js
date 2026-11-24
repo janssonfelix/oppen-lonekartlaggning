@@ -18,14 +18,14 @@ vi.setConfig({ testTimeout: 30000 });
 describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', () => {
     it('individnivån: på skärmen visas jämförelsen också mot få män (skärmen maskerar inget, ADR-51)', () => {
         const w = fonsterKon(null);
-        w.__renderTabContent('loneoversyn');
-        w.eval('_forecastRemediation()');
+        w.__ritaFlik('loneoversyn');
+        w.eval('_fcAtgard()');
         expect(w.document.querySelectorAll('#forecast-rem-result tbody tr').length).toBeGreaterThan(0);
     });
     it('individnivån i exportläget: jämförelsen kräver tröskeln i antal män, och kostnaden visas inte där antalet maskeras', () => {
         const w = iExport(fonsterKon(null));
-        w.__renderTabContent('loneoversyn');
-        w.eval('_forecastRemediation()');
+        w.__ritaFlik('loneoversyn');
+        w.eval('_fcAtgard()');
         const t = normalisera(w.document.getElementById('forecast-rem-result').textContent);
         expect(t).not.toContain(String(PAR_MA - PAR_KV));                       // en man minus en kvinna
         for (const [i] of KON_BAS.entries()) expect(t).not.toContain(String(30 * (KON_MA[i] - KON_KV[i])));   // mot 1–3 mäns median
@@ -40,22 +40,22 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         for (let i = 0; i < 12; i++) r.push(rad('man', 40000 + i, i));
         for (let i = 0; i < 12; i++) r.push(rad('kvinna', i < 3 ? 31117 : 40000 + i, i));   // tre kvinnor långt under männens median
         w.__state.data = r;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         iExport(w);
-        w.__renderTabContent('loneoversyn');
-        w.eval('_forecastRemediation()');
+        w.__ritaFlik('loneoversyn');
+        w.eval('_fcAtgard()');
         const el = w.document.getElementById('forecast-rem-result');
         const kostnad = String(Math.round(3 * (40005.5 - 31117)));
         expect(normalisera(el.textContent)).not.toContain(kostnad);
         expect(el.textContent).toMatch(/färre än 10/);
         w.alert = () => {};
-        w.eval('_forecastRemediationSeed()');
+        w.eval('_fcAtgardTillRader()');
         expect(w.__state.forecast.targets).toEqual([]);
     });
     it('utfallstabellen (i exportläget) och Excel: kostnaden maskeras där medianerna maskeras, och antalet grupper anges', async () => {
         const w = iExport(fonsterKon(null));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const kostnad = v => String(Math.round(v * 0.02));
         // Kostnaden per grupp vid 2 % påslag: en persons lön, ett pars löner och fyra personers löner gånger 0,02.
         const dolda = { 7001: kostnad(ENSAM), 7300: kostnad(PAR_KV + PAR_MA), 7002: kostnad(2 * X_KV + 2 * X_MA) };
@@ -70,7 +70,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         expect(normalisera(rad('6000').textContent)).toMatch(/\d kr\/mån/);
         expect(w.document.getElementById('forecast-outcome').textContent).toMatch(/\d+ grupper med färre än 10 personer ingår i summorna/);
         await laddaXlsx(w);
-        const bok = Object.values(fangaBocker(w, () => w.eval('exportForecast()')))[0];
+        const bok = Object.values(fangaBocker(w, () => w.eval('exportPrognos()')))[0];
         const blad = bok.split('[Fördelning]')[1].split('[')[0].split('\n');
         for (const aid of ['7001', '7300', '7002']) {
             expect(blad.find(r => r.includes(`| ${aid} |`)), aid).toMatch(/\|\s*$/);
@@ -90,11 +90,11 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         lagg(20, 'man', 50000, 'C', '6100'); lagg(4, 'kvinna', 50000, 'C', '6100');
         lagg(6, 'kvinna', 36421, 'C', '5300');
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs(); sattKTroskel(5, { fraga: false });');
+        w.eval('fyllValjare(); lasUppFlikar(); sattKTroskel(5, { fraga: false });');
         w.alert = () => {};
         Object.assign(w.__state.forecast, { minGroupN: 0, budget: { mode: 'kr', value: 5000000 }, generell: { mode: 'pct', value: 0 } });
         oppnaFlik(w, 'loneoversyn');
-        w.eval('_forecastOptimize()');
+        w.eval('_fcOptimera()');
         expect(w.__state.forecast.targets.map(t => t.aid)).toContain('5300');
         w.__state.forecast.targets.push({ bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });
         w.eval('sattKTroskel(10, { fraga: false })');
@@ -118,7 +118,7 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         const w = fonsterKon(null);
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 100 }, years: 3 });
         oppnaFlik(w, 'loneoversyn');
-        w.eval('_forecastRemediation(); _forecastSensitivity();');
+        w.eval('_fcAtgard(); _fcKanslighet();');
         expect(kostnader(w).length).toBeGreaterThan(0);                 // skärmen jämför också mot 1–3 män
         return w;
     };
@@ -164,11 +164,11 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         w.eval('_rensaAllData()');
         for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
         w.__state.data = byggKonDataset();
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         oppnaFlik(w, 'loneoversyn');
         for (const id of KNAPPRUTOR) expect(text(w, id), id).toBe('');
         const v = fyllt();
-        v.eval('_afterDataLoaded()');
+        v.eval('_efterInlastData()');
         oppnaFlik(v, 'loneoversyn');
         for (const id of KNAPPRUTOR) expect(text(v, id), id).toBe('');
         expect(v.__state.forecast._remediation).toBeUndefined();
@@ -200,10 +200,10 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
         for (let i = 0; i < 3; i++) r.push(rad('101010', 'kvinna', 41000 + i * 100, 55, 'S3'));
         for (let i = 0; i < man; i++) r.push(rad('101010', 'man', LEDNING_MAN, 56, 'S3'));
         w.__state.data = r;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         if (export_) iExport(w);
-        w.__renderTabContent('kon');
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('kon');
+        w.__ritaFlik('struktur');
         return w;
     };
     // Kryssar ur alla sektorer utom Vård. I exportläget går Ledning inte att välja (3 kvinnor); på skärmen (tröskeln 1) gör den det.
@@ -224,14 +224,14 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
         const w = fonsterUnderlag(9);
         const el = w.document.getElementById(id);
         expect(el._figur.underlag.k, id).toBe(10);
-        const fore = w.__chartExportRows(el);
+        const fore = w.__diagramexportRader(el);
         const { ruta } = valjBaraVard(w, id);
         expect(el._rfUnderlagText, id).toBeUndefined();
         expect(el._rfUnderlagFigur, id).toBeUndefined();
         expect(ruta.checked, id).toBe(true);
         expect(ruta.getAttribute('aria-invalid'), id).toBe('true');
         expect(el.parentElement.querySelector('[data-rf="urval"]').textContent, id).toContain('Urvalet eller resten har färre än 10 kvinnor eller män.');
-        const efter = w.__chartExportRows(el);
+        const efter = w.__diagramexportRader(el);
         expect(efter.slice(1), id).toEqual(fore.slice(1));
         expect(efter.map(r => r.join(' | ')).join('\n'), id).not.toMatch(/Räknat för/);
     });
@@ -242,7 +242,7 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
         expect(el._rfUnderlagText, id).toBe(`huvudområde ${VARD} (60 personer)`);
         expect(el._rfUnderlagFigur, id).toBeTruthy();
         expect(el._rfUnderlagFigur.beskrivning, id).toContain(VARD);
-        const rader = w.__chartExportRows(el);
+        const rader = w.__diagramexportRader(el);
         expect(rader.some(r => r[0] === `Räknat för: huvudområde ${VARD} (60 personer)`), id).toBe(true);
         expect(normalisera(rader.join('\n')), id).not.toContain(String(LEDNING_MAN));
     });
@@ -254,10 +254,10 @@ describe('[I6] underlaget i exportläget, precis under och precis över skyddsre
             oppnaFlik(w, id.startsWith('chart-kon') ? 'kon' : 'struktur');   // den öppna fliken ritas om på skärmen efter en export
             const el0 = w.document.getElementById(id);
             expect(el0._figur.underlag.k, id).toBe(1);
-            const hel = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            const hel = w.eval('medExportLage')(() => w.__diagramexportRader(w.document.getElementById(id)));
             valjBaraVard(w, id, [HANDL, 'Ledningsarbete', VARD]);
             expect(w.document.getElementById(id)._rfUnderlagText, id).toBe(`huvudområde ${VARD} (60 personer)`);
-            const rader = w.eval('medExportLage')(() => w.__chartExportRows(w.document.getElementById(id)));
+            const rader = w.eval('medExportLage')(() => w.__diagramexportRader(w.document.getElementById(id)));
             const text = rader.map(r => r.join(' | ')).join('\n');
             if (raknat) {
                 expect(text, `${id}, ${man} män`).toContain(`Räknat för: huvudområde ${VARD} (60 personer)`);
@@ -289,13 +289,13 @@ describe.each([[10, []], [25, SENT_MELLAN]])('[I7] uppdelningen med andra val av
     const utdataFor = val => {
         const w = iExport(fonsterKon(k === 10 ? null : k));
         w.eval(`sattGapVariabler(${JSON.stringify(val)}, { rita: false })`);
-        w.__renderTabContent('struktur');
-        const u = w.eval('gapUppdelning(getData(), { k: kTroskel(), variabler: gapVariabler() })');
+        w.__ritaFlik('struktur');
+        const u = w.eval('gapUppdelning(hamtaData(), { k: kTroskel(), variabler: gapVariabler() })');
         const block = w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
         return { u, utdata: [
             ['rapportunderlag: uppdelning', normalisera(w.__ruTillWordHtml(block) + '\n' + w.__ruTillText(block))],
             ['kortet (exportläget)', normalisera(w.document.getElementById('gap-uppdelning').textContent)],
-            ['metodbilagan', normalisera(w.__methodAppendixData().map(r => r.join(' | ')).join('\n'))],
+            ['metodbilagan', normalisera(w.__metodbilaga().map(r => r.join(' | ')).join('\n'))],
         ] };
     };
     const ingaLackor = utdata => {

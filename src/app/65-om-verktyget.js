@@ -9,18 +9,18 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
 import { AID_METODTEXT } from './04-ordlista.js';
 import { kInstalld, statGolv } from './06-k-troskel.js';
-import { applyProfileLabels } from './07-standardinstallningar.js';
-import { APP_BUILD_DATE, APP_VERSION } from './08-version.js';
+import { tillampaProfiletiketter } from './07-standardinstallningar.js';
+import { APP_BYGGDATUM, APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { state } from './12-tillstand.js';
 import { EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
-import { _wireTablistKeys } from './63-tangentbordsnavigering.js';
+import { _kopplaFlikradensTangenter } from './63-tangentbordsnavigering.js';
 
 // ---- Om verktyget-flik: render-funktion ----
-// APP_VERSION och APP_BUILD_DATE kommer från src/app/08-version.js, som
+// APP_VERSION och APP_BYGGDATUM kommer från src/app/08-version.js, som
 // genereras ur VERSION-filen (tools/gen-version.mjs). Hårdkoda dem inte här.
 
-const INFO_SECTIONS = {
+const OM_AVSNITT = {
     overview: () => `
         <h3>Vad är detta verktyg?</h3>
         <p class="om-ansvar"><strong>Ansvar.</strong> ${ANSVARSFORBEHALL}</p>
@@ -89,7 +89,7 @@ const INFO_SECTIONS = {
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
             <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
-            <li><code>extractMinimalRecord()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
+            <li><code>minimeraLonerad()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
@@ -262,7 +262,7 @@ const INFO_SECTIONS = {
         // Build-info kommer från VERSION via src/app/08-version.js; bundlern
         // stämplar samma version i HTML-kommentaren och i RELEASE.txt.
         const ver = APP_VERSION;
-        const date = APP_BUILD_DATE;
+        const date = APP_BYGGDATUM;
         return `
         <h3>Aktuell version</h3>
         <div class="info-build-card">
@@ -346,10 +346,10 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
     `
 };
 
-export function renderInfoTab(section = 'overview') {
+export function ritaOmVerktyget(section = 'overview') {
     const wrap = document.getElementById('info-tab-content');
     if (!wrap) return;
-    const renderer = INFO_SECTIONS[section] || INFO_SECTIONS.overview;
+    const renderer = OM_AVSNITT[section] || OM_AVSNITT.overview;
     wrap.innerHTML = renderer();
     // Markera aktiv knapp
     document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
@@ -365,14 +365,14 @@ export function renderInfoTab(section = 'overview') {
             : 'Licenstexterna byggs in i den färdiga filen (src/licenser.txt).';
     }
     // Tillämpa profil-substitutioner i nyrenderat innehåll
-    applyProfileLabels();
+    tillampaProfiletiketter();
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartOmVerktyget() {
     // Underflikarna i Tabeller och egna vyer har samma klasser (74-alla-diagram.js): väljarna gäller bara Om verktyget.
     document.querySelectorAll('#view-info .info-section-btn').forEach(btn => {
-        btn.addEventListener('click', () => renderInfoTab(/** @type {HTMLElement} */ (btn).dataset.section));
+        btn.addEventListener('click', () => ritaOmVerktyget(/** @type {HTMLElement} */ (btn).dataset.section));
     });
-    _wireTablistKeys(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('#view-info .info-section-btn')]));
+    _kopplaFlikradensTangenter(/** @type {HTMLElement[]} */ ([...document.querySelectorAll('#view-info .info-section-btn')]));
 }

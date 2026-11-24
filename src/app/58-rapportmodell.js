@@ -31,28 +31,28 @@ import { esc } from './01-html-och-tillganglighet.js';
 import { andelAvMan, ANSVARSFORBEHALL, antalText } from './03-hjalpfunktioner.js';
 import { AID_METODTEXT } from './04-ordlista.js';
 import { _basEffektNot, _konUtelamnatNot, _kSanktNot, _raGapText, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
-import { kMaskNote, kSamladNote } from './06-maskeringsnoter.js';
+import { kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS, gapStatusNiva } from './10-diagramtema.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getBasIntervals, getData, policyFor, referensKalla, referensKortnamn, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
-import { bedomningUnderlag, bootstrapCIGallande, styrkaGallande, UK_ETIKETT } from './13-oversikt.js';
-import { _methodAppendixData, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
+import { hamtaBasIntervall, hamtaData, policyFor, referensKalla, referensKortnamn, referensNamn, state, statistikBeskrivning } from './12-tillstand.js';
+import { bedomningUnderlag, bootstrapKIGallande, styrkaGallande, UK_ETIKETT } from './13-oversikt.js';
+import { _metodbilaga, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { renderTabContent } from './31-navigering.js';
+import { ritaFlik } from './31-navigering.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laOversiktRader, _laTrattGlesNot, laLikaGrupper } from './41-lika-arbete.js';
 import { referensOverblick } from './44-referensoverblick.js';
 import { konsklassOrd, lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _RG_STEG_YRKE, ALDER_METODVAL_TEXT, ALDER_SAKNAS_TEXT, harAlder } from './50-regressionsmodeller.js';
-import { _formatPValue, _yrkesStegText, runOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _handlingsplanSeedRows, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
-import { _bes8Areas } from './61-regler-och-praxis.js';
+import { _formateraPVarde, _yrkesStegText, korOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { _handlingsplanForifyllning, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
+import { _bes8Omraden } from './61-regler-och-praxis.js';
 import { _abForandringText, _abGruppAntal, _abKr, _abSpridningText, AB_SPRIDNING_NOT, abGrupperEjJamforbara, arsjamforelse } from './73-arsbokslut.js';
-import { buildGruppdossier, gruppdossierAsText, gruppdossierDelat } from './80-gruppdossier.js';
-import { basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, BD_YRKESKOLUMNER, buildBasdossier } from './81-basdossier.js';
+import { byggGruppdossier, gruppdossierSomText, gruppdossierDelat } from './80-gruppdossier.js';
+import { basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, BD_YRKESKOLUMNER, byggBasdossier } from './81-basdossier.js';
 
 /** Lönegapets form i exporterna: kvinnors lön i procent av mäns. `gapPct` är (kvinnor − män) / män. */
 function rmAndelAvMan(gapPct, dec = 1) { return andelAvMan(gapPct, dec); }
@@ -82,7 +82,7 @@ function rmCell(v, typ) {
     return String(v);
 }
 
-// Texten ur en not som vyerna bygger som HTML (kMaskNote, kSamladNote): namnen är redan escapade där.
+// Texten ur en not som vyerna bygger som HTML (kMaskNot, kSamladNot): namnen är redan escapade där.
 function _rmNotText(html) {
     if (!html) return '';
     const d = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
@@ -279,7 +279,7 @@ function rmBasintervallAvsnitt(k, bi) {
     const delar = [stycke(`Ett avsnitt per ${T.niva.en} med minst ${k} ${personOrd(k)}, i samma ordning som rapporten i övrigt: antal och könsfördelning, ${state.policy.length ? 'läget mot ställningstagandet, ' : ''}${T.enhet.bfl} med status enligt Lika arbete, likvärdigt arbete${harAlder() ? ', ålder' : ''} och förra året när ett bokslut är inläst. Tabellen har ${T.enhet.bfl} där både kvinnor och män når minsta gruppstorlek.`, 'dampad')];
     let smaYrken = 0;
     for (const { bas } of kand) {
-        const d = buildBasdossier(bas);
+        const d = byggBasdossier(bas);
         if (!d) continue;
         smaYrken += d.yrkenUtelamnade.length;
         delar.push({ typ: 'rubrik', niva: 3, text: `${stor(T.niva.en)} ${d.bas}` });
@@ -341,7 +341,7 @@ function rmArsjamforelseAvsnitt(diagram) {
 
 /**
  * Bilaga: gruppdossierer. En dossier per yrkesgrupp (AID inom BAS) där båda könen når k, i gruppdossierns ordning
- * (störst först), med samma text som gruppdossierns kopia (gruppdossierAsText): första raden som rubrik, resten som
+ * (störst först), med samma text som gruppdossierns kopia (gruppdossierSomText): första raden som rubrik, resten som
  * stycken. Byggs i exportläget, som hela modellen. AID-etiketter där ett kön är under k räknas, de namnges inte. BAS-
  * intervallens dossierer står redan i avsnittet Lönekartläggning per BAS-intervall och upprepas inte här.
  * @param {number} k
@@ -358,12 +358,12 @@ function rmDossierAvsnitt(k, { stub = false, besked = false } = {}) {
     if (utan) avsnitt.utelamnat.push(`gruppdossiern för ${utan} ${ordForAntal(utan, T.enhet)} där ett kön har färre än ${k} ${personOrd(k)}`);
     // Förhandsbeskedet behöver bara antalet och det utelämnade, inte texterna.
     if (besked) return avsnitt;
-    const dossierer = /** @type {any[]} */ (medGrupper.map(g => buildGruppdossier(g.key, delat)).filter(Boolean));
+    const dossierer = /** @type {any[]} */ (medGrupper.map(g => byggGruppdossier(g.key, delat)).filter(Boolean));
     avsnitt.delar.push({ typ: 'stycke', stil: 'dampad', text: `En dossier per ${T.enhet.en} i ${T.niva.en} där både kvinnor och män är minst ${k}, störst först — samma text som gruppdossierns kopia. ${stor(T.niva.bfl)} står i avsnittet Lönekartläggning per ${T.niva.en}.` });
     // Meningen om sänkt tröskel en gång för hela bilagan, inte en gång per dossier.
     if (_kSanktNot()) avsnitt.delar.push({ typ: 'stycke', text: _kSanktNot() });
     for (const d of dossierer) {
-        const rader = gruppdossierAsText(d, { stampel: false }).split('\n');
+        const rader = gruppdossierSomText(d, { stampel: false }).split('\n');
         avsnitt.delar.push({ typ: 'rubrik', niva: 3, text: rader[0] });
         for (const r of rader.slice(1)) if (r.trim()) avsnitt.delar.push({ typ: 'stycke', text: r.trim() });
     }
@@ -479,8 +479,8 @@ let _rmMinne = null;
 /** Rensa all data släpper minnet (26-rensning.js). */
 export function _rmMinneSlapp() { _rmMinne = null; }
 function _rmMinnesNyckel() {
-    return [_rmHandelser, state.data.length, getData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
-        state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, bootstrapCIGallande(), styrkaGallande(), state.likvardighet && state.likvardighet.result, state.isDemo];
+    return [_rmHandelser, state.data.length, hamtaData().length, kTroskel(), state.policy, state.statistik, state.forraArsbokslut, state.rapportTabeller,
+        state.perBasRecept, state.forklaringsmodell, state.gapUppdelning, bootstrapKIGallande(), styrkaGallande(), state.likvardighet && state.likvardighet.result, state.isDemo];
 }
 /** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
 function _rmLattAvsnitt(a) {
@@ -515,14 +515,14 @@ function _rapportModellExport({ alla = false, bada = false, besked = false, ater
 }
 /** Rapportens avsnitt utom bilagan med gruppdossierer, oberoende av urvalet: det _rapportModellExport väljer och numrerar ur. */
 function _rmAvsnittenUtanUrval() {
-    const d = getData();
+    const d = hamtaData();
     const year = new Date().getFullYear(), today = new Date().toLocaleDateString('sv-SE');
     const k = kTroskel();
     const urval = 'Hela organisationen';
-    const reg = runOLSRegression();
+    const reg = korOLSRegression();
     const lvRes = likvardighetResultat();
     // Allt som räknas, maskeras och bedöms: src/lib/vymodell-rapport.js. Här skrivs orden och delarna.
-    const vm = vymodellRapport(d, { k, golv: statGolv(), bas: getBasIntervals(), reg, lika: laLikaGrupper(d, k), lvPar: lvRes && lvRes.pairs,
+    const vm = vymodellRapport(d, { k, golv: statGolv(), bas: hamtaBasIntervall(), reg, lika: laLikaGrupper(d, k), lvPar: lvRes && lvRes.pairs,
         oversikt: _laOversiktRader(d, undefined, k), recept: state.rapportTabeller || [],
         basEffektNot: utelamnade => _basEffektNot(utelamnade, k) });
     const { nKv: kvN, nMa: maN, medKv, medMa, kvotPct, konOk } = vm.sammanfattning;
@@ -562,7 +562,7 @@ function _rmAvsnittenUtanUrval() {
         const { topp, botten } = vm.representation.iakttagelse;
         regler.delar.push(stycke(`Automatisk iakttagelse: andelen kvinnor är högre i lägre betalda ${T.niva.fl} (${botten.bas}: ${svPct(botten.andelKv, 0)}) än i högre betalda (${topp.bas}: ${svPct(topp.andelKv, 0)}). Det kan tyda på att kvinnor och män är ojämnt fördelade mellan ${T.niva.bfl}, och det är värt att ta med i granskningen av regler och praxis.`));
     }
-    const bes8 = _bes8Areas();
+    const bes8 = _bes8Omraden();
     if (bes8.length) {
         regler.delar.push({ typ: 'tabell', kolumner: [{ rubrik: 'Granskningsområde', typ: 'text' }, { rubrik: 'Bedömning', typ: 'fyllIn' }, { rubrik: 'Iakttagelser / åtgärd', typ: 'fyllIn' }],
             rader: bes8.map(a => [a.title, a.status || { text: '[HR fyller i]', fyllIn: true }, a.note || { text: '[HR fyller i]', fyllIn: true }]) });
@@ -581,7 +581,7 @@ function _rmAvsnittenUtanUrval() {
         lika.delar.push({ typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: [
             // Det råa gapet är ett beskrivande könsuppdelat mått och följer tröskeln (_raGapText).
             ['Kvinnors medianlön i procent av mäns', _raGapText(reg, v => rmAndelAvMan(v, 1))],
-            [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : 'Löneskillnad, inget räknat bort', { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formatPValue(reg.pValue)})`, fet: true }],
+            [reg.fras ? `Löneskillnad som står kvar efter ${reg.fras}` : 'Löneskillnad, inget räknat bort', { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svPct(reg.konPctHigh, 2)}; ${_formateraPVarde(reg.pValue)})`, fet: true }],
             ['Modell', `log(lön) ~ ${reg.modelDesc} · ${reg.n} obs · R² ${svPct(reg.R2 * 100, 1)}`],
         ] });
         lika.delar.push(dampad(`Löneskillnaden ${reg.fras ? `efter ${reg.fras}` : 'utan kontroller'} anges som en skillnad i procent: negativ när kvinnor ligger lägre.`));
@@ -630,7 +630,7 @@ function _rmAvsnittenUtanUrval() {
     // Lönemåtten (median, lönegapet per BAS) redovisas bara för BAS-intervall med minst tröskeln personer.
     // Gapet per BAS står med direktivets tecken (rmDirektivGap), som i EU-lönerapportens blad; översikten per
     // BAS-intervall från Lönestruktur längre ned behåller flikens form (kvinnors lön i procent av mäns med konfidensintervall).
-    const repNot = [_rmNotText(kMaskNote(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNote(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
+    const repNot = [_rmNotText(kMaskNot(repDolda, `${T.niva.en}|${T.niva.fl}`)), _rmNotText(kSamladNot(vm.representation.konLitet, `${T.niva.en}|${T.niva.fl}`))].filter(Boolean);
     const oversikt = vm.oversikt;
     const struktur = (repVisade.length || repNot.length) ? { id: 'struktur', numrerad: true, rubrik: 'Struktur och lönetransparens',
         utelamnat: [...(repDolda.length ? [`BAS ${repDolda.join(', ')} (färre än ${k} ${personOrd(k)})`] : []),
@@ -665,7 +665,7 @@ function _rmAvsnittenUtanUrval() {
     // ---- 6. Åtgärder och tidsplan ----
     // Tabellen är handlingsplanen från fliken (samma förifyllning, som redan utelämnar par under tröskeln), med det som
     // fyllts i där; ett tomt fält står kvar att fylla i.
-    const hpSeed = _handlingsplanSeedRows();
+    const hpSeed = _handlingsplanForifyllning();
     const hp = hpSeed.rows;
     const hpSkal = _hpSkalUnderlag(hpSeed);
     const hpFalt = v => v || { text: '[HR fyller i]', fyllIn: true };
@@ -705,12 +705,12 @@ function _rmAvsnittenUtanUrval() {
             nyckel([
                 ['Antal observationer', `${reg.n} (kvinnor: ${reg.nKvAnalysed}, män: ${reg.nMaAnalysed})`],
                 ['Kvinnors medianlön i procent av mäns', _raGapText(reg, v => rmAndelAvMan(v, 1))],
-                [`Oförklarad skillnad${kritisk ? ' (statistiskt säkerställd och minst 3 %)' : ''}`, { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formatPValue(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
+                [`Oförklarad skillnad${kritisk ? ' (statistiskt säkerställd och minst 3 %)' : ''}`, { text: `${rmCell(reg.konPct, 'tecken2')} (95 % KI: ${svTal(reg.konPctLow, 2)} till ${svTal(reg.konPctHigh, 2)}, ${_formateraPVarde(reg.pValue)}, t = ${svTal(reg.tStat, 2)}; HC3 robust SE)`, fet: true }],
                 ...(reg.ageEffect != null ? [['Ålderseffekt', `${rmCell(reg.ageEffect, 'tecken2')} per år`]] : []),
                 ['R² / justerad R²', `${svPct(reg.R2 * 100, 1)} / ${svPct(reg.adjR2 * 100, 1)}`],
                 ...(reg.basRef != null && !reg.modell.yrkesgrupp ? [[`${stor(T.niva.fl)} i modellen`, `${reg.nBas} (${reg.basList[0]}–${reg.basList[reg.basList.length - 1]}; indikatorvariabler, ${reg.basRef} är referens)`]] : []),
                 ...(reg.modell.yrkesgrupp && reg.yrkesSteg ? [[`${stor(T.enhet.fl)} i modellen`, `${reg.yrkesSteg.nGrupper} grupper (AID inom BAS; fasta effekter), ${reg.yrkesSteg.nGrupperBada} med båda könen`]] : []),
-                ...(basEffUt.effekter?.length ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formatPValue(e.p)})`).join('; ')}`]] : []),
+                ...(basEffUt.effekter?.length ? [['BAS-effekter', `nivå mot BAS ${reg.basRef}: ${basEffUt.effekter.map(e => `${e.bas} ${rmCell(e.pct, 'tecken2')} (${_formateraPVarde(e.p)})`).join('; ')}`]] : []),
             ]));
         if (basEffUt.not) { regression.delar.push(stycke(basEffUt.not, 'not')); regression.utelamnat.push(basEffUt.referensUtelamnad ? 'BAS-effekterna (referensintervallet under tröskeln)' : 'BAS-effekter för intervall under tröskeln'); }
         // Det bortvalda (ADR-56): en mening per variabel, med skälet.
@@ -725,7 +725,7 @@ function _rmAvsnittenUtanUrval() {
         const perBas = vm.regression.perBas;
         if (perBas.length) regression.delar.push({ typ: 'rubrik', niva: 3, text: `Per ${T.niva.en} (separata regressioner)` },
             { typ: 'tabell', kolumner: [{ rubrik: 'BAS', typ: 'text' }, { rubrik: 'N', typ: 'antal' }, { rubrik: 'Kvinnor / män', typ: 'text' }, { rubrik: 'Oförklarad skillnad', typ: 'tecken2' }, { rubrik: 'Signifikans', typ: 'text' }, { rubrik: 'Säkerställd, minst 3 %', typ: 'text' }],
-              rader: perBas.map(pb => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formatPValue(pb.pValue), pb.sakerstalld ? 'ja' : '']) });
+              rader: perBas.map(pb => [pb.bas, pb.n, `${pb.kvN} / ${pb.maN}`, pb.gapPct, _formateraPVarde(pb.pValue), pb.sakerstalld ? 'ja' : '']) });
     } else if (reg && reg.error) {
         regression.delar.push(stycke(reg.error));
         const forsok = (reg.triedSteps || []).map(st => `${st.desc || st.name}${st.status === 'ok' ? '' : st.status === 'singular' ? ' (multikollinearitet)' : st.status === 'too_few' ? ' (för få obs)' : ''}`);
@@ -738,7 +738,7 @@ function _rmAvsnittenUtanUrval() {
 
     const metod = { id: 'metod', rubrik: 'Bilaga: Metod och parametrar', utelamnat: [], delar: [
         dampad('Dessa uppgifter följer med så att analysen går att återskapa och förstå. Verktyget pekar ut kandidater för bedömning — det dömer inte.'),
-        { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: _methodAppendixData().map(([n, v]) => [String(n), String(v)]) },
+        { typ: 'tabell', nyckel: true, kolumner: [{ rubrik: '', typ: 'text' }, { rubrik: '', typ: 'text' }], rader: _metodbilaga().map(([n, v]) => [String(n), String(v)]) },
         // Metodreservationen om ålder (S7, ADR-64), oavsett om lönefilen har ålder.
         dampad(`${ALDER_METODVAL_TEXT}${harAlder() ? '' : ` ${ALDER_SAKNAS_TEXT}`}`),
     ] };
@@ -805,7 +805,7 @@ export function rmBesked(m) {
 const RM_BILD = { bredd: 1400, hojd: 620 };
 export async function rmDiagramBild(del, ritade = new Set()) {
     try {
-        if (del.flik && !ritade.has(del.flik)) { ritade.add(del.flik); try { renderTabContent(del.flik); } catch (_e) { /* diagrammet är då inte ritat */ } }
+        if (del.flik && !ritade.has(del.flik)) { ritade.add(del.flik); try { ritaFlik(del.flik); } catch (_e) { /* diagrammet är då inte ritat */ } }
         const el = document.getElementById(del.id);
         if (!el || !diagramRitat(el)) return null;
         const url = String(await diagramTillBild(el, { ...RM_BILD, utanRubrik: true }));

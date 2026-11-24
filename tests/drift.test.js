@@ -173,7 +173,7 @@ describe('likvärdigt arbete: lib ger reproducerbara konfidensintervall', () => 
 // ska delegera till lib.
 describe('regression: 50-regressionsmodeller.js är en tunn adapter', () => {
     const regSrc = readFileSync(join(root, 'src', 'app', '50-regressionsmodeller.js'), 'utf8');
-    const adaptrar = ['_computePerBasGap', 'runBlinderOaxaca', 'runQuantileRegressionAtAllTau'];
+    const adaptrar = ['_raknaPerBasGap', 'korBlinderOaxaca', 'korKvantilregressionAllaTau'];
     const libNamn = /import \{([^}]*)\} from '\.\.\/lib\/regression\.js'/.exec(regSrc)[1].split(',').map(s => s.trim().split(/\s+as\s+/).pop());
 
     it('innehåller inga egna beräkningar (ingen log eller OLS-anrop)', () => {
@@ -197,16 +197,16 @@ describe('prioritering och livscykel: adaptrarna är tunna och delegerar till li
     const prioSrc = readFileSync(join(root, 'src', 'app', '55-prioritering.js'), 'utf8');
     const lcSrc = readFileSync(join(root, 'src', 'app', '52-livscykel.js'), 'utf8');
 
-    it('computePrioritization delegerar till prioritera och bygger ingen egen beräkning', () => {
-        const kropp = extractFn(prioSrc, 'computePrioritization');
+    it('raknaPrioritering delegerar till prioritera och bygger ingen egen beräkning', () => {
+        const kropp = extractFn(prioSrc, 'raknaPrioritering');
         expect(kropp).toContain('prioritera(');
-        for (const spår of ['Stat.median', 'isKMasked', 'priorityIndex', 'sevScore', 'annualGapTotal', 'groups[']) {
+        for (const spår of ['Stat.median', 'kMaskerad', 'priorityIndex', 'sevScore', 'annualGapTotal', 'groups[']) {
             expect(kropp, `"${spår}" hör hemma i src/lib/prioritering.js`).not.toContain(spår);
         }
     });
 
-    it('runLifecycleRegression delegerar till livscykelRegression och bygger ingen egen modell', () => {
-        const kropp = extractFn(lcSrc, 'runLifecycleRegression');
+    it('korLivscykelregression delegerar till livscykelRegression och bygger ingen egen modell', () => {
+        const kropp = extractFn(lcSrc, 'korLivscykelregression');
         expect(kropp).toContain('livscykelRegression(');
         expect(lcSrc, 'OLS anropas i src/lib/livscykel.js').not.toContain('anpassaOLS(');
         expect(kropp, 'log-lön räknas i src/lib/livscykel.js').not.toContain('Math.log(');

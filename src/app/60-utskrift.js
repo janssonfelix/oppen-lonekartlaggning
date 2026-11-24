@@ -6,19 +6,19 @@ import { stor } from '../lib/termer.js';
 import { arHelaDokumentationen } from '../lib/vymodell-rapport.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { hideLoading, rapporteraFel, showLoading, tillampaDataStil } from './03-hjalpfunktioner.js';
-import { auditPoster } from './05-tabeller-och-lankar.js';
+import { doljLaddning, rapporteraFel, visaLaddning, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { metodikposter } from './05-tabeller-och-lankar.js';
 import { _kSanktStycke, kStampel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS } from './10-diagramtema.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
-import { getData, state } from './12-tillstand.js';
+import { hamtaData, state } from './12-tillstand.js';
 import { _exportUtanSkarmkolumner, _exportVisaAllaRader } from './22-exporthjalpare.js';
 import { exportElement, medExportLage } from './23-exportgrind.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
 import { laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { _jmfKallaNamn, generateBenchmark, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
+import { _jmfKallaNamn, byggJamforelse, jamforelseAktivKalla, jamforelseUrvalText } from './42-jamforelse.js';
 import { _utskriftReferenserHtml } from './44-referensoverblick.js';
 import { rapportModellBada, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 /**
@@ -75,10 +75,10 @@ function _utskriftAvstavar() {
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function buildPrintReport(...a) { return medExportLage(() => _buildPrintReportExport.apply(null, /** @type {any} */ (a))); }
-async function _buildPrintReportExport() {
-    if (!getData().length) { alert('Läs in lönefilen först.'); return; }
-    showLoading();
+function byggUtskriftsrapport(...a) { return medExportLage(() => _byggUtskriftsrapportExport.apply(null, /** @type {any} */ (a))); }
+async function _byggUtskriftsrapportExport() {
+    if (!hamtaData().length) { alert('Läs in lönefilen först.'); return; }
+    visaLaddning();
     try {
         // Rapporten är rapportmodellen med gällande urval — samma innehåll som Word-utkastet (58-rapportmodell.js).
         const bada = rapportModellBada(), modell = bada.urval;
@@ -95,7 +95,7 @@ async function _buildPrintReportExport() {
             ritaLoneoversikt();
             ritaLoneskillnadPerBas(lsBasVymodell());
             ritaLikaArbete(laVymodell());
-            if (state.statistik.length) generateBenchmark();
+            if (state.statistik.length) byggJamforelse();
             const imgs = {};
             ritaAlderOchLon('__ALLA__');
             await new Promise(r => setTimeout(r, 250));
@@ -123,7 +123,7 @@ async function _buildPrintReportExport() {
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
-                ${auditPoster().map(([_id, a]) => {
+                ${metodikposter().map(([_id, a]) => {
                     const fmtN = n => n.toLocaleString('sv-SE');
                     const exclRows = [...(a.parseExcl||[]), ...(a.analysisExclusions||[])]
                         // Texten kan innehålla referensens namn (ur fil eller organisationspaket):
@@ -164,13 +164,13 @@ async function _buildPrintReportExport() {
         if (utanAvstavning) root.querySelectorAll('td').forEach(td => { if (arTal(td.textContent)) td.classList.add('pr-tal'); });
 
         document.body.classList.add('print-mode');
-        hideLoading();
+        doljLaddning();
         await new Promise(r => setTimeout(r, 200));
         window.print();
         // Klassen tas bort när utskriftsdialogen stängts (afterprint nedan); tidsgränsen är för webbläsare utan händelsen.
         setTimeout(() => document.body.classList.remove('print-mode'), 1000);
     } catch (err) {
-        hideLoading();
+        doljLaddning();
         document.body.classList.remove('print-mode');
         alert('Fel vid PDF-generering: ' + err.message);
     }
@@ -190,7 +190,7 @@ async function _buildPrintReportExport() {
 // Skriv ut en scaffold-flik (§ 8-checklista / handlingsplansmall) i ett rent
 // fönster med alla <details> expanderade. Offlinesäkert: inga nätverksanrop,
 // inga skript i utskriftsdokumentet.
-function printScaffoldView(viewId, heading) {
+function skrivUtMallflik(viewId, heading) {
     const view = document.getElementById(viewId);
     if (!view) return;
     const clone = view.cloneNode(true);
@@ -267,12 +267,12 @@ function _utskriftEfter() {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartUtskrift() {
-    document.getElementById('btn-export-pdf')?.addEventListener('click', buildPrintReport);
+    document.getElementById('btn-export-pdf')?.addEventListener('click', byggUtskriftsrapport);
     // Generisk koppling: knappar med data-print-view="<viewId>" data-print-title="..."
     document.addEventListener('click', e => {
         const btn = /** @type {HTMLElement} */ (e.target).closest('[data-print-view]');
         if (!btn) return;
-        printScaffoldView(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
+        skrivUtMallflik(btn.getAttribute('data-print-view'), btn.getAttribute('data-print-title') || 'Checklista');
     });
     window.addEventListener('beforeprint', _utskriftFore);
     window.addEventListener('afterprint', _utskriftEfter);

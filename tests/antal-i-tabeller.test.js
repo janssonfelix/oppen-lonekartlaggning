@@ -15,12 +15,12 @@ const tal = n => n.toLocaleString('sv-SE').replace(/[  ]/g, ' ');
 /** "n = 260; 150 kvinnor, 110 män", räknat ur raderna. */
 const nText = rader => `n = ${tal(rader.length)}; ${tal(rader.filter(arKv).length)} kvinnor, ${tal(rader.filter(arMa).length)} män`;
 
-const demo = delatFonster(w => { w.__loadDemoData(); });
+const demo = delatFonster(w => { w.__lasInDemodata(); });
 
 describe('Lönestruktur: antal i tabellerna', () => {
     it('Var i lönefördelningen är skillnaden störst? bär antalet kvinnor och män i tabellens rubrikrad', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const d = w.__state.data.filter(r => arKv(r) || arMa(r));
         const tabell = w.document.querySelector('#struktur-distribution table');
         expect(rubriker(tabell)[0]).toBe('Percentil');
@@ -28,11 +28,11 @@ describe('Lönestruktur: antal i tabellerna', () => {
     });
 
     it('EU-rapportens blad Skillnad i lönefördelningen har kolumnerna Antal kvinnor och Antal män', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         await laddaXlsx(w);
         let bok = null;
         w.XLSX.writeFile = wb => { bok = wb; };
-        w.eval('exportEuReport()');
+        w.eval('exportEuRapport()');
         const rader = w.XLSX.utils.sheet_to_json(bok.Sheets['Skillnad i lönefördelningen'], { header: 1, raw: true });
         const kv = rader[0].indexOf('Antal kvinnor'), ma = rader[0].indexOf('Antal män');
         expect(kv).toBeGreaterThan(0);
@@ -44,7 +44,7 @@ describe('Lönestruktur: antal i tabellerna', () => {
 
     it('Könsfördelning per BAS-intervall har Antal kvinnor och Antal män, i skärmen och i Excel-bladet', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const tabell = w.document.getElementById('skevhet-table');
         const r = rubriker(tabell);
         const kv = r.indexOf('Antal kvinnor'), ma = r.indexOf('Antal män');
@@ -62,7 +62,7 @@ describe('Lönestruktur: antal i tabellerna', () => {
 
     it('regressionskortet: kvantiltabellen, tabellen Vad varje variabel tillför och Oaxaca-tabellen bär n i rubrikraden', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
         const kort = w.document.getElementById('regression-card');
         const kvantil = [...kort.querySelectorAll('table')].find(t => rubriker(t)[0] === 'Position i lönefördelningen');
@@ -77,9 +77,9 @@ describe('Lönestruktur: antal i tabellerna', () => {
 describe('Metodtabellerna bär n i rubrikraden', () => {
     it('regressionskortets tekniska specifikation: tabellen BAS-effekter', () => {
         const w = demo();
-        w.__renderTabContent('struktur');
+        w.__ritaFlik('struktur');
         const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
-        const reg = w.eval('runOLSRegression()');
+        const reg = w.eval('korOLSRegression()');
         expect(reg.basEffekter).toBeTruthy();
         const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => { const h = [...(t.rows[0]?.cells || [])].map(c => ren(c.textContent)); return h[0] === 'BAS' && /^Nivå mot/.test(h[1] || ''); });
         expect(tabell).toBeTruthy();
@@ -108,7 +108,7 @@ describe('Metodtabellerna bär n i rubrikraden', () => {
 describe('Ålder & karriär: modelljämförelsen', () => {
     it('bär n med kvinnor och män i rubrikraden', () => {
         const w = demo();
-        w.__renderTabContent('kon');
+        w.__ritaFlik('kon');
         const d = w.__state.data.filter(r => r.lon > 0 && r.alder > 0 && (arKv(r) || arMa(r)));
         const tabell = [...w.document.querySelectorAll('table')].find(t => rubriker(t)[0] === 'Mått' && /Livscykelmodell/.test(rubriker(t)[2] || ''));
         expect(ren(tabell.querySelector('caption').textContent)).toBe(nText(d));
@@ -118,7 +118,7 @@ describe('Ålder & karriär: modelljämförelsen', () => {
 describe('Likvärdigt arbete: kandidatparen', () => {
     it('kolumnen Antal (kvinnodom. / jämf.) visar båda yrkenas antal, på skärmen, i Word-utkastet och i rapportunderlaget', () => {
         const w = demo();
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         const par = w.eval('likvardighetResultat()').pairs;
         expect(par.length).toBeGreaterThan(0);
         const tabell = w.document.getElementById('likvardighet-table');
@@ -151,9 +151,9 @@ describe('Löneöversyn: löneskillnad per BAS-intervall före och efter', () =>
         const rad = (aid, bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: `${aid} Yrke${aid}`, aid, yrkeLabel: `Yrke${aid}`, enhet: '' });
         w.__state.data = [...Array.from({ length: 14 }, (_, i) => rad('6000', 'A', 'kvinna', 30000 + i * 10)), ...Array.from({ length: 10 }, (_, i) => rad('6000', 'A', 'man', 30000 + i * 10)),
                           ...Array.from({ length: 10 }, (_, i) => rad('6100', 'A', 'kvinna', 36000 + i * 10)), ...Array.from({ length: 14 }, (_, i) => rad('6100', 'A', 'man', 36000 + i * 10))];
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__state.forecast.targets = [{ bas: 'A', aid: '6000', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
-        w.__renderTabContent('loneoversyn');
+        w.__ritaFlik('loneoversyn');
         const tabell = w.document.getElementById('forecast-lutning-table');
         const i = rubriker(tabell).indexOf('Kvinnor / män');
         expect(i).toBe(1);
@@ -163,13 +163,13 @@ describe('Löneöversyn: löneskillnad per BAS-intervall före och efter', () =>
 
 describe('Handlingsplan: Antal berörda', () => {
     it('skärmen, Excel-underlaget, Word-utkastets tabell och rapportunderlaget har kolumnen; egna rader är tomma', async () => {
-        const w = createAppWindow(); w.__loadDemoData();
-        w.__renderTabContent('handlingsplan');
+        const w = createAppWindow(); w.__lasInDemodata();
+        w.__ritaFlik('handlingsplan');
         const tabell = w.document.querySelector('#handlingsplan-tbody').closest('table');
         const i = rubriker(tabell).indexOf('Antal berörda');
         expect(i).toBe(2);
-        const seed = w.eval('_handlingsplanSeedRows()');
-        const prio = w.eval('computePrioritization(_selectedPrioReference())');
+        const seed = w.eval('_handlingsplanForifyllning()');
+        const prio = w.eval('raknaPrioritering(_valdPrioReferens())');
         const forstaPrio = seed.rows.findIndex(r => r[2] === 'Prioritering (under referensen)');
         const forstaPar = seed.rows.findIndex(r => r[2] === 'Likvärdigt arbete (kandidatpar)');
         expect(forstaPrio).toBeGreaterThanOrEqual(0);
@@ -201,7 +201,7 @@ describe('Handlingsplan: Antal berörda', () => {
         expect(t.rader[forstaPar][j]).toBe(par.kvN);
         expect(t.rader.at(-1)[j]).toEqual({ text: '' });
         // Rapportunderlaget.
-        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanSeedRows().rows)') }, { k: 10 });
+        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanForifyllning().rows)') }, { k: 10 });
         const r = ru.tabell.rubriker.indexOf('Antal berörda');
         expect(r).toBe(2);
         expect(ru.tabell.rader[forstaPrio][r]).toBe(String(prioRad.n));
@@ -211,12 +211,12 @@ describe('Handlingsplan: Antal berörda', () => {
 
 describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
     it('panelens och rapportmodellens grupptabeller har kolumnen Kvinnor / män med årtalet', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         // Förra årets bokslut: samma som i år, så att de flaggade grupperna står som kvar.
         w.__state.forraArsbokslut = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
         w.__state.forraArsbokslut.ar -= 1;
         const nuAr = new Date().getFullYear();
-        w.eval('renderArsjamforelse()');
+        w.eval('ritaArsjamforelse()');
         const panel = [...w.document.querySelectorAll('#arsjamforelse table')].filter(t => rubriker(t)[0] === 'AID-etikett');
         expect(panel.length).toBeGreaterThan(0);
         for (const t of panel) {
@@ -234,12 +234,12 @@ describe('Jämförelse med förra året: de flaggade yrkesgrupperna', () => {
     });
 
     it('en grupp som inte finns i år visar förra årets antal, märkt med förra årets årtal', () => {
-        const w = createAppWindow(); w.__loadDemoData();
+        const w = createAppWindow(); w.__lasInDemodata();
         const forra = JSON.parse(JSON.stringify(w.eval('byggArsbokslutNu()')));
         forra.ar -= 1;
         forra.grupper.push({ yrke: 'Nedlagt yrke', bas: 'A', nKv: 12, nMa: 11, medKv: 30000, medMa: 33000, gapPct: -9.1, flaggad: true });
         w.__state.forraArsbokslut = forra;
-        w.eval('renderArsjamforelse()');
+        w.eval('ritaArsjamforelse()');
         const rad = [...w.document.querySelectorAll('#arsjamforelse table tbody tr')].find(tr => ren(tr.cells[0].textContent) === 'Nedlagt yrke (BAS A)');
         expect(ren(rad.cells[1].textContent)).toBe(`12 / 11 (${forra.ar})`);
         const t = w.eval('rapportModell({ alla: true })').avsnitt.find(a => a.id === 'arsjamforelse').delar

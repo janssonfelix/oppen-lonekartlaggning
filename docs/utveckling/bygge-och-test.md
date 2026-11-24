@@ -80,7 +80,7 @@ genererade filerna motsvarar källan.
   i CI prövar (avsnitt 9).
 
 **Reproducerbart bygge** (ADR-101). Samma commit ger samma `dist/oppen-lonekartlaggning.html` bit för bit, oavsett
-katalog, tidszon, språk och datum: bygget läser inte klockan (`Build:` och `APP_BUILD_DATE` härleds ur `VERSION`;
+katalog, tidszon, språk och datum: bygget läser inte klockan (`Build:` och `APP_BYGGDATUM` härleds ur `VERSION`;
 datumet läses bara för påminnelsen om att `VERSION` inte är dagens), inga sökvägar hamnar i filen (esbuild skriver
 relativa sökvägar i sina kommentarer), filerna läses i en fast ordning (skripten i en lista, modulerna i
 importordning), och esbuilds version är låst i `package.json`. Radsluten är LF i varje utcheckning genom
@@ -96,7 +96,7 @@ annan katalog (avsnitt 9) och release-arbetsflödet ur taggen (avsnitt 10).
 ## 3. Versionering
 
 CalVer (`ÅÅÅÅ.MM.DD`). `VERSION` är källan, och `package.json` sätts samtidigt (npm kräver fältet). `APP_VERSION` och
-`APP_BUILD_DATE` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att
+`APP_BYGGDATUM` genereras ur den (ADR-13). `tests/version.test.js` prövar att `VERSION` är CalVer och att
 `package.json` följer den; att `src/app/08-version.js` följer den prövar artefaktgrinden. Bygget för in den i
 `src/app/08-version.js`, `dist/` och programvaruförteckningen; `CHANGELOG.md` och riskanalysen anger den och prövas av
 release-grinden. Hur en version släpps står i §10.
@@ -114,7 +114,7 @@ bibliotek av hjälpklasser som ersatte alla `style`-attribut (ADR-30).
   utan `!important`; färg- och statusklasserna (`fg-`, `bg-`, `bricka-` …) och de äldre hjälpklasserna (`t-hoger`,
   `mb-14` …) är `!important` och ligger efter biblioteket.
 - **En ny kombination** skrivs med klasserna som finns; saknas ett värde läggs en rad till i rätt grupp.
-- **Utskriftsfönstret** för checklistorna (`printScaffoldView`) läser `:root` och allt från `.dold` till
+- **Utskriftsfönstret** för checklistorna (`skrivUtMallflik`) läser `:root` och allt från `.dold` till
   stilmallens slut ur den körande stilmallen och lägger in det som byggt stilark (`adoptedStyleSheets`): ett
   `<style>`-element som skriptet skapar blockeras av den ärvda CSP:n (`style-src-elem`), så fönstret var tidigare
   helt ostilat.
@@ -160,7 +160,7 @@ Vilka tester som vaktar skydden står i [`skydd.md`](skydd.md), och vilka som va
 
 **Fokus i jsdom kräver en synlig vy.** Som i en webbläsare får ett element inte fokus när det eller en förälder har
 `display: none`, och de stängda flikarnas paneler har det. Ett test som prövar fokus öppnar därför fliken som
-användaren gör, med ett klick på `.nav-item[data-tab="…"]`; `__renderTabContent` ritar bara innehållet och lämnar
+användaren gör, med ett klick på `.nav-item[data-tab="…"]`; `__ritaFlik` ritar bara innehållet och lämnar
 panelen dold.
 
 **Flikbytet är synkront i jsdom och uppskjutet i webbläsaren** (ADR-80). Ett klick från koden (`el.click()`) är inte

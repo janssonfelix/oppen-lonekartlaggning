@@ -1,41 +1,41 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { announceToScreenReader, esc, stangAutofyll } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, stangAutofyll } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { kInstalld } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { _mkTabeller, diagramMarkering } from './11-markering.js';
-import { getData, state } from './12-tillstand.js';
-import { populateSelects, renderFilerDelar, renderOversiktDelar, renderUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
-import { renderForhandskontroll } from './17-forhandskontroll.js';
+import { hamtaData, state } from './12-tillstand.js';
+import { fyllValjare, ritaFilerDelar, ritaOversiktDelar, ritaUnderlagetsKvalitet, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
+import { ritaForhandskontroll } from './17-forhandskontroll.js';
 import { _exportDjup, _ritadVid, _ritasNu, medExportLage, ritGeneration, visningNy, visningsversion } from './23-exportgrind.js';
 import { ritaLikvardigtArbete } from './34-likvardigt-arbete.js';
 import { ritaLoneoversyn } from './36-loneoversyn.js';
-import { renderStructure, renderStrukturUtkast } from './37-struktur.js';
+import { ritaStruktur, ritaStrukturUtkast } from './37-struktur.js';
 import { synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAldersstruktur, ritaAlderOchLon } from './40-alder-karriar.js';
-import { laVymodell, lsBasVymodell, renderLikaArbeteTopp, renderLonestrukturNycklar, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { generateBenchmark, renderStatistikLage } from './42-jamforelse.js';
-import { renderPersonerAttGranska } from './43-personer-att-granska.js';
-import { renderReferensOverblick } from './44-referensoverblick.js';
-import { renderAidBasLika, renderAidBasLikvardigt } from './45-aid-bas-tabeller.js';
+import { laVymodell, lsBasVymodell, ritaLikaArbeteTopp, ritaLonestrukturNycklar, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
+import { byggJamforelse, ritaStatistikLage } from './42-jamforelse.js';
+import { ritaPersonerAttGranska } from './43-personer-att-granska.js';
+import { ritaReferensOverblick } from './44-referensoverblick.js';
+import { ritaAidBasLika, ritaAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
-import { renderBlinderOaxacaCard, ritaRegressionskort, runOLSRegression } from './51-lika-arbete-regressionskort.js';
+import { ritaBlinderOaxacaKort, ritaRegressionskort, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { ritaLivscykel } from './52-livscykel.js';
-import { renderPrioritering } from './55-prioritering.js';
-import { renderHandlingsplanSeed } from './56-handlingsplan.js';
-import { renderExportBesked } from './59-exportbesked.js';
+import { ritaPrioritering } from './55-prioritering.js';
+import { ritaHandlingsplan } from './56-handlingsplan.js';
+import { ritaExportBesked } from './59-exportbesked.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
-import { renderInfoTab } from './65-om-verktyget.js';
-import { renderRapportunderlag } from './67-rapportunderlag.js';
+import { ritaOmVerktyget } from './65-om-verktyget.js';
+import { ritaRapportunderlag } from './67-rapportunderlag.js';
 import { ritaGapUppdelning } from './68-var-uppstar-gapet.js';
-import { renderExplorer } from './70-utforska.js';
-import { renderArsjamforelse } from './73-arsbokslut.js';
+import { ritaUtforska } from './70-utforska.js';
+import { ritaArsjamforelse } from './73-arsbokslut.js';
 import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
 import { ritaLonepolitik } from './75-lonepolitik.js';
-import { renderKvalitetssakring } from './85-robusthet-fardigcheck.js';
+import { ritaKvalitetssakring } from './85-robusthet-fardigcheck.js';
 import { sidindexBygg } from './89-sidindex.js';
 
 /** Visar Filer och kvalitet, rullar fram filkortet `kortId`, ger dess filväljare fokus, markerar kortet en stund och läser upp `text`. */
@@ -48,7 +48,7 @@ export function _visaFilkortet(kortId, inputId, text) {
     kort.classList.add('visas-nu');
     setTimeout(() => kort.classList.remove('visas-nu'), 2000);
     document.getElementById(inputId)?.focus?.({ preventScroll: true });
-    announceToScreenReader(text);
+    meddelaSkarmlasare(text);
 }
 /** En låst flik har klickats: visa lönefilskortet i Filer och kvalitet. */
 export function visaLonefilskortet(flikNamn) {
@@ -91,7 +91,7 @@ function synkaAlderFlik() {
 // sedan förra gången döljs (aria-busy, style.css), så att inget inaktuellt tal syns. Block som tar lång tid och inte
 // syns överst (_ritaTungtBlock) ritas efteråt, vart och ett i en egen uppgift, med en platshållare. Ett nytt flikbyte
 // under väntan går före: bara den sist valda fliken ritas.
-// Allt annat ritar som förut, synkront: renderTabContent anropad direkt (testerna, exportgrinden, exporterna och
+// Allt annat ritar som förut, synkront: ritaFlik anropad direkt (testerna, exportgrinden, exporterna och
 // medExportLage, omritningen efter ändrad tröskel) och ett klick från koden (el.click()), som inte är användarens
 // eget. Inget resultat sparas mellan uppgifterna (ADR-17): ett block räknas i sin egen uppgift ur det som gäller då,
 // och ritar ingenting om underlaget, tröskeln, förhandsvisningen, ett val eller fliken har ändrats sedan fliken ritades.
@@ -108,7 +108,7 @@ export function klickaFlik(nav, { uppskjut = false, efter = null } = {}) {
     try { /** @type {HTMLElement} */ (nav).click(); } finally { _nastaFlikbyte = null; }
 }
 let _flikVal = 0;                   // ökar vid varje flikbyte: en väntande ritning av en tidigare vald flik ritar inget
-const _flikRunda = new Map();       // flik → numret på flikens senaste ritning (renderTabContent, yttersta anropet)
+const _flikRunda = new Map();       // flik → numret på flikens senaste ritning (ritaFlik, yttersta anropet)
 /** @type {string|null} */
 let _uppskjutNasta = null;          // fliken vars nästa ritning kommer från ett uppskjutet flikbyte
 /** @type {string|null} */
@@ -124,22 +124,22 @@ const FLIK_RAKNAS_TEXT = 'Räknar fram fliken …';
 const BLOCK_RAKNAS_TEXT = 'Räknar …';
 
 /**
- * Ritar fliken efter ett byte: utan `uppskjut` direkt, som renderTabContent; med `uppskjut` när sidan har målats.
+ * Ritar fliken efter ett byte: utan `uppskjut` direkt, som ritaFlik; med `uppskjut` när sidan har målats.
  * @param {string} target
  * @param {{uppskjut?: boolean, efter?: (() => void)|null}} [val]
  */
 function flikbyte(target, { uppskjut = false, efter = null } = {}) {
-    const val = ++_flikVal, flik = tabMal(target);
+    const val = ++_flikVal, flik = flikMal(target);
     document.querySelectorAll('.view-panel[aria-busy]').forEach(p => _flikRaknas(/** @type {HTMLElement} */ (p), false));
-    if (!uppskjut) { renderTabContent(target); if (efter) efter(); return; }
+    if (!uppskjut) { ritaFlik(target); if (efter) efter(); return; }
     // En färdigritad flik som ingenting har ändrat visas som den är (ADR-81).
     if (_visasSomRitad(flik)) { _visaRitad(flik); if (efter) efter(); return; }
-    const paneler = /** @type {HTMLElement[]} */ ((PANEL_GROUPS[flik] || [flik]).map(p => document.getElementById('view-' + p)).filter(Boolean));
+    const paneler = /** @type {HTMLElement[]} */ ((PANELGRUPPER[flik] || [flik]).map(p => document.getElementById('view-' + p)).filter(Boolean));
     paneler.forEach(p => _flikRaknas(p, true));
     _efterMalning(() => {
         if (val !== _flikVal) return;   // ett senare flikbyte går före
         _uppskjutNasta = flik;
-        try { renderTabContent(target); }
+        try { ritaFlik(target); }
         catch (e) { rapporteraFel(`flikbytet (${flik})`, e); }
         finally { _uppskjutNasta = null; paneler.forEach(p => _flikRaknas(p, false)); }
         if (!efter) return;
@@ -176,7 +176,7 @@ function _sammaFangst(f) {
 }
 export function _aktivFlik() {
     const a = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-    return a ? tabMal(a) : null;
+    return a ? flikMal(a) : null;
 }
 /**
  * Ett block i fliken som tar lång tid och inte syns överst. Ritas fliken från ett uppskjutet flikbyte får blocket en
@@ -186,7 +186,7 @@ export function _aktivFlik() {
  * @param {() => void} fn ritar blocket
  */
 export function _ritaTungtBlock(flik, hostIds, fn) {
-    const hosts = _ritasUppskjutet === flik && getData().length   // utan underlag finns inget att räkna
+    const hosts = _ritasUppskjutet === flik && hamtaData().length   // utan underlag finns inget att räkna
         ?/** @type {HTMLElement[]} */ (hostIds.map(id => document.getElementById(id)).filter(Boolean)) : [];
     if (!hosts.length) { fn(); return; }
     for (const h of hosts) {
@@ -218,7 +218,7 @@ function _slappBlock(b) {
 }
 function _ritaVantandeBlock(b) {
     const v = _vantandeBlock.get(b.flik);
-    // Fliken har ritats om sedan blocket köades: den nya ritningen äger behållarna (renderTabContent har släppt dem).
+    // Fliken har ritats om sedan blocket köades: den nya ritningen äger behållarna (ritaFlik har släppt dem).
     if (!v || v.runda !== b.runda || _flikRunda.get(b.flik) !== b.runda) return;
     // Användaren har gått vidare: fliken är inte färdigritad (exportgrinden ritar om den) och ritas på nytt när den öppnas.
     if (_aktivFlik() !== b.flik) { _vantandeBlock.delete(b.flik); _blockKo.filter(x => x.flik === b.flik).concat(b).forEach(_slappBlock); return; }
@@ -257,7 +257,7 @@ function _ritaVantandeBlock(b) {
 //    rensning eller bakgrundsberäkning som blivit klar;
 //  - fliken har inte ritats om sedan dess (dess generation i exportgrinden är densamma), och inga block väntar;
 //  - läget (skärm eller export, förhandsvisningen) och dagen är desamma.
-// Bara användarens flikbyte (det uppskjutna, ADR-80) visar en flik igen. renderTabContent anropad direkt, exportläget,
+// Bara användarens flikbyte (det uppskjutna, ADR-80) visar en flik igen. ritaFlik anropad direkt, exportläget,
 // exportgrinden och klick från koden ritar alltid. Exportgrinden ser fliken som förut: den räknas som aktuell bara när
 // den ritats i den generation som gäller.
 /** @type {Map<string, {v: number, g: number, lage: string}>} */
@@ -274,7 +274,7 @@ function _visasSomRitad(flik) {
 }
 /** Visar fliken som den är ritad och gör det som görs efter en ritning: navigeringen längst ned, sidindexet, markeringen i tabellerna. */
 function _visaRitad(flik) {
-    if (_aktivFlik() === flik) { renderFlowNav(flik); sidindexBygg(flik); }
+    if (_aktivFlik() === flik) { ritaNastaSteg(flik); sidindexBygg(flik); }
     _efterRitning(flik);
 }
 // Det som räknas som en ändring: varje click, change, input, keydown, drop, paste och pointerup i sidan (också i
@@ -307,7 +307,7 @@ function _efterRitning(flik) {
 // ---- Tabs ----
 // Sammanslagna flikar: en nav-knapp kan visa/rendera flera view-paneler.
 // Panelerna ligger redan i rätt DOM-ordning (skevhet före matrix, kon före livscykel).
-export const PANEL_GROUPS = {
+export const PANELGRUPPER = {
     matrix:      ['lika-yrken'],                       // Lika arbete: yrkesgrupperna, personer att granska, AID × BAS
     struktur:    ['struktur', 'skevhet', 'regression'], // Lönestruktur: fördelning, BAS-skevhet, vad som blir kvar (regression/Oaxaca)
     kon:         ['kon', 'demografi', 'livscykel'],  // Ålder & karriär: kurvor per kön, demografi, gap över karriären
@@ -315,9 +315,9 @@ export const PANEL_GROUPS = {
     dokumentera: ['kvalitet', 'dokumentera']         // Exportera: färdigcheck + robusthet + export
 };
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
-const TAB_ALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur', spara: 'arbetet' };
-export function tabMal(namn) { return TAB_ALIAS[namn] || namn; }
-export function unlockTabs() {
+const FLIKALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur', spara: 'arbetet' };
+export function flikMal(namn) { return FLIKALIAS[namn] || namn; }
+export function lasUppFlikar() {
     ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -333,14 +333,14 @@ export function unlockTabs() {
 }
 
 // Enda källan för "rendera innehållet i flik X". Anropas både av nav-klick och
-// av refreshCurrentTab() så att de två aldrig glider isär. Datakrävande flikar
-// gatas på getData().length; info-fliken renderar sin egen tomstatus.
+// av uppdateraAktivFlik() så att de två aldrig glider isär. Datakrävande flikar
+// gatas på hamtaData().length; info-fliken renderar sin egen tomstatus.
 // Sammanslagna flikar renderar bägge sina paneler (matrix→skevhet+regression,
 // kon→kurvor+livscykel).
 // Länkade vyer (11-markering.js): när en flik har ritats om framhävs dess tabellrader för de markerade grupperna.
 // Ett uppskjutet flikbyte (flikbyte ovan) ritar här som alla andra; bara flikens tunga block väntar (_ritaTungtBlock).
-export function renderTabContent(target) {
-    const flik = tabMal(target), yttre = !_ritasNu.has(flik);
+export function ritaFlik(target) {
+    const flik = flikMal(target), yttre = !_ritasNu.has(flik);
     _ritasNu.add(flik);
     // Varje yttersta ritning är en ny runda: block som väntar från en tidigare ritning av fliken ritar inget.
     const runda = yttre ? (_flikRunda.get(flik) || 0) + 1 : (_flikRunda.get(flik) || 0);
@@ -348,7 +348,7 @@ export function renderTabContent(target) {
     const uppskjut = yttre && _uppskjutNasta === flik, forra = _ritasUppskjutet;
     if (uppskjut) { _uppskjutNasta = null; _ritasUppskjutet = flik; }
     try {
-        const ut = _renderTabContent(target);
+        const ut = _ritaFlik(target);
         // Exportgrinden (23-exportgrind.js): fliken är ritad med det som gäller nu, eller inte färdigritad när block väntar.
         // Visningsminnet (ADR-81): en färdigritad flik kan visas igen så länge ingenting ändras.
         if (uppskjut && _vantandeBlock.get(flik)?.runda === runda) { _ritadVid.delete(flik); _visadSom.delete(flik); }
@@ -365,7 +365,7 @@ export function renderTabContent(target) {
 // konfigurationsfil) säger en rad överst vad som saknas, i stället för tomma rader.
 const KRAVER_UNDERLAG = ['kon', 'matrix', 'prioritering', 'struktur', 'loneoversyn', 'utforska', 'benchmark', 'rapporttext'];
 function _ritaIngetUnderlag(target, tomt) {
-    const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
+    const vy = document.getElementById('view-' + ((PANELGRUPPER[target] || [target])[0]));
     if (!vy) return;
     let rad = vy.querySelector(':scope > .inget-underlag');
     if (!tomt || !KRAVER_UNDERLAG.includes(target)) { rad?.remove(); return; }
@@ -378,7 +378,7 @@ function _ritaIngetUnderlag(target, tomt) {
 }
 /** Ålder & karriär med en lönefil utan ålder (ADR-64), t.ex. via en direktlänk: en rad överst säger varför fliken är tom. */
 function _ritaUtanAlder(target, utan) {
-    const vy = document.getElementById('view-' + ((PANEL_GROUPS[target] || [target])[0]));
+    const vy = document.getElementById('view-' + ((PANELGRUPPER[target] || [target])[0]));
     if (!vy) return;
     let rad = vy.querySelector(':scope > .utan-alder');
     if (!utan) { rad?.remove(); return; }
@@ -389,56 +389,56 @@ function _ritaUtanAlder(target, utan) {
     rad.textContent = 'Lönefilen saknar ålder: Ålder & karriär kräver ålder i lönefilen. Analysen i de andra flikarna körs utan åldersjustering.';
     vy.insertBefore(rad, vy.firstChild);
 }
-function _renderTabContent(target) {
-    target = tabMal(target);
-    const d = getData();
+function _ritaFlik(target) {
+    target = flikMal(target);
+    const d = hamtaData();
     _ritaIngetUnderlag(target, !d.length);
     if (target === "kon") _ritaUtanAlder(target, d.length > 0 && !harAlder());
     if (target === "kon" && d.length) {
         const s = document.getElementById("bas-select-kon"); if (s) ritaAlderOchLon(/** @type {HTMLInputElement} */ (s).value); ritaLivscykel();
         const s2 = document.getElementById("bas-select-demo"); if (s2) ritaAldersstruktur(/** @type {HTMLInputElement} */ (s2).value);
     }
-    else if (target === "benchmark"    && d.length) { renderReferensOverblick(); ritaLonepolitik(); renderStatistikLage(); generateBenchmark(); }
+    else if (target === "benchmark"    && d.length) { ritaReferensOverblick(); ritaLonepolitik(); ritaStatistikLage(); byggJamforelse(); }
     else if (target === "matrix"       && d.length) {
-        const reg = runOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
-        ritaLikaArbete(laVymodell(), { reg }); renderPersonerAttGranska(); renderAidBasLika(); renderLikaArbeteTopp({ reg });
+        const reg = korOLSRegression();   // en gång i det här varvet, skickas vidare (ADR-17)
+        ritaLikaArbete(laVymodell(), { reg }); ritaPersonerAttGranska(); ritaAidBasLika(); ritaLikaArbeteTopp({ reg });
     }
-    else if (target === "prioritering" && d.length) renderPrioritering();
+    else if (target === "prioritering" && d.length) ritaPrioritering();
     else if (target === "struktur"     && d.length) {
-        renderStructure(); ritaLoneskillnadPerBas(lsBasVymodell());
+        ritaStruktur(); ritaLoneskillnadPerBas(lsBasVymodell());
         // Vad blir kvar av löneskillnaden (hopfällt från början): regressionen och kvantilregressionen ritas sist.
-        _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => renderBlinderOaxacaCard(ritaRegressionskort()));
-        ritaGapUppdelning(); renderLonestrukturNycklar();
+        _ritaTungtBlock(target, ['forklaringsmodell-panel', 'regression-card', 'blinder-oaxaca-card'], () => ritaBlinderOaxacaKort(ritaRegressionskort()));
+        ritaGapUppdelning(); ritaLonestrukturNycklar();
     }
     else if (target === "loneoversyn"  && d.length) ritaLoneoversyn();
-    else if (target === "likvardighet" && (d.length || state.statistik.length)) { ritaLikvardigtArbete(); renderAidBasLikvardigt(); }
-    else if (target === "utforska"     && d.length) { ritaLoneoversikt(); renderExplorer(); utAllaDiagramVidRitning(); }
+    else if (target === "likvardighet" && (d.length || state.statistik.length)) { ritaLikvardigtArbete(); ritaAidBasLikvardigt(); }
+    else if (target === "utforska"     && d.length) { ritaLoneoversikt(); ritaUtforska(); utAllaDiagramVidRitning(); }
     // Allt i de tre dokumentationsflikarna lämnar verktyget och ritas i exportläget (ADR-51).
     // Rapportunderlaget (hopfällt från början) och förhandsbeskedet ritas efter flikens övre del (_ritaTungtBlock), också de i exportläget.
-    else if (target === "rapporttext") medExportLage(() => { renderStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(renderRapportunderlag)); });
+    else if (target === "rapporttext") medExportLage(() => { ritaStrukturUtkast(); _ritaTungtBlock(target, ['rapportunderlag-innehall'], () => medExportLage(ritaRapportunderlag)); });
     else if (target === "dokumentera") medExportLage(() => {
-        if (d.length) renderKvalitetssakring();
-        _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => renderExportBesked()));
+        if (d.length) ritaKvalitetssakring();
+        _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => ritaExportBesked()));
     });
-    else if (target === "arbetet")     medExportLage(() => { if (typeof renderArsjamforelse === 'function') renderArsjamforelse(); });
-    else if (target === "dashboard" && d.length) renderOversiktDelar();
-    else if (target === "filer"     && d.length) renderFilerDelar();
-    else if (target === "info")  renderInfoTab();
-    else if (target === "handlingsplan") renderHandlingsplanSeed();
+    else if (target === "arbetet")     medExportLage(() => { if (typeof ritaArsjamforelse === 'function') ritaArsjamforelse(); });
+    else if (target === "dashboard" && d.length) ritaOversiktDelar();
+    else if (target === "filer"     && d.length) ritaFilerDelar();
+    else if (target === "info")  ritaOmVerktyget();
+    else if (target === "handlingsplan") ritaHandlingsplan();
     else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
     // Förhandskontrollen står i Filer och kvalitet också medan en fil väntar på Läs in, innan något är inläst.
-    if (target === "filer") renderForhandskontroll();
+    if (target === "filer") ritaForhandskontroll();
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
     // kopiera ett diagram därifrån) ska den synliga flikens rader inte flyttas.
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-    if (aktiv && tabMal(aktiv) !== target) return;
-    renderFlowNav(target);
+    if (aktiv && flikMal(aktiv) !== target) return;
+    ritaNastaSteg(target);
     sidindexBygg(target);   // 89-sidindex.js: flikens avsnitt som en lista som följer med
 }
 
 // UX: "Nästa steg"-överlämning längst ner i analysflikarna så processkänslan
 // (processkartans steg) följer med in i flikarna, inte bara på Översikt.
-const FLOW_NEXT = {
+const NASTA_STEG = {
     bestammelser: { tab: 'benchmark',     label: 'Löneläget' },
     benchmark:    { tab: 'matrix',        label: 'Lika arbete' },
     matrix:       { tab: 'likvardighet',  label: 'Likvärdigt arbete' },
@@ -451,18 +451,18 @@ const FLOW_NEXT = {
     rapporttext:  { tab: 'dokumentera',   label: 'Exportera' }
 };
 // Fördjupningen är valfri: ett sådant steg som är låst eller dolt hoppas över (Löneläget utan referens, allt utan underlag).
-const _FLOW_VALFRIA = ['benchmark', 'kon'];
-function _flowNasta(target) {
-    let next = FLOW_NEXT[target];
-    while (next && _FLOW_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${next.tab}"]`))?.disabled) next = FLOW_NEXT[next.tab];
+const _NASTA_STEG_VALFRIA = ['benchmark', 'kon'];
+function _nastaSteg(target) {
+    let next = NASTA_STEG[target];
+    while (next && _NASTA_STEG_VALFRIA.includes(next.tab) && /** @type {HTMLInputElement|null} */ (document.querySelector(`.nav-item[data-tab="${next.tab}"]`))?.disabled) next = NASTA_STEG[next.tab];
     return next;
 }
-function renderFlowNav(target) {
+function ritaNastaSteg(target) {
     document.querySelectorAll('.flow-next-bar').forEach(el => el.remove());
-    const next = _flowNasta(target);
+    const next = _nastaSteg(target);
     // bestammelser (§ 8) är statisk och alltid tillgänglig; övriga kräver data
-    if (!next || (target !== 'bestammelser' && target !== 'handlingsplan' && !getData().length)) return;
-    const view = document.getElementById('view-' + (PANEL_GROUPS[target] || [target]).at(-1));
+    if (!next || (target !== 'bestammelser' && target !== 'handlingsplan' && !hamtaData().length)) return;
+    const view = document.getElementById('view-' + (PANELGRUPPER[target] || [target]).at(-1));
     if (!view) return;
     const bar = document.createElement('div');
     bar.className = 'flow-next-bar';
@@ -471,15 +471,15 @@ function renderFlowNav(target) {
     view.appendChild(bar);
 }
 
-export function refreshCurrentTab() {
+export function uppdateraAktivFlik() {
     const active = document.querySelector('.nav-item.active');
     if (!active) return;
     const target = active.getAttribute('data-tab');
     ritaNyckeltal();
-    populateSelects();
+    fyllValjare();
     ritaKravstatus();
-    renderUnderlagetsKvalitet();
-    renderTabContent(target);
+    ritaUnderlagetsKvalitet();
+    ritaFlik(target);
 }
 
 /** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
@@ -542,7 +542,7 @@ export function uppstartNavigering() {
             const target = btn.getAttribute("data-tab");
             document.querySelectorAll(".view-panel").forEach(v => /** @type {HTMLElement} */ (v).style.display = "none");
             // Visa alla paneler i flikens grupp (sammanslagna flikar), annars panelen själv.
-            (PANEL_GROUPS[target] || [target]).forEach(p => {
+            (PANELGRUPPER[target] || [target]).forEach(p => {
                 const el = document.getElementById(`view-${p}`);
                 if (el) el.style.display = "block";
             });
@@ -583,7 +583,7 @@ export function uppstartNavigering() {
     document.addEventListener('click', e => {
         const btn = /** @type {HTMLElement} */ (e.target).closest('[data-flow-tab]');
         if (!btn) return;
-        const nav = document.querySelector(`.nav-item[data-tab="${tabMal(btn.getAttribute('data-flow-tab'))}"]`);
+        const nav = document.querySelector(`.nav-item[data-tab="${flikMal(btn.getAttribute('data-flow-tab'))}"]`);
         if (!nav) return;
         const last = /** @type {HTMLInputElement} */ (nav).disabled;
         klickaFlik(nav, { uppskjut: e.isTrusted });
@@ -602,7 +602,7 @@ export function uppstartNavigering() {
             oppnaHopfallda(ankare);
             if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
         };
-        if (!(target && typeof navigateTo === 'function' && navigateTo(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
+        if (!(target && typeof navigeraTill === 'function' && navigeraTill(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
     });
     document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!menyOppen()));
     document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));

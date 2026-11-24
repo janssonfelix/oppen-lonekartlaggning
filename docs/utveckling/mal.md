@@ -62,7 +62,7 @@ datastrukturering kan verktyget leverera värde över flera år utan att uppdate
 | Rapporttext | Auto-rapportutkastet i klarspråk och rapportunderlaget att klistra in i egen mall (ADR-20) |
 | Exportera | Färdigcheck, robusthetspanel, rapportens innehåll och all export: **Word-utkastet är rapporten, Excel-filen underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt** (ADR-40), med förhandsbesked; därtill JPA-protokoll (art. 10) och handlingsplansunderlag |
 | Spara och jämför år | Konfigurationen, ögonblicksbilden, jämförelse med förra året (ADR-54) och självdiagnostiken |
-| Gränssnittets form | 16 flikar i grupperna 1 · Underlag, 2 · Kartläggning, 3 · Åtgärder, 4 · Rapport, Arbetet och Hjälp (`PANEL_GROUPS` i `31-navigering.js`); Översiktens processkarta med de åtta lagstegen; flikmallen (ADR-41), sidindexet, sök i sidhuvudet (länkade vyer), panelen Inställningar och två lägen, vägledande och kompakt |
+| Gränssnittets form | 16 flikar i grupperna 1 · Underlag, 2 · Kartläggning, 3 · Åtgärder, 4 · Rapport, Arbetet och Hjälp (`PANELGRUPPER` i `31-navigering.js`); Översiktens processkarta med de åtta lagstegen; flikmallen (ADR-41), sidindexet, sök i sidhuvudet (länkade vyer), panelen Inställningar och två lägen, vägledande och kompakt |
 | Diagram och export | Diagramkärnan (ADR-39), formen och färgen efter uppgiften (ADR-42); exportmeny på varje diagram: PNG, SVG och diagramdata |
 | Underlagets kvalitet | Fem kriterier med OK/Varning/Kritisk; svagaste kriteriet avgör (ADR-19) |
 | Transparens | Bevis-popup på varje fynd: visar *uträkningen*, inte tabelldata |

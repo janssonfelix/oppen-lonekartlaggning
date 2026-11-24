@@ -113,7 +113,7 @@ const långsamma = [];
 for (const flik of FLIKAR) {
     const t = await page.evaluate(async namn => {
         const start = performance.now();
-        try { renderTabContent(namn); } catch (e) { return { fel: String(e && e.message || e) }; }
+        try { ritaFlik(namn); } catch (e) { return { fel: String(e && e.message || e) }; }
         await new Promise(r => requestAnimationFrame(() => r()));
         return { ms: Math.round(performance.now() - start) };
     }, flik);
@@ -129,14 +129,14 @@ const tUtforska2d = await page.evaluate(() => {
     document.getElementById('explore-rad').value = 'aidbas';
     document.getElementById('explore-kolumn').value = 'lonespann';
     const t0 = performance.now();
-    renderExplorer();
+    ritaUtforska();
     return Math.round(performance.now() - t0);
 });
 console.log(kolumn('Utforska, yrke inom BAS × lönespann', tUtforska2d));
 
 // Omritningen av alla flikar efter ändrad minsta gruppstorlek (den stegvisa vägen från gränssnittet), och de
 // tyngsta delarna i Ålder & karriär var för sig — där ligger flest diagram.
-/* global sattKTroskel, getData, ritaKonMultiplar, individLitenFor, ritaAldersstruktur -- funktionerna nedan körs i sidan, där de finns */
+/* global sattKTroskel, hamtaData, ritaKonMultiplar, individLitenFor, ritaAldersstruktur -- funktionerna nedan körs i sidan, där de finns */
 const tTroskel = await page.evaluate(async () => {
     if (typeof sattKTroskel !== 'function') return null;
     const t0 = performance.now();
@@ -149,7 +149,7 @@ const tTroskel = await page.evaluate(async () => {
 });
 if (tTroskel != null) console.log(kolumn('Ändrad tröskel: det som syns ritas om', tTroskel));
 const tKonDelar = await page.evaluate(() => {
-    const ut = {}, d = typeof getData === 'function' ? getData() : [];
+    const ut = {}, d = typeof hamtaData === 'function' ? hamtaData() : [];
     const mat = (namn, fn) => { if (typeof fn !== 'function') return; const t0 = performance.now(); try { fn(); } catch (_e) { /* mäts ändå */ } ut[namn] = Math.round(performance.now() - t0); };
     mat('  små multiplar', typeof ritaKonMultiplar === 'function' ? () => ritaKonMultiplar() : null);
     mat('  individLitenFor', typeof individLitenFor === 'function' ? () => { const f = individLitenFor(d); d.filter(f); } : null);
@@ -160,7 +160,7 @@ for (const [namn, ms] of Object.entries(tKonDelar)) console.log(kolumn(namn, ms)
 
 // Navigeringen: sidindexet per flik (fliken ritas först, sedan mäts bara byggandet av listan), sökfältets första och
 // andra sökning, och dossiererna (öppna tills de är ritade, sedan stängs de).
-/* global sidindexBygg, openBasdossier, closeBasdossier, basdossierKandidater, openGruppdossier, closeGruppdossier, rapportUrval, RM_AVSNITT -- körs i sidan */
+/* global sidindexBygg, oppnaBasdossier, stangBasdossier, basdossierKandidater, oppnaGruppdossier, stangGruppdossier, rapportUrval, RM_AVSNITT -- körs i sidan */
 const NAV_GRANS_MS = 2000;
 const navLangsam = [];
 const navRad = (t, ms) => { if (ms > NAV_GRANS_MS) navLangsam.push(t); console.log(kolumn(t, ms) + (ms > NAV_GRANS_MS ? `  ← över ${NAV_GRANS_MS} ms` : '')); };
@@ -194,15 +194,15 @@ const tDossier = await page.evaluate(async () => {
     const ritad = () => new Promise(r => requestAnimationFrame(() => r()));
     const bas = (basdossierKandidater()[0] || {}).bas;
     let t0 = performance.now();
-    openBasdossier(bas, null);
+    oppnaBasdossier(bas, null);
     await ritad();
     const basMs = Math.round(performance.now() - t0);
-    closeBasdossier();
+    stangBasdossier();
     t0 = performance.now();
-    openGruppdossier(null);
+    oppnaGruppdossier(null);
     await ritad();
     const gruppMs = Math.round(performance.now() - t0);
-    closeGruppdossier();
+    stangGruppdossier();
     return { bas: basMs, grupp: gruppMs };
 });
 navRad('Öppna BAS-dossiern', tDossier.bas);
@@ -214,10 +214,10 @@ const tRapport = await page.evaluate(() => {
     const fore = rapportUrval();
     sattRapportUrval({ ordning: [...RM_AVSNITT], med: RM_AVSNITT.filter(id => id !== 'dossierer') });
     const utan = mat(() => rapportModell());
-    const beskedUtan = mat(() => renderExportBesked());
+    const beskedUtan = mat(() => ritaExportBesked());
     sattRapportUrval({ ordning: [...RM_AVSNITT], med: [...RM_AVSNITT] });
     const med = mat(() => rapportModell());
-    const besked = mat(() => renderExportBesked());
+    const besked = mat(() => ritaExportBesked());
     sattRapportUrval({ ordning: fore.ordning, med: fore.med });
     return { utan, med, beskedUtan, besked };
 });

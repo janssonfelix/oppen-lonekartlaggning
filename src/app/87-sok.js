@@ -3,19 +3,19 @@
 // ---- Sök och hoppa ----
 import { svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
-import { announceToScreenReader, esc } from './01-html-och-tillganglighet.js';
-import { openGlossary } from './04-ordlista.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
-import { isKMasked } from './06-k-troskel.js';
+import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
+import { oppnaOrdlista } from './04-ordlista.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
+import { kMaskerad } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { diagramMarkering, sattDiagramMarkering } from './11-markering.js';
-import { getData } from './12-tillstand.js';
+import { hamtaData } from './12-tillstand.js';
 import { visningNy } from './23-exportgrind.js';
-import { openDataResidency } from './28-vad-lagras-inaktivitet.js';
+import { oppnaVadLagras } from './28-vad-lagras-inaktivitet.js';
 import { visaAlderskravet, visaLonefilskortet, visaReferenskortet } from './31-navigering.js';
 import { utVisaUnderflikFor } from './74-alla-diagram.js';
-import { gruppdossierCandidates } from './80-gruppdossier.js';
-import { basdossierKandidater, openBasdossier } from './81-basdossier.js';
+import { gruppdossierKandidater } from './80-gruppdossier.js';
+import { basdossierKandidater, oppnaBasdossier } from './81-basdossier.js';
 import { oppnaInstallningar } from './86-installningar.js';
 import { SOK_FUNKTIONER } from './86-sok-register.js';
 import { sidindexGaTill } from './89-sidindex.js';
@@ -44,13 +44,13 @@ function _sokNorm(s) {
 
 /** Allt som går att söka fram: BAS-intervall och yrkesgrupper som når tröskeln. */
 function sokKandidater() {
-    const d = getData();
+    const d = hamtaData();
     if (!d.length) return [];
     const perBas = new Map();
     for (const r of d) if (r.bas != null && r.bas !== '') perBas.set(r.bas, (perBas.get(r.bas) || 0) + 1);
-    const ut = [...perBas].filter(([, n]) => !isKMasked(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv'))
+    const ut = [...perBas].filter(([, n]) => !kMaskerad(n)).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'sv'))
         .map(([bas, n]) => ({ nyckel: `bas:${bas}`, namn: `BAS ${bas}`, under: stor(T.niva.en), n, sok: _sokNorm(`bas ${bas} bas-intervall ${bas}`) }));
-    for (const g of gruppdossierCandidates()) {
+    for (const g of gruppdossierKandidater()) {
         ut.push({ nyckel: `grupp:${g.key}`, namn: String(g.yrke || g.aid), under: `${stor(T.enhet.en)} · BAS ${g.bas}`, n: g.rows.length, sok: _sokNorm(`${g.yrke} ${g.aid} bas ${g.bas}`) });
     }
     return ut;
@@ -77,7 +77,7 @@ function sokFunktionsTraffar(text) {
         .sort((a, b) => a.rang - b.rang || a.i - b.i).slice(0, SOK_MAX_FUNKTIONER).map(k => k.p);
 }
 
-function _sokHarData() { try { return getData().length > 0; } catch (_e) { return false; } }
+function _sokHarData() { try { return hamtaData().length > 0; } catch (_e) { return false; } }
 /** Avsnittet är dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen. Ett avsnitt
  *  som fliken bygger när den ritas och som inte finns i sidan räknas som dolt, så att valet säger vad som saknas. */
 function _sokMalDolt(p) {
@@ -161,7 +161,7 @@ function sokValj(i, { uppskjut = false } = {}) {
     // Sökfältet är navigering (31-navigering.js): bara ett val som gör något annat än att byta flik ändrar det som visas (ADR-81).
     if (t.typ !== 'funktion' || t.dialog) visningNy();
     if (t.typ === 'funktion') { _sokValjFunktion(t, { uppskjut }); return; }
-    if (t.typ === 'basdossier') { _sokStang(); openBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
+    if (t.typ === 'basdossier') { _sokStang(); oppnaBasdossier(t.bas, document.getElementById('sok-grupp')); return; }
     const nu = diagramMarkering();
     if (!(nu && nu.length === 1 && nu[0] === t.nyckel)) sattDiagramMarkering(t.nyckel);
     _sokStang();
@@ -177,9 +177,9 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
     if (kraver === 'referens') { visaReferenskortet(p.namn); return; }
     if (kraver === 'alder') { visaAlderskravet(p.namn); return; }
     if (p.dialog === 'installningar') oppnaInstallningar({ fokus: p.falt || null });
-    else if (p.dialog === 'ordlista') openGlossary();
-    else if (p.dialog === 'lagras') openDataResidency();
-    else if (p.dialog === 'basdossier') openBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
+    else if (p.dialog === 'ordlista') oppnaOrdlista();
+    else if (p.dialog === 'lagras') oppnaVadLagras();
+    else if (p.dialog === 'basdossier') oppnaBasdossier((basdossierKandidater()[0] || {}).bas || null, document.getElementById('sok-grupp'));
     else if (p.dialog === 'symboler') /** @type {HTMLElement|null} */ (document.getElementById('btn-open-symbols'))?.click();
     else {
         // Användarens val visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
@@ -190,9 +190,9 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
             if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
             window.scrollTo(0, 0);
             /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
-            announceToScreenReader(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+            meddelaSkarmlasare(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
         };
-        if (!navigateTo(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
+        if (!navigeraTill(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
     }
 }
 /** @type {boolean|null} */

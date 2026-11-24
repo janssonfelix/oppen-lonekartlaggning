@@ -13,20 +13,20 @@ import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { buildBarCell, buildBaseAudit, flerKolumner, setAudit, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
-import { isKMasked, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
+import { byggStapelcell, byggGrundurval, flerKolumner, sattMetodik, tillampaFlerKolumner } from './05-tabeller-och-lankar.js';
+import { kMaskerad, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
 import { COST_DEFAULTS, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
-import { gapStatus, gapStatusNiva, PALETTE, URVAL } from './10-diagramtema.js';
+import { gapStatus, gapStatusNiva, PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { getData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
-import { computeGroupMDE, styrkaGallande } from './13-oversikt.js';
-import { _appendMethodSheet, _showExportSensitivityToast, tableToCleanBook } from './22-exporthjalpare.js';
+import { hamtaData, policyFor, referensKortnamn, referensNamn, state } from './12-tillstand.js';
+import { raknaGruppMDE, styrkaGallande } from './13-oversikt.js';
+import { _laggTillMetodblad, _visaExportvarning, tabellTillBok } from './22-exporthjalpare.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
-import { _evidenceForPrioItem, _openEvidenceModal } from './27-berakningsbevis.js';
-import { renderTabContent } from './31-navigering.js';
+import { _bevisForPrioPost, _oppnaBevisruta } from './27-berakningsbevis.js';
+import { ritaFlik } from './31-navigering.js';
 import { _laNyckel } from './41-lika-arbete.js';
 
 // ---- Prioriteringsanalys ----
@@ -40,10 +40,10 @@ import { _laNyckel } from './41-lika-arbete.js';
  * @param {string} reference - Referens-mätsticka: 'stallningstagande'|'statistik'
  * @returns {Array<Object>} Lista av prio-items, sorterade på score desc.
  */
-export function computePrioritization(reference) {
+export function raknaPrioritering(reference) {
     // Modellen (grupperingen, indexet, k-regeln) ligger i src/lib/prioritering.js (ADR-8).
     // Här översätts bara state till referensFor och parametrar.
-    return prioritera(getData(), {
+    return prioritera(hamtaData(), {
         referensFor: (aid, bas) => {
             if (reference === 'stallningstagande') {
                 const pol = policyFor(aid, bas);
@@ -72,7 +72,7 @@ export function computePrioritization(reference) {
  * @param {Object} item - Prio-item med _rows.
  * @returns {Array<{type:'warn'|'info'|'ok'|'flag', text:string}>}
  */
-export function generateMotivationSuggestions(item) {
+export function byggMotiveringsforslag(item) {
     return motiveringsgrunder(item, {
         kInstalld: kInstalld(), kTroskel: kTroskel(),
         mdePct: styrkaGallande()?.mdePct, naraGrans: state.prioConfig.bevakaThreshold
@@ -145,17 +145,17 @@ function _prioPoText() {
         : `inkl. PO-påslag ${svPoPct(po)} (ändras under Inställningar)`;
 }
 
-export function _selectedPrioReference() {
+export function _valdPrioReferens() {
     const r = document.querySelector('input[name="prio-ref"]:checked');
     return r ? /** @type {HTMLInputElement} */ (r).value : 'stallningstagande';
 }
 
-function _selectedPrioLabelMode() {
+function _valtPrioEtikettlage() {
     const el = document.getElementById('prio-label-mode');
     return el ? /** @type {HTMLInputElement} */ (el).value : 'topp10';
 }
 
-function _makePrioLabel(item, rank, mode) {
+function _byggPrioEtikett(item, rank, mode) {
     if (mode === 'ingen') return '';
     const isTop10 = rank <= 10;
     const isAkut  = item.status === 'akut';
@@ -171,7 +171,7 @@ function _makePrioLabel(item, rank, mode) {
 }
 
 // Avrunda kostnader till "snygga" referensvärden (10k, 25k, 50k, 100k, 250k, 500k, 1M, ...)
-function _niceCostLevels(maxCost) {
+function _jamnaKostnadsnivaer(maxCost) {
     if (!maxCost || maxCost <= 0) return [10000, 50000, 100000];
     const log10 = Math.floor(Math.log10(maxCost));
     const base  = Math.pow(10, log10);
@@ -180,7 +180,7 @@ function _niceCostLevels(maxCost) {
     return [Math.round(cap * 0.1), Math.round(cap * 0.3), Math.round(cap)];
 }
 // Kostnaden i kort form, i nyckeltalen, rutan Total och staplarnas etiketter: "386 Mkr", "4,2 Mkr", "950 tkr".
-function _fmtCost(kr) {
+function _formateraKostnad(kr) {
     if (kr >= 1e6) return svTal(kr/1e6, kr >= 1e7 ? 0 : 1) + '\u00a0Mkr';
     if (kr >= 1e3) return svTal(kr/1e3, 0) + '\u00a0tkr';
     return svKr(kr);
@@ -190,8 +190,8 @@ function _fmtCost(kr) {
 // Median och Referens göms också: utan dem ryms grundvyn vid 1280 px med menyn utfälld, och Avvikelse % säger hur de
 // förhåller sig. Båda står i beviset (förstoringsglaset), liksom Kv/Mä, avvikelsen i kronor, kostnaden per person och bristyrket.
 const PRIO_DOLDA_KOLUMNER = ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'];
-export function renderPrioritering() {
-    const ref = _selectedPrioReference();
+export function ritaPrioritering() {
+    const ref = _valdPrioReferens();
     const empty   = document.getElementById('prio-empty');
     const content = document.getElementById('prio-content');
     if (!empty || !content) return;
@@ -212,7 +212,7 @@ export function renderPrioritering() {
     empty.style.display = 'none';
     content.style.display = 'block';
 
-    const items = computePrioritization(ref);
+    const items = raknaPrioritering(ref);
     if (!items.length) {
         content.innerHTML = `<p class="farg-dampad pad-32 ta-mitt">${termStor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} har matchande referens i den valda jämförelsen. Kontrollera att <code>${ref === 'stallningstagande' ? T.niva.bfl : T.kod.bfl}</code> i lönefilen matchar jämförelsefilen.</p>`;
         return;
@@ -222,7 +222,7 @@ export function renderPrioritering() {
     // Nyckeltalen räknar statusarna, som tabellens kolumn Status (samma gränser ur inställningen).
     const { akut: akutCount, atgard: underCount, analysera: overCount, totalKostnad: totalCost } = prioNyckeltal(items);
     const fmt = new Intl.NumberFormat('sv-SE');
-    const fmtMkr = _fmtCost(totalCost);
+    const fmtMkr = _formateraKostnad(totalCost);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-akut')).textContent  = String(akutCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-under')).textContent = String(underCount);
     /** @type {HTMLElement} */ (document.getElementById('prio-stat-over')).textContent  = String(overCount);
@@ -261,7 +261,7 @@ export function renderPrioritering() {
           not.textContent = _prioKostnadNot(kurva); }
         if (paretoSummary) {
             paretoSummary.innerHTML = `
-                <div class="farg-primary fw-700 marg-b-4">Total: ${_fmtCost(totalParetoCost)}</div>
+                <div class="farg-primary fw-700 marg-b-4">Total: ${_formateraKostnad(totalParetoCost)}</div>
                 <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPoPct(state.costSettings.poPct)}</div>
                 <div>Topp <strong>${n50}</strong> grupper = 50%</div>
                 <div>Topp <strong>${n80}</strong> grupper = 80%</div>
@@ -276,22 +276,22 @@ export function renderPrioritering() {
 
     // Bubbeldiagram: avvikelse mot referensen (x) mot gruppens storlek (y, log), med kostnaden som bubblans yta.
     const refLabel = ref === 'stallningstagande' ? referensNamn() : 'jämförelsestatistiken';
-    ritaFigur('chart-prio-matrix', _prioMatrisFigur(items, _selectedPrioLabelMode(), refLabel, state.prioConfig), { hojd: 520 });
+    ritaFigur('chart-prio-matrix', _prioMatrisFigur(items, _valtPrioEtikettlage(), refLabel, state.prioConfig), { hojd: 520 });
 
     // Uppdatera storlekslegenden under grafen
     const sizeMax = Math.max(...items.map(i => Math.max(i.annualGapTotal, i.annualOverTotal, 1)));
-    const levels = _niceCostLevels(sizeMax);
+    const levels = _jamnaKostnadsnivaer(sizeMax);
     const s1 = document.getElementById('prio-legend-s1');
     const s2 = document.getElementById('prio-legend-s2');
     const s3 = document.getElementById('prio-legend-s3');
-    if (s1) s1.textContent = _fmtCost(levels[0]);
-    if (s2) s2.textContent = _fmtCost(levels[1]);
-    if (s3) s3.textContent = _fmtCost(levels[2]) + '+';
+    if (s1) s1.textContent = _formateraKostnad(levels[0]);
+    if (s2) s2.textContent = _formateraKostnad(levels[1]);
+    if (s3) s3.textContent = _formateraKostnad(levels[2]) + '+';
 
     // Audit
-    const baseP = buildBaseAudit();
+    const baseP = byggGrundurval();
     // Räkna grupper utan referens
-    const dForCount = getData();
+    const dForCount = hamtaData();
     let smallCount = 0, noRefCount = 0;
     const groupCheck = {};
     dForCount.forEach(r => {
@@ -301,7 +301,7 @@ export function renderPrioritering() {
         groupCheck[k].n++;
     });
     Object.values(groupCheck).forEach(g => {
-        if (isKMasked(g.n)) { smallCount++; return; }
+        if (kMaskerad(g.n)) { smallCount++; return; }
         if (ref === 'stallningstagande') {
             const pol = policyFor(g.aid, g.bas);
             if (!pol || !pol.med) noRefCount++;
@@ -310,7 +310,7 @@ export function renderPrioritering() {
             if (!sr) noRefCount++;
         }
     });
-    setAudit('prioritering', {
+    sattMetodik('prioritering', {
         title: 'Prioriteringsanalys',
         ...baseP,
         usedInAnalysis: items.length,
@@ -347,8 +347,8 @@ export function renderPrioritering() {
         const tr = document.createElement('tr');
         const statusInfo = PRIO_STATUS_INFO[i.status];
         const sgnKr  = i.diffKr  >= 0 ? '+' : '';
-        const gapBar = buildBarCell(i.gapPct, 15);
-        const diffBar = buildBarCell(i.diffPct, 25);
+        const gapBar = byggStapelcell(i.gapPct, 15);
+        const diffBar = byggStapelcell(i.diffPct, 25);
         const costTxt = i.annualGapTotal > 0 ? svKr(i.annualGapTotal) : '–';
         const costSort = i.annualGapTotal > 0 ? i.annualGapTotal : 0;
         const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : '–';
@@ -356,7 +356,7 @@ export function renderPrioritering() {
         const bristBadge    = i.isBrist    ? ' <span title="Bristyrke" class="hjalpmarke hjalp-markor">' + ikon('statusVarning', 14) + '</span>' : '';
         // #2 Power-varning per grupp: visa ⚠️ när gruppens MDE > observerad avvikelse
         // eller när någon köns-cell har < 5 personer.
-        const groupMDE = computeGroupMDE(i.kvN, i.maN);
+        const groupMDE = raknaGruppMDE(i.kvN, i.maN);
         const lowPower = groupMDE && (groupMDE.tooSmall || groupMDE.mdePct > Math.abs(i.diffPct));
         const powerBadge = lowPower
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`
@@ -413,7 +413,7 @@ export function renderPrioritering() {
             const tr = btn.closest('tr');
             const item = tr?._prioItem;
             if (!item) return;
-            _openEvidenceModal(_evidenceForPrioItem(item, ref));
+            _oppnaBevisruta(_bevisForPrioPost(item, ref));
         });
     });
 
@@ -432,7 +432,7 @@ export function renderPrioritering() {
                 btn.textContent = 'Motiveringsförslag';
                 return;
             }
-            const suggestions = generateMotivationSuggestions(item);
+            const suggestions = byggMotiveringsforslag(item);
             const newTr = document.createElement('tr');
             newTr.classList.add('suggest-row');
             const colCount = tr.children.length;
@@ -454,13 +454,13 @@ export function renderPrioritering() {
             const aid = /** @type {HTMLElement} */ (e.target).dataset.aid || '';
             if (/** @type {HTMLInputElement} */ (e.target).checked) state.bristAids.add(aid);
             else state.bristAids.delete(aid);
-            renderPrioritering();
+            ritaPrioritering();
         });
     });
 }
 
 // Lyssnare för konfigurerbara tröskelvärden
-function _readPrioConfigInputs() {
+function _lasPrioInstallningar() {
     const get = (id, def) => {
         const el = document.getElementById(id);
         if (!el) return def;
@@ -480,7 +480,7 @@ function _readPrioConfigInputs() {
 }
 
 // Viktnings-inputs
-function _readPrioWeightsInputs() {
+function _lasPrioVikter() {
     const get = (id, def) => {
         const el = document.getElementById(id);
         if (!el) return def;
@@ -498,7 +498,7 @@ function _readPrioWeightsInputs() {
 }
 
 // Kostnadsberäknings-inputs (månader + PO-påslag)
-export function _readCostSettings() {
+export function _lasKostnadsinstallningar() {
     const monthsEl = document.getElementById('prio-cost-months');
     const poEl     = document.getElementById('prio-po-pct');
     const months   = monthsEl ? parseInt(/** @type {HTMLInputElement} */ (monthsEl).value, 10) || COST_DEFAULTS.months : COST_DEFAULTS.months;
@@ -518,11 +518,11 @@ export function _readCostSettings() {
 // Fälten står under Inställningar i sidhuvudet (gäller alla flikar): Prioritering räknas om direkt, och den flik som
 // visas ritas om så att Löneöversyn, gruppdossiern och handlingsplanen följer samma period och påslag.
 function _kostnadAndrad() {
-    _readCostSettings();
+    _lasKostnadsinstallningar();
     if (!state.data.length) return;
-    renderPrioritering();
+    ritaPrioritering();
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-    if (aktiv && aktiv !== 'prioritering' && typeof renderTabContent === 'function') renderTabContent(aktiv);
+    if (aktiv && aktiv !== 'prioritering' && typeof ritaFlik === 'function') ritaFlik(aktiv);
 }
 
 // ---- Print-to-PDF: komplett rapport ----
@@ -550,12 +550,12 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     const inom = n => n80 < 0 || n <= n80;
     const lager = (serie, farg, opacitet, valj) => ({ marke: 'stapel', riktning: 'liggande', lage: 'overlagrad', serie, farg, opacitet,
         data: visade.map((i, n) => ({ i, n })).filter(({ n }) => valj(n)).map(({ i, n }) => ({ y: y[n], x: i.annualGapTotal, yrke: i.yrke, bas: i.bas, sektor: sektorsnamn(i.aid), n: i.n, kum: cumPct[n],
-            etikett: `${_fmtCost(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`, markering: markeringFor(i.bas, i.yrke) })),
+            etikett: `${_formateraKostnad(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`, markering: markeringFor(i.bas, i.yrke) })),
         tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${talformat(d.x, 'kr')}/år`], ['Kumulativ andel', talformat(d.kum, 'pct')]] });
     return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
         hojd: Math.max(170, 90 + visade.length * 28),
-        lager: [lager('Når tillsammans 80 % av kostnaden', PALETTE.serie[0], 1, inom), lager('Övriga', PALETTE.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
+        lager: [lager('Når tillsammans 80 % av kostnaden', PALETT.serie[0], 1, inom), lager('Övriga', PALETT.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
 
 // Zonernas rubriker i matrisen, med versaler: de två yttre zonerna säger gränsen ur inställningen («Mer än 5 % under»,
@@ -586,9 +586,9 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     // Namnen undviker bubblorna och varandra (etikettLage 'undvik'); ett namn som står en bit från sin bubbla får en
     // hänvisningslinje.
     const lager = Object.keys(PRIO_STATUS_INFO).map(status => ({
-        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETTE.prio[status], opacitet: 0.72, kant: FARG.vit, tips, etikettLage: 'undvik',
+        marke: 'punkt', serie: PRIO_STATUS_INFO[status].label, farg: PALETT.prio[status], opacitet: 0.72, kant: FARG.vit, tips, etikettLage: 'undvik',
         data: items.filter(i => i.status === status && isFinite(i.diffPct) && i.n > 0).map(i => {
-            const etikett = _makePrioLabel(i, i.rank, etikettlage);
+            const etikett = _byggPrioEtikett(i, i.rank, etikettlage);
             return { x: +i.diffPct.toFixed(2), y: i.n, storlek: Math.max(4, 16 * Math.sqrt(Math.max(kostnad(i), storst * 0.02) / storst)),
                      ...(etikett ? { etikett } : {}), rang: i.rank, yrke: i.yrke, bas: i.bas, sektor: sektorsnamn(i.aid), n: i.n, kvN: i.kvN, maN: i.maN, median: i.median,
                      refKalla: i.refSource, refMedian: i.refMedian, diffKr: i.diffKr, gapPct: i.gapPct, atgard: i.annualGapTotal, over: i.annualOverTotal,
@@ -608,8 +608,8 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
         // Logskala bara när grupperna skiljer sig med mer än en tiopotens; annars är en vanlig axel lättare att läsa.
         y: stor ? { skala: 'log', titel: 'Antal personer i gruppen (log skala)' } : { skala: 'linjar', titel: 'Antal personer i gruppen' },
         // Zonerna: gränserna ur inställningen ytterst, statusarnas namn i mitten (_prioZonNamn).
-        referens: [zon(xMin, tAt, PALETTE.prio.akut, _prioZonNamn('atgard', cfg), FARG.granska), zon(tAt, tBe, PALETTE.semantic.varning, _prioZonNamn('bevaka', cfg), FARG.varning),
-                   zon(tBe, tAn, PALETTE.semantic.ok, _prioZonNamn('ok', cfg), FARG.ok), zon(tAn, xMax, PALETTE.prio.analysera, _prioZonNamn('analysera', cfg), FARG.infoMork)].filter(z => z.x1 > z.x0),
+        referens: [zon(xMin, tAt, PALETT.prio.akut, _prioZonNamn('atgard', cfg), FARG.granska), zon(tAt, tBe, PALETT.semantic.varning, _prioZonNamn('bevaka', cfg), FARG.varning),
+                   zon(tBe, tAn, PALETT.semantic.ok, _prioZonNamn('ok', cfg), FARG.ok), zon(tAn, xMax, PALETT.prio.analysera, _prioZonNamn('analysera', cfg), FARG.infoMork)].filter(z => z.x1 > z.x0),
         lager };
 }
 
@@ -642,18 +642,18 @@ export function uppstartPrioritering() {
     });
     // Lyssnare för referens-toggle och etikett-toggle
     document.querySelectorAll('input[name="prio-ref"]').forEach(el => {
-        el.addEventListener('change', renderPrioritering);
+        el.addEventListener('change', ritaPrioritering);
     });
-    document.getElementById('prio-label-mode')?.addEventListener('change', renderPrioritering);
-    document.getElementById('prio-filter-quickwin')?.addEventListener('change', renderPrioritering);
-    document.getElementById('prio-filter-brist')?.addEventListener('change', renderPrioritering);
+    document.getElementById('prio-label-mode')?.addEventListener('change', ritaPrioritering);
+    document.getElementById('prio-filter-quickwin')?.addEventListener('change', ritaPrioritering);
+    document.getElementById('prio-filter-brist')?.addEventListener('change', ritaPrioritering);
     // F: Stegvis konsekvensanalys — visar effekt om vi gör topp N
     document.getElementById('btn-prio-consequence')?.addEventListener('click', () => {
         const panel = document.getElementById('prio-consequence-panel');
         if (!panel) return;
         if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-        const ref = _selectedPrioReference();
-        const items = computePrioritization(ref);
+        const ref = _valdPrioReferens();
+        const items = raknaPrioritering(ref);
         if (!items.length) { panel.innerHTML = '<p class="farg-dampad pad-12">Ingen data att analysera.</p>'; panel.style.display='block'; return; }
         const totalCost = items.reduce((s, i) => s + i.annualGapTotal, 0);
         const checkpoints = [3, 5, 10, 15, 20, 30, items.length];
@@ -665,7 +665,7 @@ export function uppstartPrioritering() {
             if (checkpoints.includes(idx + 1)) {
                 const pctOfTotal = totalCost > 0 ? svTal(cumCost / totalCost * 100, 0) : '0';
                 const personerLyfta = items.slice(0, idx + 1).reduce((s, x) => s + x.n, 0);
-                rows += `<tr><td>Topp <strong>${idx + 1}</strong></td><td class="t-hoger">${fmt.format(personerLyfta)} pers</td><td class="t-hoger">${_fmtCost(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
+                rows += `<tr><td>Topp <strong>${idx + 1}</strong></td><td class="t-hoger">${fmt.format(personerLyfta)} pers</td><td class="t-hoger">${_formateraKostnad(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
             }
         });
         panel.innerHTML = `
@@ -684,8 +684,8 @@ export function uppstartPrioritering() {
     });
     ['prio-cfg-atgard','prio-cfg-akutN','prio-cfg-bevaka','prio-cfg-analysera'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', () => {
-            _readPrioConfigInputs();
-            renderPrioritering();
+            _lasPrioInstallningar();
+            ritaPrioritering();
         });
     });
     document.getElementById('prio-cfg-reset')?.addEventListener('click', () => {
@@ -693,21 +693,21 @@ export function uppstartPrioritering() {
         /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-akutN')).value     = String(PRIO_CONFIG_DEFAULTS.akutMinN);
         /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-bevaka')).value    = String(PRIO_CONFIG_DEFAULTS.bevakaThreshold);
         /** @type {HTMLInputElement} */ (document.getElementById('prio-cfg-analysera')).value = String(PRIO_CONFIG_DEFAULTS.analyseraThreshold);
-        _readPrioConfigInputs();
-        renderPrioritering();
+        _lasPrioInstallningar();
+        ritaPrioritering();
     });
     ['prio-w-avvikelse','prio-w-volym','prio-w-jamstalldhet'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', () => {
-            _readPrioWeightsInputs();
-            renderPrioritering();
+            _lasPrioVikter();
+            ritaPrioritering();
         });
     });
     document.getElementById('prio-w-reset')?.addEventListener('click', () => {
         /** @type {HTMLInputElement} */ (document.getElementById('prio-w-avvikelse')).value    = String(PRIO_WEIGHTS_DEFAULTS.avvikelse);
         /** @type {HTMLInputElement} */ (document.getElementById('prio-w-volym')).value        = String(PRIO_WEIGHTS_DEFAULTS.volym);
         /** @type {HTMLInputElement} */ (document.getElementById('prio-w-jamstalldhet')).value = String(PRIO_WEIGHTS_DEFAULTS.jamstalldhet);
-        _readPrioWeightsInputs();
-        renderPrioritering();
+        _lasPrioVikter();
+        ritaPrioritering();
     });
     ['prio-cost-months','prio-po-pct'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', _kostnadAndrad);
@@ -719,12 +719,12 @@ export function uppstartPrioritering() {
         _kostnadAndrad();
     });
     // Initiera period-sammanfattningen vid sidladdning
-    setTimeout(() => { _readCostSettings(); visningNy(); }, 0);   // kostnadsinställningarna läses: ingen ritad flik visas igen (ADR-81)
+    setTimeout(() => { _lasKostnadsinstallningar(); visningNy(); }, 0);   // kostnadsinställningarna läses: ingen ritad flik visas igen (ADR-81)
     document.getElementById('btn-export-prio-excel')?.addEventListener('click', () => medExportLage(() => {
         const table = document.getElementById('prio-table');
         if (table) {
-            const wb = tableToCleanBook('prio-table', 'Prioritering');
-            if (wb) { _appendMethodSheet(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _showExportSensitivityToast(); }
+            const wb = tabellTillBok('prio-table', 'Prioritering');
+            if (wb) { _laggTillMetodblad(wb); XLSX.writeFile(wb, 'prioriteringslista.xlsx'); _visaExportvarning(); }
         }
     }));
 }

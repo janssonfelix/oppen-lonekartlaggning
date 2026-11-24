@@ -21,26 +21,26 @@ import { direktivMarkering } from '../lib/status.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { basdossierIntervall, vymodellBasdossier } from '../lib/vymodell-basdossier.js';
-import { _focusTraps, announceToScreenReader, esc, releaseFocus, trapFocus } from './01-html-och-tillganglighet.js';
+import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _konUtelamnatNot, _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
-import { kMaskNote } from './06-maskeringsnoter.js';
+import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT } from './10-diagramtema.js';
-import { getBasIntervals, getData, policyFor, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
-import { _direktivInline, laLikaGrupper } from './41-lika-arbete.js';
+import { _direktivITalcell, laLikaGrupper } from './41-lika-arbete.js';
 import { harAlder } from './50-regressionsmodeller.js';
 import { _hpBedomningar, _hpBedomningHtml } from './56-handlingsplan.js';
 import { _abForandringText } from './73-arsbokslut.js';
-import { closeGruppdossier, gruppNamn, openGruppdossier } from './80-gruppdossier.js';
+import { stangGruppdossier, gruppNamn, oppnaGruppdossier } from './80-gruppdossier.js';
 
 /** BAS-intervallen som får öppnas i dossiern: minst k personer, i intervallens ordning (basdossierIntervall i src/lib/vymodell-basdossier.js). */
 export function basdossierKandidater() {
-    return basdossierIntervall(getData(), getBasIntervals(), kTroskel());
+    return basdossierIntervall(hamtaData(), hamtaBasIntervall(), kTroskel());
 }
 
 const BD_STATUS_TEXT = { granska: 'Värt att granska', folj: 'Följ upp', balanserat: 'Balanserat', ejbedomd: 'Går ej att bedöma', liten: 'Könsuppdelningen är för liten' };
@@ -51,12 +51,12 @@ const BD_STATUS_KLASS = { granska: ['farg-granska', 'sok'], folj: ['farg-varning
  * intervallet saknas eller har färre än k personer. Här hämtas bara tillståndets delar.
  * @param {string} bas
  */
-export function buildBasdossier(bas) {
-    const k = kTroskel(), d = getData();
+export function byggBasdossier(bas) {
+    const k = kTroskel(), d = hamtaData();
     let likvardighet = null;
     try { likvardighet = likvardighetResultat(); }
     catch (e) { rapporteraFel('BAS-dossier: likvärdigt arbete', e); }
-    return vymodellBasdossier(d, bas, { k, basIntervall: getBasIntervals(), golv: statGolv(), kInstalld: kInstalld(),
+    return vymodellBasdossier(d, bas, { k, basIntervall: hamtaBasIntervall(), golv: statGolv(), kInstalld: kInstalld(),
         referens: policyFor(null, bas), referensNamn: referensKortnamn(), lika: laLikaGrupper(d, k), likvardighet,
         harAlder: harAlder(), forraBokslut: state.forraArsbokslut });
 }
@@ -66,17 +66,17 @@ export function buildBasdossier(bas) {
 /** @type {string|null} */
 let _bdVald = null;
 /** Öppnar dossiern för ett BAS-intervall (eller det första), med fokus tillbaka till öppnaren när den stängs. */
-export function openBasdossier(bas, opener) {
+export function oppnaBasdossier(bas, opener) {
     const modal = document.getElementById('basdossier-modal');
     if (!modal) return;
     ritaBasdossier(bas);
     modal.style.display = 'flex';
-    if (typeof trapFocus === 'function') trapFocus(modal, opener || document.activeElement);
+    if (typeof fangaFokus === 'function') fangaFokus(modal, opener || document.activeElement);
 }
-export function closeBasdossier() {
+export function stangBasdossier() {
     const modal = document.getElementById('basdossier-modal');
     if (!modal || modal.style.display !== 'flex') return;
-    if (typeof releaseFocus === 'function') releaseFocus(modal);
+    if (typeof slappFokus === 'function') slappFokus(modal);
     modal.style.display = 'none';
 }
 
@@ -96,17 +96,17 @@ function ritaBasdossier(bas) {
     sel.value = kand.some(x => x.bas === onskat) ? onskat : kand[0].bas;
     _bdVald = sel.value;
     // Ett begärt intervall som inte (längre) når tröskeln öppnas inte i tysthet som ett annat: det sägs.
-    if (bas && bas !== sel.value) announceToScreenReader(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
-    const d = buildBasdossier(sel.value);
+    if (bas && bas !== sel.value) meddelaSkarmlasare(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
+    const d = byggBasdossier(sel.value);
     body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
     // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
     // med samma öppnare och utan att flytta fokus. Fokus står kvar där det var (väljaren), i stället för att hoppa
     // till stängknappen.
     const modal = document.getElementById('basdossier-modal');
     if (modal && modal.style.display === 'flex') {
-        const trap = _focusTraps.get(modal), opener = trap ? trap.opener : null;
-        if (trap) { modal.removeEventListener('keydown', trap.handler); _focusTraps.delete(modal); }
-        trapFocus(modal, opener, { flyttaFokus: false });
+        const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
+        if (trap) { modal.removeEventListener('keydown', trap.handler); _fokusfallor.delete(modal); }
+        fangaFokus(modal, opener, { flyttaFokus: false });
     }
 }
 
@@ -140,12 +140,12 @@ function _bdRitaInnehall(d) {
     const yrkesrad = y => `<tr><td>${esc(y.aid)}</td><td>${esc(String(y.yrke).replace(/^\d+\s*/, '') || y.yrke)}</td>`
         + `<td class="t-tal">${y.tot} (${y.nKv}/${y.nMa})</td>`
         + (y.samlad ? `<td colspan="3" class="t-mitt">Gruppens median ${_bdKr(y.medTot)}</td>`
-            : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivInline(y.kvotPct)}</td>`)
+            : `<td class="t-tal">${_bdKr(y.medKv)}</td><td class="t-tal">${_bdKr(y.medMa)}</td><td class="t-tal">${svPct(y.kvotPct, 1)}${_direktivITalcell(y.kvotPct)}</td>`)
         + `<td>${status(y)}${y.ocksaI.length ? `<br><span class="gd-note">${esc(_bdHelaYrketNot(y))}</span>` : ''}</td><td class="t-mitt">${y.dossierKey ? `<button type="button" class="btn-table-tool" data-bd-gruppdossier="${esc(y.dossierKey)}" aria-label="Öppna gruppdossiern för ${esc(y.yrke)}">Gruppdossier</button>` : ''}</td></tr>`;
     const yrken = (d.yrken.length
         ? `<div class="table-container"><table class="data-table st-088 bd-tabell" id="basdossier-yrken"><thead><tr><th scope="col">AID</th><th scope="col">${stor(T.namn.en)}</th><th scope="col" class="t-hoger">Antal (kv/mä)</th><th scope="col" class="t-hoger">Median kvinnor</th><th scope="col" class="t-hoger">Median män</th><th scope="col" class="t-hoger">Kvinnors median i % av mäns</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Gruppdossier</span></th></tr></thead><tbody>${d.yrken.map(yrkesrad).join('')}</tbody></table></div>`
         : missing(`${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`))
-        + (d.yrkenUtelamnade.length ? kMaskNote(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : '')
+        + (d.yrkenUtelamnade.length ? kMaskNot(d.yrkenUtelamnade, `${T.enhet.en}|${T.enhet.fl}`) : '')
         + (d.ejJamforbara.length ? `<p class="gd-note">Inte jämförbara (ett kön har färre än två personer): ${esc(d.ejJamforbara.join(', '))}.</p>` : '');
 
     // 3. Likvärdigt arbete
@@ -204,11 +204,11 @@ function _bdForraText(f) {
 
 /**
  * Textens stycken för ett BAS-intervall, i rapportens ordning: en rubrik och raderna under den per punkt. En enda
- * textbyggare för dossierns textkopia (basdossierAsText), rapportutkastet i Rapporttext (basintervallUtkastText),
+ * textbyggare för dossierns textkopia (basdossierSomText), rapportutkastet i Rapporttext (basintervallUtkastText),
  * avsnittet Lönekartläggning per BAS-intervall i Word och PDF (58-rapportmodell.js) och rapportunderlagets block
  * per intervall (67-rapportunderlag.js), så att de inte kan säga olika saker. Modellen ska vara byggd i exportläget:
  * grupper under k står då bara med namn bland de utelämnade.
- * @param {any} d modellen ur buildBasdossier
+ * @param {any} d modellen ur byggBasdossier
  * @param {{forraBaraMedBokslut?: boolean}} [val] forraBaraMedBokslut: punkten Förra året bara när ett bokslut är
  *   inläst (rapporten); dossiern säger annars hur man får ett
  * @returns {{rubrik: string, rader: string[]}[]}
@@ -272,7 +272,7 @@ function _bdTextRader(d, val) {
  * Textversionen i rapportens form: rubriken "BAS-intervall X" och ett stycke per punkt. Byggs ur en modell som
  * byggts i exportläget (basdossierText), så grupper under k står bara med namn bland de utelämnade.
  */
-function basdossierAsText(d) {
+function basdossierSomText(d) {
     const L = _bdTextRader(d);
     if (_kSanktNot()) L.push('', _kSanktNot());
     return L.join('\n');
@@ -289,7 +289,7 @@ export function basintervallUtkastText(d) {
 /**
  * Yrkesgruppstabellen i rapportens avsnitt och rapportunderlagets block: bara yrken där båda könen når k (de övriga
  * står i texten, med gruppens median eller bland de utelämnade). Talen som tal; den som ritar formaterar.
- * @param {any} d modellen ur buildBasdossier, byggd i exportläget
+ * @param {any} d modellen ur byggBasdossier, byggd i exportläget
  */
 export function basdossierYrkesrader(d) {
     return d.yrken.filter(y => !y.samlad).map(y => ({ aid: y.aid, yrke: String(y.yrke).replace(/^\d+\s*/, '') || String(y.yrke),
@@ -299,13 +299,13 @@ export const BD_YRKESKOLUMNER = ['AID', stor(T.namn.en), 'Kvinnor / män', 'Medi
 
 /** BAS-intervallen med lönerader som inte når k: de nämns i rapporten och utkastet, utan mått (som i Lönestruktur). */
 export function basdossierUtelamnade() {
-    const d = getData(), kand = new Set(basdossierKandidater().map(x => x.bas));
-    return getBasIntervals().filter(b => !kand.has(b) && d.some(r => r.bas === b && r.lon > 0));
+    const d = hamtaData(), kand = new Set(basdossierKandidater().map(x => x.bas));
+    return hamtaBasIntervall().filter(b => !kand.has(b) && d.some(r => r.bas === b && r.lon > 0));
 }
 
 /** Texten för ett BAS-intervall, byggd i exportläget (ADR-51); null när intervallet inte når den inställda tröskeln. */
 function basdossierText(bas) {
-    return medExportLage(() => { const d = buildBasdossier(bas); return d ? basdossierAsText(d) : null; });
+    return medExportLage(() => { const d = byggBasdossier(bas); return d ? basdossierSomText(d) : null; });
 }
 
 /**
@@ -330,33 +330,33 @@ export function uppstartBasdossier() {
         const bas = btn.getAttribute('data-open-basdossier') || '';
         // Från gruppdossiern: den stängs först, så att fokus går tillbaka till det som öppnade den när BAS-dossiern stängs.
         const iGrupp = btn.closest('#dossier-modal');
-        if (iGrupp) { closeGruppdossier(); openBasdossier(bas); } else openBasdossier(bas, btn);
+        if (iGrupp) { stangGruppdossier(); oppnaBasdossier(bas); } else oppnaBasdossier(bas, btn);
     }, true);
     document.addEventListener('click', e => {
         const t = /** @type {HTMLElement} */ (e.target);
         if (!t.closest) return;
-        if (t.closest('[data-basdossier-close]')) { closeBasdossier(); return; }
+        if (t.closest('[data-basdossier-close]')) { stangBasdossier(); return; }
         const grupp = t.closest('[data-bd-gruppdossier]');
-        if (grupp) { closeBasdossier(); openGruppdossier(grupp.getAttribute('data-bd-gruppdossier')); return; }
+        if (grupp) { stangBasdossier(); oppnaGruppdossier(grupp.getAttribute('data-bd-gruppdossier')); return; }
         const alder = t.closest('[data-bd-alder]');
         if (alder) {
             const bas = alder.getAttribute('data-bd-alder') || '';
-            closeBasdossier();
+            stangBasdossier();
             const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('bas-select-kon'));
             if (sel && [...sel.options].some(o => o.value === bas)) sel.value = bas;
-            navigateTo('kon');
+            navigeraTill('kon');
             return;
         }
         if (t.closest('#btn-basdossier-copy')) {
             const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
             const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
-            if (!txt) { announceToScreenReader(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
-            const klart = () => announceToScreenReader('BAS-dossiern kopierad.');
+            if (!txt) { meddelaSkarmlasare(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
+            const klart = () => meddelaSkarmlasare('BAS-dossiern kopierad.');
             if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
             else klart();
         }
     });
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && document.getElementById('basdossier-modal')?.style.display === 'flex') closeBasdossier();
+        if (e.key === 'Escape' && document.getElementById('basdossier-modal')?.style.display === 'flex') stangBasdossier();
     });
 }

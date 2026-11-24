@@ -9,7 +9,7 @@ import { las, papa, vanta, csvFil, braRader } from './helpers/granssnitt-rigg.js
 // Ett delat fönster med demodatan där varje flik i menyn har klickats fram en gång (det dyra är att rita flikarna), för
 // testerna som söker igenom alla flikar. Vakten i delatFonster fäller det test som ändrar fönstret.
 const allaFlikar = delatFonster(async w => {
-    w.__loadDemoData();
+    w.__lasInDemodata();
     [...w.document.querySelectorAll('.nav-item[data-tab]')].forEach(b => { if (!b.disabled && !b.hidden) b.click(); });
     await new Promise(r => setTimeout(r, 0));
 });
@@ -33,11 +33,11 @@ describe('#1 röktest: boot', () => {
 
     it('vakten ser en ändrad tröskel, en öppen dialog och ett ändrat tillstånd, men inte en ritad flik', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const fore = JSON.stringify(tillstandsavtryck(w));
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(JSON.stringify(tillstandsavtryck(w))).toBe(fore);
-        w.eval('openGlossary()');
+        w.eval('oppnaOrdlista()');
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(utgangslage(w)).toEqual({ troskel: 25, dialoger: 1, flik: 'struktur' });
         const andrat = tillstandsavtryck(w), bas = JSON.parse(fore);
@@ -48,10 +48,10 @@ describe('#1 röktest: boot', () => {
 
     it('app.js bootar utan kast och exponerar nyckel-API', () => {
         expect(win.__bootErr).toBeUndefined();
-        expect(typeof win.__renderTabContent).toBe('function');
+        expect(typeof win.__ritaFlik).toBe('function');
         expect(typeof win.__state).toBe('object');
-        expect(typeof win.__loadDemoData).toBe('function');
-        expect(typeof win.__methodAppendixData).toBe('function');
+        expect(typeof win.__lasInDemodata).toBe('function');
+        expect(typeof win.__metodbilaga).toBe('function');
     });
 
     it('storage-tripwire är aktiv (kastar vid icke-tillåten skrivning)', () => {
@@ -59,7 +59,7 @@ describe('#1 röktest: boot', () => {
     });
 
     it('process-tracker renderas redan vid boot (utan data) med steg 1 ej klart', () => {
-        // Boot-koden i 61-regler-och-praxis.js kör renderProcessTracker() — kortet ska
+        // Boot-koden i 61-regler-och-praxis.js kör ritaKartlaggningensSteg() — kortet ska
         // finnas ÄVEN innan data laddats (demo laddas i ett senare describe-block).
         const host = win.document.getElementById('process-tracker');
         expect(host).toBeTruthy();
@@ -73,8 +73,8 @@ describe('#1 röktest: boot', () => {
 });
 
 describe('#1 röktest: demodata + full pipeline', () => {
-    it('loadDemoData kör hela pipelinen utan kast', () => {
-        expect(() => win.__loadDemoData()).not.toThrow();
+    it('lasInDemodata kör hela pipelinen utan kast', () => {
+        expect(() => win.__lasInDemodata()).not.toThrow();
         expect(win.__state.data.length).toBe(260);   // självdiagnostikens 200 + tre yrken i BAS C (kandidatpar)
         expect(win.__state.isDemo).toBe(true);
     });
@@ -86,7 +86,7 @@ describe('#1 röktest: demodata + full pipeline', () => {
 
 describe('process-tracker: statusar härleds ur inläst data', () => {
     it('steg 1 blir klart (✅) och likvärdighetsraden visar kandidatpar-antal efter demodata', () => {
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         const host = win.document.getElementById('process-tracker');
         const rows = host.querySelectorAll('.ptrack-row');
         expect(rows.length).toBe(9);
@@ -101,13 +101,13 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
     it('regler & praxis-raden speglar antal ifyllda bedömningar (0/6 → 1/6)', () => {
         // nollställ, rendera → 0/6
         for (let i = 1; i <= 6; i++) { const s = win.document.getElementById('bes8-status-' + i); if (s) s.value = ''; }
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         let bes8Row = [...win.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Regler & praxis/.test(r.textContent));
         expect(bes8Row.textContent).toContain('0/6');
 
         // fyll ett område → 1/6
         win.document.getElementById('bes8-status-1').value = 'Åtgärd krävs';
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         bes8Row = [...win.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => /Regler & praxis/.test(r.textContent));
         expect(bes8Row.textContent).toContain('1/6');
         expect(bes8Row.querySelector('.ptrack-status').dataset.status).toBe('delvis');   // delvis
@@ -115,7 +115,7 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
     });
 
     it('steg 6 (samverkan), 7 (rapporttext) och 8 (dokumentation) är manuella (➖)', () => {
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
         const samverkan = rows.find(r => /Samverkan/.test(r.textContent));
         const dok = rows.find(r => /Dokumentation/.test(r.textContent));
@@ -129,8 +129,8 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
 describe('#1 röktest: varje flik renderar utan kast', () => {
     const tabs = ['rapport', 'kon', 'demografi', 'benchmark', 'matrix',
         'prioritering', 'struktur', 'loneoversyn', 'likvardighet', 'utforska', 'benchmark', 'kvalitet', 'info'];
-    it.each(tabs)('renderTabContent("%s")', (t) => {
-        expect(() => win.__renderTabContent(t)).not.toThrow();
+    it.each(tabs)('ritaFlik("%s")', (t) => {
+        expect(() => win.__ritaFlik(t)).not.toThrow();
     });
 
     // CSP:n har style-src-attr 'none' (ADR-30): ett element får bara bära de stilar som skript sätter via CSSOM —
@@ -141,7 +141,7 @@ describe('#1 röktest: varje flik renderar utan kast', () => {
         const d = win.document;
         const fynd = [];
         for (const t of tabs) {
-            win.__renderTabContent(t);
+            win.__ritaFlik(t);
             for (const el of d.querySelectorAll('[style]')) {
                 if (el.closest('svg')) continue;
                 for (let i = 0; i < el.style.length; i++) {
@@ -160,7 +160,7 @@ describe('#1 röktest: varje flik renderar utan kast', () => {
         const tom = d.createElement('span').style;
         const somSatt = (egenskap, varde) => { tom[egenskap] = ''; tom[egenskap] = varde; return tom[egenskap] || 'saknas'; };
         for (const t of tabs) {
-            win.__renderTabContent(t);
+            win.__ritaFlik(t);
             for (const el of d.querySelectorAll('[data-stil-bredd]')) if (el.style.width !== somSatt('width', el.getAttribute('data-stil-bredd'))) saknas.push(`${t}: ${el.className}`);
             for (const el of d.querySelectorAll('[data-stil-vanster]')) if (el.style.left !== somSatt('left', el.getAttribute('data-stil-vanster'))) saknas.push(`${t}: ${el.className}`);
             for (const el of d.querySelectorAll('[data-stil-mvanster]')) if (el.style.marginLeft !== somSatt('marginLeft', el.getAttribute('data-stil-mvanster'))) saknas.push(`${t}: ${el.className}`);
@@ -171,7 +171,7 @@ describe('#1 röktest: varje flik renderar utan kast', () => {
 
 describe('process-trackern och § 3:10', () => {
     it('process-trackern har nio steg och steg 9 är manuellt (➖)', () => {
-        win.__renderProcessTracker();
+        win.__ritaKartlaggningensSteg();
         const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
         expect(rows.length).toBe(9);
         const step9 = rows[8];
@@ -180,8 +180,8 @@ describe('process-trackern och § 3:10', () => {
     });
 
     it('§ 3:10 och A/B-scenariojämförelsen ritas utan fel', () => {
-        win.__loadDemoData();
-        expect(() => win.__renderTabContent('likvardighet')).not.toThrow();
+        win.__lasInDemodata();
+        expect(() => win.__ritaFlik('likvardighet')).not.toThrow();
         expect(typeof win.__likvardighetspar).toBe('function');
         expect(typeof win.eval('_lvParFigur')).toBe('function');
     });
@@ -249,7 +249,7 @@ describe('demoläget märker även tabellernas CSV', () => {
     it('filnamnet får DEMO_ i demoläget, men bara en gång', () => {
         const w = createAppWindow();
         expect(w.__csvFilnamn('utforska')).toBe('utforska');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.__csvFilnamn('utforska')).toBe('DEMO_utforska');
         expect(w.__csvFilnamn('DEMO_Utforska_Median_2026-09-25')).toBe('DEMO_Utforska_Median_2026-09-25');
     });
@@ -279,7 +279,7 @@ describe('gränssnittet har inga paragrafhänvisningar utanför hjälptexten', (
 
 describe('menystruktur', () => {
     let w;
-    beforeAll(() => { w = createAppWindow(); w.__loadDemoData(); });
+    beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
     const flikar = () => [...w.document.querySelectorAll('.nav-item[data-tab]')].filter(b => !b.hidden).map(b => b.dataset.tab);
     const klicka = tab => w.document.querySelector(`.nav-item[data-tab="${tab}"]`).click();
     const synlig = id => w.document.getElementById(id).style.display === 'block';
@@ -290,9 +290,9 @@ describe('menystruktur', () => {
         expect(w.document.getElementById('lifecycle-chart')).not.toBeNull();
         expect(w.document.querySelector('#livscykel-content .livscykel-kohort-not').textContent).toMatch(/tvärsnitt.*inte hur en persons lön utvecklas/);
         expect(w.document.getElementById('kon-kohort-not').textContent).toMatch(/tvärsnitt/);
-        w.eval("renderInfoTab('metodik')");
+        w.eval("ritaOmVerktyget('metodik')");
         expect(w.document.getElementById('view-info').textContent).toMatch(/tvärsnitt.*kohorteffekter/);
-        expect(w.eval('_methodAppendixData()').find(r => r[0] === 'Ålder & karriär (tvärsnitt)')[1]).toMatch(/tvärsnitt.*kohorteffekter/);
+        expect(w.eval('_metodbilaga()').find(r => r[0] === 'Ålder & karriär (tvärsnitt)')[1]).toMatch(/tvärsnitt.*kohorteffekter/);
     });
     it('flikar med flera paneler visar alla sina paneler', () => {
         klicka('kon');
@@ -311,9 +311,9 @@ describe('menystruktur', () => {
         expect(oversikt.contains(w.document.getElementById('export-hub'))).toBe(false);
     });
     it('flikmålen rapport, demografi och kvalitet leds till sina flikar', () => {
-        w.eval("navigateTo('rapport')");     expect(synlig('view-rapport') && synlig('view-utforska')).toBe(true);
-        w.eval("navigateTo('demografi')");   expect(synlig('view-demografi')).toBe(true);
-        w.eval("navigateTo('kvalitet')");    expect(synlig('view-dokumentera')).toBe(true);
+        w.eval("navigeraTill('rapport')");     expect(synlig('view-rapport') && synlig('view-utforska')).toBe(true);
+        w.eval("navigeraTill('demografi')");   expect(synlig('view-demografi')).toBe(true);
+        w.eval("navigeraTill('kvalitet')");    expect(synlig('view-dokumentera')).toBe(true);
         const a = w.document.createElement('button'); a.setAttribute('data-goto-tab', 'kvalitet');
         w.document.body.appendChild(a); a.click(); a.remove();
         expect(synlig('view-dokumentera')).toBe(true);
@@ -323,10 +323,10 @@ describe('menystruktur', () => {
         const mal = [...w.document.querySelectorAll('[data-goto-tab],[data-go-to-tab],[data-flow-tab]')]
             .map(e => e.getAttribute('data-goto-tab') || e.getAttribute('data-go-to-tab') || e.getAttribute('data-flow-tab'));
         const finns = new Set(flikar().concat(['benchmark']));
-        mal.forEach(m => expect(finns.has(w.eval(`tabMal(${JSON.stringify(m)})`)), m).toBe(true));
+        mal.forEach(m => expect(finns.has(w.eval(`flikMal(${JSON.stringify(m)})`)), m).toBe(true));
     });
     it('processkartan har 9 steg under menyns faser: Samverkan under Åtgärder, Rapporttext först under Rapport', () => {
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         const host = w.document.getElementById('process-tracker');
         // Faserna och stegen i den ordning de står: varje fasrubrik följs av sina steg.
         const faser = {}; let fas = null;
@@ -350,7 +350,7 @@ describe('menystruktur', () => {
         expect(rows[6].querySelector('.ptrack-status').dataset.status).toBe('manuell');
     });
     it('"Gå till steget" för Samverkan öppnar Handlingsplan och går till kortet', () => {
-        w.__renderProcessTracker();
+        w.__ritaKartlaggningensSteg();
         const knapp = [...w.document.querySelectorAll('#process-tracker [data-goto-avsnitt]')][0];
         const kort = w.document.getElementById('hp-samverkan');
         let rullad = false; kort.scrollIntoView = () => { rullad = true; };
@@ -366,7 +366,7 @@ describe('menystruktur', () => {
         w.__state.statistik = [{ aid: '1', bas: 'A', median: 30000 }];
         w.eval('_visaJamforelseFlik(true)');
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').hidden).toBe(false);
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.document.querySelector('.nav-item[data-tab="benchmark"]').getAttribute('aria-disabled')).toBe('true');
     });
 });
@@ -391,7 +391,7 @@ describe('utfällt som standard', () => {
     });
     it('flikens avsnitt: det första är öppet, och ett hopfällt avsnitt är ändå ritat (exporterna läser tabellerna)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         // Per flik i den nya formen: det första avsnittet öppet, övriga hopfällda.
         // Lönestruktur har ett avsnitt utan flikens prefix först (Var uppstår löneskillnaden?, avsnitt-ov-gap): där läses fliken.
@@ -417,10 +417,10 @@ describe('utfällt som standard', () => {
 
 // Ålder är valfri i lönefilen (ADR-64): utan ålder är Ålder & karriär låst med ett eget skäl.
 describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
-    const utanAlder = w => { w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 })); w.eval('unlockTabs()'); };
+    const utanAlder = w => { w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 })); w.eval('lasUppFlikar()'); };
     it('fliken är låst med tipset, klicket leder till lönefilskortet med skälet, och funktionssöket säger detsamma', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const kon = w.document.getElementById('tab-kon');
         expect(kon.getAttribute('aria-disabled')).toBeNull();
         utanAlder(w);
@@ -441,11 +441,11 @@ describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
     });
     it('med ålder igen låses fliken upp och får sitt eget tips', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const med = w.__state.data;
         utanAlder(w);
         w.__state.data = med;
-        w.eval('unlockTabs()');
+        w.eval('lasUppFlikar()');
         const kon = w.document.getElementById('tab-kon');
         expect(kon.getAttribute('aria-disabled')).toBeNull();
         expect(kon.getAttribute('title')).toBe(kon.getAttribute('data-tip'));
@@ -456,11 +456,11 @@ describe('menyn låser Ålder & karriär utan ålder i lönefilen', () => {
 describe('interna fel syns i stället för att sväljas', () => {
     it('ett fel i en del av Att göra hoppar över delen, men rapporteras och visas', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const varningar = [];
         w.console.warn = (...a) => varningar.push(a.join(' '));
         w.eval("likvardighetResultat = () => { throw new Error('trasigt 203020 och 36725'); }");
-        const punkter = w.eval('buildActionChecklist()');
+        const punkter = w.eval('byggAtgardslista()');
         expect(punkter.length).toBeGreaterThan(0);                              // resten av listan finns kvar
         expect(w.__state._interntFel.map(f => f.plats)).toContain('Att göra: likvärdigt arbete');
         const banner = w.document.getElementById('internt-fel-banner');
@@ -469,15 +469,15 @@ describe('interna fel syns i stället för att sväljas', () => {
         expect(banner.textContent).toMatch(/ofullständigt/);
         expect(varningar.join('\n')).toMatch(/Att göra: likvärdigt arbete/);
         expect(varningar.join('\n')).not.toMatch(/\d/);                          // inga siffror (kan vara data) i konsolen
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(banner.hidden).toBe(true);
         expect(w.__state._interntFel).toEqual([]);
     });
     it('vid normal körning av demot med alla flikar uppstår inga interna fel', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         for (const t of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__renderTabContent(t);
+            'handlingsplan', 'dokumentera', 'kon', 'utforska', 'benchmark', 'info']) w.__ritaFlik(t);
         await new Promise(r => setTimeout(r, 300));
         expect(w.__state._interntFel || []).toEqual([]);
         expect(w.document.getElementById('internt-fel-banner').hidden).toBe(true);
@@ -488,7 +488,7 @@ describe('demot och testdatan har riktiga AID-koder', () => {
     it('varje AID i demot finns i etikettlistan', async () => {
         const { etikett } = await import('../src/lib/aid.js');
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const okanda = [...new Set(w.__state.data.map(r => r.aid))].filter(a => !etikett(a));
         expect(okanda).toEqual([]);
     });
@@ -510,7 +510,7 @@ describe('[S5] organisationsneutralt standardläge', () => {
     const utanReferens = () => {
         const w = createAppWindow();
         w.__state.data = rader();
-        w.eval('populateSelects(); unlockTabs(); ritaKravstatus();');
+        w.eval('fyllValjare(); lasUppFlikar(); ritaKravstatus();');
         return w;
     };
     it('ingen inbyggd referens och neutral profil', () => {
@@ -526,7 +526,7 @@ describe('[S5] organisationsneutralt standardläge', () => {
         const w = utanReferens();
         w.document.querySelector('.nav-item[data-tab="prioritering"]').click();
         expect(w.document.getElementById('view-prioritering').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
-        w.__renderTabContent('benchmark');
+        w.__ritaFlik('benchmark');
         expect(w.document.getElementById('avsnitt-jmf-stallningstagande').textContent).toMatch(/Läs in organisationens lönepolitiska ställningstagande/);
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/Kräver lönepolitiskt ställningstagande/);
     });
@@ -537,11 +537,11 @@ describe('[S5] organisationsneutralt standardläge', () => {
     });
     it('demoläget använder Exempelkommunen och försvinner med rensningen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.eval('referensNamn()')).toBe('Exempelkommunens lönepolitik');
         expect(w.__state.policy.length).toBeGreaterThan(0);
         expect(w.__state.profile.name).toBe('Exempelkommunen');
-        w.__clearAllData();
+        w.__rensaAllData();
         expect(w.__state.policy).toEqual([]);
         expect(w.__state.profile.name).toBe('Organisationen');
         expect(w.eval('referensNamn()')).toBe('Ingen referens inläst');
@@ -552,7 +552,7 @@ describe('Om verktyget: licens', () => {
     it('avsnittet Referenser anger MIT-licensen och upphovspersonen', () => {
         const w = createAppWindow();
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
+        w.eval("ritaOmVerktyget('references')");
         const t = w.document.getElementById('view-info').textContent;
         expect(t).toMatch(/MIT-licensen/);
         expect(t).toContain('Felix Jansson');
@@ -564,7 +564,7 @@ describe('Om verktyget: licens', () => {
         expect(sektioner.length).toBeGreaterThan(0);
         let text = '';
         for (const s of sektioner) {
-            w.eval(`renderInfoTab(${JSON.stringify(s)})`);
+            w.eval(`ritaOmVerktyget(${JSON.stringify(s)})`);
             text += w.document.getElementById('info-tab-content').textContent + '\n';
         }
         expect(text).not.toMatch(/Versionshistorik/);
@@ -593,8 +593,8 @@ describe('demosidan: adressparametern ?demo=1', () => {
 describe('demot: ställningstagandet följer demolönerna', () => {
     it('några grupper ligger under ställningstagandet, så att Prioritering har något att visa', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('prioritering');
+        w.__lasInDemodata();
+        w.__ritaFlik('prioritering');
         expect(w.document.getElementById('view-prioritering').textContent).not.toMatch(/Inga grupper under referensen/);
     });
 });
@@ -673,7 +673,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const { join, dirname } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
         w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
-        w.loadStructureFile(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
         for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
     };
     it('användbarhetsgraden räknar inte avsiktligt uteslutna BAS; singular för en person', async () => {
@@ -691,14 +691,14 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         for (let i = 0; i < 30; i++) rader.push({ bas: 'D', kon: i % 2 ? 'man' : 'kvinna', lon: 40000, alder: 40, yrke: '1 Y', aid: '1', enhet: '1000' });
         for (let i = 0; i < 3; i++) rader.push({ bas: 'C', kon: 'kvinna', lon: 20000, alder: 40, yrke: '2 Y', aid: '2', enhet: '1000' });
         w.__state.data = rader;
-        w.eval('populateSelects(); unlockTabs();');
+        w.eval('fyllValjare(); lasUppFlikar();');
         w.__lasInReferens([{ bas: 'C', p10: 28300, med: 31700, p90: 35400 }, { bas: 'D', p10: 30000, med: 33900, p90: 37800 }], 'ref.csv');
         w.__ritaKravstatus();
         expect(w.document.getElementById('comp-pol-val').textContent).toMatch(/^0 av 1 BAS-intervall/);
     });
     it('Exportera har checklistan överst, robustheten och exporterna som lista; rapportunderlaget står i Rapporttext', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         // Alla flikens paneler ligger i innehållsytan (det tomma bandet överst kom av att de låg utanför).
@@ -755,10 +755,10 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('robusthetsanalysen skriver sitt utfall i slutsatserna och i avsnittets nyckeltal; rensning tömmer raden', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
-        w.eval("_renderRobusthetResult(document.getElementById('robusthet-body'))");
+        w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))");
         const rader = [...d.querySelectorAll('#robusthet-body tbody tr')];
         const flippar = d.querySelectorAll('#robusthet-body .rb-flip').length;
         const ruta = d.querySelectorAll('#dk-slutsatser .slutsats')[1].textContent;
@@ -771,7 +771,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('Struktur har slutsatserna först, sedan representationen och kartan; talen i toppen är tabellernas', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
@@ -795,7 +795,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('Struktur utan könsuppdelning visar inga könstal i toppen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');           // männen är färre än 150
         w.__state.kLage = 'export';                                // så som fliken lämnar verktyget (ADR-51)
@@ -809,7 +809,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('Likvärdigt arbete — paren öppna, exporten hos paren, och inställningarna står kvar utfällda när ett värde ändras', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="likvardighet"]').click();
         const avsnitt = () => [...d.querySelectorAll('details.avsnitt[id^="avsnitt-lv-"]')];
@@ -839,7 +839,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('Löneöversyn — budget och utfall före avsnitten, och antalet riktade potter i rubriken', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="loneoversyn"]').click();
         const fore = (a, b) => !!(d.getElementById(a).compareDocumentPosition(d.getElementById(b)) & 4);
@@ -858,7 +858,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('Lönepolitik — slutsatserna räknar de yrkesgrupper tabellen visar med position', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="benchmark"]').click();
         const avsnitt = () => [...d.querySelectorAll('details.avsnitt[id^="avsnitt-lp-"]')];
@@ -885,7 +885,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(d.getElementById('lonepolitik-rubrik').closest('.flik-intro')).not.toBeNull();
         // Ny ritning bevarar vilka avsnitt som är utfällda.
         d.getElementById('avsnitt-lp-efterlevnad').open = true;
-        w.__renderTabContent('lonepolitik');
+        w.__ritaFlik('lonepolitik');
         expect(avsnitt().filter(a => a.open).map(a => a.id)).toEqual(['avsnitt-lp-tabell', 'avsnitt-lp-efterlevnad']);
     });
     it('menyn på smala skärmar — knappen Meny öppnar och stänger, och varje menyval har sin etikett i ett eget element', () => {
@@ -958,7 +958,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const filer = d.getElementById('view-filer');
         expect(filer.contains(d.getElementById('upload-sektion')) && filer.contains(d.getElementById('file-input-data')) && filer.contains(d.getElementById('organisationspaket'))).toBe(true);
         expect(vy.contains(d.getElementById('upload-sektion'))).toBe(false);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(vy.classList.contains('har-data')).toBe(true);
         const rad = d.getElementById('ov-filrad');
         expect(rad.textContent).toMatch(/Lönefil: 260 personer.*Referens: .+Jämförelsestatistik: ingen inläst.*Minsta gruppstorlek 10.*Filer och kvalitet/);
@@ -993,7 +993,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('Att göra — hela listan är ett avsnitt som står kvar utfällt när en punkt bockas av', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         const avsnitt = () => d.getElementById('avsnitt-ov-punkter');
         expect(avsnitt().closest('#att-gora')).not.toBeNull();
@@ -1012,7 +1012,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('en höjd minsta gruppstorlek syns i Översikts filrad', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         w.eval('sattKTroskel(150, { fraga: false })');
         expect(d.getElementById('ov-filrad').textContent).toContain('Minsta gruppstorlek 150');
@@ -1042,7 +1042,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(panel.style.display).toBe('none');
         expect(d.activeElement).toBe(knapp);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         knapp.click();
         expect(d.getElementById('inst-namn').textContent).toMatch(/Organisation.+Referens.+Jämförelsestatistik/);
         expect(rader().every(r => !r.querySelector('button').disabled)).toBe(true);
@@ -1074,7 +1074,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(knapp.title).toBe('Läs in en lönefil först');
         for (const r of d.querySelectorAll('#inst-flikar .inst-flik button')) expect(r.disabled).toBe(true);
         w.eval('stangInstallningar()');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         d.getElementById('btn-open-installningar').click();
         const igen = [...d.querySelectorAll('#inst-flikar .inst-flik')].find(r => /Tröskel för extremvärden/.test(r.textContent)).querySelector('button');
         expect(igen.disabled).toBe(false);
@@ -1084,7 +1084,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('minsta gruppstorlek i flikarnas urvalsrad är en länk till inställningarna, och en ändring där slår igenom', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         for (const [flik, rad] of [['matrix', 'la-urval'], ['struktur', 'st-urval'], ['likvardighet', 'lv-urval'], ['benchmark', 'lp-urval']]) {
             d.querySelector(`.nav-item[data-tab="${flik}"]`).click();
@@ -1110,12 +1110,12 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         // Utan data finns inga grupper att söka i; fältet syns ändå och hittar funktionerna (tests/sok-funktioner.test.js).
         expect(d.getElementById('sok-ruta').hidden).toBe(false);
         expect(w.eval('sokKandidater()')).toEqual([]);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(falt.getAttribute('role')).toBe('combobox');
         // Kandidaterna är BAS-intervall och yrkesgrupper med minst tröskeln personer — samma urval som gruppdossiern.
         const kand = w.eval('sokKandidater()');
         expect(kand.every(k => k.n >= 10)).toBe(true);
-        expect(kand.filter(k => k.nyckel.startsWith('grupp:')).map(k => k.nyckel.slice(6)).sort()).toEqual(w.eval('gruppdossierCandidates().map(c => c.key)').sort());
+        expect(kand.filter(k => k.nyckel.startsWith('grupp:')).map(k => k.nyckel.slice(6)).sort()).toEqual(w.eval('gruppdossierKandidater().map(c => c.key)').sort());
         expect(kand.filter(k => k.nyckel.startsWith('bas:')).length).toBeGreaterThanOrEqual(3);
         // Sökningen: varje ord ska finnas, accenter och versaler spelar ingen roll, ord som börjar med söktexten först.
         skriv('UND');
@@ -1164,7 +1164,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('alla grupper går att söka fram oavsett tröskel (skärmen maskerar inget, ADR-51)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document, falt = d.getElementById('sok-grupp'), lista = d.getElementById('sok-grupp-lista');
         const skriv = t => { falt.value = t; falt.dispatchEvent(new w.Event('input', { bubbles: true })); };
         const fore = w.eval('sokKandidater()').map(k => k.nyckel);
@@ -1183,7 +1183,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
     });
     it('exportgrinden — en flik som ritades före en ändrad tröskel ritas om innan något läses ur den', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         const oppna = f => d.querySelector(`.nav-item[data-tab="${f}"]`).click();
         oppna('struktur'); oppna('matrix'); oppna('prioritering');
@@ -1198,7 +1198,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         // Diagram: det tömda elementet sitter inte kvar i sidan och har inget att exportera.
         w.__tomt = kvartiler;
         expect(kvartiler.isConnected).toBe(false);
-        expect(w.eval('_chartExportUnderlag(window.__tomt)')).toBeNull();
+        expect(w.eval('_diagramexportUnderlag(window.__tomt)')).toBeNull();
         expect(w.eval('exportSakra(window.__tomt)')).toBe(false);
         // ZIP-exporten tar "allt som är ritat": den ritar först om varje flik som ritats förut men inte är aktuell.
         const zip = w.eval('zipDiagram().map(el => el.id)');   // i exportläget: varje flik som ritats ritas om före uppräkningen
@@ -1207,25 +1207,25 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         w.eval('sattKTroskel(26, { fraga: false })');                    // en ändring till: Lika arbete är inaktuell igen
         expect(w.eval("flikInaktuell('matrix')")).toBe(true);
         // Tabell: en läsning genom grinden ritar om Lika arbete först, och raderna bär den nya tröskeln.
-        const klon = w.eval("_cloneAndCleanTableForExport('paygap-table')");   // ritar om Lika arbete i exportläget; efteråt är fliken inaktuell igen (skärmläget)
+        const klon = w.eval("_tabellkopiaForExport('paygap-table')");   // ritar om Lika arbete i exportläget; efteråt är fliken inaktuell igen (skärmläget)
         expect(klon).not.toBeNull();
         expect(klon.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
     });
     it('grinden stänger vid fel — går fliken inte att rita om exporteras ingenting ur den', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         d.querySelector('.nav-item[data-tab="dashboard"]').click();
         w.eval('sattKTroskel(25, { fraga: false })');
-        w.eval("const __r = _renderTabContent; _renderTabContent = function (f) { if (f === 'struktur') throw new Error('prov'); return __r(f); };");
-        expect(w.eval("_cloneAndCleanTableForExport('paygap-table')")).toBeNull();
+        w.eval("const __r = _ritaFlik; _ritaFlik = function (f) { if (f === 'struktur') throw new Error('prov'); return __r(f); };");
+        expect(w.eval("_tabellkopiaForExport('paygap-table')")).toBeNull();
         expect(w.eval('exportSakra(document.getElementById("chart-skevhet-overview"))')).toBe(false);
         expect(w.eval("flikInaktuell('struktur')")).toBe(true);
     });
     it('"Rensa all data" lämnar exportmenyerna och BAS-väljaren i Ålder & karriär orörda', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="struktur"]').click();
         d.querySelector('.nav-item[data-tab="kon"]').click();
@@ -1239,13 +1239,13 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(val().every(n => n >= 3)).toBe(true);
         expect(d.getElementById('bas-select-kon')).not.toBeNull();          // väljaren hör till sidan, inte till det ritade
         expect(d.getElementById('ak-urval-text').textContent).toBe('');
-        w.__loadDemoData();
+        w.__lasInDemodata();
         d.querySelector('.nav-item[data-tab="kon"]').click();
         expect(d.getElementById('bas-select-kon').options.length).toBeGreaterThan(1);
     });
     it('två lägen — väljaren står i Inställningar, läget ändrar bara vad som visas och lagras inte', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         expect(w.eval('lage()')).toBe('vagledande');
         expect(d.body.classList.contains('lage-kompakt')).toBe(false);
@@ -1266,7 +1266,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         // Inget lagras och inget följer med i konfigurationsfilen.
         expect(w.localStorage.length).toBe(0);
         expect(w.sessionStorage.length).toBe(0);
-        expect(JSON.stringify(w.eval('buildConfigSnapshot()'))).not.toMatch(/kompakt|"lage"/);
+        expect(JSON.stringify(w.eval('byggKonfiguration()'))).not.toMatch(/kompakt|"lage"/);
         // Rensning av data rör inte läget (det är en inställning för visningen), och ett okänt värde ger vägledande.
         w.eval('_rensaAllData()');
         expect(w.eval('lage()')).toBe('kompakt');
@@ -1292,7 +1292,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(knappar.length).toBe(2);
         expect(knappar.every(b => b.disabled)).toBe(true);
         expect(w.document.getElementById('view-kvalitet').textContent).toMatch(/innan du exporterar/i);
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
         expect([...w.document.querySelectorAll('[data-dok-klick]')].every(b => !b.disabled)).toBe(true);
     });
@@ -1304,7 +1304,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
 
 describe('startytan på Översikt (före inläsning)', () => {
     // Ytan för lönefilen har ingen egen filväljare: den öppnar lönefilskortets, och en släppt fil går samma väg
-    // (change-händelsen på #file-input-data och loadStructureFile).
+    // (change-händelsen på #file-input-data och lasInStrukturfil).
     const slapp = (w, fil) => {
         const inp = w.document.getElementById('file-input-data');
         let filer = { length: 0 };
@@ -1349,7 +1349,7 @@ describe('startytan på Översikt (före inläsning)', () => {
 describe('länkar till ett avsnitt i en annan flik', () => {
     it('Att göra-länkarna till Lönestruktur byter flik och fäller ut avsnittet de leder till', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         for (const id of ['avsnitt-ls-bas', 'avsnitt-ls-kon']) d.getElementById(id).open = false;
         d.querySelector('#comp-gap .comp-lank').click();
@@ -1364,20 +1364,20 @@ describe('länkar till ett avsnitt i en annan flik', () => {
 describe('flik utan underlag', () => {
     it('säger att inget underlag är inläst och länkar till Filer och kvalitet; raden försvinner när underlaget finns', () => {
         const w = createAppWindow();
-        w.eval("renderTabContent('matrix')");
+        w.eval("ritaFlik('matrix')");
         const rad = () => w.document.querySelector('#view-lika-yrken > .inget-underlag');
         expect(rad().textContent).toContain('Inget underlag inläst');
         expect(rad().querySelector('[data-go-to-tab="filer"]')).toBeTruthy();
         expect(rad().textContent).toContain('under Filer och kvalitet');
-        w.eval("renderTabContent('matrix')");
+        w.eval("ritaFlik('matrix')");
         expect(w.document.querySelectorAll('#view-lika-yrken > .inget-underlag').length).toBe(1);
-        w.__loadDemoData();
-        w.eval("renderTabContent('matrix')");
+        w.__lasInDemodata();
+        w.eval("ritaFlik('matrix')");
         expect(rad()).toBeNull();
     });
     it('flikar som inte kräver lönefilen får ingen sådan rad', () => {
         const w = createAppWindow();
-        w.eval("renderTabContent('handlingsplan'); renderTabContent('info')");
+        w.eval("ritaFlik('handlingsplan'); ritaFlik('info')");
         expect(w.document.querySelector('.inget-underlag')).toBeNull();
     });
 });
@@ -1390,7 +1390,7 @@ describe('utskrift av den aktiva fliken (Ctrl+P)', () => {
     });
     it('hopfällda avsnitt i den synliga fliken fälls ut före utskriften och tillbaka efteråt', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const avsnitt = [...w.document.querySelectorAll('#view-lika-yrken details.avsnitt')];
         expect(avsnitt.length).toBeGreaterThan(0);
@@ -1402,7 +1402,7 @@ describe('utskrift av den aktiva fliken (Ctrl+P)', () => {
     });
     it('PDF-rapportens utskrift rör inte avsnitten', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="matrix"]').click();
         const avsnitt = [...w.document.querySelectorAll('#view-lika-yrken details.avsnitt')];
         avsnitt.forEach(d => { d.open = false; });
@@ -1421,7 +1421,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — licens', ()
         t.innerHTML = '<pre>Permission is hereby granted — testtext</pre>';
         w.document.body.appendChild(t);
         w.document.querySelector('.nav-item[data-tab="info"]').click();
-        w.eval("renderInfoTab('references')");
+        w.eval("ritaOmVerktyget('references')");
         expect(w.document.getElementById('om-licenstexter').textContent).toContain('Permission is hereby granted');
         expect(w.document.getElementById('view-info').textContent).toContain('riskanalys.md');
     });

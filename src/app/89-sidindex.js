@@ -2,12 +2,12 @@
 // Copyright 2026 Felix Jansson
 // ---- Sidindex ("På den här sidan") ----
 import { esc } from './01-html-och-tillganglighet.js';
-import { oppnaHopfallda, PANEL_GROUPS } from './31-navigering.js';
+import { oppnaHopfallda, PANELGRUPPER } from './31-navigering.js';
 /**
  * En lista över flikens avsnitt som följer med när sidan rullas: rubriken i varje utfällbart avsnitt
  * (details.avsnitt > summary h2|h3) och varje kort (.card-header > h2) som syns. Ett avsnitt som är dolt (hidden,
  * .dold, display: none, eller utan ruta i webbläsaren) står inte i listan, och färre än tre poster ger inget index.
- * Listan byggs när fliken ritas (renderTabContent i 31-navigering.js), alltså också efter en inläsning. Ett klick
+ * Listan byggs när fliken ritas (ritaFlik i 31-navigering.js), alltså också efter en inläsning. Ett klick
  * fäller ut avsnittet, rullar fram det och ger dess summary fokus. Posten för avsnittet som står överst i fönstret
  * är markerad (IntersectionObserver; utan den den första). Kompakt läge ändrar ingenting här.
  * Från 1920 punkter står listan i en spalt i marginalen till höger om innehållet, smalare än så som en utfällbar rad
@@ -53,7 +53,7 @@ function _sidindexBred() {
 /** Flikens synliga avsnittsrubriker i sidans ordning: { rubrik, mal } där mal är avsnittet eller kortet. */
 function _sidindexRubriker(flik) {
     const ut = [], layout = _sidindexHarLayout();
-    for (const p of (PANEL_GROUPS[flik] || [flik])) {
+    for (const p of (PANELGRUPPER[flik] || [flik])) {
         const panel = document.getElementById('view-' + p);
         if (!panel || _sidindexDoltIMarkering(panel, panel.parentElement)) continue;
         panel.querySelectorAll('details.avsnitt > summary h2, details.avsnitt > summary h3, .card-header > h2').forEach(h => {

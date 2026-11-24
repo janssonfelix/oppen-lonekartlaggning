@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { K_STANDARD } from '../lib/ktroskel.js';
-import { announceToScreenReader } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { visaInterntFel } from './03-hjalpfunktioner.js';
-import { navigateTo } from './05-tabeller-och-lankar.js';
+import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _kVisaFel, _synkaKTroskel } from './06-k-troskel.js';
-import { applyProfileLabels, COST_DEFAULTS, DEFAULT_PROFILE, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
+import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
 import { _rfRensaAlla } from './10-diagramritare.js';
 import { sattDiagramMarkering } from './11-markering.js';
 import { aterstallReferens, state } from './12-tillstand.js';
 import { ovRitaLage, ritaKravstatus, skattningarSlapp } from './13-oversikt.js';
 import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
-import { _renderDemoBanner } from './20-demodata-diagnostik.js';
+import { _ritaDemoruta } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
-import { updateGdprBanner } from './25-dataskyddsinfo.js';
-import { setInactivityTimeout } from './28-vad-lagras-inaktivitet.js';
-import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, renderPaketInfo } from './29-organisationspaket.js';
-import { renderFilrutor, resetUploadCell } from './32-filinlasning.js';
+import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
+import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
+import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, ritaPaketinfo } from './29-organisationspaket.js';
+import { ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { _fcGlomKnappresultat } from './36-loneoversyn.js';
-import { _visaJamforelseFlik, renderReferensKort } from './38-referensfiler.js';
+import { _visaJamforelseFlik, ritaReferensKort } from './38-referensfiler.js';
 import { rapportGlomHopfallning } from './39-loneoversikt.js';
 import { laMinneSlapp } from './41-lika-arbete.js';
 import { jamforelseSattVal } from './42-jamforelse.js';
-import { _hpDemoNycklar, renderHandlingsplanSeed } from './56-handlingsplan.js';
+import { _hpDemoNycklar, ritaHandlingsplan } from './56-handlingsplan.js';
 import { _rmMinneSlapp } from './58-rapportmodell.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
-import { explorerSlappMinne, explorerSynkaSmaLas } from './70-utforska.js';
+import { utforskaSlappMinne, utforskaSynkaSmaLas } from './70-utforska.js';
 
 // ---- Rensa all data: lagringsminimering (art. 5.1 e, 25.2) ----
 /**
@@ -33,11 +33,11 @@ import { explorerSlappMinne, explorerSynkaSmaLas } from './70-utforska.js';
  * personuppgifter. Användaren har samma effekt om de stänger fliken — denna
  * knapp gör rensningen till en explicit, dokumenterad åtgärd. Rätten till radering utövas mot källsystemet.
  */
-export function clearAllData() {
+export function rensaAllData() {
     const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length
         || _fkVantar || state.forhandskontroll;   // en fil som väntar på Läs in, eller förhandskontrollens tio rader
     if (!hasAny) {
-        announceToScreenReader('Ingen data finns i minnet att rensa.');
+        meddelaSkarmlasare('Ingen data finns i minnet att rensa.');
         return;
     }
     if (!confirm('All data försvinner ur minnet: lönefilen, ställningstagandet, statistiken, scenarierna och ögonblicksbilden. Det går inte att ångra. Vill du fortsätta?')) return;
@@ -66,7 +66,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
     //    urvalets värdelistor, diagrammets exportfunktion) — släpp dem också,
     //    annars finns hela underlaget kvar i minnet efter rensningen.
-    if (typeof explorerSlappMinne === 'function') explorerSlappMinne();
+    if (typeof utforskaSlappMinne === 'function') utforskaSlappMinne();
     if (typeof rapportGlomHopfallning === 'function') rapportGlomHopfallning();
 
     // 1. Nolla state-objektet
@@ -76,13 +76,13 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // Organisationspaketets låsningar (ADR-47) följer med paketet; en låst rensningstid går tillbaka till standard.
     const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
     state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
-    if (inaktivitetVarLast && typeof setInactivityTimeout === 'function') setInactivityTimeout(INAKTIVITET_STANDARD_MIN);
-    if (typeof explorerSynkaSmaLas === 'function') explorerSynkaSmaLas();
+    if (inaktivitetVarLast && typeof sattInaktivitetstid === 'function') sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
+    if (typeof utforskaSynkaSmaLas === 'function') utforskaSynkaSmaLas();
     if (typeof _kVisaFel === 'function') _kVisaFel('');   // ett felmeddelande vid fältet hör till det rensade läget
     if (typeof _synkaKTroskel === 'function') _synkaKTroskel();
     aterstallReferens();   // ADR-28: ingen referens (ingen inbyggd)
-    state.profile = { ...DEFAULT_PROFILE };   // neutral profil (demoläget och paket sätter en egen)
-    if (typeof applyProfileLabels === 'function') applyProfileLabels();
+    state.profile = { ...STANDARDPROFIL };   // neutral profil (demoläget och paket sätter en egen)
+    if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
     if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
     if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
     if (typeof jamforelseSattVal === 'function') jamforelseSattVal({ bas: '', sektor: '' });
@@ -95,14 +95,14 @@ export function _rensaAllData({ inbakat = true } = {}) {
     state.statistikHasP90 = false;
     state.statistikHasKon = false;
     if (typeof _synkaKostnadsfalt === 'function') _synkaKostnadsfalt();
-    if (typeof renderPaketInfo === 'function') renderPaketInfo();
+    if (typeof ritaPaketinfo === 'function') ritaPaketinfo();
     const paketStatus = document.getElementById('paket-status');
     if (paketStatus) { paketStatus.textContent = ''; paketStatus.className = 'status-msg'; }
     if (typeof _fyllPaketFormular === 'function') _fyllPaketFormular();
     state.statistik = [];
     state.isDemo = false;   // #9: lämna demoläge
     state.demoStort = false;
-    if (typeof _renderDemoBanner === 'function') _renderDemoBanner();
+    if (typeof _ritaDemoruta === 'function') _ritaDemoruta();
     state._interntFel = [];   // interna fel gällde det rensade underlaget
     if (typeof visaInterntFel === 'function') visaInterntFel();
     state._lastStructureFile = null;   // släpp filreferensen (GDPR: inget kvar i RAM)
@@ -171,7 +171,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
     state.handlingsplan = {};
     if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear();
-    if (typeof renderHandlingsplanSeed === 'function') renderHandlingsplanSeed();
+    if (typeof ritaHandlingsplan === 'function') ritaHandlingsplan();
     // Rapporttextens utkast bär fynden i klarspråk, också ett redigerat: det töms och markeringen tas bort.
     const utkast = document.getElementById('struktur-narrative');
     if (utkast) { /** @type {HTMLTextAreaElement} */ (utkast).value = ''; delete utkast.dataset.dirty; }
@@ -192,14 +192,14 @@ export function _rensaAllData({ inbakat = true } = {}) {
     ['underlagets-kvalitet-status','underlagets-kvalitet-rader'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
 
     // 3. Återställ uppladdningsceller
-    if (typeof resetUploadCell === 'function') {
-        resetUploadCell('upload-cell-data',    'upload-cell required', 'Obligatorisk');
-        resetUploadCell('upload-cell-policy',  'upload-cell optional', 'Valfritt');
-        resetUploadCell('upload-cell-stat',    'upload-cell optional', 'Valfritt');
-        resetUploadCell('upload-cell-history', 'upload-cell optional', 'Valfritt');
+    if (typeof aterstallFilruta === 'function') {
+        aterstallFilruta('upload-cell-data',    'upload-cell required', 'Obligatorisk');
+        aterstallFilruta('upload-cell-policy',  'upload-cell optional', 'Valfritt');
+        aterstallFilruta('upload-cell-stat',    'upload-cell optional', 'Valfritt');
+        aterstallFilruta('upload-cell-history', 'upload-cell optional', 'Valfritt');
     }
     document.querySelectorAll('input[type="file"]').forEach(inp => { /** @type {HTMLInputElement} */ (inp).value = ''; });
-    if (typeof renderReferensKort === 'function') renderReferensKort();
+    if (typeof ritaReferensKort === 'function') ritaReferensKort();
     ['data-status','policy-status','stat-status','config-status'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.textContent = ''; el.className = 'status-msg'; el.innerHTML = ''; }
@@ -212,12 +212,12 @@ export function _rensaAllData({ inbakat = true } = {}) {
     });
     if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
     state.filnamn = { data: null, policy: null, statistik: null };
-    if (typeof renderFilrutor === 'function') renderFilrutor();
-    if (typeof navigateTo === 'function') navigateTo('dashboard');
+    if (typeof ritaFilrutor === 'function') ritaFilrutor();
+    if (typeof navigeraTill === 'function') navigeraTill('dashboard');
 
-    updateGdprBanner();
+    uppdateraDataskyddsbesked();
     if (typeof ritaKravstatus === 'function') ritaKravstatus();
-    announceToScreenReader('All data har raderats ur minnet.');
+    meddelaSkarmlasare('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.
     if (inbakat && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
     visningNy();   // och det som ritades under rensningen visas inte igen heller

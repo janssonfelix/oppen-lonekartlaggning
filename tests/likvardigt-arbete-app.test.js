@@ -21,8 +21,8 @@ describe('Lägre krav, högre lön', () => {
     const oppna = (w, data) => {
         w.__state.data = data;
         if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
     };
     it('avsnittet ritas med paret, utan §; blocket kommer efter Likvärdigt arbete', () => {
         const w = createAppWindow();
@@ -50,7 +50,7 @@ describe('Lägre krav, högre lön', () => {
         w.document.querySelector(`[data-fler-kolumner="${id}"]`).click();
         expect(synliga()).toEqual(['Kvinnodominerad AID-etikett', 'Median', 'Jämförelseetikett', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
         // Exporten: samma tio kolumner som före, och etikettcellen utan BAS-texten.
-        const m = w.__tableToMatrix(id);
+        const m = w.__tabellTillMatris(id);
         expect(m[0]).toEqual(['Kvinnodominerad AID-etikett', 'BAS', 'Median', 'Jämförelseetikett', 'BAS', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
         expect(m[1].slice(0, 2)).toEqual(['Yrke 100', 'E']);
         expect(m[1][4]).toBe('C');
@@ -78,8 +78,8 @@ describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall'
         w.__state.data = [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'C', 2, 18, 34000)];
         w.__state.arbetsvardering = poang ? { byKey: new Map([['100', 500], ['200', 480]]), count: 2, hasBas: false } : null;
         if (w.__state.likvardighet) w.__state.likvardighet.result = null;
-        w.eval('populateSelects(); unlockTabs();');
-        w.__renderTabContent('likvardighet');
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('likvardighet');
         return w;
     };
     const text = el => el.textContent.replace(/\s+/g, ' ');
@@ -102,7 +102,7 @@ describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall'
         const under = [...w.document.querySelectorAll('#likvardighet-table .lv-under')].map(e => e.textContent);
         expect(under.length).toBeGreaterThan(0);
         expect(under.some(t => /intern/.test(t))).toBe(false);
-        const intro = w.eval('_evidenceForLikvardighetPair')(r.pairs[0]).intro;
+        const intro = w.eval('_bevisForLikvardighetspar')(r.pairs[0]).intro;
         expect(intro).toContain('som enligt arbetsvärderingen har <em>lika eller lägre krav</em> (480 poäng mot 500)');
         expect(intro).not.toContain('samma BAS-intervall');
     });
@@ -117,17 +117,17 @@ describe('Poängläget: texterna i Likvärdigt arbete säger inte BAS-intervall'
 describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
     it('BAS-ordningen har ingen panel, inget tillstånd och inget fält i konfigurationsfilen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.document.getElementById('bas-rank-config-container')).toBeNull();
         expect('basRankOverride' in w.__state).toBe(false);
-        const cfg = w.__buildConfigSnapshot();
+        const cfg = w.__byggKonfiguration();
         expect('basRankOverride' in cfg).toBe(false);
     });
     it('robusthetspanelen prövar Likvärdigt arbete och Prioritering, inte BAS-ordningen', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderKvalitetssakring();
-        w.__runRobusthet();
+        w.__lasInDemodata();
+        w.__ritaKvalitetssakring();
+        w.__korRobusthet();
         await new Promise(r => setTimeout(r, 120));
         const txt = w.document.getElementById('robusthet-body').textContent;
         expect(txt).toMatch(/Likvärdigt arbete|Prioritering/);
@@ -135,7 +135,7 @@ describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
     });
     it('extremvärden i Underlagets kvalitet, organisationspaketet i uppladdningsytan, Spara och jämför år har fyra avsnitt', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         expect(d.getElementById('outliers-container').closest('#underlagets-kvalitet')).not.toBeNull();
         expect(d.getElementById('file-input-paket').closest('#upload-sektion')).not.toBeNull();
@@ -147,7 +147,7 @@ describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
     });
     it('Dokumentera lovar inte inställningar som påverkar analysen; metodtexten beskriver BAS-stegen', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         expect(w.document.getElementById('view-dokumentera').textContent).not.toMatch(/inställningarna som påverkar analysen/);
         const src = require('fs').readFileSync(require('path').join(__dirname, '../src/app/41-lika-arbete.js'), 'utf8');
         const rad = src.split('\n').find(l => l.includes("['BAS-rangordning'"));
@@ -159,14 +159,14 @@ describe('BAS-ordningen är fast (se §6 i likvardighetsmodellen.md)', () => {
 describe('demodata med kandidatpar', () => {
     it('demodatan ger minst ett kandidatpar där båda grupperna har minst k personer', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const par = w.__likvardighetspar().pairs || [];
         const godkanda = par.filter(p => p.kvN >= w.__K && (p.maN === null || p.maN === undefined || p.maN >= w.__K));
         expect(godkanda.length).toBeGreaterThan(0);
     });
     it('jämförelseyrken är alla som inte är kvinnodominerade: Systemutvecklare (blandad) jämförs i BAS C (ADR-60)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         // Systemutvecklare i BAS C (23 kvinnor av 45) är blandad och därmed jämförelseyrke.
         const sysC = w.__likvardighetspar().orgIckeKv.find(g => g.bas === 'C' && /Systemutvecklare/.test(g.label));
         expect(sysC).toMatchObject({ n: 45, nKv: 23, klass: 'blandad' });
@@ -190,7 +190,7 @@ describe('demodata med kandidatpar', () => {
     });
     it('nyckeltalet räknar alla par, varav dem över 5 %, och Visa alla visar paren som Visa max döljer (ADR-61)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const d = w.document;
         d.querySelector('.nav-item[data-tab="likvardighet"]').click();
         const lv = w.__state.likvardighet.result;
@@ -207,7 +207,7 @@ describe('demodata med kandidatpar', () => {
         const totalt = lv.pairs.length;
         w.__state.likvardighet.topN = 2;
         w.__state.likvardighet.result = null;
-        w.__renderTabContent('likvardighet');
+        w.__ritaFlik('likvardighet');
         expect(d.querySelectorAll('#likvardighet-table tbody tr')).toHaveLength(2);
         expect(d.getElementById('nyckel-lv-par').textContent).toBe(`2 av ${totalt} par`);
         expect([...d.querySelectorAll('#lv-slutsatser .slutsats-varde')][2].textContent).toBe(String(totalt));
@@ -217,7 +217,7 @@ describe('demodata med kandidatpar', () => {
     });
     it('rapportunderlaget får parblock och diagrammet över kandidatpar', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         expect(w.__rapportunderlagBlock().some(b => b.id.startsWith('par:'))).toBe(true);
         expect(w.document.querySelector('[data-rapport-diagram="chart-likvardighet-heatmap"]')).not.toBeNull();
@@ -238,7 +238,7 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
     const raknaBerakningar = w => w.eval('window.__lvBerakningar = 0; const __lvOrig = likvardighetspar; '
         + 'likvardighetspar = function (o) { window.__lvBerakningar++; return __lvOrig(o); };');
     const flik = (w, f) => w.document.querySelector(`.nav-item[data-tab="${f}"]`).click();
-    const demo = () => { const w = createAppWindow(); raknaBerakningar(w); w.__loadDemoData(); return w; };
+    const demo = () => { const w = createAppWindow(); raknaBerakningar(w); w.__lasInDemodata(); return w; };
 
     it('inläsningen, varje flik och protokollet för gemensam lönebedömning räknar paren en gång', async () => {
         const w = demo();
@@ -250,7 +250,7 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
         w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
         w.alert = () => {};
         w.XLSX.writeFile = () => {};
-        w.eval('exportJPAProtocol()');
+        w.eval('exportJPAProtokoll()');
         expect(w.__lvBerakningar).toBe(1);
     });
     // Fältens ändringar i fliken: resultatet nollställs, och det nya räknas med det nya värdet (en gång).
@@ -309,7 +309,7 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
 
 describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () => {
     it('kandidatparen ritas som ett par per rad med båda medianerna', () => {
-        win.__loadDemoData();
+        win.__lasInDemodata();
         const pairs = (win.__likvardighetspar() || {}).pairs || [];
         if (!pairs.length) return;
         win.__pairs = pairs;
@@ -322,16 +322,16 @@ describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () 
     });
 
     it('likvärdighetsfliken ritar kandidatparen i sin behållare', () => {
-        win.__loadDemoData();
-        win.__renderTabContent('likvardighet');
+        win.__lasInDemodata();
+        win.__ritaFlik('likvardighet');
         const pairs = (win.__likvardighetspar() || {}).pairs || [];
         const el = win.document.getElementById('chart-likvardighet-heatmap');
         if (pairs.length) expect(el).not.toBeNull();
     });
 
-    it('tableToMatrix läser rubrik + rader och rensar knappar/ikoner', () => {
-        win.__renderTabContent('matrix');   // fyller matrix-table
-        const m = win.__tableToMatrix('matrix-table');
+    it('tabellTillMatris läser rubrik + rader och rensar knappar/ikoner', () => {
+        win.__ritaFlik('matrix');   // fyller matrix-table
+        const m = win.__tabellTillMatris('matrix-table');
         expect(Array.isArray(m)).toBe(true);
         if (m.length) {
             const cols = m[0].length;
@@ -356,15 +356,15 @@ describe('SKR:s personalstatistik som nationell reserv i Likvärdigt arbete', ()
 describe('kandidatparens tabell', () => {
     it('intervallet står som ett spann på en rad med omdömet som märke, och exporten bär formen med klamrar', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
+        w.__lasInDemodata();
+        w.__ritaFlik('likvardighet');
         const d = w.document;
         const ki = [...d.querySelectorAll('#likvardighet-table .lv-ki')];
         expect(ki.length).toBeGreaterThan(0);
         for (const k of ki) {
             expect(k.textContent).toMatch(/^[\d\s\u00a0\u2212-]+–[\d\s\u00a0\u2212-]+ kr$/);
             expect(k.closest('td').querySelector('.lv-ki-marke').textContent).toMatch(/^(säker skillnad|inom slumpfel)$/);
-            expect(w.eval('_tableCellText')(k.closest('td'))).toMatch(/^\[[^\]]+ kr, [^\]]+ kr\]\s?(säker skillnad|inom slumpfel)$/);
+            expect(w.eval('_tabellcellText')(k.closest('td'))).toMatch(/^\[[^\]]+ kr, [^\]]+ kr\]\s?(säker skillnad|inom slumpfel)$/);
         }
         const rubriker = [...d.querySelectorAll('#likvardighet-table thead th')].map(th => th.textContent);
         expect(rubriker).toContain('Summa för gruppen (kr/mån)');
@@ -377,8 +377,8 @@ describe('kandidatparens tabell', () => {
     });
     it('ett par under 5 % syns utan att något ändrats, och fältet säger att 0 betyder alla (ADR-61)', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__renderTabContent('likvardighet');
+        w.__lasInDemodata();
+        w.__ritaFlik('likvardighet');
         const d = w.document;
         expect(w.__state.likvardighet.minGapPct).toBe(0);
         const lv = w.__state.likvardighet.result;
@@ -409,20 +409,20 @@ describe('Krav mot lön med många yrkesgrupper', () => {
 describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt arbete', () => {
     it('Rapporttext räknar likvärdighetsparen en gång och sparar resultatet', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         w.__state.likvardighet.result = null;
         const orig = w.likvardighetspar;
         let n = 0;
         w.likvardighetspar = (...a) => { n++; return orig(...a); };
         w.document.querySelector('.nav-item[data-tab="rapporttext"]').click();
         w.__rapportunderlagBlock();
-        w.eval('_handlingsplanSeedRows()');
+        w.eval('_handlingsplanForifyllning()');
         expect(n).toBe(1);
         expect(w.__state.likvardighet.result).toBeTruthy();
     });
     it('ny jämförelsestatistik nollställer det sparade likvärdighetsresultatet', async () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
@@ -439,8 +439,8 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
     });
     it('Likvärdigt arbete i poängläget: fliken säger att kraven mäts med poäng och Lägre krav förklarar varför den är tom', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.arbetsvardering = { byKey: new Map(w.__getData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
+        w.__lasInDemodata();
+        w.__state.arbetsvardering = { byKey: new Map(w.__hamtaData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
         w.__state.likvardighet.result = null;
         w.document.querySelector('.nav-item[data-tab="likvardighet"]').click();
         const t = w.document.getElementById('view-likvardighet').textContent;
@@ -451,8 +451,8 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
     // eller visar rader som alltid är 0 (externa par, reserven per BAS, gemensamma BAS-intervall).
     const poangFonster = () => {
         const w = createAppWindow();
-        w.__loadDemoData();
-        w.__state.arbetsvardering = { byKey: new Map(w.__getData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
+        w.__lasInDemodata();
+        w.__state.arbetsvardering = { byKey: new Map(w.__hamtaData().map(r => [`${r.aid}|${r.bas}`, 100 + 'ABCDEFGHIJ'.indexOf(r.bas) * 50])) };
         w.__state.likvardighet.result = null;
         return w;
     };
@@ -468,10 +468,10 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
     });
     it('Likvärdigt arbete i poängläget: rutan Inga kandidatpar räknar inga interna och externa jämförelseetiketter', () => {
         const w = createAppWindow();
-        w.__loadDemoData();
+        w.__lasInDemodata();
         // De kvinnodominerade AID-etiketterna får lägst poäng: ingen jämförelseetikett har lika eller lägre poäng.
         const andel = new Map();
-        for (const r of w.__getData()) {
+        for (const r of w.__hamtaData()) {
             const n = `${r.aid}|${r.bas}`, a = andel.get(n) || [0, 0];
             andel.set(n, [a[0] + (r.kon.includes('kvinna') ? 1 : 0), a[1] + 1]);
         }
@@ -487,7 +487,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt
         const w = poangFonster();
         expect(w.eval('likvardighetResultat()').pairs.length).toBeGreaterThan(0);
         let csv = null;
-        w.eval('_downloadCSV = rows => { window.__lvCsv = rows; }');
+        w.eval('_laddaNedCSV = rows => { window.__lvCsv = rows; }');
         w.eval('exportLikvardighetCSV()');
         csv = w.__lvCsv;
         const csvMeta = csv.slice(csv.findIndex(r => r[0] === '# METADATA'));
