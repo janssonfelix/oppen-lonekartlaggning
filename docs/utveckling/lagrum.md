@@ -10,7 +10,8 @@ paragrafnummer i en kolumnrubrik lätt blir fel utan att någon märker det.
 
 Status: *Förslag* = inte juridiskt granskad; varje arbetsgivare stämmer av mot sin egen juridiska rådgivning
 och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). Källor: diskrimineringslagen (2008:567) t.o.m. SFS 2025:736, direktiv (EU)
-2023/970, förordning (EU) 2016/679.
+2023/970, förordning (EU) 2016/679. Raderna om diskrimineringslagen och prop. 1999/2000:143 är lästa mot texten på
+riksdagen.se 2026-11-24.
 
 ## Så hänvisar verktyget
 
@@ -37,10 +38,10 @@ och sitt dataskyddsombud · *Avstämd* = granskad av jurist (ingen rad ännu). K
 | Samverkan med arbetstagarna | 3 kap. 11 §; redogörelse 13 § 7; information till facket 12 § | *samverkan med arbetstagarna* | Förslag |
 | Åtgärder, kostnadsberäkning och tidsplan (senast inom tre år) | 3 kap. 13 § andra stycket 4–5 (10–24 anställda via 14 §); allmänt 3 kap. 2 § 3 och 3 § | *åtgärder och tidsplan* | Förslag |
 | Ordet *handlingsplan* | inte lagens begrepp sedan 2017 (SFS 2016:828) | fliken heter fortfarande *Handlingsplan*; rapportens avsnitt heter *Åtgärder och tidsplan* | Beslutat 2026-11-15: fliken behåller namnet, som är neutralt |
-| Dokumentation | 3 kap. 13 § (25 eller fler anställda, gäller alltid kommun och region) och 14 § (10–24) | *dokumentationen av lönekartläggningen* | Förslag |
+| Dokumentation | 3 kap. 13 § (25 eller fler arbetstagare vid kalenderårets ingång; paragrafen har ingen egen regel för kommun och region) och 14 § (10–24: uppgifterna i 13 § 3–6 och samverkan) | *dokumentationen av lönekartläggningen* | Förslag |
 | Ramen | 3 kap. 8–14 §§ | *diskrimineringslagen 3 kap. (lönekartläggning)* | Förslag |
 | Svensk lag om lönetransparens | finns inte (oktober 2026). Lagrådsremiss 2026-01-15 (ikraftträdande 1 juli 2026); regeringen sköt 2026-03-11 fram det till 1 januari 2027 och meddelade 2026-03-26 att ingen proposition lämnas och att direktivet ska omförhandlas; EU-kommissionen svarade 2026-05-22 att det varken omförhandlas eller senareläggs; DO fick 2026-06-08 ett uppdrag om främjandeinsatser (A2026/00595) med redovisning 2027-11-01. Inget datum finns | ingen hänvisning; bevakas | Förslag, bevakas |
-| Offentlighet och sekretess i kommun och region | 10 kap. 11–14 §§ och 12 kap. 2 § offentlighets- och sekretesslagen (2009:400) i stället för MBL:s tystnadsplikt | nämns i samverkansavsnittet när texten uppdateras | Förslag |
+| Offentlighet och sekretess i kommun och region | 3 kap. 12 § diskrimineringslagen: i det allmännas verksamhet gäller 10 kap. 11–14 §§ och 12 kap. 2 § offentlighets- och sekretesslagen (2009:400) i stället för MBL:s tystnadsplikt | nämns i samverkansavsnittet när texten uppdateras | Förslag |
 
 **AID** (SKR:s arbetsidentifikation) är ingen rättskälla. Verktyget använder AID-etiketterna som utgångspunkt
 för lika arbete, med metodtexten att AID inte är ett arbetsvärderingssystem (ADR-33); bedömningen av vilka
