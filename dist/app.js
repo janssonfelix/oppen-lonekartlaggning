@@ -18530,9 +18530,6 @@ function vymodellLonepolitik(rader, { policyFor: policyFor2, nivaEtikett, k, har
 }
 
 // src/app/75-lonepolitik.js
-function _lpNiva(n) {
-  return maskeringsniva(n, kTroskel());
-}
 function lonepolitikVymodell() {
   return vymodellLonepolitik(hamtaData(), {
     policyFor,
@@ -20147,9 +20144,6 @@ function _gdBootstrapGapKI(kvLons, maLons, B) {
 }
 function gruppdossierKandidater() {
   return gruppdossierGrupper(hamtaData(), kTroskel());
-}
-function _gdKon(rows) {
-  return { kv: rows.filter((r) => arKvinna(r)), ma: rows.filter((r) => arMan(r)) };
 }
 function gruppdossierDelat({ text = false } = {}) {
   return { kandidater: gruppdossierKandidater(), perBas: /* @__PURE__ */ new Map(), prio: /* @__PURE__ */ new Map(), text };
@@ -24873,7 +24867,6 @@ function skapaPaketMedImportprofil(profil) {
     importprofiler: [...ovriga, profil]
   });
 }
-var INBAKAT_PAKET_ID = "inbakat-organisationspaket";
 var _verktygsfil = null;
 function uppdateraOrganisationsfilKnapp() {
   const knapp = _paketFalt("btn-organisationsfil-spara");
@@ -24969,7 +24962,7 @@ async function flyttaTillNyVersion() {
   return { ok: true, meddelande };
 }
 function lasInInbakatPaket() {
-  const mall = document.getElementById(INBAKAT_PAKET_ID);
+  const mall = document.getElementById(MALL_ID);
   if (!mall) return null;
   const text = (
     /** @type {HTMLTemplateElement} */

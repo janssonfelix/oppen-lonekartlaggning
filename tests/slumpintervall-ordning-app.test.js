@@ -9,6 +9,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
+import { arKvinna, arMan } from '../src/lib/kon.js';
 
 /** Seedad Fisher–Yates (linjär kongruensgenerator), så att omkastningen är densamma varje gång. */
 function omkastad(lista, seed) {
@@ -48,7 +49,7 @@ function intervall(omkasta) {
     const lika = Object.fromEntries(w.laLikaGrupper(d).grupper.map(g => [g.yrke, { niva: g.niva, sakerstalld: g.sakerstalld, flaggad: g.flaggad }]));
     const tratt = Object.fromEntries(w._laTrattUnderlag(d).punkter.map(p => [p.nyckel, { kvot: p.kvot, gransLag: p.gransLag, gransHog: p.gransHog, utanfor: p.utanfor }]));
     const dossier = Object.fromEntries(w.gruppdossierKandidater().map(g => {
-        const { kv, ma } = w._gdKon(g.rows);
+        const kv = g.rows.filter(r => arKvinna(r)), ma = g.rows.filter(r => arMan(r));
         return [g.key, w._gdBootstrapGapKI(kv.map(r => r.lon), ma.map(r => r.lon))];
     }));
     const kv = w._regKvantilBerakna({ direkt: true });

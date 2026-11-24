@@ -24,7 +24,7 @@ import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_ALLA, gapStatusKI, gapStatusNiva, PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData } from './12-tillstand.js';
 import { styrkaGallande } from './13-oversikt.js';
 import { _bevisForEUMatrisrad, _bevisForLonegapsrad, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _konTathetFigur } from './40-alder-karriar.js';

@@ -7,7 +7,7 @@
 // (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
 import { installningsGrans } from '../lib/installningsgranser.js';
 import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
-import { bakaIn, filnamnForslag, flyttaOrganisationsfil, normaliseraFilnamn } from '../lib/organisationsfil.js';
+import { bakaIn, filnamnForslag, flyttaOrganisationsfil, MALL_ID, normaliseraFilnamn } from '../lib/organisationsfil.js';
 import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, paketArGammalt, tolkaPaket } from '../lib/organisationspaket.js';
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
@@ -402,7 +402,6 @@ export function skapaPaketMedImportprofil(profil) {
 }
 
 // ---- Organisationsfil: verktyget med paketet inbakat (organisationsfil.md) ----
-const INBAKAT_PAKET_ID = 'inbakat-organisationspaket';   // = MALL_ID i src/lib/organisationsfil.js
 /** @type {File|null} */
 let _verktygsfil = null;   // den fil systemförvaltaren pekat ut
 
@@ -499,7 +498,7 @@ async function flyttaTillNyVersion() {
  * @returns {{ok:boolean, meddelande:string}|null} null när inget paket är inbakat
  */
 export function lasInInbakatPaket() {
-    const mall = document.getElementById(INBAKAT_PAKET_ID);
+    const mall = document.getElementById(MALL_ID);
     if (!mall) return null;
     // Ett <template> håller sitt innehåll i ett eget fragment: textContent på elementet är tomt.
     const text = (/** @type {HTMLTemplateElement} */ (mall).content?.textContent ?? mall.textContent) || '';

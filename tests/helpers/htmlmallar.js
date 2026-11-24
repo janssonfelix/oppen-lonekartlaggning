@@ -307,7 +307,7 @@ function analyseraStruktur(fil) {
     for (const f of fil.funktioner) {
         const p = oppenFor(fil, f.start);
         if (p < 0 || !op(tok[p], '(')) continue;
-        const pos = delaArg(fil, p + 1, par[p]).findIndex(([s, e]) => s === f.start);
+        const pos = delaArg(fil, p + 1, par[p]).findIndex(([s]) => s === f.start);
         if (ar(tok[p - 1], 'namn') && (op(tok[p - 2], '.') || op(tok[p - 2], '?.'))) {
             const metod = tok[p - 1].v;
             if (pos === 0 && LISTANROP.has(metod)) f.listanrop = { metod, mottagare: [kedjeStart(fil, p - 3), p - 2] };
@@ -814,7 +814,7 @@ function skapaBedomare(filer, undantag = []) {
         return false;
     }
 
-    function arVitlistfilter(fil, [s, e]) {
+    function arVitlistfilter(fil, [s]) {
         const funk = fil.funkVidStart.get(s);
         if (!funk || funk.kropp.typ !== 'uttryck' || funk.params.length !== 1 || funk.params[0].monster) return false;
         const x = funk.params[0].namn;
@@ -1113,7 +1113,7 @@ const HTMLTAGG = /<\/?[A-Za-z][\w-]*[\s>/]|<!--/;
 function provningar(fil) {
     const { tok, par } = fil;
     const ut = [];
-    for (const [h, delar] of fil.mallar) {
+    for (const [, delar] of fil.mallar) {
         if (delar.length < 2) continue;
         const text = delar.map(i => tok[i].text).join('');
         if (!HTMLTAGG.test(text)) continue;
