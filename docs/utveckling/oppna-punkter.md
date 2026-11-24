@@ -26,7 +26,10 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 6. **En arbetare i testkörningen kraschar ibland i Node** (SIGSEGV, V8:s skräpsamlare). Punkten avslutades
    2026-11-23, efter 80 framkallningsförsök på Node 22 och 24, 25 CI-körningar och åtta hela kontroller lokalt utan
    krasch, och öppnades igen 2026-11-24: i en hel kontroll lokalt (Node 22.22.2) dog arbetaren med
-   `tests/start-och-meny-app.test.js`, och omkörningen i `tools/test.mjs` gick igenom. Omkörningen står kvar som skydd;
+   `tests/start-och-meny-app.test.js`, och omkörningen i `tools/test.mjs` gick igenom. Samma dag kördes hela sviten
+   20 varv i följd (Node 22.22.2, `node tools/test.mjs`): i två varv dog en arbetare med SIGSEGV, med
+   `tests/ktroskel-utdata.test.js` och `tests/struktur-flikar.test.js`, och omkörningen gick igenom båda gångerna.
+   Kraschen följer alltså ingen fil; alla tre filerna ritar verktyget i jsdom. Omkörningen står kvar som skydd;
    orsaken är inte funnen.
 8. **Ett gemensamt globalt scope i den byggda filen:** delarna är ES-moduler (ADR-98), men utfilen är platt så att testerna når appens namn som globala. Reglerna flyttas till `src/lib/`, med tillståndet som argument och prövade i Node, så att en extern granskare hittar varje regel och dess test på ett ställe.
 28. **Testsviten tar omkring tre minuter lokalt och två till fyra per jobb i CI** (delad på fyra jobb, mätt
