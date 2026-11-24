@@ -118,7 +118,7 @@ och finns till för `tips`.
 | `linje` | `{ x, y }`; `y: null` bryter linjen | `streck?: 'hel'` \| `'streckad'` \| `'prickad'`; `kurva?: 'monoton'`; `punkter?: boolean`; `tjocklek?` (standard 2) |
 | `band` | `{ x, lag, hog }` | `kurva?: 'monoton'`; `opacitet?` (standard 0,18) |
 | `intervall` | `{ x \| y, lag, hog, farg?, forskjutning? }` | `riktning?: 'liggande'`; `tjocklek?` (standard 6); `opacitet?` |
-| `lada` | en per individ: `{ x, y, farg? }` | `avvikare?: false` (lådan ritas utan de enskilda lönerna utanför morrhåren — en avvikare är en person); `punkter?: 'avvikare'` (standard: låda med morrhår och avvikare) \| `'alla'` (varje individ som punkt, utspridda i sidled, ingen låda) \| `'svarm'` (varje individ som punkt, packade intill varandra utan att täcka varandra, så att fördelningens form syns); `form?: 'fiol'` (en täthetskurva speglad kring kategorins mitt i stället för lådan, med median och kvartiler som streck; kurvan går mellan morrhårens ändar och ritar varken morrhår eller avvikarpunkter. Den är lådan i allt annat: tips, klick, tangentbord, små individer och diagramdata) \| `form?: 'regnmoln'` (en halv täthetskurva till höger om kategorins mitt, median och kvartiler som streck, och varje individ som en punkt till vänster; kurvan är ett aggregat som lådan, punkterna är individer som i `punkter: 'alla'`) \| `form?: 'kvantiler'` med `antal?: 20 \| 50` (standard 20; kvantilpunktdiagram: gruppen som `antal` lika stora andelar, varje andel en prick vid sin kvantil, staplade i sidled där de annars skulle täcka varandra, med samma prickstorlek i hela lagret; antalet är högst halva gruppen, så att en prick aldrig står för färre än två personer — `kvantilpunkter` i `src/lib/figur.js`. Prickarna är ett aggregat: träffen ger lådans sammanfattning med `kvantil: { nr, antal, varde }`, och diagramdatan är en rad per prick med kvantilens värde, aldrig individer) |
+| `lada` | en per individ: `{ x, y, farg? }` | `avvikare?: false` (lådan ritas utan de enskilda lönerna utanför morrhåren — en avvikare är en person); `punkter?: 'avvikare'` (standard: låda med morrhår och avvikare) \| `'alla'` (varje individ som punkt, utspridda i sidled, ingen låda) \| `'svarm'` (varje individ som punkt, packade intill varandra utan att täcka varandra, så att fördelningens form syns); `form?: 'fiol'` (en täthetskurva speglad kring kategorins mitt i stället för lådan, med median och kvartiler som streck; kurvan skattas med normalkärna och Silvermans bandbredd ur värdena mellan morrhårens ändar, går mellan dem och ritar varken morrhår eller avvikarpunkter. Den är lådan i allt annat: tips, klick, tangentbord, små individer och diagramdata) \| `form?: 'regnmoln'` (en halv täthetskurva till höger om kategorins mitt, median och kvartiler som streck, och varje individ som en punkt till vänster; kurvan är ett aggregat som lådan, punkterna är individer som i `punkter: 'alla'`) \| `form?: 'kvantiler'` med `antal?: 20 \| 50` (standard 20; kvantilpunktdiagram: gruppen som `antal` lika stora andelar, varje andel en prick vid sin kvantil, staplade i sidled där de annars skulle täcka varandra, med samma prickstorlek i hela lagret; antalet är högst halva gruppen, så att en prick aldrig står för färre än två personer — `kvantilpunkter` i `src/lib/figur.js`. Prickarna är ett aggregat: träffen ger lådans sammanfattning med `kvantil: { nr, antal, varde }`, och diagramdatan är en rad per prick med kvantilens värde, aldrig individer) |
 | `ruta` | `{ x, y, varde, text? }` | `visaText?: boolean` |
 | `yta` | `{ x0, x1, y0, y1, namn?, varde?, fargvarde?, farg?, etikett?, undertext? }` — en fri rektangel mellan två hörn på talaxlar (trädkarta: vyn räknar lägena). Färgen är punktens `farg`, annars färgskalan för `fargvarde`, annars lagrets. I diagramdatan: en rad per yta med `namn` (annars `etikett`) och `varde` | `opacitet?`; `etikettLage?: 'topp'` (bara etiketten, ingen undertext). Etiketten ritas uppe till vänster när ytan rymmer den |
 
@@ -588,6 +588,15 @@ ett trasigt diagram.
 11. **Ett nytt `ritaFigur`-anrop visar alla serier igen.** Det användaren dolt via förklaringen nollställs av
     en ny figur (omritning vid ändrad storlek behåller det).
 
+**Vyer som slår ihop i stället för att utelämna.** Två vyer redovisar det som är under tröskeln i en större enhet:
+
+- **Histogrammet kön mot kön** i Ålder & karriär (`histogramKlasser` i `src/lib/struktur.js`) visas bara när båda
+  könen når tröskeln, och ingen stapel gäller en klass med färre än tröskeln personer: klasserna i ändarna slås ihop
+  inåt tills ändklassen når den (*under X*, *X eller mer*), och finns en gles klass i mitten fördubblas klassbredden och
+  indelningen görs om. Blir det inte minst tre klasser ritas inget.
+- **Trädkartan** i Lönestruktur (`_strukturTradkartaFigur` i `37-struktur.js`) slår ihop AID-etiketter under tröskeln
+  till en grå yta per BAS-intervall, *Övriga små grupper*, med det sammanlagda antalet och utan könsfördelning.
+
 ## 8. Krav på varje vy
 
 - **Ett vakttest per vy:** ingen cell under tröskeln når SVG:n, verktygstipset eller tabellen
@@ -640,6 +649,9 @@ nytt diagram.
 Tabellernas radgrafik (`_laOversiktGrafik`, `_pagAvvikelseGrafik`) ritas med vanlig SVG utanför kärnan. Den är en
 utsmyckning av talet i cellen bredvid (`aria-hidden`), har ingen export och bär inga värden som inte står i raden.
 ADR-39 gäller för allt som är ett diagram.
+
+**Etiketter lutas aldrig.** Ryms inte etiketterna på en kategoriaxel visas var n:te, och en lång etikett bryts på två
+rader eller avkortas (`_rfRadbryt`, `_rfKorta` i `10-diagramlayout.js`).
 
 **Färg** (`PALETT` i `10-diagramtema.js`). Färgen väljs efter vad den ska säga:
 

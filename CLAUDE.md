@@ -27,7 +27,8 @@ request och `npm run kontroll -- --snabb` under arbetet. Ändra i `src/`, aldrig
 
 | Innan du ändrar … | läs |
 |---|---|
-| något som lämnar verktyget (text, tabell, bild, fil) | `docs/utveckling/skydd.md` S4, `docs/utveckling/k-troskeln.md`, `docs/utveckling/diagramkarnan.md` §1 och §7–8, k-riggen `tests/helpers/ktroskel-rigg.js` |
+| något som lämnar verktyget (text, tabell, bild, fil) | `docs/utveckling/skydd.md` S4, `docs/utveckling/k-troskeln.md`, `docs/utveckling/diagramkarnan.md` §1 och §7–8, `docs/utveckling/exporterna.md`, k-riggen `tests/helpers/ktroskel-rigg.js` |
+| menyn, tangentbordet, Att göra, jämförelsestatistiken eller felrapporteringen | `docs/utveckling/granssnittet.md`, ADR-10 |
 | ett diagram | `docs/utveckling/diagramkarnan.md` §1, §7–8 och §10 |
 | regressionen eller annan statistik | principerna 2–3, `docs/utveckling/regressionsmodellen.md`, ADR-17 (regressionen cachas aldrig); `tests/stat-referens.test.js` |
 | likvärdigt arbete eller definitionen av kvinnodominerat | `docs/utveckling/likvardighetsmodellen.md`, `tests/likvardighet.test.js` |

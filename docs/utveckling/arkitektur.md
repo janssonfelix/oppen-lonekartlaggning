@@ -151,4 +151,5 @@ text. Språket i det användaren läser prövas av de vakter som nämns i [`prin
 - Varför det är så här: [`arkitekturbeslut.md`](arkitekturbeslut.md). Det är där de numrerade besluten (ADR) står.
 - Beräkningarnas formler: [`regressionsmodellen.md`](regressionsmodellen.md),
   [`likvardighetsmodellen.md`](likvardighetsmodellen.md) och [`k-troskeln.md`](k-troskeln.md).
+- Gränssnittet och exporterna: [`granssnittet.md`](granssnittet.md) och [`exporterna.md`](exporterna.md).
 - Hur man kommer igång som utvecklare eller granskare: [`kom-igang.md`](kom-igang.md).

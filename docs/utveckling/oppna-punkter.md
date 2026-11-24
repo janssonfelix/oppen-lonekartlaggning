@@ -80,11 +80,9 @@ kvar med en rad om hur den avslutades. Syfte och avgränsning står i [`mal.md`]
 18. **Uttagsstegen per lönesystem i `datauttag.md` är inte verifierade mot systemen**; de
     bygger på det gemensamma statistikuttaget och har rader som varje organisations systemförvaltare fyller i
     och bekräftar för sin installation.
-29. **Beslutsloggen bär lydelsen för gränssnittet och exporterna.** De områdena har ingen referens, så några beslut
-    (bland dem ADR-10, 15, 23, 29, 33, 35 och 39) är längre än loggens tre meningar. ADR-50 och 62 pekar sedan
-    2026-11-21 på `prioriteringsmodellen.md` och `loneoversynsmodellen.md`, och de långa besluten bland ADR-77–92 på
-    sina referenser. Några detaljer i ADR-16, 20, 28, 30, 33, 54 och 62 ströks när loggen kortades (ADR-73) och
-    finns bara i git-historiken.
+29. *Avslutad 2026-11-24:* gränssnittet och exporterna har var sin referens, `granssnittet.md` och `exporterna.md`.
+    ADR-10, 15, 23, 29, 31, 33, 35, 37, 39, 75, 79, 80 och 81 är kortade till loggens form och pekar dit, till
+    `k-troskeln.md` eller till `diagramkarnan.md`, dit detaljerna i ADR-39 flyttade.
 19. *Avslutad 2026-11-21:* README i roten har ingen bild, och det är ett beslut: skärmbilder och bildfiler checkas
     inte in i källkoden.
 21. **Inför användning hos fler arbetsgivare:** licens- eller användaravtal, prismodell och support; en beskriven
