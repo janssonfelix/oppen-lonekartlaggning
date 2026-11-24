@@ -471,12 +471,12 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
 
 - Roten har `role="group"` och ritytan `role="img"`: förklaringens knappar ligger utanför bilden så att
   hjälpmedel når dem.
-- `data-marke` har värdena `stapel`, `punkt`, `linje`, `linjepunkt`, `litenpunkt`, `band`, `intervall`,
-  `lada`, `median`, `morrhar`, `avvikare`, `individ`, `ruta`, `rutatext`, `etikett`, `punktetikett`, `hanvisning`, `fel`, `rander`,
-  `fargstapel`, `zon`, `zonetikett`, `referenslinje`, `nollinje`.
+- `data-marke` har värdena `stapel`, `punkt`, `linje`, `linjepunkt`, `litenpunkt`, `kvantilpunkt`, `band`, `intervall`,
+  `lada`, `median`, `kvartil`, `morrhar`, `avvikare`, `individ`, `ruta`, `rutatext`, `yta`, `etikett`, `punktetikett`,
+  `hanvisning`, `fel`, `rander`, `monster`, `fargstapel`, `zon`, `zonetikett`, `referenslinje`, `nollinje`.
 - `data-l` är lagrets index i figuren som skickades in och `data-i` punktens index i lagrets data — alltid,
   med eller utan små grupper, dolda serier och bortvalda punkter. De bärs av märken som går att träffa: `stapel`, `punkt`,
-  `linjepunkt`, `litenpunkt`, `intervall`, `individ`, `ruta` och `lada` (lådans `data-i` är den första ritade
+  `linjepunkt`, `litenpunkt`, `kvantilpunkt`, `intervall`, `individ`, `ruta`, `yta` och `lada` (lådans `data-i` är den första ritade
   individen i kategorin). Banorna `linje` och `band` har bara `data-l`.
 - Ett `<text>` har ett `<title>` bara när den visade texten har kortats.
 - Texten har grundstorleken 12 px (`DIAGRAM_TYPSNITT.size`): axlarna, axeltitlarna och förklaringen. Stapel- och
@@ -484,8 +484,8 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   punktetiketter, referenslinjernas etiketter, ytans andra rad och exportens fotrad — har `_rfLitenPx`, som aldrig
   går under golvet 11 px (`DIAGRAM_TYPSNITT.minsta`). Ingen text i en figur är alltså mindre än 11 px. Exporten ritar med
   samma storlekar i den logiska bredden och skalas sedan (avsnitt 6).
-- Det finns två slags inre `<svg>`: panelen (`data-del="panel"`) och ränderna i en liten yta
-  (`data-marke="rander"`). Diagrammets egen svg är `:scope > svg` i behållaren.
+- Det finns tre slags inre `<svg>`: panelen (`data-del="panel"`), ränderna i en liten yta
+  (`data-marke="rander"`) och mönstret på en yta (`data-marke="monster"`). Diagrammets egen svg är `:scope > svg` i behållaren.
 - Egenskaper på behållaren (inget skrivs som attribut): `_figur` (originalet, med små punkter),
   `_figurVal`, `_figurDolda`, `_figurFilter`, `_figurBredd`, `_rfKoppling`, `_exportBeskrivning`, `_rfUrvalFel`, och
   bara med ett aktivt filter som har räknat om härledda lager `_rfVisadFigur`, `_rfRitadVisad` och `_rfHarlett`.
@@ -605,7 +605,7 @@ ett trasigt diagram.
   `tests/diagramritare.test.js`) vaktar att kärnan respekterar `liten`; de vaktar inte att vyn sätter den.
 - **Inget ritas förbi kärnan:** ett test håller andra ritande och exporterande anrop borta från källan.
 - **En gemensam väg från diagram till bild.** ZIP-exporten (`66`), "Kopiera diagram" i
-  rapportunderlaget (`67`), utskriften (`60`) och prioriteringsmatrisens bild (`55`) hämtar bilden genom
+  rapportunderlaget (`67`), utskriften (`60`) och Word-utkastets diagram (`58`) hämtar bilden genom
   `diagramTillBild(el, { bredd, hojd })` och frågar `diagramRitat(el)`. En ny plats som behöver en diagrambild ska
   använda samma väg; `utanRubrik: true` ger bilden utan rubrik och fotrad.
 
