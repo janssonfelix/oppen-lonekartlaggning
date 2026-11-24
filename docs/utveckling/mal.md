@@ -68,4 +68,5 @@ datastrukturering kan verktyget leverera värde över flera år utan att uppdate
 | Transparens | Bevis-popup på varje fynd: visar *uträkningen*, inte tabelldata |
 
 Statistiken står i [`regressionsmodellen.md`](regressionsmodellen.md) och
-[`likvardighetsmodellen.md`](likvardighetsmodellen.md).
+[`likvardighetsmodellen.md`](likvardighetsmodellen.md). Gränssnittet och exporterna står i [`granssnittet.md`](granssnittet.md) och
+[`exporterna.md`](exporterna.md).

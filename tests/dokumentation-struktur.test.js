@@ -60,6 +60,16 @@ describe('dokumentation: målen, arkitekturbesluten och de öppna punkterna stä
         const saknade = [...new Set(kandidater)].filter(f => !existsSync(join(root, f)));
         expect(saknade, `dokumenten pekar ut filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
     });
+
+    it('varje fil som ett beslut pekar på under Gäller i dag finns', () => {
+        // Pekarna står ofta som bara filnamn; de söks där dokumenten och koden ligger.
+        const mappar = ['', 'docs/utveckling/', 'docs/dataskydd/', 'docs/anvandare/', 'docs/'];
+        const pekare = [...adrMd.matchAll(/\*Gäller i dag:\*([\s\S]*?)(?=\n\n|\*\*ADR-)/g)]
+            .flatMap(m => [...m[1].matchAll(/`([\w./-]+\.(?:md|js|mjs|json))`/g)].map(x => x[1]));
+        expect(pekare.length).toBeGreaterThan(50);
+        const saknade = [...new Set(pekare)].filter(f => !mappar.some(d => existsSync(join(root, d + f))));
+        expect(saknade, `besluten pekar på filer som inte finns: ${saknade.join(', ')}`).toEqual([]);
+    });
 });
 
 // CLAUDE.md är ingången för AI-assistenter: kort nog att läsas i sin helhet, och den pekar bara på det som finns.

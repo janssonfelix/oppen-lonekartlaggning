@@ -41,7 +41,7 @@ import { _laNyckel } from './41-lika-arbete.js';
  * @returns {Array<Object>} Lista av prio-items, sorterade på score desc.
  */
 export function raknaPrioritering(reference) {
-    // Modellen (grupperingen, indexet, k-regeln) ligger i src/lib/prioritering.js (ADR-8).
+    // Modellen (grupperingen, indexet, k-regeln) ligger i src/lib/prioritering.js (ADR-98).
     // Här översätts bara state till referensFor och parametrar.
     return prioritera(hamtaData(), {
         referensFor: (aid, bas) => {

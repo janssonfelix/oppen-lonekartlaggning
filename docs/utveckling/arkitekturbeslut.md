@@ -24,7 +24,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-8 | lib-speglarna genereras från `src/lib/` | Upphävd | – |
 | ADR-9 | Hash-baserad CSP `script-src` | Gällande | – |
 | ADR-10 | Sidopanelen är navigation, inte ARIA-tabs | Gällande | – |
-| ADR-12 | K-anonymitetens redovisningsform: utelämna och namnge | Ändrad av ADR-51 | – |
+| ADR-12 | Redovisningsformen för minsta gruppstorlek: utelämna och namnge | Ändrad av ADR-51 | – |
 | ADR-13 | `VERSION` är enda källa för versionsstämpeln | Gällande | – |
 | ADR-14 | Tabeller och egna vyer visar små grupper; exporten utelämnar dem | Sammanförd i `k-troskeln.md` | – |
 | ADR-15 | Formler i CSV- och urklippsexport neutraliseras | Gällande | – |
@@ -115,7 +115,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 ## Besluten
 
 **ADR-1 — Web Worker avvisad.** Verktyget använder ingen arbetstråd; vid ett faktiskt prestandabehov används
-main-tråds-chunking (`requestIdleCallback`) och nedsampling i diagramkärnan. *Avvisat:* en worker: CSP:n saknar
+uppgifter i följd på huvudtråden (`setTimeout`, ADR-80) och nedsampling i diagramkärnan. *Avvisat:* en worker: CSP:n saknar
 `worker-src`, en worker når IndexedDB utanför lagringsspärren, `file://` och blob-workers är opålitliga, och
 diagramritningen arbetar ändå mot DOM. *Gäller i dag:* `skydd.md` S1.
 
@@ -150,14 +150,12 @@ får importera varandra; aliaset injiceras inuti den importerande modulens IIFE,
 djupare än `esc()`. Appen använder därför delegerade lyssnare (`data-goto-tab`, `data-dismiss-parent`). *Gäller i dag:*
 `skydd.md` S1, `docs/dataskydd/riskanalys.md` §6.1 och `bygge-och-test.md` §2.
 
-**ADR-10 — Sidopanelen är navigation, inte ARIA-tabs.** Sidopanelen är `<nav aria-label>` med knappar utan tab-roll och
-`aria-current="page"` på den aktiva; pil-, Home- och End-navigering är ett tillägg, och alla knappar ligger i naturlig
-Tab-ordning. En persistent sidopanel som byter huvudinnehåll är navigation; de två äkta tablistarna (`info-tab-nav`,
-`benchmark-metric-bar`) har bara `role="tab"`-barn. `tests/a11y.test.js` (axe-core, ett dev-beroende som aldrig ingår i
-bygget) kräver noll överträdelser. *Avvisat:* tablist-mönstret, som bara tillåter `role="tab"`-barn, medan sidopanelen
-har en disclosure-knapp.
+**ADR-10 — Sidopanelen är navigation, inte ARIA-tabs.** Sidomenyn är navigation, med `aria-current="page"` på den
+aktiva knappen och alla knappar i Tab-ordningen; pil-, Home- och End-tangenterna är ett tillägg, och bara de äkta
+flikraderna har tablist-mönstret. En meny som byter sidans huvudinnehåll är navigation. *Avvisat:* tablist-mönstret för
+menyn, som bara tillåter `role="tab"`-barn (menyn hade då en hopfällbar grupp). *Gäller i dag:* `granssnittet.md` §1.
 
-**ADR-12 — K-anonymitetens redovisningsform: utelämna och namnge.** En grupp under tröskeln utelämnas i det som lämnar
+**ADR-12 — Redovisningsformen för minsta gruppstorlek: utelämna och namnge.** En grupp under tröskeln utelämnas i det som lämnar
 verktyget och namnges i en not; är bara könsuppdelningen för liten redovisas gruppens samlade median. *Avvisat:* en rad
 med `< 10` i varje mätvärde (värdelös, långa tabeller), och att utelämna grupper där bara ena könet är litet (i
 EU-matrisen har grupperna ofta 14–17 personer men 2–3 av ena könet). *Gäller i dag:* `k-troskeln.md` §2 och §4.
@@ -170,10 +168,9 @@ Byggdatumet härleds ur versionen, inte ur systemklockan, som skulle ge ny SHA-2
 när användaren kryssar i rutan, ett beslutat undantag; den som använder verktyget har redan rådatan. *Avvisat:*
 differensskydd mot att räkna fram en liten grupp ur två filtrerade urval. *Gäller i dag:* `k-troskeln.md` §2 och §4.
 
-**ADR-15 — Formler i CSV- och urklippsexport neutraliseras.** En textcell som börjar med `=`, `+`, `-` eller `@` (eller
-tabb eller CR) får ett inledande `'`, så att en fientlig lönefil inte kan lägga en formel i en export. Tal lämnas
-orörda, och ett tal som börjar med `−` (U+2212) skrivs med `-`, eftersom Excel annars läser det som text. Regeln bor i
-`neutraliseraCell` (`src/lib/csv.js`). *Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.6.
+**ADR-15 — Formler i CSV- och urklippsexport neutraliseras.** En textcell som kan bli en formel får ett inledande
+`'`, så att en fientlig lönefil inte kan lägga en formel i en export; tal lämnas orörda. *Gäller i dag:*
+`exporterna.md` §2 och `docs/dataskydd/riskanalys.md` §6.6.
 
 **ADR-16 — Inga paragrafhänvisningar i gränssnittet, och sedan 2026-10-19 inte heller i hjälptexter eller exporter.**
 Verktyget hänvisar övergripande, aldrig med paragraf- eller artikelnummer, och lagrummen står bara i `lagrum.md`: 3 kap.
@@ -203,12 +200,10 @@ symmetriskt utan referenskön, och grupperna rangordnas efter bidrag i kronor; B
 förklarat, men inte var. *Avvisat:* uppdelning på median, där delarna inte summerar. *Gäller i dag:*
 `regressionsmodellen.md` §10.
 
-**ADR-23 — Personer att granska: individlista i verktyget, aldrig i utdata.** Panelen i Lika arbete listar personer vars
-lön ligger minst X % (standard 10, inställbar 5–30) under en förväntad lön ur kollegorna i samma AID och BAS, utan
-personen själv: `ln(lön) = a + b · ålder` när kollegornas åldrar skiljer sig minst 5 år, annars deras median. Bara
-grupper med minst `statGolv()` personer prövas (minst 10, högre när tröskeln är höjd), och båda könen flaggas (`src/lib/individflaggor.js`). Personen identifieras med
-filens radnummer, så att ingen ny identifierare samlas in; ett citerat fält med radbrytning förskjuter numreringen, en
-accepterad begränsning. *Gäller i dag:* `k-troskeln.md` §4.
+**ADR-23 — Personer att granska: individlista i verktyget, aldrig i utdata.** Panelen i Lika arbete listar personer
+vars lön ligger en inställbar andel under en förväntad lön ur kollegorna i samma grupp, så att enskilda avvikelser går
+att granska, och listan lämnar aldrig verktyget. Personen identifieras med filens radnummer, så att ingen ny
+identifierare samlas in. *Gäller i dag:* `granssnittet.md` §5 och `k-troskeln.md` §4.
 
 **ADR-24 — Stabilitet för flaggor i Lika arbete: märkning, inte nedgradering.** En flaggad grupp märks *skör* om
 skillnaden kan hamna under storleksgränsen när en eller två personer tas bort, annars *stabil*, och flaggan ligger kvar.
@@ -225,48 +220,43 @@ utan ställningstagande visas ett tomläge. Benämningar, grundinställningar, s
 importprofiler kommer ur ett organisationspaket som handläggaren läser in i ett steg. *Gäller i dag:* `skydd.md` S5,
 `docs/anvandare/organisationspaket.md` och `.github/CONTRIBUTING.md` (importprofiler).
 
-**ADR-29 — Ett steg är klart när dess punkter är hanterade.** Processöversikten markerar ett steg som klart när arbetet
-är gjort, inte när analysen har körts: Lika arbete när alla punkter i Att göra i *Lika arbete* och *Lika arbete,
-fördjupning* är avbockade, Likvärdigt arbete när inga kandidatpar finns eller alla är avbockade. Finns bara par med en
-grupp under tröskeln är tillståndet *inget att hantera*. *Börja här* sorterar underlaget först, sedan de könsrelaterade
-fynden och sist läget mot referenserna (`src/lib/attgora.js`).
+**ADR-29 — Ett steg är klart när dess punkter är hanterade.** Processöversikten markerar ett analyssteg som klart när
+arbetet är gjort, med stegets punkter i Att göra avbockade, inte när analysen har körts. *Börja här* sorterar efter
+prioritet och inom samma prioritet underlaget först, sedan fynden om skillnader mellan kvinnor och män. *Gäller i dag:* `granssnittet.md` §2.
 
 **ADR-30 — Stilelement kräver kontrollsumma, stilattribut är förbjudna; låsta beroenden.** Alla `style="…"` är ersatta
 av klasser, och CSP:n har `style-src-elem` med kontrollsummor och `style-src-attr 'none'`; beroendena är låsta
 (`vendor/SHA256SUMS`, CI-stegen på commit-SHA). *Gäller i dag:* `bygge-och-test.md` §4, `skydd.md` S1 och
 `docs/dataskydd/riskanalys.md` §6.1.
 
-**ADR-31 — Interna fel rapporteras i stället för att sväljas.** Analysdelar som ska tåla fel hoppar över sin del om
-något kastar, men anropar `rapporteraFel(plats, e)` (`03-hjalpfunktioner.js`): en banner säger att resultatet kan vara
-ofullständigt, och konsolen får en varning där siffrorna är maskerade, eftersom konsolen aldrig ska bära lönedata.
-Avsiktliga `catch`, som nekad urklippsbehörighet, rapporterar inte. Vakten är `tests/start-och-meny-app.test.js`.
+**ADR-31 — Interna fel rapporteras i stället för att sväljas.** En analysdel som ska tåla fel hoppar över sin del,
+men felet visas i en banner och i konsolen, där siffrorna är maskerade: ett tyst ofullständigt resultat är värre än ett
+synligt fel, och konsolen ska aldrig bära lönedata. *Gäller i dag:* `granssnittet.md` §6.
 
 **ADR-33 — AID-hierarki, översikt per huvudområde, ansvarskod och kodkvalitet.** Huvudområdet i AID är en översikt
-och en dimension i Tabeller och egna vyer, inte ett globalt filter, som skulle ändra alla flikars resultat och k-skydd
-samtidigt. Ansvarskoden är valfri, läses bara om minst 95 % av värdena är giltiga och redovisas bredvid huvudresultaten;
-huvudtalet räknar inte bort den, eftersom om ansvaret är ett sakligt skäl är arbetsgivarens bedömning. *Gäller i dag:*
-`docs/anvandare/datauttag.md` och `docs/dataskydd/riskanalys.md` §6.4.
+och en dimension, inte ett globalt filter, som skulle ändra alla flikars resultat och minsta gruppstorlek samtidigt.
+Ansvarskoden är valfri och redovisas bredvid huvudresultaten; huvudtalet räknar inte bort den, eftersom om ansvaret är
+ett sakligt skäl är arbetsgivarens bedömning. *Gäller i dag:* `granssnittet.md` §3, `docs/anvandare/datauttag.md` och
+`docs/dataskydd/riskanalys.md` §6.4.
 
 **ADR-34 — SKR:s personalstatistik som referens för kvinnoandel.** Kvinnoandelen per AID-etikett kommer ur SKR:s
 personalstatistik, en källa med dokumenterat ursprung som täcker etikettlistan; den är reserven i Likvärdigt arbete och
 ett referensvärde bredvid organisationens egen könsfördelning, och påverkar inga k-regler. *Gäller i dag:*
 `likvardighetsmodellen.md` §4.
 
-**ADR-35 — Jämförelsestatistik: alla percentiler i en tabell och två diagram.** `src/lib/jamforelse.js` räknar raderna
-(P10, median och P90 för organisationen och jämförelsen) som tabellen, diagrammen och Excel läser, så att de inte kan
-säga olika saker. En källa som inte är inläst är `aria-disabled` (inte `disabled`), så att flikraden fungerar med
-piltangenterna. *Avvisat:* en egen gräns på 20 personer för P10 och P90: värdet pekar inte ut vem, och medianen har
-samma egenskap vid udda antal.
+**ADR-35 — Jämförelsestatistik: alla percentiler i en tabell och två diagram.** Tabellen, diagrammen och Excel-filen
+läser samma rader med P10, median och P90 (`src/lib/jamforelse.js`), så att de inte kan säga olika saker. *Avvisat:* en
+egen gräns på 20 personer för P10 och P90: värdet pekar inte ut vem, och medianen har samma egenskap vid udda antal.
+*Gäller i dag:* `granssnittet.md` §4.
 
 **ADR-36 — Filrutorna syns alltid; namn på organisationen och jämförelsestatistiken.** Filrutorna syns alltid, så att
-ställningstagandet och statistiken aldrig döljs bakom en hopfälld rad. `orgNamn` och `jmfNamn` (`src/lib/namn.js`) är
+ställningstagandet och statistiken aldrig döljs bakom en hopfälld rad. `orgNamn` och `jmfNamn` (`src/app/07-standardinstallningar.js`) är
 enda källan för etiketterna, och namnfälten avvisar text som liknar personnummer eller e-post. *Gäller i dag:*
 `skydd.md` S5.
 
-**ADR-37 — Word-utkastet som riktig .docx.** Utkastet skrivs som Office Open XML (`src/lib/docx.js`) med
-Word-standardens rubrikstilar och metadata utan namn, eftersom HTML med ändelsen `.doc` får Word att varna och öppna
-filen i skyddad vy. *Avvisat:* inbäddad HTML (altChunk), som Word på webben, LibreOffice och Google Dokument inte
-hanterar.
+**ADR-37 — Word-utkastet som riktig .docx.** Utkastet skrivs som Office Open XML (`src/lib/docx.js`), eftersom HTML
+med ändelsen `.doc` får Word att varna och öppna filen i skyddad vy. *Avvisat:* inbäddad HTML (altChunk), som Word på
+webben, LibreOffice och Google Dokument inte hanterar. *Gäller i dag:* `exporterna.md` §3.
 
 **ADR-38 — K-tröskeln är en inställning.** Minsta gruppstorlek är en inställning, standard 10, tillåtet 2–1000, så att
 en arbetsgivare med egna riktlinjer kan följa dem; en sänkning under 10 kräver bekräftelse och ger en varning som inte
@@ -274,16 +264,13 @@ går att stänga. *Avvisat:* "bara höja", "golv vid 5" och "styrt av organisati
 med varning". *Gäller i dag:* `k-troskeln.md` §1, §3 och §5–§10.
 
 **ADR-39 — Diagramkärna på D3 med eget figurformat.** Vyerna bygger en figur (ren data), och `ritaFigur` gör SVG av den
-med D3, så att varje datapunkt bär gruppnyckel och `liten`-flagga och skyddet ligger på ett ställe. Etiketter lutas
-aldrig. Täthetskurvor skattas med normalkärna och Silvermans bandbredd mellan morrhårens ändar; ett histogram kön mot
-kön visas bara när båda könen når tröskeln och ingen klass rymmer färre (ändklasserna slås ihop inåt); trädkartan slår
-ihop AID-etiketter under tröskeln till en grå yta per BAS-intervall; och en värmekartas färgskala räknas bara ur värden
-som får redovisas. *Gäller i dag:* `diagramkarnan.md` §1–§8 och `k-troskeln.md` §4.
+med D3, så att varje datapunkt bär gruppnyckel och `liten`-flagga och skyddet för små grupper ligger på ett ställe.
+*Gäller i dag:* `diagramkarnan.md` §1–§8 och §10, och `k-troskeln.md` §4.
 
 **ADR-40 — Fyra exporter med var sin uppgift, ritade ur en rapportmodell.** Word-utkastet är rapporten, Excel-filen
 underlaget, PDF-rapporten en låst kopia av Word-utkastet och ZIP-filen allt; Word och PDF ritas ur samma rapportmodell,
 så att de inte kan glida isär. *Avvisat:* eget innehåll i PDF-rapporten (två sanningar), och särskilda sammanställningar
-för ledningsbriefen. *Gäller i dag:* `mal.md` (*Exportera*) och `k-troskeln.md` §3.
+för ledningsbriefen. *Gäller i dag:* `mal.md` (*Exportera*), `exporterna.md` §1 och `k-troskeln.md` §3.
 
 **ADR-41 — Flikmallen: resultatet först.** Varje flik har en rad om vad den svarar på, urvalet, nyckeltalen i en rad,
 huvudresultatet och under *Fördjupning* hopfällbara avsnitt, så att huvudresultatet inte ligger flera skärmar ned.
@@ -433,11 +420,9 @@ ord (grupp, AID-grupp), som inte blev tydligare; att behålla *yrke*, som handbo
 etiketterna. *Gäller i dag:* `src/lib/termer.js` och `bygge-och-test.md` §13.
 
 **ADR-75 — Kort ordform i kolumnrubriker, och Word-utkastets täta läge.** En kolumnrubrik där hela termen inte ryms
-får begreppets korta form (`kort` i `src/lib/termer.js`, *AID* för AID-etikett), på skärmen och i rapporten: Lönelägets
-första kolumn och *AID median högre (kr)* i Likvärdigt arbete i Word-utkastet och PDF-rapporten. Exporternas etiketter
-behåller hela termen. En tabell i Word-utkastet som inte ryms i 10 pt skrivs i 9 pt med cellmarginalen 57 twips.
-*Avvisat:* rubriken «Jämförelseetikettens median högre med», som inte rymdes. *Gäller i dag:* `bygge-och-test.md` §13
-och `src/lib/docx.js`.
+får begreppets korta form (*AID* för AID-etikett), på skärmen och i rapporten, medan exporternas etiketter behåller hela
+termen; en tabell i Word-utkastet som inte ryms skrivs tätare. *Avvisat:* rubriken «Jämförelseetikettens median högre
+med», som inte rymdes. *Gäller i dag:* `bygge-och-test.md` §13 och `exporterna.md` §3.
 
 **ADR-76 — Poängläget jämför bara med organisationens egna jämförelseetiketter.** Med arbetsvärderingspoäng i
 lönefilen används jämförelsestatistiken inte längre som reserv. Statistikens rader har inga egna poäng; en rad fick
@@ -463,30 +448,22 @@ huvudregressionens reservsteg utan BAS, som i det läget visar den råa skillnad
 under en rubrik som säger BAS. *Gäller i dag:* `regressionsmodellen.md` §3.
 
 **ADR-79 — Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och
-arbetsvärdering.** Protokollet för gemensam lönebedömning redovisar både median och medelvärde per kön, med skillnaden i
-kronor och kvinnors i procent av mäns, för varje redovisad AID-etikett (blad 2) och BAS-intervall (blad 3), i blad 3 för
-samma personer som regressionen. Statusen och urvalet följer som förut medianen i blad 2 och regressionen i blad 3;
-medelvärdet står bara för en grupp där båda könen når tröskeln. Försättssidan har fält som parterna fyller i för
-löneökning efter föräldraledighet eller ledighet för vård av anhörig, för utvärderingen av åtgärderna från föregående
-gemensamma lönebedömning och för analysen av systemen för könsneutral arbetsvärdering och arbetsindelning. *Gäller i
-dag:* `lagrum.md`, avsnittet om protokollet för gemensam lönebedömning.
+arbetsvärdering.** Protokollet för gemensam lönebedömning redovisar median och medelvärde per kön, så att direktivets
+genomsnittliga lönenivåer täcks, medan urvalet och statusen följer medianen och regressionen som förut. Försättssidan
+har fält för de led som underlaget inte kan räkna. *Gäller i dag:* `exporterna.md` §4 och `lagrum.md`, avsnittet om
+protokollet för gemensam lönebedömning.
 
 **ADR-80 — Flikbytet ritar först och räknar sedan.** När användaren själv byter flik blir fliken synlig och sidan
-målas innan fliken räknas, med `aria-busy` och en rad om att fliken räknas medan det som stod i panelen döljs; block som
-tar över en halv sekund och inte syns överst ritas efteråt, vart och ett i en egen uppgift på huvudtråden med en
-platshållare. Ett nytt flikbyte under väntan går före, ett block ritar ingenting om underlaget, tröskeln,
-förhandsvisningen, ett val eller fliken har ändrats sedan fliken ritades, och inget resultat sparas mellan uppgifterna
-(ADR-17); direkta anrop av `renderTabContent`, exportläget och klick från koden ritar synkront som förut. *Avvisat:* en
-arbetstråd (ADR-1); att återanvända regressionen mellan flikarna, som kräver en ändrad ADR-17; att visa flikens gamla
-innehåll medan den räknas. *Gäller i dag:* `k-troskeln.md` §3.
+målas innan fliken räknas, och tunga block som inte syns överst ritas efteråt, vart och ett i en egen uppgift; inget
+resultat sparas mellan uppgifterna (ADR-17). *Avvisat:* en arbetstråd (ADR-1); att återanvända regressionen mellan
+flikarna, som kräver en ändrad ADR-17; att visa flikens gamla innehåll medan den räknas. *Gäller i dag:*
+`k-troskeln.md` §3.
 
-**ADR-81 — En färdigritad flik visas igen när ingenting har ändrats.** När användaren byter tillbaka till en flik som
-är färdigritad visas den som den är, utan omritning, om visningsversionen och flikens ritning är oförändrade sedan dess:
-visningsversionen ökar vid varje inmatning i sidan utom ren navigering, vid varje ny generation utom en exports tur och
-retur, och vid inläsning, rensning, en konfigurationsfil, ett paket och varje bakgrundsberäkning som blir klar. Det som
-återanvänds är flikens ritade innehåll i sidan; regressionen och andra resultat cachas fortfarande aldrig, och ADR-17
-gäller för dem. *Avvisat:* att spara regressionen eller andra resultat mellan flikarna; att avgöra per flik vad som
-påverkar den, som är finare men lättare att få fel än att rita om allt efter varje ändring. *Gäller i dag:*
+**ADR-81 — En färdigritad flik visas igen när ingenting har ändrats.** En flik som användaren byter tillbaka till
+visas som den är, utan omritning, när ingenting som kan ändra den har hänt sedan den ritades, avgjort med en
+visningsversion som ökar grovt hellre än fint. Det som återanvänds är flikens ritade innehåll; regressionen och andra
+resultat cachas aldrig (ADR-17). *Avvisat:* att spara regressionen eller andra resultat mellan flikarna; att avgöra per
+flik vad som påverkar den, som är finare men lättare att få fel än att rita om allt efter varje ändring. *Gäller i dag:*
 `k-troskeln.md` §3.
 
 **ADR-82 — Bara dator: verktyget anpassas inte för surfplatta eller telefon.** Ändrar ADR-41, som också nämnde
@@ -595,7 +572,7 @@ för gemensam lönebedömning får bladet *2a. Lika arbete, alla grupper*: samma
 flaggade. Bladet har antal och medianer men inga medelvärden, så det ger ingen ny skillnad mot blad 3:s medelvärden
 (medianer går inte att dela upp). *Avvisat:* en ny tabell för protokollet, som kunde säga något annat än Lika arbete
 om samma grupp; att lägga till medelvärdet per grupp, som öppnar nya skillnader mot blad 3. *Gäller i dag:*
-`lagrum.md`, avsnittet om protokollet för gemensam lönebedömning, och `k-troskeln.md` avsnitt 2.
+`exporterna.md` §4, `lagrum.md`, avsnittet om protokollet för gemensam lönebedömning, och `k-troskeln.md` avsnitt 2.
 
 **ADR-94 — Diagrammens filter står alltid utfällda.** Beslutat av underhållaren 2026-11-22. Filterraderna ovanför ett
 diagram står i en inramad ruta med rubriken *Filter* och antalet aktiva filter; rutan fälls inte ihop, och med ett
@@ -655,7 +632,7 @@ De äldre besluten och CHANGELOG nämner de gamla namnen; tabellen visar vad de 
 
 Spegelns alias följer samma ord: `_fitOLS` heter `_anpassaOLS`, `_rngFor` `_slumpFor`, `_fcComputePott` `_fcBeraknaPott`,
 `_lvComputePairs` `_lvLikvardighetspar`, `_toCsv` `_tillCsv` och så vidare. *Gäller i dag:* `sparbarhet.md`
-(kolumnen Funktion och fil), `gen-mirrors.mjs`.
+(kolumnen Funktion och fil).
 
 **ADR-98 — Appen byggs från ES-moduler med esbuild.** Beslutat av underhållaren 2026-11-23. Delarna i `src/app/` är
 ES-moduler med explicita `import` och `export`, och de importerar `src/lib/` under lib-namnen. `tools/build-app.mjs`
@@ -685,8 +662,9 @@ bara det den får; en tunn adapter i samma del (`laVymodell()`) läser tillstån
 minne för de dyra delarna (bootstrap, omkastning) som valfria argument. Vymodellen för en flik ligger i
 `src/lib/vymodell-<flik>.js`, platt bland de andra modulerna, så att vakterna för `src/lib/` (`tests/lib-beroenden.test.js`,
 modultabellen i `arkitektur.md`) gäller utan ändring. Varje vymodell prövas i Node med ID-märkta tester i
-spårbarhetsmatrisen, och k-invarianten prövas på vymodellen vid 10 och 25 (I9). Först ute är Lika arbete och
-Lönestrukturs avsnitt per BAS-intervall (`vymodell-lonestruktur.js`); flikens övriga delar och de andra flikarna följer.
+spårbarhetsmatrisen, och k-invarianten prövas på vymodellen vid 10 och 25 (I9). Först ute var Lika arbete och
+Lönestrukturs avsnitt per BAS-intervall (`vymodell-lonestruktur.js`); vilka flikar och delar som har en vymodell står i
+modultabellen i `arkitektur.md`.
 Diagrammens figurer byggs kvar i appen ur vymodellens data. *Skäl:* en extern granskare ska kunna läsa och pröva varje
 regel som styr vad en flik visar utan DOM och tillstånd (ADR-95, ADR-98). *Avvisat:* en mapp `src/lib/vymodeller/`,
 som vakterna för `src/lib/` inte läser och som skulle kräva att de skrivs om; att låta ritfunktionen läsa tillståndet
@@ -751,7 +729,7 @@ dag:* `k-troskeln.md` §1 och §5.
 
 **ADR-104 — Funktionerna i `src/app/` har svenska namn; tillståndets fält och DOM:ens id:n står kvar.** Beslutat av
 underhållaren 2026-11-23. Utvidgar ADR-97 till appen. Toppnivånamnen i `src/app/` (funktioner, konstanter och `let`)
-som har en engelsk del byts mot svenska, en grupp moduler i taget och utan beteendeändring: först S4 och exporten,
+som hade en engelsk del är bytta mot svenska, en grupp moduler i taget och utan beteendeändring: först S4 och exporten,
 sedan tillståndet och starten, flikarna och sist diagramritaren och verktygstipsen. Verben följer en ordlista (render
 blir rita, compute räkna, build bygg, apply tillämpa, show visa och så vidare) och substantiven verktygets egna ord
 (diagram, tabell, prognos, kostnad, inställningar). Prefixen (`_fc`, `_st`, `_rf` …) och etablerade förkortningar (CSV,
@@ -764,7 +742,7 @@ tabellerna med sitt id; en granskare läser dem inte. *Skäl:* den som följer e
 skärmen och exporten ska känna igen samma ord i koden, dokumenten och spårbarhetsmatrisen (ADR-95). Bygget fäller ett
 namn som krockar med ett annat eller med `window` (`bygge-och-test.md` §2). *Avvisat:* att byta tillståndets fält och
 id:n i samma ändring, som rör varje fil utan att en granskare vinner något. De äldre besluten och CHANGELOG nämner
-några av appens gamla namn; tabellen visar vad de heter nu och fylls på grupp för grupp:
+några av appens gamla namn; tabellen visar vad de heter nu:
 
 | Modul | Gammalt namn | Nytt namn |
 |---|---|---|

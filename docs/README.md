@@ -51,6 +51,8 @@ Verktyget är ett proof of concept; vad det betyder står i README:s [*Status*](
 | [`arkitektur.md`](utveckling/arkitektur.md) | Arkitekturen på en sida: lagren, dataflödet från fil till export och beräkningskärnans moduler. |
 | [`kom-igang.md`](utveckling/kom-igang.md) | Första timmen; utvecklarens väg ändrar, bygger och provar. |
 | [`bygge-och-test.md`](utveckling/bygge-och-test.md) | Hur verktyget byggs, testas, typkontrolleras och släpps: bygget och dess skyddsnät, testsviten och testmiljön, typkontrollen, linten, `npm run kontroll`, CI, releasen och demosidan. |
+| [`granssnittet.md`](utveckling/granssnittet.md) | Gränssnittet som det är byggt: menyn och tangentbordet, processöversikten och *Börja här*, huvudområdet och ansvarskoden, jämförelsestatistiken, *Personer att granska* och de interna felen. |
+| [`exporterna.md`](utveckling/exporterna.md) | Exporterna som de byggs: de samlade exporterna, formelskyddet i CSV och urklipp, Word-utkastet och protokollet för gemensam lönebedömning. |
 | [`diagramkarnan.md`](utveckling/diagramkarnan.md) | Diagramkärnan som den är byggd: figurformatet, ritaren, exporten och vyernas skyldigheter. |
 | [`organisationsfil.md`](utveckling/organisationsfil.md) | Formatspecifikation för organisationsfilen: verktyget med organisationspaketet inbakat. |
 | [`arkitekturbeslut.md`](utveckling/arkitekturbeslut.md) | Loggen över arkitekturbesluten (ADR): vad som valdes och varför, med status; numren som koden och testerna pekar på. |

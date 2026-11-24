@@ -3,8 +3,8 @@
 /**
  * Öppen lönekartläggning — Likvärdighetsanalys (DiskrL 3:10 §)
  *
- * Ren, testbar kärna för § 3:10-analysen. Appen får den genom lib-speglarna
- * (ADR-8); likvardighetspar() i 34-likvardigt-arbete.js är adaptern
+ * Ren, testbar kärna för § 3:10-analysen. Appen importerar den
+ * (ADR-98); likvardighetspar() i 34-likvardigt-arbete.js är adaptern
  * runt den. Vitest verifierar *algoritmen* deterministiskt.
  *
  * Modellen (ADR-60: jämförelseyrkena är alla som inte är kvinnodominerade):
@@ -230,7 +230,7 @@ export function aldersjusteradSkillnad(kvRader, jmfRader, { golv = ALDERS_GOLV_S
     const kvMedian = _median(kvAlla.map(r => r.lon));
     if (!(medianJusterad > 0) || !(kvMedian > 0)) return null;
     const gapKr = medianJusterad - kvMedian;
-    return { medianJusterad, gapKr, gapPct: gapKr / kvMedian * 100, metod: 'alder' };
+    return { medianJusterad, gapKr, gapPct: gapKr * 100 / kvMedian, metod: 'alder' };
 }
 
 /** Individrader {lon, alder} ur en aggregerad grupp (lons och aldrar är parallella). */
@@ -445,7 +445,7 @@ export function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
             if (g.median <= f.median) { jämförelse.statLägreEllerLika++; continue; }
             jämförelse.statHögre++;
             const gapKr = g.median - f.median;
-            const gapPct = (gapKr / f.median) * 100;
+            const gapPct = gapKr * 100 / f.median;   // multiplicera först: ett par exakt på minGap faller inte bort på avrundningen
             if (gapPct < minGap) continue;
 
             const ärIntern = källa === 'intern';
@@ -531,7 +531,7 @@ export function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
             if (g.median <= f.median) { jämförelse.statLägreEllerLika++; continue; }
             jämförelse.statHögre++;
             const gapKr = g.median - f.median;
-            const gapPct = (gapKr / f.median) * 100;
+            const gapPct = gapKr * 100 / f.median;   // multiplicera först: ett par exakt på minGap faller inte bort på avrundningen
             if (gapPct < minGap) continue;
             /** @type {{lo:number, hi:number}|null} */
             let gapCI = null;
@@ -583,7 +583,7 @@ export function byggParLagreKrav(orgKvDom, orgIckeKv, val = {}) {
             const rg = rang(g.bas);
             if (!(rg < rf) || !(g.median > f.median)) continue;
             const gapKr = g.median - f.median;
-            const gapPct = gapKr / f.median * 100;
+            const gapPct = gapKr * 100 / f.median;   // multiplicera först: ett par exakt på minGap faller inte bort på avrundningen
             if (gapPct < minGap) continue;
             ut.push({ _f: f, _g: g,
                 kvAid: f.aid, kvLabel: f.label, kvBas: f.bas, kvN: f.n, kvNKv: f.nKv, kvMedian: f.median, kvKvinnoPct: f.kvinnoPct,

@@ -12,7 +12,7 @@ import {
     tolkaTal, tolkaTalStrikt, _normaliseraKon, _normaliseraBas, _normaliseraPolicyAid, _stadaYrkesfalt,
     _pnrSampelSteg, hittaKansligaKolumner, tolkaLonerad, yrkeLiknarNamn, YRKE_NAMNMONSTER,
     yrkeNamnNyckel, sallsyntaNamnrader, YRKE_NAMN_HOGST_RADER,
-    _gissaAvgransare, _avkodaCsv, _hittaCsvRubrik, _gissaTabellformat,
+    _gissaAvgransare, _avkodaCsv, _hittaCsvRubrik, _gissaTabellformat, bladetsSlut,
     _rubrikForRoll, vardeForRoll, gissaKolumnmappning, lonefilensRubriker, hittaAnsvarKolumn, _bedomAnsvarKolumn, minimeraRad
 } from '../src/lib/inlasning.js';
 import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
@@ -465,6 +465,15 @@ describe('_gissaTabellformat (magiska bytes)', () => {
     });
 });
 
+describe('bladetsSlut (Excelbladets verkliga område)', () => {
+    it('sista raden och kolumnen med värde; blanka celler och nycklar med ! räknas inte', () => {
+        expect(bladetsSlut({ '!ref': 'A1:XFD1048576', A1: { v: 'BAS' }, E3: { v: 30000 }, AA2: { v: '' }, XFD1048576: { v: ' ' } }))
+            .toEqual({ r: 2, c: 4 });
+        expect(bladetsSlut({ AB10: { v: 0 } })).toEqual({ r: 9, c: 27 });
+        expect(bladetsSlut({ '!ref': 'A1:C3' })).toBeNull();
+    });
+});
+
 describe('_hittaCsvRubrik (rubrikrad + preamble-tolerans)', () => {
     const GROUPS = [['bas', 'basintervall'], ['mnadsln', 'lon', 'ln'], ['kon', 'kn'], ['lder', 'alder']];
     it('hittar rubrikraden på rad 0 utan preamble', () => {
@@ -540,6 +549,15 @@ describe('inläsning: kolumnvalet', () => {
     it('delsträngen gäller när ingen rubrik är exakt lika, och sökordens ordning står sig', () => {
         expect(gissaKolumnmappning(['Lönetillägg', 'Kön']).lon).toBe('Lönetillägg');
         expect(gissaKolumnmappning(['Lön', 'Månadslön']).lon).toBe('Månadslön');
+    });
+    it('en exakt rubrik för ett senare sökord går före en delsträng för ett tidigare, och annars den kortaste', () => {
+        expect(gissaKolumnmappning(['Kontor', 'Kön']).kon).toBe('Kön');
+        expect(gissaKolumnmappning(['Basenhet', 'BAS-intervall']).bas).toBe('BAS-intervall');
+        expect(gissaKolumnmappning(['Anställningsålder', 'Ålder (år)']).alder).toBe('Ålder (år)');
+        expect(gissaKolumnmappning(['Lönetillägg', 'Grundlön']).lon).toBe('Grundlön');
+    });
+    it('yrkets sökord är en prioritetsordning: AID-etikett går före en rubrik som bara heter AID', () => {
+        expect(gissaKolumnmappning(['AID', 'AID-etikett']).yrke).toBe('AID-etikett');
     });
 });
 

@@ -2325,11 +2325,18 @@ function rubrikgrupper() {
 function _hittaRubrik(rubriker, sokord, roll) {
   const hoppa = (h) => roll === "yrke" && arAnsvarskodRubrik(h);
   const rensade = (rubriker || []).map((h) => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ""));
-  for (const name of sokord) {
-    const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-    let i = rensade.indexOf(searchStr);
-    if (i < 0) i = rensade.findIndex((r) => r !== null && r.includes(searchStr));
+  const ord = sokord.map((s) => s.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  if (roll !== "yrke") for (const s of ord) {
+    const i = rensade.indexOf(s);
     if (i >= 0) return rubriker[i];
+  }
+  for (const s of ord) {
+    let bast = rensade.indexOf(s);
+    if (bast >= 0) return rubriker[bast];
+    rensade.forEach((r, i) => {
+      if (r !== null && r.includes(s) && (bast < 0 || r.length < rensade[bast].length)) bast = i;
+    });
+    if (bast >= 0) return rubriker[bast];
   }
   return void 0;
 }
@@ -2468,6 +2475,19 @@ function hittaKansligaKolumner(rader) {
     else if (nameCount >= 5) issues.push({ col, reason: `Innehåller troligtvis personnamn (${nameCount} av ${sample.length} sampelvärden)` });
   });
   return issues;
+}
+function bladetsSlut(blad) {
+  let r = -1, c = -1;
+  for (const adress of Object.keys(blad || {})) {
+    const m = /^([A-Z]+)(\d+)$/.exec(adress);
+    const cell = blad[adress];
+    if (!m || !cell || cell.v == null || String(cell.v).trim() === "") continue;
+    let kol = 0;
+    for (const tecken of m[1]) kol = kol * 26 + tecken.charCodeAt(0) - 64;
+    r = Math.max(r, Number(m[2]) - 1);
+    c = Math.max(c, kol - 1);
+  }
+  return r < 0 ? null : { r, c };
 }
 function _gissaTabellformat(byte) {
   if (byte.length >= 4 && byte[0] === 80 && byte[1] === 75 && (byte[2] === 3 || byte[2] === 5 || byte[2] === 7)) return "xlsx";
@@ -3890,7 +3910,7 @@ function aldersjusteradSkillnad(kvRader, jmfRader, { golv = ALDERS_GOLV_STANDARD
   const kvMedian = median(kvAlla.map((r) => r.lon));
   if (!(medianJusterad > 0) || !(kvMedian > 0)) return null;
   const gapKr = medianJusterad - kvMedian;
-  return { medianJusterad, gapKr, gapPct: gapKr / kvMedian * 100, metod: "alder" };
+  return { medianJusterad, gapKr, gapPct: gapKr * 100 / kvMedian, metod: "alder" };
 }
 function _gruppRader(g) {
   if (!g || !Array.isArray(g.lons)) return [];
@@ -4077,7 +4097,7 @@ function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
       }
       jämförelse.statHögre++;
       const gapKr = g.median - f.median;
-      const gapPct = gapKr / f.median * 100;
+      const gapPct = gapKr * 100 / f.median;
       if (gapPct < minGap) continue;
       const ärIntern = källa === "intern";
       let gapCI = null;
@@ -4166,7 +4186,7 @@ function byggParPoang(orgKvDom, internAlla, poangPerNyckel, val = {}) {
       }
       jämförelse.statHögre++;
       const gapKr = g.median - f.median;
-      const gapPct = gapKr / f.median * 100;
+      const gapPct = gapKr * 100 / f.median;
       if (gapPct < minGap) continue;
       let gapCI = null;
       try {
@@ -4219,7 +4239,7 @@ function byggParLagreKrav(orgKvDom, orgIckeKv, val = {}) {
       const rg = rang(g.bas);
       if (!(rg < rf) || !(g.median > f.median)) continue;
       const gapKr = g.median - f.median;
-      const gapPct = gapKr / f.median * 100;
+      const gapPct = gapKr * 100 / f.median;
       if (gapPct < minGap) continue;
       ut.push({
         _f: f,
@@ -9973,12 +9993,6 @@ function minimeraLonerad(row, rubriker = _lonefilensRubriker(Object.keys(row))) 
 }
 
 // src/lib/loneoversyn.js
-function _median(arr) {
-  return arr && arr.length ? median(arr) : 0;
-}
-function _kvantil(arr, q) {
-  return arr && arr.length ? kvantil(arr, q) : 0;
-}
 function _lyftLagstForst(lons, pott, cap) {
   const n = lons.length;
   if (!n || pott <= 0) return new Array(n).fill(0);
@@ -10063,7 +10077,7 @@ function fordela(rader, generell, riktningar, avrundning) {
       const frac = pott / groupSum;
       gd = lons.map((x) => x > 0 ? x * frac : 0);
     } else {
-      const cap = t.dist === "target" ? t.targetLevel === "p25" ? _kvantil(lons, 0.25) : _median(lons) : Infinity;
+      const cap = t.dist === "target" ? t.targetLevel === "p25" ? kvantil(lons, 0.25) : median(lons) : Infinity;
       gd = _lyftLagstForst(lons, pott, cap);
     }
     idxs.forEach((i, j) => {
@@ -10099,8 +10113,8 @@ function fordela(rader, generell, riktningar, avrundning) {
     n: gr.n,
     kvN: gr.kvN,
     andelKv: gr.n ? 100 * gr.kvN / gr.n : 0,
-    gammalMedian: _median(gr.oldL),
-    nyMedian: _median(gr.newL),
+    gammalMedian: median(gr.oldL),
+    nyMedian: median(gr.newL),
     kostnad: gr.cost
   }));
   const generellCost = genDeltas.reduce((s, x) => s + x, 0);
@@ -10177,7 +10191,7 @@ function sammanstallGrupper(rader) {
     n: g.n,
     kvN: g.kvN,
     andelKv: g.n ? 100 * g.kvN / g.n : 0,
-    median: _median(g.lons)
+    median: median(g.lons)
   }));
 }
 function hittaOmkorningar(perGrupp) {
@@ -10242,9 +10256,9 @@ function lonespannPerBas(rader) {
   return [...m.entries()].map(([bas, lons]) => ({
     bas,
     n: lons.length,
-    p25: _kvantil(lons, 0.25),
-    median: _median(lons),
-    p75: _kvantil(lons, 0.75)
+    p25: kvantil(lons, 0.25),
+    median: median(lons),
+    p75: kvantil(lons, 0.75)
   })).sort((a, b) => a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0);
 }
 function individlyft(rader, val) {
@@ -10263,9 +10277,9 @@ function individlyft(rader, val) {
   });
   const benchFor = (bas, aid) => {
     const g = menByGroup.get(bas + "|" + aid);
-    if (g && g.length >= minMen) return { v: _median(g), kalla: "yrke" };
+    if (g && g.length >= minMen) return { v: median(g), kalla: "yrke" };
     const b = menByBas.get(bas);
-    if (b && b.length >= minMen) return { v: _median(b), kalla: "bas" };
+    if (b && b.length >= minMen) return { v: median(b), kalla: "bas" };
     return null;
   };
   const flagged = [];
@@ -10555,14 +10569,14 @@ function forslagUrPotten(rader, { budget, generell, kandidater, minN }) {
 }
 function villkorsgrupper(rader, { villkor, minN, arKvDom }) {
   const basMed = /* @__PURE__ */ new Map(), basP25 = new Map(lonespannPerBas(rader).map((b) => [b.bas, b.p25]));
-  const median2 = (bas) => {
-    if (!basMed.has(bas)) basMed.set(bas, _median(rader.filter((r) => r.bas === bas).map((r) => r.lon)));
+  const basMedian = (bas) => {
+    if (!basMed.has(bas)) basMed.set(bas, median(rader.filter((r) => r.bas === bas).map((r) => r.lon)));
     return basMed.get(bas);
   };
   return sammanstallGrupper(rader).filter((g) => {
     if (g.n < minN) return false;
     if (villkor === "kvdom") return arKvDom(g.andelKv);
-    if (villkor === "underbas") return g.median < median2(g.bas);
+    if (villkor === "underbas") return g.median < basMedian(g.bas);
     if (villkor === "underp25") return g.median < basP25.get(g.bas);
     return true;
   });
@@ -22562,6 +22576,13 @@ function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
   const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
   const sheetName = wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
+  const slut = bladetsSlut(ws);
+  if (!slut) throw new Error("Excel-bladet är tomt.");
+  if (ws["!ref"]) {
+    const omrade = XLSX.utils.decode_range(ws["!ref"]);
+    omrade.e = { r: Math.min(omrade.e.r, slut.r), c: Math.min(omrade.e.c, slut.c) };
+    ws["!ref"] = XLSX.utils.encode_range(omrade);
+  }
   const grid = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "", blankrows: true });
   const startRad = ws["!ref"] ? XLSX.utils.decode_range(ws["!ref"]).s.r : 0;
   if (!grid.length) throw new Error("Excel-bladet är tomt.");
@@ -24452,8 +24473,6 @@ function uppstartUtforska() {
 
 // src/app/29-organisationspaket.js
 var PAKET_MAX_FILSTORLEK = installningsGrans("fil").paket;
-var PAKET_INAKTIVITET_MIN = 5;
-var PAKET_INAKTIVITET_MAX = 120;
 function _paketLasStandard() {
   return { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
 }
@@ -24711,14 +24730,14 @@ function _paketLasFel() {
     return `Minsta gruppstorlek ${k} är lägre än lägsta tillåtna ${lagst}.`;
   }
   const inakt = /^\d+$/.test(inaktText) ? Number(inaktText) : null;
-  if (inaktText !== "" && (inakt == null || inakt !== 0 && (inakt < PAKET_INAKTIVITET_MIN || inakt > PAKET_INAKTIVITET_MAX))) {
-    return `Rensning vid inaktivitet: ange 0 (av) eller ett heltal mellan ${PAKET_INAKTIVITET_MIN} och ${PAKET_INAKTIVITET_MAX} minuter.`;
+  if (inaktText !== "" && (inakt == null || inakt !== 0 && (inakt < INAKTIVITET_MIN || inakt > INAKTIVITET_MAX))) {
+    return `Rensning vid inaktivitet: ange 0 (av) eller ett heltal mellan ${INAKTIVITET_MIN} och ${INAKTIVITET_MAX} minuter.`;
   }
   if (
     /** @type {HTMLInputElement} */
     _paketFalt("paket-inaktivitet-last")?.checked && !(inakt != null && inakt > 0)
   ) {
-    return `Rensning vid inaktivitet kan bara låsas till ett värde mellan ${PAKET_INAKTIVITET_MIN} och ${PAKET_INAKTIVITET_MAX} minuter.`;
+    return `Rensning vid inaktivitet kan bara låsas till ett värde mellan ${INAKTIVITET_MIN} och ${INAKTIVITET_MAX} minuter.`;
   }
   return null;
 }

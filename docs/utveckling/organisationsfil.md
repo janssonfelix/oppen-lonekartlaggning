@@ -88,7 +88,7 @@ påverkas inte eftersom inget skript ändras (samma mönster som licenstexterna,
 `tests/dokumentation-struktur.test.js`). JSON-texten skrivs med `<` som `<` och `</` kan därmed inte
 avsluta elementet.
 
-**Ren kärna i `src/lib/organisationsfil.js`** (speglad till appen som övriga lib-moduler, ADR-8):
+**Ren kärna i `src/lib/organisationsfil.js`** (importerad av appen som övriga lib-moduler, ADR-98):
 - `bakaIn(html, paketJson, meta)` → `{ ok, html, fel?, varning? }`: kontrollerar att `html` är
   verktyget (CSP-metataggen, `APP_VERSION`-mönstret), läser versionen ur filen, tar bort ett tidigare
   `<template id="inbakat-organisationspaket">`, lägger in det nya före `</body>`, returnerar resultatet.
@@ -107,7 +107,7 @@ avsluta elementet.
   `textContent`, anropa `lasInPaket(text, 'inbakat')` med `kalla: 'inbakat'`; status i filrutan.
   Fel i blocket (ogiltig JSON, ogiltigt paket) visas som fel i filrutan, verktyget startar ändå utan
   paket.
-- `12-tillstand.js`: `state.paketKalla` får värdet `'inbakat'` utöver `'fil'`; `referensKalla()`
+- `12-tillstand.js`: `state.paket.kalla` får värdet `'inbakat'` utöver `'fil'`; `referensKalla()`
   och `statistikBeskrivning()` säger *(inbakat i den här filen)*.
 - `26-rensning.js`: efter rensningen läses det inbakade paketet in igen (utan bekräftelsefråga om
   tröskeln: filens eget värde gäller som vid start).

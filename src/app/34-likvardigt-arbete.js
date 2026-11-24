@@ -87,7 +87,7 @@ export function likvardighetResultat() {
 /**
  * § 3:10-analys — state-adapter runt src/lib/likvardighet.js.
  *
- * Algoritmen finns bara i lib, som speglas som alla andra kärnmoduler (ADR-8);
+ * Algoritmen finns bara i lib, som appen importerar som alla andra kärnmoduler (ADR-98);
  * den här funktionen gör bara tre saker:
  * läser `state`, anropar `_lvLikvardighetspar`, och fyller på med den UI-diagnostik
  * som lib inte känner till (exempelrader, lokal könsdata, felsträngar).

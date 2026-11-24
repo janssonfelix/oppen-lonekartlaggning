@@ -315,19 +315,25 @@ export function rubrikgrupper() {
 }
 
 /**
- * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med sökordet, annars en som innehåller det; sökorden
- * prövas i tur och ordning. Exakt likhet först, så att "Lön" går före "Lönetillägg" för sökordet "ln".
+ * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med något av sökorden, prövade i tur och ordning, så
+ * att "Kön" går före "Kontor". Annars, sökord för sökord, den rubrik som är lika med sökordet eller den kortaste som
+ * innehåller det, så att "Grundlön" går före "Lönetillägg" för sökordet "ln". Yrkets sökord är en prioritetsordning och
+ * prövas bara sökord för sökord, så att "AID-etikett" går före "AID".
  */
 export function _hittaRubrik(rubriker, sokord, roll) {
     // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
     // får aldrig tas för yrke (ADR-33).
     const hoppa = h => roll === 'yrke' && _anArRubrik(h);
     const rensade = (rubriker || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
-    for (const name of sokord) {
-        const searchStr = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        let i = rensade.indexOf(searchStr);
-        if (i < 0) i = rensade.findIndex(r => r !== null && r.includes(searchStr));
-        if (i >= 0) return rubriker[i];
+    const ord = sokord.map(s => s.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    // Yrkets sökord är en prioritetsordning (TILLATNA_FALT), de andra rollernas olika stavningar av samma sak.
+    if (roll !== 'yrke') for (const s of ord) { const i = rensade.indexOf(s); if (i >= 0) return rubriker[i]; }
+    // Sökord för sökord: exakt, annars den kortaste rubriken som innehåller det ("Ålder (år)" före "Anställningsålder").
+    for (const s of ord) {
+        let bast = rensade.indexOf(s);
+        if (bast >= 0) return rubriker[bast];
+        rensade.forEach((r, i) => { if (r !== null && r.includes(s) && (bast < 0 || r.length < rensade[bast].length)) bast = i; });
+        if (bast >= 0) return rubriker[bast];
     }
     return undefined;
 }
@@ -573,6 +579,27 @@ export function hittaKansligaKolumner(rader) {
 }
 
 // ---- Filtexten: teckenkodning, avgränsare och rubrikrad (flyttade från src/app/32-filinlasning.js) ----
+
+/**
+ * Den sista raden och kolumnen (räknade från 0) som har en cell med värde i ett Excelblad, eller null för ett tomt blad.
+ * Bladets angivna område kan vara uppblåst: en enda cell i XFD1048576 gör det till 17 miljarder celler, och tabellen
+ * som byggs över det låser fliken. Inläsningen bygger därför tabellen bara fram till de celler som finns.
+ * @param {Object<string, *>} blad - Arbetsbladet: cellerna under sina adresser ("A1"), övriga nycklar börjar med "!".
+ * @returns {{r: number, c: number}|null}
+ */
+export function bladetsSlut(blad) {
+    let r = -1, c = -1;
+    for (const adress of Object.keys(blad || {})) {
+        const m = /^([A-Z]+)(\d+)$/.exec(adress);
+        const cell = blad[adress];
+        if (!m || !cell || cell.v == null || String(cell.v).trim() === '') continue;
+        let kol = 0;
+        for (const tecken of m[1]) kol = kol * 26 + tecken.charCodeAt(0) - 64;
+        r = Math.max(r, Number(m[2]) - 1);
+        c = Math.max(c, kol - 1);
+    }
+    return r < 0 ? null : { r, c };
+}
 
 /**
  * Identifierar filformat via magiska bytes (accept-attributet är bara rådgivande

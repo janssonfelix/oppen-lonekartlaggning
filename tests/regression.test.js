@@ -53,6 +53,7 @@ describe('förklaringsmodellen som värde (ADR-56)', () => {
         expect(r.modell.alder).toBe(false);
         expect(r.modell.bas).toBe(true);
         expect(r.modell.yrkesgrupp).toBe(false);
+        expect(r.varningar).toEqual([]);   // fältet är giltigt men avslaget
     });
     it('yrkesgrupp kräver BAS: BAS kryssas i med en varning', () => {
         const r = normaliseraForklaringsmodell({ yrkesgrupp: true, bas: false, alder: true });

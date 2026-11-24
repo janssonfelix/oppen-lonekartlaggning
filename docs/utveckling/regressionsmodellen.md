@@ -122,7 +122,7 @@ regressionens resultat, med tillskottet, gapet utan och med, och skälet. Mening
 i rapportunderlaget och i rapportens sammanfattning och bilaga.
 
 **Skälet** är valfri fritext, högst 300 tecken, med samma personuppgiftsvakt som handlingsplanens fritext
-(`_opLiknarPersonuppgift`): ett skäl som ser ut att innehålla ett personnummer eller en e-postadress sparas inte, och
+(`liknarPersonuppgift`): ett skäl som ser ut att innehålla ett personnummer eller en e-postadress sparas inte, och
 panelen säger varför. Ett ändrat skäl ändrar inga tal.
 
 **Frasen.** Texterna som förut sade en fast modell byggs ur valet. `modellFras(m)` ger frasen i löptext, "när …
@@ -384,7 +384,7 @@ golvet redovisas som *för få*, med antalen. Ett skattat intervall bär också 
 personer (`medKv`, `medMa`, `medelKv`, `medelMa`), som protokollet för gemensam lönebedömning redovisar (ADR-79).
 
 **BH-korrigeringen.** Testerna per BAS-intervall korrigeras för att många prövas samtidigt (Benjamini–Hochberg).
-Räkningen står på ett ställe, `bhJustera` i `src/lib/stat.js` (i appen `_bhJustera`): q-värdena i samma ordning som
+Räkningen står på ett ställe, `bhJustera` i `src/lib/stat.js`: q-värdena i samma ordning som
 p-värdena, q = min(1, p · m / rang) med p-värdena sorterade stigande, gjort monotont bakifrån; ett enda test ger q = p.
 m är antalet intervall som kunde skattas (status ok och ändligt p-värde). Regressionskortet och Att göra (`perBasRegression` i `src/lib/vymodell-regressionskort.js`)
 och protokollet för gemensam lönebedömning anropar den över samma tester, så att samma intervall får samma q.

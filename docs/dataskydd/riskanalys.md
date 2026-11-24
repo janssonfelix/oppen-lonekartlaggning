@@ -527,7 +527,7 @@ där som en lista i avsnitt 4, under samma namn och med hur vart och ett är byg
   Testerna i `tests/diagramvyer*.test.js` prövar det för var och en, med ett kön eller en
   grupp under tröskeln som inte får finnas i figuren. Dessa vyer ingår i den allmänna invarianten på samma sätt
   som övriga flikar (de ritas när fliken ritas). Beräkningarna bakom översikten och trattdiagrammet hålls i
-  minnet per underlag och tröskel (`_laMinne`) och släpps av *Rensa all data* och när statistiken
+  minnet per underlag och tröskel (`_laMinnen`) och släpps av *Rensa all data* och när statistiken
   ogiltigförklaras. Ett test kräver det.
 
 ### 6.7 Bundle-integritet ✔
