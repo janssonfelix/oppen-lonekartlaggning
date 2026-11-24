@@ -9,7 +9,7 @@ import { arKvinna, arMan } from '../lib/kon.js';
 import { tolkaPaket } from '../lib/organisationspaket.js';
 import { ordForAntal, stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { _importprofilFor, _importprofilKalla, _importprofilLista, doljLaddning, importprofilText, visaLaddning } from './03-hjalpfunktioner.js';
+import { _importprofilFor, _importprofilKalla, _importprofilLista, doljLaddning, importprofilText, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _hittaAnsvarKolumn, _lonefilensRubriker, minimeraLonerad } from './06-uppgiftsminimering.js';
 import { _kopplaNamnFalt, tillampaProfiletiketter, STANDARDPROFIL, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
@@ -582,7 +582,14 @@ function lasInStrukturfil(file) {
     const _csvReader = new FileReader();
     _csvReader.onerror = () => { failLoad('Kunde inte läsa filen.'); visningNy(); _beskedEfterOversikt(franOversikt); };
     // När filen är läst (inte bara när den valdes): ingen ritad flik visas igen som den är (ADR-81).
-    _csvReader.onload = () => { try { _lasLonefil(); } finally { visningNy(); _beskedEfterOversikt(franOversikt); } };
+    _csvReader.onload = () => {
+        try { _lasLonefil(); }
+        catch (err) {
+            // Ett oväntat fel får inte lämna laddningsrutan kvar. Lästes filen inte in, står det tidigare underlaget kvar.
+            if (state.data === parsed) doljLaddning(); else failLoad('Lönefilen lästes inte in: ett internt fel avbröt inläsningen.');
+            rapporteraFel('inläsningen av lönefilen', err);
+        } finally { visningNy(); _beskedEfterOversikt(franOversikt); }
+    };
     const _lasLonefil = () => {
       const buf = _csvReader.result;
       const fmt = _gissaTabellformat(new Uint8Array(/** @type {ArrayBuffer} */ (buf)));
