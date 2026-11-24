@@ -6,7 +6,7 @@ import { personOrd } from '../lib/namn.js';
 import { liknarPersonuppgift } from '../lib/organisationspaket.js';
 import { kvantilBootstrap, osakerhetKonstanter } from '../lib/osakerhet.js';
 import { bortvaltNotering } from '../lib/rapportunderlag.js';
-import { forklaringsmodellArStandard, huvudregression, kvantilDesign, modellFras, normaliseraForklaringsmodell, stegEtikett, tillforGransPp } from '../lib/regression.js';
+import { forklaringsmodellArStandard, huvudregression, KVANTIL_MAX_VARV, kvantilDesign, modellFras, normaliseraForklaringsmodell, stegEtikett, tillforGransPp } from '../lib/regression.js';
 import { froAvTal } from '../lib/rng.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
@@ -870,6 +870,7 @@ export function ritaRegressionskort() {
                         </table>
                     </div>
                     ${tolkning ? `<div class="bak-info-yta rund-4 fs-sm marg-t-10 pad-10-14">${tolkning}</div>` : ''}
+                    ${kv.ejKonvergerat.length ? `<p class="notis-varning fs-sm marg-10-0-0 pad-8-12">Skattningen vid ${kv.ejKonvergerat.map(t => t === 0.5 ? 'medianen' : `P${Math.round(t * 100)}`).join(' och ')} stabiliserades inte inom ${KVANTIL_MAX_VARV} varv. Den visas som den stod efter sista varvet och är osäkrare än tabellen ger sken av.</p>` : ''}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
                         <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan ${T.enhet.en} inom BAS)${(() => { const f = modellFras({ ...forklaringsmodell(), yrkesgrupp: false }); return f ? `: kön, ${f}` : ': bara kön'; })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
                         ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>

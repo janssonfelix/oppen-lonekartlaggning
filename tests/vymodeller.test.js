@@ -746,6 +746,9 @@ describe('[B3.12] Regressionskortets vymodell', () => {
         expect(kvantilVymodell(qr(null)).tolkning).toBeNull();
         expect(kvantilVymodell({ results: [{ tau: 0.1, konPct: -2 }, { tau: 0.5, error: true }], diff: null }).visas).toBe(false);
         expect(kvantilVymodell(null).visas).toBe(false);
+        expect(kvantilVymodell(qr(null)).ejKonvergerat).toEqual([]);
+        const ejKonv = { results: [{ tau: 0.1, konPct: -2, konvergerat: false }, { tau: 0.5, konPct: -3, konvergerat: true }, { tau: 0.9, konPct: -6, konvergerat: false }], diff: { varde: -4, ki: null } };
+        expect(kvantilVymodell(ejKonv).ejKonvergerat).toEqual([0.1, 0.9]);
     });
     it('[R1] ett kön under k: inget ojusterat steg, ingen förklarad andel, budget, trappa eller kronexempel', () => {
         const { r, vm } = rk(10, { fa: true });

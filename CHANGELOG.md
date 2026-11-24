@@ -9,6 +9,8 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Kvantilregressionen säger till när en skattning inte stabiliserats.** Står könsskillnaden vid P10, medianen eller
+  P90 fortfarande och rör sig efter 60 varv, säger kortet det under tabellen.
 - **En grupp exakt på kvinnotröskeln klassas rätt.** Med lydelsen *Mer än 55 %* blev till exempel 11 kvinnor av 20
   kvinnodominerad, eftersom andelen räknades till en aning över 55 %; robusthetspanelen prövar alltid 55 %.
 - **En tom ålder räknas inte som 0 år i likvärdigt arbete.** Den åldersjusterade skillnaden och medelåldern per par
