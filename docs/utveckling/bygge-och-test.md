@@ -63,7 +63,7 @@ Lib-modulernas privata namn får döpas om. Bygget är deterministiskt, och arte
 genererade filerna motsvarar källan.
 
 **`npm run bundle`** (`tools/bundle.mjs`) gör samma regenerering och bygger sedan
-`dist/oppen-lonekartlaggning.html` (omkring 3,4 MB; en enda fil) och `dist/RELEASE.txt`:
+`dist/oppen-lonekartlaggning.html` (omkring 3 MB; en enda fil) och `dist/RELEASE.txt`:
 
 - Biblioteken och `dist/app.js` läggs in som skript i sidan, och CSP:ns `script-src` och `style-src-elem` får
   kontrollsummor i stället för `'unsafe-inline'` (ADR-9, ADR-30).

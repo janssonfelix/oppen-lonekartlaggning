@@ -64,7 +64,7 @@ Exempel ur koden i dag:
   tröskeln tas bort (`_fcRensaParMal` med `rensaForeslagnaRader`, regel R2 i avsnitt 8).
 - **Varningar och noter om tröskeln.** Noten under en egen riktad rad i Löneöversyn (`riktadRadInfo` i
   `src/lib/vymodell-loneoversyn.js`, med `kInstalld()`), varningen
-  *Underlaget är litet* i Prioriteringens motiveringsförslag (`55-prioritering.js`, som står när något kön i
+  *Underlaget är litet* i Prioriteringens motiveringsförslag (`motiveringsgrunder` i `src/lib/prioritering.js`, som står när något kön i
   gruppen har färre än tröskeln och gäller skattningens säkerhet, inte läget) och antalet små grupper i
   likvärdighetsanalysens diagnostik (`kvDomUnderK` i `src/lib/vymodell-likvardigt-arbete.js`, `34-likvardigt-arbete.js`) läser
   `kInstalld()`.
@@ -403,7 +403,7 @@ Tröskeln är redovisningens gräns. Skattningar och några tabeller har egna go
 |---|---|---|
 | `statGolv()`: regression per BAS, Blinder-Oaxaca, bootstrap-KI, livscykelmodellen, extremvärdesdetektorn, det justerade gapet inom AID-etikett, ansvarsindikatorn och Personer att granska; därtill statusen *Går ej att bedöma* i uppmärksamhetstrappan (ADR-59) och lönemåtten i tabellerna per AID-kod och BAS-intervall (ADR-57) | `K_STANDARD` = 10 på skärmen; `max(kInstalld(), K_STANDARD)` i exportläget (ADR-103) | Gränsen gäller skattningens tillförlitlighet, inte redovisningen: ett kvalitetsgolv, som inte följer med nedåt. I exportläget följer den med uppåt, så att ett skärpt skydd också gäller skattade gruppvärden i det som lämnar verktyget; på skärmen hindrar en höjd tröskel inte analysen. Där en grupp på skärmen är för liten för att prövas (Personer att granska, regressionen per BAS-intervall, Blinder-Oaxaca, livscykelmodellen) hänvisar texten till lönerna under Tabeller och egna vyer och till Sakliga skäl (`provaEnskiltText()`). |
 | Huvudregressionen (Lönestruktur; `korOLSRegression`) | 5 av varje kön | Fast golv (beslut, ADR-38). Det justerade gapet med konfidensintervall visas därifrån, också när det ojusterade steget utelämnas (regel R1). |
-| Motiveringsregeln om medelålder per kön (`55-prioritering.js`) | 3 av varje kön | Fast golv (beslut, ADR-38). |
+| Motiveringsregeln om medelålder per kön (`motiveringsgrunder` i `src/lib/prioritering.js`) | 3 av varje kön | Fast golv (beslut, ADR-38). |
 | Löneöversiktens rader per AID-etikett (`LONEOVERSIKT_MINSTA_YRKE` i `src/lib/vymodell-loneoversikt.js`) | 5 | Fast golv (beslut, ADR-38). |
 | `LITET_UNDERLAG` (`litetUnderlag()`) | 5 | Ingen maskeringsgräns. I ett diagram ritas en stapel eller ett segment som gäller färre än fem personer med mönster, som en varning (ADR-39, `diagramkarnan.md`). I tabellerna per AID-kod och BAS-intervall är det gränsen för en egen rad i exportläget, och i könsfördelningen per BAS-intervall gränsen för en egen rad i båda lägena (avsnitt 4). |
 | Lönepolitikens mellannivå (`ANTAL_MIN` och `maskeringsniva` i `src/lib/lonepolitik.js`; tabellens rader i `tabellblock`, `src/lib/vymodell-lonepolitik.js`) | Från 5 upp till tröskeln | Grupper mellan 5 och k redovisas med antal (bandplacering i antal), inga lönemått; under 5 maskeras raden, namnges i en not och räknas in i BAS-totalen. Mellannivån försvinner när tröskeln är 5 eller lägre. Bandkartans punkter, könspositionen, tredjedelarna och efterlevnaden följer k i samma vymodell (`vymodellLonepolitik`), också i bladet Lönepolitik. |
