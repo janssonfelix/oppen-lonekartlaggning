@@ -623,8 +623,9 @@ ett trasigt diagram.
 - Punktsymbolerna är cirkel, romb, kvadrat, streck och två trianglar; trianglarna har inget prov i förklaringen.
   Ofylld finns bara per lager (`ofylld`), inte per punkt: en vy som blandar fyllda och ofyllda punkter i en serie
   delar den i två lager (statistikens spann i Löneläget har sex: tre klasser för könsdominans, fylld och ofylld).
-- Punkter som ligger på varandra flyttas inte isär (bara deras etiketter): många grupper med nästan samma värde
-  i samma kategori täcker varandra (sett i bandkartan och i *Krav mot lön* med ett fyrtiotal AID-etiketter).
+- Kärnan flyttar inte isär punkter som ligger på varandra (bara deras etiketter); en vy kan göra det med
+  `forskjutning`. *Krav mot lön* gör det (`vymodellKravMotLon`), bandkartan inte: där täcker många grupper med nästan
+  samma värde i samma kategori varandra (`oppna-punkter.md` punkt 3).
 - WebKit körs inte direkt på utvecklingsdatorn (systembibliotek saknas) utan i en behållare: `npm run test:browser:webkit:behallare` (Podman och Playwrights avbild, utan nätverk, projektet monterat skrivskyddat). Avbildens version ska följa Playwrights version i `package.json`.
 
 ## 10. Form och färg efter uppgift
