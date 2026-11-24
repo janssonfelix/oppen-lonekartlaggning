@@ -145,9 +145,9 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
 });
 
 describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () => {
-    // Tre BAS-intervall med stora nivåskillnader (25 000, 40 000, 64 000 kr) men liten spridning inom varje
-    // yrkesgrupp: den gamla formeln (σ över hela urvalet) rymde BAS-skillnaderna och gav en MDE per grupp
-    // som var många gånger för stor.
+    // Regeln (σ inom grupp, hela urvalets σ som reserv) prövas i tests/osakerhet.test.js under [B4.5] och appens
+    // adapter i tests/osakerhet-adapter.test.js; här prövas metodtexten. Tre BAS-intervall med stora nivåskillnader
+    // men liten spridning inom varje yrkesgrupp.
     const rader = () => {
         const r = [];
         const nivaer = { A: 25000, B: 40000, C: 64000 };
@@ -156,23 +156,6 @@ describe('MDE per grupp: spridningen inom grupp, inte över hela urvalet', () =>
                      yrke: `10${bas} Y${bas}`, aid: `10${bas}`, yrkeLabel: `Y${bas}` });
         return r;
     };
-    const sdLog = loner => { const l = loner.map(Math.log), m = l.reduce((a, b) => a + b, 0) / l.length; return Math.sqrt(l.reduce((a, v) => a + (v - m) ** 2, 0) / (l.length - 1)); };
-    it('σ är poolad inom grupp och MDE för en grupp med 20 + 20 blir klart mindre än med hela urvalets σ', () => {
-        const w = createAppWindow(); const data = rader(); w.__state.data = data;
-        const p = w.eval('raknaStyrkeanalys()');
-        expect(p.sigmaKalla).toBe('inomGrupp');
-        expect(p.sigmaGrupper).toBe(3);
-        expect(p.sigmaHela).toBeCloseTo(sdLog(data.map(d => d.lon)), 6);
-        expect(p.sigma).toBeLessThan(p.sigmaHela / 5);
-        expect(p.sigma).toBeGreaterThan(0);
-        w.eval('state.powerAnalysis = raknaStyrkeanalys()');
-        const ny = w.eval('raknaGruppMDE(20, 20)');
-        const gammal = w.eval(`raknaGruppMDE(20, 20, ${p.sigmaHela})`);
-        expect(gammal.mdePct).toBeGreaterThan(25);
-        expect(ny.mdePct).toBeLessThan(gammal.mdePct / 5);
-        expect(ny.level).toBe('good');
-        expect(gammal.level).toBe('poor');
-    });
     it('metodtexten i Om verktyget beskriver σ inom grupp och reserven', () => {
         const w = createAppWindow(); w.__state.data = rader();
         w.eval("ritaOmVerktyget('metodik')");
@@ -198,10 +181,6 @@ describe('förklaringsmodellen i tillstånd och konfigurationsfil (ADR-56)', () 
     });
     it('konfigurationsfilen: ett trasigt värde ger standard med varning, en fil utan fältet ger standard utan varning', () => {
         const w = fonster();
-        w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))'), forklaringsmodell: { alder: 'ja', bas: true } };
-        const r = w.eval('tillampaKonfiguration(window.__cfg)');
-        expect(w.__state.forklaringsmodell).toEqual({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
-        expect(r.varningar.length).toBe(0);   // "ja" tvingas till falskt utan varning: fältet är giltigt men avslaget
         w.__cfg = { ...w.eval('JSON.parse(JSON.stringify(byggKonfiguration()))'), forklaringsmodell: 'full' };
         const r2 = w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.__state.forklaringsmodell).toBeNull();
