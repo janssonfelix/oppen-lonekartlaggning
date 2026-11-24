@@ -21,7 +21,7 @@ kontrollsumma), ADR-1 (ingen arbetstråd). Hela policyn och vad den inte täcker
 inga CSP-överträdelser, och en arbetstråd, ett injicerat skript och en injicerad händelsehanterare stoppas.
 Testsvitens vakt för byggets CSP står i matrisens rad S1. Linten (`eslint.config.js`) förbjuder
 `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `navigator.sendBeacon` och `new Worker`/`new SharedWorker` i
-`dist/app.js` och `src/lib/`.
+`src/app/` och `src/lib/` (källan till `dist/app.js`, som inte lintas).
 *Vaktas inte:* linten ser bara direkta anrop med de namnen (inte till exempel `window['fetch']` eller ett alias), och
 tredjepartsbiblioteken i `vendor/` lintas inte; där är CSP:n och röktestet vakten. Röktestet körs i CI och med
 `npm run test:browser`, inte i `npm test`.
@@ -38,7 +38,7 @@ en snubbeltråd mot misstag, inte det egentliga skyddet.
 *Vakt:* lagringsspärren i testsviten, matrisens rad S2; `tools/browser-smoke/sakerhet.mjs` (spärren också för cookies,
 och lagringen är tom efter en full körning).
 Linten (`eslint.config.js`) förbjuder `indexedDB` och `caches`, också som `window.indexedDB` och `window.caches`, i
-`dist/app.js` och `src/lib/`.
+`src/app/` och `src/lib/` (källan till `dist/app.js`, som inte lintas).
 *Vaktas inte:* IndexedDB och Cache API ligger utanför spärren. Linten ser bara direkta anrop med de namnen, och
 tredjepartsbiblioteken i `vendor/` lintas inte; där täcks det av kodgranskning, inte av ett test (riskanalysen
 §6.2).
