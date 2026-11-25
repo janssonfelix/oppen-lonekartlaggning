@@ -14259,6 +14259,7 @@ function ritaAlderOchLon(bas) {
     document.getElementById("kon-color-by")?.value || "kon"
   );
   const scope2 = isAll ? "hela urvalet" : `${T.niva.en} ${bas}`;
+  const trendOrd = (reg) => `${reg.m < 0 ? "minskar" : "ökar"} med ${Math.abs(Math.round(reg.m))} kr per år`;
   const { utan } = vm;
   const skal = `färre än ${k} ${personOrd(k)} av ${kvOk || maOk ? "könet" : "vartdera könet"} finns i urvalet`;
   ritaFigur("chart-kon-scatter", _konPunktmolnFigur({
@@ -14277,7 +14278,7 @@ function ritaAlderOchLon(bas) {
     ciKv: vm.ciKv,
     ciMa: vm.ciMa,
     pol: isAll ? null : policyFor(null, bas),
-    beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` + (konOk && trendKv && trendMa ? `Kvinnors trend ökar med ${Math.round(trendKv.m)} kr per år, mäns med ${Math.round(trendMa.m)} kr per år. ` : `${trendKv ? `Kvinnors trend ökar med ${Math.round(trendKv.m)} kr per år. ` : ""}${trendMa ? `Mäns trend ökar med ${Math.round(trendMa.m)} kr per år. ` : ""}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ""}`) + `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` + (vm.trendAlla ? ` Trend för hela urvalet: ${vm.trendAlla.m >= 0 ? "+" : "−"}${svTal(Math.abs(vm.trendAlla.m), 0)} kr per år.` : "")
+    beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` + (konOk && trendKv && trendMa ? `Kvinnors trend ${trendOrd(trendKv)}, mäns ${trendOrd(trendMa)}. ` : `${trendKv ? `Kvinnors trend ${trendOrd(trendKv)}. ` : ""}${trendMa ? `Mäns trend ${trendOrd(trendMa)}. ` : ""}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ""}`) + `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` + (vm.trendAlla ? ` Trend för hela urvalet: ${vm.trendAlla.m >= 0 ? "+" : "−"}${svTal(Math.abs(vm.trendAlla.m), 0)} kr per år.` : "")
   }), { hojd: 420 });
   const boxEl = document.getElementById("chart-kon-boxplot");
   const lada = _konLadFigurFor(vm.lada, scope2, k);
@@ -14686,8 +14687,8 @@ function ritaAldersstruktur(bas) {
   if (vm.pension === "manga") risks.push(`<strong>Många nära pension:</strong> ${svPct(andel60, 1)} av ${scopeShort} är 60 år eller äldre. Med riktåldern 60–67 kan en stor del gå i pension inom 0–7 år. Planera för att deras kunskap förs vidare.`);
   else if (vm.pension === "uppsikt") risks.push(`<strong>Håll uppsikt – nära pension:</strong> ${svPct(andel60, 1)} är 60 år eller äldre.`);
   if (vm.atervaxt) risks.push(`<strong>Brist på återväxt:</strong> Endast ${svPct(andelU40, 1)} är under 40 år.`);
-  if (vm.avvikelse === "aldre") risks.push(`Medelåldern är ${svTal(alderDiff, 1)} år <em>högre</em> än organisationssnittet.`);
-  else if (vm.avvikelse === "yngre") risks.push(`Medelåldern är ${svTal(Math.abs(alderDiff), 1)} år <em>lägre</em> än organisationssnittet.`);
+  if (vm.avvikelse === "aldre") risks.push(`Medianåldern är ${svTal(alderDiff, 1)} år <em>högre</em> än i organisationen.`);
+  else if (vm.avvikelse === "yngre") risks.push(`Medianåldern är ${svTal(Math.abs(alderDiff), 1)} år <em>lägre</em> än i organisationen.`);
   const riskEl = document.getElementById("demo-risk-insight");
   if (riskEl) {
     if (risks.length === 0) {

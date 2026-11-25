@@ -654,6 +654,24 @@ describe('Löneutveckling: chart-kon-scatter och chart-kon-boxplot', () => {
     const rader = (n, kon, bas = 'A') => Array.from({ length: n }, (_, i) => person(bas, kon, 30000 + i * 300, { alder: 25 + (i % 35), yrke: `53${i % 3} Yrke` }));
     const rita = (data, fn) => medData(data, [], () => { w.eval("fyllValjare(); ritaAlderOchLon('__ALLA__')"); return fn(w.document); });
     const serier = id => w.document.getElementById(id)._figur.lager.map(l => [l.marke, l.serie]);
+    it('en lön som sjunker med åldern beskrivs som en minskning, och åldersskillnaden mot organisationen som medianer', () => {
+        // Kvinnornas lön sjunker 100 kr per år; männens stiger.
+        const sjunker = Array.from({ length: 30 }, (_, i) => person('A', 'kvinna', 40000 - (25 + i) * 100, { alder: 25 + i, yrke: '531 Yrke' }));
+        rita([...sjunker, ...rader(30, 'man')], d => {
+            const besk = d.getElementById('chart-kon-scatter')._figur.beskrivning;
+            expect(besk).toMatch(/Kvinnors trend minskar med 100 kr per år, mäns ökar med \d+ kr per år\./);
+            expect(besk).not.toMatch(/ökar med -/);
+        });
+        // BAS A är äldre än organisationen: texten säger medianålder, som talet den bygger på.
+        const aldre = Array.from({ length: 20 }, (_, i) => person('A', i % 2 ? 'man' : 'kvinna', 30000 + i * 100, { alder: 55 + (i % 8), yrke: '531 Yrke' }));
+        const yngre = Array.from({ length: 40 }, (_, i) => person('B', i % 2 ? 'man' : 'kvinna', 30000 + i * 100, { alder: 25 + (i % 8), yrke: '532 Yrke' }));
+        medData([...aldre, ...yngre], [], () => {
+            w.eval("fyllValjare(); ritaAldersstruktur('A')");
+            const risk = w.document.getElementById('demo-risk-insight').textContent;
+            expect(risk).toMatch(/Medianåldern är [\d,]+ år högre än i organisationen\./);
+            expect(risk).not.toMatch(/Medelåldern|organisationssnittet/);
+        });
+    });
     it('båda könen över tröskeln: band och trend per kön, punkter per kön, låda per kön', () => {
         rita([...rader(30, 'kvinna'), ...rader(30, 'man')], d => {
             expect(serier('chart-kon-scatter')).toEqual([['band', 'Kvinna 95 % KI'], ['band', 'Man 95 % KI'], ['punkt', 'Kvinna'], ['punkt', 'Man'],
