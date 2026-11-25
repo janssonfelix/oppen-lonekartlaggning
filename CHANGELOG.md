@@ -9,6 +9,11 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Löneläget utan ställningstagande kallar det inte referenspunkt.** Med bara jämförelsestatistik inläst hade
+  överblickens bild en tom serie för ställningstagandet, och rubriken och beskrivningen talade om det som
+  referenspunkt. Nu visar bilden statistiken och organisationen och säger det.
+- **Personer att granska och tabellerna per AID och BAS böjer antalen.** Noten under avvikelsetabellen löd på
+  skärmen «minst 1 kvinnor och 1 män»; nu står «både kvinnor och män». Noten om små grupper skrev «1 män»; nu «1 man».
 - **Regressionskortet säger bara det modellen räknar bort.** Utan ålder i modellen stod det att skillnaden «kan
   inte motiveras med arbetar i andra BAS-intervall»; nu står «att kvinnor arbetar i andra BAS-intervall». Kortets
   inledning, analysen per BAS-intervall och BAS-effekterna i den tekniska specifikationen nämnde ålder också när

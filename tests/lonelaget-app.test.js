@@ -62,6 +62,14 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
         expect(d.querySelectorAll('#ref-tabell thead th').length).toBe(10);
         expect(d.getElementById('chart-ref-hantel')._figur.lager.some(l => l.serie === 'Statistiken')).toBe(false);
     });
+    it('utan ställningstagande: bilden har ingen serie för det och kallar det inte referenspunkt', () => {
+        const w = fonster(); medStatistik(w); w.__state.policy = [];
+        w.__ritaFlik('benchmark');
+        const f = w.document.getElementById('chart-ref-hantel')._figur;
+        expect([...new Set(f.lager.map(l => l.serie))]).toEqual(['Statistiken', 'Organisationen']);
+        expect(f.beskrivning).not.toMatch(/ställningstagandet/i);
+        expect(w.document.getElementById('ref-overblick').textContent).toMatch(/Lönerna mot statistiken/);
+    });
     it('statistik med bara median: inget läge mot statistiken, hanteln ritar bara strecket för den', () => {
         const w = fonster(); medStatistik(w, { spann: false });
         w.__ritaFlik('benchmark');

@@ -130,7 +130,7 @@ function _pagRitaAvvikelse(d, grans) {
     if (!rader.length) { /** @type {HTMLElement} */ (t.querySelector('thead')).innerHTML = ''; /** @type {HTMLElement} */ (t.querySelector('tbody')).innerHTML = ''; return; }
     const fa = _pagAvvikelseTabell(rader, grans);
     const not = document.getElementById('pag-diagram-not');
-    if (not) not.textContent = `Bara ${T.niva.fl} där minst ${kTroskel()} kvinnor och ${kTroskel()} män har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.`
+    if (not) not.textContent = `Bara ${T.niva.fl} där ${kTroskel() > 1 ? `minst ${kTroskel()} kvinnor och ${kTroskel()} män` : 'både kvinnor och män'} har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.`
         + (fa ? ` Andelar märkta med * gäller färre än ${litetUnderlag()} personer: ett litet underlag, som inte ska läsas som ett mönster.` : '');
 }
 

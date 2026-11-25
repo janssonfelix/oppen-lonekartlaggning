@@ -237,6 +237,11 @@ describe('Excel (alla flikar): de fyra bladen', () => {
         expect(met).toContain('Kvinnodominerad vid mer än 60 % kvinnor');
         expect(w.eval('_excelAlltBok()').Sheets['Metod & parametrar']).toBeDefined();
     });
+    it('noten om små grupper böjer antalet: en kvinna, en man', () => {
+        const w = fonster();
+        expect(w.eval(`_aidbasSmaNot([{ aid: '9009', yrke: 'Yrke 9009', bas: 'A', nKv: 3, nMa: 1 }, { aid: '9010', yrke: 'Yrke 9010', bas: 'B', nKv: 1, nMa: 2 }], 5)`))
+            .toBe('Grupper med färre än 5 personer redovisas inte som egen rad (2): 9009 Yrke 9009 · BAS A (3 kvinnor, 1 man); 9010 Yrke 9010 · BAS B (1 kvinna, 2 män).');
+    });
     it('utan par står texten om inga fall i bladet Hierarkisk jämförelse', async () => {
         const w = fonster(TVA_BAS);
         const { blad } = await bok(w);

@@ -565,6 +565,10 @@ describe('andelsstaplar: könsfördelning, ålderspyramid och avvikelse från f�
         expect(t.querySelector('tbody tr')._markering).toEqual(['bas:A']);
         expect(d.getElementById('pag-diagram-not').textContent).toMatch(/minst 10 kvinnor och 10 män/);
         expect(d.getElementById('pag-diagram-not').textContent).toMatch(/märkta med \* gäller färre än 5 personer/);
+        // På skärmen (tröskeln 1, ADR-51) står ingen tröskel i noten: inte «minst 1 kvinnor och 1 män».
+        w2.__state.kLage = 'skarm'; w2.eval('ritaPersonerAttGranska()');
+        expect(d.getElementById('pag-diagram-not').textContent).toMatch(/där både kvinnor och män har prövats/);
+        w2.__state.kLage = 'export'; w2.eval('ritaPersonerAttGranska()');
         // Varken den lilla gruppens löner eller någon enskild lön står i tabellen.
         expect(t.outerHTML.replace(/(\d)[\s  ](?=\d)/g, '$1')).not.toMatch(/7811\d|BAS S|20000|42000/);
         // Som resten av panelen: ingen exportknapp.
