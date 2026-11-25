@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { byggPaket, tolkaPaket, paketArGammalt, PAKET_FORMAT, PAKET_MAX_BYTE } from '../src/lib/organisationspaket.js';
+import { byggPaket, tolkaPaket, paketArGammalt, PAKET_FORMAT } from '../src/lib/organisationspaket.js';
 import { nyttRecept } from '../src/lib/tabellrecept.js';
 import { perBasStandard } from '../src/lib/perbas.js';
+import { FIL_MAX } from '../src/lib/installningsgranser.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -59,7 +60,7 @@ describe('organisationspaket: avvisning', () => {
     it('varken referens eller statistik', () => {
         expect(fel(JSON.stringify(byggPaket({ ...underlag(), referens: null, statistik: null })))).toMatch(/ställningstagande|statistik/);
     });
-    it('för stor fil', () => expect(fel(' '.repeat(PAKET_MAX_BYTE + 1))).toMatch(/stor/));
+    it('för stor fil', () => expect(fel(' '.repeat(FIL_MAX.paket + 1))).toMatch(/stor/));
     it('personnummer eller e-post i ett textfält', () => {
         fel(JSON.stringify(byggPaket({ ...underlag(), utgivare: '19850101-1234' })));
         fel(JSON.stringify(byggPaket({ ...underlag(), organisation: 'a@b.se' })));

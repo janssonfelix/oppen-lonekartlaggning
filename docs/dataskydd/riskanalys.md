@@ -53,7 +53,7 @@ hos individen, och tillför därmed ingen ny integritetsrisk:
 | Ålder (valfri, rekommenderad) | Kontrollvariabel; utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte (ADR-64) | Medel |
 | AID-etikett (AID-kod och etikettnamn) | Gruppering. Högst 40 tecken efter koden behålls; texten maskeras inte (ADR-85), så ett namn som står i fältet följer med | Låg–medel — hög om uttaget har lagt namn i fältet; inläsningen varnar då (§6.4) |
 | BAS-intervall | Kravnivå-proxy | Låg |
-| Poäng (valfri) | Arbetsvärderingens krav-poäng per befattning (krav-proxy för likvärdigt arbete) | Ingen — befattningsattribut, ej individbundet |
+| Poäng (valfri) | Arbetsvärderingens krav-poäng per befattning (mått på kraven i likvärdigt arbete) | Ingen — befattningsattribut, ej individbundet |
 | Ansvarskod enligt AID (valfri) | Grupperas i tre ansvarsgrupper (ledningsansvar, särskilt uppdrag, inget); prövar ansvar som tänkbart sakligt skäl. Läses bara om minst 95 % av värdena är giltiga; kolumnen *Ansvar* (ofta kostnadsställe) läses aldrig | Låg–medel — chefsansvar kan i små grupper peka ut en person; samma k-regel som övriga grupper (§6.5; ansvarsgrupperna i `docs/utveckling/k-troskeln.md` avsnitt 2) |
 | Radnummer (`radnr`) | Radens nummer i källfilen; låter HR slå upp en person i *Personer att granska* och extremvärdesdetektorn (ADR-23) | Låg — ingen ny identifierare, men kopplar raden till källfilen |
 

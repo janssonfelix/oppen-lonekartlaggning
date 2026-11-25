@@ -3751,7 +3751,7 @@ exports[`golden: Excel-exporterna på fast dataset > JPA-protokollet matchar fac
     ],
     [
       "Diskrimineringslagen, kvinnodominerat arbete",
-      "Arbetsgivaren ska analysera om kvinnodominerade arbeten har lägre lön än arbeten som inte är kvinnodominerade och har likvärdiga eller lägre krav i arbetet. Verktyget jämför med AID-etiketter på samma nivå som inte är kvinnodominerade; könsandelen i jämförelseetiketten står i tabellen. BAS-rank används i flik 3b som ordinal proxy för arbetskrav — slutgiltig kravvärdering kräver kvalitativ granskning.",
+      "Arbetsgivaren ska analysera om kvinnodominerade arbeten har lägre lön än arbeten som inte är kvinnodominerade och har likvärdiga eller lägre krav i arbetet. Verktyget jämför med AID-etiketter på samma nivå som inte är kvinnodominerade; könsandelen i jämförelseetiketten står i tabellen. I blad 3b mäts kraven med ordningen mellan BAS-intervallen, eller med arbetsvärderingspoäng när lönefilen har dem — slutgiltig kravvärdering kräver kvalitativ granskning.",
     ],
     [
       "Diskrimineringslagen, åtgärder",

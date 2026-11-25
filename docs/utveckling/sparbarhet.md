@@ -227,7 +227,7 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `KVANTIL_KI_B`, `KVANTIL_KI_MAX_N` | 200, 2000 | `src/lib/osakerhet.js` | kvantilregressionens intervall | Fast |
 | `KVINNO_TROSKEL_STANDARD` | 60 % | `src/lib/likvardighet.js` (också standard i `src/lib/aidbas.js`) | gränsen för kvinnodominerat, också i `prognosutfall` när ingen gräns skickas | Inställning (gränsen och definitionen) |
 | `ALDERS_GOLV_STANDARD`, `ALDERS_SPRIDNING_MIN` | 10, 5 år | `src/lib/likvardighet.js` | åldersjusteringen i paren | Fast |
-| `ARSBOKSLUT_K_MIN` | 3 | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
+| `ARSBOKSLUT_K_MIN` | 3 (`K_MIN`) | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
 | `SKAL_GRANSER` | 200 000 kr, 200 tecken, 8 skäl | `src/lib/sakligaskal.js` | gränserna för de sakliga skälen | Fast |
 | `PRIO_CONFIG_DEFAULTS` | åtgärd −5 %, akut minst 10, bevaka −2 %, analysera 5 % | `src/lib/prioritering.js` | prioriteringens statusar | Inställning |
 | `PRIO_WEIGHTS_DEFAULTS` | avvikelse 50, volym 30, jämställdhet 20 | `src/lib/prioritering.js` | prioriteringens vikter | Inställning |

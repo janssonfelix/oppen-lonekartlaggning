@@ -69,7 +69,7 @@ function byggKonfiguration() {
         perBasRecept: state.perBasRecept ? JSON.parse(JSON.stringify(state.perBasRecept)) : null,   // vilka avsnitt som följer med i rapporten
         forklaringsmodell: state.forklaringsmodell ? { ...state.forklaringsmodell } : null,   // regressionens variabler och skälet (ADR-56); null = standard
         gapUppdelning: state.gapUppdelning ? { variabler: [...state.gapUppdelning.variabler] } : null,   // uppdelningens variabler i ordning (ADR-65); null = standard
-        // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
+        // En Set blir en lista: JSON.stringify skriver inte Set.
         bristAids: Array.from(state.bristAids || []),
         likvardighet: state.likvardighet ? {
             kvinnoTroskelPct: state.likvardighet.kvinnoTrosholdPct,
@@ -107,13 +107,13 @@ function byggKonfiguration() {
         // användarinitierade nedladdningen.
         // Innehåller INGA råa individrader; kan innehålla användarförfattad text
         // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
-        bes8: (typeof _bes8Omraden === 'function' ? _bes8Omraden() : [])
+        bes8: _bes8Omraden()
             .map(a => ({ n: a.n, status: a.status, anteckning: a.note })),
         // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
-        handlingsplan: (typeof _hpForKonfiguration === 'function' ? _hpForKonfiguration() : []),
+        handlingsplan: _hpForKonfiguration(),
         attGoraKlara: Array.from(state._actionChecklistDone || []),
         // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
-        arsbokslut: (typeof byggArsbokslutNu === 'function' ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
+        arsbokslut: byggArsbokslutNu() || state.forraArsbokslut || null,
         orgNamn: orgNamn(''),
         jmfNamn: jmfNamn(''),
         strukturNarrativ: (() => {
@@ -193,7 +193,6 @@ function _tillampaKonfiguration(cfg) {
             throw new Error(`kostnad.manader måste vara ett tal mellan ${installningsGrans('manader').min} och ${installningsGrans('manader').max}.`);
         tmp.costSettings = { ...COST_DEFAULTS, ...(ko.manader != null ? { months: ko.manader } : {}), ...(ko.poPct != null ? { poPct: ko.poPct } : {}) };
     }
-    // bristAids: array av strängar
     if (cfg.rapportUrval != null) {
         const u = cfg.rapportUrval;
         if (typeof u !== 'object' || !Array.isArray(u.ordning) || !Array.isArray(u.med) || ![...u.ordning, ...u.med].every(x => typeof x === 'string'))
@@ -201,6 +200,7 @@ function _tillampaKonfiguration(cfg) {
         if (u.fast != null && typeof u.fast !== 'string') throw new Error('rapportUrval.fast måste vara en text.');
         tmp.rapportUrval = { ordning: u.ordning, med: u.med, ...(u.fast ? { fast: u.fast } : {}) };   // fast: ett färdigt urvals id; okänt id hoppas över
     }
+    // bristAids: strängar eller tal
     if (cfg.bristAids != null) {
         if (!Array.isArray(cfg.bristAids)) throw new Error('bristAids måste vara en array.');
         if (!cfg.bristAids.every(a => typeof a === 'string' || typeof a === 'number'))
@@ -285,7 +285,7 @@ function _tillampaKonfiguration(cfg) {
                 dist: ['flat', 'lowest', 'target'].includes(t.fordelning) ? t.fordelning : 'lowest',
                 targetLevel: t.malniva === 'p25' ? 'p25' : 'median',
                 pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pott) ? t.pott : 'övrigt',
-                // Valfritt och bakåtkompatibelt (filer utan fältet läses som förut): en rad verktyget själv
+                // Valfritt (en fil utan fältet har bara egna rader): en rad verktyget själv
                 // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
                 // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
                 // med noten om gruppen är under tröskeln (ADR-38, regel R2).
@@ -363,7 +363,7 @@ function _tillampaKonfiguration(cfg) {
         tmp.rapportTabeller = giltiga;
     }
     if (cfg.arsbokslut != null) {
-        const a = typeof valideraArsbokslut === 'function' ? valideraArsbokslut(cfg.arsbokslut) : null;
+        const a = valideraArsbokslut(cfg.arsbokslut);
         if (!a) varningar.push('Filens årsbokslut gick inte att läsa och hoppas över.');
         else tmp.arsbokslut = a;
     }
@@ -395,7 +395,7 @@ function _tillampaKonfiguration(cfg) {
         const kr = sattKTroskel(tmp.kTroskel, { rita: false });
         kAndrad = kr.andrad === true;
         // Under organisationspaketets golv (ADR-47): värdet avvisas som från fältet, resten av filen läses in.
-        if (!kr.ok && kr.fel) { varningar.push(`Filens minsta gruppstorlek ${tmp.kTroskel} används inte: ${kr.fel}`); if (typeof _kVisaFel === 'function') _kVisaFel(kr.fel); }
+        if (!kr.ok && kr.fel) { varningar.push(`Filens minsta gruppstorlek ${tmp.kTroskel} används inte: ${kr.fel}`); _kVisaFel(kr.fel); }
     }
     state.bristAids        = tmp.bristAids || new Set();
     sattRapportUrval(tmp.rapportUrval || null);   // okända avsnitt i filen hoppas över; utan fältet gäller hela dokumentationen
@@ -403,7 +403,7 @@ function _tillampaKonfiguration(cfg) {
     if (tmp.perBasRecept) state.perBasRecept = perBasReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
     state.forklaringsmodell = forklaringsmodellArStandard(fm.modell) ? null : fm.modell;
     state.gapUppdelning = gapVariablerArStandard(gu.variabler) ? null : { variabler: gu.variabler };
-    if (tmp.lonemanad != null && typeof sattLonemanad === 'function') sattLonemanad(tmp.lonemanad);
+    if (tmp.lonemanad != null) sattLonemanad(tmp.lonemanad);
     if (tmp.forhandskontrollStopp != null) state.forhandskontrollStopp = tmp.forhandskontrollStopp;
     if (tmp.likvardighet) {
         state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
@@ -412,8 +412,8 @@ function _tillampaKonfiguration(cfg) {
         state.forecast = /** @type {any} */ (tmp.forecast);
         // Rader som verktyget föreslog ur par (kalla: 'par') prövas mot den inställda tröskeln, också på skärmen — filen
         // kan vara sparad vid en lägre — som när tröskeln höjs i gränssnittet (ADR-69). Utan lönefil prövas de när den läses in.
-        if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
-        if (typeof ritaLoneoversyn === 'function' && document.getElementById('view-loneoversyn')) {
+        _fcRensaParMal();
+        if (document.getElementById('view-loneoversyn')) {
             try { ritaLoneoversyn(); } catch (_e) { /* renderas vid nästa flikbyte */ }
         }
     }
@@ -426,15 +426,15 @@ function _tillampaKonfiguration(cfg) {
         if (s) /** @type {HTMLInputElement} */ (s).value = a.status;
         if (t) /** @type {HTMLInputElement} */ (t).value = a.note;
     });
-    if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
+    bes8Uppdatera();
     // Handlingsplanens fält ersätts bara när filen bär dem; rader som inte finns i underlaget nu ligger kvar i minnet.
     // Demots nycklar glöms: filens skäl är användarens, också på en nyckel där demot skrev skäl.
-    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear(); if (typeof ritaHandlingsplan === 'function') ritaHandlingsplan(); }
+    if (tmp.handlingsplan) { state.handlingsplan = tmp.handlingsplan; _hpDemoNycklar.clear(); ritaHandlingsplan(); }
     if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
     // Filens egna profiler ersätter sessionens egna; organisationspaketets står kvar.
     // Bara en fil med profiler ersätter sessionens egna: en äldre fil (eller en tom lista) tar inte bort dem tyst.
     if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter(p => p.kalla !== 'konfiguration'), ...tmp.importprofiler];
-    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; if (typeof ritaArsjamforelse === 'function') medExportLage(() => ritaArsjamforelse()); }
+    if (tmp.arsbokslut) { state.forraArsbokslut = tmp.arsbokslut; medExportLage(() => ritaArsjamforelse()); }
     // Bara namn som finns i filen sätts — en fil utan namn ska inte radera paketets namn.
     if (tmp.orgName) sattOrgNamn(tmp.orgName);
     if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);
@@ -530,9 +530,9 @@ export function ritaOgonblicksbildJamforelse() {
     const diff = (a, b, fmt2) => {
         if (a == null || b == null) return '<span class="f-dampad">–</span>';
         const d = a - b;
+        // En förändring, ingen bedömning: tecknet säger riktningen, ingen färg säger om den är bra.
         const sgn = d >= 0 ? '+' : '';
-        const klass = Math.abs(d) < 0.01 ? 'f-dampad' : (d > 0 ? 'fg-ok' : 'f-kritisk');
-        return `<span class="${klass} halvfet">${sgn}${fmt2 ? fmt2(d) : fmt(d)}</span>`;
+        return `<span class="${Math.abs(d) < 0.01 ? 'f-dampad' : 'halvfet'}">${sgn}${fmt2 ? fmt2(d) : fmt(d)}</span>`;
     };
     const rows = [
         ['Antal personer (n)',         snap.n,                                 cur.n,                            fmt],
@@ -557,7 +557,7 @@ export function ritaOgonblicksbildJamforelse() {
             <h4 class="fs-md marg-0-0-6">Jämförelse: ögonblicksbild och nuvarande analys</h4>
             <p class="text-dampad-xs marg-0-0-10">Ögonblicksbild: ${esc(snap.label)} (${new Date(snap.timestamp).toLocaleString('sv-SE')}) — Nuvarande: ${esc(cur.label)}</p>
             <table class="data-table st-088">
-                <thead><tr><th>Mått</th><th class="t-hoger">Ögonblicksbild</th><th class="t-hoger">Nuvarande</th><th class="t-hoger">Δ (nuvarande − snapshot)</th></tr></thead>
+                <thead><tr><th>Mått</th><th class="t-hoger">Ögonblicksbild</th><th class="t-hoger">Nuvarande</th><th class="t-hoger">Skillnad (nuvarande − ögonblicksbild)</th></tr></thead>
                 <tbody>${tableHtml}</tbody>
             </table>
         </div>
@@ -626,11 +626,10 @@ export function uppstartKonfiguration() {
     document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
         const snap = byggOgonblicksbild();
         if (!snap) { alert('Läs in lönefilen först.'); return; }
-        // I: möjlighet att namnge scenariot
         const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
         snap.label = name;
         state.snapshot = snap;
-        // I: Spara även i state.scenarios (max 5)
+        // Sparas också bland scenarierna (högst fem).
         state.scenarios = (state.scenarios || []);
         state.scenarios.unshift({ ...snap });
         if (state.scenarios.length > 5) state.scenarios.length = 5;

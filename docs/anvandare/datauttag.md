@@ -15,14 +15,14 @@ innehålla rätt **fält** och får **aldrig** innehålla identifierande personu
 
 Exportera en personallista (en rad per anställd) med dessa kolumner:
 
-| Fält | Obligatoriskt | Vanliga källkolumnnamn (auto-matchas) |
+| Fält | Obligatoriskt | Vanliga källkolumnnamn (känns igen automatiskt) |
 |---|---|---|
 | BAS-intervall | Ja | `BAS`, `BAS-intervall` |
 | AID-etikett | Ja | `AID-etikett`, `AID`, `Yrke`, `Yrkesgrupp`, `Befattning` |
 | Månadslön | Ja | `Månadslön`, `Lön` — heltidsomräknad fast månadslön (se avsnitt 1b) |
 | Ålder *(eller födelseår)* | *Rekommenderad* | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt. Utan ålder körs analysen utan åldersjustering och fliken Ålder & karriär visas inte |
 | Kön | Ja | `Kön`, `Kon` (K/M, Kvinna/Man m.fl. tolkas automatiskt) |
-| Poäng *(arbetsvärdering)* | Nej | `Poäng`, `Arbetsvärdering` — valfri krav-proxy för likvärdigt arbete |
+| Poäng *(arbetsvärdering)* | Nej | `Poäng`, `Arbetsvärdering` — valfritt mått på arbetets krav i likvärdigt arbete |
 | Ansvarskod *(AID)* | Nej | `Ansvarskod`, `AID-ansvar`, `Ansvarsnivå` — A, B, C, L, F, M, 1001 eller 1002, med valfri lokal sista position (t.ex. `C1`); flera koder per person skiljs med mellanslag |
 
 - **AID-etiketten** är AID-koden med etikettnamnet, till exempel `402010 Förskollärare`. Verktyget kallar fältet
@@ -33,7 +33,7 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
   95 % av de ifyllda värdena är giltiga koder. **En kolumn som bara heter `Ansvar` läses
   aldrig** — i de flesta lönesystem är den ett kostnadsställe, inte AID:s ansvarskod.
 
-- Verktyget **auto-matchar** vanliga kolumnnamn (versaler/gemener och å/ä/ö spelar ingen
+- Verktyget **känner igen** vanliga kolumnnamn (versaler/gemener och å/ä/ö spelar ingen
   roll). Känns en kolumn inte igen finns en **kolumnmappnings-guide** i verktyget där du
   pekar ut rätt kolumn manuellt. Mappningen kan sparas som en **importprofil**, så att
   samma uttag känns igen nästa gång (avsnitt 2b).

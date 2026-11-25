@@ -9,7 +9,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { papa, vanta, csvFil } from './helpers/granssnitt-rigg.js';
 import { PO_PCT_GRANS, MANADER_GRANS, PRIO_TROSKEL_GRANS, PRIO_VIKT_GRANS, FIL_MAX, installningsGrans, arInomGrans, filStorlekFel } from '../src/lib/installningsgranser.js';
-import { PAKET_MAX_BYTE } from '../src/lib/organisationspaket.js';
 
 const MB = 1024 * 1024;
 const storlek = (fil, bytes) => { Object.defineProperty(fil, 'size', { value: bytes }); return fil; };
@@ -28,9 +27,6 @@ describe('gränsernas siffror: de som fälten i Inställningar redan använder',
     });
     it('filgränserna: lönefil 50 MB, ställningstagande och jämförelsestatistik 20 MB, konfiguration och paket 5 MB', () => {
         expect(FIL_MAX).toEqual({ lonefil: 50 * MB, stallningstagande: 20 * MB, jamforelsestatistik: 20 * MB, konfiguration: 5 * MB, paket: 5 * MB });
-    });
-    it('organisationspaketets gräns är samma tal som FIL_MAX.paket, och det finns ingen andra källa', () => {
-        expect(PAKET_MAX_BYTE).toBe(FIL_MAX.paket);
     });
 });
 
@@ -70,6 +66,7 @@ describe('filStorlekFel', () => {
         expect(filStorlekFel(FIL_MAX.lonefil + 1, 'lonefil')).toBe('Lönefilen är för stor för att läsas in (högst 50 MB).');
         expect(filStorlekFel(21 * MB, 'stallningstagande')).toBe('Filen med ställningstagandet är för stor för att läsas in (högst 20 MB).');
         expect(filStorlekFel(6 * MB, 'konfiguration')).toBe('Konfigurationsfilen är för stor för att läsas in (högst 5 MB).');
+        expect(filStorlekFel(6 * MB, 'paket')).toBe('Filen med organisationspaketet är för stor för att läsas in (högst 5 MB).');
     });
     it('en okänd storlek räknas inte som för stor', () => {
         expect(filStorlekFel(NaN, 'lonefil')).toBeNull();
