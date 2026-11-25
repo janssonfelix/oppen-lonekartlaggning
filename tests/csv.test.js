@@ -83,6 +83,11 @@ describe('CSV-exporten: svenska tal lämnas orörda', () => {
             expect(tillTsv([[v]]), v).toBe("'" + v);
         }
     });
+    it('en tabb eller radbrytning i en cell blir mellanslag i urklippet, så att raden hålls ihop och skyddet gäller', () => {
+        expect(tillTsv([['5310 Undersköterska\nnatt', 31000]])).toBe('5310 Undersköterska natt\t31000');
+        expect(tillTsv([['a\r\n=1+2', 'b\tc']])).toBe('a =1+2\tb c');
+        expect(tillTsv([['\n=1+2']])).toBe(' =1+2');   // ledande blanksteg: Excel läser det som text
+    });
 });
 
 

@@ -166,4 +166,12 @@ describe('äldre konfigurationsfiler (version 2, de gamla fältnamnen, ADR-96)',
         expect(() => w.__tillampaKonfiguration({ version: 3, kostnad: { manader: 61 } })).toThrow(/kostnad\.manader/);
         expect(() => w.__tillampaKonfiguration({ version: 2, prioConfig: { akutMinN: 0 } })).toThrow(/prioTrosklar\.akutMinstN/);
     });
+    it('en fil som avvisas ändrar ingenting, också när felet gäller rapportens recept', () => {
+        const w = createAppWindow();
+        const fore = JSON.stringify([w.__state.prioWeights, w.__state.prioConfig, w.__state.costSettings]);
+        const giltigt = { prioVikter: { avvikelse: 1, volym: 1, jamstalldhet: 1 }, kostnad: { manader: 6 } };
+        expect(() => w.__tillampaKonfiguration({ version: 3, ...giltigt, rapportTabeller: 'x' })).toThrow(/rapportTabeller/);
+        expect(() => w.__tillampaKonfiguration({ version: 3, ...giltigt, perBasRecept: 5 })).toThrow(/perBasRecept/);
+        expect(JSON.stringify([w.__state.prioWeights, w.__state.prioConfig, w.__state.costSettings])).toBe(fore);
+    });
 });

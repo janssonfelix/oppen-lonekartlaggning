@@ -346,6 +346,9 @@ function _tillampaKonfiguration(cfg) {
         if (typeof cfg.strukturNarrativ !== 'string') throw new Error('strukturNarrativ måste vara en sträng eller null.');
         tmp.strukturNarrative = cfg.strukturNarrativ;
     }
+    // Formen på rapportens recept prövas här, före fas 2; ett ogiltigt recept i listan hoppas över där, med varning.
+    if (cfg.rapportTabeller != null && !Array.isArray(cfg.rapportTabeller)) throw new Error('rapportTabeller måste vara en array.');
+    if (cfg.perBasRecept != null && typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
 
     // ---- FAS 2: Atomär applicering — state nu garanterat reparerbart ----
     if (tmp.prioConfig)        state.prioConfig       = tmp.prioConfig;
@@ -355,7 +358,6 @@ function _tillampaKonfiguration(cfg) {
     // Omritningen görs en gång, sist (se nedan), eftersom mer än tröskeln ändras här.
     const varningar = [...tmp.hpVarningar];
     if (cfg.rapportTabeller != null) {
-        if (!Array.isArray(cfg.rapportTabeller)) throw new Error('rapportTabeller måste vara en array.');
         const giltiga = cfg.rapportTabeller.map(t => valideraRecept(t)).filter(Boolean);
         if (giltiga.length < cfg.rapportTabeller.length) varningar.push(`${cfg.rapportTabeller.length - giltiga.length} egna tabeller i filen gick inte att läsa och hoppas över.`);
         tmp.rapportTabeller = giltiga;
@@ -376,7 +378,6 @@ function _tillampaKonfiguration(cfg) {
         }
     }
     if (cfg.perBasRecept != null) {
-        if (typeof cfg.perBasRecept !== 'object') throw new Error('perBasRecept måste vara ett objekt.');
         tmp.perBasRecept = valideraPerBasRecept(cfg.perBasRecept);
     }
     // Förklaringsmodellen (ADR-56): ett ogiltigt värde ger standard med varning, aldrig fel; utan fältet gäller standard.

@@ -846,10 +846,6 @@ function underlagVarde(dim, rad) {
   const v = dim && typeof dim.varde === "function" ? dim.varde(rad) : rad && dim ? rad[dim.falt] : null;
   return v == null || v === "" ? null : String(v);
 }
-function underlagDimension(underlag2, falt) {
-  const dims = underlag2 && Array.isArray(underlag2.dimensioner) ? underlag2.dimensioner : [];
-  return dims.find((u) => u && u.falt === falt) || null;
-}
 function underlagVarden(underlag2, dim) {
   const grupper = /* @__PURE__ */ new Map();
   for (const r of underlag2 && underlag2.rader || []) {
@@ -2572,7 +2568,8 @@ function tillCsv(rader, avgransare) {
   return rader.map((r) => (Array.isArray(r) ? r : [r]).map(escapeCell).join(avgransare)).join("\r\n");
 }
 function tillTsv(rader) {
-  return rader.map((r) => r.map((c) => c == null ? "" : neutraliseraCell(c)).join("	")).join("\n");
+  const cell = (c) => c == null ? "" : neutraliseraCell(typeof c === "string" ? c.replace(/[\t\r\n]+/g, " ") : c);
+  return rader.map((r) => r.map(cell).join("	")).join("\n");
 }
 
 // src/lib/falt.js
@@ -2924,9 +2921,6 @@ function pivottabell(rader, spec, { k = 10 } = {}) {
 }
 
 // src/lib/tabellrecept.js
-var DIMENSIONER2 = ["bas", "aid", "alder", "kon", "alla", "aidbas", "lonespann", "sektor", "aidniva"];
-var MATT2 = ["median", "medel", "n", "p10", "p25", "p75", "p90", "spridning", "andelKv", "gap"];
-var RECEPT_DIMENSIONER = DIMENSIONER2, RECEPT_MATT = MATT2;
 var DIM_ETIKETT = Object.freeze({
   bas: stor(STANDARDTERMER.niva.en),
   aid: stor(STANDARDTERMER.enhet.en),
@@ -2973,9 +2967,9 @@ function nyttRecept(spec, { namn = "", upprepa = null } = {}) {
 function valideraRecept(r) {
   if (!r || typeof r !== "object" || !r.spec || typeof r.spec !== "object") return null;
   const s = r.spec;
-  if (!DIMENSIONER2.includes(s.rad)) return null;
-  const kolumn = s.kolumn && s.kolumn !== s.rad && DIMENSIONER2.includes(s.kolumn) ? s.kolumn : null;
-  const matt = MATT2.includes(s.matt) ? s.matt : "median";
+  if (!DIMENSIONER.includes(s.rad)) return null;
+  const kolumn = s.kolumn && s.kolumn !== s.rad && DIMENSIONER.includes(s.kolumn) ? s.kolumn : null;
+  const matt = MATT.includes(s.matt) ? s.matt : "median";
   const urval = s.urval && typeof s.urval === "object" && Array.isArray(s.urval.villkor) ? { lage: s.urval.lage === "nagot" ? "nagot" : "alla", villkor: s.urval.villkor.filter((v) => v && typeof v === "object").map((v) => ({ ...v })) } : { lage: "alla", villkor: [] };
   const gruppVillkor = Array.isArray(s.gruppVillkor) ? s.gruppVillkor.filter((g) => g && typeof g === "object").map((g) => ({ ...g })) : [];
   return {
@@ -20568,9 +20562,9 @@ function rmPerBasAvsnitt(d, k) {
   const pb = rmPerBasUnderlag(d, k);
   if (!pb || !pb.intervall.length) return null;
   const stycke = (text, stil) => ({ typ: "stycke", text, ...stil ? { stil } : {} });
-  const MATT3 = { p10: "P10", p25: "P25", med: "Median", p75: "P75", p90: "P90", medel: "Medellön" };
+  const MATT2 = { p10: "P10", p25: "P25", med: "Median", p75: "P75", p90: "P90", medel: "Medellön" };
   const matt = pb.recept.matt;
-  const kol = [{ rubrik: "Grupp", typ: "text" }, { rubrik: "Antal", typ: "antal" }, ...matt.map((m) => ({ rubrik: MATT3[m], typ: "kr" }))];
+  const kol = [{ rubrik: "Grupp", typ: "text" }, { rubrik: "Antal", typ: "antal" }, ...matt.map((m) => ({ rubrik: MATT2[m], typ: "kr" }))];
   const dimEtikett = pb.dimEtikett, kort = pb.dim === "sektor" ? T.huvudomrade.en : "BAS", per = pb.dim === "sektor" ? T.huvudomrade.en : T.niva.en;
   const utelamnat = [];
   const { basUtelamnade, smaYrken, konDolda, medelDolda } = perBasUtelamnat(pb);
@@ -21546,12 +21540,13 @@ function _tillampaKonfiguration(cfg) {
     if (typeof cfg.strukturNarrativ !== "string") throw new Error("strukturNarrativ måste vara en sträng eller null.");
     tmp.strukturNarrative = cfg.strukturNarrativ;
   }
+  if (cfg.rapportTabeller != null && !Array.isArray(cfg.rapportTabeller)) throw new Error("rapportTabeller måste vara en array.");
+  if (cfg.perBasRecept != null && typeof cfg.perBasRecept !== "object") throw new Error("perBasRecept måste vara ett objekt.");
   if (tmp.prioConfig) state.prioConfig = tmp.prioConfig;
   if (tmp.prioWeights) state.prioWeights = tmp.prioWeights;
   if (tmp.costSettings) state.costSettings = tmp.costSettings;
   const varningar = [...tmp.hpVarningar];
   if (cfg.rapportTabeller != null) {
-    if (!Array.isArray(cfg.rapportTabeller)) throw new Error("rapportTabeller måste vara en array.");
     const giltiga = cfg.rapportTabeller.map((t) => valideraRecept(t)).filter(Boolean);
     if (giltiga.length < cfg.rapportTabeller.length) varningar.push(`${cfg.rapportTabeller.length - giltiga.length} egna tabeller i filen gick inte att läsa och hoppas över.`);
     tmp.rapportTabeller = giltiga;
@@ -21570,7 +21565,6 @@ function _tillampaKonfiguration(cfg) {
     }
   }
   if (cfg.perBasRecept != null) {
-    if (typeof cfg.perBasRecept !== "object") throw new Error("perBasRecept måste vara ett objekt.");
     tmp.perBasRecept = valideraPerBasRecept(cfg.perBasRecept);
   }
   const rader = hamtaData();
@@ -27614,14 +27608,14 @@ function _excelPerBasRader() {
   if (!pb || !pb.intervall.length) return null;
   const tal = (v) => v == null || !isFinite(v) ? "" : Math.round(v);
   const pct = (v) => v == null || !isFinite(v) ? "" : Math.round(v * 10) / 10;
-  const MATT3 = { p10: "P10", p25: "P25", med: "Median", p75: "P75", p90: "P90", medel: "Medellön" };
+  const MATT2 = { p10: "P10", p25: "P25", med: "Median", p75: "P75", p90: "P90", medel: "Medellön" };
   const matt = pb.recept.matt;
   const per = pb.dim === "sektor" ? T.huvudomrade.en : T.niva.en, kort = pb.dim === "sektor" ? stor(T.huvudomrade.en) : "BAS";
   const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
   const undertryckNoter = rmPerBasUndertryckNoter(pb, pb.k);
   for (const i of pb.intervall) {
     rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} ${ordForAntal(i.antalYrken, T.enhet)}`]);
-    rows.push(["Grupp", "Antal", ...matt.map((m) => MATT3[m])]);
+    rows.push(["Grupp", "Antal", ...matt.map((m) => MATT2[m])]);
     i.rader.forEach((r) => rows.push([r.namn, r.n == null ? "" : r.n, ...matt.map((m) => tal(r[m]))]));
     if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} ${personOrd(pb.k)}): ${i.utelamnade.join(", ")}`]);
     if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} ${personOrd(pb.k)}`]);
