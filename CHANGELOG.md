@@ -7,7 +7,9 @@ Datumformat: `ÅÅÅÅ.MM.DD` (CalVer). Varje version är ett bygge av en enda H
 Från och med nästa version har varje version en rad per ändring som en användare märker. Detaljerna står i
 referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
-## Oförlöst
+## 2026.11.25
+
+Lästa rad för rad före versionen: alla nio områden, i den djupa granskningen av hela repot.
 
 - **Antalen i regressionskortet böjs.** Meningen under yrkesgruppssteget skrev «1 enkönade grupper bidrar inte»
   och kunde skriva «1 grupper»; orsaken när modellen faller tillbaka skrev «1 BAS-intervall är helt enkönade». Nu

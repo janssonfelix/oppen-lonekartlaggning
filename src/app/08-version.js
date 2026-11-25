@@ -12,5 +12,5 @@
 // Genererad av tools/gen-version.mjs; vaktas av tests/version.test.js.
 // ====================================================================
 
-export const APP_VERSION = '2026.11.22';
-export const APP_BYGGDATUM = '2026-11-22';
+export const APP_VERSION = '2026.11.25';
+export const APP_BYGGDATUM = '2026-11-25';
