@@ -3,13 +3,12 @@
 // Kör hela kedjan i Definition of Done (.github/CONTRIBUTING.md, punkt 3): `npm run kontroll`.
 //
 // Stegen körs i ordning som `npm run <steg>` och kedjan stannar på första fel, med stegets slutkod. Efter `bundle`
-// prövas samma två grindar som CI-jobbet grindar kör utöver npm-skripten (.github/workflows/ci.yml):
-//   artefakten   — bygget ändrade inga genererade filer: de spårade filerna under dist/ och GENERERADE. CI bygger
-//                  om och kräver att de, artefakten och RELEASE.txt inräknade, blir byte-identiska med det
-//                  incheckade; här jämförs filerna som de låg när kedjan började med filerna efter bygget. En ändring
-//                  betyder att de inte motsvarade källan: de ombyggda filerna ska checkas in. Grinden är den enda
-//                  kontrollen av de genererade filerna; testsviten prövar dem inte en gång till.
-//   teckenkodningen — ingen U+FFFD (mojibake) i dist/app.js, src/index.html och src/style.css.
+// prövas samma grind som CI-jobbet grindar kör utöver npm-skripten (.github/workflows/ci.yml): bygget ändrade inga
+// genererade filer, de spårade filerna under dist/ och GENERERADE. CI bygger om och kräver att de, artefakten och
+// RELEASE.txt inräknade, blir byte-identiska med det incheckade; här jämförs filerna som de låg när kedjan började
+// med filerna efter bygget. En ändring betyder att de inte motsvarade källan: de ombyggda filerna ska checkas in.
+// Grinden är den enda kontrollen av de genererade filerna; testsviten prövar dem inte en gång till. Teckenkodningen
+// (ingen U+FFFD) prövar bygget självt (tools/bundle.mjs), som stoppar.
 //
 // `--snabb` är körningen under arbetet: `test` (enhetsprojektet) i stället för `test:full`, och inget röktest i
 // webbläsaren. Utan flagga körs allt, som före en pull request.
@@ -31,10 +30,8 @@ export const STEG = ['build:app', 'lint', 'typecheck', 'test:full', 'bundle', 't
 /** Kedjan under arbetet (`--snabb`): den snabba testkörningen och inget röktest i webbläsaren. */
 export const SNABBA_STEG = ['build:app', 'lint', 'typecheck', 'test', 'bundle'];
 
-/** Steget efter vilket artefakten och teckenkodningen prövas. */
+/** Steget efter vilket artefakten prövas. */
 const BYGGSTEG = 'bundle';
-
-const TECKENKODNING = ['dist/app.js', 'src/index.html', 'src/style.css'];
 
 /** Den genererade filen i src/app/ (tools/build-app.mjs skriver den ur VERSION). */
 const GENERERADE = ['src/app/08-version.js'];
@@ -74,8 +71,6 @@ function grindar(fore) {
             + byggda.map(f => `    ${f}`).join('\n')
             + '\n  Checka in de ombyggda filerna (som CI:s artefaktgrind kräver) och kör kontrollen igen.');
     }
-    const mojibake = TECKENKODNING.filter(f => readFileSync(join(root, f), 'utf8').includes('�'));
-    if (mojibake.length) fel.push(`U+FFFD (mojibake) i ${mojibake.join(', ')}.`);
     return fel;
 }
 
@@ -118,7 +113,7 @@ function kor(steg) {
                 sammanfatta();
                 return 1;
             }
-            console.log('\n[kontroll] Artefakten motsvarar källan och teckenkodningen är ren.');
+            console.log('\n[kontroll] Artefakten motsvarar källan.');
         }
     }
     sammanfatta();

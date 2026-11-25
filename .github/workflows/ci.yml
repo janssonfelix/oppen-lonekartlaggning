@@ -1,7 +1,7 @@
 name: CI
 
 # Kvalitetsgrind. Fyra jobb:
-#   grindar — lint, typkontroll, mojibake-skydd, kontroll av att den incheckade artefakten
+#   grindar — lint, typkontroll, kontroll av att den incheckade artefakten (bygget stoppar vid mojibake)
 #             faktiskt motsvarar källan och att ett andra bygge i en annan katalog blir samma fil.
 #   tester  — hela testsviten, delad på fyra parallella jobb (Vitests --shard). Varje testfil körs
 #             i exakt ett av dem; tillsammans är de `npm run test:full`.
@@ -59,10 +59,6 @@ jobs:
       # som ett gemensamt globalt scope). Nolläge: varje nytt fel stoppar bygget.
       - name: Typkontroll (tsc --checkJs, noll fel)
         run: npm run typecheck
-
-      - name: Teckenkodningsgrind (ingen U+FFFD i egen källkod)
-        run: |
-          node -e "const fs=require('fs');let bad=false;for(const f of ['dist/app.js','src/index.html','src/style.css']){if(fs.readFileSync(f,'utf8').includes('�')){console.error('U+FFFD (mojibake) i '+f);bad=true;}}if(bad)process.exit(1);console.log('Ingen mojibake i källfilerna.');"
 
       # Bygget är reproducerbart (ingen tidsstämpel i bannern), så en färsk build måste bli byte-identisk
       # med den incheckade artefakten och RELEASE.txt. Grinden är den enda kontrollen av det som bygget skriver i

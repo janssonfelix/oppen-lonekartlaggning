@@ -187,6 +187,16 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
         expect(plats.every(p => p > 0), steg.join(', ')).toBe(true);
         expect([...plats].sort((a, b) => a - b)).toEqual(plats);
         expect(rel).not.toMatch(/--key\b|COSIGN_PRIVATE_KEY/);
+        // Jobbet som kör utvecklingsberoendena har inga skrivbehörigheter och sparar ingen nyckel i .git/config; jobbet
+        // som signerar och publicerar kör ingen npm och checkar inte ut repot, så ingen kod ur npm når dess behörigheter.
+        const bygg = jobb.slice(jobb.indexOf('\n  bygg:'), jobb.indexOf('\n  publicera:'));
+        const publicera = jobb.slice(jobb.indexOf('\n  publicera:'));
+        expect(bygg).toMatch(/permissions:\n\s+contents: read\n/);
+        expect(bygg).not.toMatch(/: write/);
+        expect(bygg).toMatch(/persist-credentials: false/);
+        expect(publicera).toMatch(/needs: bygg/);
+        expect(publicera).toMatch(/id-token: write/);
+        expect(publicera).not.toMatch(/\bnpm\b|\bnpx\b|actions\/checkout@|actions\/setup-node@/);
         // Artefakten, RELEASE.txt, programvaruförteckningen och valideringsrapporten signeras och publiceras med sina
         // Sigstore-paket.
         for (const f of ['oppen-lonekartlaggning.html', 'RELEASE.txt', 'sbom.cdx.json', 'valideringsrapport.md', 'valideringsrapport.json']) {

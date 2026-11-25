@@ -14,7 +14,6 @@
 // ====================================================================
 import { htmlTillText } from '../lib/htmltext.js';
 import { personOrd } from '../lib/namn.js';
-import { medianKvotKIGiltiga } from '../lib/osakerhet.js';
 import { skrDelText } from '../lib/skrreferens.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, stor } from '../lib/termer.js';
@@ -34,13 +33,6 @@ import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
 import { _valdPrioReferens, raknaPrioritering, byggMotiveringsforslag } from './55-prioritering.js';
 import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlingsplan.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
-
-// Bootstrap-KI på mediankvoten (kvinnors median som % av männens): medianKvotKIGiltiga i src/lib/osakerhet.js. Samma
-// dragningar som översikten per BAS-intervall (_laBootstrapGapKI), med B = 2000 som raknaBootstrapKI; dragningar
-// där männens median inte är positiv räknas inte.
-export function _gdBootstrapGapKI(kvLons, maLons, B) {
-    return medianKvotKIGiltiga(kvLons, maLons, { B });
-}
 
 /** Alla grupper som får öppnas i dossier (minsta gruppstorlek som överallt annars): gruppdossierGrupper i src/lib/vymodell-gruppdossier.js. */
 export function gruppdossierKandidater() {

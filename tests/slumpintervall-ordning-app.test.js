@@ -50,7 +50,7 @@ function intervall(omkasta) {
     const tratt = Object.fromEntries(w._laTrattUnderlag(d).punkter.map(p => [p.nyckel, { kvot: p.kvot, gransLag: p.gransLag, gransHog: p.gransHog, utanfor: p.utanfor }]));
     const dossier = Object.fromEntries(w.gruppdossierKandidater().map(g => {
         const kv = g.rows.filter(r => arKvinna(r)), ma = g.rows.filter(r => arMan(r));
-        return [g.key, w._gdBootstrapGapKI(kv.map(r => r.lon), ma.map(r => r.lon))];
+        return [g.key, w.byggGruppdossier(g.key).gap.ci];
     }));
     const kv = w._regKvantilBerakna({ direkt: true });
     // Kvantilregressionens punktskattningar räknas med IRLS och kan skilja i sista decimalerna med radordningen; här

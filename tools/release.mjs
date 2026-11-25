@@ -13,7 +13,7 @@
 //   - CHANGELOG:s översta versionsrubrik är VERSION, och rubriken "Oförlöst" är borta;
 //   - riskanalysen anger bygget (VERSION) och kontrollsumman i dist/RELEASE.txt: den är granskad mot det som släpps;
 //   - riskanalysens granskningsdatum och dataskyddsbeskrivningens "Granskad mot koden" är inte äldre än
-//     senaste commit som rör koden (src/, tools/bundle.mjs, vendor/) — oppna-punkter.md punkt 17b;
+//     senaste commit som rör koden eller bygget (KODVAGAR nedan) — oppna-punkter.md punkt 17b;
 //   - arbetskatalogen är ren, så att taggen pekar på exakt det som kontrollerats.
 //
 // Vid OK skrivs taggkommandot ut. Release-arbetsflödet (.github/workflows/release.yml) kör samma kontroll
@@ -28,8 +28,9 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CALVER = /^(\d{4})\.(\d{2})\.(\d{2})$/;
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
-// De sökvägar vars ändring kräver att riskanalysen granskas på nytt.
-export const KODVAGAR = ['src', 'tools/bundle.mjs', 'vendor'];
+// De sökvägar vars ändring kräver att riskanalysen granskas på nytt: koden, biblioteken och det som bygger filen ur dem
+// (tools/bundle.mjs och de filer den läser in, utom den här, som bara ger kontrollsummans kommandon i RELEASE.txt).
+export const KODVAGAR = ['src', 'vendor', 'tools/bundle.mjs', 'tools/build-app.mjs', 'tools/gen-version.mjs', 'tools/lib/minify-css.mjs', 'tools/lib/minify-html.mjs'];
 const PUNKT = 'oppna-punkter.md punkt 17b';
 // Kontrollsummans kommandon i dist/RELEASE.txt (tools/bundle.mjs skriver dem) och i SECURITY.md och körguiden §0:
 // alternativet när cosign inte kan köras (beslut 11b). Skyddar mot en skadad eller förväxlad fil, inte en utbytt.
