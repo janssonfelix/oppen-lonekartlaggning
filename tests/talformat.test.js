@@ -151,7 +151,7 @@ describe('Jämförelseexporten: talceller med svenskt talformat, koder som text'
     });
     it('kronor är heltal i talceller med tusentalsformat och kr', () => {
         const r = radFor('012345');
-        for (const rubrik of ['Median', 'Diff Median (kr)', 'Diff P10 (kr)', 'Diff P90 (kr)']) {
+        for (const rubrik of ['Median', 'Skillnad median (kr)', 'Skillnad P10 (kr)', 'Skillnad P90 (kr)']) {
             const c = cellAt(r, rubrik);
             expect(c.t, rubrik).toBe('n');
             expect(Number.isInteger(c.v), rubrik).toBe(true);
@@ -170,8 +170,8 @@ describe('Jämförelseexporten: talceller med svenskt talformat, koder som text'
     });
     it('procent är tal i procentenheter med två decimaler, också när skillnaden är negativ', () => {
         const r = radFor('012345');
-        const kr = cellAt(r, 'Diff Median (kr)');
-        const pct = cellAt(r, 'Diff Median (%)');
+        const kr = cellAt(r, 'Skillnad median (kr)');
+        const pct = cellAt(r, 'Skillnad median (%)');
         expect(pct.t).toBe('n');
         expect(pct.z).toBe('0.00\\ "%"');
         expect(pct.v).toBe(Number(pct.v.toFixed(2)));
@@ -192,7 +192,7 @@ describe('Jämförelseexporten: talceller med svenskt talformat, koder som text'
     it('en referens som saknas ger tomma celler, inte noll eller text', () => {
         const r = radFor('234567');   // statistiken har bara medianen för gruppen
         expect(cellAt(r, 'P10', 8)).toBeUndefined();
-        expect(cellAt(r, 'Diff P10 (%)', 8)).toBeUndefined();
+        expect(cellAt(r, 'Skillnad P10 (%)', 8)).toBeUndefined();
         expect(cellAt(r, 'Median', 11)).toMatchObject({ t: 'n', v: 44000 });
     });
     it('rundtur: arbetsboken skrivs och läses tillbaka med samma tal och samma text', () => {

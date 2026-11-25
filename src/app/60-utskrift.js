@@ -105,7 +105,7 @@ async function _byggUtskriftsrapportExport() {
             }
             // Genom exportgrinden; hopfällda rader följer med. Skärmens egna kolumner (Detalj, Beräkning), knappar och
             // infoikoner gör inget på papper och tar bredd från sidan. Rubrikens ombrytningsskydd håller bara ihop ordet
-            // med infoikonen på skärmen; på papper ska rubriken få avstavas som förut.
+            // med infoikonen på skärmen; på papper får rubriken avstavas.
             const cloneTable = id => {
                 const t = exportElement(id);
                 if (!t) return '';
@@ -114,12 +114,12 @@ async function _byggUtskriftsrapportExport() {
                 klon.querySelectorAll('thead .ingen-radbrytning').forEach(s => s.replaceWith(...s.childNodes));
                 return klon.outerHTML;
             };
-        const matrixSection   = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en} och ${T.niva.en}</h2><p>${stor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
-        const skevhetSection  = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
+            const matrixSection = `<section class="page-break"><h2>Lika arbete — kvinnor och män i samma ${T.enhet.en} och ${T.niva.en}</h2><p>${stor(T.enhet.fl)} där skillnaden är statistiskt säkerställd och minst 3 % (verktygets storleksgräns) är värda att granska mot sakliga skäl. Kolumnen ${esc(_STS_DIR_ETIKETT)}: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('matrix-table')}</section>`;
+            const skevhetSection = `<section class="page-break"><h2>Löneskillnad per ${T.niva.en}</h2><p>Markeringen ${esc(_STS_DIR_ETIKETT)} vid den ojusterade skillnaden: ${esc(_STS_DIR_TIPS)}</p>${cloneTable('paygap-table')}<h2 class="pr-ned">Ojämn könsfördelning (under 40 % av ett kön)</h2>${cloneTable('skevhet-table')}</section>`;
             const bildSektion = (rubrik, src, alt) => (src ? `<section class="page-break"><h2>${rubrik}</h2><img src="${src}" alt="${alt}"></section>` : '');
-        const rapportSection  = `<section class="page-break"><h2>Löneöversikt (organisation · kön · ${T.enhet.en})</h2>${cloneTable('rapport-table')}</section>`;
-        const bmSection       = state.statistik.length ? `<section class="page-break"><h2>Jämförelse mot ${esc(_jmfKallaNamn(jamforelseAktivKalla()))}${jamforelseUrvalText() ? ` (${esc(jamforelseUrvalText())})` : ''}</h2>${cloneTable('benchmark-table')}</section>` : '';
-        const bilagaSection   = `
+            const rapportSection = `<section class="page-break"><h2>Löneöversikt (organisation · kön · ${T.enhet.en})</h2>${cloneTable('rapport-table')}</section>`;
+            const bmSection = state.statistik.length ? `<section class="page-break"><h2>Jämförelse mot ${esc(_jmfKallaNamn(jamforelseAktivKalla()))}${jamforelseUrvalText() ? ` (${esc(jamforelseUrvalText())})` : ''}</h2>${cloneTable('benchmark-table')}</section>` : '';
+            const bilagaSection = `
             <section class="page-break">
                 <h2>Bilaga: Metodik &amp; urval (kvalitetssäkring)</h2>
                 <p class="pr-dampad">Detalj över varje analys, formler och vilka rader som ingått. Använd för revision och kvalitetskontroll av resultaten.</p>
@@ -176,20 +176,8 @@ async function _byggUtskriftsrapportExport() {
     }
 }
 
-// ====================================================================
-// Word-utkast: redigerbar §§ 8–14-dokumentation ("sista milen")
-// --------------------------------------------------------------------
-// Producerar hela dokumentationsskelettet (DiskrL kap. 3) som en REDIGERBAR
-// .doc-fil: verktygets fynd är ifyllda och de kvalitativa bedömningar lagen
-// ålägger ARBETSGIVAREN (§8-praxis, sakliga skäl, kravvärdering, beslut,
-// samverkan) markeras som gula [HR fyller i …]-block. HR öppnar i Word,
-// kompletterar och äger slutdokumentet — inget lagras, inget skickas (samma
-// lokal-only-princip som övriga exporter; .doc byggs som en lokal Blob).
-// ====================================================================
-
-// Skriv ut en scaffold-flik (§ 8-checklista / handlingsplansmall) i ett rent
-// fönster med alla <details> expanderade. Offlinesäkert: inga nätverksanrop,
-// inga skript i utskriftsdokumentet.
+// Skriver ut en mallflik (checklistan i Regler & praxis, handlingsplanen) i ett eget fönster med alla <details>
+// utfällda. Inga nätverksanrop och inga skript i utskriftsdokumentet.
 // Utskriften lämnar verktyget: handlingsplanens förifyllda rader bär gruppmått, så fliken ritas i exportläget (ADR-51)
 // genom exportgrinden innan den kopieras. Skärmens version maskerar inget.
 function skrivUtMallflik(viewId, heading) { medExportLage(() => _skrivUtMallflik(viewId, heading)); }
@@ -227,7 +215,8 @@ function _skrivUtMallflik(viewId, heading) {
     w.document.write('<!DOCTYPE html><html lang="sv"><head><meta charset="utf-8">'
         + '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data: blob:;">'
         + '<title>' + esc(heading) + '</title></head><body><h1>Lönekartläggning — ' + esc(heading) + '</h1>'
-        // Handlingsplanen är förifylld med gruppmått (årskostnad per yrkesgrupp/par); checklistan har inga
+        // Handlingsplanen är förifylld med gruppmått (årskostnad per grupp och par) och bär meningen om sänkt tröskel;
+        // checklistan har inga gruppmått.
         + (viewId === 'view-handlingsplan' ? _kSanktStycke() : '')
         + /** @type {HTMLElement} */ (clone).innerHTML
         + '<p class="foot">Utskrivet ur Öppen lönekartläggning. Dokumentera bedömningar och åtgärder i lönekartläggningsrapporten (Word).</p></body></html>');

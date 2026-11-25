@@ -32,7 +32,7 @@ import { _aidbasExcelBlad, _aidbasLikaBlad, _aidbasMetodRader, AIDBAS_BLADNAMN, 
 import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
 import { ritaPrioritering } from './55-prioritering.js';
 import { _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
-import { rmPerBasUnderlag, rmPerBasUndertryckNoter } from './58-rapportmodell.js';
+import { RM_MATT, rmPerBasUnderlag, rmPerBasUndertryckNoter } from './58-rapportmodell.js';
 import { _lpExcelBlad } from './75-lonepolitik.js';
 /**
  * Bladen som "Excel (alla flikar)" kommer att innehålla, i ordning — underlaget till exportens förhandsbesked.
@@ -100,14 +100,13 @@ function _excelPerBasRader() {
     if (!pb || !pb.intervall.length) return null;
     const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
     const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
-    const MATT = { p10: 'P10', p25: 'P25', med: 'Median', p75: 'P75', p90: 'P90', medel: 'Medellön' };
     const matt = pb.recept.matt;
     const per = pb.dim === 'sektor' ? T.huvudomrade.en : T.niva.en, kort = pb.dim === 'sektor' ? stor(T.huvudomrade.en) : 'BAS';
     const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
     const undertryckNoter = rmPerBasUndertryckNoter(pb, pb.k);
     for (const i of pb.intervall) {
         rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} ${ordForAntal(i.antalYrken, T.enhet)}`]);
-        rows.push(['Grupp', 'Antal', ...matt.map(m => MATT[m])]);
+        rows.push(['Grupp', 'Antal', ...matt.map(m => RM_MATT[m])]);
         i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
         if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} ${personOrd(pb.k)}): ${i.utelamnade.join(', ')}`]);
         if (!i.konVisas) rows.push([`Kvinnor och män redovisas inte var för sig: ett kön har färre än ${pb.k} ${personOrd(pb.k)}`]);
@@ -116,20 +115,20 @@ function _excelPerBasRader() {
     }
     if (pb.basUtelamnade.length) rows.push([`${pb.dimEtikett} som inte redovisas (färre än ${pb.k} ${personOrd(pb.k)}): ${pb.basUtelamnade.join(', ')}`], []);
     if (pb.konsgap) {
-    // Utan ålder i lönefilen (ADR-64) står medelåldern inte med.
-    const medAlder = pb.harAlder !== false;
-    rows.push([`Löneskillnader inom likvärdigt arbete, per ${per}`]);
-    rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', ...(medAlder ? ['Medelålder alla', 'Medelålder män', 'Medelålder kvinnor'] : [])]);
-    pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), ...(medAlder ? [tal(r.alder), tal(r.alderMa), tal(r.alderKv)] : [])]));
-    undertryckNoter.konsgap.forEach(t => rows.push([t]));
-    rows.push([]);
+        // Utan ålder i lönefilen (ADR-64) står medelåldern inte med.
+        const medAlder = pb.harAlder !== false;
+        rows.push([`Löneskillnader inom likvärdigt arbete, per ${per}`]);
+        rows.push(['BAS', 'Antal', 'Medellön alla', 'Medellön män', 'Medellön kvinnor', 'Kvinnors medellön i % av mäns', 'Andel kvinnor (%)', ...(medAlder ? ['Medelålder alla', 'Medelålder män', 'Medelålder kvinnor'] : [])]);
+        pb.konsgap.rader.forEach(r => rows.push([r.bas, r.n, tal(r.medel), tal(r.medelMa), tal(r.medelKv), pct(r.kvot), pct(r.andelKv), ...(medAlder ? [tal(r.alder), tal(r.alderMa), tal(r.alderKv)] : [])]));
+        undertryckNoter.konsgap.forEach(t => rows.push([t]));
+        rows.push([]);
     }
     if (pb.recept.aldersgrupper && pb.harAlder === false) rows.push(['Löneskillnader i åldersgrupper redovisas inte: lönefilen saknar ålder.']);
     if (pb.aldersgrupper) {
-    rows.push([`Löneskillnader i åldersgrupper, per ${per}`]);
-    rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
-    pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
-    undertryckNoter.aldersgrupper.forEach(t => rows.push([t]));
+        rows.push([`Löneskillnader i åldersgrupper, per ${per}`]);
+        rows.push(['BAS', 'Antal', 'Medelålder', 'Medellön alla', ...pb.aldersgrupper.grupper.map(g => `Medellön ${g} år`)]);
+        pb.aldersgrupper.rader.forEach(r => rows.push([r.bas, r.n, tal(r.alder), tal(r.medel), ...r.perGrupp.map(tal)]));
+        undertryckNoter.aldersgrupper.forEach(t => rows.push([t]));
     }
     return rows;
 }
@@ -157,8 +156,7 @@ function _excelDiagramBlad() {
         [stor(T.enhet.en), stor(T.niva.en), 'Antal kvinnor', 'Antal män', 'Kvinnors median i % av mäns', 'Gräns, nedre', 'Gräns, övre', 'Mot gränserna'],
         ...tratt.punkter.map(p => [p.yrke, p.bas, p.nKv, p.nMa, r1(p.kvot), r1(p.gransLag), r1(p.gransHog), p.utanfor ? 'Utanför gränserna' : 'Inom gränserna']),
         [], ['Bladet visar gränserna, inte statusen: statusen per grupp står i bladen EU-lönekartläggning och Lika arbete AID x BAS och väger samman gränserna med storleken, minst 3 %.']]]);
-    const arKv = arKvinna, arMa = arMan;
-    const alder = alderGapRader(d.filter(arKv), d.filter(arMa), k);
+    const alder = alderGapRader(d.filter(arKvinna), d.filter(arMan), k);
     if (alder.visade.length) ut.push(['Löneskillnad per ålder', [
         ['Löneskillnad per åldersgrupp (Ålder & karriär)'],
         ...(alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${alder.dolda.join(', ')}.`]] : []), [],
@@ -193,10 +191,8 @@ function _exportAlltTillExcelExport() {
 export function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
 function __excelAlltBokExport() {
 
-    // Self-healing: säkerställ att flik-tabellerna är renderade innan de läses.
-    // Täcker både den deferrade inläsningen (skevhet/kon körs strax efter load)
-    // och flikar som aldrig besökts (EU-matrisen renderades annars först vid
-    // flikbesök → arket föll tyst bort ur exporten).
+    // Tabellerna läses ur flikarna: en flik som aldrig har öppnats har tomma tabeller och ritas först (annars föll
+    // bladet bort ur arbetsboken utan att någon märkte det).
     const ensure = (sel, fn) => { if (!document.querySelector(sel)) { try { fn(); } catch (_e) { /* tolerant */ } } };
     ensure('#rapport-table tbody tr', ritaLoneoversikt);
     ensure('#skevhet-table tbody tr', () => ritaLoneskillnadPerBas(lsBasVymodell()));
@@ -223,17 +219,17 @@ function __excelAlltBokExport() {
     const egnaRader = _excelEgnaRader();
     if (egnaRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(egnaRader), 'Egna tabeller');
 
-    // Sheet: EU-Lönekartläggning
+    // Bladet EU-lönekartläggning
     const matrixSheet = tableToSheet('matrix-table');
     // Reservationen om lönebegreppet (ADR-107) under tabellen: rubrikraden och kolumnerna står kvar där de stod.
     if (matrixSheet) XLSX.utils.sheet_add_aoa(matrixSheet, [[], [EU_LONEBEGREPP_RESERVATION]], { origin: -1 });
     if (matrixSheet) XLSX.utils.book_append_sheet(wb, matrixSheet, 'EU-lönekartläggning');
 
-    // Sheet: Prioritering
+    // Bladet Prioritering
     const prioSheet = tableToSheet('prio-table');
     if (prioSheet) XLSX.utils.book_append_sheet(wb, prioSheet, 'Prioritering');
 
-    // Sheet: Lönegap & Könsfördelning
+    // Bladen Löneskillnad och Könsskevhet
     const paygapSheet = tableToSheet('paygap-table');
     if (paygapSheet) XLSX.utils.book_append_sheet(wb, paygapSheet, 'Löneskillnad');
     const skevhetSheet = tableToSheet('skevhet-table');
@@ -248,7 +244,7 @@ function __excelAlltBokExport() {
     const sektorSheet = tableToSheet('sektor-table');
     if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
 
-    // Sheet: Benchmark mot jämförelsestatistiken
+    // Bladet Jämförelsestatistik
     // Bara med inläst jämförelsestatistik: samma villkor som förhandsbeskedet (excelAlltBlad), oberoende av vilka flikar som visats.
     const bmSheet = state.statistik.length ? tableToSheet('benchmark-table') : null;
     if (bmSheet) {
@@ -261,7 +257,7 @@ function __excelAlltBokExport() {
     const skalRader = _excelSkalRader();
     if (skalRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(skalRader), 'Sakliga skäl');
 
-    // Sheet: Underlagets kvalitet (ADR-19)
+    // Bladet Underlagets kvalitet (ADR-19)
     const uk = bedomningUnderlag();
     if (uk) {
         const ukRows = [
@@ -273,7 +269,7 @@ function __excelAlltBokExport() {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ukRows), 'Underlagets kvalitet');
     }
 
-    // Sheet: Metodik & urval (audit)
+    // Bladet Metodik: urvalet bakom varje analys
     const metRows = [
         ['Metodik & urval — kvalitetssäkring'],
         ['Genererad', new Date().toLocaleString('sv-SE')],
@@ -305,15 +301,15 @@ function __excelAlltBokExport() {
     metRows.push([]);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(metRows), 'Metodik');
 
-    // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Lonegap är Lika arbetes
-    // kvot per intervall. Båda behålls; raden säger vad som skiljer dem.
+    // Två blad som liknar varandra: Per BAS är lönestrukturen som i en skriven lönekartläggning, Löneskillnad är
+    // kvinnors medianlön i procent av mäns per intervall. Båda behålls; raden säger vad som skiljer dem.
     _laggTillMetodblad(wb, { extra: [
         ['Bladen Per BAS och Löneskillnad', `Per BAS är lönestrukturen per ${T.niva.en} som i en skriven lönekartläggning: referensen, organisationen och varje ${T.enhet.en} med P10, median, P90 och antal, per kön. Löneskillnad är tabellen ur Lönestruktur: kvinnors medianlön i procent av mäns per ${T.niva.en}, med antal och medianer. Samma underlag, två frågor.`],
         ..._excelLonepolitikMetod(diagramBlad), ..._aidbasMetodRader()] });
     return wb;
 }
 
-// ---- Joint Pay Assessment-protokoll (EU 2023/970 Art. 10) ----
+// ---- Protokollet för gemensam lönebedömning (EU 2023/970 art. 10) ----
 /**
  * Etiketterna för de två "exkluderade p.g.a. minsta gruppstorlek"-raderna. Yrkesgrupperna
  * prövas mot redovisningströskeln (kTroskel()); BAS-regressionen avgörs av
@@ -334,9 +330,7 @@ function _jpaNivaCeller(kv, ma, nKv, nMa) { return jpaNivaCeller(kv, ma, nKv, nM
 /** Protokollets blad med alla grupper i lika arbete (ADR-93). */
 const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
 /**
- * Genererar en samrådsprotokoll-Excel speciellt utformad för facklig samverkan.
- *
- * Strikt EU 2023/970 Art. 10-process:
+ * Protokollet för gemensam lönebedömning som Excel-fil, till samrådet med arbetstagarnas företrädare (art. 10):
  *   - Listar yrkesgrupper med statusen Värt att granska (säkerställd skillnad på minst 3 %, ADR-59) med kolumnen
  *     Ojusterad löneskillnad ≥ 5 % (direktivmarkeringen), och BAS-intervall där regressionens skillnad är
  *     säkerställd också efter korrigering för många tester (Benjamini–Hochberg, q < 0,05) och minst 3 %, som
@@ -346,7 +340,7 @@ const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
  *   - Minsta gruppstorlek tillämpas: grupper med färre än kTroskel() personer av något kön exkluderas ur blad 2 och 3,
  *     och blad 2a visar dem med antal men utan median
  *   - Median och medelvärde per kön för varje redovisad grupp och intervall; statusen följer medianen (ADR-79)
- *   - Tomma protokoll-fält för sakliga skäl, fackliga kommentar, åtgärder, och på försättssidan för löneökning efter
+ *   - Tomma fält för sakliga skäl, fackliga kommentarer, åtgärder, och på försättssidan för löneökning efter
  *     ledighet, utvärderingen av föregående lönebedömnings åtgärder och systemen för arbetsvärdering (ADR-79)
  *   - Signaturblad för arbetsgivare + fackliga representanter
  *   - Transparens om vad som EXKLUDERATS p.g.a. minsta gruppstorlek (antal, ingen PII)
@@ -493,7 +487,7 @@ function _exportJPAProtokollExport() {
     const basHeaderRow = [
         'Nr', stor(T.niva.en), 'N totalt', 'N kvinnor', 'N män',
         'Oförklarad skillnad (%)', '95 % KI lägre', '95 % KI övre',
-        'p-värde', 'q-värde (BH-justerat)', 'R² för modellen', 'Säkerställd efter korrigering (q < 0,05)',
+        'p-värde', 'q-värde (BH-justerat)', 'R² för modellen (%)', 'Säkerställd efter korrigering (q < 0,05)',
         // Lönenivåerna för samma personer som regressionen (ADR-79)
         ..._JPA_MEDIAN_KOLUMNER, ..._JPA_MEDEL_KOLUMNER,
         // Protokoll-fält
@@ -512,9 +506,9 @@ function _exportJPAProtokollExport() {
             basRows.push([
                 idx + 1, b.bas, b.n, b.kvN, b.maN,
                 +b.gapPct.toFixed(2), +b.ciLow.toFixed(2), +b.ciHigh.toFixed(2),
-                b.pValue < 0.001 ? '< 0.001' : +b.pValue.toFixed(4),
-                b.q < 0.001 ? '< 0.001' : +b.q.toFixed(4),
-                +(b.R2 * 100).toFixed(1) + '%',
+                b.pValue < 0.001 ? '< 0,001' : +b.pValue.toFixed(4),
+                b.q < 0.001 ? '< 0,001' : +b.q.toFixed(4),
+                +(b.R2 * 100).toFixed(1),
                 b.q < 0.05 ? 'Ja' : 'Nej',
                 // Intervallet har båda könen på minst statGolv() ≥ tröskeln; cellerna prövar ändå tröskeln själva (S4).
                 ..._jpaNivaCeller(b.medKv, b.medMa, b.kvN, b.maN), ..._jpaNivaCeller(b.medelKv, b.medelMa, b.kvN, b.maN),
@@ -533,18 +527,16 @@ function _exportJPAProtokollExport() {
     _tillampaTalformat(basSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, basSheet, '3. Likvärdigt arbete (BAS)');
 
-    // === Sheet 3b: § 3:10 Likvärdighet (kv-dom yrken vs yrken som inte är kv-dom, ADR-60) ===
-    // Använder lvResult som beräknats högst upp i
-    // funktionen — så försättssidans räknare och tabellen i flik 3b alltid
-    // är från samma compute.
+    // === Blad 3b: § 3:10, kvinnodominerade grupper mot grupper som inte är det (ADR-60) ===
+    // lvResult räknades högst upp, så att försättssidans antal och tabellen i blad 3b kommer ur samma beräkning.
     if (lvResult && lvResult.pairs.length && !lvRedovisning.par.length) {
         // Alla par har en grupp under tröskeln: arket anger det i stället för att tiga eller påstå att par saknas.
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[lvRedovisning.not]]), '3b. Likvärdigt arbete (krav)');
     }
     if (lvRedovisning.par.length) {
-        // Inom-organisationen-jämförelse primär, jämförelsestatistiken
-        // som extern fallback per BAS. Bootstrap-CI på varje par.
-        const lvSig = ci => !ci ? 'CI ej beräknad' : (ci.lo > 0 ? 'Säker (CI > 0)' : 'Slump? (CI överlappar 0)');
+        // Jämförelsen inom organisationen går först; jämförelsestatistiken tas per BAS när en jämförelse saknas där.
+        // Varje par har ett bootstrapintervall för skillnaden.
+        const lvSig = ci => !ci ? 'Inget konfidensintervall' : (ci.lo > 0 ? 'Säkerställd (intervallet över 0)' : 'Kan vara slump (intervallet omfattar 0)');
         const lvKälla = p => p.jamforKalla === 'intern' ? 'Intern (organisation)'
             : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
         const lvHeader = [
@@ -581,8 +573,6 @@ function _exportJPAProtokollExport() {
         ];
         lvSheet['!freeze'] = { xSplit: 3, ySplit: 1 };
         _tillampaTalformat(lvSheet, SV_TALFORMAT);
-        // OBS: kolon är förbjudet i Excel-arknamn (SheetJS kastar) — därav "3-10".
-        // Demodata saknar § 3:10-par, så arket prövas bara med riktiga par.
         XLSX.utils.book_append_sheet(wb, lvSheet, '3b. Likvärdigt arbete (krav)');
     }
 
@@ -605,7 +595,7 @@ function _exportJPAProtokollExport() {
         ['Statusen bygger på statistisk signal: säkerställd skillnad och minst 3 % (verktygets storleksgräns). Lagen kräver ändå att varje skillnad analyseras.', ''],
         [`${_STS_DIR_KOLUMN}: ${_STS_DIR_TIPS}`, ''],
         [`Minsta gruppstorlek (n<${kTroskel()}) skyddar enskilda anställdas integritet (uppgiftsminimering och inbyggt dataskydd enligt dataskyddsförordningen).`, ''],
-        ['Grupper under k-tröskeln kan inte analyseras säkert utan risk för återidentifiering.', ''],
+        ['Grupper under minsta gruppstorlek kan inte analyseras utan risk att enskilda pekas ut.', ''],
         ['Om dessa grupper behöver granskas separat bör det ske utan numeriska bilagor.', '']
     ];
     const excludedSheet = XLSX.utils.aoa_to_sheet(excludedRows);
@@ -627,9 +617,9 @@ function _exportJPAProtokollExport() {
         ['— Statistisk metodik —', ''],
         [`Lika arbete (${T.enhet.en})`, `Direkt median-jämförelse mellan kvinnors och mäns löner inom samma ${T.kod.en}. Kvinnors median i procent av mäns = median_kv / median_mä × 100; under 100 betyder att kvinnor ligger lägre.`],
         ['Median och medelvärde', `Blad 2 och 3 redovisar både median och medelvärde för kvinnor och män, i kronor och som kvinnors i procent av mäns. Statusen och urvalet följer medianen i blad 2 och regressionen i blad 3; medelvärdet står bredvid som underlag. I blad 3 räknas båda på samma personer som regressionen.`],
-        [`Likvärdigt arbete (${T.niva.en})`, `OLS-regression: log(lön) ~ kön${harAlder() ? ' + ålder (centrerad)' : ''} inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. HC3-robusta standardfel (Long & Ervin 2000).${harAlder() ? '' : ' Lönefilen saknar ålder, så ålder räknas inte bort.'}`],
-        ['Konfidensintervall', '95% KI = β ± t(0,975; n−k) × HC3 robust SE, transformerat tillbaka från log-skala; t-kvantilen räknas vid n−k frihetsgrader (2,0 vid 60, 1,98 vid 100).'],
-        ['Statistisk signifikans', `p < 0.05 = ej slumpmässig skillnad. För ${T.niva.bfl} gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).`],
+        [`Likvärdigt arbete (${T.niva.en})`, `OLS-regression: log(lön) ~ kön${harAlder() ? ' + ålder (centrerad)' : ''} inom varje BAS. Oförklarad skillnad = könskoefficienten omräknad till procentskillnad. Robusta standardfel (HC3, Long & Ervin 2000).${harAlder() ? '' : ' Lönefilen saknar ålder, så ålder räknas inte bort.'}`],
+        ['Konfidensintervall', '95 % KI = β ± t(0,975; n − k) × robust standardfel (HC3), omräknat från log-skala; t-kvantilen räknas vid n − k frihetsgrader (2,0 vid 60, 1,98 vid 100).'],
+        ['Statistisk signifikans', `p < 0,05: skillnaden är statistiskt säkerställd, det vill säga osannolik som ren slump om lönerna inte skilde sig åt. För ${T.niva.bfl} gäller gränsen q-värdet efter korrigering för många tester, inte det råa p-värdet (se Multipel jämförelse).`],
         ['', ''],
         ['— Minsta gruppstorlek —', ''],
         ['Tröskel', `n ≥ ${kTroskel()} per kön krävs för att en grupp ska redovisas individuellt.`],
@@ -638,7 +628,7 @@ function _exportJPAProtokollExport() {
         ['', ''],
         ['— Begränsningar att vara medvetna om —', ''],
         ['Sakliga skäl', 'Verktyget identifierar löneskillnader men avgör inte vad som är saklig grund. Den bedömningen är gemensamma parters ansvar.'],
-        ...(harAlder() ? [['Modellantaganden', 'OLS antar linjär samband mellan ålder och log(lön). Lifecycle-analysen (i verktygets EU-flik) testar detta antagande med kvadratisk åldersterm.']] : []),
+        ...(harAlder() ? [['Modellantaganden', 'OLS antar ett linjärt samband mellan ålder och log(lön). Analysen av löneskillnaden över karriären (fliken Ålder & karriär) prövar antagandet med en kvadratisk åldersterm.']] : []),
         ['Multipel jämförelse', `Ett test per ${T.niva.en} körs samtidigt, och av ren slump förväntas ungefär 1 falskt positivt resultat per 20 tester. Därför korrigeras p-värdena med Benjamini–Hochbergs metod (andelen falska upptäckter). Flik 3 tar med ${artikel(T.niva)} ${T.niva.en} bara när q-värdet efter korrigeringen är under 0,05 och skillnaden är minst 3 %, samma regel som i verktyget. Det råa p-värdet står bredvid för jämförelse.`]
     ];
     const metodikSheet = XLSX.utils.aoa_to_sheet(metodikRows);
@@ -697,6 +687,5 @@ function _exportJPAProtokollExport() {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartExcelexport() {
-    // Multi-flik Excel-export
     document.getElementById("btn-export-all-excel")?.addEventListener("click", exportAlltTillExcel);
 }
