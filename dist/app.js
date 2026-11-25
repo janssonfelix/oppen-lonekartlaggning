@@ -8055,7 +8055,7 @@ function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
 function arsjamforelseBlock(j, { id = "arsjamforelse", forraAr, nuAr, urval, demo, troskelNot }) {
   const { fore, efter } = _inled({ demo, urval, troskelNot });
   const skriv = (v, typ) => v == null ? "–" : typ === "kr" ? _kr(v) : typ === "pct" ? _pct2(v, 1) : svTal(v, 0);
-  const diff = (v, typ) => v == null ? "–" : `${v > 0 ? "+" : v < 0 ? "−" : "±"}${skriv(Math.abs(v), typ)}${typ === "pct" ? "-enheter" : ""}`;
+  const diff = (v, typ) => v == null ? "–" : `${v > 0 ? "+" : v < 0 ? "−" : "±"}${typ === "pct" ? `${svTal(Math.abs(v), 1)} procentenheter` : skriv(Math.abs(v), typ)}`;
   const g = j.grupper, p = j.punkter;
   const namn = (l) => l.map(gruppMedBas).join(", ");
   const st = [
@@ -20659,7 +20659,7 @@ function rmArsjamforelseAvsnitt(diagram) {
   if (!j) return null;
   const stycke = (text2, stil) => ({ typ: "stycke", text: text2, ...stil ? { stil } : {} });
   const skriv = (v, typ) => v == null ? "—" : typ === "kr" ? svKr(v) : typ === "pct" ? svPct(v, 1) : svTal(v, 0);
-  const diff = (v, typ) => v == null ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : "±"}${skriv(Math.abs(v), typ)}${typ === "pct" ? "-enheter" : ""}`;
+  const diff = (v, typ) => v == null ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : "±"}${typ === "pct" ? `${svTal(Math.abs(v), 1)} procentenheter` : skriv(Math.abs(v), typ)}`;
   const text = (s) => ({ text: s });
   const delar = [
     stycke(`Jämfört med lönekartläggningen ${forra.ar} (bokslut sparat ${forra.skapat}, minsta gruppstorlek ${forra.k}). Lönemått bara för ${T.enhet.fl} där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativ när kvinnor ligger lägre.`, "dampad"),
@@ -22051,7 +22051,7 @@ function ritaArsjamforelse() {
   const diff = (v, typ) => {
     if (v == null) return '<span class="f-dampad">–</span>';
     const tkn = v > 0 ? "+" : v < 0 ? "−" : "±";
-    return `<span class="halvfet">${tkn}${skriv(Math.abs(v), typ === "pct" ? "pct" : typ)}${typ === "pct" ? "-enheter" : ""}</span>`;
+    return `<span class="halvfet">${tkn}${typ === "pct" ? `${svTal(Math.abs(v), 1)} procentenheter` : skriv(Math.abs(v), typ)}</span>`;
   };
   const nyckeltal = `<table class="data-table st-088"><thead><tr><th>Mått</th><th class="t-hoger">${forra.ar}</th><th class="t-hoger">${nu.ar}</th><th class="t-hoger">Skillnad</th></tr></thead><tbody>` + j.nyckeltal.map((r) => `<tr><td>${esc(r.etikett)}</td><td class="t-tal">${skriv(r.forra, r.typ)}</td><td class="t-tal">${skriv(r.nu, r.typ)}</td><td class="t-tal">${diff(r.diff, r.typ)}</td></tr>`).join("") + "</tbody></table>";
   const antal = (g2) => _abGruppAntal(g2, nu.ar) ?? "–";
@@ -23675,8 +23675,8 @@ function _figBubbla(model) {
     x: { skala: "linjar", titel: "Andel kvinnor (%) — bubblans storlek visar antal personer", doman: [0, 100] },
     y: { skala: "linjar", titel: "Median, kronor/månad", format: "kr" },
     hojd: 460,
-    // 40 % och 60 %: gränserna för könsdominans som § 3:10-analysen använder.
-    referens: [40, 60].map((x) => ({ x, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
+    // Gränserna för könsdominans som Likvärdigt arbete använder: kvinnotröskeln (standard 60 %) och samma gräns för män.
+    referens: [100 - aidbasGrans(), aidbasGrans()].map((x) => ({ x, streck: "prickad", farg: PALETT.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
     lager: [{
       marke: "punkt",
       serie: "Grupper",

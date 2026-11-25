@@ -9,6 +9,10 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Bubbeldiagrammet följer kvinnotröskeln.** Strecken för könsdominans i Tabeller och egna vyer stod fast på 40 och
+  60 %; nu följer de tröskeln som Likvärdigt arbete använder.
+- **Årsjämförelsen skriver procentenheter.** Förändringen av en andel stod som «%-enheter» i panelen, rapporten och
+  rapportunderlaget; nu står «procentenheter».
 - **Löneläget utan ställningstagande kallar det inte referenspunkt.** Med bara jämförelsestatistik inläst hade
   överblickens bild en tom serie för ställningstagandet, och rubriken och beskrivningen talade om det som
   referenspunkt. Nu visar bilden statistiken och organisationen och säger det.

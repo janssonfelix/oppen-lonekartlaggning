@@ -307,7 +307,7 @@ function rmArsjamforelseAvsnitt(diagram) {
     if (!j) return null;
     const stycke = (text, stil) => ({ typ: 'stycke', text, ...(stil ? { stil } : {}) });
     const skriv = (v, typ) => (v == null ? '—' : typ === 'kr' ? svKr(v) : typ === 'pct' ? svPct(v, 1) : svTal(v, 0));
-    const diff = (v, typ) => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
+    const diff = (v, typ) => (v == null ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${typ === 'pct' ? `${svTal(Math.abs(v), 1)} procentenheter` : skriv(Math.abs(v), typ)}`);
     const text = s => ({ text: s });
     /** @type {any[]} */ const delar = [
         stycke(`Jämfört med lönekartläggningen ${forra.ar} (bokslut sparat ${forra.skapat}, minsta gruppstorlek ${forra.k}). Lönemått bara för ${T.enhet.fl} där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns, negativ när kvinnor ligger lägre.`, 'dampad'),

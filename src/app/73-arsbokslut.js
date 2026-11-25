@@ -234,7 +234,7 @@ export function ritaArsjamforelse() {
     const diff = (v, typ) => {
         if (v == null) return '<span class="f-dampad">–</span>';
         const tkn = v > 0 ? '+' : v < 0 ? '−' : '±';
-        return `<span class="halvfet">${tkn}${skriv(Math.abs(v), typ === 'pct' ? 'pct' : typ)}${typ === 'pct' ? '-enheter' : ''}</span>`;
+        return `<span class="halvfet">${tkn}${typ === 'pct' ? `${svTal(Math.abs(v), 1)} procentenheter` : skriv(Math.abs(v), typ)}</span>`;
     };
     const nyckeltal = `<table class="data-table st-088"><thead><tr><th>Mått</th><th class="t-hoger">${forra.ar}</th><th class="t-hoger">${nu.ar}</th><th class="t-hoger">Skillnad</th></tr></thead><tbody>`
         + j.nyckeltal.map(r => `<tr><td>${esc(r.etikett)}</td><td class="t-tal">${skriv(r.forra, r.typ)}</td><td class="t-tal">${skriv(r.nu, r.typ)}</td><td class="t-tal">${diff(r.diff, r.typ)}</td></tr>`).join('')
