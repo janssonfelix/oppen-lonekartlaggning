@@ -5,7 +5,7 @@
  *
  * Appen bygger sin HTML med mallsträngar som tilldelas innerHTML. Skyddet är att varje värde som kan komma ur en
  * inläst fil, ett organisationspaket, en konfigurationsfil, ett filnamn, en kolumnrubrik eller fritext går genom
- * esc() (src/app/01-html-och-tillganglighet.js). CSP:n stoppar skript och händelsehanterare, så en miss ger
+ * esc() (src/lib/htmltext.js). CSP:n stoppar skript och händelsehanterare, så en miss ger
  * förfalskat innehåll, inte kodkörning (docs/dataskydd/riskanalys.md §7, A3). Vakten läser källtexten i src/app/
  * med en liten tokeniserare, utan att ladda appen; src/lib/ läses för att slå upp funktionerna som appen importerar
  * (libSomKalla). Importer och exporter läses med acorn, och ett namn slås upp via filens egen import, så att

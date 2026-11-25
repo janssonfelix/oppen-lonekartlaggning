@@ -110,8 +110,26 @@ var FARG = Object.freeze({
   accentKant: "#bfdbfe"
 });
 
-// src/app/01-html-och-tillganglighet.js
+// src/lib/htmltext.js
 var esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+function utanTaggar(text) {
+  let s = String(text ?? ""), forra;
+  do {
+    forra = s;
+    s = s.replace(/<[^<>]*>/g, "");
+  } while (s !== forra);
+  return s.replace(/</g, "");
+}
+function htmlTillText(text) {
+  return utanTaggar(text).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+}
+var _TAL = String.raw`[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*`;
+var _AR_TAL = new RegExp(String.raw`^${_TAL}(?:\still\s+${_TAL})?(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$`);
+function arTal(text) {
+  return _AR_TAL.test(String(text ?? "").trim());
+}
+
+// src/app/01-html-och-tillganglighet.js
 function stangAutofyll(rot = document) {
   if (!rot || typeof rot.querySelectorAll !== "function") return;
   const satt = (el) => {
@@ -8007,15 +8025,14 @@ function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
 function skalSammanstallningNot(k) {
   return `Totalt i kronor är summan av alla skäl i sammanställningen, också på egna rader, som saknar medianskillnad. Andelen räknas bara mot den samlade medianskillnaden i de grupper som har en sådan. Grupper där ett kön har färre än ${k} ${personOrd(k)} ingår inte i sammanställningen; för dem står bara kategorierna i tabellen ovan.`;
 }
-var _esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 function tillWordHtml(b) {
-  let h = `<h3>${_esc(b.rubrik)}</h3>`;
-  for (const s of b.stycken) h += `<p>${_esc(s)}</p>`;
-  const tabell = (t) => '<table border="1" cellpadding="4"><thead><tr>' + t.rubriker.map((r) => `<th>${_esc(r)}</th>`).join("") + "</tr></thead><tbody>" + t.rader.map((r) => "<tr>" + r.map((c) => `<td>${_esc(c)}</td>`).join("") + "</tr>").join("") + "</tbody></table>";
+  let h = `<h3>${esc(b.rubrik)}</h3>`;
+  for (const s of b.stycken) h += `<p>${esc(s)}</p>`;
+  const tabell = (t) => '<table border="1" cellpadding="4"><thead><tr>' + t.rubriker.map((r) => `<th>${esc(r)}</th>`).join("") + "</tr></thead><tbody>" + t.rader.map((r) => "<tr>" + r.map((c) => `<td>${esc(c)}</td>`).join("") + "</tr>").join("") + "</tbody></table>";
   if (b.tabell) h += tabell(b.tabell);
-  for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t) + (t.not ? `<p>${_esc(t.not)}</p>` : "");
-  if (b.provat) h += "<p><strong>Redan prövat</strong></p><ul>" + b.provat.map((p) => `<li>${_esc(p)}</li>`).join("") + "</ul>";
-  if (b.fragor) h += "<p><strong>Frågor till ansvarig chef</strong></p><ol>" + b.fragor.map((f) => `<li>${_esc(f)}</li>`).join("") + "</ol>";
+  for (const t of b.tabeller || []) h += `<p><strong>${esc(t.rubrik)}</strong></p>` + tabell(t) + (t.not ? `<p>${esc(t.not)}</p>` : "");
+  if (b.provat) h += "<p><strong>Redan prövat</strong></p><ul>" + b.provat.map((p) => `<li>${esc(p)}</li>`).join("") + "</ul>";
+  if (b.fragor) h += "<p><strong>Frågor till ansvarig chef</strong></p><ol>" + b.fragor.map((f) => `<li>${esc(f)}</li>`).join("") + "</ol>";
   return h;
 }
 function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
@@ -19450,24 +19467,6 @@ function uppstartJamforelse() {
     ) });
     byggJamforelse();
   });
-}
-
-// src/lib/htmltext.js
-function utanTaggar(text) {
-  let s = String(text ?? ""), forra;
-  do {
-    forra = s;
-    s = s.replace(/<[^<>]*>/g, "");
-  } while (s !== forra);
-  return s.replace(/</g, "");
-}
-function htmlTillText(text) {
-  return utanTaggar(text).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
-}
-var _TAL = String.raw`[−+\-–]?[\d\s\u00a0,.%/()−–+]*\d[\d\s\u00a0,.%/()−–+]*`;
-var _AR_TAL = new RegExp(String.raw`^${_TAL}(?:\still\s+${_TAL})?(kr\/år|kr\/mån|kr|mnkr|Mkr|%)?$`);
-function arTal(text) {
-  return _AR_TAL.test(String(text ?? "").trim());
 }
 
 // src/lib/vymodell-rapport.js

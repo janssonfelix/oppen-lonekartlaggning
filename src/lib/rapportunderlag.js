@@ -23,6 +23,7 @@ import { STANDARDTERMER as T, genitiv, stor, artikel, adjektiv, termFras } from 
 import { arKvinna, arMan } from './kon.js';
 import { svTal as formatTal } from './talformat.js';
 import { aidAvRad, namnrader } from './aid.js';
+import { esc } from './htmltext.js';
 
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
@@ -498,19 +499,17 @@ export function skalSammanstallningNot(k) {
         + `Grupper där ett kön har färre än ${k} ${personOrd(k)} ingår inte i sammanställningen; för dem står bara kategorierna i tabellen ovan.`;
 }
 
-const _esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
 /** Ren HTML för urklipp: inga typsnitt, färger eller klasser — mallen formaterar. */
 export function tillWordHtml(b) {
-    let h = `<h3>${_esc(b.rubrik)}</h3>`;
-    for (const s of b.stycken) h += `<p>${_esc(s)}</p>`;
-    const tabell = t => '<table border="1" cellpadding="4"><thead><tr>' + t.rubriker.map(r => `<th>${_esc(r)}</th>`).join('') + '</tr></thead><tbody>'
-        + t.rader.map(r => '<tr>' + r.map(c => `<td>${_esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
+    let h = `<h3>${esc(b.rubrik)}</h3>`;
+    for (const s of b.stycken) h += `<p>${esc(s)}</p>`;
+    const tabell = t => '<table border="1" cellpadding="4"><thead><tr>' + t.rubriker.map(r => `<th>${esc(r)}</th>`).join('') + '</tr></thead><tbody>'
+        + t.rader.map(r => '<tr>' + r.map(c => `<td>${esc(c)}</td>`).join('') + '</tr>').join('') + '</tbody></table>';
     if (b.tabell) h += tabell(b.tabell);
     // Fler tabeller med egen rubrik (blocket om förra året: Löneutveckling per BAS-intervall).
-    for (const t of b.tabeller || []) h += `<p><strong>${_esc(t.rubrik)}</strong></p>` + tabell(t) + (t.not ? `<p>${_esc(t.not)}</p>` : '');
-    if (b.provat) h += '<p><strong>Redan prövat</strong></p><ul>' + b.provat.map(p => `<li>${_esc(p)}</li>`).join('') + '</ul>';
-    if (b.fragor) h += '<p><strong>Frågor till ansvarig chef</strong></p><ol>' + b.fragor.map(f => `<li>${_esc(f)}</li>`).join('') + '</ol>';
+    for (const t of b.tabeller || []) h += `<p><strong>${esc(t.rubrik)}</strong></p>` + tabell(t) + (t.not ? `<p>${esc(t.not)}</p>` : '');
+    if (b.provat) h += '<p><strong>Redan prövat</strong></p><ul>' + b.provat.map(p => `<li>${esc(p)}</li>`).join('') + '</ul>';
+    if (b.fragor) h += '<p><strong>Frågor till ansvarig chef</strong></p><ol>' + b.fragor.map(f => `<li>${esc(f)}</li>`).join('') + '</ol>';
     return h;
 }
 

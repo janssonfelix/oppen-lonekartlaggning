@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { createAppWindow } from './helpers/app-harness.js';
 import { regexEscape } from './helpers/regex.js';
 import { utanHtmlKommentarer, utanSkript } from './helpers/htmlrens.js';
+import { esc } from '../src/lib/htmltext.js';
 import { bedöm, jämförVersion, ÅTGÄRDADE } from '../tools/sarbarheter.mjs';
 import { hämta, läsPurl } from '../tools/sarbarheter-hamta.mjs';
 
@@ -114,16 +115,13 @@ describe('säkerhet: tredjepartsbiblioteken är låsta med kontrollsummor', () =
 });
 
 describe('säkerhet: en enda escaping-funktion', () => {
-    it('src/app definierar esc() på ett ställe', () => {
-        const def = readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js'))
-            .flatMap(f => (läs(`src/app/${f}`).match(/\bconst esc\s*=/g) || []).map(() => f));
-        expect(def).toEqual(['01-html-och-tillganglighet.js']);
+    it('src definierar esc() på ett ställe, src/lib/htmltext.js', () => {
+        const def = ['src/app', 'src/lib'].flatMap(d => readdirSync(join(ROOT, d)).filter(f => f.endsWith('.js'))
+            .flatMap(f => (läs(`${d}/${f}`).match(/\bconst esc\s*=/g) || []).map(() => `${d}/${f}`)));
+        expect(def).toEqual(['src/lib/htmltext.js']);
     });
-    // Citattecken måste escapas så att data-bas="${esc(x)}" inte kan brytas ut. esc är en enradig pilfunktion vars
-    // stränglitteraler innehåller ';' ("&amp;"), så hela raden tas.
-    it('esc escapear < > & samt citattecken (säker i attributkontext)', () => {
-        const rad = läs('src/app/01-html-och-tillganglighet.js').split('\n').find(r => /^export const esc\s*=/.test(r)).replace(/^export /, '');
-        const esc = new Function(`${rad}; return esc;`)();
+    // Citattecken måste escapas så att data-bas="${esc(x)}" inte kan brytas ut.
+    it('esc escapar < > & och citattecken (säker i attributkontext)', () => {
         expect(esc('<b>')).toBe('&lt;b&gt;');
         expect(esc('a & b')).toBe('a &amp; b');
         expect(esc('A" onmouseover="alert(1)')).toBe('A&quot; onmouseover=&quot;alert(1)');
