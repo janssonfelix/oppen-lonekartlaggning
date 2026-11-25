@@ -91,8 +91,8 @@ export function ritaLoneoversikt() {
             ['Median', 'P50, mittersta värdet av sorterad lönelista'],
             ['P10', 'Värdet där 10% av gruppen tjänar mindre'],
             ['P90', 'Värdet där 90% av gruppen tjänar mindre'],
-            ['Lönespridning', '<code>P90 / P10</code> (1.0 = ingen spridning, &gt;1.5 = bred spridning)'],
-            ['Diff mot jämförelsestatistiken', '<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %']
+            ['Lönespridning', '<code>P90 / P10</code> (1,0 = ingen spridning, över 1,5 = bred spridning)'],
+            ['Skillnad mot jämförelsestatistiken', '<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %']
         ],
         notes: [
             `Minsta gruppstorlek: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? '' : 'er'} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,

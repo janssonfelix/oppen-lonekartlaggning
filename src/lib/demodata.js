@@ -357,10 +357,10 @@ export function demodiagnostik({ rader, reg, underlag, antalBas }, ord) {
             const rang = basRangordning(reg.basList);
             const steg = rang(sista.bas) - rang(reg.basRef);
             const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
-            tests.push({ name: 'BAS-effekt är signifikant positiv (~10-15% per steg)', expected: '+5% till +25% per steg',
+            tests.push({ name: 'BAS-effekt är signifikant positiv (omkring 10–15 % per steg)', expected: '+5 % till +25 % per steg',
                 actual: svPct(perSteg, 2) + ` (BAS ${sista.bas} mot ${reg.basRef}: ${svPct(sista.pct, 1)})`, pass: perSteg > 5 && perSteg < 25 });
         }
-        tests.push({ name: 'R² > 30% (modellen förklarar betydande andel av lönerna)', expected: 'R² > 0.30', actual: svPct(reg.R2 * 100, 2), pass: reg.R2 > 0.30 });
+        tests.push({ name: 'R² > 30 % (modellen förklarar en betydande andel av lönerna)', expected: 'R² > 0,30', actual: svPct(reg.R2 * 100, 2), pass: reg.R2 > 0.30 });
     } else {
         tests.push({ name: 'Regression kunde estimeras', expected: 'OK', actual: 'Fel: ' + reg.error, pass: false });
     }

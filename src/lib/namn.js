@@ -22,3 +22,8 @@ export function normaliseraNamn(text) {
 export function personOrd(n) {
     return Number(n) === 1 ? 'person' : 'personer';
 }
+
+/** "1 kvinna, 6 män": antalen med ordens rätta form (talen som de ges, utan formatering). */
+export function kvinnorOchMan(kv, ma) {
+    return `${kv} ${Number(kv) === 1 ? 'kvinna' : 'kvinnor'}, ${ma} ${Number(ma) === 1 ? 'man' : 'män'}`;
+}

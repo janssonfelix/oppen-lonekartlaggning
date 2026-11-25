@@ -62,7 +62,7 @@ function _sigKlartext(p) {
     if (p < 0.001) return 'Extremt signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 1 000 fall. Mycket starkt stöd för en verklig löneskillnad.';
     if (p < 0.01)  return 'Mycket signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 100 fall. Starkt stöd för en verklig skillnad.';
     if (p < 0.05)  return 'Signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 5 av 100 fall. Den vanliga tröskeln för en "statistiskt säkerställd" skillnad.';
-    return `Ej signifikant (p=${svTal(p, 3)}): datat är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slumpvariation.`;
+    return `Ej signifikant (p=${svTal(p, 3)}): underlaget är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slumpvariation.`;
 }
 
 // ---- Pedagogik-hjälpare för den multivariata analysen -----------------------
@@ -873,7 +873,7 @@ export function ritaRegressionskort() {
                     ${kv.ejKonvergerat.length ? `<p class="notis-varning fs-sm marg-10-0-0 pad-8-12">Skattningen vid ${kv.ejKonvergerat.map(t => t === 0.5 ? 'medianen' : `P${Math.round(t * 100)}`).join(' och ')} stabiliserades inte inom ${KVANTIL_MAX_VARV} varv. Den visas som den stod efter sista varvet och är osäkrare än tabellen ger sken av.</p>` : ''}
                     <p class="text-dampad-xs lh-1_5 marg-t-8">
                         <em>Metod: IRLS (Iteratively Reweighted Least Squares) på samma variabler som huvudregressionen (utan ${T.enhet.en} inom BAS)${(() => { const f = modellFras({ ...forklaringsmodell(), yrkesgrupp: false }); return f ? `: kön, ${f}` : ': bara kön'; })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
-                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
+                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, med slumptal ur underlaget så att det blir detsamma varje gång${qr.kiVantar ? '; det räknas i bakgrunden och visas strax' : ''}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
                     </p>
                 </details>`;
             })()}
@@ -886,7 +886,7 @@ export function ritaRegressionskort() {
                         <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="farg-kritisk">p &lt; 0,001</strong></td><td>Extremt signifikant — utan verklig skillnad skulle en så stor skillnad uppstå i färre än 1 av 1 000 fall. Mycket starkt stöd för verklig löneskillnad.</td></tr>
                         <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="farg-kritisk">p &lt; 0,01</strong></td><td>Mycket signifikant — färre än 1 av 100 fall. Starkt stöd för verklig skillnad.</td></tr>
                         <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="farg-varning">p &lt; 0,05</strong></td><td>Signifikant — färre än 5 av 100 fall. Den vanliga tröskeln för "statistiskt säkerställd" skillnad.</td></tr>
-                        <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="f-dampad">p ≥ 0,05</strong></td><td>Ej signifikant — datat är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slump.</td></tr>
+                        <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="f-dampad">p ≥ 0,05</strong></td><td>Ej signifikant — underlaget är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slump.</td></tr>
                     </table>
                     <p class="marg-10-0-6"><strong>Symbolerna i per-BAS-tabellen:</strong></p>
                     <ul class="marg-0-0-10-22">

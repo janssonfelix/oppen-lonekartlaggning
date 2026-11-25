@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { namnGenitiv, normaliseraNamn, personOrd } from '../src/lib/namn.js';
+import { kvinnorOchMan, namnGenitiv, normaliseraNamn, personOrd } from '../src/lib/namn.js';
 import { skalSammanstallningNot, stabilitetKort } from '../src/lib/rapportunderlag.js';
 
 describe('namn: genitiv och normalisering', () => {
@@ -23,6 +23,11 @@ describe('namn: ordformen för ett antal personer', () => {
         expect(personOrd(1)).toBe('person');
         expect(personOrd('1')).toBe('person');
         for (const n of [0, 2, 5, 10, undefined]) expect(personOrd(n)).toBe('personer');
+    });
+    it('kvinnor och män böjs efter antalet: «1 kvinna, 6 män», «3 kvinnor, 1 man»', () => {
+        expect(kvinnorOchMan(1, 6)).toBe('1 kvinna, 6 män');
+        expect(kvinnorOchMan(3, 1)).toBe('3 kvinnor, 1 man');
+        expect(kvinnorOchMan(0, 0)).toBe('0 kvinnor, 0 män');
     });
     it('texter med tröskeln böjs efter den (minst 1 person, minst 5 personer)', () => {
         expect(skalSammanstallningNot(1)).toContain('färre än 1 person ingår inte');
