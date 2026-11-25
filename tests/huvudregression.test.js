@@ -14,7 +14,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
-import { huvudregression, HUVUDREGRESSION_MIN_N, HUVUDREGRESSION_MIN_PER_KON, FORKLARINGSMODELL_STANDARD,
+import { huvudregression, kollinearitetsdiagnos, HUVUDREGRESSION_MIN_N, HUVUDREGRESSION_MIN_PER_KON, FORKLARINGSMODELL_STANDARD,
     STEG_YRKE, blinderOaxaca, kvantilregressionAllaTau } from '../src/lib/regression.js';
 
 const las = f => JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', f), 'utf8'));
@@ -292,5 +292,15 @@ describe('huvudregression: den valda förklaringsmodellen i returvärdet (ADR-56
         expect(r.modelDesc).toBe('kön + ålder + BAS-intervall (indikatorer) + AID-etikett inom BAS (fasta effekter)');
         expect(r.sequential.at(-1).name).toBe(STEG_YRKE);
         expect(r.bortvalt).toEqual([]);
+    });
+});
+
+describe('kollinearitetsdiagnos böjer efter antalet', () => {
+    const rad = (bas, kon) => ({ bas, kon, lon: 30000, alder: 40 });
+    it('ett enkönat intervall i singular, två i plural', () => {
+        const ett = [...[0, 1, 2].map(() => rad('A', 'man')), rad('B', 'man'), rad('B', 'kvinna'), rad('B', 'man')];
+        expect(kollinearitetsdiagnos(ett, ['A', 'B'])[0]).toMatch(/<strong>1<\/strong> BAS-intervall har bara ett kön – .* inom det\./);
+        const tva = [...ett, ...[0, 1, 2].map(() => rad('C', 'kvinna'))];
+        expect(kollinearitetsdiagnos(tva, ['A', 'B', 'C'])[0]).toMatch(/<strong>2<\/strong> BAS-intervall har bara ett kön – .* inom dessa\./);
     });
 });

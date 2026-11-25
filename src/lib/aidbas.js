@@ -23,7 +23,7 @@
  * Ren modul utan DOM eller state.
  */
 import { median, kvantil } from './stat.js';
-import { basRangordning, konsklass } from './likvardighet.js';
+import { basRangordning, konsklass, KVINNO_TROSKEL_STANDARD } from './likvardighet.js';
 import { arKvinna, arMan } from './kon.js';
 import { namnrader } from './aid.js';
 
@@ -36,13 +36,12 @@ export const KV_DEFINITIONER = Object.freeze({
     do: Object.freeze({ namn: 'Mer än {grans} %', text: 'mer än {grans} % kvinnor' }),
     scb: Object.freeze({ namn: '{grans} % eller mer', text: '{grans} % kvinnor eller mer' })
 });
-export const KV_GRANS_STANDARD = 60;
 
 export const KLASS_KV = 'Kvinnodominerad', KLASS_MA = 'Mansdominerad', KLASS_BLANDAD = 'Könsblandad';
 export const INGA_HIERARKISKA_PAR = 'Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.';
 
 /** Definitionens namn, med gränsen insatt: "Mer än 60 %" eller "60 % eller mer". */
-export function kvDefinitionNamn(definition, grans = KV_GRANS_STANDARD) {
+export function kvDefinitionNamn(definition, grans = KVINNO_TROSKEL_STANDARD) {
     return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn.replace('{grans}', String(grans));
 }
 /** Klassernas namn, för den som jämför klassningen. */
@@ -54,7 +53,7 @@ export function ingaParText() { return INGA_HIERARKISKA_PAR; }
  * @param {string} definition - 'do' eller 'scb'
  * @param {number|string} [grans] - gränsen, eller gränsen redan formaterad som text (rapportunderlaget, appen)
  */
-export function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
+export function kvDefinitionText(definition, grans = KVINNO_TROSKEL_STANDARD) {
     return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).text.replace('{grans}', String(grans));
 }
 
@@ -65,7 +64,7 @@ export function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
  * @param {number} [grans]
  * @returns {string} Kvinnodominerad, Mansdominerad, Könsblandad eller '' för okänd andel
  */
-export function dominans(andelKv, definition = 'do', grans = KV_GRANS_STANDARD) {
+export function dominans(andelKv, definition = 'do', grans = KVINNO_TROSKEL_STANDARD) {
     // Samma definition som likvärdighetsanalysen (ADR-60): konsklass i likvardighet.js.
     const k = konsklass(andelKv, definition, grans);
     return k === 'kvinnodominerad' ? KLASS_KV : k === 'mansdominerad' ? KLASS_MA : k === 'blandad' ? KLASS_BLANDAD : '';
@@ -154,7 +153,7 @@ export function likaArbeteTabell(lika) {
  *   `nationell` ger andelen kvinnor nationellt för en AID-kod (procent), eller null när den saknas.
  *   `jamforelse` avgör vilka grupper som räknas som övriga i sammanfattningen (ADR-60).
  */
-export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KV_GRANS_STANDARD, jamforelse = 'alla', nationell = null } = {}) {
+export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KVINNO_TROSKEL_STANDARD, jamforelse = 'alla', nationell = null } = {}) {
     const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
     const ut = grupper.map(g => {
         const andelKv = g.nKv / g.n * 100;
@@ -189,7 +188,7 @@ export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', g
  * A är ett jämförelseyrke enligt `jamforelse` (ADR-60): standard alla som inte är kvinnodominerade.
  * @param {{k?:number, definition?:'do'|'scb', grans?:number, jamforelse?:'alla'|'mansdominerade'}} val
  */
-export function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KV_GRANS_STANDARD, jamforelse = 'alla' } = {}) {
+export function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KVINNO_TROSKEL_STANDARD, jamforelse = 'alla' } = {}) {
     const grupper = grupperaAidBas(rader).filter(g => g.n >= k)
         .map(g => ({ aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.n, median: median(g.loner), klass: dominans(g.nKv / g.n * 100, definition, grans) }));
     const rang = basRangordning(grupper.map(g => g.bas));

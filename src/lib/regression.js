@@ -145,7 +145,7 @@ export function kollinearitetsdiagnos(rader, basLista) {
         const hasMa = sub.some(d => arMan(d));
         if (!hasKv || !hasMa) singleSexBas++;
     });
-    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${T.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
+    if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${ordForAntal(singleSexBas, T.niva)} har bara ett kön – könseffekten kan inte estimeras inom ${singleSexBas === 1 ? 'det' : 'dessa'}.`);
     if (basLista.length < 2) issues.push(`Endast <strong>${basLista.length}</strong> ${ordForAntal(basLista.length, T.niva)} i urvalet – ingen variation att estimera BAS-effekten med.`);
     if (rader.length < 50)  issues.push(`Litet urval (n=${rader.length}) – kan ge instabila estimat.`);
     return issues;

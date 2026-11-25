@@ -33,7 +33,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         const kort = w.document.getElementById('regression-card');
         const t = kort.textContent.replace(/\s+/g, ' ');
         expect(t).toMatch(/löneskillnaden mellan kvinnor och män med samma AID-etikett, BAS-intervall och ålder/);
-        expect(t).toMatch(/Bygger på 114 personer i 4 grupper \(samma AID-etikett i samma BAS-intervall\) där båda könen finns; 1 enkönade grupper bidrar inte/);
+        expect(t).toMatch(/Bygger på 114 personer i 4 grupper \(samma AID-etikett i samma BAS-intervall\) där båda könen finns; 1 enkönad grupp bidrar inte/);
         expect(t).toMatch(/Huvudtalet ovan räknar inte bort AID-etiketten/);
         expect(kort.querySelector('.reg-budget-legend').textContent).toMatch(/Förklaras av AID-etikett inom BAS/);
         expect(kort.querySelector('.step-final .step-name').textContent).toMatch(/BAS-intervall och ålder \(full modell\)/);

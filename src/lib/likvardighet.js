@@ -44,7 +44,6 @@ import { arKvinna } from './kon.js';
 import { namnrader } from './aid.js';
 
 export const KVINNO_TROSKEL_STANDARD = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
-export const KV_DOM_STAT = 60;               // gränsen för jämförelsestatistiken — samma som KVINNO_TROSKEL_STANDARD
 
 /**
  * Den enda definitionen av kvinnodominerat arbete i verktyget (ADR-60, §9.22).
@@ -322,7 +321,7 @@ export function aggregeraOrgKvDom(data, kvinnoGrans = KVINNO_TROSKEL_STANDARD, K
  * @param {{definition?:'do'|'scb', grans?:number}} [val]
  * @returns {{statIckeKv:Array, statByBas:Map, klass:Object, klassKalla:Object}}
  */
-export function klassificeraStatistik(statistik, nationellKlass, { definition = 'do', grans = KV_DOM_STAT } = {}) {
+export function klassificeraStatistik(statistik, nationellKlass, { definition = 'do', grans = KVINNO_TROSKEL_STANDARD } = {}) {
     const statByBas = new Map();
     const statIckeKv = [];
     const klass = { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 };

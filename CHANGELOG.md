@@ -9,6 +9,10 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Antalen i regressionskortet böjs.** Meningen under yrkesgruppssteget skrev «1 enkönade grupper bidrar inte»
+  och kunde skriva «1 grupper»; orsaken när modellen faller tillbaka skrev «1 BAS-intervall är helt enkönade». Nu
+  «1 enkönad grupp bidrar inte», «1 grupp» och «1 BAS-intervall har bara ett kön».
+
 - **En liten grupp delar inte längre ett diagram i delbilder.** Ett liggande diagram med fler än femton kategorier
   delas i delbilder om femton. En kategori med bara grupper under minsta gruppstorleken räknades med i delningen, så
   att den exporterade bilden kunde få en tom sista del («16–16») som visade att en grupp till fanns. Nu räknas bara
