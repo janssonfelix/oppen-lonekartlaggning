@@ -6603,8 +6603,8 @@ function vymodellRegressionskort(r, { k, rader, medAlder, basEffektNot }) {
 }
 
 // src/app/08-version.js
-var APP_VERSION = "2026.11.22";
-var APP_BYGGDATUM = "2026-11-22";
+var APP_VERSION = "2026.11.25";
+var APP_BYGGDATUM = "2026-11-25";
 
 // src/app/10-diagramtema.js
 var PALETT = {

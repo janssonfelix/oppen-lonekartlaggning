@@ -1,7 +1,7 @@
 # Risk- och sårbarhetsanalys (dataskydd och informationssäkerhet) — Öppen lönekartläggning
 
-**Bygge:** `2026.11.22` · **Artefakt-SHA-256:** `7963dc3380d95ecf83d9eca0fd592f606dd588e6e22629f66d0f95f0e148eddb` (se `dist/RELEASE.txt`).
-**Granskningsdatum:** 2026-11-24.
+**Bygge:** `2026.11.25` · **Artefakt-SHA-256:** `2de5ce3e6ce5df3842a30664044984256d4d8537d44e598f0cabd8dac2a016c4` (se `dist/RELEASE.txt`).
+**Granskningsdatum:** 2026-11-25.
 **Granskare:** granskningen är gjord med AI-verktyg och styrd av en person; ingen utomstående har granskat koden.
 **Granskningsmetod:** kodläsning påstående för påstående + statisk sökning i källkod och bygge +
 körning av det byggda verktyget i jsdom och i Chromium (utan nätverk) med syntetiska testfiler.
@@ -492,7 +492,8 @@ där som en lista i avsnitt 4, under samma namn och med hur vart och ett är byg
   bör stänga av sådan synkning på de datorer som används (§8, punkt 7).
 - **Formelskydd (ADR-15)**: i CSV-filer och urklipp får textceller som börjar med
   `=`, `+`, `-` eller `@` ett inledande `'`. Då kan en fientligt utformad lönefil
-  inte få Excel att köra en formel. Tal lämnas orörda; `.xlsx`-exporten skriver
+  inte få Excel att köra en formel. En tabb eller radbrytning i en cell blir mellanslag i urklippet, så att texten
+  efter den inte börjar en ny cell förbi skyddet. Tal lämnas orörda; `.xlsx`-exporten skriver
   text som textceller och berörs inte.
 - **Export-känslighetsnotis**: vid filsparande visas en påminnelse om
   förvaringsdisciplin (behörighetsstyrd disk, ej okrypterad e-post). Notisen säger att filen innehåller
@@ -726,34 +727,32 @@ Chromium, Firefox och WebKit. Verifieringen visar också var skyddet är svagare
 - invarianterna prövar inte undantagen och diagrambilderna (§6.5).
 
 Här står bara den senaste granskningen; varje ny granskning ersätter stycket om den förra. De tidigare
-(2026-10-19 av hela dokumentet, och 2026-11-02, 11-05, 11-06, 11-16, 11-21 och 11-22 av det som ändrats) står i
+(2026-10-19 av hela dokumentet, och 2026-11-02, 11-05, 11-06, 11-16, 11-21, 11-22 och 11-24 av det som ändrats) står i
 git-historiken för den här filen.
 
-**Granskningen 2026-11-24** prövade dokumentet och dataskyddsbeskrivningen mot koden som ändrats efter bygget
-2026.11.22 (#115–#140). Biblioteken i `vendor/` är oförändrade. Kontrollerat:
-- Appen byggs nu som ES-moduler med esbuild (ADR-98); `tools/bundle.mjs` anropar bara det nya byggsteget, och
-  skydden mot mojibake och `node --check` står kvar. Lagringsspärren är fortfarande den första koden i verktygets
-  skript (§6.2). CSP-raden i bygget har samma direktiv som i bygget 2026.11.22, med fem skript och fem hashar.
-  Sökningen i `dist/app.js` efter nätverks-, lagrings- och navigeringsanrop ger bara lagringsspärren, verktygets egen
-  text och utskriftsfönstret (§6.6). Bygget har inget `<script src>` och stilmallen inget `url(`; det som lagts till i
-  `src/index.html` har inga länkar, ramar, bilder eller stilattribut.
-- Funktionerna har bytt till svenska namn (ADR-104) och reglerna har flyttat till `src/lib/` (ADR-99). Varje funktion,
-  fil och test som de två dokumenten nämner finns; hänvisningen till ett borttaget test i A3 är rättad.
-- Konfigurationsfilen skrivs i version 3 med svenska fältnamn och läser version 2 (ADR-96, §6.8); `byggKonfiguration()`
-  läser fortfarande inte `state.data`.
-- Minsta gruppstorlek är 3–1 000 (ADR-102), och golvet för skattningar följer tröskeln bara i exportläget (ADR-103,
-  §6.5). JPA-protokollets urval och lönenivåer har flyttat till `src/lib/jpaprotokoll.js` utan ändrad utdata.
-- Inaktivitetsrensningen räknar tiden på klockan, också medan datorn sover (§6.3); ett paket kan inte låsa läget av.
-- Organisationsfilen har en egen flik och kan flyttas till en ny version ur den gamla filen (§6.9); blocket är
-  fortfarande ett `<template>` efter sista skriptet.
-- Lagringsspärrens felmeddelande hänvisade till avsnitt 4 i dataskyddsbeskrivningen och hänvisar nu till avsnitt 2.
+**Granskningen 2026-11-25** prövade dokumentet och dataskyddsbeskrivningen mot koden som ändrats efter granskningen
+2026-11-24 (#141–#169), bland annat den djupa granskningen av hela repot område för område. Biblioteken i `vendor/` är
+oförändrade. Kontrollerat:
+- CSP-raden i bygget har samma direktiv som i bygget 2026.11.22, med fem skript och fem hashar. Sökningen i
+  `dist/app.js` efter nätverks-, lagrings- och navigeringsanrop ger bara verktygets egen text och utskriftsfönstret
+  (§6.6). Bygget har inget `<script src>` och stilmallen inget `url(`. Bannern i den byggda filen är på svenska och
+  byggflaggan som hoppade över appens bygge är borta; skydden mot mojibake och `node --check` står kvar (§6.7).
+- Varje funktion, fil och test som de två dokumenten nämner finns.
+- Utskriften av handlingsplanens mall ritas i exportläget och följer tröskeln; den skrivs fortfarande ut via ett
+  lokalt fönster utan skript (§6.6).
+- *Rensa all data* och rensningen vid inaktivitet stänger och tömmer också gruppdossiern, BAS-dossiern,
+  beräkningsbeviset och dialogen för sakliga skäl (§6.3). Alla nedladdningar går genom en funktion som släpper
+  blob-länken efteråt.
+- Urklippet gör tabb och radbrytning i en cell till mellanslag, så att en etikett inte kan dela raden förbi
+  formelskyddet (§6.6).
+- En konfigurationsfil som avvisas ändrar ingenting: formen på alla delar prövas före den andra fasen (§6.8).
+- `esc()` står på ett ställe, `src/lib/htmltext.js`, för hela verktyget (A3).
 
-Ingen avvikelse mot skydden hittades. Rättat: testnamnet i A3, spärrens avsnittshänvisning och rutans namn i
-dataskyddsbeskrivningen §3 (*Ta med grupper under 10 i exporten*).
+Ingen avvikelse mot skydden hittades. Rättat: formelskyddet i §6.6 säger hur urklippet hanterar tabb och radbrytning.
 
 Granskningen är avgränsad till det som ändrats; påståenden om oförändrad kod lästes inte om mot koden.
 
-Testsviten (148 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
+Testsviten (149 filer) och röktestet i Chromium kördes mot bygget (`npm run kontroll`). Inte prövat i den här
 granskningen: röktestet i Firefox och WebKit (det körs i CI), de påståenden märkta *Verifierat i webbläsare* som inte
 har ett automatiskt test, och exporterna öppnade i Word, Excel och en PDF-läsare.
 
