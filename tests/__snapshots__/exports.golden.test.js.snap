@@ -1568,10 +1568,10 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Lönespridning",
-      "P90 / P10 (1.0 = ingen spridning, >1.5 = bred spridning)",
+      "P90 / P10 (1,0 = ingen spridning, över 1,5 = bred spridning)",
     ],
     [
-      "  Diff mot jämförelsestatistiken",
+      "  Skillnad mot jämförelsestatistiken",
       "(organisationens median / jämförelsens median) − 1 uttryckt i %",
     ],
     [
@@ -5140,7 +5140,7 @@ exports[`golden: PDF/print-rapporten (byggUtskriftsrapport) på fast dataset > u
                             
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
-                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Median:</strong> P50, mittersta värdet av sorterad lönelista</li><li><strong>P10:</strong> Värdet där 10% av gruppen tjänar mindre</li><li><strong>P90:</strong> Värdet där 90% av gruppen tjänar mindre</li><li><strong>Lönespridning:</strong> P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)</li><li><strong>Diff mot jämförelsestatistiken:</strong> (organisationens median / jämförelsens median) − 1 uttryckt i %</li></ul>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Median:</strong> P50, mittersta värdet av sorterad lönelista</li><li><strong>P10:</strong> Värdet där 10% av gruppen tjänar mindre</li><li><strong>P90:</strong> Värdet där 90% av gruppen tjänar mindre</li><li><strong>Lönespridning:</strong> P90 / P10 (1,0 = ingen spridning, över 1,5 = bred spridning)</li><li><strong>Skillnad mot jämförelsestatistiken:</strong> (organisationens median / jämförelsens median) − 1 uttryckt i %</li></ul>
                         <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Minsta gruppstorlek: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS</li><li>BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje AID-etikett med ≥5 personer</li></ul>
                     
                         <h3 class="pr-ned-14">Löneskillnad och könsfördelning</h3>
@@ -6716,10 +6716,10 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  Lönespridning",
-      "P90 / P10 (1.0 = ingen spridning, >1.5 = bred spridning)",
+      "P90 / P10 (1,0 = ingen spridning, över 1,5 = bred spridning)",
     ],
     [
-      "  Diff mot jämförelsestatistiken",
+      "  Skillnad mot jämförelsestatistiken",
       "(organisationens median / jämförelsens median) − 1 uttryckt i %",
     ],
     [
@@ -7943,7 +7943,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > PDF-rapporten (komplett) byggs 
                             
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>62</strong></td></tr>
                         </tbody></table>
-                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Median:</strong> P50, mittersta värdet av sorterad lönelista</li><li><strong>P10:</strong> Värdet där 10% av gruppen tjänar mindre</li><li><strong>P90:</strong> Värdet där 90% av gruppen tjänar mindre</li><li><strong>Lönespridning:</strong> P90 / P10 (1.0 = ingen spridning, &gt;1.5 = bred spridning)</li><li><strong>Diff mot jämförelsestatistiken:</strong> (organisationens median / jämförelsens median) − 1 uttryckt i %</li></ul>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Median:</strong> P50, mittersta värdet av sorterad lönelista</li><li><strong>P10:</strong> Värdet där 10% av gruppen tjänar mindre</li><li><strong>P90:</strong> Värdet där 90% av gruppen tjänar mindre</li><li><strong>Lönespridning:</strong> P90 / P10 (1,0 = ingen spridning, över 1,5 = bred spridning)</li><li><strong>Skillnad mot jämförelsestatistiken:</strong> (organisationens median / jämförelsens median) − 1 uttryckt i %</li></ul>
                         <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Minsta gruppstorlek: 0 grupper utelämnades (n &lt; 10); de räknas upp under respektive BAS</li><li>BAS-grupper visar i ordning: "ställningstagandet" (referensen), "Organisationen", "Kvinna", "Man" och sedan varje AID-etikett med ≥5 personer</li></ul>
                     
                         <h3 class="pr-ned-14">Löneskillnad och könsfördelning</h3>

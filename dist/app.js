@@ -1621,6 +1621,9 @@ function normaliseraNamn(text) {
 function personOrd(n) {
   return Number(n) === 1 ? "person" : "personer";
 }
+function kvinnorOchMan(kv, ma) {
+  return `${kv} ${Number(kv) === 1 ? "kvinna" : "kvinnor"}, ${ma} ${Number(ma) === 1 ? "man" : "män"}`;
+}
 
 // src/lib/ktroskel.js
 var K_STANDARD = 10;
@@ -9834,13 +9837,13 @@ function demodiagnostik({ rader, reg, underlag: underlag2, antalBas }, ord) {
       const steg = rang(sista.bas) - rang(reg.basRef);
       const perSteg = (Math.exp(Math.log(1 + sista.pct / 100) / steg) - 1) * 100;
       tests.push({
-        name: "BAS-effekt är signifikant positiv (~10-15% per steg)",
-        expected: "+5% till +25% per steg",
+        name: "BAS-effekt är signifikant positiv (omkring 10–15 % per steg)",
+        expected: "+5 % till +25 % per steg",
         actual: svPct(perSteg, 2) + ` (BAS ${sista.bas} mot ${reg.basRef}: ${svPct(sista.pct, 1)})`,
         pass: perSteg > 5 && perSteg < 25
       });
     }
-    tests.push({ name: "R² > 30% (modellen förklarar betydande andel av lönerna)", expected: "R² > 0.30", actual: svPct(reg.R2 * 100, 2), pass: reg.R2 > 0.3 });
+    tests.push({ name: "R² > 30 % (modellen förklarar en betydande andel av lönerna)", expected: "R² > 0,30", actual: svPct(reg.R2 * 100, 2), pass: reg.R2 > 0.3 });
   } else {
     tests.push({ name: "Regression kunde estimeras", expected: "OK", actual: "Fel: " + reg.error, pass: false });
   }
@@ -15132,7 +15135,7 @@ function _sigKlartext(p) {
   if (p < 1e-3) return "Extremt signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 1 000 fall. Mycket starkt stöd för en verklig löneskillnad.";
   if (p < 0.01) return "Mycket signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 1 av 100 fall. Starkt stöd för en verklig skillnad.";
   if (p < 0.05) return 'Signifikant: om det inte fanns någon verklig skillnad skulle en så stor skillnad uppstå av slump i färre än 5 av 100 fall. Den vanliga tröskeln för en "statistiskt säkerställd" skillnad.';
-  return `Ej signifikant (p=${svTal(p, 3)}): datat är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slumpvariation.`;
+  return `Ej signifikant (p=${svTal(p, 3)}): underlaget är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slumpvariation.`;
 }
 function _ansvarRadText(fore, efter) {
   const sv = (v) => v.toFixed(2).replace(".", ",");
@@ -15848,7 +15851,7 @@ function ritaRegressionskort() {
       const f = modellFras({ ...forklaringsmodell(), yrkesgrupp: false });
       return f ? `: kön, ${f}` : ": bara kön";
     })()} — en approximation av kvantillösningen, inte den exakta minimeringen. Kräver minst 50 observationer för stabilt resultat.
-                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, seedat ur datat så att det blir detsamma varje gång${qr.kiVantar ? "; det räknas i bakgrunden och visas strax" : ""}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
+                        ${qr.kiUtelamnad ? esc(qr.kiUtelamnad) : `Konfidensintervallet är ett percentil-bootstrap med ${qr.kiB} omsamplingar av raderna, med slumptal ur underlaget så att det blir detsamma varje gång${qr.kiVantar ? "; det räknas i bakgrunden och visas strax" : ""}. Tolkningen om golv och tak görs bara när intervallet för P90 − P10 utesluter noll.`}</em>
                     </p>
                 </details>`;
   })()}
@@ -15861,7 +15864,7 @@ function ritaRegressionskort() {
                         <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="farg-kritisk">p &lt; 0,001</strong></td><td>Extremt signifikant — utan verklig skillnad skulle en så stor skillnad uppstå i färre än 1 av 1 000 fall. Mycket starkt stöd för verklig löneskillnad.</td></tr>
                         <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="farg-kritisk">p &lt; 0,01</strong></td><td>Mycket signifikant — färre än 1 av 100 fall. Starkt stöd för verklig skillnad.</td></tr>
                         <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="farg-varning">p &lt; 0,05</strong></td><td>Signifikant — färre än 5 av 100 fall. Den vanliga tröskeln för "statistiskt säkerställd" skillnad.</td></tr>
-                        <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="f-dampad">p ≥ 0,05</strong></td><td>Ej signifikant — datat är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slump.</td></tr>
+                        <tr><td class="pad-3-12-3-0 lodrat-topp"><strong class="f-dampad">p ≥ 0,05</strong></td><td>Ej signifikant — underlaget är förenligt med att ingen verklig skillnad finns. Observerad skillnad kan vara slump.</td></tr>
                     </table>
                     <p class="marg-10-0-6"><strong>Symbolerna i per-BAS-tabellen:</strong></p>
                     <ul class="marg-0-0-10-22">
@@ -22179,7 +22182,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
   const yrken = [];
   if (!d.yrken.length) yrken.push(`${stor(adjektiv({ utrum: "ingen", neutrum: "inget", plural: "inga" }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`);
   for (const y of d.yrken) {
-    const antal = `${y.tot} personer (${y.nKv} kvinnor, ${y.nMa} män)`;
+    const antal = `${y.tot} ${personOrd(y.tot)} (${kvinnorOchMan(y.nKv, y.nMa)})`;
     yrken.push((y.samlad ? `- ${y.yrke}: ${antal}. Gruppens median ${kr2(y.medTot)}; könsuppdelningen är för liten för en jämförelse.${y.ocksaI.length && y.status !== "liten" ? ` ${BD_STATUS_TEXT[y.status]}.` : ""}` : `- ${y.yrke}: ${antal}. Kvinnor ${kr2(y.medKv)}, män ${kr2(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns${direktivMarkering(y.kvotPct) ? ` (${_STS_DIR_ETIKETT}, direktivmarkering)` : ""}. ${BD_STATUS_TEXT[y.status]}.`) + (y.ocksaI.length ? ` ${_bdHelaYrketNot(y)}.` : ""));
   }
   if (d.yrkenUtelamnade.length) yrken.push(`Redovisas inte (färre än ${d.k} ${personOrd(d.k)}): ${d.yrkenUtelamnade.join(", ")}.`);
@@ -22201,7 +22204,7 @@ function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
   if (d.alder) {
     const alder = d.alder.map((a) => {
       const kon = a.medKv != null ? `, kvinnor ${kr2(a.medKv)}, män ${kr2(a.medMa)}` : "";
-      return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr2(a.med)}${kon}` : ""}.`;
+      return `- ${a.namn}: ${a.n} ${personOrd(a.n)} (${kvinnorOchMan(a.nKv, a.nMa)})${a.med != null ? `, median ${kr2(a.med)}${kon}` : ""}.`;
     });
     alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} ${personOrd(d.k)}.`);
     ut.push({ rubrik: "Ålder", rader: alder });
@@ -22382,8 +22385,8 @@ function ritaLoneoversikt() {
       ["Median", "P50, mittersta värdet av sorterad lönelista"],
       ["P10", "Värdet där 10% av gruppen tjänar mindre"],
       ["P90", "Värdet där 90% av gruppen tjänar mindre"],
-      ["Lönespridning", "<code>P90 / P10</code> (1.0 = ingen spridning, &gt;1.5 = bred spridning)"],
-      ["Diff mot jämförelsestatistiken", "<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %"]
+      ["Lönespridning", "<code>P90 / P10</code> (1,0 = ingen spridning, över 1,5 = bred spridning)"],
+      ["Skillnad mot jämförelsestatistiken", "<code>(organisationens median / jämförelsens median) − 1</code> uttryckt i %"]
     ],
     notes: [
       `Minsta gruppstorlek: ${vm.utelamnade} grupp${vm.utelamnade === 1 ? "" : "er"} utelämnades (n &lt; ${kTroskel()}); de räknas upp under respektive BAS`,

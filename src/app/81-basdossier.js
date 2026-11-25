@@ -16,7 +16,7 @@
 // k. Textversionen lämnar verktyget och byggs därför i exportläget (basdossierText): grupper under k utelämnas och
 // räknas upp utan lönemått.
 // ====================================================================
-import { personOrd } from '../lib/namn.js';
+import { kvinnorOchMan, personOrd } from '../lib/namn.js';
 import { direktivMarkering } from '../lib/status.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, ordForAntal, stor, termFras } from '../lib/termer.js';
@@ -224,7 +224,7 @@ export function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
     const yrken = [];
     if (!d.yrken.length) yrken.push(`${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} i intervallet har både kvinnor och män att jämföra.`);
     for (const y of d.yrken) {
-        const antal = `${y.tot} personer (${y.nKv} kvinnor, ${y.nMa} män)`;
+        const antal = `${y.tot} ${personOrd(y.tot)} (${kvinnorOchMan(y.nKv, y.nMa)})`;
         yrken.push((y.samlad
             ? `- ${y.yrke}: ${antal}. Gruppens median ${kr(y.medTot)}; könsuppdelningen är för liten för en jämförelse.${y.ocksaI.length && y.status !== 'liten' ? ` ${BD_STATUS_TEXT[y.status]}.` : ''}`
             : `- ${y.yrke}: ${antal}. Kvinnor ${kr(y.medKv)}, män ${kr(y.medMa)}; kvinnors median ${svPct(y.kvotPct, 1)} av mäns${direktivMarkering(y.kvotPct) ? ` (${_STS_DIR_ETIKETT}, direktivmarkering)` : ''}. ${BD_STATUS_TEXT[y.status]}.`)
@@ -245,7 +245,7 @@ export function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
     if (d.alder) {
         const alder = d.alder.map(a => {
             const kon = a.medKv != null ? `, kvinnor ${kr(a.medKv)}, män ${kr(a.medMa)}` : '';
-            return `- ${a.namn}: ${a.n} personer (${a.nKv} kvinnor, ${a.nMa} män)${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`;
+            return `- ${a.namn}: ${a.n} ${personOrd(a.n)} (${kvinnorOchMan(a.nKv, a.nMa)})${a.med != null ? `, median ${kr(a.med)}${kon}` : ''}.`;
         });
         alder.push(`Ett köns median står bara där båda könen i åldersgruppen har minst ${d.k} ${personOrd(d.k)}.`);
         ut.push({ rubrik: 'Ålder', rader: alder });
