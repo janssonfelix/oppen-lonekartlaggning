@@ -6,9 +6,9 @@
 // Tar bara med AID-etikett, antal anställningar och andel kvinnor, för kommuner och regioner var för sig.
 // SKR döljer andelen för små grupper ("**"); då sparas null.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import vm from 'node:vm';
+import { forstaBladetsRader } from './lib/xlsx-rader.mjs';
 
 /** Rader ur ett blad ([kod, klartext, antal, % kvinnor, …]) → Map kod → { n, pct|null }. */
 export function etiketterFranTabell(rader) {
@@ -39,16 +39,7 @@ function main() {
         console.error('Användning: npm run gen:skr -- <Tabell4 KP.xlsx> <Tabell5 RP.xlsx> <ÅÅÅÅ-MM>');
         process.exit(1);
     }
-    const ctx = { console };
-    ctx.self = ctx;
-    ctx.window = ctx;
-    vm.createContext(ctx);
-    vm.runInContext(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'), ctx);
-    const las = fil => {
-        const wb = ctx.XLSX.read(readFileSync(fil), { type: 'buffer' });
-        return etiketterFranTabell(ctx.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' }));
-    };
-    const kommun = las(kp), region = las(rp);
+    const kommun = etiketterFranTabell(forstaBladetsRader(kp)), region = etiketterFranTabell(forstaBladetsRader(rp));
     if (kommun.size < 100 || region.size < 100) throw new Error(`Bara ${kommun.size}/${region.size} etiketter hittades — fel fil?`);
     const [ar, man] = period.split('-');
     const manad = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'][+man - 1];

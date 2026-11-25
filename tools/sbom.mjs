@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readVersion } from './gen-version.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -45,7 +46,7 @@ export const BIBLIOTEK = [
  * @returns {Sbom} CycloneDX-dokumentet.
  */
 export function byggSbom() {
-    const version = läs('VERSION').replace(/^﻿/, '').trim();
+    const version = readVersion();
     const summor = Object.fromEntries(läs('vendor/SHA256SUMS').trim().split('\n').map(r => {
         const [sha, fil] = r.trim().split(/\s+/); return [fil, sha];
     }));

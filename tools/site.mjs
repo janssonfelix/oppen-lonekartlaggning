@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// Demosidan: bygger site/dist/ ur mallen site/index.html och det
-// färdiga bygget. Mappen kan läggas på vilken statisk webbplats som helst.
+// Demosidan: bygger site/dist/ ur mallen site/index.html och det färdiga bygget. Mappen kan läggas på vilken
+// statisk webbplats som helst.
 //
-// Kör med:  npm run site   (efter npm run bundle)
-// Valfritt: GUIDE_URL=https://…/docs/anvandare/ npm run site
-//           — adressen där guiderna (Markdown) visas på den plattform som väljs.
-// Output:   site/dist/index.html, oppen-lonekartlaggning.html, RELEASE.txt
-//           genomgang.html (bildspelet, incheckat i site/; byggs av marknadsverktygen)
-//           (+ oversikt.png om dist/marknad/skarmbilder/01-oversikt.png finns,
-//            + fran-fil-till-analys.gif om dist/marknad/gif/ finns)
+// Körs med `npm run site` efter `npm run bundle`. GUIDE_URL=https://…/docs/anvandare/ ger adressen där guiderna
+// (Markdown) visas; utan den säger sidan var de finns i källkoden.
+// Skriver site/dist/index.html, oppen-lonekartlaggning.html, RELEASE.txt och genomgang.html (bildspelet, incheckat
+// i site/), och oversikt.png och fran-fil-till-analys.gif om de finns under dist/marknad/.
 
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -55,7 +52,8 @@ export function byggSida(mall, { version, sha, storlek, guideUrl, bild, slinga }
         guider = '<p>Guider:</p>\n        <ul>\n' + GUIDER.map(([fil, namn, vad]) =>
             `            <li><a href="${esc(bas + fil)}">${namn}</a> — ${vad}</li>`).join('\n') + '\n        </ul>';
     } else {
-        guider = '<p>Guiderna (körguide, datauttag, organisationspaket och checklistan för skarp data) finns i källkoden under <code>docs/anvandare/</code>.</p>';
+        const namn = GUIDER.map(([, n]) => n.toLowerCase());
+        guider = `<p>Guiderna (${namn.slice(0, -1).join(', ')} och ${namn.at(-1)}) finns i källkoden under <code>docs/anvandare/</code>.</p>`;
     }
     // Slingan kräver stillbilden: den som har bett om mindre rörelse (prefers-reduced-motion) får stillbilden.
     const bildHtml = bild && slinga
