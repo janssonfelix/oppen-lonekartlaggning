@@ -37,7 +37,7 @@ export function _metodbilaga() {
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
     const medAlder = harAlder();
     // Förklaringsmodellen (ADR-56): raderna säger den modell huvudtalet räknas med. Med ålder i lönefilen och BAS som
-    // indikatorer säger modellen referensen ("indikatorvariabler, första BAS som referens"), som förut; med yrkesgrupp
+    // indikatorer säger modellen referensen ("indikatorvariabler, första BAS som referens"); med yrkesgrupp
     // vald ingår BAS i gruppnivåerna och modellen skattas med inomtransformation (regressionsmodellen.md §4).
     const modell = forklaringsmodell();
     const beskrivning = modellBeskrivning(modell);

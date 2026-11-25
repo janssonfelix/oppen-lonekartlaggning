@@ -496,7 +496,7 @@ function _laOversiktTabell(ov) {
         const skillnad = o.skillnadKr;
         const tr = document.createElement('tr');
         tr._markering = markeringFor(o.bas);
-        // Bevisknappen står i radens rubrik: uträkningen bakom raden (formel och ingångsdata), som förut i tabellen per
+        // Bevisknappen står i radens rubrik: uträkningen bakom raden (formel och ingångsdata), som i tabellen per
         // BAS-intervall. Knappen har ingen text, så radens text och exporten är desamma som utan den.
         // Knapparna står under etiketten, inte efter: två ikoner bredvid "BAS X" gjorde tabellen för bred vid 1400 px.
         tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}<span class="la-oversikt-verktyg"><button class="btn-evidence la-oversikt-bevis" data-la-bevis="1" type="button" title="Visa beräkningen bakom raden" aria-label="Visa beräkningen bakom BAS ${esc(o.bas)}">${ikon('sok')}</button>${basdossierKnapp(o.bas, { ikonEndast: true })}</span></th><td class="tal">${o.nKv} / ${o.nMa}</td><td class="tal">${talformat(o.medKv, 'kr')}</td><td class="tal">${talformat(o.medMa, 'kr')}</td>`

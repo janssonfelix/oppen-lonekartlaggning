@@ -310,7 +310,7 @@ function basdossierText(bas) {
 
 /**
  * Knappen som öppnar dossiern, för tabellerna (Löneöversikten, Lönestrukturs tabell per BAS-intervall) och
- * gruppdossiern. `ikonEndast`: bara en ikon, som bevisknappen bredvid, så att radens rubrik har samma text som förut.
+ * gruppdossiern. `ikonEndast`: bara en ikon, som bevisknappen bredvid, så att radens rubrik har samma text som utan knappen.
  */
 export function basdossierKnapp(bas, { text = 'BAS-dossier', ikonEndast = false } = {}) {
     const attr = `type="button" data-open-basdossier="${esc(bas)}" aria-label="BAS-dossier för BAS ${esc(bas)}" title="BAS-dossier: allt om BAS ${esc(bas)} på en sida"`;

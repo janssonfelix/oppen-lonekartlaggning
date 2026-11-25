@@ -345,8 +345,8 @@ export function ritaHandlingsplan() {
         const n = seed.nycklar[i], egen = _hpArEgen(n), g = r[1] || (egen ? 'egen rad' : '');
         // Skärmen samlar det som bara visas (åtgärd, grupp, antal berörda, underlag) i första cellen, så att fälten man fyller
         // i ryms utan sidledsrullning. Kolumnerna Grupp, Antal berörda och Underlag finns kvar för utskriften
-        // (hp-bara-utskrift) och undertexten i första cellen följer inte med dit (hp-bara-skarm), så utskriften har samma
-        // kolumner som förut. En egen rad har åtgärd och grupp som fält och en knapp som tar bort raden; gruppfältet står i
+        // (hp-bara-utskrift) och undertexten i första cellen följer inte med dit (hp-bara-skarm), så utskriften har en
+        // kolumn för var och en. En egen rad har åtgärd och grupp som fält och en knapp som tar bort raden; gruppfältet står i
         // första cellen och speglas i utskriftens gruppkolumn (_hpSpegla). Antal berörda står efter gruppen; en egen rad
         // har inget antal.
         const antal = `<td class="t-hoger hp-bara-utskrift">${r[8] != null ? esc(String(r[8])) : ''}</td>`;

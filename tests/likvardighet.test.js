@@ -1,5 +1,5 @@
 /**
- * Vitest-tester för Likvärdighetsanalysen (DiskrL 3:10 §) — v4-modellen.
+ * Vitest-tester för Likvärdighetsanalysen (3 kap. 9 § 2 diskrimineringslagen).
  *
  * Testar den GÄLLANDE modellen: organisationens kvinnodominerade AID×BAS-grupper
  * jämförs INOM samma BAS-intervall, primärt mot organisationens egna

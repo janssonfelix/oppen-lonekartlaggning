@@ -30,7 +30,7 @@ export async function diagramkarnan() {
     console.log('\n── Övergångar ──');
     // Vad varje diagram ritar (diagramtyperna i Utforska, flikarnas figurer) prövas i jsdom: tests/diagramvyer.test.js och
     // tests/diagramvyer-marken.test.js. Här det som kräver webbläsaren: övergångarna, "minska rörelse", pekaren och
-    // trädkartans ytor i sidan. Vyerna ställs ändå in som förut: med --bilder sparas en bild av var och en.
+    // trädkartans ytor i sidan. Vyerna ställs ändå in här: med --bilder sparas en bild av var och en.
     /* global _rfOvergangPa -- funktionerna nedan körs i sidan, där de finns */
     {
         await page.evaluate(() => { const t = document.getElementById('explore-typ'); t.value = 'svarm'; t.dispatchEvent(new Event('change', { bubbles: true })); });

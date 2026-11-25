@@ -872,7 +872,7 @@ function _rfZonEtiketter(zoner, c, bredd, hojd) {
         const rutorFor = (rad, dx) => { const y0 = (lodrat ? 2 : fran + 2) + rad * radH;
             return rader.map((text, n) => { const x0 = x0Av(text, dx); return { x0, x1: x0 + _rfBredd(text, fpx), y0: y0 + n * radH, y1: y0 + n * radH + fpx * 1.05 }; }); };
         // Först en plats överst i zonen som varken täcker en text, en ritad punkt eller en hänvisningslinje: rad för rad
-        // nedåt (högst RF_ZON_RADER), och i varje rad i sidled. Finns ingen sådan, som förut de tre översta raderna mitt i
+        // nedåt (högst RF_ZON_RADER), och i varje rad i sidled. Finns ingen sådan, någon av de tre översta raderna mitt i
         // zonen, där bara texter undviks.
         /** @type {Array<{x0:number, x1:number, y0:number, y1:number}>|null} */ let val = null;
         for (let rad = 0; rad < RF_ZON_RADER && !val; rad++) {

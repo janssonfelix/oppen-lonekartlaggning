@@ -46,6 +46,7 @@ export default defineConfig({
         hookTimeout: 60000,
         maxWorkers,
         exclude: [...configDefaults.exclude, '.claude/**'],
+        setupFiles: ['tests/helpers/paastaende.js'],
         projects: [
             { extends: true, test: { name: 'enhet', include: sökvägar(enhetsfiler) } },
             { extends: true, test: { name: 'app', include: sökvägar(appfiler) } },

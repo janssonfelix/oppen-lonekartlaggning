@@ -340,6 +340,52 @@ describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisninga
         expect(filer.flatMap(f => läs(f).split('\n').map((r, i) => [r, i]).filter(([r]) => HISTORIA.test(r))
             .map(([r, i]) => `${f}:${i + 1} ${r.trim().slice(0, 80)}`))).toEqual([]);
     });
+});
+
+// Kommentarerna i källan: var kommentarerna står och på vilken rad.
+const KOMMENTAR = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g;
+const radFor = (t, i) => t.slice(0, i).split('\n').length;
+const kallfiler = (...kataloger) => kataloger.flatMap(gå).filter(f => /\.(js|mjs)$/.test(f) && !f.startsWith('tools/data/'));
+
+describe('kommentarerna följer koden', () => {
+    it('ett funktionsnamn som en kommentar i src nämner finns i koden', () => {
+        const filer = kallfiler('src');
+        const namn = new Set(filer.flatMap(f => [...läs(f).replace(KOMMENTAR, ' ').matchAll(/[A-Za-z_$][\w$]*/g)].map(m => m[0])));
+        expect(filer.flatMap(f => { const t = läs(f);
+            return [...t.matchAll(KOMMENTAR)].flatMap(k => [...k[0].matchAll(/\b(_[a-zA-Z]\w{3,}|[a-z]+[A-Z]\w+)(?=\()/g)]
+                .filter(m => !namn.has(m[1])).map(m => `${f}:${radFor(t, k.index)} ${m[1]}`)); })).toEqual([]);
+    });
+    it('kommentarerna säger vad som gäller, inte att det är som förut', () => {
+        const HISTORIK = /som förut|som i dag|BAKGRUND|[Bb]ug-?fix|tidigare hette/;
+        expect(kallfiler('src', 'tools').flatMap(f => { const t = läs(f);
+            return [...t.matchAll(KOMMENTAR)].filter(k => HISTORIK.test(k[0]))
+                .map(k => `${f}:${radFor(t, k.index)} ${k[0].match(HISTORIK)[0]}`); })).toEqual([]);
+    });
+    it('lagrum står inte i den gamla formen «§ 3:10» eller «DiskrL 3:10» i koden, verktygen eller testerna', () => {
+        const GAMMAL = /§ ?\d+:\d+|DiskrL ?\d+:\d+/;
+        const filer = kallfiler('src', 'tools', 'tests').filter(f => !['tests/dokumentation-struktur.test.js', 'tests/start-och-meny-app.test.js', 'tests/dokumentation-sprak.test.js'].includes(f));
+        expect(filer.flatMap(f => läs(f).split('\n').map((r, i) => [r, i]).filter(([r]) => GAMMAL.test(r))
+            .map(([r, i]) => `${f}:${i + 1} ${r.trim().slice(0, 80)}`))).toEqual([]);
+    });
+});
+
+describe('appens moduler: inga vakter på funktioner som alltid finns', () => {
+    // En importerad eller i filen deklarerad funktion finns alltid när modulen körs; en typeof-vakt på den döljer
+    // bara ett stavfel. Vakter på webbläsarens API, variabler och egenskaper står kvar.
+    it('ingen typeof X === \'function\' på en importerad eller deklarerad funktion i src/app', () => {
+        expect(kallfiler('src/app').flatMap(f => {
+            const t = läs(f);
+            const egna = new Set([
+                ...[...t.matchAll(/import\s*\{([^}]*)\}\s*from/g)].flatMap(m => m[1].split(',').map(n => n.trim().split(/\s+as\s+/).pop()).filter(Boolean)),
+                ...[...t.matchAll(/function\s*\*?\s*([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]),
+            ]);
+            return [...t.matchAll(/typeof ([A-Za-z_$][\w$]*) [!=]== 'function'/g)].filter(m => egna.has(m[1]))
+                .map(m => `${f}:${radFor(t, m.index)} ${m[1]}`);
+        })).toEqual([]);
+    });
+});
+
+describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisningarna går att följa (index)', () => {
     it('indextabellen och besluten har samma nummer, i samma ordning', () => {
         expect(beslutsnummer.length).toBeGreaterThan(20);
         expect(indexrader.map(m => Number(m[1]))).toEqual(beslutsnummer);

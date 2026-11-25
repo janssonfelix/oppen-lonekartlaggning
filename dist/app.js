@@ -22737,7 +22737,7 @@ function lasInStrukturfil(file) {
     missingKonExamples: [],
     // upp till 3 exempel på okända kön-värden
     // Rader där fältet för AID-etikett ser ut att innehålla ett personnamn (namnmönster och sällsynt i filen,
-    // sallsyntaNamnrader): bara antalet och de första radnumren (_fkGranser().namnRadnr), aldrig fältets text.
+    // sallsyntaNamnrader): bara antalet och de första radnumren (forhandskontrollGranser().namnRadnr), aldrig fältets text.
     // Sätts när filen är läst (_namnTillStats). Förhandskontrollen varnar på dem.
     yrkeNamn: 0,
     yrkeNamnRadnr: []

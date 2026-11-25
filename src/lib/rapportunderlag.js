@@ -100,7 +100,7 @@ export function likaArbeteGrupper(rader, { k, golv = 10 }) {
         grupper.push(g);
     }
     // Koderna efter den största skillnaden bland kodens grupper (störst först), inom koden intervallen i BAS-ordning.
-    // Med en grupp per kod är ordningen densamma som förut: skillnaden, störst först.
+    // Med en grupp per kod är ordningen skillnaden, störst först.
     const rang = basRangordning(grupper.map(g => g.bas));
     const storst = new Map();
     for (const g of grupper) storst.set(g.aid, Math.max(storst.get(g.aid) ?? -Infinity, g.gapPct));

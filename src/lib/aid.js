@@ -76,7 +76,7 @@ export function aidAvRad(r) {
  * rader; står två texter på lika många rader gäller den som kommer först i lönefilen. En stavning som bara står på
  * enstaka rader, eller ett namn som skrivits i fältet på en rad, blir alltså inte gruppens namn när en annan text står
  * på fler rader. Ger för varje nyckel den första raden med den texten, så att den som skriver namnet tar etiketten
- * (`yrkeLabel`) eller hela fältet ur samma rad. Har gruppen en enda text är raden gruppens första, som förut.
+ * (`yrkeLabel`) eller hela fältet ur samma rad. Har gruppen en enda text är raden gruppens första.
  * @template K
  * @param {Iterable<any>} rader - i lönefilens ordning
  * @param {(r: any) => K} nyckelAv - gruppens nyckel för en rad
