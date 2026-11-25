@@ -13,6 +13,7 @@
 // (avgränsningen i docs/utveckling/mal.md). Den samlar underlaget för den bedömning som görs någon annanstans.
 // ====================================================================
 import { htmlTillText } from '../lib/htmltext.js';
+import { periodOrd } from '../lib/kostnad.js';
 import { personOrd } from '../lib/namn.js';
 import { skrDelText } from '../lib/skrreferens.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
@@ -220,7 +221,7 @@ function _gdRitaInnehall(d) {
     // 7. Prioritering & kostnad
     const prioInner = d.prio
         ? `<p>Status: <strong>${esc(d.prio.status || '–')}</strong> · avvikelse mot referens (${esc(d.prio.refSource || '–')}): <strong>${pct(d.prio.diffPct)}</strong></p>
-           <p>Kostnad att lyfta till referensens median: <strong>${kr(d.prio.annualGapTotal)}/år</strong> (${kr(d.prio.costPerPerson)}/person).</p>`
+           <p>Kostnad att lyfta till referensens median: <strong>${kr(d.prio.annualGapTotal)}/${periodOrd(state.costSettings)}</strong> (${kr(d.prio.costPerPerson)}/person).</p>`
         : missing('Gruppen finns inte i prioriteringslistan (saknar referens eller ligger över den).');
 
     // 8. Hypoteser
@@ -269,7 +270,7 @@ export function gruppdossierSomText(d, { stampel = true } = {}) {
     if (d.adjusted && d.adjusted.status === 'ok') L.push(`Skillnad när åldern räknats bort (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);
     if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr(d.pol.p10)}–${kr(d.pol.p90)} (${d.polLevel})`
         + (d.band && d.band.position != null ? ` · position ${svPct((d.band.position * 100), 0)}` : ''));
-    if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per år`);
+    if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per ${periodOrd(state.costSettings)}`);
     // Förslagen är HTML (fetstil m.m.); textkopian tar bort taggarna och avkodar tecknen
     // utan att tolka HTML.
     const somText = h => htmlTillText(h);

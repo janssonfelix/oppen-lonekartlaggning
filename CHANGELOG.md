@@ -9,6 +9,12 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Kostnaderna säger beräkningsperioden.** Kostnaden att nå referensen räknas för beräkningsperioden under
+  Inställningar, men Prioriteringens diagram, åtgärdslistan, gruppdossiern, handlingsplanen och Word-utkastet kallade
+  den en kostnad per år också när perioden var till exempel sex månader. Nu står perioden («kr/6 mån»); med tolv
+  månader står det som förut.
+- **Motiveringsförslagen i Prioritering hänvisar till Handlingsplan.** De bad användaren dokumentera i ett
+  kommentarsfält som fliken inte har; bedömningen fylls i under Handlingsplan.
 - **En kopierad tabell håller ihop också när ett namn har en radbrytning.** En AID-etikett med radbrytning eller tabb
   ur lönefilen delade tidigare raden när tabellen klistrades in, så att talen hamnade under fel rubrik; nu blir den
   mellanslag i urklippet, och formelskyddet gäller hela cellen.

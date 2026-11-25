@@ -80,8 +80,9 @@ export function arsbeloppMening(g, kostnadsval, kr) {
     if (diff < 100) return null;
     const { months, poPct: po } = kostnadsfaktor(kostnadsval);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, kostnadsval) / 1000) * 1000;
+    const period = months === 12 ? 'per år (12 månader, ' : `för ${months} månader (`;   // beloppet gäller perioden
     return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
-        + `det omkring ${kr(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, `
+        + `det omkring ${kr(belopp)} ${period}PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
 }
 

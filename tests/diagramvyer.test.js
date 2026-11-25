@@ -898,6 +898,15 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         expect(f2.lager.reduce((n, l) => n + l.data.length, 0)).toBe(15);
         expect(vanliga([[w.eval('_prioKostnadNot(kostnadskurva(window.__m, { max: 40, visas: PRIO_KOSTNAD_MAX }))')]])[0][0]).toMatch(/^Diagrammet visar de 15 grupper som kostar mest\. Övriga 7 grupper står tillsammans för [\d ]+ kr per år \(\d+ % av kostnaden\)/);
         expect(w.eval('_prioKostnadNot(kostnadskurva(window.__m.slice(0, 15), { max: 40, visas: PRIO_KOSTNAD_MAX }))')).toBe('');
+        // Kostnaden gäller beräkningsperioden: med sex månader står den inte som en kostnad per år.
+        const manader = w.state.costSettings.months;
+        w.state.costSettings.months = 6;
+        try {
+            const f6 = w.eval('_prioKostnadFigur(window.__m, window.__k)');
+            expect(vanliga(f6.lager[0].tips(f6.lager[0].data[0]))[1][1]).toMatch(/ kr\/6 mån$/);
+            expect(f6.x.titel).toMatch(/^Kostnad per 6 mån/);
+            expect(w.eval('_prioKostnadNot(kostnadskurva(window.__m, { max: 40, visas: PRIO_KOSTNAD_MAX }))')).toMatch(/ kr per 6 mån \(/);
+        } finally { w.state.costSettings.months = manader; }
         expect(() => valideraFigur(f, 't')).not.toThrow();
     });
     it('matrisen: en serie per status som finns, logaritmisk y-axel, fyra zoner med namn, etikett enligt läget', () => {

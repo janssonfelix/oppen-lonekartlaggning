@@ -9,7 +9,7 @@
 // + § 3:10-par. Returnerar enbart de förifyllda dataraderna (utan tomrader) så att
 // både Excel-exporten och skärm-mallen (ritaHandlingsplan) använder samma logik.
 // Varifrån en förifylld rad kommer, som kolumnen Underlag och exporterna säger det.
-import { periodkostnad } from '../lib/kostnad.js';
+import { periodkostnad, periodOrd } from '../lib/kostnad.js';
 import { liknarPersonuppgift } from '../lib/organisationspaket.js';
 import { gruppSkillnadKr, SKAL_UTAN_BELOPP, skalForRad, skalSammanstallning, skalUnderlag, skalUtanBelopp, valideraSkal } from '../lib/sakligaskal.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
@@ -333,6 +333,8 @@ export function ritaHandlingsplan() {
     document.querySelectorAll('[data-dok-klick]').forEach(b => { /** @type {HTMLInputElement} */ (b).disabled = !hamtaData().length; });
     const tbody = document.getElementById('handlingsplan-tbody');
     if (!tbody) return;
+    const period = document.getElementById('hp-kostnad-period');
+    if (period) period.textContent = `(kr/${periodOrd(state.costSettings)})`;   // kostnaden gäller beräkningsperioden
     const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
     const fmtKr = n => (n ? svKr(n) : '');
     const lista = (id, nyckel, falt, val, alt, etikett) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett)}">`
@@ -426,7 +428,7 @@ export function _hpValideraKonfiguration(lista, varningar) {
 export function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
     if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
-    const header = ['Åtgärd', `Grupp (${T.enhet.en} och ${T.niva.en})`, 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', 'Beräknad kostnad (kr/år, inkl. PO)', 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
+    const header = ['Åtgärd', `Grupp (${T.enhet.en} och ${T.niva.en})`, 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', `Beräknad kostnad (kr/${periodOrd(state.costSettings)}, inkl. PO)`, 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
         'Sakliga skäl (kategori och belopp)', 'Förklarad andel av skillnaden (%)'];
     const seed = _handlingsplanForifyllning();
     const prioCount = seed.prioCount, lvCount = seed.lvCount;

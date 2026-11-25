@@ -792,9 +792,6 @@ function _lvParFigur(pairs, max = 14) {
 }
 
 /**
- * Exporterar § 3:10-tabellen + metadatablad till Excel.
- */
-/**
  * Robust CSV-export för § 3:10. Använder _laddaNedCSV-helpern direkt —
  * INGA beroenden på XLSX-biblioteket. Detta är PRIMÄR exportväg (Excel-versionen
  * är sekundär).
@@ -872,7 +869,8 @@ function _exportLikvardighetCSVExport() {
     _laddaNedCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
-// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+// Exporterar § 3:10-tabellen och ett metadatablad till Excel. Går alltid genom exportläget (ADR-51): djupräknaren
+// håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportLikvardighet(...a) { return medExportLage(() => _exportLikvardighetExport.apply(null, /** @type {any} */ (a))); }
 function _exportLikvardighetExport() {
     // STEG 0: Diagnostiska statusmeddelanden så användaren ser EXAKT var det

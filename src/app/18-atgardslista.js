@@ -9,6 +9,7 @@
 //   State sparas på state._actionChecklist (i minnet — försvinner vid reload).
 import { borjaHar } from '../lib/attgora.js';
 import { jamforbaraBas } from '../lib/datakvalitet.js';
+import { periodOrd } from '../lib/kostnad.js';
 import { direktivMarkering } from '../lib/status.js';
 import { svPct, svTal } from '../lib/talformat.js';
 import { livscykelMonster } from '../lib/vymodell-livscykel.js';
@@ -150,7 +151,7 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
                     kategori: 'Löneläge mot referens',
                     prioritet: 'hög',
                     titel: `${i.yrke} (BAS ${i.bas}) — ${_agPct(i.diffPct)} % under ${i.refSource}`,
-                    detalj: `n=${i.n}, kostnad att nå referensen: ${fmt.format(Math.round(i.annualGapTotal))} kr/år. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
+                    detalj: `n=${i.n}, kostnad att nå referensen: ${fmt.format(Math.round(i.annualGapTotal))} kr/${periodOrd(state.costSettings)}. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
                     tab: 'prioritering',
                     källa: 'Prioriteringsanalys'
                 });

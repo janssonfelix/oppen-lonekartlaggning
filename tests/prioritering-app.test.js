@@ -205,6 +205,8 @@ describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
         expect(wrap.closest('tr').nextElementSibling.classList.contains('suggest-row')).toBe(true);
         expect(forslag.getAttribute('aria-expanded')).toBe('true');
         expect(forslag.textContent).toBe('Dölj motiveringsförslag');
+        // Förslagen hänvisar till Handlingsplan, där bedömningen fylls i; fliken har inget eget kommentarsfält.
+        expect(wrap.closest('tr').nextElementSibling.textContent).toMatch(/dokumentera bedömningen i Handlingsplan/i);
         forslag.click();
         expect(wrap.closest('tr').nextElementSibling?.classList.contains('suggest-row')).toBeFalsy();
         expect(forslag.textContent).toBe('Motiveringsförslag');

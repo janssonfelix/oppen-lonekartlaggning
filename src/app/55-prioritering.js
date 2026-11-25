@@ -5,6 +5,7 @@ import { talformat } from '../lib/figur.js';
 import { installningsGrans } from '../lib/installningsgranser.js';
 import { statistikFor } from '../lib/jamforelse.js';
 import { personOrd } from '../lib/namn.js';
+import { periodOrd } from '../lib/kostnad.js';
 import { kostnadskurva, motiveringsgrunder, prioKonstanter, prioNyckeltal, prioritera } from '../lib/prioritering.js';
 import { avrundaSymmetriskt } from '../lib/stat.js';
 import { svKr, svPct, svPoPct, svTal } from '../lib/talformat.js';
@@ -437,10 +438,10 @@ export function ritaPrioritering() {
             newTr.classList.add('suggest-row');
             const colCount = tr.children.length;
             if (suggestions.length === 0) {
-                newTr.innerHTML = `<td colspan="${colCount}" class="bak-yta pad-8-16"><em class="f-dampad">Inga regelbaserade förslag matchar denna grupp. Använd kommentarsfältet för fri motivering.</em></td>`;
+                newTr.innerHTML = `<td colspan="${colCount}" class="bak-yta pad-8-16"><em class="f-dampad">Inga regelbaserade förslag matchar denna grupp. Dokumentera bedömningen i Handlingsplan.</em></td>`;
             } else {
                 const items = suggestions.map(s => `<li class="ms-${s.type}">${s.text}</li>`).join('');
-                newTr.innerHTML = `<td colspan="${colCount}"><div class="motivation-suggestions"><strong>${ikon('lampa')} Hypoteser att granska för ${esc(item.yrke)} / BAS ${esc(item.bas)}:</strong><ul>${items}</ul><p class="text-dampad-xs kursiv marg-t-6">Förslagen är regelbaserade frågeställningar — inte färdiga motiveringar. Verifiera mot data och dokumentera i kommentarsfältet ovan.</p></div></td>`;
+                newTr.innerHTML = `<td colspan="${colCount}"><div class="motivation-suggestions"><strong>${ikon('lampa')} Hypoteser att granska för ${esc(item.yrke)} / BAS ${esc(item.bas)}:</strong><ul>${items}</ul><p class="text-dampad-xs kursiv marg-t-6">Förslagen är regelbaserade frågeställningar — inte färdiga motiveringar. Verifiera mot data och dokumentera bedömningen i Handlingsplan.</p></div></td>`;
             }
             /** @type {HTMLElement} */ (tr.parentNode).insertBefore(newTr, tr.nextSibling);
             tillampaFlerKolumner('prio-table');   // radens colspan följer kolumnerna som syns
@@ -448,7 +449,7 @@ export function ritaPrioritering() {
             btn.textContent = 'Dölj motiveringsförslag';
         });
     });
-    // Listeners för bristyrke-toggle och kommentarer
+    // Lyssnare för bristyrke-rutan
     tbody.querySelectorAll('.brist-toggle').forEach(cb => {
         cb.addEventListener('change', e => {
             const aid = /** @type {HTMLElement} */ (e.target).dataset.aid || '';
@@ -538,7 +539,7 @@ const PRIO_KOSTNAD_MAX = 15;
 /** @param {ReturnType<typeof kostnadskurva>} kurva */
 function _prioKostnadNot({ ovriga, ovrigaSumma: summa, total: totalt }) {
     if (!ovriga || !(totalt > 0)) return '';
-    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${ovriga} grupper står tillsammans för ${talformat(summa, 'kr')} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
+    return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${ovriga} grupper står tillsammans för ${talformat(summa, 'kr')} per ${periodOrd(state.costSettings)} (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
 }
 function _prioKostnadFigur(allaVisade, allCumPct) {
     // Högst PRIO_KOSTNAD_MAX grupper ritas; resten redovisas som en mening under diagrammet (_prioKostnadNot) — en
@@ -546,14 +547,14 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
     // diagrammet annars över tusen punkter högt.
     const visade = allaVisade.slice(0, PRIO_KOSTNAD_MAX), cumPct = allCumPct.slice(0, PRIO_KOSTNAD_MAX);
     const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · BAS ${i.bas}`;
-    const y = visade.map(namn), n80 = cumPct.findIndex(p => p >= 80);
+    const y = visade.map(namn), n80 = cumPct.findIndex(p => p >= 80), per = periodOrd(state.costSettings);
     const inom = n => n80 < 0 || n <= n80;
     const lager = (serie, farg, opacitet, valj) => ({ marke: 'stapel', riktning: 'liggande', lage: 'overlagrad', serie, farg, opacitet,
         data: visade.map((i, n) => ({ i, n })).filter(({ n }) => valj(n)).map(({ i, n }) => ({ y: y[n], x: i.annualGapTotal, yrke: i.yrke, bas: i.bas, sektor: sektorsnamn(i.aid), n: i.n, kum: cumPct[n],
             etikett: `${_formateraKostnad(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`, markering: markeringFor(i.bas, i.yrke) })),
-        tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${talformat(d.x, 'kr')}/år`], ['Kumulativ andel', talformat(d.kum, 'pct')]] });
-    return { beskrivning: 'Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.',
-        urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: 'Årskostnad (kr) · procenttalet är kumulativ andel', format: 'kr' },
+        tips: d => [[`${d.yrke} · BAS ${d.bas}`], ['Kostnad', `${talformat(d.x, 'kr')}/${per}`], ['Kumulativ andel', talformat(d.kum, 'pct')]] });
+    return { beskrivning: `Kostnaden per ${per} och grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.`,
+        urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], y: { skala: 'band', ordning: y, etikettMax: 40 }, x: { skala: 'linjar', titel: `Kostnad per ${per} (kr) · procenttalet är kumulativ andel`, format: 'kr' },
         hojd: Math.max(170, 90 + visade.length * 28),
         lager: [lager('Når tillsammans 80 % av kostnaden', PALETT.serie[0], 1, inom), lager('Övriga', PALETT.serie[0], 0.4, n => !inom(n))].filter(l => l.data.length) };
 }
@@ -577,11 +578,11 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     const kr = v => talformat(v, 'kr');
     const pm = (v, dec) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(dec).replace('.', ',')}`;
     const kostnad = i => Math.max(i.annualGapTotal, i.annualOverTotal);
-    const storst = Math.max(1, ...items.map(kostnad));
+    const storst = Math.max(1, ...items.map(kostnad)), per = periodOrd(state.costSettings);
     const tips = d => [[`#${d.rang} ${d.yrke}`], [`BAS ${d.bas}`, `n = ${d.n} (Kv: ${d.kvN}, Mä: ${d.maN})`], ['Median', kr(d.median)],
         [`Referens (${d.refKalla})`, kr(d.refMedian)], ['Avvikelse', `${pm(d.x, 2)} % (${pm(d.diffKr, 0).slice(0, 1)}${kr(Math.abs(d.diffKr))}/mån)`],
         ...(d.gapPct != null ? [['Skillnad kvinnor–män', `${pm(d.gapPct, 1)} %`]] : []),
-        ...(d.atgard > 0 ? [['Kostnad att nå referensen/år', kr(d.atgard)]] : d.over > 0 ? [['Överlönekostnad/år', kr(d.over)]] : []),
+        ...(d.atgard > 0 ? [[`Kostnad att nå referensen/${per}`, kr(d.atgard)]] : d.over > 0 ? [[`Överlönekostnad/${per}`, kr(d.over)]] : []),
         ['Prioriteringsindex', `${svTal(d.index, 0)}/100`]];
     // Namnen undviker bubblorna och varandra (etikettLage 'undvik'); ett namn som står en bit från sin bubbla får en
     // hänvisningslinje.

@@ -518,7 +518,7 @@ export const DIFFERENS_DEKLARATIONER = [
     { namn: 'Prioritering: tabellen', vag: /^(tabell-CSV: prio-table|skärm i exportläget: prioritering)/, rubrik: /^Prio \| AID-etikett \| BAS \| Status \| Antal \|/,
         inget: 'medianer och kostnaden att nå referensen (en median) per grupp som når tröskeln, ingen totalrad' },
     { namn: 'Prioritering: kostnadsdiagrammet', vag: /^diagramdata( \(Alla diagram\))?: (chart-prio-pareto|ut-diagram-chart-prio-pareto)/,
-        rubrik: /^Serie \| Årskostnad \(kr\)/, inget: 'kostnaden att nå referensen per grupp som når tröskeln, ingen total' },
+        rubrik: /^Serie \| Kostnad per (år|\d+ mån) \(kr\)/, inget: 'kostnaden att nå referensen per grupp som når tröskeln, ingen total' },
     // Var uppstår löneskillnaden (trappan): delar av skillnaden mellan könens medellöner, inte medel per grupp. Små
     // grupper räknas samman innan delarna räknas (ADR-87); ekvationssystemet prövas med lösaren i
     // tests/ktroskel-differens.test.js.
