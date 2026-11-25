@@ -48,12 +48,13 @@ export function _rfMonster(g, x0, y0, w, h, monster) {
     if (!(w >= _RF_RANDER.minst && h >= _RF_RANDER.minst)) return;
     const yta = g.append('svg').attr('data-marke', 'monster').attr('pointer-events', 'none').attr('overflow', 'hidden')
         .attr('x', x0).attr('y', y0).attr('width', w).attr('height', h);
-    // Mönstret ska synas utan att ta över: tunna sneda streck (45°) eller små glesa prickar i ytans färg.
+    // Mönstret ska synas utan att ta över: tunna vågräta streck eller små glesa prickar i ytans färg.
     const steg = 7;
     if (monster === 'linjer') {
-        const antal = Math.min(_RF_RANDER.max, Math.ceil((w + h) / steg));
-        for (let r = 0; r <= antal; r++) {
-            yta.append('line').attr('x1', r * steg - h).attr('x2', r * steg).attr('y1', h).attr('y2', 0)
+        const antal = Math.min(_RF_RANDER.max, Math.ceil(h / steg));
+        for (let r = 0; r < antal; r++) {
+            const y = r * steg + steg / 2;
+            yta.append('line').attr('x1', 0).attr('x2', w).attr('y1', y).attr('y2', y)
                 .attr('stroke', FARG.vit).attr('stroke-opacity', 0.6).attr('stroke-width', 1.2);
         }
         return;
@@ -141,7 +142,7 @@ function _rfStapel(g, l, li, c) {
         if (lage === 'staplad') r.attr('stroke', FARG.vit).attr('stroke-width', 1.5);
         else r.attr('rx', Math.min(_RF.stapelHorn, tjock / 2, Math.abs(b - a) / 2));
         if (l.opacitet != null) r.attr('fill-opacity', l.opacitet);
-        // Mönstret är lagrets, eller den enskilda stapelns (`monster` på datapunkten: t.ex. en stapel med litet underlag).
+        // Mönstret är lagrets, eller den enskilda stapelns (`monster` på datapunkten: t.ex. en stapel med en annan status).
         const monster = d.monster === 'linjer' || d.monster === 'prickar' ? d.monster : l.monster;
         if (monster) _rfMonsterIPanel(g, r, c, monster);
         if (d.liten) _rfLitenYta(g, r, c);
@@ -551,15 +552,17 @@ function _rfLada(g, l, li, c) {
     const svarm = l.punkter === 'svarm', alla = svarm || l.punkter === 'alla';
     const individer = _rfLadIndivider(c.figur, l, c.dold, ys);
     // Individpunkter nedsamplas som punktlager: var k:te av de individer som återstår (små är redan borta).
-    // Lådor räknas alltid ur alla återstående individer.
+    // Lådor, kurvor, median och kvartiler räknas alltid ur alla återstående individer; bara punkterna väljs ut.
     const steg = (alla || l.form === 'regnmoln') && individer.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(individer.length / PUNKTMOLN_MAX_PUNKTER) : 1;
+    const valda = new Set();
     const grupper = new Map();
     individer.forEach((o, n) => {
-        if (n % steg) return;
+        if (n % steg === 0) valda.add(o);
         const k = _rfLadKategori(o.d);
         if (!grupper.has(k)) grupper.set(k, []);
         grupper.get(k).push(o);
     });
+    const urval = punkter => (steg > 1 ? punkter.filter(o => valda.has(o)) : punkter);
     let ritade = 0, kvantilRadie = /** @type {number|null} */ (null);
     for (const [k, punkter] of grupper) {
         const x0 = c.x(k);
@@ -585,7 +588,7 @@ function _rfLada(g, l, li, c) {
             const streck = (marke, v, tjock) => g.append('line').attr('data-marke', marke).attr('pointer-events', 'none')
                 .attr('x1', mitt + kant).attr('x2', mitt + kant + bredd(v)).attr('y1', ys(v)).attr('y2', ys(v)).attr('stroke', farg).attr('stroke-width', tjock);
             streck('kvartil', s.q1, 1); streck('kvartil', s.q3, 1); streck('median', s.median, 2.5);
-            const ordnade = [...punkter.filter(p => !p.d.liten), ...punkter.filter(p => p.d.liten)];
+            const prov = urval(punkter), ordnade = [...prov.filter(p => !p.d.liten), ...prov.filter(p => p.d.liten)];
             ordnade.forEach(({ d, i }, n) => {
                 const m = g.append('circle').attr('data-marke', 'individ').attr('data-l', li).attr('data-i', i)
                     .attr('cx', mitt - kant - _RF.individ - (_rfSprid(n) + 0.5) * Math.max(0, halv - kant - 2 * _RF.individ)).attr('cy', ys(d.y)).attr('r', _RF.individ)
@@ -619,7 +622,7 @@ function _rfLada(g, l, li, c) {
         if (alla) {
             // Ordningsnumret för spridningen räknas bland de individer som faktiskt ritas i kategorin, med de små
             // SIST: de övriga ligger då still när små grupper slås av och på (utan visaSma finns inga små här).
-            const ordnade = [...punkter.filter(p => !p.d.liten), ...punkter.filter(p => p.d.liten)];
+            const prov = urval(punkter), ordnade = [...prov.filter(p => !p.d.liten), ...prov.filter(p => p.d.liten)];
             const sidled = svarm ? _rfSvarm(ordnade.map(p => ys(p.d.y)), ordnade.filter(p => !p.d.liten).length, _RF.individ, Math.max(_RF.individ, plats / 2 - _RF.individ)) : null;
             ordnade.forEach(({ d, i }, n) => {
                 const m = g.append('circle').attr('data-marke', 'individ').attr('data-l', li).attr('data-i', i)
