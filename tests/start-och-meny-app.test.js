@@ -212,7 +212,7 @@ describe('röktest: varje flik renderar utan kast', () => {
     });
 });
 
-describe('process-trackern och § 3:10', () => {
+describe('process-trackern och likvärdigt arbete', () => {
     it('process-trackern har nio steg och steg 9 är manuellt (➖)', () => {
         win.__ritaKartlaggningensSteg();
         const rows = [...win.document.querySelectorAll('#process-tracker .ptrack-row')];
@@ -222,7 +222,7 @@ describe('process-trackern och § 3:10', () => {
         expect(step9.textContent).toMatch(/Uppföljning/);
     });
 
-    it('§ 3:10 och A/B-scenariojämförelsen ritas utan fel', () => {
+    it('likvärdigt arbete och A/B-scenariojämförelsen ritas utan fel', () => {
         win.__lasInDemodata();
         expect(() => win.__ritaFlik('likvardighet')).not.toThrow();
         expect(typeof win.__likvardighetspar).toBe('function');

@@ -21,6 +21,16 @@ med underhållaren innan den görs.
 - **S4. Minsta gruppstorlek i allt som lämnar verktyget:** k-tröskeln, standard 10.
 - **S5. Ingen inbyggd organisation:** det organisationsspecifika kommer ur användarens filer.
 
+**Så glider det inte isär.** Det mesta som gått fel stod på två ställen och ändrades bara på det ena.
+
+- **Sök före du skriver.** Innan en ny hjälpfunktion, konstant, gräns eller lista: sök efter namnet och talet i
+  `src/`, `tools/` och `tests/`. En lista som ska följa något annat (flikar, steg, källfiler) härleds ur källan.
+- **En ändring tar med sig sina spår.** Ett namnbyte eller en ändrad regel ändrar kommentarer, testnamn, dokument
+  och listor i samma commit.
+- **Kommentarer säger vad som gäller och varför**, aldrig vad som gällde förut; historiken står i commit och ADR.
+- **Inget försvar för det som inte kan hända:** ingen typeof på en import, ingen reserv för ett format som inte finns.
+- **Ett test prövar kravet, inte koden:** fall och listor tas ur källan, och varje påstående måste kunna visas köra.
+
 **Klart betyder** Definition of Done i `.github/CONTRIBUTING.md` punkt 3. Kör `npm run kontroll` före en pull
 request och `npm run kontroll -- --snabb` under arbetet. Ändra i `src/`, aldrig i `dist/`, och kör
 `npm run build:app` efter en ändring i `src/`.

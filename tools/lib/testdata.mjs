@@ -14,7 +14,7 @@ const YRKEN = [
 ];
 // Andel kvinnor per yrke med valet `mansdominerade`, i samma ordning som YRKEN: kvinnodominerade, blandade och
 // mansdominerade yrken som i en verklig organisation. Utan valet är andelen 62 % i alla yrken, så att de tester och
-// filer som redan bygger på generatorn får samma utdata som förut.
+// filer som redan bygger på generatorn får samma utdata som utan valet.
 const KVINNOANDEL = [0.85, 0.88, 0.95, 0.72, 0.22, 0.62, 0.18, 0.5];
 
 /**

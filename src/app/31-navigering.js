@@ -91,7 +91,7 @@ function synkaAlderFlik() {
 // sedan förra gången döljs (aria-busy, style.css), så att inget inaktuellt tal syns. Block som tar lång tid och inte
 // syns överst (_ritaTungtBlock) ritas efteråt, vart och ett i en egen uppgift, med en platshållare. Ett nytt flikbyte
 // under väntan går före: bara den sist valda fliken ritas.
-// Allt annat ritar som förut, synkront: ritaFlik anropad direkt (testerna, exportgrinden, exporterna och
+// Allt annat ritar synkront: ritaFlik anropad direkt (testerna, exportgrinden, exporterna och
 // medExportLage, omritningen efter ändrad tröskel) och ett klick från koden (el.click()), som inte är användarens
 // eget. Inget resultat sparas mellan uppgifterna (ADR-17): ett block räknas i sin egen uppgift ur det som gäller då,
 // och ritar ingenting om underlaget, tröskeln, förhandsvisningen, ett val eller fliken har ändrats sedan fliken ritades.
@@ -180,7 +180,7 @@ export function _aktivFlik() {
 }
 /**
  * Ett block i fliken som tar lång tid och inte syns överst. Ritas fliken från ett uppskjutet flikbyte får blocket en
- * platshållare och ritas i en egen uppgift när fliken har målats; annars ritas det direkt, som förut.
+ * platshållare och ritas i en egen uppgift när fliken har målats; annars ritas det direkt.
  * @param {string} flik fliken blocket hör till
  * @param {string[]} hostIds behållarna som blocket ritar i (platshållaren står i dem under väntan)
  * @param {() => void} fn ritar blocket
@@ -258,7 +258,7 @@ function _ritaVantandeBlock(b) {
 //  - fliken har inte ritats om sedan dess (dess generation i exportgrinden är densamma), och inga block väntar;
 //  - läget (skärm eller export, förhandsvisningen) och dagen är desamma.
 // Bara användarens flikbyte (det uppskjutna, ADR-80) visar en flik igen. ritaFlik anropad direkt, exportläget,
-// exportgrinden och klick från koden ritar alltid. Exportgrinden ser fliken som förut: den räknas som aktuell bara när
+// exportgrinden och klick från koden ritar alltid. För exportgrinden räknas fliken som aktuell bara när
 // den ritats i den generation som gäller.
 /** @type {Map<string, {v: number, g: number, lage: string}>} */
 const _visadSom = new Map();   // flik → visningsversion, generation och läge när fliken senast ritades klart

@@ -16,7 +16,7 @@ CI:s steg och vad release-grinden prövar — skrivs inte av här utan hänvisas
 |---|---|
 | Skripten och Node-kravet | `package.json` (`scripts`, `engines`) |
 | Bygget | `tools/build-app.mjs`, `tools/bundle.mjs`, `tools/gen-version.mjs`, `tools/lib/minify-css.mjs`, `tools/lib/minify-html.mjs` |
-| Testsviten och testmiljön | `vitest.config.js`, `tools/test.mjs`, `tests/helpers/app-harness.js` |
+| Testsviten och testmiljön | `vitest.config.js`, `tools/test.mjs`, `tests/helpers/app-harness.js`, `tests/helpers/paastaende.js` (varje test måste ha ett påstående) |
 | Webbläsarröktestet och prestandamätningen | `tools/browser-smoke.mjs`, `tools/browser-smoke/`, `tools/perf-smoke.mjs` |
 | Typkontrollen och linten | `tsconfig.json`, `tsconfig.app.json`, `types/globals.d.ts`, `eslint.config.js` |
 | Kedjan lokalt | `tools/kontroll.mjs` |

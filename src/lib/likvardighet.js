@@ -653,7 +653,7 @@ export function likvardighetsparUr({ data = [], statistik = [], nationellKlass =
     const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
     const s2 = klassificeraStatistik(statistik, nationellKlass, { definition, grans: kvinnoThr });
     // Filtret 'mansdominerade' begränsar jämförelsemängden innan paren byggs, så att reserven
-    // till jämförelsestatistiken per BAS fungerar som förut när bara blandade egna yrken finns.
+    // till jämförelsestatistiken per BAS fungerar också när bara blandade egna yrken finns.
     if (jamforelse === 'mansdominerade') {
         s1.orgIckeKv = s1.orgIckeKv.filter(g => g.klass === 'mansdominerad');
         s2.statIckeKv = s2.statIckeKv.filter(g => g.klass === 'mansdominerad');

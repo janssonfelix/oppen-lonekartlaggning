@@ -35,7 +35,9 @@ datorn** — det styr hur vi tar emot bidrag.
 4. Beskriv ändringen och varför den behövs.
 
 Varje uppgift som flera filer behöver står på ett ställe; andra filer hänvisar dit eller härleds ur det och skriver
-inte av det (princip 4 i `docs/utveckling/principer.md`).
+inte av det (princip 4 i `docs/utveckling/principer.md`). Sök därför efter en befintlig funktion, konstant eller lista
+innan du skriver en ny, och låt ett namnbyte eller en ändrad regel ta med sig kommentarer, testnamn och dokument i
+samma ändring. Kommentarer säger vad som gäller, inte vad som gällde förut.
 
 Verktyget är **neutralt**: det är skrivet för alla arbetsgivare och är inte kopplat till någon särskild
 organisation. Skriv inga namn på organisationer, arbetsgivare eller lönesystem i kod, tester, exempel eller

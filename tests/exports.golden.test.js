@@ -2,7 +2,7 @@
  * Golden-file-tester för Excel-exporterna.
  *
  * Verktygets exporter (JPA-protokoll, "Excel alla flikar", handlingsplans-
- * underlag, EU-rapport, § 3:10) är de juridiskt relevanta leveranserna. Här körs varje
+ * underlag, EU-rapport, likvärdigt arbete) är de juridiskt relevanta leveranserna. Här körs varje
  * export på ett FAST deterministiskt dataset i jsdom (riktiga SheetJS/PapaParse,
  * seedad Math.random för bootstrap), arbetsboken fångas i stället för att
  * skrivas till disk, och hela innehållet normaliseras (datum/klockslag/version
@@ -71,7 +71,7 @@ beforeAll(() => {
         __loadFixture: function(utanAlder) {
             window.__resetSeed();
             // FAST dataset: 2 BAS × 2 yrken — kvinnodominerat + icke-kvinnodominerat
-            // i varje BAS (ger § 3:10-par i BAS-läge), formelbaserade löner (ingen
+            // i varje BAS (ger par för likvärdigt arbete i BAS-läge), formelbaserade löner (ingen
             // slump), åldrar 30–59, n ≥ tröskeln där maskning inte önskas.
             const rows = [];
             const add = (n, bas, aid, label, kon, lon0, step) => {
@@ -389,7 +389,7 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
     };
 
     beforeEach(() => {
-        // __loadFixture nollställer seed + § 3:10-cachen och renderar om vyerna,
+        // __loadFixture nollställer seed och likvärdighetscachen och renderar om vyerna,
         // så varje test startar från identiskt, reproducerbart tillstånd.
         win.__loadFixture();
         setManual();
@@ -476,7 +476,7 @@ describe('golden: PDF/print-rapporten (byggUtskriftsrapport) på fast dataset', 
         return s;
     };
 
-    // Ren start per anrop: __loadFixture nollställer seed + § 3:10-cachen och renderar
+    // Ren start per anrop: __loadFixture nollställer seed och likvärdighetscachen och renderar
     // om vyerna. byggUtskriftsrapport konsumerar Math.random (regression, bootstrap-CI).
     const renderPrint = async (template) => {
         win.__loadFixture();

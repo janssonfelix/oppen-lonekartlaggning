@@ -147,7 +147,7 @@ export function likvardighetspar(over) {
 
 // Lägre krav, högre lön (ADR-25) — par över BAS-gränserna. På skärmen står BAS som liten text under etiketterna, som i
 // partabellen, och BAS-steget bakom Fler kolumner. BAS-kolumnerna står kvar i tabellen för exporterna (.bara-export,
-// dolda på skärmen), och texten under etiketten följer inte med ut (data-export-text): exporten är densamma som förut.
+// dolda på skärmen), och texten under etiketten följer inte med ut (data-export-text): exporten har BAS i egna kolumner.
 function _lagreKravHtml(result) {
     const poang = lvPoang(result);
     const par = result.lagreKrav || [];

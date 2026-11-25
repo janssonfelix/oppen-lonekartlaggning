@@ -1958,7 +1958,7 @@ export function figurTillBild(figur, format, bredd, hojd, val = {}) {
  * figur (felläge, rensad). Små grupper följer bara med när vyn uttryckligen säger det (val.exportMedSma,
  * Utforskas kryssruta — ADR-14); bara svaret exakt `true` räknas som ja (kastar den, eller svarar den något annat, är det nej). Figuren är ORIGINALET: bilden ritas
  * ur den med visaSma och dolda (samma färger som på skärmen), och diagramdatan filtreras av anroparen —
- * _figTillTabell(visaSma ? figur : _figUtanSma(figur)), alla serier.
+ * figurTillTabell(visaSma ? figur : utanSmaGrupper(figur)), alla serier.
  * `tom` är sant när inget återstår att exportera (alla punkter hör till små grupper som inte får följa med).
  * `filter` är urvalet i diagrammet (en kopia av el._figurFilter): bara exportmenyns bild följer det; diagramTillBild
  * (rapport, utskrift, ZIP, rapportunderlag) ritar alltid allt, och `tom` räknas utan urvalet.

@@ -307,7 +307,7 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
     });
 });
 
-describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () => {
+describe('visualisering: likvärdigt arbete — kandidatparen som bild + tabellexport', () => {
     it('kandidatparen ritas som ett par per rad med båda medianerna', () => {
         win.__lasInDemodata();
         const pairs = (win.__likvardighetspar() || {}).pairs || [];
