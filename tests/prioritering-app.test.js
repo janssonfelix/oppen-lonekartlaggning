@@ -162,7 +162,7 @@ describe('Prioriteringens rader: Visa beräkningen och menyn Mer', () => {
         w.document.querySelector('.nav-item[data-tab="prioritering"]').click();   // fokus når bara en flik som visas
         return w;
     };
-    it('varje rad har förstoringsglaset och en meny Mer med tre val i text; de tillgängliga namnen är som förut', () => {
+    it('varje rad har förstoringsglaset och en meny Mer med tre val i text; knapparna har yrkets namn', () => {
         const w = prio();
         const rader = [...w.document.querySelectorAll('#prio-table tbody tr')].filter(tr => tr.querySelector('.prio-detalj'));
         expect(rader.length).toBeGreaterThan(3);

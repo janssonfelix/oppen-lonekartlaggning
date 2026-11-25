@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Characterization-tester för kostnadsräkningen: kostnadsformeln i src/lib/kostnad.js (kostnadsfaktor, periodkostnad och
+ * Tester för kostnadsräkningen: kostnadsformeln i src/lib/kostnad.js (kostnadsfaktor, periodkostnad och
  * kostnadPerAr, åtgärdskostnad per år med beräkningsperiod och PO-påslag) och arsbeloppMening i src/lib/prioritering.js
  * (räkneexemplet om könsskillnaden i kronor per år).
  *
- * Förväntade tal är handräknade ur formeln |belopp| × månader × (1 + PO) × antal. Lägen där dagens beteende ser
- * tveksamt ut är låsta som de är idag och märkta TVEKSAMT; de ska inte tolkas som avsedd specifikation.
+ * Förväntade tal är handräknade ur formeln |belopp| × månader × (1 + PO) × antal.
  */
 import { describe, it, expect } from 'vitest';
 import { kostnadsfaktor, periodkostnad, kostnadPerAr, periodOrd } from '../src/lib/kostnad.js';
@@ -64,7 +63,7 @@ describe('[B7.1] kostnadPerAr: formeln |belopp| × månader × (1 + PO) × antal
     it('månader som saknas ger 12', () => {
         expect(kostnadPerAr(1000, 1, { poPct: 0 })).toBe(12000);
     });
-    it('TVEKSAMT: months 0 blir tyst 12 månader (koden använder `|| 12`, så 0 ger inte 0)', () => {
+    it('months 0 ger standardvärdet 12: perioden är 1–60 månader i Inställningar, konfigurationsfilen och paketet', () => {
         expect(kostnadPerAr(1000, 1, { months: 0, poPct: 0 })).toBe(12000);
     });
     it('kostnaden är linjär i antal personer', () => {
@@ -105,7 +104,7 @@ describe('[B7.11] arsbeloppMening: räkneexemplet om könsskillnaden', () => {
         expect(text).toContain('ligger 100 kr per månad under');
         expect(text).toContain('omkring 1000 kr per år');
     });
-    it('TVEKSAMT: 50 kr skillnad rundas uppåt till 100 kr och ger en mening, trots att 50 kr är under gränsen', () => {
+    it('gränsen gäller den avrundade skillnaden som texten visar: 50 kr blir 100 kr och ger en mening', () => {
         const text = arsbeloppMening({ medKv: 30000, medMa: 30050, nKv: 1 }, { months: 12, poPct: 0 }, kr);
         expect(text).toContain('ligger 100 kr per månad under');
     });

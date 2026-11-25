@@ -587,7 +587,7 @@ describe('namnen i etiketterna', () => {
         expect(th).toContain('P10 Testkommunen');
         expect(th).toContain('Median Testkommunen');
     });
-    it('utan namn: etiketterna som i dag', () => {
+    it('utan namn: etiketterna säger org. och Organisationen', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
         w.eval("sattOrgNamn('')");   // demot heter Exempelkommunen
@@ -605,7 +605,7 @@ describe('namnen i etiketterna', () => {
     });
 });
 
-describe('Jämförelsestatistik, Översikt och namn: detaljer — namn', () => {
+describe('namnen i paketet och ställningstagandet', () => {
     const medStatistik = () => {
         const w = createAppWindow();
         w.__lasInDemodata();

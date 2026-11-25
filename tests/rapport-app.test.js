@@ -731,7 +731,7 @@ describe('innehåll på sidan och i rapportunderlaget', () => {
     });
 });
 
-describe('sortering, Att göra, kopiering och Likvärdigt arbete — kopiering', () => {
+describe('kopiera diagram', () => {
     it('att rita en annan flik (t.ex. för att kopiera ett diagram) flyttar inte sidans navigering', () => {
         const w = createAppWindow();
         w.__lasInDemodata();

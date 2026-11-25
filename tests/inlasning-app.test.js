@@ -227,7 +227,7 @@ describe('PII-kontrollen vid inläsning samplar hela filen', () => {
         expect(w.__state.data).toEqual([]);
         expect(w.document.getElementById('data-status').textContent).toMatch(/Filen avvisad[\s\S]*Id/);
     });
-    it('CSV utan personnummer läses in som förut', async () => {
+    it('CSV utan personnummer läses in', async () => {
         const w = createAppWindow();
         await vendorPapa(w);
         const r = rader().map((x, i) => (i > 0 ? [...x.slice(0, 4), `L${i}`] : x));
@@ -391,7 +391,7 @@ describe('ingen organisatorisk enhet i data eller utdata (se avgränsningen i ma
     });
 });
 
-describe('Lika arbete och filrutorna: ordning och kompakta rutor — filrutorna', () => {
+describe('filrutorna efter inläsningen', () => {
     it('efter inläsning syns alla tre filrutorna, lönefilens kompakt, och bara ett dataskyddsbesked', () => {
         const w = createAppWindow();
         const d = w.document;
@@ -563,7 +563,7 @@ describe('lönefil vars kolumner inte känns igen', () => {
     });
 });
 
-describe('sortering, Att göra, kopiering och Likvärdigt arbete — inläsning', () => {
+describe('CSV med bara CR som radslut', () => {
     it('CSV med bara CR som radslut och en försättsrad: rubriken hittas och radnumren stämmer', async () => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');
@@ -577,7 +577,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — inläsning'
     });
 });
 
-describe('Jämförelsestatistik, Översikt och namn: detaljer — inläsning', () => {
+describe('Byt fil som misslyckas', () => {
     const vendor = async (w, fil) => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');

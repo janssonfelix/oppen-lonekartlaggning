@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
-describe('Lika arbete och filrutorna: ordning och kompakta rutor — Lika arbete', () => {
+describe('Lika arbete: avsnittens ordning', () => {
     const efter = (a, b) => !!(a.compareDocumentPosition(b) & 4);   // b ligger efter a
     it('Lika arbete visar slutsatser och yrkesgrupperna först, sedan personer att granska, per BAS, könsfördelningen och sist regressionen', () => {
         const w = createAppWindow();
@@ -153,7 +153,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
     const bevaka = w => { w.eval(`window.__fel = []; { const rf = rapporteraFel; rapporteraFel = function (plats, e) { window.__fel.push(plats + ': ' + (e && e.message)); return rf(plats, e); }; }
         { const ce = console.error; console.error = function (...a) { window.__fel.push(a.join(' ')); return ce.apply(console, a); }; }`); return w; };
 
-    it('standardvalet: BAS och AID i den ordningen, dagens delar och texter, ingen återställning', () => {
+    it('standardvalet: BAS och AID i den ordningen, delarna A, B och C, ingen återställning', () => {
         const w = demo();
         expect(kort(w).querySelector('.gu-val legend').textContent).toBe('Förklara med:');
         expect(valda(w)).toEqual(['bas', 'aid']);
@@ -274,7 +274,7 @@ describe('Var uppstår löneskillnaden: valbara förklaringsvariabler (ADR-65)',
         w.__rensaAllData();
         expect(w.__state.gapUppdelning).toBeNull();
     });
-    it('rapportunderlaget och metodbilagan följer valet och nämner variablerna; standardvalet ger dagens text', () => {
+    it('rapportunderlaget och metodbilagan följer valet och nämner variablerna; standardvalet nämner BAS och AID', () => {
         const w = demo();
         const block = () => w.__rapportunderlagBlock().find(b => b.id === 'uppdelning');
         const metod = () => w.__metodbilaga().map(r => r.join(': ')).join('\n');

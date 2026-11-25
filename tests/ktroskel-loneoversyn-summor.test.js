@@ -202,7 +202,7 @@ describe('Löneöversyn på skärmen och med egna riktade rader', () => {
         expect(r.rad('X', '7002')).toBe(maskeradRad('X', '7002', 4, 50));
     });
 
-    it('skärmen visar varje grupp med medianer och kostnad som förut, utan samlad rad', () => {
+    it('skärmen visar varje grupp med medianer och kostnad, utan samlad rad', () => {
         const w = forbered(fonsterKon(null));
         const tabell = [...w.document.querySelectorAll('#forecast-outcome .table-wrap tbody tr')].map(tr => [...tr.children].map(c => normalisera(c.textContent)));
         for (const [bas, aid] of SMA_GRUPPER) {

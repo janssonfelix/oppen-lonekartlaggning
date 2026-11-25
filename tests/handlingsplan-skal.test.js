@@ -310,7 +310,7 @@ describe('Handlingsplan: Att göra-punkten för rader utan val', () => {
 });
 
 describe('Handlingsplan: skälen i konfigurationsfilen', () => {
-    it('följer med och läses in igen; äldre poster utan skal läses som förut', () => {
+    it('följer med och läses in igen; äldre poster utan skal läses in utan skal', () => {
         const a = fonster();
         const nyckel = knapp(radMedSkillnad(a)).dataset.hpSkal;
         oppna(a, radMedSkillnad(a));

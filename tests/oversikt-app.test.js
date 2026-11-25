@@ -112,7 +112,7 @@ describe('Översikt och namn: namnfälten och kvalitetsdelen', () => {
     });
 });
 
-describe('Jämförelsestatistik, Översikt och namn: detaljer — Översikt', () => {
+describe('Översikt: kvalitetsdelen vid omritning', () => {
     it('kvalitetsdelen fälls inte ut igen vid omritning när statusen är densamma', () => {
         const w = createAppWindow();
         w.__lasInDemodata();   // varning → utfälld
@@ -257,7 +257,7 @@ describe('samma bild på Översikt', () => {
         expect(fore('ov-intro', 'ov-filrad') && fore('ov-filrad', 'dashboard-summary')).toBe(true);
         expect(d.getElementById('ov-intro').closest('.flik-intro-rad')).not.toBeNull();
     });
-    it('rapporten bär de tre nya diagrammen, och åldersdiagrammet bara när Ålder & karriär visar hela urvalet', () => {
+    it('rapporten bär trattdiagrammet, ålderskurvan och könsläget i bandet, och åldersdiagrammet bara när Ålder & karriär visar hela urvalet', () => {
         w.__lasInDemodata();
         const diagram = () => w.eval('rapportModell()').avsnitt.flatMap(a => a.delar.filter(x => x.typ === 'diagram').map(x => `${a.id}:${x.id}`));
         expect(diagram()).toEqual(expect.arrayContaining(['lika:chart-la-tratt', 'struktur:chart-kon-aldergap', 'struktur:chart-lp-konlagen']));
@@ -385,7 +385,7 @@ describe('Att göra: en stil på status', () => {
     });
 });
 
-describe('sortering, Att göra, kopiering och Likvärdigt arbete — Att göra', () => {
+describe('Att göra: länkar, ord och tal', () => {
     it('Att göra: länkarna går att skilja åt för skärmläsare; datakvalitet leder till Underlagets kvalitet', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
@@ -437,7 +437,7 @@ describe('sortering, Att göra, kopiering och Likvärdigt arbete — Att göra',
     });
 });
 
-describe('k-anonymitet, sortering, efterlevnad och dossiern — efterlevnad', () => {
+describe('efterlevnadskortet utan BAS-nivårader', () => {
     it('efterlevnadskortet blir inte grönt när policyn saknar BAS-nivårader', () => {
         const sparadPolicy = win.__state.policy;
         try {

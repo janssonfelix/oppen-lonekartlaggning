@@ -126,7 +126,7 @@ describe('bedomUnderlag utan ålder i lönefilen (ADR-64)', () => {
         expect(rim.text).not.toMatch(/ålder/);
         expect(res.kriterier.find(c => c.id === 'modell').text).not.toMatch(/ålder/);
     });
-    it('med ålder räknas en orimlig ålder som förut', () => {
+    it('med ålder räknas en orimlig ålder', () => {
         const r = [...grupp('A', 10, 10), ...grupp('B', 10, 9), rad('B', 'man', 35000, 90)];
         expect(bedomUnderlag(r, ok).kriterier.find(c => c.id === 'rimlighet').varde).toBeCloseTo(2.5, 9);
     });

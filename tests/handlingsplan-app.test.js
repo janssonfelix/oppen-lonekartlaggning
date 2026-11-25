@@ -194,7 +194,7 @@ describe('Handlingsplan: skärmen samlar det som bara visas i första kolumnen',
             expect([...under.querySelectorAll('.hp-under-rad')].map(r => ren(r.textContent))).toEqual([ren(`${tr.cells[1].textContent} · ${tr.cells[2].textContent} berörda`), `Underlag: ${tr.cells[3].textContent}`]);
         }
     });
-    it('utskriften av mallen har samma kolumner som förut, utan skärmens undertext', () => {
+    it('utskriften av mallen har tabellens kolumner, utan skärmens undertext', () => {
         const w = fonster();
         w.__ritaFlik('handlingsplan');
         w.eval('_hpLaggTillEgen()');

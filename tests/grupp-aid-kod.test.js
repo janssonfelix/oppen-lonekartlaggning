@@ -72,7 +72,7 @@ describe('namnrader: gruppens namn är texten på flest av dess rader', () => {
         expect(m.get('207011|C')).toBe(a);
         expect(m.get('207011|D')).toBe(b);
     });
-    it('rader utan kod grupperas på sin text och heter som förut', () => {
+    it('rader utan kod grupperas på sin text och heter som den', () => {
         expect(namn([t('Ingen kod', 'B'), t('Ingen kod, natt', 'B'), t('Ingen kod', 'B')])).toEqual([['Ingen kod|B', 'Ingen kod'], ['Ingen kod, natt|B', 'Ingen kod, natt']]);
         expect(namnrader([], aidAvRad).size).toBe(0);
     });
@@ -113,7 +113,7 @@ describe('likaArbeteGrupper: en grupp är AID-koden', () => {
         const lika = [...flera(TEXT_B, 'C', 'kvinna', 2, 30000), ...flera(TEXT_A, 'C', 'man', 2, 32000), ...flera(TEXT_A, 'C', 'kvinna', 1, 30000), ...flera(TEXT_B, 'C', 'man', 1, 32000)];
         expect(likaArbeteGrupper(lika, { k: 1 }).grupper[0].yrke).toBe(TEXT_B);
     });
-    it('samma kod i två BAS-intervall är två grupper, intill varandra i BAS-ordning; rader utan kod grupperas på sin text, som förut', () => {
+    it('samma kod i två BAS-intervall är två grupper, intill varandra i BAS-ordning; rader utan kod grupperas på sin text', () => {
         const r = [...underlag(), ...flera(TEXT_B, 'D', 'kvinna', 3, 36000), ...flera(TEXT_B, 'D', 'man', 3, 36000),
             ...flera('Ingen kod', 'B', 'kvinna', 3, 30000), ...flera('Ingen kod', 'B', 'man', 3, 30000),
             ...flera('Ingen kod, natt', 'B', 'kvinna', 3, 30000), ...flera('Ingen kod, natt', 'B', 'man', 3, 30000)];

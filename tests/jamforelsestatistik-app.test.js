@@ -165,7 +165,7 @@ describe('Jämförelsestatistik: exporten namnger statistiken', () => {
     });
 });
 
-describe('Jämförelsestatistik, Översikt och namn: detaljer — Jämförelsestatistik', () => {
+describe('Jämförelsestatistik: beräkningspanelen, urvalet och klick i diagrammet', () => {
     const vendor = async (w, fil) => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');

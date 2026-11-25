@@ -354,7 +354,7 @@ describe('inlasning: känsliga kolumner', () => {
 describe('hittaKansligaKolumner (PII-rubriker)', () => {
     // Rader vars värden inte själva utlöser värdekontrollen (ett ord, inte "Förnamn Efternamn").
     const rader = kol => Array.from({ length: 10 }, (_, i) => ({ BAS: 'C', [kol]: `V${i}` }));
-    it('rubriken Förnamn avvisas, med och utan ö (var en känd brist)', () => {
+    it('rubriken Förnamn avvisas, med och utan ö', () => {
         for (const kol of ['Förnamn', 'Fornamn', 'FÖRNAMN', 'Förnamn ']) {
             const fel = hittaKansligaKolumner(rader(kol));
             expect(fel.map(f => f.col), kol).toEqual([kol]);

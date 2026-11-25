@@ -409,7 +409,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
         expect(win.__policyFor('999', 'Z')).toBeNull();
     });
 
-    it('BAS-only-fil beter sig exakt som före ändringen', () => {
+    it('en fil med bara BAS matchar på BAS och bortser från AID', () => {
         setPolicy([P({ bas: 'A', tag: 'a' }), P({ bas: 'B', tag: 'b' })]);
         expect(win.__policyFor(null, 'A').tag).toBe('a');
         expect(win.__policyFor('207', 'B').tag).toBe('b');   // aid ignoreras när ingen aid-rad finns
@@ -438,7 +438,7 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
         expect(win.document.getElementById('lonepolitik-empty').style.display).toBe('block');
     });
 
-    it('med policy byggs modellen med täckningsgrad och maskeringstrappa', () => {
+    it('med policy byggs modellen med täckningsgrad, och på skärmen visas varje grupp i sin helhet', () => {
         win.__lasInDemodata();
         const bas = [...new Set(win.__hamtaData().map(r => r.bas))];
         setPolicy(bas.map(b => ({ bas: b, p10: 25000, med: 32000, p90: 45000 })));
@@ -446,14 +446,8 @@ describe('lönepolitik: policyFor-kaskad + flik', () => {
         expect(m.hasPolicy).toBe(true);
         expect(m.byBas.length).toBeGreaterThan(0);
         expect(m.coverage.personsPct).toBeGreaterThan(0);
-        // varje AID-grupp har en giltig maskeringsnivå
-        const tiers = m.byBas.flatMap(b => b.groups.map(g => g.tier));
-        tiers.forEach(t => expect(['full', 'count', 'masked']).toContain(t));
-        // full analys kräver n >= kTroskel()
-        m.byBas.forEach(b => b.groups.forEach(g => {
-            if (g.tier === 'full') expect(g.n).toBeGreaterThanOrEqual(10);
-            if (g.tier === 'masked') expect(g.n).toBeLessThan(5);
-        }));
+        // skärmen har tröskeln 1 (ADR-51): ingen grupp maskeras; trappan vid exportens tröskel prövas i lonepolitik.test.js
+        expect(m.byBas.flatMap(b => b.groups).every(g => g.tier === 'full')).toBe(true);
         expect(() => win.__ritaLonepolitik()).not.toThrow();
         expect(win.document.getElementById('lonepolitik-table')).not.toBeNull();
         setPolicy([]);   // städa så senare test inte påverkas

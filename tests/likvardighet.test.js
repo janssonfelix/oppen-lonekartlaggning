@@ -636,7 +636,7 @@ describe('lägre krav, högre lön', () => {
         const poangByKey = new Map([['100', 50], ['200', 40]]);
         expect(kor(d, { poangByKey }).lagreKrav).toEqual([]);
     });
-    it('dagens pairs är oförändrade', () => {
+    it('utan poäng: ett par i samma BAS-intervall och ett med lägre krav', () => {
         const d = [...grupp('100', 'E', 18, 2, 30000), ...grupp('200', 'E', 2, 18, 33000), ...grupp('300', 'C', 2, 18, 36000)];
         const r = kor(d);
         expect(r.pairs.map(p => [p.kvAid, p.maAid])).toEqual([['100', '200']]);

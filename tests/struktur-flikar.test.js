@@ -171,7 +171,7 @@ describe('Rapporttext, Exportera och Spara och jämför år', () => {
         expect(nb.value).toBe('');
         expect(nb.dataset.dirty).toBeUndefined();
     });
-    it('Lönestruktur bygger inte längre utkastet; årsjämförelsens bild ritas av Spara och jämför år', () => {
+    it('Lönestruktur bygger inget utkast; årsjämförelsens bild ritas av Spara och jämför år', () => {
         const w = createAppWindow(); w.__lasInDemodata();
         w.document.querySelector('.nav-item[data-tab="struktur"]').click();
         expect(w.document.getElementById('struktur-narrative').value).toBe('');

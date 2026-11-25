@@ -665,7 +665,7 @@ describe('rapportunderlag: sakliga skäl i handlingsplanens block', () => {
         expect(b.stycken.join(' ')).toMatch(/Tabellerna visar de sakliga skäl som organisationen har angett per grupp\. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar\. Kategorierna och beloppen är organisationens bedömning\. Verktyget räknar bara om beloppen till andelar av skillnaden\./);
         expect(tillText(b)).toContain('Sammanställning per kategori');
     });
-    it('utan skäl: blocket som förut', () => {
+    it('utan skäl: blocket har inga tabeller', () => {
         expect(avsnittBlock('handlingsplan', { rader: rad, summa: 1000 }, { k: 10 }).tabeller).toBeUndefined();
         expect(avsnittBlock('handlingsplan', { rader: rad, summa: 1000, skal: { grupper: [], perKategori: null } }, { k: 10 }).tabeller).toBeUndefined();
     });

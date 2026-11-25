@@ -107,7 +107,7 @@ describe('Flikbytet: rita först, räkna sedan', () => {
         expect(w.document.getElementById('besked-excel').textContent).toMatch(/färre än 13 /);
     });
 
-    it('exportläget, direkta anrop av ritaFlik och klick från koden ritar synkront som förut', () => {
+    it('exportläget, direkta anrop av ritaFlik och klick från koden ritar synkront', () => {
         const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document;
         nav(w, 'rapporttext').click();

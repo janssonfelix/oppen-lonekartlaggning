@@ -108,7 +108,7 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
             forvantaInget(w, kvN, { 'riktade rader': text(w, 'forecast-targets'), kurvan: text(w, 'forecast-sensitivity') });
         }
     });
-    it('båda grupperna över tröskeln (12 mot 24): förslaget, mål-läget och kurvan finns som förut', () => {
+    it('båda grupperna över tröskeln (12 mot 24): förslaget, mål-läget och kurvan finns', () => {
         const w = fonsterPar({ kvN: 12, jmfN: 24 });
         w.eval('_fcOptimera()');
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 12]);

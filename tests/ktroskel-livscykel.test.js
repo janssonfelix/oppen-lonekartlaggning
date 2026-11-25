@@ -108,7 +108,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         expect(d.predKvinna[0].lon).toBeGreaterThan(2 * r.predKvinna[0].lon);
     });
 
-    it('på skärmen ritas kurvan för D som förut (ADR-51)', async () => {
+    it('på skärmen ritas kurvan för D (ADR-51)', async () => {
         const w = fonster();
         await valj(w, 'D');
         const el = w.document.getElementById('lifecycle-chart');
@@ -165,7 +165,7 @@ describe('[B3.10] [S4] Livscykelns lönekurva: ett valt BAS-intervall under trö
         expect(utdata.find(([n]) => n === 'skärm i exportläget: alla flikar')[1]).toMatch(NOT);
     }, 180000);
 
-    it('ett valt intervall över tröskeln har sin kurva i exporten som förut: diagramdatan, bilden, ZIP-filen och Alla diagram', async () => {
+    it('ett valt intervall över tröskeln har sin kurva i exporten: diagramdatan, bilden, ZIP-filen och Alla diagram', async () => {
         const w = fonster();
         await valj(w, 'B');
         const tal = String(Math.round(w.eval('korLivscykelregression("B")').predKvinna[0].lon * 100) / 100).replace('.', ',');

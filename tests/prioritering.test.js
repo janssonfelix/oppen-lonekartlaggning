@@ -111,7 +111,7 @@ describe('prioritera: gruppen är AID-koden och BAS-intervallet', () => {
         const nycklar = l => l.map(g => `${g.aid}|${g.bas}|${g.yrke}|${g.n}`).sort();
         expect(nycklar(prio)).toEqual(nycklar(jmf));
     });
-    it('rader utan kod grupperas på hela texten, som förut', () => {
+    it('rader utan kod grupperas på hela texten', () => {
         const rader = [...grupp('Ingen kod', 'B', 30000, 6, 31000, 6), ...grupp('Ingen kod, natt', 'B', 30000, 6, 31000, 6)];
         const res = kör(rader, { referensFor: () => ({ median: 35000, kalla: 'x' }) });
         expect(res.map(g => g.aid).sort()).toEqual(['Ingen kod', 'Ingen kod, natt']);
@@ -257,7 +257,7 @@ describe('prioritera: snabbvinst, bristyrke och sortering', () => {
     });
 });
 
-describe('prioritera: statusgränser och tröskelvärden (characterization)', () => {
+describe('prioritera: statusgränser och tröskelvärden', () => {
     const REF = 40000;
     const referens = () => ({ median: REF, kalla: 'testref' });
     // Alla i gruppen har samma lön, så gruppmedianen är lönen och avvikelsen = (lön / 40 000 − 1) × 100.
@@ -328,7 +328,7 @@ describe('prioritera: statusgränser och tröskelvärden (characterization)', ()
     });
 });
 
-describe('prioIndex: viktsumma 0 (characterization)', () => {
+describe('prioIndex: viktsumma 0', () => {
     it('alla vikter 0 ger index 0 (wTotal sätts till 1, så ingen division med noll och inget NaN)', () => {
         const delar = { sevScore: 100, volScore: 100, gapScore: 100, riktningsvikt: 1, bristMultiplier: 1,
             vikter: { avvikelse: 0, volym: 0, jamstalldhet: 0 } };
@@ -337,7 +337,7 @@ describe('prioIndex: viktsumma 0 (characterization)', () => {
 });
 
 describe('prioritera: delpoängen ligger på posten och konstanterna har sina värden', () => {
-    it('prioKonstanter har modellens dagens värden och är frusen', () => {
+    it('prioKonstanter har modellens fastställda värden och är frusen', () => {
         expect(prioKonstanter()).toEqual({ AVVIKELSE_TAK: 30, VOLYM_TAK: 50, GAP_TAK: 15, RIKTNING_UNDER: 1, RIKTNING_OVER: 0.5,
             BRIST_MULTIPLIKATOR: 1.2, SNABB_VINST_KR: 1500, SNABB_VINST_AVVIKELSE: 3, SNABB_VINST_MIN_N: 5 });
         expect(Object.isFrozen(prioKonstanter())).toBe(true);

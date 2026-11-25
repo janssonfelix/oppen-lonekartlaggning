@@ -49,7 +49,7 @@ describe('[B1.7] percentilintervall', () => {
 });
 
 describe('konstanterna', () => {
-    it('har dagens värden och finns i objektet för appen', () => {
+    it('har sina fastställda värden och finns i objektet för appen', () => {
         expect([B_ORGANISATION, B_PER_GRUPP, B_DOSSIER, Z_95, Z_STYRKA, BALANSGRANS, MDE_SIGMA_MIN_RESIDUALER, EXTREMVARDE_Z, KVANTIL_KI_B])
             .toEqual([2000, 1000, 2000, 1.96, 2.802, 0.4, 20, 3, 200]);
         const k = osakerhetKonstanter();

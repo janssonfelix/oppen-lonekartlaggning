@@ -138,7 +138,7 @@ describe('inverterat band (P10 >= P90) — malformerad policydata', () => {
         expect(utanTak.nAffected).toBe(1);
         expect(utanTak.totalMonth).toBe(2000);
     });
-    it('bandlage hade redan kontrollen — nu är de tre samstämmiga', () => {
+    it('bandlage avvisar också ett felvänt band', () => {
         expect(bandlage(35000, inv.p10, inv.p90)).toBeNull();
     });
 });
