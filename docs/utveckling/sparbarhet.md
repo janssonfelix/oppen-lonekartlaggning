@@ -225,7 +225,7 @@ filformat (till exempel i `forhandskontroll.js`, `datakvalitet.js` och `aidkontr
 | `MAD_TILL_SIGMA`, `MEDIAN_SE_FAKTOR` | 1,4826, 1,2533 | `src/lib/osakerhet.js` | MAD till σ vid normalfördelning; medianens standardfel √(π/2)·σ/√n | Fast |
 | `SMA_GRUPPER_RATTNING` | 0,6 | `src/lib/osakerhet.js` | trattens breddning för små grupper | Fast |
 | `KVANTIL_KI_B`, `KVANTIL_KI_MAX_N` | 200, 2000 | `src/lib/osakerhet.js` | kvantilregressionens intervall | Fast |
-| `KVINNO_TROSKEL_STANDARD`, `KV_DOM_STAT`, `KV_GRANS_STANDARD` | 60 % | `src/lib/likvardighet.js`, `src/lib/aidbas.js` | gränsen för kvinnodominerat, också i `prognosutfall` när ingen gräns skickas | Inställning (gränsen och definitionen) |
+| `KVINNO_TROSKEL_STANDARD` | 60 % | `src/lib/likvardighet.js` (också standard i `src/lib/aidbas.js`) | gränsen för kvinnodominerat, också i `prognosutfall` när ingen gräns skickas | Inställning (gränsen och definitionen) |
 | `ALDERS_GOLV_STANDARD`, `ALDERS_SPRIDNING_MIN` | 10, 5 år | `src/lib/likvardighet.js` | åldersjusteringen i paren | Fast |
 | `ARSBOKSLUT_K_MIN` | 3 | `src/lib/arsbokslut.js` | lägsta tröskel ett bokslut bär; ett lägre k i filen höjs hit | Fast |
 | `SKAL_GRANSER` | 200 000 kr, 200 tecken, 8 skäl | `src/lib/sakligaskal.js` | gränserna för de sakliga skälen | Fast |

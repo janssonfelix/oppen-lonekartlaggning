@@ -95,8 +95,8 @@ export function _yrkesStegText(s, modell) {
     const sv = v => v.toFixed(1).replace('.', ',');
     const tkn = v => `${v >= 0 ? '+' : '−'}${sv(Math.abs(v))} %`;
     return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma ${T.enhet.en}${modell.alder ? ', ' + T.niva.en + ' och ålder' : ' och ' + T.niva.en} `
-        + `(fasta effekter för ${T.enhet.en} inom BAS). Bygger på ${s.nPersoner} personer i ${s.nGrupperBada} grupper (samma ${T.enhet.en} i samma ${T.niva.en}) där båda könen finns`
-        + (s.nEnkonade ? `; ${s.nEnkonade} enkönade grupper bidrar inte` : '')
+        + `(fasta effekter för ${T.enhet.en} inom BAS). Bygger på ${s.nPersoner} ${personOrd(s.nPersoner)} i ${s.nGrupperBada} ${s.nGrupperBada === 1 ? 'grupp' : 'grupper'} (samma ${T.enhet.en} i samma ${T.niva.en}) där båda könen finns`
+        + (s.nEnkonade ? `; ${s.nEnkonade} ${s.nEnkonade === 1 ? 'enkönad grupp bidrar' : 'enkönade grupper bidrar'} inte` : '')
         + (modell.yrkesgrupp ? `. ${stor(T.enhet.en)} inom BAS är vald i förklaringsmodellen, så det här är huvudtalet.` : `. Huvudtalet ovan räknar inte bort ${T.enhet.bf}.`);
 }
 

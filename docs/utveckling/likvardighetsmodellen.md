@@ -69,8 +69,7 @@ Valen heter efter lydelsen, inte efter en avsändare (ADR-72): namnen och texter
 - **Övriga** är blandade. `konsklass` ger `'kvinnodominerad'`, `'mansdominerad'`, `'blandad'`, eller `''` när
   andelen är okänd; `arKvinnodominerad` ger `false` för en okänd andel.
 
-**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_STANDARD`; beslut 2026-10-19, källan i `lagrum.md`). Konstanten `KV_DOM_STAT` (60) står kvar i modulen
-och är bara standardvärdet i `klassificeraStatistik` när den anropas utan gräns.
+**Gränsen** är kvinnotröskeln, standard 60 % (`KVINNO_TROSKEL_STANDARD`; beslut 2026-10-19, källan i `lagrum.md`).
 
 **Valet** görs i Likvärdigt arbetes inställningar och gäller hela verktyget: kvinnotröskeln
 (`state.likvardighet.kvinnoTrosholdPct`) och definitionen (`state.likvardighet.kvDomDefinition`, standard `'do'`).

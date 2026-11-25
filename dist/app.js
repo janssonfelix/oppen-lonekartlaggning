@@ -3801,7 +3801,6 @@ function perBasSignal(skillnadPct, sakerEfterKorrigering, sakerRatt) {
 
 // src/lib/likvardighet.js
 var KVINNO_TROSKEL_STANDARD = 60;
-var KV_DOM_STAT = 60;
 function arKvinnodominerad(pct, definition = "do", grans = KVINNO_TROSKEL_STANDARD) {
   if (typeof pct !== "number" || !isFinite(pct)) return false;
   const p = Math.round(pct * 1e9) / 1e9;
@@ -3975,7 +3974,7 @@ function aggregeraOrgKvDom(data, kvinnoGrans = KVINNO_TROSKEL_STANDARD, K = 10, 
   orgIckeKv.sort((a, b) => b.n - a.n);
   return { orgKvDom, orgIckeKv, antalAidxBas: map.size, kvDomMedNLessThanK };
 }
-function klassificeraStatistik(statistik, nationellKlass, { definition = "do", grans = KV_DOM_STAT } = {}) {
+function klassificeraStatistik(statistik, nationellKlass, { definition = "do", grans = KVINNO_TROSKEL_STANDARD } = {}) {
   const statByBas = /* @__PURE__ */ new Map();
   const statIckeKv = [];
   const klass = { kvDom: 0, blandat: 0, ickeKv: 0, oklassificerad: 0 };
@@ -4470,7 +4469,7 @@ function kollinearitetsdiagnos(rader, basLista) {
     const hasMa = sub.some((d) => arMan(d));
     if (!hasKv || !hasMa) singleSexBas++;
   });
-  if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${STANDARDTERMER.niva.fl} är helt enkönade – könseffekten kan inte estimeras inom dessa.`);
+  if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${ordForAntal(singleSexBas, STANDARDTERMER.niva)} har bara ett kön – könseffekten kan inte estimeras inom ${singleSexBas === 1 ? "det" : "dessa"}.`);
   if (basLista.length < 2) issues.push(`Endast <strong>${basLista.length}</strong> ${ordForAntal(basLista.length, STANDARDTERMER.niva)} i urvalet – ingen variation att estimera BAS-effekten med.`);
   if (rader.length < 50) issues.push(`Litet urval (n=${rader.length}) – kan ge instabila estimat.`);
   return issues;
@@ -7226,10 +7225,9 @@ var KV_DEFINITIONER = Object.freeze({
   do: Object.freeze({ namn: "Mer än {grans} %", text: "mer än {grans} % kvinnor" }),
   scb: Object.freeze({ namn: "{grans} % eller mer", text: "{grans} % kvinnor eller mer" })
 });
-var KV_GRANS_STANDARD = 60;
 var KLASS_KV = "Kvinnodominerad", KLASS_MA = "Mansdominerad", KLASS_BLANDAD = "Könsblandad";
 var INGA_HIERARKISKA_PAR = "Inga fall där ett arbete med lägre krav, som inte är kvinnodominerat, har högre lön än ett kvinnodominerat arbete med högre krav.";
-function kvDefinitionNamn(definition, grans = KV_GRANS_STANDARD) {
+function kvDefinitionNamn(definition, grans = KVINNO_TROSKEL_STANDARD) {
   return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).namn.replace("{grans}", String(grans));
 }
 function klassNamn() {
@@ -7238,10 +7236,10 @@ function klassNamn() {
 function ingaParText() {
   return INGA_HIERARKISKA_PAR;
 }
-function kvDefinitionText(definition, grans = KV_GRANS_STANDARD) {
+function kvDefinitionText(definition, grans = KVINNO_TROSKEL_STANDARD) {
   return (KV_DEFINITIONER[definition] || KV_DEFINITIONER.do).text.replace("{grans}", String(grans));
 }
-function dominans(andelKv, definition = "do", grans = KV_GRANS_STANDARD) {
+function dominans(andelKv, definition = "do", grans = KVINNO_TROSKEL_STANDARD) {
   const k = konsklass(andelKv, definition, grans);
   return k === "kvinnodominerad" ? KLASS_KV : k === "mansdominerad" ? KLASS_MA : k === "blandad" ? KLASS_BLANDAD : "";
 }
@@ -7305,7 +7303,7 @@ function likaArbeteTabell(lika) {
   }));
   return { rader, utelamnade: [...lika && lika.utelamnade || []], ejJamforbara: (lika && lika.ejJamforbara || []).length };
 }
-function likvardigtTabell(rader, { k = 10, golv = 5, definition = "do", grans = KV_GRANS_STANDARD, jamforelse = "alla", nationell = null } = {}) {
+function likvardigtTabell(rader, { k = 10, golv = 5, definition = "do", grans = KVINNO_TROSKEL_STANDARD, jamforelse = "alla", nationell = null } = {}) {
   const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
   const ut = grupper.map((g) => {
     const andelKv = g.nKv / g.n * 100;
@@ -7355,7 +7353,7 @@ function likvardigtTabell(rader, { k = 10, golv = 5, definition = "do", grans = 
   }
   return { rader: ut, sma, sammanfattning, definition, grans, jamforelse };
 }
-function hierarkiskaPar(rader, { k = 10, definition = "do", grans = KV_GRANS_STANDARD, jamforelse = "alla" } = {}) {
+function hierarkiskaPar(rader, { k = 10, definition = "do", grans = KVINNO_TROSKEL_STANDARD, jamforelse = "alla" } = {}) {
   const grupper = grupperaAidBas(rader).filter((g) => g.n >= k).map((g) => ({ aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.n, median: median(g.loner), klass: dominans(g.nKv / g.n * 100, definition, grans) }));
   const rang = basRangordning(grupper.map((g) => g.bas));
   const par = [];
@@ -15170,7 +15168,7 @@ function _ansvarRadText(fore, efter) {
 function _yrkesStegText(s, modell) {
   const sv = (v) => v.toFixed(1).replace(".", ",");
   const tkn = (v) => `${v >= 0 ? "+" : "−"}${sv(Math.abs(v))} %`;
-  return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma ${T.enhet.en}${modell.alder ? ", " + T.niva.en + " och ålder" : " och " + T.niva.en} (fasta effekter för ${T.enhet.en} inom BAS). Bygger på ${s.nPersoner} personer i ${s.nGrupperBada} grupper (samma ${T.enhet.en} i samma ${T.niva.en}) där båda könen finns` + (s.nEnkonade ? `; ${s.nEnkonade} enkönade grupper bidrar inte` : "") + (modell.yrkesgrupp ? `. ${stor(T.enhet.en)} inom BAS är vald i förklaringsmodellen, så det här är huvudtalet.` : `. Huvudtalet ovan räknar inte bort ${T.enhet.bf}.`);
+  return `<strong>${tkn(s.gapPct)}</strong> är löneskillnaden mellan kvinnor och män med samma ${T.enhet.en}${modell.alder ? ", " + T.niva.en + " och ålder" : " och " + T.niva.en} (fasta effekter för ${T.enhet.en} inom BAS). Bygger på ${s.nPersoner} ${personOrd(s.nPersoner)} i ${s.nGrupperBada} ${s.nGrupperBada === 1 ? "grupp" : "grupper"} (samma ${T.enhet.en} i samma ${T.niva.en}) där båda könen finns` + (s.nEnkonade ? `; ${s.nEnkonade} ${s.nEnkonade === 1 ? "enkönad grupp bidrar" : "enkönade grupper bidrar"} inte` : "") + (modell.yrkesgrupp ? `. ${stor(T.enhet.en)} inom BAS är vald i förklaringsmodellen, så det här är huvudtalet.` : `. Huvudtalet ovan räknar inte bort ${T.enhet.bf}.`);
 }
 function _bhTextFor(n) {
   if (!(n > 0)) return "";
