@@ -6104,6 +6104,10 @@ function periodkostnad(kronorPerManad, kostnadsval) {
   const { months, poFaktor } = kostnadsfaktor(kostnadsval);
   return kronorPerManad * months * poFaktor;
 }
+function periodOrd(kostnadsval) {
+  const { months } = kostnadsfaktor(kostnadsval);
+  return months === 12 ? "år" : `${months} mån`;
+}
 function kostnadPerAr(kronorPerManad, antal, kostnadsval) {
   return periodkostnad(Math.abs(kronorPerManad), kostnadsval) * antal;
 }
@@ -6155,7 +6159,8 @@ function arsbeloppMening(g, kostnadsval, kr2) {
   if (diff < 100) return null;
   const { months, poPct: po } = kostnadsfaktor(kostnadsval);
   const belopp = Math.round(kostnadPerAr(diff, g.nKv, kostnadsval) / 1e3) * 1e3;
-  return `Räkneexempel: kvinnornas medianlön ligger ${kr2(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar det omkring ${kr2(belopp)} per år (${months} månader, PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.`;
+  const period = months === 12 ? "per år (12 månader, " : `för ${months} månader (`;
+  return `Räkneexempel: kvinnornas medianlön ligger ${kr2(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar det omkring ${kr2(belopp)} ${period}PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.`;
 }
 function motiveringsgrunder(post, { kInstalld: kInstalld2, kTroskel: kTroskel2, mdePct, naraGrans }) {
   const out = [];
@@ -11242,10 +11247,10 @@ function ritaPrioritering() {
       newTr.classList.add("suggest-row");
       const colCount = tr.children.length;
       if (suggestions.length === 0) {
-        newTr.innerHTML = `<td colspan="${colCount}" class="bak-yta pad-8-16"><em class="f-dampad">Inga regelbaserade förslag matchar denna grupp. Använd kommentarsfältet för fri motivering.</em></td>`;
+        newTr.innerHTML = `<td colspan="${colCount}" class="bak-yta pad-8-16"><em class="f-dampad">Inga regelbaserade förslag matchar denna grupp. Dokumentera bedömningen i Handlingsplan.</em></td>`;
       } else {
         const items2 = suggestions.map((s) => `<li class="ms-${s.type}">${s.text}</li>`).join("");
-        newTr.innerHTML = `<td colspan="${colCount}"><div class="motivation-suggestions"><strong>${ikon("lampa")} Hypoteser att granska för ${esc(item.yrke)} / BAS ${esc(item.bas)}:</strong><ul>${items2}</ul><p class="text-dampad-xs kursiv marg-t-6">Förslagen är regelbaserade frågeställningar — inte färdiga motiveringar. Verifiera mot data och dokumentera i kommentarsfältet ovan.</p></div></td>`;
+        newTr.innerHTML = `<td colspan="${colCount}"><div class="motivation-suggestions"><strong>${ikon("lampa")} Hypoteser att granska för ${esc(item.yrke)} / BAS ${esc(item.bas)}:</strong><ul>${items2}</ul><p class="text-dampad-xs kursiv marg-t-6">Förslagen är regelbaserade frågeställningar — inte färdiga motiveringar. Verifiera mot data och dokumentera bedömningen i Handlingsplan.</p></div></td>`;
       }
       tr.parentNode.insertBefore(newTr, tr.nextSibling);
       tillampaFlerKolumner("prio-table");
@@ -11339,12 +11344,12 @@ function _kostnadAndrad() {
 var PRIO_KOSTNAD_MAX = 15;
 function _prioKostnadNot({ ovriga, ovrigaSumma: summa, total: totalt }) {
   if (!ovriga || !(totalt > 0)) return "";
-  return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${ovriga} grupper står tillsammans för ${talformat(summa, "kr")} per år (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
+  return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${ovriga} grupper står tillsammans för ${talformat(summa, "kr")} per ${periodOrd(state.costSettings)} (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
 }
 function _prioKostnadFigur(allaVisade, allCumPct) {
   const visade = allaVisade.slice(0, PRIO_KOSTNAD_MAX), cumPct = allCumPct.slice(0, PRIO_KOSTNAD_MAX);
   const namn = (i, n) => `#${n + 1} ${_rfKorta(String(i.yrke), 26)} · BAS ${i.bas}`;
-  const y = visade.map(namn), n80 = cumPct.findIndex((p) => p >= 80);
+  const y = visade.map(namn), n80 = cumPct.findIndex((p) => p >= 80), per = periodOrd(state.costSettings);
   const inom = (n) => n80 < 0 || n <= n80;
   const lager = (serie, farg, opacitet, valj) => ({
     marke: "stapel",
@@ -11364,13 +11369,13 @@ function _prioKostnadFigur(allaVisade, allCumPct) {
       etikett: `${_formateraKostnad(i.annualGapTotal)} · ${svPct(cumPct[n], 0)}`,
       markering: markeringFor(i.bas, i.yrke)
     })),
-    tips: (d) => [[`${d.yrke} · BAS ${d.bas}`], ["Kostnad", `${talformat(d.x, "kr")}/år`], ["Kumulativ andel", talformat(d.kum, "pct")]]
+    tips: (d) => [[`${d.yrke} · BAS ${d.bas}`], ["Kostnad", `${talformat(d.x, "kr")}/${per}`], ["Kumulativ andel", talformat(d.kum, "pct")]]
   });
   return {
-    beskrivning: "Årskostnad per grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.",
+    beskrivning: `Kostnaden per ${per} och grupp, störst först, med den kumulativa andelen av totalkostnaden som text. Siffrorna finns i prioriteringstabellen nedan.`,
     urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal],
     y: { skala: "band", ordning: y, etikettMax: 40 },
-    x: { skala: "linjar", titel: "Årskostnad (kr) · procenttalet är kumulativ andel", format: "kr" },
+    x: { skala: "linjar", titel: `Kostnad per ${per} (kr) · procenttalet är kumulativ andel`, format: "kr" },
     hojd: Math.max(170, 90 + visade.length * 28),
     lager: [lager("Når tillsammans 80 % av kostnaden", PALETT.serie[0], 1, inom), lager("Övriga", PALETT.serie[0], 0.4, (n) => !inom(n))].filter((l) => l.data.length)
   };
@@ -11383,7 +11388,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
   const kr2 = (v) => talformat(v, "kr");
   const pm = (v, dec) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(dec).replace(".", ",")}`;
   const kostnad = (i) => Math.max(i.annualGapTotal, i.annualOverTotal);
-  const storst = Math.max(1, ...items.map(kostnad));
+  const storst = Math.max(1, ...items.map(kostnad)), per = periodOrd(state.costSettings);
   const tips = (d) => [
     [`#${d.rang} ${d.yrke}`],
     [`BAS ${d.bas}`, `n = ${d.n} (Kv: ${d.kvN}, Mä: ${d.maN})`],
@@ -11391,7 +11396,7 @@ function _prioMatrisFigur(items, etikettlage, refLabel, cfg) {
     [`Referens (${d.refKalla})`, kr2(d.refMedian)],
     ["Avvikelse", `${pm(d.x, 2)} % (${pm(d.diffKr, 0).slice(0, 1)}${kr2(Math.abs(d.diffKr))}/mån)`],
     ...d.gapPct != null ? [["Skillnad kvinnor–män", `${pm(d.gapPct, 1)} %`]] : [],
-    ...d.atgard > 0 ? [["Kostnad att nå referensen/år", kr2(d.atgard)]] : d.over > 0 ? [["Överlönekostnad/år", kr2(d.over)]] : [],
+    ...d.atgard > 0 ? [[`Kostnad att nå referensen/${per}`, kr2(d.atgard)]] : d.over > 0 ? [[`Överlönekostnad/${per}`, kr2(d.over)]] : [],
     ["Prioriteringsindex", `${svTal(d.index, 0)}/100`]
   ];
   const lager = Object.keys(PRIO_STATUS_INFO).map((status) => ({
@@ -18129,6 +18134,8 @@ function ritaHandlingsplan() {
   });
   const tbody = document.getElementById("handlingsplan-tbody");
   if (!tbody) return;
+  const period = document.getElementById("hp-kostnad-period");
+  if (period) period.textContent = `(kr/${periodOrd(state.costSettings)})`;
   const seed = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
   const fmtKr = (n) => n ? svKr(n) : "";
   const lista = (id, nyckel, falt, val, alt, etikett2) => `<select id="${id}" class="form-select hp-falt" data-hp-nyckel="${esc(nyckel)}" data-hp-falt="${falt}" aria-label="${esc(etikett2)}">` + alt.map(([v, l]) => `<option value="${esc(v)}"${v === val ? " selected" : ""}>${esc(l)}</option>`).join("") + "</select>";
@@ -18208,7 +18215,7 @@ function _exportHandlingsplanExport() {
     "Antal berörda",
     "Underlag",
     "Sakliga skäl prövade?",
-    "Beräknad kostnad (kr/år, inkl. PO)",
+    `Beräknad kostnad (kr/${periodOrd(state.costSettings)}, inkl. PO)`,
     "Kostnaden avser",
     "Ansvarig",
     "Tidsplan (senast inom tre år)",
@@ -20291,7 +20298,7 @@ function _gdRitaInnehall(d) {
   const benchInner = d.bench && d.bench.median > 0 ? `<p>Extern median: <strong>${kr2(d.bench.median)}</strong> · organisationen: <strong>${kr2(d.median)}</strong>
            (${svPct((d.median / d.bench.median - 1) * 100, 1)})</p>` : missing("Ingen matchande rad i jämförelsestatistiken.");
   const prioInner = d.prio ? `<p>Status: <strong>${esc(d.prio.status || "–")}</strong> · avvikelse mot referens (${esc(d.prio.refSource || "–")}): <strong>${pct(d.prio.diffPct)}</strong></p>
-           <p>Kostnad att lyfta till referensens median: <strong>${kr2(d.prio.annualGapTotal)}/år</strong> (${kr2(d.prio.costPerPerson)}/person).</p>` : missing("Gruppen finns inte i prioriteringslistan (saknar referens eller ligger över den).");
+           <p>Kostnad att lyfta till referensens median: <strong>${kr2(d.prio.annualGapTotal)}/${periodOrd(state.costSettings)}</strong> (${kr2(d.prio.costPerPerson)}/person).</p>` : missing("Gruppen finns inte i prioriteringslistan (saknar referens eller ligger över den).");
   const hypInner = d.suggestions.length ? `<ul class="gd-list">${d.suggestions.map((s) => `<li class="gd-hyp gd-hyp-${esc(s.type || "info")}">${s.text}</li>`).join("")}</ul>` : missing("Inga regelbaserade hypoteser utlöstes för denna grupp.");
   return `
         <div class="gd-head">
@@ -20323,7 +20330,7 @@ function gruppdossierSomText(d, { stampel = true } = {}) {
   if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
   if (d.adjusted && d.adjusted.status === "ok") L.push(`Skillnad när åldern räknats bort (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);
   if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr2(d.pol.p10)}–${kr2(d.pol.p90)} (${d.polLevel})` + (d.band && d.band.position != null ? ` · position ${svPct(d.band.position * 100, 0)}` : ""));
-  if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr2(d.prio.annualGapTotal)} per år`);
+  if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr2(d.prio.annualGapTotal)} per ${periodOrd(state.costSettings)}`);
   const somText = (h) => htmlTillText(h);
   if (d.suggestions.length) {
     L.push("Frågor att undersöka:");
@@ -20393,7 +20400,7 @@ function rmCell(v, typ) {
   if (typ === "ar") return `${svTal(v, 0)} år`;
   if (typ === "tal2") return svTal(v, 2);
   if (typ === "kr") return svKr(v);
-  if (typ === "krAr") return `${svTal(v, 0)} kr/år`;
+  if (typ === "krAr") return `${svTal(v, 0)} kr/${periodOrd(state.costSettings)}`;
   if (typ === "pct0") return svPct(v, 0);
   if (typ === "pct1") return svPct(v, 1);
   if (typ === "pct2") return svPct(v, 2);
@@ -29185,7 +29192,7 @@ function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
           kategori: "Löneläge mot referens",
           prioritet: "hög",
           titel: `${i.yrke} (BAS ${i.bas}) — ${_agPct(i.diffPct)} % under ${i.refSource}`,
-          detalj: `n=${i.n}, kostnad att nå referensen: ${fmt.format(Math.round(i.annualGapTotal))} kr/år. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
+          detalj: `n=${i.n}, kostnad att nå referensen: ${fmt.format(Math.round(i.annualGapTotal))} kr/${periodOrd(state.costSettings)}. Väg skillnaden mot sakliga skäl och dokumentera din bedömning.`,
           tab: "prioritering",
           källa: "Prioriteringsanalys"
         });

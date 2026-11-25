@@ -32,6 +32,15 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(not).toContain(`${antal(UNDERLAG[0])} från Prioritering, under referensen, och ${antal(UNDERLAG[1])} kandidatpar från Likvärdigt arbete`);
         expect(w.document.querySelector('.handlingsplan-not').textContent).toMatch(/följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte/);
     });
+    it('kostnadskolumnen säger beräkningsperioden: kr/år vid tolv månader, annars antalet månader', () => {
+        const w = fonster();
+        w.__ritaFlik('handlingsplan');
+        const rubrik = () => w.document.getElementById('hp-kostnad-period').textContent;
+        expect(rubrik()).toBe('(kr/år)');
+        w.__state.costSettings.months = 6;
+        w.__ritaFlik('handlingsplan');
+        expect(rubrik()).toBe('(kr/6 mån)');
+    });
     it('fälten har etiketter med yrke och kolumn, lagras i state och står kvar efter flikbyte', () => {
         const w = fonster();
         w.__ritaFlik('handlingsplan');

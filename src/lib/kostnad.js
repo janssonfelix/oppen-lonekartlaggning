@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Öppen lönekartläggning — Kostnad per år (ren modell)
+ * Öppen lönekartläggning — Kostnad för beräkningsperioden (ren modell)
  *
  * Kostnadsformeln på ett ställe: ett månadsbelopp × beräkningsperiodens månader × (1 + PO-påslaget). Prioriteringen,
  * löneöversynen, handlingsplanen och beräkningsbeviset räknar med den.
@@ -45,9 +45,19 @@ export function periodkostnad(kronorPerManad, kostnadsval) {
 }
 
 /**
- * Ett månadsbelopp per person som belopp per år för `antal` personer, med beräkningsperiod och PO-påslag ur
- * kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Prioriteringens åtgärdskostnad och
- * gruppdossierns räkneexempel räknar med samma formel.
+ * Perioden som kostnaden gäller, som ord efter «kr/» och «per»: «år» när beräkningsperioden är tolv månader, annars
+ * antalet månader («6 mån»). Kostnaderna räknas för beräkningsperioden, inte för ett år.
+ * @param {{months?: number}|null|undefined} kostnadsval
+ */
+export function periodOrd(kostnadsval) {
+    const { months } = kostnadsfaktor(kostnadsval);
+    return months === 12 ? 'år' : `${months} mån`;
+}
+
+/**
+ * Ett månadsbelopp per person som kostnad för `antal` personer under beräkningsperioden, med perioden och PO-påslaget
+ * ur kostnadsinställningarna: |belopp| × månader × (1 + PO) × antal. Trots namnet är det ett år bara när perioden är
+ * tolv månader (periodOrd). Prioriteringens åtgärdskostnad och gruppdossierns räkneexempel räknar med samma formel.
  * @param {number} kronorPerManad
  * @param {number} antal
  * @param {{months?: number, poPct?: number}|null|undefined} kostnadsval

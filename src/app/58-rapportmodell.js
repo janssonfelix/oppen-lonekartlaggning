@@ -9,7 +9,7 @@
 // Delar: { typ: 'stycke', text, stil? } (stil: dampad | not | fet) · { typ: 'fyllIn', text } · { typ: 'rubrik', niva, text } ·
 //        { typ: 'tabell', kolumner: [{ rubrik, typ }], rader: [[värde]], nyckel?, caption? } · { typ: 'diagram', id, flik, rubrik } ·
 // En modelltabell, där alla rader bygger på samma urval, bär antalet i `caption` (antalText: "n = 260; …"), som skärmen.
-// Kolumntyper: text, antal, ar (ålder i år), kr, krAr, pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
+// Kolumntyper: text, antal, ar (ålder i år), kr, krAr (kr för beräkningsperioden, periodOrd), pct0, pct1, pct2, tecken2 (procent med tecken), andelAvMan, direktiv, fyllIn.
 // Ett värde kan också vara { text } (färdig text, t.ex. en förklaring i stället för ett tal) eller null (streck).
 //
 // Dataskydd: tröskeln tillämpas när modellen byggs — i vymodellen (src/lib/vymodell-rapport.js, ADR-99), med samma
@@ -18,6 +18,7 @@
 // ====================================================================
 import { utanTaggar as _utanTaggar } from '../lib/htmltext.js';
 import { matchningEtikett } from '../lib/jamforelse.js';
+import { periodOrd } from '../lib/kostnad.js';
 import { personOrd } from '../lib/namn.js';
 import { perBasTabeller } from '../lib/perbas.js';
 import { bortvaltNotering, gruppMedBas, skalSammanstallningNot } from '../lib/rapportunderlag.js';
@@ -72,7 +73,7 @@ function rmCell(v, typ) {
     if (typ === 'ar') return `${svTal(v, 0)} år`;
     if (typ === 'tal2') return svTal(v, 2);
     if (typ === 'kr') return svKr(v);
-    if (typ === 'krAr') return `${svTal(v, 0)}\u00a0kr/år`;
+    if (typ === 'krAr') return `${svTal(v, 0)}\u00a0kr/${periodOrd(state.costSettings)}`;
     if (typ === 'pct0') return svPct(v, 0);
     if (typ === 'pct1') return svPct(v, 1);
     if (typ === 'pct2') return svPct(v, 2);

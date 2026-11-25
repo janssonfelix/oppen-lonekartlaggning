@@ -9,7 +9,7 @@
  * tveksamt ut är låsta som de är idag och märkta TVEKSAMT; de ska inte tolkas som avsedd specifikation.
  */
 import { describe, it, expect } from 'vitest';
-import { kostnadsfaktor, periodkostnad, kostnadPerAr } from '../src/lib/kostnad.js';
+import { kostnadsfaktor, periodkostnad, kostnadPerAr, periodOrd } from '../src/lib/kostnad.js';
 import { arsbeloppMening } from '../src/lib/prioritering.js';
 
 const KOST = { months: 12, poPct: 39.15 };
@@ -120,5 +120,19 @@ describe('[B7.11] arsbeloppMening: räkneexemplet om könsskillnaden', () => {
     it('nKv 0 ger null, och g null ger null', () => {
         expect(arsbeloppMening({ medKv: 30000, medMa: 36000, nKv: 0 }, KOST, kr)).toBeNull();
         expect(arsbeloppMening(null, KOST, kr)).toBeNull();
+    });
+});
+
+describe('periodOrd: kostnaden gäller beräkningsperioden, inte ett år', () => {
+    it('«år» vid tolv månader och utan inställning, annars antalet månader', () => {
+        expect(periodOrd({ months: 12, poPct: 40 })).toBe('år');
+        expect(periodOrd(null)).toBe('år');
+        expect(periodOrd({ months: 6 })).toBe('6 mån');
+        expect(periodOrd({ months: 24 })).toBe('24 mån');
+    });
+    it('räkneexemplet säger perioden när den inte är tolv månader', () => {
+        const text = arsbeloppMening({ medKv: 30000, medMa: 31000, nKv: 10 }, { months: 6, poPct: 0 }, kr);
+        expect(text).toContain('omkring 60000 kr för 6 månader (PO-påslag');
+        expect(text).not.toContain('per år');
     });
 });
