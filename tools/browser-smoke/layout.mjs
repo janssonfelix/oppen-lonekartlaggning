@@ -117,7 +117,7 @@ export async function utseende() {
         }
         await s.close();
         // Sökfältets platshållare ryms i fältet på de bredder verktyget är gjort för. Mellan 1 101 och 1 365 punkter, med
-        // den utfällda sidomenyn, går rubriken och raden om lokal bearbetning före (F7 i punkt 26): där är sökfältet
+        // den utfällda sidomenyn, går rubriken och raden om lokal bearbetning före: där är sökfältet
         // minst 80 punkter brett, och att det inte ligger över rubriken prövas i avsnittet om sidhuvudet nedan.
         for (const bredd of [1100, 1280, 1440]) {
             await page.setViewportSize({ width: bredd, height: 900 });
@@ -259,7 +259,7 @@ export async function utseende() {
 
     console.log('\n── Sidhuvudet med den utfällda sidomenyn: inget överlapp, raden om lokal bearbetning hel ──');
     {
-        // F7 i punkt 26: med den utfällda sidomenyn låg sökfältet över slutet av rubriken och över «Vad lagras?». Ordningen
+        // Med den utfällda sidomenyn låg sökfältet över slutet av rubriken och över «Vad lagras?». Ordningen
         // när kraven krockar: inget överlapp, «bearbetas lokalt» syns, sökfältets platshållare ryms.
         for (const bredd of [1101, 1280, 1365]) {
             await page.setViewportSize({ width: bredd, height: 900 });
@@ -295,7 +295,7 @@ export async function utseende() {
 
     console.log('\n── Att göra: märket står på en egen rad ──');
     {
-        // S7 i punkt 26: märket stod ibland på rubrikens rad och ibland ovanför, efter rubrikens längd.
+        // Märket stod ibland på rubrikens rad och ibland ovanför, efter rubrikens längd.
         await page.setViewportSize({ width: 1280, height: 900 });
         await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
         await page.waitForTimeout(200);

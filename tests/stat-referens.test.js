@@ -165,7 +165,7 @@ describe('[B3.5] kvantilregression (IRLS) mot exakt LP-lösning (≡ quantreg::r
             const forlust = y.reduce((s, yi, i) => {
                 const r = yi - X[i].reduce((a, v, j) => a + v * fit.beta[j], 0);
                 return s + (r >= 0 ? +tau * r : (+tau - 1) * r);
-            });
+            }, 0);
             expect(forlust).toBeGreaterThanOrEqual(ref.quantreg[tau].loss - 1e-9);
             expect(forlust / ref.quantreg[tau].loss - 1).toBeLessThan(1e-3);
         });
@@ -202,7 +202,7 @@ describe('kvantilregressionen på indikatormodellen mot exakt LP-lösning (ADR-6
                 const forlust = y0.reduce((s, yi, i) => {
                     const r = yi - Xd[i].reduce((a, v, j) => a + v * fit.beta[j], 0);
                     return s + (r >= 0 ? +tau * r : (+tau - 1) * r);
-                });
+                }, 0);
                 expect(forlust).toBeGreaterThanOrEqual(refKv[namn][tau].loss - 1e-9);
                 expect(forlust / refKv[namn][tau].loss - 1).toBeLessThan(1e-3);
             });

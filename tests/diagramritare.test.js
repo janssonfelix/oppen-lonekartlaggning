@@ -382,7 +382,7 @@ describe('text innanför bilden och utan överlapp', () => {
         }
     });
     it('tal på axlarna kortas aldrig med …; ryms inte ett tal hoppas det över', () => {
-        const svg = rita({ beskrivning: 'b', x: { skala: 'linjar', format: 'kr' }, y: { skala: 'linjar', format: 'kr' }, lager: [{ marke: 'punkt', data: [{ x: 0, y: 0 }, { x: 2.5e9, y: 2.5e9 }] }] });
+        const svg = rita({ beskrivning: 'b', x: { skala: 'linjar', format: 'kr' }, y: { skala: 'linjar', format: 'kr' }, lager: [{ marke: 'punkt', data: [{ x: 0, y: 0 }, { x: 2.5e9, y: 2.5e9 }] }] }, 200);
         for (const t of alla(svg, '[data-axel]')) expect(texten(t)).not.toContain('…');
     });
     it('logaritmisk axel 10..1000 på 240 px: etiketterna ligger minst en textrad isär', () => {
@@ -1142,7 +1142,7 @@ describe('ritaren: referenser, paneler och y2', () => {
             lager: [
                 { marke: 'ruta', serie: 'Median', panel: 'Kvinna', data: [{ x: 'a', y: 'r', varde: 0 }] },
                 { marke: 'ruta', serie: 'Median', panel: 'Man', data: [{ x: 'a', y: 'r', varde: 1 }] },
-            ] });
+            ] }, 700);
         const r = alla(svg, 'rect[data-marke="ruta"]');
         expect(r).toHaveLength(2);
         expect(r[0].parentNode).not.toBe(r[1].parentNode);
@@ -1376,7 +1376,7 @@ describe('text på punkter och etikett på referenslinjer', () => {
 describe('mönster på staplar och stapel på avkortad axel', () => {
     it('monster: linjer och prickar ritas som geometri i en nästlad svg, utan pattern och id', () => {
         const lager = m => ({ marke: 'stapel', serie: m, farg: '#dc2626', lage: 'overlagrad', monster: m, data: [{ x: m, y: 5 }] });
-        const svg = rita({ beskrivning: 'M', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [lager('linjer'), lager('prickar')] });
+        const svg = rita({ beskrivning: 'M', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [lager('linjer'), lager('prickar')] }, 640);
         const panel = alla(svg, 'svg[data-del="panel"] svg[data-marke="monster"]');
         expect(panel).toHaveLength(2);
         expect(panel[0].querySelectorAll('line').length).toBeGreaterThan(0);
@@ -1407,7 +1407,7 @@ describe('mönster på staplar och stapel på avkortad axel', () => {
     });
     it('punktens symbol — cirkel, romb, kvadrat — ritas också i förklaringen, så att formen och inte bara färgen skiljer serierna', () => {
         const lager = (symbol, farg) => ({ marke: 'punkt', symbol, serie: symbol, farg, data: [{ x: 1, y: 1 }] });
-        const svg = rita({ beskrivning: 'S', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [lager('cirkel', '#0f766e'), lager('romb', '#b91c1c'), lager('kvadrat', '#d97706')] });
+        const svg = rita({ beskrivning: 'S', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [lager('cirkel', '#0f766e'), lager('romb', '#b91c1c'), lager('kvadrat', '#d97706')] }, 640);
         expect(alla(svg, 'svg[data-del="panel"] [data-marke="punkt"]').map(e => e.tagName.toLowerCase())).toEqual(['circle', 'path', 'rect']);
         expect(alla(svg, '[data-del="forklaring"] [data-prov="punkt"]').map(e => e.tagName.toLowerCase())).toEqual(['circle', 'path', 'rect']);
     });
@@ -3673,7 +3673,7 @@ describe('etiketter som inte täcker varandra', () => {
         // höger når utanför panelen) skulle texten ligga på linjen och tätt intill "Lika lön".
         const svg = rita({ beskrivning: 'R', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 200] },
             referens: [{ y: 100, etikett: 'Lika lön' }],
-            lager: [{ marke: 'punkt', serie: 'S', storlek: 6, etikettLage: 'undvik', data: [{ x: 97, y: 99, etikett: 'Lärare grundskola' }] }] });
+            lager: [{ marke: 'punkt', serie: 'S', storlek: 6, etikettLage: 'undvik', data: [{ x: 97, y: 99, etikett: 'Lärare grundskola' }] }] }, 600);
         const q = ruta(svg.querySelector('text[data-marke="punktetikett"]')), et = ruta(svg.querySelector('text[data-marke="linjeetikett"]'));
         const ly = tal(svg.querySelector('line[data-marke="referenslinje"]'), 'y1');
         expect(tom(q, et)).toBe(false);
@@ -3706,7 +3706,7 @@ describe('etiketter som inte täcker varandra', () => {
         expect(q.x0).toBeGreaterThanOrEqual(tal(zon, 'x')); expect(q.x1).toBeLessThanOrEqual(tal(zon, 'x') + tal(zon, 'width'));
         expect(q.y0).toBeLessThan(40);                                    // i zonens överkant, inte längst ned
         // Utan punkten står rubriken mitt i zonen överst, som förut.
-        const utan = rita({ ...f, lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 10, y: 50 }] }] });
+        const utan = rita({ ...f, lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 10, y: 50 }] }] }, 700);
         const q2 = ruta(alla(utan, 'text[data-marke="zonetikett"]')[0]), zon2 = utan.querySelector('[data-marke="zon"]');
         expect((q2.x0 + q2.x1) / 2).toBeCloseTo(tal(zon2, 'x') + tal(zon2, 'width') / 2, 0);
     });
@@ -3718,7 +3718,7 @@ describe('etiketter som inte täcker varandra', () => {
     });
     it("en datapunkt med etikettLage 'under' har etiketten under punkten; utan har den den över", () => {
         const svg = rita({ beskrivning: 'U', legend: false, x: { skala: 'band', ordning: ['A', 'B'] }, y: { skala: 'linjar', doman: [0, 100] },
-            lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 'A', y: 50, etikett: 'under', etikettLage: 'under' }, { x: 'B', y: 50, etikett: 'över' }] }] });
+            lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 'A', y: 50, etikett: 'under', etikettLage: 'under' }, { x: 'B', y: 50, etikett: 'över' }] }] }, 600);
         const [u, o] = alla(svg, 'text[data-marke="punktetikett"]'), [cu, co] = alla(svg, 'circle[data-marke="punkt"]');
         expect(ruta(u).y0).toBeGreaterThan(tal(cu, 'cy') + tal(cu, 'r'));
         expect(ruta(o).y1).toBeLessThan(tal(co, 'cy') - tal(co, 'r'));

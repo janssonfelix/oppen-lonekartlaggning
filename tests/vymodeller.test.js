@@ -1008,7 +1008,7 @@ describe('[R2] Löneöversyns förslag följer den inställda tröskeln; egna ra
 describe('[R4] Löneöversynens scenarier: det råa gapet sparas och visas bara när båda könen når tröskeln', () => {
     it('ett scenario sparat vid en lägre tröskel visar inget rågap vid en högre, och Till kv-dom följer utfallets regel', () => {
         const d = underlag(), out = lo(1).out;
-        const sc = scenarioUr(d, out, { efter: -2 });
+        const sc = scenarioUr(d, out, { efter: -2 }, 1);
         expect(sc).toMatchObject({ nKv: 62, nMa: 53, summary: { oforklaratEfter: -2, rawGapEfter: out.rawGapEfter, equityCost: out.equityCost } });
         expect(sc.grupper.map(g => g.bas)).toEqual(['A', 'B', 'C', 'D', 'E']);
         expect(scenarioUr(d, out, { efter: -2 }, 70).summary.rawGapEfter).toBeNull();
