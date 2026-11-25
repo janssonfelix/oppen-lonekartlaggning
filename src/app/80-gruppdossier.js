@@ -22,16 +22,16 @@ import { gruppdossierGrupper, vymodellGruppdossier } from '../lib/vymodell-grupp
 import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
-import { _kSanktNot, _parUtelamnadeNot, kTroskel } from './06-k-troskel.js';
+import { _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel } from './06-k-troskel.js';
 import { _skrDel, skrForklaring, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { T } from './09-termer.js';
 import { gapStatusKI } from './10-diagramtema.js';
-import { hamtaData, policyFor, policyNivaEtikett, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaData, kopieraTextTillUrklipp, policyFor, policyNivaEtikett, referensKortnamn, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivITalcell } from './41-lika-arbete.js';
 import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
-import { _valdPrioReferens, raknaPrioritering, byggMotiveringsforslag } from './55-prioritering.js';
+import { _valdPrioReferens, raknaPrioritering, byggMotiveringsforslag, PRIO_STATUS_INFO } from './55-prioritering.js';
 import { _hpBedomningar, _hpBedomningHtml, _hpPassarGrupp } from './56-handlingsplan.js';
 import { basdossierKandidater, basdossierKnapp } from './81-basdossier.js';
 
@@ -145,6 +145,9 @@ export function ritaGruppdossier(preselectKey) {
     }
 }
 
+/** Prioriteringens läge med samma namn som i fliken Prioritering («Börja här»), inte statusens kod. */
+const _gdPrioLage = status => (PRIO_STATUS_INFO[status] && PRIO_STATUS_INFO[status].label) || status || '–';
+
 /** Gruppens namn med AID-koden en gång: yrkesetiketten börjar oftast redan med koden. */
 export function gruppNamn(g) {
     const aid = String(g.aid ?? ''), yrke = String(g.yrke ?? '').trim();
@@ -220,7 +223,7 @@ function _gdRitaInnehall(d) {
 
     // 7. Prioritering & kostnad
     const prioInner = d.prio
-        ? `<p>Status: <strong>${esc(d.prio.status || '–')}</strong> · avvikelse mot referens (${esc(d.prio.refSource || '–')}): <strong>${pct(d.prio.diffPct)}</strong></p>
+        ? `<p>Läge mot referensen: <strong>${esc(_gdPrioLage(d.prio.status))}</strong> · avvikelse mot referens (${esc(d.prio.refSource || '–')}): <strong>${pct(d.prio.diffPct)}</strong></p>
            <p>Kostnad att lyfta till referensens median: <strong>${kr(d.prio.annualGapTotal)}/${periodOrd(state.costSettings)}</strong> (${kr(d.prio.costPerPerson)}/person).</p>`
         : missing('Gruppen finns inte i prioriteringslistan (saknar referens eller ligger över den).');
 
@@ -270,7 +273,7 @@ export function gruppdossierSomText(d, { stampel = true } = {}) {
     if (d.adjusted && d.adjusted.status === 'ok') L.push(`Skillnad när åldern räknats bort (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);
     if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr(d.pol.p10)}–${kr(d.pol.p90)} (${d.polLevel})`
         + (d.band && d.band.position != null ? ` · position ${svPct((d.band.position * 100), 0)}` : ''));
-    if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per ${periodOrd(state.costSettings)}`);
+    if (d.prio) L.push(`Prioritering: ${_gdPrioLage(d.prio.status)} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr(d.prio.annualGapTotal)} per ${periodOrd(state.costSettings)}`);
     // Förslagen är HTML (fetstil m.m.); textkopian tar bort taggarna och avkodar tecknen
     // utan att tolka HTML.
     const somText = h => htmlTillText(h);
@@ -301,10 +304,8 @@ export function uppstartGruppdossier() {
         if (!/** @type {HTMLElement} */ (e.target).closest('#btn-dossier-copy')) return;
         const sel = document.getElementById('dossier-select');
         const d = sel ? medExportLage(() => byggGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
-        if (!d) return;
+        if (!d) { alert(`Gruppen har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
         const txt = medExportLage(() => gruppdossierSomText(d));
-        const done = () => { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Dossier kopierad.'); };
-        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {});
-        else done();
+        kopieraTextTillUrklipp(txt, () => { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Dossier kopierad.'); });
     });
 }

@@ -29,7 +29,7 @@ import { _konUtelamnatNot, _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel, s
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT } from './10-diagramtema.js';
-import { hamtaBasIntervall, hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, kopieraTextTillUrklipp, policyFor, referensKortnamn, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivITalcell, laLikaGrupper } from './41-lika-arbete.js';
@@ -350,10 +350,8 @@ export function uppstartBasdossier() {
         if (t.closest('#btn-basdossier-copy')) {
             const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById('basdossier-select'));
             const txt = sel ? basdossierText(sel.value) : null;   // texten lämnar verktyget (ADR-51)
-            if (!txt) { meddelaSkarmlasare(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
-            const klart = () => meddelaSkarmlasare('BAS-dossiern kopierad.');
-            if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {});
-            else klart();
+            if (!txt) { alert(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
+            kopieraTextTillUrklipp(txt, () => meddelaSkarmlasare('BAS-dossiern kopierad.'));
         }
     });
     document.addEventListener('keydown', e => {

@@ -370,21 +370,29 @@ function __kopieraTabellTillUrklippExport(tableId, btn) {
 // Rad-matris → TSV i urklipp (_tillTsv, src/lib/csv.js). Delas av tabellverktygen och diagrammens exportmeny.
 export function _kopieraMatrisTillUrklipp(rows, btn, { undantag = '' } = {}) {
     const tsv = tillTsv(_tsvMedStampel(rows, undantag));
-    const done = () => {
+    kopieraTextTillUrklipp(tsv, () => {
         if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Kopierat: ' + (rows.length - 1) + ' rader.');
         // Knappens innehåll (ikonen och texten) läggs tillbaka som det var.
         if (btn) { const o = btn.innerHTML; btn.textContent = 'Kopierad'; setTimeout(() => { btn.innerHTML = o; }, 1500); }
-    };
-    const fallback = () => {
+    }, 'Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.');
+}
+/**
+ * Text till urklipp, för tabellerna och dossiererna. Nekar webbläsaren Clipboard API, eller saknas det, kopieras texten
+ * via ett dolt textfält; går inte det heller visas `nekad`. `klart` körs bara när texten har kopierats.
+ * @param {string} text
+ * @param {() => void} klart
+ * @param {string} [nekad]
+ */
+export function kopieraTextTillUrklipp(text, klart, nekad = 'Webbläsaren tillät inte kopieringen.') {
+    const reserv = () => {
         try {
             const ta = document.createElement('textarea');
-            ta.value = tsv; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
-            document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
-        } catch (_e) { alert('Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.'); }
+            ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); klart();
+        } catch (_e) { alert(nekad); }
     };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(tsv).then(done).catch(fallback);
-    } else { fallback(); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(klart).catch(reserv);
+    else reserv();
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

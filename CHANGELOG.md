@@ -9,6 +9,11 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Gruppdossiern säger läget mot referensen med Prioriteringens ord.** Dossiern och dess textkopia skrev statusens
+  kod («akut», «bevaka», «ok»); nu står samma namn som i Prioritering («Börja här», «Nära referens, under»).
+- **Kopiera i dossiererna säger när inget kopierades.** En grupp eller ett intervall under tröskeln gav ingen
+  synlig reaktion, och när webbläsaren nekade urklipp sades ändå att dossiern var kopierad. Nu sägs varför inget
+  kopieras, och ett nekat urklipp går samma reservväg som tabellernas Kopiera.
 - **Kostnaderna säger beräkningsperioden.** Kostnaden att nå referensen räknas för beräkningsperioden under
   Inställningar, men Prioriteringens diagram, åtgärdslistan, gruppdossiern, handlingsplanen och Word-utkastet kallade
   den en kostnad per år också när perioden var till exempel sex månader. Nu står perioden («kr/6 mån»); med tolv
