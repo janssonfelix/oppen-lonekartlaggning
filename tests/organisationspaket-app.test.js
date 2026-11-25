@@ -507,8 +507,8 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
         expect(w.eval("orgNamn()")).toBe('Organisationen');
         expect(w.eval("orgNamn('org.')")).toBe('org.');
         expect(w.eval("jmfNamn('jämförelsestatistiken')")).toBe('jämförelsestatistiken');
-        expect(w.eval("sattOrgNamn('  Hallsbergs kommun ')").ok).toBe(true);
-        expect(w.eval("orgNamn('org.')")).toBe('Hallsbergs kommun');
+        expect(w.eval("sattOrgNamn('  Exempelås kommun ')").ok).toBe(true);
+        expect(w.eval("orgNamn('org.')")).toBe('Exempelås kommun');
         expect(w.eval("sattJmfNamn('SKR:s statistik')").ok).toBe(true);
         expect(w.__state.profile).toMatchObject({ benchmarkLabel: 'SKR:s statistik', benchmarkLabelGenitive: 'SKR:s statistiks', benchmarkShort: 'SKR:s statistik' });
         w.eval("sattOrgNamn(''); sattJmfNamn('')");
