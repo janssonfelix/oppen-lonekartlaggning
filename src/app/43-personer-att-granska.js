@@ -8,7 +8,7 @@ import { svKr } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { kTroskel, litetUnderlag, provaEnskiltText, statGolv } from './06-k-troskel.js';
+import { kTroskel, LITET_UNDERLAG, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { PALETT } from './10-diagramtema.js';
 import { markeraUtanExport } from './11-diagramexport.js';
@@ -106,14 +106,14 @@ function _pagAvvikelseTabell(rader, grans) {
     if (!t) return false;
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
     const kant = Math.min(100, Math.ceil(Math.max(10, ...rader.map(o => Math.max(o.under, o.over))) * 1.2 / 10) * 10);
-    const andel = (v, antal) => `${talformat(v, 'antal')} %${antal > 0 && antal < litetUnderlag() ? '<span class="pag-litet" title="Litet underlag">*</span>' : ''}`;
+    const andel = (v, antal) => `${talformat(v, 'antal')} %${antal > 0 && antal < LITET_UNDERLAG ? '<span class="pag-litet" title="Litet underlag">*</span>' : ''}`;
     /** @type {HTMLElement} */ (t.querySelector('thead')).innerHTML = `<tr><th scope="col">${stor(T.niva.en)}</th><th scope="col" class="ta-vanster">Kön</th><th scope="col" class="tal">Prövade</th>`
         + `<th scope="col" class="tal">Minst ${g} % under</th><th scope="col" class="la-oversikt-skala t-mitt" data-export-skip>under åt vänster · över åt höger</th><th scope="col" class="ta-vanster">Minst ${g} % över</th></tr>`;
     const tb = /** @type {HTMLElement} */ (t.querySelector('tbody'));
     tb.innerHTML = '';
     let fa = false;
     for (const o of rader) {
-        if ((o.nUnder > 0 && o.nUnder < litetUnderlag()) || (o.nOver > 0 && o.nOver < litetUnderlag())) fa = true;
+        if ((o.nUnder > 0 && o.nUnder < LITET_UNDERLAG) || (o.nOver > 0 && o.nOver < LITET_UNDERLAG)) fa = true;
         const tr = document.createElement('tr');
         tr._markering = markeringFor(o.bas);
         tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}</th><td class="ta-vanster">${esc(o.kon)}</td><td class="tal">${o.n}</td><td class="tal">${andel(o.under, o.nUnder)}</td>`
@@ -131,7 +131,7 @@ function _pagRitaAvvikelse(d, grans) {
     const fa = _pagAvvikelseTabell(rader, grans);
     const not = document.getElementById('pag-diagram-not');
     if (not) not.textContent = `Bara ${T.niva.fl} där ${kTroskel() > 1 ? `minst ${kTroskel()} kvinnor och ${kTroskel()} män` : 'både kvinnor och män'} har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.`
-        + (fa ? ` Andelar märkta med * gäller färre än ${litetUnderlag()} personer: ett litet underlag, som inte ska läsas som ett mönster.` : '');
+        + (fa ? ` Andelar märkta med * gäller färre än ${LITET_UNDERLAG} personer: ett litet underlag, som inte ska läsas som ett mönster.` : '');
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

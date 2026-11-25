@@ -328,7 +328,6 @@ describe('exporten', () => {
         });
         expect(sedda).toHaveLength(2);
         for (const s of sedda) {
-            expect('bortvalda' in s.val).toBe(false);
             expect('filter' in s.val).toBe(false);
             expect(String(s.val.fot || '')).not.toContain('Urval i diagrammet');
             const svg = w.figurTillSvg(s.figur, 1600, 900, s.val);

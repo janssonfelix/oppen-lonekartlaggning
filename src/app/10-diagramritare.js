@@ -67,15 +67,12 @@ function _rfSynligt(figurIn, val) {
     return { visa, dold, dolda, bortvalda, lagerAlla, synliga, paneler, antalP: Math.max(1, paneler.length), doms };
 }
 
-// Filtret som ska gälla: val.filter ({ kategori: Map<falt, Set>, intervall: Map<falt, {min, max}> }), eller det
-// äldre val.bortvalda (en mängd: de bortvalda värdena i figurens första kategoridimension). Annat ger inget filter.
-// Utan figur.urval har filtret ingen verkan (_figArBortvald).
+// Filtret som ska gälla: val.filter ({ kategori: Map<falt, Set>, intervall: Map<falt, {min, max}> }). Annat ger inget
+// filter. Utan figur.urval har filtret ingen verkan (arBortvald).
 /** @param {any} val @returns {any} */
 function _rfBortvalda(val) {
     const f = val && val.filter;
-    if (f && typeof f === 'object') return f;
-    const b = val && val.bortvalda;
-    return b && typeof b.has === 'function' ? b : null;
+    return f && typeof f === 'object' ? f : null;
 }
 
 // En panel: stödlinjer, märken (i en nästlad <svg> som klipper), stapeletiketter, axellinje, x-markeringar, titel.
@@ -166,9 +163,8 @@ function _rfRitaForklaring(svg, L, syn, px, H, notRader) {
  * Bygger SVG:n för en figur. Sätter inget i sidan och läser inget ur den.
  * @param {any} figurIn  figur enligt src/lib/figur.js (redan validerad); data-l/data-i pekar på den
  * @param {number} bredd    bildens bredd i pixlar
- * @param {{hojd?:number, visaSma?:boolean, dolda?:Set<string>, filter?:any, bortvalda?:Set<string>, bakgrund?:string, not?:string, rubrik?:string, fot?:string, radpanelBredvid?:boolean}} [val]
+ * @param {{hojd?:number, visaSma?:boolean, dolda?:Set<string>, filter?:any, bakgrund?:string, not?:string, rubrik?:string, fot?:string, radpanelBredvid?:boolean}} [val]
  *   filter: urvalet (figur.urval) vars punkter inte ritas — som små punkter utan visaSma; index oförändrade.
- *   bortvalda: det äldre formatet (bortvalda värden i första kategoridimensionen), om filter saknas.
  *   rubrik och fot (en rad var, avkortas) är till för exporten: en bild som klistras in i ett dokument säger själv vad den visar.
  * @returns {SVGSVGElement}
  */
@@ -1895,8 +1891,8 @@ function _rfBildmatt(bredd, hojd) {
  * @param {any} figur  ORIGINALFIGUREN enligt src/lib/figur.js — aldrig en förfiltrerad kopia
  * @param {number} bredd  bildens bredd i pixlar (annat än ett tal > 0: 1600)
  * @param {number} hojd   bildens höjd i pixlar (annat än ett tal > 0: bredd × 9/16)
- * @param {{visaSma?:boolean, dolda?:Set<string>, filter?:any, bortvalda?:Set<string>, rubrik?:string, fot?:string}} [val]  dolda = serier som dolts via
- *   förklaringen, filter = urvalet (figur.urval) vars punkter inte ritas, bortvalda = det äldre formatet av filtret
+ * @param {{visaSma?:boolean, dolda?:Set<string>, filter?:any, rubrik?:string, fot?:string}} [val]  dolda = serier som dolts via
+ *   förklaringen, filter = urvalet (figur.urval) vars punkter inte ritas
  * @returns {string}
  */
 function figurTillSvg(figur, bredd, hojd, val = {}) {
@@ -1906,10 +1902,9 @@ function figurTillSvg(figur, bredd, hojd, val = {}) {
     valideraFigur(figur, 'export');
     // Härledda lager räknas om för filtret, som på skärmen (exportmenyn). Utan filter (diagramTillBild) är figuren
     // oförändrad: lagrens egna data.
-    figur = harleddaLager(figur, o.filter && typeof o.filter === 'object' ? o.filter : o.bortvalda, { visaSma: !!o.visaSma }).figur;
+    figur = harleddaLager(figur, o.filter, { visaSma: !!o.visaSma }).figur;
     const bas = { hojd: logH, radpanelBredvid: true, visaSma: !!o.visaSma, dolda: o.dolda && typeof o.dolda.has === 'function' ? o.dolda : undefined,
-                  ...(o.filter && typeof o.filter === 'object' ? { filter: o.filter } : {}),
-                  ...(o.bortvalda && typeof o.bortvalda.has === 'function' ? { bortvalda: o.bortvalda } : {}), bakgrund: FARG.vit,
+                  ...(o.filter && typeof o.filter === 'object' ? { filter: o.filter } : {}), bakgrund: FARG.vit,
                   ...(typeof o.rubrik === 'string' && o.rubrik ? { rubrik: o.rubrik } : {}), ...(typeof o.fot === 'string' && o.fot ? { fot: o.fot } : {}) };
     const sankt = _kSanktNot();
     let svg = _rfByggSvg(figur, logB, { ...bas, not: sankt });

@@ -630,13 +630,14 @@ describe('urval', () => {
         expect(urvalEtikett(stapelfigur({ urval: { falt: 'bas', namn: 'BAS-intervall' } }), null, 'A')).toBe('A');
     });
     it('arBortvald: bara en punkt med fältet och ett bortvalt värde', () => {
-        const f = stapelfigur();
-        expect(arBortvald(f, new Set(['A']), { bas: 'A' })).toBe(true);
-        expect(arBortvald(f, new Set(['A']), { bas: 'B' })).toBe(false);
-        expect(arBortvald(f, new Set(['A']), { y: 3 })).toBe(false);
-        expect(arBortvald(stapelfigur({ urval: undefined }), new Set(['A']), { bas: 'A' })).toBe(false);
+        const f = stapelfigur(), a = { kategori: new Map([['bas', new Set(['A'])]]) };
+        expect(arBortvald(f, a, { bas: 'A' })).toBe(true);
+        expect(arBortvald(f, a, { bas: 'B' })).toBe(false);
+        expect(arBortvald(f, a, { y: 3 })).toBe(false);
+        expect(arBortvald(stapelfigur({ urval: undefined }), a, { bas: 'A' })).toBe(false);
         expect(arBortvald(f, undefined, { bas: 'A' })).toBe(false);
-        expect(arBortvald(f, new Set(['A']), null)).toBe(false);
+        expect(arBortvald(f, a, null)).toBe(false);
+        expect(arBortvald(f, new Set(['A']), { bas: 'A' })).toBe(false);     // en mängd är inget filter
     });
     // Diagramfilter v2: flera dimensioner, kategori och intervall.
     const ANTAL = { typ: 'intervall', falt: 'n', namn: 'Antal personer i gruppen', format: 'antal', etikett: '{v} personer i gruppen' };
@@ -700,12 +701,6 @@ describe('urval', () => {
         const synliga = f.lager[0].data.filter(d => !d.liten && !arBortvald(f, fi, d));
         expect(synliga).toEqual([{ x: 2, y: 2, bas: 'A', n: 10 }, { x: 6, y: 6 }]);
     });
-    it('arBortvald: en mängd (det äldre formatet) gäller den första kategoridimensionen', () => {
-        const f = tvaDim({ urval: [ANTAL, { typ: 'kategori', ...URVAL }, { typ: 'kategori', falt: 'kon', namn: 'Kön' }] });
-        expect(arBortvald(f, new Set(['A']), { bas: 'A', n: 1 })).toBe(true);
-        expect(arBortvald(f, new Set(['A']), { kon: 'A', n: 1 })).toBe(false);
-        expect(arBortvald(f, ['A'], { bas: 'A' })).toBe(false);          // en lista är ingen mängd och inget filter
-    });
     it('urvalIntervallText och urvalBeskrivning: samma text i noten och exportens fotrad', () => {
         expect(urvalIntervallText(ANTAL, { min: 10, max: 50 })).toBe('10–50');
         expect(urvalIntervallText(ANTAL, { min: 10, max: null })).toBe('minst 10');
@@ -720,8 +715,6 @@ describe('urval', () => {
         expect(urvalBeskrivning(f, null)).toEqual([]);
         // Utan mall: namnet och intervallet.
         expect(urvalBeskrivning(tvaDim({ urval: [{ ...ANTAL, etikett: undefined }] }), filter({}, { n: { max: 50 } }))).toEqual(['Antal personer i gruppen högst 50']);
-        // Det äldre formatet (en mängd) beskrivs som den första kategorin.
-        expect(urvalBeskrivning(stapelfigur(), new Set(['A', 'C']))).toEqual(['utan BAS C, BAS A']);
     });
 
     // ---- Diagramfilter v3: listor och härledda lager ----
@@ -760,8 +753,7 @@ describe('urval', () => {
         expect(urvalAktivt(filter({ bas: ['A'] }))).toBe(true);
         expect(urvalAktivt(filter({}, { n: { min: null, max: null } }))).toBe(false);
         expect(urvalAktivt(filter({}, { n: { min: 3 } }))).toBe(true);
-        expect(urvalAktivt(new Set())).toBe(false);
-        expect(urvalAktivt(new Set(['A']))).toBe(true);
+        expect(urvalAktivt(new Set(['A']))).toBe(false);     // en mängd är inget filter
     });
 
     // Två punktlager (Kvinna, Man) och en trend per kön som räknas ur punkterna: medelvärdet av y på två x.

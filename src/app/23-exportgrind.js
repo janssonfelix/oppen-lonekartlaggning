@@ -43,7 +43,6 @@ function _bytKLage(lage, { tur = false } = {}) {
     state._lifecycleCache = null;
 }
 const _ALLTID_EXPORT = new Set(['dokumentera', 'rapporttext', 'arbetet']);
-const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets kvalitet', 'Att göra', 'processöversikten', 'extremvärden', 'inläsningsrapporten', 'A/B-jämförelsen']);
 /**
  * Ritar skärmen tillbaka efter en export: Översikts delar och den öppna fliken, när grinden ritade dem i exportläget
  * (`ritade`: flikarna som ritades under exporten), utom de tre dokumentationsflikarna (_ALLTID_EXPORT), som alltid ritas i
@@ -54,9 +53,8 @@ const _OVERSIKT_STEG = new Set(['nyckeltal', 'kompliansöversikt', 'underlagets 
  */
 function _ritaOmEfterExport(ritade) {
     if (!state.data.length || typeof _omritningssteg !== 'function') return;
-    for (const [namn, fn] of _omritningssteg()) {
-        if (_ALLTID_EXPORT.has(namn) || namn === 'flikar som inte syns') continue;
-        const ska = namn === 'gruppdossiern' || (_OVERSIKT_STEG.has(namn) ? ritade.has('dashboard') : ritade.has(namn));
+    for (const [namn, flik, fn] of _omritningssteg()) {
+        const ska = namn === 'gruppdossiern' || (!!flik && !_ALLTID_EXPORT.has(flik) && ritade.has(flik));
         if (ska) _omritningForsok(namn, fn);
     }
     // En kopia i Alla diagram som exporterades bär källans figur ur exportläget: samlingen ritas om på skärmen.

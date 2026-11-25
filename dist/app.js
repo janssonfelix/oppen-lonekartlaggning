@@ -481,11 +481,7 @@ function kvantilpunkter(varden, antalMax = 20) {
   const v = (varden || []).filter((x) => typeof x === "number" && isFinite(x)).sort((a, b) => a - b);
   const antal = Math.min(antalMax, Math.floor(v.length / 2));
   if (antal < 1) return null;
-  const q = (p) => {
-    const pos = (v.length - 1) * p, lo = Math.floor(pos), hi = Math.ceil(pos);
-    return lo === hi ? v[lo] : v[lo] + (v[hi] - v[lo]) * (pos - lo);
-  };
-  return { antal, varden: Array.from({ length: antal }, (_, i) => q((i + 0.5) / antal)) };
+  return { antal, varden: Array.from({ length: antal }, (_, i) => kvantil(v, (i + 0.5) / antal)) };
 }
 function kronorSkillnad(medKv, medMa) {
   if (typeof medKv !== "number" || typeof medMa !== "number" || !isFinite(medKv) || !isFinite(medMa) || !(medMa > 0) || !(medKv > 0)) return null;
@@ -693,12 +689,8 @@ function urvalSpann(figur, dim, { visaSma = false } = {}) {
   }
   return min < max ? { min, max } : null;
 }
-function _normaliseratFilter(figur, filter) {
+function _normaliseratFilter(filter) {
   if (!filter || typeof filter !== "object") return null;
-  if (typeof filter.has === "function") {
-    const k = _urvalRa(figur).find((u) => u && _urvalTyp(u) === "kategori");
-    return k ? { kategori: /* @__PURE__ */ new Map([[k.falt, filter]]), intervall: null } : null;
-  }
   const map = (m) => m && typeof m.get === "function" ? m : null;
   return { kategori: map(filter.kategori), intervall: map(filter.intervall) };
 }
@@ -708,15 +700,11 @@ function arBortvald(figur, filter, d) {
     /** @type {any} */
     filter
   );
-  const mangd = typeof f.has === "function";
-  const kat = mangd ? null : f.kategori && typeof f.kategori.get === "function" ? f.kategori : null;
-  const int = mangd ? null : f.intervall && typeof f.intervall.get === "function" ? f.intervall : null;
-  let forstaKategori = true;
+  const kat = f.kategori && typeof f.kategori.get === "function" ? f.kategori : null;
+  const int = f.intervall && typeof f.intervall.get === "function" ? f.intervall : null;
   for (const u of _urvalRa(figur)) {
     if (!u || typeof u !== "object") continue;
     const intervall = _urvalTyp(u) === "intervall";
-    const b = !intervall && mangd && forstaKategori ? f : null;
-    if (!intervall) forstaKategori = false;
     const v = d[u.falt];
     if (v == null) continue;
     if (intervall) {
@@ -725,7 +713,7 @@ function arBortvald(figur, filter, d) {
       if (typeof g.min === "number" && v < g.min) return true;
       if (typeof g.max === "number" && v > g.max) return true;
     } else {
-      const m = b || kat && kat.get(u.falt);
+      const m = kat && kat.get(u.falt);
       if (m && typeof m.has === "function" && m.has(String(v))) return true;
     }
   }
@@ -745,7 +733,7 @@ function urvalIntervallText(dim, g) {
   return "";
 }
 function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
-  const f = _normaliseratFilter(figur, filter);
+  const f = _normaliseratFilter(filter);
   if (!f) return [];
   const ut = [];
   for (const u of urvalLista(figur)) {
@@ -768,7 +756,6 @@ function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
 }
 function urvalAktivt(filter) {
   if (!filter || typeof filter !== "object") return false;
-  if (typeof filter.has === "function") return filter.size > 0;
   const kat = filter.kategori && typeof filter.kategori.values === "function" ? [...filter.kategori.values()] : [];
   if (kat.some((s) => s && s.size > 0)) return true;
   const int = filter.intervall && typeof filter.intervall.values === "function" ? [...filter.intervall.values()] : [];
@@ -5887,7 +5874,7 @@ function oversiktNiva(o, golv) {
   if (!(o.nKv >= golv && o.nMa >= golv)) return "ejbedomd";
   return statusNiva(Math.abs(100 - o.gap), kiUtesluterLika(o.ci));
 }
-function vymodellLonestruktur(rader, { bas, k, golv, litetUnderlag: litetUnderlag2, oversikt }) {
+function vymodellLonestruktur(rader, { bas, k, golv, litetUnderlag, oversikt }) {
   const perBas = (
     /** @type {Record<string, any[]>} */
     Object.fromEntries(bas.map((b) => [b, rader.filter((r) => r.bas === b)]))
@@ -5932,7 +5919,7 @@ function vymodellLonestruktur(rader, { bas, k, golv, litetUnderlag: litetUnderla
   const konsfordelning = { rader: [], utelamnade: [] };
   for (const b of bas) {
     const df = perBas[b], nKv = df.filter((r) => arKvinna(r)).length, nMa = df.filter((r) => arMan(r)).length, tot = nKv + nMa;
-    if (tot < litetUnderlag2) {
+    if (tot < litetUnderlag) {
       if (tot > 0) konsfordelning.utelamnade.push(b);
       continue;
     }
@@ -12775,7 +12762,7 @@ function _pagAvvikelseTabell(rader, grans) {
   if (!t) return false;
   const g = new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(grans);
   const kant = Math.min(100, Math.ceil(Math.max(10, ...rader.map((o) => Math.max(o.under, o.over))) * 1.2 / 10) * 10);
-  const andel = (v, antal) => `${talformat(v, "antal")} %${antal > 0 && antal < litetUnderlag() ? '<span class="pag-litet" title="Litet underlag">*</span>' : ""}`;
+  const andel = (v, antal) => `${talformat(v, "antal")} %${antal > 0 && antal < LITET_UNDERLAG ? '<span class="pag-litet" title="Litet underlag">*</span>' : ""}`;
   t.querySelector("thead").innerHTML = `<tr><th scope="col">${stor(T.niva.en)}</th><th scope="col" class="ta-vanster">Kön</th><th scope="col" class="tal">Prövade</th><th scope="col" class="tal">Minst ${g} % under</th><th scope="col" class="la-oversikt-skala t-mitt" data-export-skip>under åt vänster · över åt höger</th><th scope="col" class="ta-vanster">Minst ${g} % över</th></tr>`;
   const tb = (
     /** @type {HTMLElement} */
@@ -12784,7 +12771,7 @@ function _pagAvvikelseTabell(rader, grans) {
   tb.innerHTML = "";
   let fa = false;
   for (const o of rader) {
-    if (o.nUnder > 0 && o.nUnder < litetUnderlag() || o.nOver > 0 && o.nOver < litetUnderlag()) fa = true;
+    if (o.nUnder > 0 && o.nUnder < LITET_UNDERLAG || o.nOver > 0 && o.nOver < LITET_UNDERLAG) fa = true;
     const tr = document.createElement("tr");
     tr._markering = markeringFor(o.bas);
     tr.innerHTML = `<th scope="row">BAS ${esc(o.bas)}</th><td class="ta-vanster">${esc(o.kon)}</td><td class="tal">${o.n}</td><td class="tal">${andel(o.under, o.nUnder)}</td><td class="la-oversikt-cell">${_pagAvvikelseGrafik(o, kant)}</td><td class="ta-vanster">${andel(o.over, o.nOver)}</td>`;
@@ -12804,7 +12791,7 @@ function _pagRitaAvvikelse(d, grans) {
   }
   const fa = _pagAvvikelseTabell(rader, grans);
   const not = document.getElementById("pag-diagram-not");
-  if (not) not.textContent = `Bara ${T.niva.fl} där ${kTroskel() > 1 ? `minst ${kTroskel()} kvinnor och ${kTroskel()} män` : "både kvinnor och män"} har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.` + (fa ? ` Andelar märkta med * gäller färre än ${litetUnderlag()} personer: ett litet underlag, som inte ska läsas som ett mönster.` : "");
+  if (not) not.textContent = `Bara ${T.niva.fl} där ${kTroskel() > 1 ? `minst ${kTroskel()} kvinnor och ${kTroskel()} män` : "både kvinnor och män"} har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.` + (fa ? ` Andelar märkta med * gäller färre än ${LITET_UNDERLAG} personer: ett litet underlag, som inte ska läsas som ett mönster.` : "");
 }
 function uppstartPersonerAttGranska() {
   markeraUtanExport(document.getElementById("pag-diagram-ruta"), "individer");
@@ -14350,8 +14337,8 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
     serie: s,
     farg,
     opacitet: 0.55,
-    data: klasser.map((c) => ({ x: namn(c), y: +(100 * c[falt] / tot).toFixed(1), n: c.nKv + c.nMa, ...c[falt] > 0 && c[falt] < litetUnderlag() ? { fa: true } : {} })),
-    tips: (d) => [[`${d.x} tkr`], [s, talformat(d.y, "pct")], ["Personer i klassen", String(d.n)], ...d.fa ? [["Litet underlag", `färre än ${litetUnderlag()} ${s.toLowerCase()}`]] : []]
+    data: klasser.map((c) => ({ x: namn(c), y: +(100 * c[falt] / tot).toFixed(1), n: c.nKv + c.nMa, ...c[falt] > 0 && c[falt] < LITET_UNDERLAG ? { fa: true } : {} })),
+    tips: (d) => [[`${d.x} tkr`], [s, talformat(d.y, "pct")], ["Personer i klassen", String(d.n)], ...d.fa ? [["Litet underlag", `färre än ${LITET_UNDERLAG} ${s.toLowerCase()}`]] : []]
   });
   return {
     beskrivning: `Lönefördelningen för kvinnor och män i ${scope}: andel av respektive kön per löneklass. Varje klass rymmer minst ${kTroskel()} ${personOrd(kTroskel())}; klasserna i ändarna är hopslagna.`,
@@ -14447,7 +14434,7 @@ function ritaKonHistogram(vm, scope) {
   const fa = figur.lager.some((l) => l.data.some((d) => d.fa));
   if (not) {
     not.hidden = !fa;
-    not.textContent = fa ? `Några staplar gäller färre än ${litetUnderlag()} personer av könet i klassen (se verktygstipset på stapeln). Det är ett litet underlag — läs dem som enstaka personer, inte som ett mönster.` : "";
+    not.textContent = fa ? `Några staplar gäller färre än ${LITET_UNDERLAG} personer av könet i klassen (se verktygstipset på stapeln). Det är ett litet underlag — läs dem som enstaka personer, inte som ett mönster.` : "";
   }
 }
 function _konMultiplarFigur(rader, liten, k = kTroskel()) {
@@ -18803,10 +18790,10 @@ function _lpFigurKonLagen(sum) {
       serie,
       farg,
       data: rader.map(([namn, antal, n]) => {
-        const a = +(100 * antal[i] / n).toFixed(1), fa = antal[i] > 0 && antal[i] < litetUnderlag();
+        const a = +(100 * antal[i] / n).toFixed(1), fa = antal[i] > 0 && antal[i] < LITET_UNDERLAG;
         return { y: namn, x: a, n, ...fa ? { fa: true } : {}, ...a >= 7 ? { etikett: svPct(a, 0) } : {} };
       }),
-      tips: (d) => [[d.y], [serie, talformat(d.x, "pct")], ["Antal i könet", String(d.n)], ...d.fa ? [["Litet underlag", `färre än ${litetUnderlag()} personer`]] : []]
+      tips: (d) => [[d.y], [serie, talformat(d.x, "pct")], ["Antal i könet", String(d.n)], ...d.fa ? [["Litet underlag", `färre än ${LITET_UNDERLAG} personer`]] : []]
     }))
   };
 }
@@ -25717,12 +25704,10 @@ function _bytKLage(lage2, { tur = false } = {}) {
   state._lifecycleCache = null;
 }
 var _ALLTID_EXPORT = /* @__PURE__ */ new Set(["dokumentera", "rapporttext", "arbetet"]);
-var _OVERSIKT_STEG = /* @__PURE__ */ new Set(["nyckeltal", "kompliansöversikt", "underlagets kvalitet", "Att göra", "processöversikten", "extremvärden", "inläsningsrapporten", "A/B-jämförelsen"]);
 function _ritaOmEfterExport(ritade) {
   if (!state.data.length || typeof _omritningssteg !== "function") return;
-  for (const [namn, fn] of _omritningssteg()) {
-    if (_ALLTID_EXPORT.has(namn) || namn === "flikar som inte syns") continue;
-    const ska = namn === "gruppdossiern" || (_OVERSIKT_STEG.has(namn) ? ritade.has("dashboard") : ritade.has(namn));
+  for (const [namn, flik, fn] of _omritningssteg()) {
+    const ska = namn === "gruppdossiern" || !!flik && !_ALLTID_EXPORT.has(flik) && ritade.has(flik);
     if (ska) _omritningForsok(namn, fn);
   }
   if (typeof utAllaDiagramEfterExport === "function") _omritningForsok("Alla diagram", utAllaDiagramEfterExport);
@@ -31073,9 +31058,6 @@ function provaEnskiltText() {
 function kMaskerad(n) {
   return n < kTroskel();
 }
-function litetUnderlag() {
-  return LITET_UNDERLAG;
-}
 function _konFarRedovisas(nKv, nMa) {
   return konFarRedovisas(nKv, nMa, kTroskel());
 }
@@ -31301,7 +31283,7 @@ function _skattningarIBakgrunden() {
   return _bakgrundsrakning;
 }
 function _ritaOmAllaFlikar() {
-  for (const [namn, fn] of _omritningssteg()) _omritningForsok(namn, fn);
+  for (const [namn, , fn] of _omritningssteg()) _omritningForsok(namn, fn);
   visningNy();
 }
 function _omritningForsok(namn, fn) {
@@ -31314,14 +31296,14 @@ function _omritningForsok(namn, fn) {
 function _omritningssteg() {
   if (!state.data.length || typeof ritaFlik !== "function") return [];
   const steg = [];
-  steg.push(["flikar som inte syns", () => {
+  steg.push(["flikar som inte syns", null, () => {
     const oppen2 = document.querySelector(".nav-item.active[data-tab]");
     if (typeof tomFlikarUtom === "function") tomFlikarUtom(/* @__PURE__ */ new Set(["dashboard", ...oppen2 ? [oppen2.getAttribute("data-tab")] : []]));
   }]);
-  steg.push(["nyckeltal", () => {
+  steg.push(["nyckeltal", "dashboard", () => {
     if (typeof ritaNyckeltal === "function") ritaNyckeltal();
   }]);
-  steg.push(["kompliansöversikt", () => {
+  steg.push(["kompliansöversikt", "dashboard", () => {
     if (typeof ritaKravstatus === "function") ritaKravstatus();
   }]);
   const indata = () => ({ data: state.data, rest: `${kInstalld()}|${JSON.stringify(typeof forklaringsmodell === "function" ? forklaringsmodell() : null)}` });
@@ -31331,7 +31313,7 @@ function _omritningssteg() {
   };
   let reg;
   let regFangst = null;
-  steg.push(["underlagets kvalitet", () => {
+  steg.push(["underlagets kvalitet", "dashboard", () => {
     if (typeof ritaUnderlagetsKvalitet !== "function") return;
     regFangst = indata();
     reg = typeof korOLSRegression === "function" ? korOLSRegression() : void 0;
@@ -31339,28 +31321,28 @@ function _omritningssteg() {
   }]);
   let punkter;
   let punktFangst = null;
-  steg.push(["Att göra", () => {
+  steg.push(["Att göra", "dashboard", () => {
     if (typeof ritaAtgardslista !== "function") return;
     punktFangst = indata();
     punkter = ritaAtgardslista({ reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
-  steg.push(["processöversikten", () => {
+  steg.push(["processöversikten", "dashboard", () => {
     if (typeof ritaKartlaggningensSteg !== "function") return;
     ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : void 0, reg: oforandrat(regFangst) ? reg : void 0 });
   }]);
-  steg.push(["extremvärden", () => {
+  steg.push(["extremvärden", "dashboard", () => {
     if (typeof ritaExtremvarden === "function") ritaExtremvarden();
   }]);
-  steg.push(["inläsningsrapporten", () => {
+  steg.push(["inläsningsrapporten", "dashboard", () => {
     if (typeof ritaValideringsrapport === "function") ritaValideringsrapport();
   }]);
-  steg.push(["A/B-jämförelsen", () => {
+  steg.push(["A/B-jämförelsen", "dashboard", () => {
     const ab = document.getElementById("snapshot-comparison");
     if (ab && ab.style.display !== "none" && typeof ritaOgonblicksbildJamforelse === "function") ritaOgonblicksbildJamforelse();
   }]);
   const oppen = document.querySelector(".nav-item.active[data-tab]");
-  if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), () => ritaFlik(oppen.getAttribute("data-tab"))]);
-  steg.push(["gruppdossiern", () => {
+  if (oppen && oppen.getAttribute("data-tab") !== "dashboard") steg.push([oppen.getAttribute("data-tab"), oppen.getAttribute("data-tab"), () => ritaFlik(oppen.getAttribute("data-tab"))]);
+  steg.push(["gruppdossiern", null, () => {
     const dossier = document.getElementById("dossier-body");
     if (dossier && dossier.innerHTML.trim() && typeof ritaGruppdossier === "function") ritaGruppdossier();
   }]);
@@ -31407,7 +31389,7 @@ function _ritaOmAllaFlikarStegvis() {
       for (let i = 0; i < steg.length; i++) {
         text.textContent = `Räknar om med minsta gruppstorlek ${kTroskel()} … ${i + 1} av ${steg.length}`;
         await new Promise((r) => setTimeout(r, 0));
-        _omritningForsok(steg[i][0], steg[i][1]);
+        _omritningForsok(steg[i][0], steg[i][2]);
         visningNy();
       }
     } finally {
@@ -34162,9 +34144,7 @@ function _rfSynligt(figurIn, val) {
 }
 function _rfBortvalda(val) {
   const f = val && val.filter;
-  if (f && typeof f === "object") return f;
-  const b = val && val.bortvalda;
-  return b && typeof b.has === "function" ? b : null;
+  return f && typeof f === "object" ? f : null;
 }
 function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
   const { panelB, inreH, y, y2 } = L;
@@ -35815,14 +35795,13 @@ function figurTillSvg(figur, bredd, hojd, val = {}) {
   const logB = 800, logH = logB * H / B;
   const o = val && typeof val === "object" ? val : {};
   valideraFigur(figur, "export");
-  figur = harleddaLager(figur, o.filter && typeof o.filter === "object" ? o.filter : o.bortvalda, { visaSma: !!o.visaSma }).figur;
+  figur = harleddaLager(figur, o.filter, { visaSma: !!o.visaSma }).figur;
   const bas = {
     hojd: logH,
     radpanelBredvid: true,
     visaSma: !!o.visaSma,
     dolda: o.dolda && typeof o.dolda.has === "function" ? o.dolda : void 0,
     ...o.filter && typeof o.filter === "object" ? { filter: o.filter } : {},
-    ...o.bortvalda && typeof o.bortvalda.has === "function" ? { bortvalda: o.bortvalda } : {},
     bakgrund: FARG.vit,
     ...typeof o.rubrik === "string" && o.rubrik ? { rubrik: o.rubrik } : {},
     ...typeof o.fot === "string" && o.fot ? { fot: o.fot } : {}

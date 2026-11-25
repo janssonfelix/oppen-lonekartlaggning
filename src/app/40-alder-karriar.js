@@ -10,7 +10,7 @@ import { alderBandRader, alderGapRader, ALDERSKLASSER, konHistogram, ladaPerKon,
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { _kronorFalt, _kvantilTipsRader } from './03-hjalpfunktioner.js';
-import { _konUtelamnatNot, _sattDiagramKNot, individLitenFor, kInstalld, kTroskel, litetUnderlag } from './06-k-troskel.js';
+import { _konUtelamnatNot, _sattDiagramKNot, individLitenFor, kInstalld, kTroskel, LITET_UNDERLAG } from './06-k-troskel.js';
 import { jmfNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -133,11 +133,11 @@ function _konHistogramFigur(klasser, nKv, nMa, scope) {
     const namn = c => (c.oppenNed ? `under ${_konTkr(c.till)}` : c.oppenUpp ? `${_konTkr(c.fran)} eller mer` : `${_konTkr(c.fran)}–${_konTkr(c.till)}`);
     // De två fördelningarna ligger på samma plats, halvgenomskinliga: formen på vardera syns, och där de täcker
     // varandra blandas färgerna (i parvisa staplar går formen inte att se). En stapel som gäller färre än
-    // litetUnderlag() personer är märkt `fa` och förklaras i noten och tipset — inget mönster, som inte går att läsa
+    // LITET_UNDERLAG personer är märkt `fa` och förklaras i noten och tipset — inget mönster, som inte går att läsa
     // i två lager.
     const serie = (s, farg, falt, tot) => ({ marke: 'stapel', lage: 'overlagrad', serie: s, farg, opacitet: 0.55,
-        data: klasser.map(c => ({ x: namn(c), y: +(100 * c[falt] / tot).toFixed(1), n: c.nKv + c.nMa, ...(c[falt] > 0 && c[falt] < litetUnderlag() ? { fa: true } : {}) })),
-        tips: d => [[`${d.x} tkr`], [s, talformat(d.y, 'pct')], ['Personer i klassen', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${litetUnderlag()} ${s.toLowerCase()}`]] : [])] });
+        data: klasser.map(c => ({ x: namn(c), y: +(100 * c[falt] / tot).toFixed(1), n: c.nKv + c.nMa, ...(c[falt] > 0 && c[falt] < LITET_UNDERLAG ? { fa: true } : {}) })),
+        tips: d => [[`${d.x} tkr`], [s, talformat(d.y, 'pct')], ['Personer i klassen', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${LITET_UNDERLAG} ${s.toLowerCase()}`]] : [])] });
     return { beskrivning: `Lönefördelningen för kvinnor och män i ${scope}: andel av respektive kön per löneklass. Varje klass rymmer minst ${kTroskel()} ${personOrd(kTroskel())}; klasserna i ändarna är hopslagna.`,
         x: { skala: 'band', titel: 'Månadslön (tusen kronor)', ordning: klasser.map(namn) }, y: { skala: 'linjar', titel: 'Andel av könet (%)' }, hojd: 340,
         lager: [serie('Kvinnor', PALETT.kon.kvinna, 'nKv', nKv), serie('Män', PALETT.kon.man, 'nMa', nMa)] };
@@ -206,7 +206,7 @@ function ritaKonHistogram(vm, scope) {
     ritaFigur(el, { ...figur, underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.aldersgrupp], rader: [...vm.dataKv, ...vm.dataMa], k, rita } });
     const not = document.getElementById('kon-histogram-not');
     const fa = figur.lager.some(l => l.data.some(d => d.fa));
-    if (not) { not.hidden = !fa; not.textContent = fa ? `Några staplar gäller färre än ${litetUnderlag()} personer av könet i klassen (se verktygstipset på stapeln). Det är ett litet underlag — läs dem som enstaka personer, inte som ett mönster.` : ''; }
+    if (not) { not.hidden = !fa; not.textContent = fa ? `Några staplar gäller färre än ${LITET_UNDERLAG} personer av könet i klassen (se verktygstipset på stapeln). Det är ett litet underlag — läs dem som enstaka personer, inte som ett mönster.` : ''; }
 }
 
 // ---- Små multiplar: lön mot ålder, en panel per BAS-intervall ----
