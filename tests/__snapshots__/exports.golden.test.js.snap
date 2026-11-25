@@ -4315,11 +4315,11 @@ exports[`golden: Excel-exporterna på fast dataset > den samlade jämförelseexp
       "",
     ],
     [
-      "Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.",
+      "Diff-kolumner: positiva värden = organisationen ligger över referensen.",
       "",
     ],
     [
-      "Negativa värden (röd) = organisationen ligger under referens.",
+      "Negativa värden = organisationen ligger under referensen.",
       "",
     ],
     [

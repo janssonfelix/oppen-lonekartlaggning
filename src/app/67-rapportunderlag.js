@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Rapportunderlag (ADR-20): kopierbara block för en egen Word-mall ----
-// Faktastycken, rena tabeller och diagram som klistras in i kommunens mall.
+// Faktastycken, rena tabeller och diagram som klistras in i organisationens mall.
 // Bedömningen (sakliga skäl) skrivs av verksamheten — här finns bara underlaget.
 // Blocken väljs och räknas i src/lib/vymodell-rapportunderlag.js och byggs i src/lib/rapportunderlag.js;
 // här hämtas resultaten ur de befintliga analyserna och kopieringen till urklipp sköts.

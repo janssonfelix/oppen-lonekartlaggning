@@ -326,6 +326,26 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect([...oax.querySelectorAll('tbody td:first-child')].map(td => td.textContent)).not.toContain('Ålder');
         expect(oaxText).toMatch(/Ålder har kontrollerats/);
     });
+    it('utan ålder: introt, motivet och BAS-effekterna nämner inte ålder', () => {
+        const { kortText } = rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' });
+        expect(kortText).not.toMatch(/kvinnor är yngre/);
+        expect(kortText).not.toMatch(/motiveras med arbetar/);
+        expect(kortText).toMatch(/inte beror på att kvinnor arbetar i andra BAS-intervall/);
+        expect(kortText).toMatch(/efter kontroll för kön — inget/);
+    });
+    it('Livscykelns modelljämförelse namnger huvudmodellen som den är vald', () => {
+        const rubrik = w => w.document.querySelector('#livscykel-modelljamforelse thead th:nth-child(2)').textContent;
+        expect(rubrik(rita({ bas: true, alder: false, yrkesgrupp: false, skal: '' }).w)).toBe('Huvudmodell (BAS-intervall)');
+        expect(rubrik(rita(null).w)).toBe('Huvudmodell (ålder och BAS-intervall)');
+    });
+    it('lönefil utan ålder: per-BAS-analysen sägs inte rensa bort åldersskillnaden', () => {
+        const w = createAppWindow(); w.__lasInDemodata();
+        w.__state.data = w.__state.data.map(r => ({ ...r, alder: 0 }));
+        w.document.querySelector('.nav-item[data-tab="struktur"]').click(); w.eval('ritaFlik("struktur")');
+        const text = w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
+        expect(text).toMatch(/körs en separat analys\. Visar/);
+        expect(text).not.toMatch(/rensar bort åldersskillnaden/);
+    });
     it('endast kön: Oaxaca-kortet visas inte och kortet säger att inget räknats bort', () => {
         const { kortText, oax, figur } = rita({ bas: false, alder: false, yrkesgrupp: false, skal: '' });
         expect(oax.innerHTML).toBe('');
@@ -347,6 +367,10 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect(kortText).toMatch(/när ålder och BAS-intervall räknats bort/);
         expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
         expect(oaxText).toMatch(/Förklarat av ålder och BAS-intervall/);
+        expect(kortText).toMatch(/inte beror på att kvinnor är yngre eller arbetar i andra BAS-intervall/);
+        // Symbolerna i per-BAS-tabellen: under 3 % får ögat, och triangeln står för ett utslag som inte håller efter korrigering.
+        expect(kortText).toMatch(/Inget märke = inte signifikant(?!,)/);
+        expect(kortText).toMatch(/\(ej efter korr\.\) = signifikant i det råa p-värdet men inte efter korrigering/);
     });
 });
 

@@ -34,7 +34,7 @@ export let _livscykelValdBas = null;
  * modelljämförelsen. Det som räknas och bedöms står i vymodellen (vymodellLivscykel i src/lib/vymodell-livscykel.js,
  * ADR-99); här skrivs orden och ritas.
  *
- * Anropas när fliken "Lön över karriären" (data-tab="kon") öppnas — livscykel-
+ * Anropas när fliken Ålder & karriär (data-tab="kon") öppnas — livscykel-
  * panelen visas tillsammans med kön/ålder-kurvorna (sammanslagen flik).
  *
  * @param {any} [given] huvudregressionen från regressionskortet i samma varv (ADR-17)
@@ -244,7 +244,7 @@ export function ritaLivscykel(given) {
                     <thead>
                         <tr>
                             <th>Mått</th>
-                            <th>Huvudmodell (BAS-indikatorer, linjär ålder)</th>
+                            <th>Huvudmodell (${h && primary.fras ? esc(primary.fras) : h ? 'bara kön' : 'kunde inte skattas'})</th>
                             <th>Livscykelmodell (BAS-indikatorer, ålder² + interaktioner)</th>
                         </tr>
                     </thead>
@@ -392,18 +392,10 @@ function _livscykelFigur(r) {
 /**
  * Sekundär livscykelanalys (utökad modell):
  *   log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)
- *
- * Skillnader mot primäranalysen:
- *   1. Kvadratisk åldersterm — fångar inverterad-U-form (lön planar ut sent i karriären)
- *   2. Kön×ålder och kön×ålder²-interaktioner — gapet kan växa/krympa med ålder
- * BAS kodas som indikatorer (första BAS = referens), precis som i huvudmodellen.
- *
- * Returnerar koefficienter + prediktionspunkter med 95 % KI för visualisering.
- *
- * @param {string} fixBas - BAS-intervall att fixera vid i visualiseringen (default = mest folkrika)
- * @returns {Object} { error } eller fullt resultat med predKvinna, predMan, gapPerAge, model fit
+ * Kvadratisk åldersterm (lönen planar ut sent i karriären) och samspel mellan kön och ålder (skillnaden kan växa eller
+ * krympa med åldern). Ger { error } eller resultatet med prediktionspunkter och 95 % KI.
+ * @param {string|null} [fixBas] BAS-intervall att fixera vid; null = det mest folkrika
  */
-/** @param {string|null} [fixBas] BAS-intervall att fixera vid; null = det mest folkrika */
 export function korLivscykelregression(fixBas) {
     // Modellen (designmatris, OLS, HC3, prediktioner) ligger i src/lib/livscykel.js (ADR-98).
     return livscykelRegression(hamtaData(), { fixBas, golv: statGolv() });

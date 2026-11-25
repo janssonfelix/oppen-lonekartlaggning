@@ -331,14 +331,6 @@ function _jmfStatlageFigur(rader) {
         ].filter(l => l.data.length) };
 }
 
-// ---- OLS Regression: oförklarad löneskillnad ----
-// Modellen: log(lön) ~ kön + ålder + BAS-intervall (indikatorvariabler)
-/**
- * Standardnormal CDF Φ(x) via Abramowitz & Stegun 26.2.17 (5 termer, abs.fel < 7.5e-8).
- * @param {number} x
- * @returns {number} Φ(x) ∈ [0,1]
- */
-
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartJamforelse() {
     document.getElementById('jmf-bas')?.addEventListener('change', e => { jamforelseSattVal({ bas: /** @type {HTMLInputElement} */ (e.target).value }); byggJamforelse(); });

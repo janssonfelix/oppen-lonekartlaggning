@@ -14990,7 +14990,7 @@ function ritaLivscykel(given) {
                     <thead>
                         <tr>
                             <th>Mått</th>
-                            <th>Huvudmodell (BAS-indikatorer, linjär ålder)</th>
+                            <th>Huvudmodell (${h && primary.fras ? esc(primary.fras) : h ? "bara kön" : "kunde inte skattas"})</th>
                             <th>Livscykelmodell (BAS-indikatorer, ålder² + interaktioner)</th>
                         </tr>
                     </thead>
@@ -15394,7 +15394,7 @@ function _fmTexter(m) {
   const lista = (delar, skilj = " och ") => delar.length <= 1 ? delar.join("") : `${delar.slice(0, -1).join(", ")}${skilj}${delar[delar.length - 1]}`;
   const forklarasAv = lista([...m.alder ? ["åldersfördelning"] : [], ...m.bas ? ["BAS-placering"] : [], ...m.yrkesgrupp ? [_FM_I_MENING.yrkesgrupp] : []]);
   const samma = m.alder || m.bas ? `i ${lista([...m.alder ? ["samma ålder"] : [], ...m.bas ? [`samma ${T.niva.en}`] : [], ...m.yrkesgrupp ? [`samma ${T.enhet.en}`] : []])}` : `oavsett ålder och ${T.niva.en}`;
-  const motiv = lista([...m.alder ? ["att kvinnor är yngre"] : [], ...m.bas ? [`arbetar i andra ${T.niva.fl}`] : [], ...m.yrkesgrupp ? [`har andra ${T.enhet.fl}`] : []], " eller ");
+  const motiv = `att kvinnor ${lista([...m.alder ? ["är yngre"] : [], ...m.bas ? [`arbetar i andra ${T.niva.fl}`] : [], ...m.yrkesgrupp ? [`har andra ${T.enhet.fl}`] : []], " eller ")}`;
   const variabler = ["kön", ...m.alder ? ["ålder"] : [], ...m.bas ? [_FM_I_MENING.bas] : [], ...m.yrkesgrupp ? [_FM_I_MENING.yrkesgrupp] : []];
   const antalOrd = ["", "en sak", "två saker", "tre saker", "fyra saker"][variabler.length];
   const sista = sistaSteg(m);
@@ -15730,9 +15730,9 @@ function ritaRegressionskort() {
         </div>` : "";
   wrap.innerHTML = `
         <div class="card ram-v-3-${verdictFarg}" role="region" aria-label="Multivariat regressionsresultat">
-            <div class="reg-intro">
-                <p><span class="info-tip" data-tooltip="En statistisk metod (OLS-regression) som &quot;rensar bort&quot; effekten av att kvinnor och män har olika ålder och arbetar i olika ${T.niva.fl}. Det som kvarstår är den OFÖRKLARADE löneskillnaden — det som inte kan tillskrivas dessa strukturella skillnader.">${ikon("info", 14)}</span> Den <strong>råa löneskillnaden</strong> mellan kvinnor och män kan delvis förklaras av att grupperna har olika åldersstruktur och är olika fördelade över ${T.niva.bfl}. Verktyget använder en statistisk metod som räknar bort de strukturella skillnaderna. Det som <strong>kvarstår</strong> är den <em>oförklarade</em> löneskillnaden — den del som inte beror på att kvinnor är yngre, jobbar i annat BAS osv.</p>
-            </div>
+            ${fmT.fras ? `<div class="reg-intro">
+                <p><span class="info-tip" data-tooltip="En statistisk metod (OLS-regression) som &quot;rensar bort&quot; effekten av att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}. Det som kvarstår är den OFÖRKLARADE löneskillnaden — det som inte kan tillskrivas dessa strukturella skillnader.">${ikon("info", 14)}</span> Den <strong>råa löneskillnaden</strong> mellan kvinnor och män kan delvis förklaras av att grupperna skiljer sig i ${esc(fmT.forklarasAv)}. Verktyget använder en statistisk metod som räknar bort de skillnaderna. Det som <strong>kvarstår</strong> är den <em>oförklarade</em> löneskillnaden — den del som inte beror på ${esc(fmT.motiv)}.</p>
+            </div>` : ""}
 
             ${saFunkarHtml}
             ${modelBanner}
@@ -15789,7 +15789,7 @@ function ritaRegressionskort() {
                     <span class="info-tip" data-tooltip="För varje ${T.niva.en} körs en egen analys. Visar vilka delar av organisationen som driver den oförklarade skillnaden, snarare än ett genomsnitt för hela organisationen.">${ikon("info", 14)}</span>
                 </summary>
                 <p class="text-dampad-sm lh-1_55 marg-8-0-6">
-                    Inom varje ${T.niva.en} körs en separat analys (som rensar bort åldersskillnaden). Visar var i organisationen den oförklarade skillnaden ligger — inte alla BAS bidrar lika mycket till totalbilden.
+                    Inom varje ${T.niva.en} körs en separat analys${harAlder() ? " (som rensar bort åldersskillnaden)" : ""}. Visar var i organisationen den oförklarade skillnaden ligger — inte alla BAS bidrar lika mycket till totalbilden.
                 </p>
                 ${caveatInline}
                 <div class="chart-container"><div id="chart-perbas-gap"></div></div>
@@ -15887,7 +15887,8 @@ function ritaRegressionskort() {
                     <ul class="marg-0-0-10-22">
                         <li>${ikon("nal")} = signifikant <strong>och</strong> minst 3 % (verktygets storleksgräns) — Titta närmare: pröva om skillnaden har sakliga skäl</li>
                         <li>${ikon("oga")} = signifikant men under 3 % — Dokumentera: skriv ner sakliga skäl och följ upp</li>
-                        <li><span class="f-dampad">Inget märke</span> = inte signifikant, eller signifikant men praktiskt obetydlig storlek</li>
+                        <li>${ikon("statusVarning")} <span class="text-dampad-xs">(ej efter korr.)</span> = signifikant i det råa p-värdet men inte efter korrigering för multipel jämförelse — Osäkert utslag: presentera inte som säkerställt</li>
+                        <li><span class="f-dampad">Inget märke</span> = inte signifikant</li>
                     </ul>
                     <p class="notis-varning fs-sm marg-10-0-0 pad-8-12">
                         <strong>Viktig nyans – statistisk och praktisk signifikans:</strong>
@@ -15929,7 +15930,7 @@ function ritaRegressionskort() {
                     </table>` : ""}
                     ${basEffUt.effekter ? `
                     <h3>BAS-effekter (indikatorvariabler)</h3>
-                    <p>Varje ${T.niva.en} har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för kön och ålder — inget antagande om lika stora steg mellan bokstäverna.</p>
+                    <p>Varje ${T.niva.en} har en egen indikator; det alfabetiskt första intervallet, <code>${esc(r.basRef)}</code>, är referens. Koefficienten är intervallets lönenivå i procent mot referensen, efter kontroll för ${esc(fmT.variabler.filter((v) => v !== _FM_I_MENING.bas).join(", ").replace(/, ([^,]*)$/, " och $1"))} — inget antagande om lika stora steg mellan bokstäverna.</p>
                     ${basEffUt.effekter.length ? `<table class="reg-tech-table">${antalRubrik(r.nKvAnalysed, r.nMaAnalysed)}
                         <tr><th>BAS</th><th>Nivå mot ${esc(r.basRef)}</th><th>95% KI</th><th>p-värde</th></tr>
                         ${basEffUt.effekter.map((e) => `<tr><td>${esc(e.bas)}</td><td>${e.pct >= 0 ? "+" : ""}${svPct(e.pct, 1)}</td><td>${svPct(e.low, 1)} till ${svPct(e.high, 1)}</td><td>${_formateraPVarde(e.p)}</td></tr>`).join("")}
@@ -36791,8 +36792,8 @@ function _exportJamforelseExcelExport() {
     ["Matchning", `AID + BAS: samma AID och samma BAS. Endast AID: en rad med samma AID som saknar BAS. Rader för andra ${T.niva.fl} används aldrig. – = statistik saknas.`],
     ["Referens", referensNamn() + referensKalla()],
     ["", ""],
-    ["Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.", ""],
-    ["Negativa värden (röd) = organisationen ligger under referens.", ""],
+    ["Diff-kolumner: positiva värden = organisationen ligger över referensen.", ""],
+    ["Negativa värden = organisationen ligger under referensen.", ""],
     ["Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.", ""],
     [`Minsta gruppstorlek (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, ""]
   ];
