@@ -359,7 +359,7 @@ function _exportJPAProtokollExport() {
     const localDate = now.toLocaleDateString('sv-SE');
     const profileLabel = state.profile.benchmarkLabel;
 
-    // § 3:10-paren hämtas EN GÅNG här, så att försättssidan och flik 3b alltid är konsistenta, och ur samma resultat som
+    // paren i likvärdigt arbete hämtas EN GÅNG här, så att försättssidan och flik 3b alltid är konsistenta, och ur samma resultat som
     // fliken visar (likvardighetResultat, som nollställs när underlaget eller valen ändras).
     const lvResult = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
     // Minsta gruppstorlek: protokollet redovisar bara par där båda grupperna når tröskeln (undantaget gäller
@@ -527,7 +527,7 @@ function _exportJPAProtokollExport() {
     _tillampaTalformat(basSheet, SV_TALFORMAT);
     XLSX.utils.book_append_sheet(wb, basSheet, '3. Likvärdigt arbete (BAS)');
 
-    // === Blad 3b: § 3:10, kvinnodominerade grupper mot grupper som inte är det (ADR-60) ===
+    // === Blad 3b: likvärdigt arbete, kvinnodominerade grupper mot grupper som inte är det (ADR-60) ===
     // lvResult räknades högst upp, så att försättssidans antal och tabellen i blad 3b kommer ur samma beräkning.
     if (lvResult && lvResult.pairs.length && !lvRedovisning.par.length) {
         // Alla par har en grupp under tröskeln: arket anger det i stället för att tiga eller påstå att par saknas.

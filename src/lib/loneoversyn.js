@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Öppen lönekartläggning — Pure löneöversyns-/prognosfunktioner
+ * Öppen lönekartläggning — Löneöversyn och prognos (ren modell)
  *
  * Budget-först-modell: en pott (kr eller % av lönesumman) fördelas GENERELLT
  * (till alla) + RIKTAT (till valda BAS→AID-grupper), och utfallet (nya löner,
  * budgetutnyttjande, råa lönegapet före/efter) beräknas.
  *
- * Separat från app.js för att kunna testas via Vitest utan DOM/state.
  * Det oförklarade gapet (huvudregressionen) beräknas INTE
  * här, utan i vymodellen (oforklaratForeEfter i vymodell-loneoversyn.js) på de simulerade
  * raderna. Här beräknas bara det rena (median-baserade) gapet; tröskelmålets
@@ -27,7 +26,7 @@ import { arKvinna, arMan } from './kon.js';
 import { konsMedianerUrLoner } from './struktur.js';
 
 /**
- * "Water-filling": höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
+ * Lägst först: höj de lägst betalda först. Hittar en gemensam nivå L (≤ cap)
  * och lyfter alla under L upp till L så långt potten räcker. Pengar som inte
  * får plats under cap lämnas oanvända (returneras implicit via summan av deltan).
  * @returns {number[]} delta per individ (samma ordning som lons)
@@ -247,8 +246,8 @@ export function stangningsriktning(kandidater, andel, minN = 0) {
 
 /**
  * Stegvis plan: rampa fördelningen linjärt över N år (1/N per år) och beräkna
- * ackumulerad kostnad och råa lönegapet vid varje år. Stödjer DiskrL 3:11
- * ("senast inom tre år"). perPerson kommer från fordela (har delta + lon + kon).
+ * ackumulerad kostnad och råa lönegapet vid varje år. Stödjer tidsplanen i 3 kap. 13 § diskrimineringslagen
+ * (senast inom tre år). perPerson kommer från fordela (har delta + lon + kon).
  * @returns {Array<{year,andelPct,kumRaise,kumKostnad,rawGap}>}
  */
 export function stegvisPlan(rader, perPerson, ar, kostnadsval) {
@@ -287,7 +286,7 @@ export function sammanstallGrupper(rader) {
 }
 
 /**
- * Leapfrog-/spillover-detektering: hittar grupper som efter påslaget passerar
+ * Omkörningar: hittar grupper som efter påslaget passerar
  * (går om) en grupp som tidigare hade högre median — vilket kan skapa ny
  * skevhet. Jämför på gruppmedianer (perGroup från fordela).
  * @returns {Array<{bas:string, aid:string, overBas:string, overAid:string, gammalA:number, nyA:number, gammalB:number, nyB:number}>}
@@ -336,7 +335,7 @@ export function prognosutfall(rader, budget, generell, riktningar, kostnadsval) 
     const totalRaise = alloc.totals.totalRaise;
     // Gränsen för kvinnodominerat: saknas den gäller arKvinnodominerads standard, KVINNO_TROSKEL_STANDARD i
     // likvardighet.js. 0 är en gräns, inte en som saknas.
-    const kvThreshold = kostnadsval?.kvThreshold ?? undefined;
+    const kvThreshold = kostnadsval?.kvThreshold;
     const lonsummaFore = lonesumma(rader);
     // Hur mycket av påslaget går till kvinnodominerade grupper (jämställdhetsandel)
     const kvDefinition = (kostnadsval && kostnadsval.kvDefinition) || 'do';
@@ -361,14 +360,10 @@ export function prognosutfall(rader, budget, generell, riktningar, kostnadsval) 
     };
 }
 
-// ===================================================================
-// Lönespann/compa-ratio, individnivå-remediation,
-// marknadspositionering, budgetkänslighet.
-// ===================================================================
+// ---- Lönespann, kostnaden på individnivå, marknadspositionering och budgetkänslighet ----
 
 /**
- * (A) Lönespann per BAS: P25 / median / P75. compa-ratio och range-penetration
- * beräknas mot detta i UI.
+ * Lönespann per BAS: P25 / median / P75. Utfallstabellen ställer gruppens nya median mot BAS-medianen.
  * @returns {Array<{bas,n,p25,median,p75}>}
  */
 export function lonespannPerBas(rader) {
@@ -385,7 +380,7 @@ export function lonespannPerBas(rader) {
 }
 
 /**
- * (B) Individnivå-remediation (DiskrL 3:9 — lika arbete): flaggar kvinnor som
+ * Kostnaden på individnivå (lika arbete, 3 kap. 9 § 1): flaggar kvinnor som
  * är betalda mer än `gapPct` % under sitt likalöne-benchmark (mäns median i
  * samma BAS×AID, fallback mäns median i BAS) och beräknar kostnaden att lyfta
  * dem till benchmark. Endast aggregat returneras för visning; `flagged` används
@@ -443,7 +438,7 @@ export function individlyft(rader, val) {
 }
 
 /**
- * (E) Marknadspositionering: bygg riktade rader som lyfter grupper vars median
+ * Marknadspositionering: bygg riktade rader som lyfter grupper vars median
  * ligger under marknad × factor, mot den nivån.
  * @param {Array<{bas,aid,n,median}>} grupper - från sammanstallGrupper
  * @param {Map<string,number>} marknadPerNyckel - nyckel "aid|bas" eller "aid" → marknadsmedian
@@ -467,16 +462,17 @@ export function marknadsriktning(grupper, marknadPerNyckel, faktor, minN) {
 }
 
 /**
- * (F) Budgetkänslighet: svep §3:10-stängning 0→100 % och returnera kostnad +
- * råa lönegapet för varje steg (avtagande avkastning).
+ * Budgetkänslighet: minskar skillnaderna i likvärdigt arbete i steg från 0 till 100 % (stangningsriktning, med samma
+ * minsta antal personer i gruppen som knappen) och returnerar kostnaden och den råa skillnaden för varje steg.
+ * @param {number} [minN=0] - rikta bara mot grupper med minst minN personer
  * @returns {Array<{fraction,kostnad,rawGap}>}
  */
-export function kanslighetskurva(rader, kandidater, kostnadsval, steg) {
+export function kanslighetskurva(rader, kandidater, kostnadsval, steg, minN = 0) {
     const S = steg || 10;
     const out = [];
     for (let i = 0; i <= S; i++) {
         const frac = i / S;
-        const targets = stangningsriktning(kandidater, frac, 0);
+        const targets = stangningsriktning(kandidater, frac, minN);
         const alloc = fordela(rader, { mode: 'pct', value: 0 }, targets, kostnadsval && kostnadsval.roundStep);
         out.push({
             fraction: frac,
@@ -503,7 +499,7 @@ export function troskelmalKonstanter() {
 }
 
 /**
- * (C) Tröskelmål: det minsta jämna lyftet i procent till alla kvinnor som behövs för att den oförklarade skillnaden
+ * Tröskelmål: det minsta jämna lyftet i procent till alla kvinnor som behövs för att den oförklarade skillnaden
  * ska nå målet, antingen högst `malPct` procent (skillnaden räknas som kvinnor mot män, negativ när kvinnor ligger
  * lägre) eller inte signifikant (p över TROSKELMAL_SIGNIFIKANS_P). Söks med bisektion i 0–TROSKELMAL_MAX_LYFT_PCT %
  * i TROSKELMAL_VARV varv; svaret är intervallets övre gräns, där målet är nått.

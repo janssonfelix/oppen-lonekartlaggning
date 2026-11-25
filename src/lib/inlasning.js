@@ -300,7 +300,7 @@ export const TILLATNA_FALT = {
     alder:   ["lder","alder"],
     kon:     ["kon","kn"],
     // Valfri arbetsvärderingspoäng per befattning — del av strukturdatan (som BAS),
-    // aktiverar poäng som krav-proxy i § 3:10. Normaliserade mönster:
+    // aktiverar poäng som krav-proxy i likvärdighetsanalysen. Normaliserade mönster:
     // "Poäng"→pong, "Poang"→poang, "Arbetsvärdering"→arbetsvrdering.
     poang:   ["pong","poang","arbetsvrdering","arbetsvardering"],
     // Valfri ansvarskod enligt AID (ADR-33): "Ansvarskod", "AID-ansvar",
@@ -434,7 +434,7 @@ export function tolkaLonerad(falt, referensar, medAnsvar = false) {
     const yrkeFull    = _stadaYrkesfalt(falt.yrke);
     // AID och etikett hålls isär. `r.yrke` är "AID Etikett"-strängen (den som vyerna visar);
     // `r.aid` och `r.yrkeLabel` ger ren AID-kod respektive enbart etikett-delen
-    // för analyser som behöver något entydigt nyckel (t.ex. § 3:10-paret).
+    // för analyser som behöver något entydigt nyckel (t.ex. paret i likvärdigt arbete).
     const aidMatch = yrkeFull.match(/^(\d+)/);
     const aid      = aidMatch ? aidMatch[1] : "";
     const yrkeLabel = aid ? yrkeFull.replace(/^\d+\s*/, '').trim() : yrkeFull;

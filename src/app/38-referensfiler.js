@@ -159,7 +159,7 @@ export function uppstartReferensfiler() {
                 );
                 // Läs in jämförelsestatistikens faktiska könsfördelning
                 // (Kvinnor Antal, Män Antal, Andel kvinnor). Detta möjliggör att
-                // § 3:10-analysen kan använda LOKAL könsfördelning per AID×BAS
+                // likvärdighetsanalysen kan använda LOKAL könsfördelning per AID×BAS
                 // i stället för SKR:s personalstatistik som reserv.
                 const idxNKv = hdr.findIndex(t =>
                     /(kvinnor\s*antal|kv\s*antal|antal\s*kvinnor)/.test(t)

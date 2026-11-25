@@ -84,7 +84,7 @@ function _ritaKansligAvvisning(sensitive) {
  */
 // Arbetsvärdering (poäng) härleds ur strukturdatans valfria Poäng-kolumn —
 // en del av samma fil som BAS, INTE en separat uppladdning. Bygger samma
-// interna struktur som § 3:10-motorn alltid använt: Map "aid|bas" → poäng.
+// interna struktur som likvärdighetsanalysen alltid använt: Map "aid|bas" → poäng.
 // Returnerar antal befattningar med poäng (0 = ingen kolumn → BAS-rank-proxy).
 export function _harledArbetsvarderingUrData() {
     const byKey = new Map();
@@ -978,7 +978,7 @@ export function uppstartFilinlasning() {
     kopplaSlappyta("drop-area-policy", "file-input-policy");
     kopplaSlappyta("drop-area-stat", "file-input-stat");
     document.getElementById('btn-download-csv-template')?.addEventListener('click', () => {
-        // Poang är valfri: arbetsvärderingspoäng per befattning (krav-proxy i § 3:10).
+        // Poang är valfri: arbetsvärderingspoäng per befattning (krav-proxy i likvärdighetsanalysen).
         // Lämnas tom om ingen arbetsvärdering gjorts — BAS-rank används då.
         const headers = CSV_MALL_RUBRIKER;
         const examples = [

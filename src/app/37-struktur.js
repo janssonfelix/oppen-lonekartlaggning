@@ -465,7 +465,7 @@ function _byggSammanfattning(d, ctx) {
         const lagsta = sorted[0], hogsta = sorted[sorted.length - 1];
         if (lagsta.andelKv - hogsta.andelKv > 15) lines.push(`Vertikal könssegregering: andelen kvinnor är högre i lägre betalda BAS (${lagsta.bas}: ${svPct(lagsta.andelKv, 0)}) än i högre betalda (${hogsta.bas}: ${svPct(hogsta.andelKv, 0)}). Det är en strukturell orsak till löneskillnaden.`);
     }
-    // § 3:10
+    // Likvärdigt arbete
     /** @type {any} */ let lv = null; try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
     // Minsta gruppstorlek: antalet redovisas för par där båda grupperna når tröskeln; resten nämns (som övriga utdata)
     const lvPar = _parForRedovisning(lv && lv.pairs);

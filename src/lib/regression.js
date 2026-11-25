@@ -331,7 +331,7 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
  * ett mellanled, inte ett redovisat värde — men bara grupper med båda könen bidrar till
  * könskoefficienten (i en enkönad grupp är det transformerade könet noll). Antalet grupper
  * och personer steget bygger på följer med i resultatet.
- * Gruppnyckeln är AID-koden (eller yrket när AID saknas) inom BAS, samma som § 3:10-motorn.
+ * Gruppnyckeln är AID-koden (eller yrket när AID saknas) inom BAS, samma som likvärdighetsanalysen.
  * Modellen läser ingen golv-gräns, så den tar inte emot golv (statGolv används bara i ansvarssteget).
  * medAlder = false utelämnar ålderskolumnen (ålder inte vald, ADR-56); extra = ytterligare kolumner per rad som
  * inomtransformeras i samma grupper (ansvarssteget ovanpå yrkesgrupp); name = stegets namn.

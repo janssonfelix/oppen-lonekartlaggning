@@ -24,6 +24,24 @@ import { exportElement, medExportLage } from './23-exportgrind.js';
 import { uppdateraAktivFlik } from './31-navigering.js';
 import { ritaReferensKort } from './38-referensfiler.js';
 /**
+ * Löneöversynens utgångsläge: tillståndet vid start, Rensa all data och knappen Nollställ börjar härifrån.
+ * @returns {{budget: {mode: string, value: number|null}, generell: {mode: string, value: number|null}, targets: any[],
+ *   minGroupN: number, roundStep: number, years: number, scenarios: {A: any, B: any}, result: any, _remediation?: any}}
+ */
+export function nyPrognos() {
+    return {
+        budget:   { mode: 'pct', value: null },   // pott: % av lönesumman eller krontal per månad
+        generell: { mode: 'pct', value: null },   // generellt påslag till alla
+        targets:  [],                             // riktade potter per BAS och AID
+        minGroupN: 10,                            // rikta bara mot grupper med minst så många personer
+        roundStep: 0,                             // avrunda nya löner till närmaste steg (0 = av)
+        years: 1,                                 // stegvis plan över N år (3 kap. 13 § diskrimineringslagen: senast inom tre år)
+        scenarios: { A: null, B: null },          // sparade scenarier för A/B-jämförelse, bara i minnet
+        result:   null
+    };
+}
+
+/**
  * Appens tillstånd. Fälten som bär inlästa eller beräknade data är löst typade (`any`): deras form
  * beskrivs i respektive modul, och typkontrollen (tsconfig.app.json) vaktar i första hand null-hantering,
  * fältnamn på de fasta delarna och argument till src/lib.
@@ -63,7 +81,7 @@ import { ritaReferensKort } from './38-referensfiler.js';
  * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
  */
 export const state = {
-    data: [],        // full dataset, never filtered
+    data: [],        // hela underlaget, aldrig filtrerat
     // Referensen (ADR-28): ingen inbyggd — ställningstagandet läses in som fil eller ur ett
     // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
     policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
@@ -95,24 +113,13 @@ export const state = {
     bootstrapCI: null,                // cache av 95 % KI för mediankvot
     powerAnalysis: null,              // cache av MDE-beräkning
 
-    // Löneöversyn/prognos: budget-först-fördelning (pott → generellt + riktat).
-    // Simuleringen rör aldrig state.data — allt räknas på en kopia.
-    forecast: {
-        budget:   { mode: 'pct', value: null },   // pott: % av lönesumman ELLER krontal/mån
-        generell: { mode: 'pct', value: null },   // generellt påslag till alla
-        targets:  [],                             // riktade potter per BAS→AID
-        minGroupN: 10,                            // rikta endast mot grupper med minst n personer
-        roundStep: 0,                             // avrunda nya löner till närmaste steg (0 = av)
-        years: 1,                                 // stegvis plan över N år (DiskrL 3:11)
-        scenarios: { A: null, B: null },          // sparade scenarier för A/B-jämförelse (ej persisterat)
-        result:   null
-    },
+    // Löneöversyn/prognos: budget-först-fördelning (pott → generellt + riktat). Simuleringen rör aldrig state.data.
+    forecast: nyPrognos(),
 
     // Inaktivitetstimer
     inactivityTimeoutMin: INAKTIVITET_STANDARD_MIN,   // 0 = av, annars antal minuter; på som standard (GDPR art. 25.2)
-    // § 3:10 Likvärdighetsanalys — kvinnodom. yrken vs icke-kvinnodom. yrken
-    // med ≤ samma BAS-rank (krav-proxy) och högre lön. Båda källor (data,
-    // statistik) är giltig arbetsgivardata.
+    // Likvärdighetsanalysen (3 kap. 9 § 2): kvinnodominerade yrken mot yrken som inte är det, med samma eller lägre
+    // BAS-rank (krav-proxy) och högre lön.
     likvardighet: {
         kvinnoTrosholdPct: 60,
         kvDomDefinition: 'do',     // 'do' (*Mer än X %*) | 'scb' (*X % eller mer*): den enda definitionen i verktyget (ADR-60); nycklarna är historiska och står kvar för sparade konfigurationsfiler (ADR-72)
@@ -122,7 +129,7 @@ export const state = {
         poangBandPct: 5,           // ekvivalensband för arbetsvärderingspoäng (±%)
         result: null               // senaste beräkning för render-tabell + JPA
     },
-    // valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i § 3:10.
+    // valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i likvärdighetsanalysen.
     // null = använd BAS-rank. byKey: Map<'AID|BAS' eller 'AID', poäng>.
     arbetsvardering: null,
     // Lönemånaden underlaget gäller (fritext, t.ex. "2026-10"): står på bladen per AID och BAS. Ingen uppgift i
@@ -250,15 +257,12 @@ export function ritaOmReferens() {
     }
 }
 
-// ---- Colors & Stats ----
+// ---- Färger och statistik ----
 // Härleds ur PALETT (10-diagramtema.js) så könsfärgerna har EN källa.
 export const farger = { kvinna: PALETT.kon.kvinna, man: PALETT.kon.man, policy: PALETT.semantic.policy };
 
 // Statistiska helpers för vyerna; en källa: src/lib/stat.js (tests/stat.test.js prövar den).
 export const Stat = { median, kvantil, linjarRegression };
-
-// Talen i indata (_normaliseraTaltext, tolkaTal, tolkaTalStrikt) tolkas i src/lib/inlasning.js och importeras
-// under samma namn.
 
 /**
  * 95-procentigt konfidensband för en enkel linjär regressionslinje (regressionslinjensBand i src/lib/osakerhet.js):
@@ -291,13 +295,10 @@ function aktiveraHuvudtabeller() {
     kopplaHopfallbaraGrupper('benchmark-table');
 }
 
-// ---- Kopiera/CSV per tabell (visualiserings-Steg 3-komplettering) ------------
-// Sortering fanns redan (aktiveraSortering); det som saknades var att få UT en
-// enskild tabell. En diskret verktygsrad placeras EN gång framför tabellens
-// container (utanför det som ritas om vid re-render), och klicken hanteras
-// delegerat så att tabellen läses LIVE — sorterad ordning och omritad tbody
-// följer med. CSV återanvänder _laddaNedCSV; kopiering ger TAB-separerat så
-// att inklistring i Excel hamnar i kolumner.
+// ---- Kopiera och CSV per tabell ----
+// En verktygsrad placeras en gång framför tabellens behållare (utanför det som ritas om), och klicken hanteras
+// delegerat så att tabellen läses som den står: sorterad ordning och omritad tbody följer med. Kopian är
+// tabbseparerad, så att inklistring i Excel hamnar i kolumner.
 export function laggTillTabellverktyg(tableId, fileBase) {
     const table = document.getElementById(tableId);
     if (!table || table._exportToolsInit) return;

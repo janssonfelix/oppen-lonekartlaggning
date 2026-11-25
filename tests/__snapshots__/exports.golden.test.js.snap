@@ -1812,19 +1812,19 @@ exports[`golden: Excel-exporterna på fast dataset > "Excel (alla flikar)" match
     ],
     [
       "  Kostnad att nå referensen",
-      "|avvikelse kr/mån| × 12 mån × (1 + 40 %/100) × antal personer (endast om under referens, inkl. PO-påslag)",
+      "|avvikelse kr/mån| × 12 mån × (1 + 40 %) × antal personer (endast om under referens, inkl. PO-påslag)",
     ],
     [
       "  Prioriteringsindex",
-      "riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100",
+      "riktningsvikt × (avvikelse·50 % + volym·30 % + jämställdhet·20 %), skala 0–100",
     ],
     [
       "  Riktningsvikt",
-      "1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)",
+      "1,0 om under referens, 0,5 om över (en grupp under referensen vägs tyngre)",
     ],
     [
       "  Läge mot referensen",
-      "Läget sätts efter avvikelsen mot referensen: • Börja här: under -5 % och minst 10 personer • Under referens, liten grupp: under -5 % och färre än 10 personer • Nära referens, under: under -2 % • Över referens: över +5 % • Nära referens: däremellan",
+      "Läget sätts efter avvikelsen mot referensen: • Börja här: mer än 5 % under och minst 10 personer • Under referens, liten grupp: mer än 5 % under och färre än 10 personer • Nära referens, under: mer än 2 % under • Över referens: mer än 5 % över • Nära referens: däremellan",
     ],
     [
       null,
@@ -5176,7 +5176,7 @@ exports[`golden: PDF/print-rapporten (byggUtskriftsrapport) på fast dataset > u
                             
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
                         </tbody></table>
-                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Avvikelse %:</strong> (organisationens median / referensens median) − 1 i %</li><li><strong>Kostnad att nå referensen:</strong> |avvikelse kr/mån| × 12 mån × (1 + 40&nbsp;%/100) × antal personer (endast om under referens, inkl. PO-påslag)</li><li><strong>Prioriteringsindex:</strong> riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100</li><li><strong>Riktningsvikt:</strong> 1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)</li><li><strong>Läge mot referensen:</strong> Läget sätts efter avvikelsen mot referensen: • Börja här: under -5 % och minst 10 personer • Under referens, liten grupp: under -5 % och färre än 10 personer • Nära referens, under: under -2 % • Över referens: över +5 % • Nära referens: däremellan</li></ul>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Avvikelse %:</strong> (organisationens median / referensens median) − 1 i %</li><li><strong>Kostnad att nå referensen:</strong> |avvikelse kr/mån| × 12 mån × (1 + 40&nbsp;%) × antal personer (endast om under referens, inkl. PO-påslag)</li><li><strong>Prioriteringsindex:</strong> riktningsvikt × (avvikelse·50&nbsp;% + volym·30&nbsp;% + jämställdhet·20&nbsp;%), skala 0–100</li><li><strong>Riktningsvikt:</strong> 1,0 om under referens, 0,5 om över (en grupp under referensen vägs tyngre)</li><li><strong>Läge mot referensen:</strong> Läget sätts efter avvikelsen mot referensen: • Börja här: mer än 5&nbsp;% under och minst 10 personer • Under referens, liten grupp: mer än 5&nbsp;% under och färre än 10 personer • Nära referens, under: mer än 2&nbsp;% under • Över referens: mer än 5&nbsp;% över • Nära referens: däremellan</li></ul>
                         <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Aktuell referens: Eget ställningstagande (per BAS)</li><li>Tabellen visar de 30 högst prioriterade grupperna</li><li>Bubblornas storlek visar kostnaden för perioden, den vågräta axeln avvikelsen och den lodräta antalet personer (logaritmisk skala)</li></ul>
                     
                         <h3 class="pr-ned-14">Jämförelsestatistik</h3>
@@ -6960,19 +6960,19 @@ exports[`golden: lönefil utan ålder (ADR-64) > "Excel (alla flikar)" matchar f
     ],
     [
       "  Kostnad att nå referensen",
-      "|avvikelse kr/mån| × 12 mån × (1 + 40 %/100) × antal personer (endast om under referens, inkl. PO-påslag)",
+      "|avvikelse kr/mån| × 12 mån × (1 + 40 %) × antal personer (endast om under referens, inkl. PO-påslag)",
     ],
     [
       "  Prioriteringsindex",
-      "riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100",
+      "riktningsvikt × (avvikelse·50 % + volym·30 % + jämställdhet·20 %), skala 0–100",
     ],
     [
       "  Riktningsvikt",
-      "1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)",
+      "1,0 om under referens, 0,5 om över (en grupp under referensen vägs tyngre)",
     ],
     [
       "  Läge mot referensen",
-      "Läget sätts efter avvikelsen mot referensen: • Börja här: under -5 % och minst 10 personer • Under referens, liten grupp: under -5 % och färre än 10 personer • Nära referens, under: under -2 % • Över referens: över +5 % • Nära referens: däremellan",
+      "Läget sätts efter avvikelsen mot referensen: • Börja här: mer än 5 % under och minst 10 personer • Under referens, liten grupp: mer än 5 % under och färre än 10 personer • Nära referens, under: mer än 2 % under • Över referens: mer än 5 % över • Nära referens: däremellan",
     ],
     [
       null,
@@ -7979,7 +7979,7 @@ exports[`golden: lönefil utan ålder (ADR-64) > PDF-rapporten (komplett) byggs 
                             
                             <tr><th><strong>= Använda i denna analys</strong></th><td><strong>4</strong></td></tr>
                         </tbody></table>
-                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Avvikelse %:</strong> (organisationens median / referensens median) − 1 i %</li><li><strong>Kostnad att nå referensen:</strong> |avvikelse kr/mån| × 12 mån × (1 + 40&nbsp;%/100) × antal personer (endast om under referens, inkl. PO-påslag)</li><li><strong>Prioriteringsindex:</strong> riktningsvikt × (avvikelse·50% + volym·30% + jämställdhet·20%), skala 0-100</li><li><strong>Riktningsvikt:</strong> 1.0 om under referens, 0.5 om över (under-betalning vägs tyngre)</li><li><strong>Läge mot referensen:</strong> Läget sätts efter avvikelsen mot referensen: • Börja här: under -5 % och minst 10 personer • Under referens, liten grupp: under -5 % och färre än 10 personer • Nära referens, under: under -2 % • Över referens: över +5 % • Nära referens: däremellan</li></ul>
+                        <p class="pr-tat"><strong>Formler:</strong></p><ul><li><strong>Avvikelse %:</strong> (organisationens median / referensens median) − 1 i %</li><li><strong>Kostnad att nå referensen:</strong> |avvikelse kr/mån| × 12 mån × (1 + 40&nbsp;%) × antal personer (endast om under referens, inkl. PO-påslag)</li><li><strong>Prioriteringsindex:</strong> riktningsvikt × (avvikelse·50&nbsp;% + volym·30&nbsp;% + jämställdhet·20&nbsp;%), skala 0–100</li><li><strong>Riktningsvikt:</strong> 1,0 om under referens, 0,5 om över (en grupp under referensen vägs tyngre)</li><li><strong>Läge mot referensen:</strong> Läget sätts efter avvikelsen mot referensen: • Börja här: mer än 5&nbsp;% under och minst 10 personer • Under referens, liten grupp: mer än 5&nbsp;% under och färre än 10 personer • Nära referens, under: mer än 2&nbsp;% under • Över referens: mer än 5&nbsp;% över • Nära referens: däremellan</li></ul>
                         <p class="pr-tat"><strong>Speciella regler:</strong></p><ul><li>Aktuell referens: Eget ställningstagande (per BAS)</li><li>Tabellen visar de 30 högst prioriterade grupperna</li><li>Bubblornas storlek visar kostnaden för perioden, den vågräta axeln avvikelsen och den lodräta antalet personer (logaritmisk skala)</li></ul>
                     
                         <h3 class="pr-ned-14">Jämförelsestatistik</h3>

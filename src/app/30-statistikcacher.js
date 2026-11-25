@@ -17,7 +17,7 @@ export function tomStatistikcacher({ recompute = true, likvardighet = true } = {
     state.powerAnalysis = null;
     if (typeof skattningarSlapp === 'function') skattningarSlapp();   // skattningarna vid andra golv (ADR-103)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // översiktens och trattdiagrammets minne följer underlaget
-    // Rensa även § 3:10-cachen så att JPA-export
+    // Rensa även likvärdighetscachen så att JPA-export
     // inte plockar resultat beräknat på ett tidigare dataset.
     // Recompute sker lat — nästa render eller export gör en fresh compute. Ett tröskelbyte behåller paren
     // (likvardighet: false): de läser ingen tröskel, och antalet små grupper räknas när resultatet läses.

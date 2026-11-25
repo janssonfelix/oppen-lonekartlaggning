@@ -338,6 +338,9 @@ describe('[B7.6] forecast: ett par per yrke i förslagen (ADR-69)', () => {
         for (let i = 0; i < 20; i++) data.push({ bas: 'D', aid: '5400', kon: 'kvinna', lon: 30000 });
         const kurva = kanslighetskurva(data, cand, { months: 1, poPct: 0 }, 1);
         expect(kurva[1].kostnad).toBe(21690 * 12 + 500 * 20);
+        // Minsta antal personer i gruppen gäller som i knappen: yrket med 12 personer faller bort vid 15.
+        expect(kanslighetskurva(data, cand, { months: 1, poPct: 0 }, 1, 15)[1].kostnad).toBe(500 * 20);
+        expect(stangningsriktning(cand, 1, 15).map(x => x.aid)).toEqual(['5400']);
     });
 });
 

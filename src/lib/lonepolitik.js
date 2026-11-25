@@ -8,7 +8,7 @@
  * Separat från appen för att kunna testas via Vitest utan DOM/state.
  *
  * Själva uppslaget (vilken policyrad som gäller för en grupp) görs av
- * policyFor() i app.js, eftersom det läser state; lonepolitikModell() tar emot
+ * policyFor() i src/app/12-tillstand.js, eftersom det läser state; lonepolitikModell() tar emot
  * det som argument, liksom tröskeln k.
  *
  * Maskeringstrappan (tre steg, `maskeringsniva`) sätts på varje yrkesgrupp i
@@ -42,7 +42,6 @@ export function organisationsBand(rader, k) {
     if (lons.length < k) return null;
     return { n: lons.length, p10: _kvantil(lons, 0.1), med: _median(lons), p90: _kvantil(lons, 0.9) };
 }
-
 
 /**
  * Var i sitt eget lönespann ligger en lön?

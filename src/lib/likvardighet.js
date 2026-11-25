@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 /**
- * Öppen lönekartläggning — Likvärdighetsanalys (DiskrL 3:10 §)
+ * Öppen lönekartläggning — Likvärdighetsanalys (3 kap. 9 § 2 diskrimineringslagen)
  *
- * Ren, testbar kärna för § 3:10-analysen. Appen importerar den
+ * Ren, testbar kärna för likvärdighetsanalysen. Appen importerar den
  * (ADR-98); likvardighetspar() i 34-likvardigt-arbete.js är adaptern
  * runt den. Vitest verifierar *algoritmen* deterministiskt.
  *
@@ -14,7 +14,7 @@
  *   Steg 1 — Organisationens AID×BAS-grupper delas i:
  *            • kvinnodominerade — analysens subjekt
  *            • alla övriga (mansdominerade och blandade) — interna jämförelsekandidater
- *              med klassen synlig (PRIMÄR jämförelsekälla; § 3:10 är en
+ *              med klassen synlig (PRIMÄR jämförelsekälla; likvärdigt arbete är en
  *              inom-arbetsgivare-analys). Minsta gruppstorlek tillämpas EJ.
  *   Steg 2 — jämförelsestatistikens AID×BAS som inte är kvinnodominerade blir
  *            kandidater med klass. Lokal könsdata primär, den nationella
@@ -488,7 +488,7 @@ export function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
  * Steg 3 — bygg kandidatpar med ARBETSVÄRDERINGSPOÄNG som krav-proxy
  * istället för BAS. Parar över BAS-gränser: ett jämförelseyrke kvalificerar om
  * dess poäng ≤ det kvinnodominerade yrkets poäng × (1 + band) — dvs likvärdiga
- * eller lägre krav (DiskrL 3:10). Bara organisationens egna jämförelseetiketter
+ * eller lägre krav (3 kap. 9 § 2). Bara organisationens egna jämförelseetiketter
  * jämförs: jämförelsestatistiken har inga poäng (ADR-76).
  *
  * @param {Array} orgKvDom

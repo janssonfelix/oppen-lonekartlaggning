@@ -53,7 +53,7 @@ export const PALETT = {
         [0.75, '#86b6ef'], [1.0, '#1c5cab']
     ],
     // Sekventiell (enkelriktad) skala: ljus → varm/röd. Används där måttet bara
-    // går åt ett håll, t.ex. § 3:10-gapet (jämförelseyrket tjänar mer → rödare).
+    // går åt ett håll, t.ex. skillnaden i likvärdigt arbete (jämförelseyrket tjänar mer → rödare).
     // En kulör från ljus till mörk.
     sekventiell: [[0.0, '#fbe3d6'], [0.5, '#e8703c'], [1.0, '#8a2f10']],
     // Neutral sekventiell skala för mått där högt varken är bra eller dåligt (lön, antal).

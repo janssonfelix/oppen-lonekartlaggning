@@ -2,11 +2,11 @@
 // Copyright 2026 Felix Jansson
 // ---- Handlingsplan: mall, förifyllning från Prioritering och Likvärdigt arbete, export ----
 // Förifyllt handlingsplansunderlag (Excel): seedar rader från Prioritering
-// (grupper under referens) och § 3:10-paren. Gruppmått, inga individdata; det användaren
+// (grupper under referens) och paren i likvärdigt arbete. Gruppmått, inga individdata; det användaren
 // fyllt i (sakligt skäl, ansvarig, tidsplan, status) ligger i state.handlingsplan och följer med.
 // Renodlar analysflödet: verktyget levererar underlaget, planen färdigställs i Word.
 // Delad seedning av handlingsplanen: rader från Prioritering (under referens, § 9)
-// + § 3:10-par. Returnerar enbart de förifyllda dataraderna (utan tomrader) så att
+// + par i likvärdigt arbete. Returnerar enbart de förifyllda dataraderna (utan tomrader) så att
 // både Excel-exporten och skärm-mallen (ritaHandlingsplan) använder samma logik.
 // Varifrån en förifylld rad kommer, som kolumnen Underlag och exporterna säger det.
 import { periodkostnad, periodOrd } from '../lib/kostnad.js';

@@ -170,7 +170,7 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
         }
     } catch (e) { rapporteraFel('Att göra: prioriteringen', e); }
 
-    // === 3. § 3:10 Likvärdighetsanalys — kandidatpar ===
+    // === 3. Likvärdighetsanalys — kandidatpar ===
     // Paren kommer i första hand ur organisationens egna yrken; jämförelsestatistiken är
     // bara en reserv. Därför krävs ingen inläst statistik för att paren ska komma med.
     try {
@@ -264,7 +264,7 @@ function _attGoraLank(it, text, klass = '') {
     return `<a href="#" data-go-to-tab="${esc(it.tab)}"${ankare} aria-label="${esc(text)}: ${esc(it.titel)}"${klass ? ` class="${klass}"` : ''}>${text}</a>`;
 }
 
-/** Meningen om § 3:10-par som utelämnats ur listan (grupp under tröskeln), annars tom sträng. */
+/** Meningen om par i likvärdigt arbete som utelämnats ur listan (grupp under tröskeln), annars tom sträng. */
 function _attGoraParNot() {
     try {
         if (!state.data.length || typeof likvardighetspar !== 'function') return '';

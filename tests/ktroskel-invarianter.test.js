@@ -122,13 +122,13 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         const w = fyllt();
         w.eval('sattForhandsvisning(true)');
         expect(kostnader(w)).toEqual([]);
-        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än tröskeln/);   // räknad i exportläget, inte tömd
+        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än gränsen/);   // räknad i exportläget, inte tömd
         expect(text(w, 'forecast-sensitivity')).not.toBe('');
         // Vid 25 blir texten densamma: en markering visar att rutorna räknas om och inte bara står kvar.
         for (const id of ['forecast-rem-result', 'forecast-sensitivity']) w.document.getElementById(id).textContent = 'gammalt';
         w.eval('sattKTroskel(25, { fraga: false })');
         expect(kostnader(w)).toEqual([]);
-        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än tröskeln/);
+        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än gränsen/);
         expect(text(w, 'forecast-sensitivity')).not.toMatch(/^gammalt$|^$/);
         w.eval('sattForhandsvisning(false)');
         expect(text(w, 'forecast-rem-result')).toMatch(/minst 1 män/);
@@ -143,7 +143,7 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         expect(text(w, 'forecast-sensitivity')).toBe('');
         oppnaFlik(w, 'loneoversyn');
         expect(kostnader(w)).toEqual([]);
-        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än tröskeln/);
+        expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än gränsen/);
         expect(text(w, 'forecast-sensitivity')).not.toBe('');
     });
     it('en tom ruta förblir tom när fliken ritas om: ingen beräkning utan knapptryck', () => {

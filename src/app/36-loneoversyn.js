@@ -27,7 +27,7 @@ import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, nyPrognos, state } from './12-tillstand.js';
 import { _laggTillMetodblad } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
@@ -100,7 +100,7 @@ function ritaRiktadeRader() {
             <input type="number" data-f="value" min="0" step="100" value="${tg.value == null ? '' : tg.value}" aria-label="Belopp" class="bredd-90">
             <select data-f="dist" aria-label="Fördelning inom gruppen"${till ? ' class="dold"' : ''}>${distOpts}</select>
             <select data-f="targetLevel" aria-label="Målnivå"${tg.dist === 'target' ? '' : ' class="dold"'}>${lvlOpts}</select>
-            <select data-f="pool" aria-label="Pott-typ" title="Ring-fenced pott (visas i kostnad-per-pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
+            <select data-f="pool" aria-label="Pott-typ" title="Pottyp: vart pengarna i raden är öronmärkta (visas i Kostnad per pott)">${[['equity', 'Likalön'], ['marknad', 'Marknad'], ['befordran', 'Befordran'], ['övrigt', 'Övrigt']].map(([v, l]) => `<option value="${v}"${(tg.pool || 'övrigt') === v ? ' selected' : ''}>${l}</option>`).join('')}</select>
             <span class="text-dampad-xs ingen-radbrytning" title="Vad raden förbrukar av potten">≈ ${Math.round(info.kostnad).toLocaleString('sv-SE')} kr</span>
             <button type="button" data-f="remove" class="btn btn-secondary btn-sm" aria-label="Ta bort rad">${ikon('kryss', 14)}</button>
         </div>${info.upplysning === 'underK' ? `<p class="k-mask-note">Raden berör ${info.n} ${info.n === 1 ? 'person' : 'personer'}, färre än ${kInstalld()} ${personOrd(kInstalld())} — beloppet bygger på enskildas löner och ingår i summorna, även i Excel-exporten.</p>` : (info.upplysning === 'ingen' ? '<p class="k-mask-note">Ingen i gruppen matchar kön och lönegräns.</p>' : '')}`;
@@ -228,7 +228,7 @@ function ritaPrognos() {
         ${vm.varningar.length ? `<p class="farg-varning fs-sm marg-8-0-0">${ikon('statusVarning')} ${vm.varningar.map(v => esc(_FC_VARNINGAR[v])).join(' ')}</p>` : ''}
         ${state.forecast.roundStep > 0 ? `<p class="text-dampad-xs marg-6-0-0">Nya löner avrundas till närmaste ${state.forecast.roundStep} kr.</p>` : ''}`; if (meterEl) tillampaDataStil(meterEl);
 
-    // (A) Lönespann per BAS + compa-ratio
+    // Lönespann per BAS, och gruppens nya median mot BAS-medianen i utfallstabellen
     // Minsta gruppstorlek: ett BAS under tröskeln får inte röja sitt lönespann —
     // P25/median/P75 pekar då ut enskilda löner. Raden utelämnas i stället för
     // att fyllas med "< 10"-celler, och BAS:et räknas upp i noten under (vm.band).
@@ -240,7 +240,7 @@ function ritaPrognos() {
         ${kMaskNot(vm.band.utelamnade, `${T.niva.en}|${T.niva.fl}`)}
         <p class="text-dampad-xs marg-6-0-0">Läget mot BAS-medianen i tabellen nedan är gruppens nya median delad med BAS-medianen: över 1,10 märks «över», under 0,90 märks «under».</p>
     </div>` : '';
-    // (D) Kostnad per pott (ring-fenced)
+    // Kostnad per pott (öronmärkta potter)
     const { perPott: poolCost, potter: poolRows } = vm.potter;
     const poolHtml = (poolRows.length || out.generellCost > 0.5) ? `<div class="card marg-0-0-14">
         <strong class="block-mb6">Kostnad per pott (kr/mån)</strong>
@@ -248,7 +248,7 @@ function ritaPrognos() {
             ${out.generellCost > 0.5 ? `<tr><td>Generellt påslag</td><td class="t-hoger">${kr(out.generellCost)}</td></tr>` : ''}
             ${poolRows.map(p => `<tr><td>${_FC_POTTER[p]}</td><td class="t-hoger">${kr(poolCost[p])}</td></tr>`).join('')}
         </tbody></table>
-        <p class="text-dampad-xs marg-6-0-0">Ring-fenced pottar — tagga varje riktad rad med en pott-typ för att se vart utrymmet går.</p>
+        <p class="text-dampad-xs marg-6-0-0">Öronmärkta potter: välj en pottyp på varje riktad rad för att se vart utrymmet går.</p>
     </div>` : '';
     // Utfall: nyckeltal + gap + per-grupp-tabell (minsta gruppstorlek på medianer)
     // Där medianerna maskeras maskeras också kostnaden: i en grupp med en person är ett påslag i
@@ -288,7 +288,7 @@ function ritaPrognos() {
             <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${{ '-1': 'bg-ok', 0: 'bg-dampad', 1: 'bg-kritisk' }[ra.riktning]}" data-stil-bredd="${w(ra.efter)}%"></div></div></div>
         </div>`;
     };
-    // Stegvis plan över N år (DiskrL 3:11)
+    // Stegvis plan över N år (3 kap. 13 § diskrimineringslagen: senast inom tre år)
     const years = state.forecast.years || 1;
     let stagedHtml = '';
     if (vm.plan) {
@@ -312,13 +312,13 @@ function ritaPrognos() {
             </div>
             <p class="text-dampad-xs marg-8-0-0">Andelen till kvinnodominerade grupper visar ungefär hur mycket av översynen som riktas mot skillnaderna i likvärdigt arbete.</p>
         </div>` : '';
-    // Spillover-/leapfrog-varning
+    // Grupper som går om varandra (hittaOmkorningar)
     // Jämförelsen visar gruppmedianer: bara grupper som når tröskeln tas med, och inte en grupp vars medianer
     // maskeras i utfallet för att dess kostnad står på den samlade raden (ADR-70, utfallsvy).
     const leaps = vm.omkorningar;
     const leapHtml = leaps.length ? `
         <div class="card bak-varning-yta ram-v-3-varning marg-0-0-14">
-            <strong class="block-mb6">${ikon('statusVarning')} Spillover: ${leaps.length} grupp${leaps.length > 1 ? 'er' : ''} går om en tidigare högre grupp</strong>
+            <strong class="block-mb6">${ikon('statusVarning')} Omkörning: ${leaps.length} grupp${leaps.length > 1 ? 'er' : ''} går om en tidigare högre grupp</strong>
             <ul class="fs-sm lh-1_6 marg-4-0-0-18">
                 ${leaps.slice(0, 6).map(l => `<li><strong>${esc(l.bas)}·${esc(l.aid)}</strong> (median ${kr(l.gammalA)} till ${kr(l.nyA)}) passerar <strong>${esc(l.overBas)}·${esc(l.overAid)}</strong> (${kr(l.gammalB)} till ${kr(l.nyB)})</li>`).join('')}
                 ${leaps.length > 6 ? `<li>… och ${leaps.length - 6} till.</li>` : ''}
@@ -331,7 +331,7 @@ function ritaPrognos() {
             <div class="fs-md lh-1_8">
                 Kvinnors medianlön i % av mäns: ${konOk ? andelCell : esc(_konUtelamnatNot()) + '<br>'}
                 ${konOk ? gapBar() : ''}
-                Oförklarad skillnad (regressionen): ${ols.fore == null && ols.efter == null ? '<span class="f-dampad">— (för få obs för regression)</span>' : gapCell}
+                Oförklarad skillnad (regressionen): ${ols.fore == null && ols.efter == null ? '<span class="f-dampad">– (för få personer för regressionen)</span>' : gapCell}
             </div>
             <p class="text-dampad-xs marg-8-0-0">Under 100 % betyder att kvinnors medianlön är lägre än mäns. Den oförklarade skillnaden anges i procent (negativt = kvinnor lägre; "minskar" = närmare noll) och räknas om med regressionen på de simulerade lönerna.</p>
         </div>
@@ -423,7 +423,7 @@ function _ritaPrognosLutning(d, sim) {
 
 /** Ritar fliken Löneöversyn: kontrollerna ur tillståndet, de riktade raderna, prognosen, scenarierna och knappresultaten. */
 export function ritaLoneoversyn() {
-    // Spegla state → statiska kontroller (för config-load)
+    // Fälten följer tillståndet (också efter en inläst konfigurationsfil)
     const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) /** @type {HTMLInputElement} */ (el).value = v; };
     setVal('forecast-budget-mode', state.forecast.budget.mode);
     setVal('forecast-budget-value', state.forecast.budget.value);
@@ -454,7 +454,7 @@ export function _fcGlomKnappresultat() {
     _fcBorttagnaNot = '';   // meningen om borttagna förslag gällde det förra underlaget eller den förra prognosen
     _fcVisaParNot();
 }
-// Kandidater ur § 3:10-paren för förslag, mål-läge och känslighetskurva. Par där det kvinnodominerade
+// Kandidater ur paren i likvärdigt arbete för förslag, mål-läge och känslighetskurva. Par där det kvinnodominerade
 // yrket eller jämförelseyrket har färre personer än den inställda tröskeln tas inte med, också på
 // skärmen (ADR-69): förslagets belopp räknas ur jämförelseyrkets median och står på raden, i summorna,
 // i Excel-exporten och i konfigurationsfilen. Undantaget gäller bara fliken Likvärdigt arbete. Minsta
@@ -472,7 +472,7 @@ const _fcParUrsprung = new WeakMap();
 // De riktade raderna som ett sparat scenario (A/B) räknades med, per scenario. Bara i minnet, som scenarierna själva.
 /** @type {WeakMap<object, object[]>} */
 const _fcScenarioRader = new WeakMap();
-/** Alla § 3:10-par i analysen, utan tröskel (tom lista om analysen inte går att räkna). */
+/** Alla par i likvärdighetsanalysen, utan tröskel (tom lista om analysen inte går att räkna). */
 function _fcAllaPar() {
     try { const lv = likvardighetResultat(); return (lv && lv.pairs) || []; } catch (_e) { return []; }
 }
@@ -495,8 +495,8 @@ function _fcKandidater() {
 }
 /**
  * Gör förslagen till riktade rader (kalla: 'par') och minns, för varje rad, storleken på grupperna i paret den räknades
- * ur, så att _fcRensaParMal kan avgöra raden säkert när tröskeln ändras. Paret är det som _fcForeslaRiktning och
- * _fcStangningsriktning valde: ett per yrke, ur samma _fcEttParPerYrke.
+ * ur, så att _fcRensaParMal kan avgöra raden säkert när tröskeln ändras. Paret är det som förslaget valde: ett per
+ * yrke, ur samma ettParPerYrke (src/lib/loneoversyn.js).
  */
 function _fcForslagTillRader(targets, cand) {
     const valda = new Map(ettParPerYrke(cand).map(c => [c.bas + '|' + c.aid, c]));
@@ -540,7 +540,7 @@ function _fcOptimera() {
 }
 /**
  * Efter ändrad tröskel, inläst konfigurationsfil och inläst lönefil: tar bort de riktade rader som verktyget föreslog
- * ur § 3:10-par (kalla: 'par') och som inte säkert räknades ur ett par där båda grupperna når den inställda tröskeln,
+ * ur par i likvärdigt arbete (kalla: 'par') och som inte säkert räknades ur ett par där båda grupperna når den inställda tröskeln,
  * också på skärmen (ADR-69), och uppdaterar meningen om utelämnade par. Rader som användaren lagt till själv står kvar
  * (regel R2). Anropas av sattKTroskel före omritningen.
  *
@@ -612,7 +612,7 @@ function _fcLaggTillEfterVillkor() {
     ritaPrognos();
     if (added === 0) alert('Grupperna finns redan bland de riktade raderna.');
 }
-// Mål-läge: bygg riktade rader som stänger en andel av de osakliga gapen (§ 3:10).
+// Mål-läge: riktade rader som minskar skillnaderna i likvärdigt arbete med en andel.
 function _fcStangGap() {
     const d = hamtaData();
     if (!d.length) return;
@@ -657,7 +657,7 @@ function _ritaScenariojamforelse() {
     const maskerat = vm.maskerat;
     const col = (r) => r ? `<td class="t-hoger">${kr(r.anvant)}</td><td class="t-hoger">${kr(r.totalKostnad)}</td><td class="t-hoger">${andelAvMan(r.raEfter)}</td><td class="t-hoger">${pc(r.oforklaratEfter)}</td><td class="t-hoger">${kr(r.tillKvDom)}</td><td class="t-hoger">${r.omkorningar}</td>` : '<td colspan="6" class="farg-dampad kursiv">ej sparat</td>';
     host.innerHTML = `<table class="data-table fs-sm">
-        <thead><tr><th>Scenario</th><th class="t-hoger">Använt/mån</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kv. median i % av mäns, efter</th><th class="t-hoger">Oförkl. efter</th><th class="t-hoger">Till kv-dom</th><th class="t-hoger">Spillover</th></tr></thead>
+        <thead><tr><th>Scenario</th><th class="t-hoger">Använt/mån</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kv. median i % av mäns, efter</th><th class="t-hoger">Oförkl. efter</th><th class="t-hoger">Till kv-dom</th><th class="t-hoger">Omkörningar</th></tr></thead>
         <tbody>
             <tr><td><strong>A</strong> ${sc.A ? `<span class="f-dampad">(${esc(sc.A.budgetTxt)}, ${sc.A.targetsCount} riktade)</span>` : ''}</td>${col(vm.A)}</tr>
             <tr><td><strong>B</strong> ${sc.B ? `<span class="f-dampad">(${esc(sc.B.budgetTxt)}, ${sc.B.targetsCount} riktade)</span>` : ''}</td>${col(vm.B)}</tr>
@@ -674,8 +674,8 @@ function _fcLasMal(falt, standard) {
     if (!isFinite(v)) return { ok: true, pct: standard, min: lo, max: hi };
     return { ok: v >= lo && v <= hi, pct: v, min: lo, max: hi };
 }
-// (C) Tröskelmål: minsta likalönslyft till kvinnor för att nå mål-gap / icke-signifikans. Sökningen är
-// likalonslyftForMal i src/lib/loneoversyn.js (_fcLyftForMal); här läses fälten, k-spärren prövas och resultatet ritas.
+// Tröskelmål: det minsta likalönslyftet till kvinnor som når målet för skillnaden eller gör den icke-signifikant.
+// Sökningen är likalonslyftForMal i src/lib/loneoversyn.js; här läses fälten och resultatet ritas.
 function _fcLyftMotMal() {
     const host = document.getElementById('forecast-threshold-result');
     const d = hamtaData();
@@ -697,16 +697,16 @@ function _fcLyftMotMal() {
     const base = svar.utgangslage;
     if (svar.status === 'ingenSkattning') { host.innerHTML = '<span class="f-dampad">För få observationer för regression.</span>'; return; }
     if (svar.status === 'redan') { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Målet är redan uppfyllt (oförklarad skillnad ${svPct(base.konPct, 1)}${useSig ? `, p=${base.pValue == null ? '–' : svTal(base.pValue, 3)}` : ''}).</span>`; return; }
-    if (svar.status === 'utomRackhall') { host.innerHTML = `<span class="f-kritisk">Mer än ${MAX_LYFT_PCT} % likalönslyft skulle krävas — kontrollera datan/modellen.</span>`; return; }
+    if (svar.status === 'utomRackhall') { host.innerHTML = `<span class="f-kritisk">Mer än ${MAX_LYFT_PCT} % likalönslyft skulle krävas. Kontrollera underlaget och regressionens variabler.</span>`; return; }
     const hi = /** @type {number} */ (svar.lyftPct), kostnad = /** @type {number} */ (svar.kostnadPerManad);
     const efter = /** @type {{konPct: number|null}} */ (svar.resultat);
     host.innerHTML = `<div class="fs-sm lh-1_6">
         För att nå <strong>${useSig ? `en oförklarad skillnad som inte är signifikant (p över ${svTal(SIGNIFIKANS_P, 2)})` : 'en oförklarad skillnad på högst ' + svPoPct(tgt)}</strong> krävs ett likalönslyft på <strong>≈ ${svPct(hi, 1)}</strong> till kvinnor.
         <br>Kostnad: <strong>≈ ${Math.round(kostnad).toLocaleString('sv-SE')} kr/mån</strong> (≈ ${Math.round(periodkostnad(kostnad, state.costSettings)).toLocaleString('sv-SE')} kr inkl. PO/period). Oförklarad skillnad då: ${efter.konPct == null ? '–' : svPct(efter.konPct, 2)}.
-        <br><span class="text-dampad-xs">Informativ beräkning (jämn lyft-procent till kvinnor) — för fördelning per grupp, använd förslags-/mål-knapparna.</span>
+        <br><span class="text-dampad-xs">Ett räkneexempel med samma procentuella lyft till alla kvinnor. För en fördelning per grupp, använd knapparna för förslag och mål.</span>
     </div>`;
 }
-// (E) Marknadspositionering: lyft grupper under marknad × factor.
+// Marknadspositionering: lyft grupper under marknadens median × faktorn.
 function _fcMarknad() {
     const d = hamtaData();
     if (!d.length) return;
@@ -724,7 +724,7 @@ function _fcMarknad() {
     ritaPrognos();
     if (!added) alert('Grupperna finns redan bland de riktade raderna.');
 }
-// (F) Budgetkänslighetskurva (§3:10-stängning 0→100 %).
+// Budgetkänsligheten: skillnaderna i likvärdigt arbete minskade med 0–100 %.
 function _fcKanslighet() {
     const host = document.getElementById('forecast-sensitivity');
     const d = hamtaData();
@@ -735,14 +735,15 @@ function _fcKanslighet() {
     const cand = _fcKandidater();
     if (!cand.length) { host.innerHTML = '<span class="text-dampad-sm">Verktyget hittade inga skillnader i likvärdigt arbete att räkna på.</span>'; return; }
     const cost = _fcKostnadsval();   // samma kostnadsinställningar och definition av kvinnodominerat som prognosen
-    // k: det råa gapet följer tröskeln (vymodellKanslighet i src/lib/vymodell-loneoversyn.js).
-    const { kurva: curve, storsta: maxGap } = vymodellKanslighet(d, cand, cost, kTroskel());
+    // k: det råa gapet följer tröskeln; minsta antal personer i gruppen som knappen för att minska skillnaderna
+    // (vymodellKanslighet i src/lib/vymodell-loneoversyn.js).
+    const { kurva: curve, storsta: maxGap } = vymodellKanslighet(d, cand, cost, kTroskel(), state.forecast.minGroupN || 0);
     const kr = n => svKr(n);
     host.innerHTML = `<table class="data-table fs-sm"><thead><tr><th>Minskning av skillnaderna</th><th class="t-hoger">Total kostnad</th><th class="t-hoger">Kvinnors median i % av mäns</th><th>　</th></tr></thead><tbody>
         ${curve.map(c => `<tr><td>${svPct((c.fraction * 100), 0)}</td><td class="t-hoger">${kr(c.kostnad)}</td><td class="t-hoger">${c.rawGap == null ? '–' : andelAvMan(c.rawGap)}</td><td><div class="rund-4 hojd-9 min-bredd-2 bg-info" data-stil-bredd="${(Math.abs(c.rawGap || 0) / maxGap * 100).toFixed(0)}%"></div></td></tr>`).join('')}
     </tbody></table><p class="text-dampad-xs marg-6-0-0">Avtagande avkastning: visar hur den råa skillnaden och kostnaden utvecklas när skillnaderna i likvärdigt arbete minskar allt mer.${_fcParNot ? ' ' + esc(_fcParNot) : ''}</p>`; tillampaDataStil(host);
 }
-// (B) Individnivå-remediation (DiskrL 3:9).
+// Kostnaden på individnivå (lika arbete, 3 kap. 9 § 1).
 function _fcAtgard() {
     const host = document.getElementById('forecast-rem-result');
     const d = hamtaData();
@@ -758,7 +759,7 @@ function _fcAtgard() {
     const rem = vm.rem;
     state.forecast._remediation = rem;
     const kr = n => svKr(n);
-    if (!rem.count) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Inga kvinnor ligger mer än tröskeln under sitt jämförelsevärde.</span>`; return; }
+    if (!rem.count) { host.innerHTML = `<span class="farg-ok">${ikon('bock')} Inga kvinnor ligger mer än gränsen under sitt jämförelsevärde.</span>`; return; }
     const { visade, dolda } = vm;
     const rowsHtml = visade.slice(0, 12).map(g => `<tr><td>${esc(g.bas)}</td><td>${esc(g.aid)}</td><td class="t-hoger">${g.count}</td><td class="t-hoger">${kr(g.cost)}/mån</td></tr>`).join('');
     // Summan är ett lönemått över de berörda: den visas först när de är minst K.
@@ -768,7 +769,7 @@ function _fcAtgard() {
     const doldaNot = dolda
         ? `<p class="k-mask-note">${dolda} ${dolda === 1 ? 'grupp' : 'grupper'} där färre än ${K} kvinnor berörs ${vm.summaVisas ? 'ingår i summan men ' : ''}redovisas inte per grupp och blir inga riktade rader.</p>`
         : '';
-    host.innerHTML = `<div class="fs-sm marg-b-8"><strong>${rem.count}</strong> individer (kvinnor) ligger mer än tröskeln under sitt jämförelsevärde. ${summa}</div>
+    host.innerHTML = `<div class="fs-sm marg-b-8"><strong>${rem.count}</strong> ${rem.count === 1 ? 'kvinna' : 'kvinnor'} ligger mer än gränsen under sitt jämförelsevärde. ${summa}</div>
         ${rowsHtml ? `<table class="data-table st-085"><thead><tr><th>BAS</th><th>${stor(T.kod.en)}</th><th class="t-hoger">Antal</th><th class="t-hoger">Kostnad</th></tr></thead><tbody>${rowsHtml}</tbody></table>` : ''}${doldaNot}
         <p class="text-dampad-xs marg-6-0-0">Jämförelsevärdet är mäns median med samma ${T.enhet.en} i samma ${T.niva.en} när minst ${K} män finns där, annars mäns median i BAS (också minst ${K} män). Endast aggregat visas. Den slutliga bedömningen av sakliga skäl görs manuellt.</p>`;
 }
@@ -822,7 +823,7 @@ function _exportPrognosExport() {
         ['Generellt (kr/mån)', kr(out.generellCost || 0)],
         ['Riktat (kr/mån)', kr(out.riktadCost || 0)],
         ['Varav till kvinnodominerade grupper (kr/mån)', varavKvDom == null ? '–' : kr(varavKvDom || 0)],
-        ['Spillover-varningar (grupper som går om en högre grupp)', vy.omkorningar.length],
+        ['Omkörningar (grupper som går om en tidigare högre grupp)', vy.omkorningar.length],
         ['Total kostnad (inkl. PO + period)', kr(out.totalKostnad)],
         ['Lönesumma före (kr/mån)', kr(out.lonsummaFore)],
         ['Lönesumma efter (kr/mån)', kr(out.lonsummaEfter)],
@@ -883,11 +884,9 @@ export function uppstartLoneoversyn() {
         _fcUppdateraForslagPott();
         document.getElementById('forecast-export')?.addEventListener('click', exportPrognos);
         document.getElementById('forecast-reset')?.addEventListener('click', () => {
-            state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
+            state.forecast = nyPrognos();
+            // Tomma fält (null) sätts inte av ritaLoneoversyn; de övriga fälten följer tillståndet.
             ['forecast-budget-value', 'forecast-generell-value'].forEach(id => { const el = document.getElementById(id); if (el) /** @type {HTMLInputElement} */ (el).value = ''; });
-            const mn = document.getElementById('forecast-min-n'); if (mn) /** @type {HTMLInputElement} */ (mn).value = '10';
-            const rs = document.getElementById('forecast-round'); if (rs) /** @type {HTMLInputElement} */ (rs).value = '0';
-            const yr = document.getElementById('forecast-years'); if (yr) /** @type {HTMLInputElement} */ (yr).value = '1';
             _fcGlomKnappresultat();
             ritaLoneoversyn();
         });
