@@ -343,12 +343,18 @@ kontrollsummorna i `vendor/SHA256SUMS`). Utvecklingsberoendena bevakas av Depend
 
 1. Granska `docs/dataskydd/riskanalys.md` och `docs/dataskydd/dataskydd.md` mot koden och sätt
    granskningsdatumet (punkt 17b i [`oppna-punkter.md`](oppna-punkter.md)).
-2. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
-3. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
-4. Har funktionalitet tillkommit eller ändrats sedan förra versionen: uppdatera och bygg om bildspelet
+2. Läs nästa område i tur och ordning rad för rad, och rätta det som glidit isär: en uppgift på två ställen, en
+   kommentar eller ett test som inte längre stämmer, död kod. En diff visar inte originalet till en kopia, så det
+   syns bara när helheten läses. Områdena: (1) indata och förtroendegränser, (2) minsta gruppstorlek och
+   undertryckning, (3) exporterna, (4) statistiken, (5) löneöversyn, kostnad, prioritering och lönepolitik,
+   (6) rensning, inaktivitet och tillstånd, (7) övriga vyer och diagramritaren, (8) bygget, CI och verktygen,
+   (9) testsviten. Vilket område som lästs står i CHANGELOG under versionen.
+3. Sätt versionen i `VERSION` och `package.json`, och byt rubriken *Oförlöst* i `CHANGELOG.md` mot versionen.
+4. `npm run build:app && npm run bundle`; för in byggets kontrollsumma och version på rad 3 i riskanalysen.
+5. Har funktionalitet tillkommit eller ändrats sedan förra versionen: uppdatera och bygg om bildspelet
    `site/genomgang.html` (Definition of Done i `.github/CONTRIBUTING.md`).
-5. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden skriver ut taggkommandot.
-6. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om, signerar och
+6. Kör `npm run test:full`, checka in och kör `npm run release:kontroll`. Grinden skriver ut taggkommandot.
+7. Pusha taggen `v<VERSION>`. Arbetsflödet `.github/workflows/release.yml` kör grinden igen, bygger om, signerar och
    publicerar en GitHub Release. Samma tagg publicerar demosidan (`.github/workflows/pages.yml`; går också att köra
    för hand).
 
