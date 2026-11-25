@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT,
     URVAL_LISTA_MAX, urvalSomLista, urvalAktivt, harleddaLager, harlettNamn, harlettNot,
-    underlagKonAntal, underlagSkyddat, underlagVarde, underlagDimension, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening, exportSkal, EXPORT_SKAL } from '../src/lib/figur.js';
+    underlagKonAntal, underlagSkyddat, underlagVarde, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening, exportSkal, EXPORT_SKAL } from '../src/lib/figur.js';
 import { kvantil } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
@@ -918,8 +918,6 @@ describe('underlag: skyddsregeln, valbara värden och valet', () => {
         expect(underlagVarde({ falt: 'x', varde: r => r.lon > 1 ? 7 : null }, { lon: 2 })).toBe('7');
         expect(underlagVarde(SEKTOR, { sektor: '' })).toBeNull();
         expect(underlagVarde(SEKTOR, {})).toBeNull();
-        expect(underlagDimension(und(), 'sektor')).toBe(SEKTOR);
-        expect(underlagDimension(und(), 'bas')).toBeNull();
     });
     it('underlagVarden: bara värden vars grupp klarar regeln går att välja, i ordning; de andra räknas', () => {
         expect(underlagVarden(und(), SEKTOR)).toEqual({ varden: ['Bara kv', 'Mellan', 'Stor'], utelamnade: 1 });

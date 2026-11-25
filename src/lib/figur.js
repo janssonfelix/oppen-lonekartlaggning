@@ -594,15 +594,6 @@ export function underlagVarde(dim, rad) {
 }
 
 /**
- * Dimensionen `falt` i figurens underlag, eller null.
- * @param {any} underlag @param {string} falt
- */
-export function underlagDimension(underlag, falt) {
-    const dims = underlag && Array.isArray(underlag.dimensioner) ? underlag.dimensioner : [];
-    return dims.find(u => u && u.falt === falt) || null;
-}
-
-/**
  * Värdena som går att välja i dimensionen: de vars grupp (raderna med värdet) klarar skyddsregeln, i dimensionens
  * `ordning` (en jämförelsefunktion) eller svensk sorteringsordning. `utelamnade` är antalet värden som inte går att
  * välja; de ingår bara i hela underlaget.

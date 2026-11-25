@@ -8,15 +8,9 @@
  * Excel-filen byggs, med samma pivot som fliken (pivottabell) och samma regler för minsta gruppstorlek som Utforskas
  * export: en cell under tröskeln blir tom, och rader och kolumner som bara har tomma celler utelämnas och räknas.
  */
-import { pivottabell } from './utforska.js';
+import { pivottabell, DIMENSIONER, MATT } from './utforska.js';
 import { personOrd } from './namn.js';
 import { STANDARDTERMER as T, stor } from './termer.js';
-
-
-// Samma listor som i src/lib/utforska.js (DIMENSIONER, MATT); tests/tabellrecept.test.js vaktar att de är lika.
-const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
-const MATT = ['median', 'medel', 'n', 'p10', 'p25', 'p75', 'p90', 'spridning', 'andelKv', 'gap'];
-export const RECEPT_DIMENSIONER = DIMENSIONER, RECEPT_MATT = MATT;
 
 export const DIM_ETIKETT = Object.freeze({
     bas: stor(T.niva.en), aid: stor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',

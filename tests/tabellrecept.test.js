@@ -2,8 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Egna tabeller i rapporten (src/lib/tabellrecept.js): recept, validering och tabeller med minsta gruppstorlek.
 import { describe, it, expect } from 'vitest';
-import { nyttRecept, valideraRecept, receptBeskrivning, receptTillTabeller, RECEPT_DIMENSIONER, RECEPT_MATT } from '../src/lib/tabellrecept.js';
-import { DIMENSIONER, MATT } from '../src/lib/utforska.js';
+import { nyttRecept, valideraRecept, receptBeskrivning, receptTillTabeller } from '../src/lib/tabellrecept.js';
 
 const rad = (bas, aid, kon, lon, alder = 40) => ({ bas, aid, yrke: `${aid} Yrke${aid}`, yrkeLabel: `Yrke${aid}`, kon, lon, alder });
 const grupp = (bas, aid, kon, n, lon0) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon, lon0 + i * 100, 25 + (i % 30)));
@@ -11,10 +10,6 @@ const underlag = () => [...grupp('A', '1000', 'kvinna', 12, 30000), ...grupp('A'
     ...grupp('A', '2000', 'kvinna', 4, 77777), ...grupp('B', '3000', 'kvinna', 15, 40000), ...grupp('B', '3000', 'man', 3, 88888)];
 
 describe('tabellrecept: recept', () => {
-    it('dimensionerna och måtten är Utforskas', () => {
-        expect(RECEPT_DIMENSIONER).toEqual(DIMENSIONER);
-        expect(RECEPT_MATT).toEqual(MATT);
-    });
     it('nyttRecept tar Utforskas spec, kortar namnet och ger en beskrivning som namn när inget anges', () => {
         const r = nyttRecept({ rad: 'aid', kolumn: 'kon', matt: 'median', delaKon: false, slaIhop: false, urval: { lage: 'alla', villkor: [] }, gruppVillkor: [] }, { namn: '' });
         expect(r.id).toMatch(/^t/);
