@@ -57,8 +57,9 @@ i sidhuvudet (`aria-expanded`). Den stängs av ett val i menyn, av Escape och av
 när den öppnas och tillbaka till knappen när den stängs. När fönstret passerar brytpunkten stängs menyn utan glidning.
 
 **Vakten** är `tests/a11y.test.js`: axe-core (ett utvecklingsberoende som aldrig ingår i bygget) körs i jsdom mot varje
-ritad flik med demodata och kräver noll överträdelser av nivåerna *serious*, *critical* och *moderate*. Färgkontrasten
-kräver en layoutmotor och prövas inte där.
+ritad flik med demodata (diagrammen ritade av diagramkärnan) och kräver noll överträdelser av nivåerna *serious*,
+*critical* och *moderate*. Färgkontrasten kräver en layoutmotor och prövas inte där; palettens kontrast mot ytorna
+räknas i `tests/farger.test.js`.
 
 ## 2. Processöversikten och *Börja här*
 
