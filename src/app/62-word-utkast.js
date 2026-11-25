@@ -85,7 +85,6 @@ async function _utkastFyllBilder(block) {
 
 /** Bygger Word-utkastet som .docx: filen som Blob och dess namn. Används av knappen och av ZIP-exporten. */
 export async function byggWordUtkast() {
-    if (typeof JSZip === 'undefined') throw new Error('en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt');
     const year = new Date().getFullYear();
     const stamp = idagDatum();
     const demo = state.isDemo;

@@ -13856,11 +13856,6 @@ function exportLikvardighet(...a) {
 function _exportLikvardighetExport() {
   let stegnamn = "init";
   try {
-    stegnamn = "kontroll XLSX-bibliotek";
-    if (typeof XLSX === "undefined" || !XLSX.utils || typeof XLSX.writeFile !== "function") {
-      alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
-      return;
-    }
     stegnamn = "hämta result från state";
     const result = likvardighetResultat();
     if (!result) {
@@ -16901,10 +16896,6 @@ function exportPrognos(...a) {
   ));
 }
 function _exportPrognosExport() {
-  if (typeof XLSX === "undefined") {
-    alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
-    return;
-  }
   if (!state.forecast.result || !hamtaData().length) {
     alert("Det finns ingen prognos att exportera. Ange en pott först.");
     return;
@@ -18201,10 +18192,6 @@ function exportHandlingsplan(...a) {
   ));
 }
 function _exportHandlingsplanExport() {
-  if (typeof XLSX === "undefined") {
-    alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
-    return;
-  }
   const header = [
     "Åtgärd",
     `Grupp (${T.enhet.en} och ${T.niva.en})`,
@@ -22580,7 +22567,6 @@ function _efterInlastData() {
 }
 var CSV_MALL_RUBRIKER = ["BAS-intervall", "AID", "Manadslon", "Alder", "Kon", "Poang"];
 function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
-  if (typeof XLSX === "undefined") throw new Error("Excelfilen kan inte läsas: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
   const wb = XLSX.read(new Uint8Array(buf), { type: "array" });
   const sheetName = wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
@@ -27341,7 +27327,7 @@ function ritaStrukturTradkarta(d, id = "chart-struktur-tradkarta") {
   if (!el) return;
   let figur = null;
   try {
-    figur = d && d.length && typeof d3 !== "undefined" ? _strukturTradkartaFigur(d) : null;
+    figur = d && d.length ? _strukturTradkartaFigur(d) : null;
   } catch (e) {
     rapporteraFel("diagram chart-struktur-tradkarta", e);
   }
@@ -27574,10 +27560,6 @@ function exportEuRapport(...a) {
   ));
 }
 function _exportEuRapportExport() {
-  if (typeof XLSX === "undefined") {
-    alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
-    return;
-  }
   const d = hamtaData();
   if (!d.length) {
     alert("Ingen data.");
@@ -27847,10 +27829,6 @@ function _exportAlltTillExcelExport() {
     alert("Läs in lönefilen först.");
     return;
   }
-  if (typeof XLSX === "undefined") {
-    alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
-    return;
-  }
   const wb = _excelAlltBok();
   XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
   _visaExportvarning();
@@ -27978,10 +27956,6 @@ function exportJPAProtokoll(...a) {
 function _exportJPAProtokollExport() {
   if (!state.data.length) {
     alert("Läs in lönefilen först.");
-    return;
-  }
-  if (typeof XLSX === "undefined") {
-    alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
     return;
   }
   const d = hamtaData();
@@ -28759,7 +28733,6 @@ function _excelBladnamn(namn, reserv) {
   return namn.length <= 31 && namn.trim() && !/[:\\/?*[\]]/.test(namn) ? namn : reserv;
 }
 function _laggTillMetodblad(wb, { undantag = "", extra = [] } = {}) {
-  if (typeof XLSX === "undefined" || !XLSX.utils || !wb) return;
   const rows = [["Metod & parametrar — reproducerbarhet och tolkning"], [""], ..._metodbilaga(), ...extra];
   const ram = rows.findIndex((rad) => rad[0] === "Rättslig ram");
   rows.splice(ram < 0 ? rows.length : ram + 1, 0, ["Ansvar", ANSVARSFORBEHALL]);
@@ -36492,7 +36465,6 @@ async function _utkastFyllBilder(block) {
   return { block: ut, saknas };
 }
 async function byggWordUtkast() {
-  if (typeof JSZip === "undefined") throw new Error("en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt");
   const year = (/* @__PURE__ */ new Date()).getFullYear();
   const stamp = idagDatum();
   const demo = state.isDemo;
@@ -36545,10 +36517,6 @@ function exportJamforelseExcel(...a) {
   ));
 }
 function _exportJamforelseExcelExport() {
-  if (typeof XLSX === "undefined") {
-    alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
-    return;
-  }
   const d = hamtaData();
   if (!d.length) {
     alert("Ingen lönefil är inläst. Läs in lönefilen först.");
@@ -36756,10 +36724,6 @@ function exportZip(...a) {
   ));
 }
 async function _exportZipExport() {
-  if (typeof JSZip === "undefined") {
-    alert("Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.");
-    return false;
-  }
   if (!hamtaData().length) {
     alert("Läs in lönefilen först.");
     return false;
@@ -36767,12 +36731,10 @@ async function _exportZipExport() {
   const zip = new JSZip();
   visaLaddning();
   try {
-    if (typeof XLSX !== "undefined") {
-      try {
-        zip.file("lonekartlaggning_komplett.xlsx", XLSX.write(_excelAlltBok(), { bookType: "xlsx", type: "array" }));
-      } catch (e) {
-        rapporteraFel("ZIP: Excel-filen", e);
-      }
+    try {
+      zip.file("lonekartlaggning_komplett.xlsx", XLSX.write(_excelAlltBok(), { bookType: "xlsx", type: "array" }));
+    } catch (e) {
+      rapporteraFel("ZIP: Excel-filen", e);
     }
     try {
       const word = await byggWordUtkast();

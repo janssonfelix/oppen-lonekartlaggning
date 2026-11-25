@@ -427,7 +427,6 @@ export function _hpValideraKonfiguration(lista, varningar) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 export function exportHandlingsplan(...a) { return medExportLage(() => _exportHandlingsplanExport.apply(null, /** @type {any} */ (a))); }
 function _exportHandlingsplanExport() {
-    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const header = ['Åtgärd', `Grupp (${T.enhet.en} och ${T.niva.en})`, 'Antal berörda', 'Underlag', 'Sakliga skäl prövade?', `Beräknad kostnad (kr/${periodOrd(state.costSettings)}, inkl. PO)`, 'Kostnaden avser', 'Ansvarig', 'Tidsplan (senast inom tre år)', 'Status',
         'Sakliga skäl (kategori och belopp)', 'Förklarad andel av skillnaden (%)'];
     const seed = _handlingsplanForifyllning();

@@ -179,7 +179,6 @@ function _excelLonepolitikMetod(blad) {
 function exportAlltTillExcel(...a) { return medExportLage(() => _exportAlltTillExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportAlltTillExcelExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
-    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const wb = _excelAlltBok();
     XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
     _visaExportvarning();
@@ -350,7 +349,6 @@ const JPA_BLAD_ALLA_GRUPPER = '2a. Lika arbete, alla grupper';
 export function exportJPAProtokoll(...a) { return medExportLage(() => _exportJPAProtokollExport.apply(null, /** @type {any} */ (a))); }
 function _exportJPAProtokollExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
-    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
 
     const d = hamtaData();
     const now = new Date();

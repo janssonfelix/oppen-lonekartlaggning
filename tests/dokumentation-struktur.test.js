@@ -384,7 +384,7 @@ describe('en källa: inga egna kopior av esc, median eller kvantil', () => {
     });
 });
 
-describe('appens moduler: inga vakter på funktioner som alltid finns', () => {
+describe('appens moduler: inga vakter på funktioner och bibliotek som alltid finns', () => {
     // En importerad eller i filen deklarerad funktion finns alltid när modulen körs; en typeof-vakt på den döljer
     // bara ett stavfel. Vakter på webbläsarens API, variabler och egenskaper står kvar.
     it('ingen typeof X === \'function\' på en importerad eller deklarerad funktion i src/app', () => {
@@ -396,6 +396,16 @@ describe('appens moduler: inga vakter på funktioner som alltid finns', () => {
             ]);
             return [...t.matchAll(/typeof ([A-Za-z_$][\w$]*) [!=]== 'function'/g)].filter(m => egna.has(m[1]))
                 .map(m => `${f}:${radFor(t, m.index)} ${m[1]}`);
+        })).toEqual([]);
+    });
+    // Biblioteken i vendor/ bäddas in före appen (tools/bundle.mjs), och bygget avbryts om en av filerna saknas.
+    it('ingen typeof på de inbäddade biblioteken i src/app', () => {
+        const bibliotek = [...läs('types/globals.d.ts').matchAll(/^declare const (\w+): any;/gm)].map(m => m[1]);
+        expect(bibliotek.length).toBeGreaterThan(0);
+        const vakt = new RegExp(`typeof (${bibliotek.join('|')})\\b`, 'g');
+        expect(kallfiler('src/app').flatMap(f => {
+            const t = läs(f);
+            return [...t.matchAll(vakt)].map(m => `${f}:${radFor(t, m.index)} ${m[1]}`);
         })).toEqual([]);
     });
 });

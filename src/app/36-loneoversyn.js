@@ -793,7 +793,6 @@ function _fcAtgardTillRader() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportPrognos(...a) { return medExportLage(() => _exportPrognosExport.apply(null, /** @type {any} */ (a))); }
 function _exportPrognosExport() {
-    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     if (!state.forecast.result || !hamtaData().length) { alert('Det finns ingen prognos att exportera. Ange en pott först.'); return; }
     const out = _fcBeraknaUtfall(hamtaData());   // ur raderna som de står, inte ett utfall som räknades före en rensning
     _fcKandidater();   // uppdaterar meningen om utelämnade par efter gällande tröskel

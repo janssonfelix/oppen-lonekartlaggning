@@ -289,7 +289,7 @@ function ritaStrukturTradkarta(d, id = 'chart-struktur-tradkarta') {
     // Lägena räknas med D3 här i vyn, utanför ritarens felhantering: ett fel (eller ett bygge utan D3) får inte
     // avbryta resten av fliken.
     /** @type {any} */ let figur = null;
-    try { figur = d && d.length && typeof d3 !== 'undefined' ? _strukturTradkartaFigur(d) : null; }
+    try { figur = d && d.length ? _strukturTradkartaFigur(d) : null; }
     catch (e) { rapporteraFel('diagram chart-struktur-tradkarta', e); }
     if (figur) ritaFigur(el, figur); else rensaFigur(el);
 }
@@ -489,7 +489,6 @@ function _byggSammanfattning(d, ctx) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportEuRapport(...a) { return medExportLage(() => _exportEuRapportExport.apply(null, /** @type {any} */ (a))); }
 function _exportEuRapportExport() {
-    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = hamtaData();
     if (!d.length) { alert('Ingen data.'); return; }
     const kr = n => n == null ? '' : Math.round(n);
