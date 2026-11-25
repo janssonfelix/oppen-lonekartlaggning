@@ -878,12 +878,6 @@ function _exportLikvardighetExport() {
     // rapportera, vi kan felsöka.
     let stegnamn = 'init';
     try {
-        stegnamn = 'kontroll XLSX-bibliotek';
-        if (typeof XLSX === 'undefined' || !XLSX.utils || typeof XLSX.writeFile !== 'function') {
-            alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
-            return;
-        }
-
         stegnamn = 'hämta result från state';
         const result = likvardighetResultat();
         if (!result) {

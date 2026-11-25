@@ -199,7 +199,6 @@ const CSV_MALL_RUBRIKER = ['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 
  * @throws {Error} om arbetsboken inte kan läsas eller saknar datarader.
  */
 function _xlsxTillObjekt(buf, synonymGroups, minHits = 2, profiler = []) {
-    if (typeof XLSX === 'undefined') throw new Error('Excelfilen kan inte läsas: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.');
     const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
     const sheetName = wb.SheetNames[0];
     const ws = wb.Sheets[sheetName];

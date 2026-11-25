@@ -101,7 +101,6 @@ export function _excelBladnamn(namn, reserv) {
  * @param {{undantag?: string, extra?: any[][]}} [val]
  */
 export function _laggTillMetodblad(wb, { undantag = '', extra = [] } = {}) {
-    if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
     const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_metodbilaga()), ...extra];
     // Ansvarsförbehållet (ADR-106) står under Rättslig ram i varje Excel-export.
     const ram = rows.findIndex(rad => rad[0] === 'Rättslig ram');

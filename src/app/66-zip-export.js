@@ -35,17 +35,14 @@ function _zipDiagramExport() {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportZip(...a) { return medExportLage(() => _exportZipExport.apply(null, /** @type {any} */ (a))); }
 async function _exportZipExport() {
-    if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
     if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }
     const zip = new JSZip();
     visaLaddning();
     try {
         // Excel-filen först: den byggs utan väntan, före Word-utkastets bilder.
         // Ett fel i en del stoppar inte de andra: det rapporteras, och filen får det som gick att bygga.
-        if (typeof XLSX !== 'undefined') {
-            try { zip.file('lonekartlaggning_komplett.xlsx', XLSX.write(_excelAlltBok(), { bookType: 'xlsx', type: 'array' })); }
-            catch (e) { rapporteraFel('ZIP: Excel-filen', e); }
-        }
+        try { zip.file('lonekartlaggning_komplett.xlsx', XLSX.write(_excelAlltBok(), { bookType: 'xlsx', type: 'array' })); }
+        catch (e) { rapporteraFel('ZIP: Excel-filen', e); }
         try { const word = await byggWordUtkast(); zip.file(word.namn, word.blob); }
         catch (e) { rapporteraFel('ZIP: Word-utkastet', e); }
         // Diagrammen: varje upplåst flik ritas, och sedan tas allt som är ritat och får exporteras.

@@ -23,7 +23,6 @@ import { medExportLage } from './23-exportgrind.js';
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportJamforelseExcel(...a) { return medExportLage(() => _exportJamforelseExcelExport.apply(null, /** @type {any} */ (a))); }
 function _exportJamforelseExcelExport() {
-    if (typeof XLSX === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return; }
     const d = hamtaData();
     if (!d.length) { alert('Ingen lönefil är inläst. Läs in lönefilen först.'); return; }
     const hasStat = state.statistik.length > 0;
