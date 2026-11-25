@@ -369,6 +369,21 @@ describe('kommentarerna följer koden', () => {
     });
 });
 
+describe('en källa: inga egna kopior av esc, median eller kvantil', () => {
+    // Bygget kräver redan att varje namn deklareras i en enda modul (tools/build-app.mjs); det här fångar kopiorna
+    // under andra namn. xmlText (XML, utan ogiltiga tecken) och organisationsfilens attributpar (kodar och avkodar)
+    // är egna uppgifter.
+    const KOPIA = [
+        ['esc', /\.replace\(\/&\/g, ?['"]&amp;['"]\)/, ['src/lib/htmltext.js', 'src/lib/docx.js', 'src/lib/organisationsfil.js']],
+        ['median', /length % 2 \?/, ['src/lib/stat.js']],
+        ['kvantil', /\.length - 1\) \* /, ['src/lib/stat.js']],
+    ];
+    it('esc står i src/lib/htmltext.js, median och kvantil i src/lib/stat.js', () => {
+        expect(kallfiler('src').flatMap(f => { const t = läs(f);
+            return KOPIA.filter(([, re, tillatna]) => !tillatna.includes(f) && re.test(t)).map(([namn]) => `${f}: egen ${namn}`); })).toEqual([]);
+    });
+});
+
 describe('appens moduler: inga vakter på funktioner som alltid finns', () => {
     // En importerad eller i filen deklarerad funktion finns alltid när modulen körs; en typeof-vakt på den döljer
     // bara ett stavfel. Vakter på webbläsarens API, variabler och egenskaper står kvar.

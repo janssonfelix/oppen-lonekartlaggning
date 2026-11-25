@@ -36,7 +36,7 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | Del | Innehåll |
 |---|---|
 | `00-sakerhet-och-uppstart.js` | Storage-tripwire (reservspärr mot `setItem` och cookies; luckorna står i `docs/dataskydd/riskanalys.md` §6.2), boot-splash |
-| `01-html-och-tillganglighet.js` | `esc`-hjälpare, fokusfällor, skärmläsarmeddelanden |
+| `01-html-och-tillganglighet.js` | `esc` (ur `src/lib/htmltext.js`), fokusfällor, skärmläsarmeddelanden |
 | `01-farger.js` | `FARG`: gränssnittets färger på ett ställe — statusarna (text, botten, yta, kant), neutrala och blå accent. Mallar, palett och stilmallens `--status-*` läser härifrån; `tests/farger.test.js` håller hexkoderna borta från resten |
 | `02-verktygstips.js` | Diagrammens verktygstipsportal, gränsen för nedsampling av punktmoln, verktygstips |
 | `03-hjalpfunktioner.js` | Diagrambeskrivning, http-varning, laddningsindikator och adaptern `hamtaFalt`, som skickar kolumnmappningen och importprofilen ur tillståndet till kolumnvalet i `src/lib/inlasning.js` (där också `gissaKolumnmappning` bor) |

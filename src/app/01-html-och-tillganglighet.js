@@ -1,18 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 
-// ---- Utilities ----
-/**
- * HTML-eskapera en sträng för säker interpolering i innerHTML.
- * Escapear även citattecken (" ') så strängen är säker även i ATTRIBUT-kontext
- * (t.ex. `title="${esc(x)}"`, `data-bas="${esc(b)}"`). Webbläsaren avkodar
- * entiteterna vid läsning av attribut/`.value`, så round-trips (dataset, option-
- * value) fungerar oförändrat. Utan citattecknen kunde ett osanerat fält (t.ex. BAS)
- * bryta sig ut ur attributet.
- * @param {*} s - Värde att eskapera (null/undefined → tom sträng).
- * @returns {string} HTML-säker sträng (text- och attributkontext).
- */
-export const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+// esc står i src/lib/htmltext.js, så att lib och app escapar på samma sätt.
+import { esc } from '../lib/htmltext.js';
+export { esc };
 
 // GDPR: stäng av webbläsarens autofyllning på alla input/select/textarea så att organisationsnamn, sökord,
 // anteckningar m.m. inte sparas i webbläsarens autofyll-historik (som kan synkas till leverantörens moln vid
