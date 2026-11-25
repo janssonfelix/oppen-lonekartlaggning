@@ -412,7 +412,7 @@ export async function flikarOchDiagram() {
         // Kopian har sitt eget id och därmed sin egen ruta Filter.
         const kopiansFilter = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-filter][1]');
         ok(await kopiansFilter.isVisible(), 'kopians ruta Filter syns från början');
-        // Mobilbredd: kopiorna och deras filterrader ger ingen vågrät rullning.
+        // Ett smalt fönster: kopiorna och deras filterrader ger ingen vågrät rullning.
         await page.setViewportSize({ width: 375, height: 800 });
         await page.waitForTimeout(400);
         const bred = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);

@@ -1,21 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// Genererar src/app/08-version.js från VERSION-filen.
+// Genererar src/app/08-version.js ur VERSION, och läser versionen åt bygget och programvaruförteckningen.
 //
-// BAKGRUND: APP_VERSION och APP_BYGGDATUM var hårdkodade i 60-print-init.js (nu uppdelad i 60–66)
-// och hade glidit isär från VERSION (app:en stämplade 2026.07.22 medan bygget
-// var 2026.10.04). Eftersom APP_VERSION är det användaren ser i rapportens
-// sidfot och i Excel-/Word-metadata innebar det att varje exporterad rapport
-// pekade tillbaka på fel beräkningsversion — och rapporten är ett underlag i
-// en lagstadgad process, där spårbarhet är hela poängen med stämpeln.
+// VERSION är enda källan till versionen som exporterna stämplas med (rapportens sidfot, Excel- och Word-filernas
+// egenskaper): en stämpel som glidit isär pekar varje rapport på fel beräkningsversion. Byggdatumet härleds ur
+// versionen (CalVer ÅÅÅÅ.MM.DD) och läses aldrig ur klockan, så att bygget är reproducerbart.
 //
-// VERSION är nu enda källa. Build-datumet HÄRLEDS ur versionen (CalVer
-// ÅÅÅÅ.MM.DD) i stället för att läsas från systemklockan: bygget måste förbli
-// byte-reproducerbart, och ett `new Date()` här hade gjort SHA-256:an olika
-// vid varje körning och slagit sönder artefaktgrinden i CI.
-//
-// Körs av tools/build-app.mjs före bygget.
-// Vaktas av tests/version.test.js.
+// Körs av tools/build-app.mjs före bygget. Vaktas av tests/version.test.js.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

@@ -94,7 +94,7 @@ export async function utseende() {
             }).map(th => `#${id} «${th.textContent.replace(/\s+/g, ' ').trim()}»`), tabell));
         }
         ok(!ensam.length, `1100 punkter: infoikonerna i Prioriteringens och Löneöversiktens rubriker står på samma rad som sista ordet${ensam.length ? ' — ensamma: ' + ensam.join(', ') : ''}`);
-        // Punkt 26, under 1 100 punkter: det stora demots långa namn gjorde Löneläget bredare än fönstret (listrutan för
+        // Under 1 100 punkter: det stora demots långa namn gjorde Löneläget bredare än fönstret (listrutan för
         // huvudområde), och punktetiketter vid diagrammets kant klipptes (avvikelsen mot statistiken, Krav mot lön).
         for (const bredd of [1100, 900]) {
             await s.setViewportSize({ width: bredd, height: 900 });
@@ -206,9 +206,9 @@ export async function utseende() {
 
     console.log('\n── Handlingsplanen ryms utan sidledsrullning ──');
     {
-        // UX-inventeringen 2026-11-19: mallen var 1 577 punkter bred i en ruta på 1 030 vid 1440, och fälten man fyller i
-        // låg utanför bild. På skärmen står grupp, antal berörda och underlag under åtgärden; utskriften (Ctrl+P) har
-        // dem som egna kolumner. Lilla demot i en egen sida, så att tidigare delar av röktestet inte påverkar raderna.
+        // Mallen var 1 577 punkter bred i en ruta på 1 030 vid 1440, och fälten man fyller i låg utanför bild. På
+        // skärmen står grupp, antal berörda och underlag under åtgärden; utskriften (Ctrl+P) har dem som egna kolumner.
+        // Lilla demot i en egen sida, så att tidigare delar av röktestet inte påverkar raderna.
         const s = await browser.newPage({ viewport: { width: 1440, height: 900 } });
         await s.goto('file://' + FIL);
         await s.waitForFunction(() => typeof window.lasInDemodata === 'function', null, { timeout: 15000 });

@@ -166,8 +166,8 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
     });
 });
 
-// UX-inventeringen 2026-11-19: mallen var 1 577 punkter bred i en ruta på 1 030, och fälten man fyller i låg utanför
-// bild. På skärmen står grupp, antal berörda och underlag under åtgärden; utskriften har kolumnerna som förut. Att
+// Mallen var 1 577 punkter bred i en ruta på 1 030, och fälten man fyller i låg utanför bild. På skärmen står grupp,
+// antal berörda och underlag under åtgärden; utskriften har dem som egna kolumner. Att
 // tabellen ryms i 1280 och 1440 punkter prövar webbläsarröktestet (tools/browser-smoke/layout.mjs).
 describe('Handlingsplan: skärmen samlar det som bara visas i första kolumnen', () => {
     const ren = t => String(t ?? '').replace(/\s+/g, ' ').trim();

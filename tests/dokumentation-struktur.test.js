@@ -323,9 +323,9 @@ describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisninga
     });
     // Koder och namn ur interna granskningsomgångar (DR5, «Uppgift 6», «S5 i punkt 26», «beslut 8c», «fix 2», «slutgranskningens fynd», en gammal funktionslistas «#9») förklaras inte någonstans i repot, och
     // flera krockade med skydden S1–S5 och riskanalysens id. En hänvisning går till ett ADR eller ett dokument.
-    const GRANSKNINGSKOD = /\b(?:D[RSTUVGF]\d+|Uppgift \d+|[Rr]ättning(?:somgång)? \d+|fixrunda \d+|fix \d+(?=:)|[A-Z]\d+ i punkt \d+|etapp \d+[a-z]?|beslut \d+[a-z]|[A-Z]-[A-Z]{2}\d+|[Ss]lutgranskning\w*|granskning \d{4}-\d\d-\d\d)\b|\(V\d+\)|(?:\/\/|\/\*|<!--|\*|-- |(?:describe|it)\(['`]|— )\s*#\d{1,2}\b|\(#\d{1,2}\)/;
+    const GRANSKNINGSKOD = /\b(?:D[RSTUVGF]\d+|Uppgift \d+|[Rr]ättning(?:somgång)? \d+|fixrunda \d+|fix \d+(?=:)|[A-Z]\d+ i punkt \d+|etapp \d+[a-z]?|beslut \d+[a-z]|[A-Z]-[A-Z]{2}\d+|[Ss]lutgranskning\w*|(?:granskning|inventering\w*) \d{4}-\d\d-\d\d|Punkt \d+(?=,))\b|\(V\d+\)|(?:\/\/|\/\*|<!--|\*|-- |(?:describe|it)\(['`]|— )\s*#\d{1,2}\b|\(#\d{1,2}\)/;
     it('mönstret för granskningskoder fångar koderna men inte ADR, skydden eller BAS', () => {
-        for (const t of ['(DR1)', 'DS3: staplar', 'Uppgift 6', 'Rättning 1, DV2', 'fixrunda 1', 'fix 2: indata', 'S5 i punkt 26', 'etapp 1b', 'beslut 8c', 'Klarspråket (K-OR7)', 'domänen (V2)', 'slutgranskningens fynd', 'granskning 2026-10-30', '// #9: demoläge', "describe('#1 röktest'", '// ---- #13 Förslag', 'poäng-läge (#5)']) expect(GRANSKNINGSKOD.test(t), t).toBe(true);
+        for (const t of ['(DR1)', 'DS3: staplar', 'Uppgift 6', 'Rättning 1, DV2', 'fixrunda 1', 'fix 2: indata', 'S5 i punkt 26', 'etapp 1b', 'beslut 8c', 'Klarspråket (K-OR7)', 'domänen (V2)', 'slutgranskningens fynd', 'granskning 2026-10-30', 'UX-inventeringen 2026-11-19', 'Punkt 26, under', '// #9: demoläge', "describe('#1 röktest'", '// ---- #13 Förslag', 'poäng-läge (#5)']) expect(GRANSKNINGSKOD.test(t), t).toBe(true);
         for (const t of ['ADR-63', '(S4)', 'BAS D2', 'cell D2', 'docx', 'uppgiften', '[B3.7]', 'A-Z0', 'granskningen', "'#,##0'", '<strong>#1, #2</strong>', "toBe('#1 207011 Yrke')", "'#2563eb'"]) expect(GRANSKNINGSKOD.test(t), t).toBe(false);
     });
     it('koden, verktygen och testerna hänvisar inte till granskningsomgångarnas koder', () => {

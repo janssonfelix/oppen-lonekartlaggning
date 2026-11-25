@@ -5,9 +5,9 @@
 // Kör med:  npm run gen:aid -- "<Etikettlista AID ....xlsx>" <version, t.ex. 2026-09-23>
 // Tar bara med kod, etikettnamn och möjliga ansvarskoder (inte beskrivningar och titlar).
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import vm from 'node:vm';
+import { forstaBladetsRader } from './lib/xlsx-rader.mjs';
 
 /** "A, B, C och L samt annat uttalat ansvar" → ['A','B','C','L','1001','1002'] */
 export function tolkaMojligaAnsvarskoder(text) {
@@ -30,14 +30,7 @@ function main() {
         console.error('Användning: npm run gen:aid -- <etikettlista.xlsx> <ÅÅÅÅ-MM-DD>');
         process.exit(1);
     }
-    const ctx = { console };
-    ctx.self = ctx;
-    ctx.window = ctx;
-    vm.createContext(ctx);
-    vm.runInContext(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'), ctx);
-    const wb = ctx.XLSX.read(readFileSync(fil), { type: 'buffer' });
-    const rader = ctx.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
-    const etiketter = etiketterFranRader(rader);
+    const etiketter = etiketterFranRader(forstaBladetsRader(fil));
     if (etiketter.length < 100) throw new Error(`Bara ${etiketter.length} etiketter hittades — fel fil?`);
     const kalla = `SKR, Etikettlista AID 2018 (reviderad ${version})`;
     const lista = etiketter.map(e => `        ${JSON.stringify(e)}`).join(',\n');

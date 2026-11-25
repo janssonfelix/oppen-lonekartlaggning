@@ -42,8 +42,9 @@ if (!existsSync(FIL)) {
 // tror att den senaste ändringen är verifierad.
 {
     const bundleTid = statSync(FIL).mtimeMs;
-    const kallor = ['src/index.html', 'src/style.css', 'dist/app.js',
-        ...readdirSync(join(ROOT, 'src', 'app')).map(f => join('src', 'app', f))];
+    // Allt som bäddas in: src/lib byggs in i dist/app.js genom src/app.
+    const kallor = ['src/index.html', 'src/style.css', 'src/licenser.txt', 'dist/app.js',
+        ...['app', 'lib'].flatMap(d => readdirSync(join(ROOT, 'src', d)).map(f => join('src', d, f)))];
     const nyare = kallor.filter(f => existsSync(join(ROOT, f)) && statSync(join(ROOT, f)).mtimeMs > bundleTid);
     if (nyare.length) {
         console.error(`✗ Bygget är äldre än källan (${nyare.length} fil(er), t.ex. ${nyare[0]}).`);

@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=22.12"
   },
-  "description": "Single-file lonekartlaggningsverktyg (DiskrL kap. 3 + EU 2023/970). Applikationen byggs av tools/bundle.mjs (npm run bundle); ovrig dev-tooling for tester och linting.",
+  "description": "Verktyg för lönekartläggning i en enda HTML-fil (3 kap. diskrimineringslagen och direktiv (EU) 2023/970). Filen byggs av tools/bundle.mjs (npm run bundle); övriga beroenden är verktyg för test och lint.",
   "scripts": {
     "kontroll": "node tools/kontroll.mjs",
     "test": "node tools/test.mjs --project=enhet",
