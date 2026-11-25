@@ -5,12 +5,13 @@
  * percentilindex: med samma slumpföljd ska intervallen vara exakt desamma.
  *
  * Täcker kärnan i lib och de tre anroparna i appen: översikten per BAS-intervall och lönegapet per åldersgrupp
- * (`_laBootstrapGapKI`), gruppdossiern och rapportunderlaget (`_gdBootstrapGapKI`) och Översiktens intervall
+ * (`_laBootstrapGapKI`), gruppdossiern och rapportunderlaget (`medianKvotKIGiltiga`, som vymodellerna anropar direkt) och Översiktens intervall
  * för hela organisationen (`raknaBootstrapKI`).
  */
 import { describe, it, expect } from 'vitest';
 import { bootstrapMedianer } from '../src/lib/likvardighet.js';
 import { slumpFor } from '../src/lib/rng.js';
+import { medianKvotKIGiltiga } from '../src/lib/osakerhet.js';
 import { createAppWindow } from './helpers/app-harness.js';
 
 function refMedian(arr) {
@@ -36,7 +37,7 @@ function refLa(kv, ma, B = 1000) {
     const svans = Math.floor(B * 0.025);
     return { lo: ratios[svans], hi: ratios[B - 1 - svans] };
 }
-// Den tidigare _gdBootstrapGapKI (B = 2000, dragningar med männens median 0 räknas inte).
+// Gruppdossierns och rapportunderlagets intervall, medianKvotKIGiltiga (B = 2000, dragningar med männens median 0 räknas inte).
 function refGd(kv, ma, B = 2000) {
     if (kv.length < 3 || ma.length < 3) return null;
     const ratios = refDragningar(kv, ma, B, slumpFor(kv, ma)).map(([mKv, mMa]) => (mMa > 0 ? (mKv / mMa) * 100 : NaN));
@@ -74,14 +75,14 @@ describe('bootstrapMedianer: samma medianer som en sortering per dragning', () =
 describe('[B4.1] appens intervall på mediankvoten är desamma som med sortering per dragning', () => {
     const w = createAppWindow();
     for (const [namn, kv, ma] of fall) {
-        it(`_laBootstrapGapKI och _gdBootstrapGapKI: ${namn}`, () => {
+        it(`_laBootstrapGapKI och medianKvotKIGiltiga: ${namn}`, () => {
             expect(w._laBootstrapGapKI(kv, ma)).toEqual(refLa(kv, ma));
-            expect(w._gdBootstrapGapKI(kv, ma)).toEqual(refGd(kv, ma));
+            expect(medianKvotKIGiltiga(kv, ma)).toEqual(refGd(kv, ma));
         });
     }
     it('för få personer ger inget intervall', () => {
         expect(w._laBootstrapGapKI([1, 2], [1, 2, 3])).toBeNull();
-        expect(w._gdBootstrapGapKI([1, 2, 3], [1, 2])).toBeNull();
+        expect(medianKvotKIGiltiga([1, 2, 3], [1, 2])).toBeNull();
     });
     it('raknaBootstrapKI på demodatan', () => {
         w.__lasInDemodata();

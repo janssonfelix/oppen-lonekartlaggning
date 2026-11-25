@@ -67,8 +67,20 @@ describe('release-grinden', () => {
         expect(fel({ ejIncheckat: ' M src/app/13-oversikt.js\n' }).join()).toMatch(/inte är incheckade/);
     });
 
-    it('kodvägarna är de som planen anger', () => {
-        expect(KODVAGAR).toEqual(['src', 'tools/bundle.mjs', 'vendor']);
+    it('kodvägarna täcker koden, biblioteken och varje fil som bygget läser in', () => {
+        // Bygget: tools/bundle.mjs och de egna moduler den importerar, i flera led. release.mjs ger bara kontrollsummans
+        // kommandon i RELEASE.txt och räknas inte; en ändring i grinden ska inte kräva en ny granskning.
+        const bygget = new Set(), kvar = ['tools/bundle.mjs'];
+        while (kvar.length) {
+            const f = kvar.pop();
+            if (bygget.has(f) || f === 'tools/release.mjs') continue;
+            bygget.add(f);
+            for (const [, rel] of readFileSync(join(root, f), 'utf8').matchAll(/^import .* from '(\.\.?\/[^']+)';$/gm)) {
+                kvar.push(join(f, '..', rel).replace(/\\/g, '/'));
+            }
+        }
+        expect([...bygget].sort()).toEqual(KODVAGAR.filter(v => v.startsWith('tools/')).sort());
+        expect(KODVAGAR).toEqual(expect.arrayContaining(['src', 'vendor']));
     });
 
     it('riskanalysen och dataskyddsbeskrivningen har de rader grinden läser', () => {

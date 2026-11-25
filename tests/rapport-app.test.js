@@ -469,7 +469,13 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         const utelamnat = bilaga(w).utelamnat;
         expect(utelamnat.length).toBe(1);
         const rakna = namn => { const orig = w[namn]; const r = { n: 0 }; w[namn] = (...x) => { r.n++; return orig(...x); }; return r; };
-        const byggda = rakna('byggGruppdossier'), kandidater = rakna('gruppdossierKandidater'), prio = rakna('raknaPrioritering'), ki = rakna('_gdBootstrapGapKI');
+        // Intervallet räknas i lib (medianKvotKIGiltiga), som i bygget är ett namn på toppnivån och går att räkna.
+        expect(typeof w.medianKvotKIGiltiga).toBe('function');
+        const byggda = rakna('byggGruppdossier'), kandidater = rakna('gruppdossierKandidater'), prio = rakna('raknaPrioritering'), ki = rakna('medianKvotKIGiltiga');
+        // Räkningen fångar anropen: en dossier på skärmen visar intervallet.
+        w.byggGruppdossier(w.eval('gruppdossierKandidater()[0].key'));
+        expect(ki.n).toBeGreaterThan(0);
+        byggda.n = 0; kandidater.n = 0; ki.n = 0;
         w.eval('ritaExportBesked()');
         expect(byggda.n).toBe(0);
         expect(w.document.getElementById('besked-word').textContent).toContain(utelamnat[0]);

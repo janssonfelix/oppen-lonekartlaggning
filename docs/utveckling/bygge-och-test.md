@@ -296,10 +296,10 @@ förbjuds därför inte.
 `npm run kontroll` (`tools/kontroll.mjs`) kör kedjan i *Definition of Done* i
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3: `build:app`, `lint`, `typecheck`, `test:full`,
 `bundle` och `test:browser`, i den ordningen, och stannar på första fel med stegets slutkod. Efter `bundle` prövas
-samma två grindar som CI-jobbet `grindar` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen genererad
+samma grind som CI-jobbet `grindar` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen genererad
 fil: ingen spårad fil under `dist/`, alltså inte heller `RELEASE.txt`, och inte `src/app/08-version.js`; kedjan jämför filerna som de låg när den började, CI jämför med det incheckade. En
-ändring betyder att de inte motsvarade källan, och de ombyggda filerna ska checkas in)
-och **teckenkodningsgrinden** (ingen U+FFFD i `dist/app.js`, `src/index.html` och `src/style.css`). Sist skrivs
+ändring betyder att de inte motsvarade källan, och de ombyggda filerna ska checkas in). Teckenkodningen prövar bygget
+självt (*Byggets skyddsnät* ovan). Sist skrivs
 stegens tider. `npm run kontroll -- --snabb` är körningen under arbetet: `test` i stället för `test:full`, och inget
 röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedjan har varje steg som CI-jobben
 `grindar` och `tester` kör.
@@ -360,9 +360,11 @@ commit prövar den inte, utan testsviten och artefaktgrinden (princip 4 i [`prin
 programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), bygger
 valideringsrapporten, bygger om verktyget ur taggen i en ren katalog och kräver att det blir filen som signeras,
 signerar med Sigstore cosign utan nyckel, låter GitHub attestera ursprunget (`actions/attest-build-provenance`, SLSA
-build provenance, ADR-101) och publicerar en GitHub Release. Stegen, deras ordning och behörigheterna står i arbetsflödet och
-dess kommentarer; `tests/sakerhet.test.js` prövar ordningen, den fullständiga klonen, att signeringen är utan nyckel,
-att varje fil attesteras, ombygget och att jobbet har minsta behörighet.
+build provenance, ADR-101) och publicerar en GitHub Release. Det som kör npm och testsviten ligger i ett jobb utan
+behörigheter; signeringen och publiceringen ligger i ett eget jobb, som får filerna som en artefakt och inte kör npm.
+Stegen, deras ordning och behörigheterna står i arbetsflödet och dess kommentarer; `tests/sakerhet.test.js` prövar
+ordningen, den fullständiga klonen, att signeringen är utan nyckel, att varje fil attesteras, ombygget och
+behörigheterna i de två jobben.
 
 **Valideringsrapporten** `npm run valideringsrapport` (`tools/valideringsrapport.mjs`, prövad i
 `tests/valideringsrapport.test.js`, ADR-100) kör hela sviten med Vitests JSON-rapport och skriver
