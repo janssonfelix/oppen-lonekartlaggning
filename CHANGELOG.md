@@ -9,6 +9,11 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **En kopierad tabell håller ihop också när ett namn har en radbrytning.** En AID-etikett med radbrytning eller tabb
+  ur lönefilen delade tidigare raden när tabellen klistrades in, så att talen hamnade under fel rubrik; nu blir den
+  mellanslag i urklippet, och formelskyddet gäller hela cellen.
+- **En konfigurationsfil som inte går att läsa ändrar ingenting.** Tidigare kunde Prioriteringens trösklar, vikter
+  och kostnadsinställningar ha bytts innan felet om rapportens tabeller visades.
 - **Text i diagrammen syns bättre på mellantoner.** En siffra eller ett namn på en fyllning väljs nu vit eller mörk
   efter kontrasten, och där ingen av dem räcker, som på trädkartans lila ytor, får texten en kant. Ett långt namn i
   diagrammens förklaring kortas vid ett ordslut, så att skärmläsare och röststyrning hittar knappen på det som står.

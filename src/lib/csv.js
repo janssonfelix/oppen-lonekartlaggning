@@ -36,7 +36,12 @@ export function tillCsv(rader, avgransare) {
     return rader.map(r => (Array.isArray(r) ? r : [r]).map(escapeCell).join(avgransare)).join('\r\n');
 }
 
-/** Rad-matris → TSV för urklipp, med samma formelskydd som CSV-exporten. */
+/**
+ * Rad-matris → TSV för urklipp, med samma formelskydd som CSV-exporten. Urklippet har ingen citering: en tabb eller
+ * radbrytning i en cell (en AID-etikett med radbrytning ur Excel) blir mellanslag, så att den inte delar raden och
+ * inte låter text efter radbrytningen börja en ny cell förbi formelskyddet.
+ */
 export function tillTsv(rader) {
-    return rader.map(r => r.map(c => (c == null ? '' : neutraliseraCell(c))).join('\t')).join('\n');
+    const cell = c => (c == null ? '' : neutraliseraCell(typeof c === 'string' ? c.replace(/[\t\r\n]+/g, ' ') : c));
+    return rader.map(r => r.map(cell).join('\t')).join('\n');
 }
