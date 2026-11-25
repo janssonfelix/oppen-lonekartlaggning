@@ -9,7 +9,7 @@ import { lonebegreppReservation } from '../lib/struktur.js';
 import { adjektiv } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
-import { ANSVARSFORBEHALL } from './03-hjalpfunktioner.js';
+import { ANSVARSFORBEHALL, laddaNer } from './03-hjalpfunktioner.js';
 import { _flerKolumnerAlla } from './05-tabeller-och-lankar.js';
 import { _csvMedStampel, kInstalld } from './06-k-troskel.js';
 import { skrForklaring } from './06-kvinnoandel-referens.js';
@@ -466,7 +466,7 @@ export function tabellTillBok(tableId, sheetName) {
 // Robust CSV-helper som INTE är beroende av XLSX-biblioteket. Producerar
 // semikolon-separerade filer med UTF-8 BOM (svenska Excel-default), CRLF-
 // radslut och korrekta citerade fält. Garanterat fungerande i alla webbläsare:
-// blob-URL + anchor-klick + revokeObjectURL.
+// nedladdning med laddaNer (03-hjalpfunktioner.js).
 // Formelskyddet (neutraliseraCell) och CSV-texten (tillCsv) ligger i src/lib/csv.js (ADR-15).
 // Demoläget märks i filnamnet, som diagram- och Word-exporterna (bara en gång).
 function _csvFilnamn(namn) {
@@ -483,15 +483,7 @@ export function _laddaNedCSV(rows, filename, { undantag = '' } = {}) {
         const BOM = '﻿';  // UTF-8 BOM så Excel öppnar med korrekt teckenkodning
         const csv = BOM + tillCsv(_csvMedStampel(rows, undantag));
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = _csvFilnamn(filename) + '.csv';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        laddaNer(blob, _csvFilnamn(filename) + '.csv');
         if (typeof _visaExportvarning === 'function') _visaExportvarning();
         if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('CSV exporterad: ' + (rows.length - 1) + ' rader.');
     } catch (err) {

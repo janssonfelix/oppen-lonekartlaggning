@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // ---- Inställningar ----
-import { importprofilerTillJson, inbyggdaProfiler } from '../lib/importprofiler.js';
+import { importprofilerTillJson, INBYGGDA_PROFILER } from '../lib/importprofiler.js';
 import { svTal } from '../lib/talformat.js';
 import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
-import { _importprofilKalla } from './03-hjalpfunktioner.js';
+import { _importprofilKalla, laddaNer } from './03-hjalpfunktioner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -107,7 +107,7 @@ function _instRitaImportprofiler() {
     </li>`;
     el.innerHTML = (profiler.length ? `<ul class="inst-ip-lista">${profiler.map(rad).join('')}</ul>`
         : '<p class="text-dampad-sm">Inga sparade importprofiler. Peka ut kolumnerna i kolumnmappningen och spara mappningen där.</p>')
-        + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${inbyggdaProfiler().map(p => esc(p.namn)).join(', ')}.</p>`;
+        + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${INBYGGDA_PROFILER.map(p => esc(p.namn)).join(', ')}.</p>`;
 }
 /** Profilen (eller alla sessionens profiler utan id) som JSON att dela eller bidra med: bara rubriknamn. */
 function importprofilExport(id) {
@@ -118,12 +118,7 @@ function _ipExportera(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);
     if (!p) return;
     const blob = new Blob([importprofilExport(id)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `importprofil-${p.id}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
+    meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${laddaNer(blob, `importprofil-${p.id}.json`)}`);
 }
 function _ipTaBort(id) {
     const p = (state.importprofiler || []).find(x => x.id === id);

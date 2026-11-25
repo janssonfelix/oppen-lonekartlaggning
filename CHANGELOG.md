@@ -12,6 +12,15 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 - **En kopierad tabell håller ihop också när ett namn har en radbrytning.** En AID-etikett med radbrytning eller tabb
   ur lönefilen delade tidigare raden när tabellen klistrades in, så att talen hamnade under fel rubrik; nu blir den
   mellanslag i urklippet, och formelskyddet gäller hela cellen.
+- **Rensa all data tömmer också dossiererna och beräkningsbeviset.** Gruppdossiern, BAS-dossiern, beräkningsbeviset
+  och dialogen för sakliga skäl behöll sina tal efter rensningen, och en öppen dossier stod kvar på skärmen efter
+  rensningen vid inaktivitet. Nu stängs och töms de.
+- **Den utskrivna handlingsplanen följer minsta gruppstorlek.** *Skriv ut mallen* kopierade fliken som den stod på
+  skärmen, där inget maskeras, så att en förifylld rad för en grupp under tröskeln kom med på utskriften. Nu ritas
+  utskriften i exportläget, som de andra exporterna.
+- **ZIP-filen och konfigurationsfilen ligger inte kvar i minnet efter nedladdningen.** Länken till filen släpptes
+  aldrig, så att innehållet fanns kvar i webbläsarens minne tills fliken stängdes, också efter Rensa all data. Nu
+  går varje nedladdning samma väg och släpper länken efter en sekund.
 - **En konfigurationsfil som inte går att läsa ändrar ingenting.** Tidigare kunde Prioriteringens trösklar, vikter
   och kostnadsinställningar ha bytts innan felet om rapportens tabeller visades.
 - **Text i diagrammen syns bättre på mellantoner.** En siffra eller ett namn på en fyllning väljs nu vit eller mörk

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { doljLaddning, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
+import { doljLaddning, laddaNer, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
 import { _rfBehallare } from './10-diagramritare.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { hamtaData, state } from './12-tillstand.js';
@@ -64,8 +64,7 @@ async function _exportZipExport() {
             try { const b64 = (await diagramTillBild(el, { bredd: 1920, hojd: 1080 })).split(',')[1]; zip.file(`diagram/${el.id}.png`, b64, { base64: true }); } catch (_err) { /* ett diagram som inte går att rita följer inte med */ }
         }
         const blob = await zip.generateAsync({ type: 'blob' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = 'lonekartlaggning_export.zip'; a.click();
+        laddaNer(blob, 'lonekartlaggning_export.zip');
         return true;
     } finally {
         if (typeof doljLaddning === 'function') doljLaddning();

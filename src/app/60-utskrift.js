@@ -190,8 +190,11 @@ async function _byggUtskriftsrapportExport() {
 // Skriv ut en scaffold-flik (§ 8-checklista / handlingsplansmall) i ett rent
 // fönster med alla <details> expanderade. Offlinesäkert: inga nätverksanrop,
 // inga skript i utskriftsdokumentet.
-function skrivUtMallflik(viewId, heading) {
-    const view = document.getElementById(viewId);
+// Utskriften lämnar verktyget: handlingsplanens förifyllda rader bär gruppmått, så fliken ritas i exportläget (ADR-51)
+// genom exportgrinden innan den kopieras. Skärmens version maskerar inget.
+function skrivUtMallflik(viewId, heading) { medExportLage(() => _skrivUtMallflik(viewId, heading)); }
+function _skrivUtMallflik(viewId, heading) {
+    const view = exportElement(viewId);
     if (!view) return;
     const clone = view.cloneNode(true);
     /** @type {HTMLElement} */ (clone).querySelectorAll('details').forEach(d => d.setAttribute('open', ''));

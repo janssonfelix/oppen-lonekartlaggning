@@ -2180,9 +2180,6 @@ var INBYGGDA_PROFILER = Object.freeze([
     rubriker: { bas: ["bas"], yrke: ["yrke", "aid"], lon: ["lon"], alder: ["alder"], kon: ["kon"] }
   })
 ]);
-function inbyggdaProfiler() {
-  return INBYGGDA_PROFILER;
-}
 
 // src/lib/inlasning.js
 function _normaliseraTaltext(varde) {
@@ -3482,7 +3479,7 @@ function _statistikRad(r) {
   return {
     aid,
     aidFull: _text2(r.aidFull) ?? aid,
-    bas: typeof r.bas === "string" ? r.bas.trim().toUpperCase().substring(0, 10) : "",
+    bas: (_text2(r.bas) ?? "").toUpperCase().substring(0, 10),
     median: median2,
     p10,
     p90,
@@ -12954,7 +12951,7 @@ function _instRitaImportprofiler() {
             <button type="button" class="btn btn-secondary btn-sm" data-ip-ta-bort="${esc(p.id)}">Ta bort</button>
         </div>
     </li>`;
-  el.innerHTML = (profiler.length ? `<ul class="inst-ip-lista">${profiler.map(rad).join("")}</ul>` : '<p class="text-dampad-sm">Inga sparade importprofiler. Peka ut kolumnerna i kolumnmappningen och spara mappningen där.</p>') + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${inbyggdaProfiler().map((p) => esc(p.namn)).join(", ")}.</p>`;
+  el.innerHTML = (profiler.length ? `<ul class="inst-ip-lista">${profiler.map(rad).join("")}</ul>` : '<p class="text-dampad-sm">Inga sparade importprofiler. Peka ut kolumnerna i kolumnmappningen och spara mappningen där.</p>') + `<p class="text-dampad-sm">Inbyggda (verktygets egna format): ${INBYGGDA_PROFILER.map((p) => esc(p.namn)).join(", ")}.</p>`;
 }
 function importprofilExport(id) {
   const profiler = (state.importprofiler || []).filter((p) => id == null || p.id === id);
@@ -12964,12 +12961,7 @@ function _ipExportera(id) {
   const p = (state.importprofiler || []).find((x) => x.id === id);
   if (!p) return;
   const blob = new Blob([importprofilExport(id)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `importprofil-${p.id}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-  meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${a.download}`);
+  meddelaSkarmlasare(`Importprofilen ${p.namn} är exporterad: ${laddaNer(blob, `importprofil-${p.id}.json`)}`);
 }
 function _ipTaBort(id) {
   const p = (state.importprofiler || []).find((x) => x.id === id);
@@ -18275,9 +18267,6 @@ function uppstartHandlingsplan() {
 
 // src/lib/konfiguration.js
 var KONFIGURATION_VERSION = 3;
-function konfigurationVersion() {
-  return KONFIGURATION_VERSION;
-}
 var KONFIGURATION_LASBARA = Object.freeze([2, 3]);
 var KONFIGURATION_NAMNBYTEN = Object.freeze({
   "": Object.freeze({
@@ -21255,7 +21244,7 @@ function _konfigImportprofiler() {
 }
 function byggKonfiguration() {
   return {
-    version: konfigurationVersion(),
+    version: KONFIGURATION_VERSION,
     sparad: (/* @__PURE__ */ new Date()).toISOString(),
     prioTrosklar: {
       atgardTroskel: state.prioConfig.atgardThreshold,
@@ -21784,10 +21773,7 @@ function uppstartKonfiguration() {
   document.getElementById("btn-config-save")?.addEventListener("click", () => {
     const cfg = byggKonfiguration();
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `lonekartlaggning_config_${idagDatum()}.json`;
-    a.click();
+    laddaNer(blob, `lonekartlaggning_config_${idagDatum()}.json`);
     const status = document.getElementById("config-status");
     if (status) {
       status.textContent = "Sparad";
@@ -23141,12 +23127,7 @@ function laggTillImportprofilIPaket(profil) {
   const kontroll = tolkaPaket(JSON.stringify(paket));
   if (!kontroll.ok) return { ok: false, fel: "Paketet kan inte skapas: " + kontroll.fel };
   const blob = new Blob([JSON.stringify(paket, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = _paketFilnamn(paket.organisation.namn);
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-  return { ok: true, filnamn: a.download };
+  return { ok: true, filnamn: laddaNer(blob, _paketFilnamn(paket.organisation.namn)) };
 }
 function _importprofilRuta(missing) {
   if (!_senasteInlasningLyckades || !state.columnMap || missing.length || !state.data.length || !_profilUrMappning(IMPORTPROFIL_STANDARDNAMN)) return "";
@@ -23388,13 +23369,7 @@ function uppstartFilinlasning() {
       }).join(";")
     ).join("\r\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "lonefil_mall.csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
+    laddaNer(blob, "lonefil_mall.csv");
     meddelaSkarmlasare("CSV-mall nedladdad: lonefil_mall.csv");
   });
   datafilFalt.addEventListener("change", (e) => lasInStrukturfil(
@@ -24946,11 +24921,7 @@ async function skapaOrganisationsfil() {
   return { ok: true, meddelande };
 }
 function _laddaNerHtml(html, filnamn) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-  a.download = filnamn;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
+  laddaNer(new Blob([html], { type: "text/html" }), filnamn);
 }
 var _flyttGammal = null;
 var _flyttNy = null;
@@ -25007,7 +24978,7 @@ function visaInbakatPaket() {
   const rad = (dt, dd) => dd == null || dd === "" ? "" : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`;
   const tabell = (rubrik, rader, kolumner) => !rader?.length ? "" : `<h3>${esc(rubrik)} (${rader.length} rader)</h3><div class="rulla max-hojd-420"><table class="data-table st-088"><thead><tr>${kolumner.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>${rader.map((r) => `<tr>${kolumner.map((k) => `<td>${esc(r[k] == null ? "" : String(r[k]))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
   const inst = obj?.installningar || {};
-  content.innerHTML = `<dl>${rad("Organisation", obj?.organisation?.namn)}${rad("Utgivare", obj?.utgivare)}${rad("Skapat", obj?.skapat)}${rad("Avser år", obj?.avserAr)}${rad("Inbakat", inb.skapad)}${rad("Verktygets version", inb.verktygsversion)}${rad("Verktygsfilens kontrollsumma (SHA-256)", inb.verktygssha)}${rad("Benämning på jämförelsestatistiken", obj?.profil?.jamforelseNamn)}${rad("Minsta gruppstorlek", inst.kTroskel)}${rad("Lägsta tillåtna minsta gruppstorlek", inst.kTroskelLagst)}${rad("Rensning vid inaktivitet (min)", inst.inaktivitetMin)}${rad("Rensningstiden låst", inst.inaktivitetLast ? "ja" : null)}${rad("Små grupper i exporten från Tabeller och egna vyer", inst.smaGrupperIExport === false ? "inte tillåtet" : null)}${rad(`${stor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === "mansdominerade" ? "bara mansdominerade" : inst.jamforelse === "alla" ? "alla som inte är kvinnodominerade" : null)}</dl>${rad("Egna tabeller i rapporten", obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? "eget" : null)}` + tabell(obj?.referens?.namn || "Ställningstagandet", obj?.referens?.rader, ["aid", "bas", "p10", "med", "p90"]) + tabell(obj?.statistik?.namn || "Jämförelsestatistiken", obj?.statistik?.rader, ["aid", "bas", "median", "p10", "p90", "andelKv"]) + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
+  content.innerHTML = `<dl>${rad("Organisation", obj?.organisation?.namn)}${rad("Utgivare", obj?.utgivare)}${rad("Skapat", obj?.skapat)}${rad("Avser år", obj?.avserAr)}${rad("Inbakat", inb.skapad)}${rad("Verktygets version", inb.verktygsversion)}${rad("Verktygsfilens kontrollsumma (SHA-256)", inb.verktygssha)}${rad("Benämning på jämförelsestatistiken", obj?.profil?.jamforelseNamn)}${rad("Minsta gruppstorlek", inst.kTroskel)}${rad("Lägsta tillåtna minsta gruppstorlek", inst.kTroskelLagst)}${rad("Rensning vid inaktivitet (min)", inst.inaktivitetMin)}${rad("Rensningstiden låst", inst.inaktivitetLast ? "ja" : null)}${rad("Små grupper i exporten från Tabeller och egna vyer", inst.smaGrupperIExport === false ? "inte tillåtet" : null)}${rad(`${stor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === "mansdominerade" ? "bara mansdominerade" : inst.jamforelse === "alla" ? "alla som inte är kvinnodominerade" : null)}${rad("Egna tabeller i rapporten", obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? "eget" : null)}</dl>` + tabell(obj?.referens?.namn || "Ställningstagandet", obj?.referens?.rader, ["aid", "bas", "p10", "med", "p90"]) + tabell(obj?.statistik?.namn || "Jämförelsestatistiken", obj?.statistik?.rader, ["aid", "bas", "median", "p10", "p90", "andelKv"]) + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
   modal.style.display = "flex";
   if (typeof fangaFokus === "function") fangaFokus(modal);
 }
@@ -25020,12 +24991,7 @@ function laddaNerInbakatPaket() {
   } catch (_e) {
   }
   const blob = new Blob([text], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = _paketFilnamn(inb.organisation);
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-  meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
+  meddelaSkarmlasare(`Paketet sparat: ${laddaNer(blob, _paketFilnamn(inb.organisation))}`);
 }
 var _stangPaketDialog = () => {
   const m = document.getElementById("paket-modal");
@@ -25060,12 +25026,7 @@ function uppstartOrganisationspaket() {
       return;
     }
     const blob = new Blob([JSON.stringify(paket, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = _paketFilnamn(paket.organisation.namn);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1e3);
-    meddelaSkarmlasare(`Organisationspaket sparat: ${a.download}`);
+    meddelaSkarmlasare(`Organisationspaket sparat: ${laddaNer(blob, _paketFilnamn(paket.organisation.namn))}`);
   });
   document.getElementById("file-input-verktygsfil")?.addEventListener("change", (e) => {
     const inp = (
@@ -25292,6 +25253,238 @@ function uppstartDemodataDiagnostik() {
   document.getElementById("btn-exit-demo")?.addEventListener("click", rensaAllData);
 }
 
+// src/app/57-sakliga-skal.js
+var _skal = null;
+var SKAL_JA = "Ja, sakligt skäl finns";
+var _skalKr = (v) => svKr(v);
+var _skalPct = (v) => svPct(v * 100, 0);
+function _skalBelopp(t) {
+  const s = String(t ?? "").replace(/\s/g, "");
+  if (!/^\d+$/.test(s)) return null;
+  const v = Number(s);
+  return v <= 2e5 ? v : null;
+}
+var _skalGiltiga = () => _skal ? (
+  /** @type {any[]} */
+  _skal.rader.map((r) => ({ kategori: r.kategori, belopp: _skalBelopp(r.belopp), kommentar: r.kommentar })).filter((r) => r.belopp != null)
+) : [];
+function oppnaSkalDialog(nyckel, opener) {
+  const modal = document.getElementById("skal-modal");
+  if (!modal || !nyckel) return;
+  const iExport = medExportLage(() => _handlingsplanForifyllning());
+  const skarm = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
+  const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
+  const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
+  const egen = _hpArEgen(nyckel);
+  _skal = {
+    nyckel,
+    kalla: nyckel.split("|")[0],
+    grupp: rad && rad[1] || (egen ? "Egen rad" : nyckel),
+    skillnadKr: i >= 0 ? iExport.skillnader[i] : null,
+    iExport: i >= 0 || egen,
+    konUnder: i >= 0 && !egen && _hpUtanBelopp(nyckel, iExport.minsta[i]),
+    rader: (_hpVarden(nyckel).skal || []).map((s) => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || "" }))
+  };
+  _skalRita();
+  modal.style.display = "flex";
+  if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
+}
+function stangSkalDialog() {
+  const modal = document.getElementById("skal-modal");
+  if (!modal || modal.style.display !== "flex") return;
+  if (typeof slappFokus === "function") slappFokus(modal);
+  modal.style.display = "none";
+  _skal = null;
+}
+function _skalOverstigerText(summa, skillnad) {
+  return `Skälen är tillsammans större än skillnaden (${_skalKr(summa)} mot ${_skalKr(skillnad)}). Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`;
+}
+function _skalSkillnadHtml() {
+  const s = (
+    /** @type {NonNullable<typeof _skal>} */
+    _skal
+  );
+  if (s.kalla === "egen") return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
+  if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} ${personOrd(kInstalld())}). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
+  if (s.konUnder) return `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Medianskillnaden redovisas inte, eftersom ett kön i gruppen har färre än ${kInstalld()} ${personOrd(kInstalld())}. Belopp, andel och kommentar följer därför inte med i exporterna eller i årsbokslutet; där står bara kategorierna.</p>`;
+  if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
+  const par = s.kalla === "par";
+  if (s.skillnadKr <= 0) return par ? `<p class="skal-skillnad">${stor(termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad", genitiv: true }))} median är inte lägre än ${genitiv(T.jamforelse.bf)} (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>` : `<p class="skal-skillnad">Kvinnors median är inte lägre än mäns (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`;
+  const vad = par ? `${genitiv(T.jamforelse.bf)} median minus ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad", genitiv: true })}` : "mäns median minus kvinnors i gruppen";
+  return `<p class="skal-skillnad"><strong>Medianskillnad ${svTal(s.skillnadKr, 0)} kr/mån</strong> <span class="text-dampad-sm">(${vad})</span></p>` + (par ? "" : '<p class="text-dampad-sm marg-0">Skälen gäller skillnaden mellan kvinnor och män i gruppen, inte gruppens avstånd till referensen.</p>');
+}
+function _skalRadHtml(r, i) {
+  const k = skalKategorier();
+  const vald = k.find((x) => x.id === r.kategori) || k[0];
+  const ogiltig = _skalBelopp(r.belopp) == null;
+  return `<tr class="skal-rad" data-skal-i="${i}"><td><select class="form-select skal-kategori" data-skal-i="${i}" aria-label="Kategori, skäl ${i + 1}">` + k.map((x) => `<option value="${esc(x.id)}" title="${esc(x.forklaring)}"${x.id === vald.id ? " selected" : ""}>${esc(x.namn)}</option>`).join("") + `</select><div class="text-dampad-xs skal-forklaring">${esc(vald.forklaring)}</div></td><td><input type="text" inputmode="numeric" class="skal-falt skal-belopp" data-skal-i="${i}" value="${esc(r.belopp)}" autocomplete="off" aria-label="Belopp i kr/mån, skäl ${i + 1}"${ogiltig && r.belopp !== "" ? ' aria-invalid="true"' : ""}${ogiltig ? ' aria-describedby="skal-belopp-fel"' : ""}></td><td class="t-tal skal-andel">${esc(_skalAndelText(r))}</td><td><input type="text" class="skal-falt skal-kommentar" data-skal-i="${i}" value="${esc(r.kommentar)}" maxlength="200" autocomplete="off" placeholder="Kort motivering, inga namn" aria-label="Kommentar, skäl ${i + 1}"></td><td><button type="button" class="btn-table-tool" data-skal-ta-bort="${i}" aria-label="Ta bort skäl ${i + 1}">Ta bort</button></td></tr>`;
+}
+function _skalAndelText(r) {
+  const b = _skalBelopp(r.belopp), n = _skal && _skal.skillnadKr;
+  return b != null && n && n > 0 ? _skalPct(b / n) : "–";
+}
+function _skalRita() {
+  const body = document.getElementById("skal-body");
+  if (!body || !_skal) return;
+  const s = _skal, fullt = s.rader.length >= 8;
+  body.innerHTML = `<h3 class="fs-lg marg-0">${esc(s.grupp)}</h3>${_skalSkillnadHtml()}` + (s.rader.length ? `<div class="table-container"><table class="data-table st-088 skal-tabell"><thead><tr><th scope="col">Kategori</th><th scope="col" class="t-hoger">Belopp (kr/mån)</th><th scope="col" class="t-hoger">Andel av skillnaden</th><th scope="col">Kommentar</th><th scope="col"><span class="sr-only">Ta bort</span></th></tr></thead><tbody>${s.rader.map(_skalRadHtml).join("")}</tbody></table></div>` : '<p class="text-dampad-sm">Inga skäl ännu. Lägg till ett skäl för varje kategori som förklarar en del av skillnaden.</p>') + `<div class="rad-bryt-mitt gap-8 marg-t-8"><button id="skal-lagg-till" class="btn btn-secondary btn-sm" type="button"${fullt ? " disabled" : ""}>Lägg till skäl</button><span class="text-dampad-sm">Högst 8 skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div><p id="skal-belopp-fel" class="handlingsplan-varning" role="status" hidden>Beloppet ska vara ett heltal mellan 0 och 200 000 kr. Skälet sparas när beloppet är giltigt.</p><p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p><div id="skal-status"></div>`;
+  _skalUppdatera();
+  const modal = document.getElementById("skal-modal");
+  if (modal && modal.style.display === "flex" && typeof _fokusfallor !== "undefined") {
+    const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
+    if (trap) {
+      modal.removeEventListener("keydown", trap.handler);
+      _fokusfallor.delete(modal);
+    }
+    fangaFokus(modal, opener, { flyttaFokus: false });
+  }
+}
+function _skalUppdatera() {
+  if (!_skal) return;
+  const s = _skal;
+  _hpSattSkal(s.nyckel, _skalGiltiga());
+  const sum = skalSammanstallning(_skalGiltiga(), s.iExport ? s.skillnadKr : null);
+  const status = document.getElementById("skal-status");
+  if (status) {
+    const summa = sum.forklaradAndel != null ? `Förklarat av skälen: ${_skalKr(sum.summa)} (${_skalPct(sum.forklaradAndel)}) · Återstår att förklara: ${_skalKr(
+      /** @type {number} */
+      sum.aterstar
+    )} (${_skalPct(
+      /** @type {number} */
+      sum.aterstarAndel
+    )})` : `Förklarat av skälen: ${_skalKr(sum.summa)}`;
+    const ja = _hpVarden(s.nyckel).sakligt === SKAL_JA;
+    status.innerHTML = `<p id="skal-summa" class="skal-summa" aria-live="polite">${esc(summa)}</p>` + (sum.overstiger ? `<p id="skal-overstiger" class="handlingsplan-varning" role="alert">${esc(_skalOverstigerText(
+      sum.summa,
+      /** @type {number} */
+      sum.skillnadKr
+    ))}</p>` : "") + (sum.forklaradAndel != null && sum.forklaradAndel >= 1 && !sum.overstiger && !ja ? `<div class="skal-forslag"><p class="text-dampad-sm marg-0">Beloppen du har angett täcker hela skillnaden. Bedömer organisationen att skälen är sakliga kan du välja <strong>Ja, sakligt skäl finns</strong>.</p><button id="skal-markera" class="btn btn-primary btn-sm" type="button">Välj ${SKAL_JA}</button></div>` : "");
+  }
+  let traff = 0;
+  document.querySelectorAll("#skal-body input.skal-kommentar").forEach((el) => {
+    const liknar = _hpLiknarPersonuppgift(
+      /** @type {HTMLInputElement} */
+      el.value
+    );
+    if (liknar) {
+      el.setAttribute("aria-describedby", "skal-varning");
+      traff++;
+    } else el.removeAttribute("aria-describedby");
+  });
+  const varning = document.getElementById("skal-varning");
+  if (varning) varning.hidden = !traff;
+  let fel = 0;
+  document.querySelectorAll("#skal-body input.skal-belopp").forEach((el) => {
+    if (_skalBelopp(
+      /** @type {HTMLInputElement} */
+      el.value
+    ) == null) {
+      el.setAttribute("aria-describedby", "skal-belopp-fel");
+      fel++;
+    } else el.removeAttribute("aria-describedby");
+  });
+  const beloppFel = document.getElementById("skal-belopp-fel");
+  if (beloppFel) beloppFel.hidden = !fel;
+  document.querySelectorAll("#handlingsplan-tbody [data-hp-skal]").forEach((b) => {
+    const btn = (
+      /** @type {HTMLElement} */
+      b
+    );
+    if (btn.dataset.hpSkal !== s.nyckel) return;
+    const sp = btn.querySelector(".hp-skal-sammanfattning");
+    const sk = btn.dataset.hpSkillnad;
+    const skillnad = sk === "" || sk == null ? null : Number(sk);
+    if (sp) sp.textContent = _hpSkalSammanfattning(s.nyckel, skillnad);
+    btn.setAttribute("aria-label", _hpSkalEtikett(s.nyckel, btn.dataset.hpGrupp || "", skillnad));
+  });
+}
+function uppstartSakligaSkal() {
+  document.addEventListener("click", (e) => {
+    const t = (
+      /** @type {HTMLElement} */
+      e.target
+    );
+    if (!t || !t.closest) return;
+    const gaTill = t.closest("[data-hp-ga-till]");
+    if (gaTill) {
+      e.preventDefault();
+      if (typeof stangGruppdossier === "function") stangGruppdossier();
+      if (typeof stangBasdossier === "function") stangBasdossier();
+      _hpGaTillRad(gaTill.getAttribute("data-hp-ga-till") || "");
+      return;
+    }
+    const oppna = t.closest("[data-hp-skal]");
+    if (oppna) {
+      oppnaSkalDialog(oppna.getAttribute("data-hp-skal") || "", oppna);
+      return;
+    }
+    if (!t.closest("#skal-modal")) return;
+    if (t.closest("[data-skal-close]")) {
+      stangSkalDialog();
+      return;
+    }
+    if (!_skal) return;
+    if (t.closest("#skal-lagg-till")) {
+      if (_skal.rader.length >= 8) return;
+      const anvanda = new Set(_skal.rader.map((r) => r.kategori));
+      const forsta = skalKategorier().find((k) => !anvanda.has(k.id)) || skalKategorier()[0];
+      _skal.rader.push({ kategori: forsta.id, belopp: "", kommentar: "" });
+      _skalRita();
+      const sel = [...document.querySelectorAll("#skal-body select.skal-kategori")].at(-1);
+      if (sel) sel.focus();
+      return;
+    }
+    const bort = t.closest("[data-skal-ta-bort]");
+    if (bort) {
+      _skal.rader.splice(Number(bort.getAttribute("data-skal-ta-bort")), 1);
+      _skalRita();
+      document.getElementById("skal-lagg-till")?.focus();
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Skälet är borttaget.");
+      return;
+    }
+    if (t.closest("#skal-markera")) {
+      const nyckel = _skal.nyckel;
+      _hpSatt(nyckel, "sakligt", SKAL_JA);
+      document.querySelectorAll("#handlingsplan-tbody select.hp-falt").forEach((el) => {
+        const sel = (
+          /** @type {HTMLSelectElement} */
+          el
+        );
+        if (sel.dataset.hpNyckel === nyckel && sel.dataset.hpFalt === "sakligt") sel.value = SKAL_JA;
+      });
+      _skalUppdatera();
+      document.getElementById("skal-summa")?.setAttribute("tabindex", "-1");
+      document.getElementById("skal-summa")?.focus();
+      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Raden är markerad: sakligt skäl finns.");
+    }
+  });
+  ["input", "change"].forEach((typ) => document.getElementById("skal-modal")?.addEventListener(typ, (e) => {
+    const el = (
+      /** @type {HTMLInputElement} */
+      e.target
+    );
+    if (!_skal || !el || !el.dataset || el.dataset.skalI == null) return;
+    const r = _skal.rader[Number(el.dataset.skalI)];
+    if (!r) return;
+    if (el.classList.contains("skal-kategori")) {
+      r.kategori = el.value;
+      const f = el.parentElement && el.parentElement.querySelector(".skal-forklaring");
+      const k = skalKategorier().find((x) => x.id === el.value);
+      if (f && k) f.textContent = k.forklaring;
+    } else if (el.classList.contains("skal-belopp")) {
+      r.belopp = el.value;
+      if (_skalBelopp(el.value) == null && el.value !== "") el.setAttribute("aria-invalid", "true");
+      else el.removeAttribute("aria-invalid");
+      const andel = el.closest("tr")?.querySelector(".skal-andel");
+      if (andel) andel.textContent = _skalAndelText(r);
+    } else if (el.classList.contains("skal-kommentar")) r.kommentar = el.value.slice(0, 200);
+    _skalUppdatera();
+  }));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.getElementById("skal-modal")?.style.display === "flex") stangSkalDialog();
+  });
+}
+
 // src/app/26-rensning.js
 function rensaAllData() {
   const hasAny = state.data.length || state.policy.length || state.statistik.length || state.snapshot || state.paket || (state.importprofiler || []).length || _fkVantar || state.forhandskontroll;
@@ -25340,7 +25533,12 @@ var RENSA_OVRIGT = [
   "ut-alla-grupper",
   "forecast-threshold-result",
   "forecast-sensitivity",
-  "forecast-rem-result"
+  "forecast-rem-result",
+  // Löneöversyns knappresultat
+  "dossier-body",
+  "basdossier-body",
+  "evidence-modal-content",
+  "skal-body"
 ];
 function _rensaAllData({ inbakat = true } = {}) {
   visningNy();
@@ -25410,6 +25608,7 @@ function _rensaAllData({ inbakat = true } = {}) {
   if (typeof skattningarSlapp === "function") skattningarSlapp();
   state.dataAudit = null;
   if (state.likvardighet) state.likvardighet.result = null;
+  for (const stang of [stangGruppdossier, stangBasdossier, _stangBevisruta, stangSkalDialog]) if (typeof stang === "function") stang();
   RENSA_BEHALLARE.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = "";
@@ -28858,15 +29057,7 @@ function _laddaNedCSV(rows, filename, { undantag = "" } = {}) {
     const BOM = "\uFEFF";
     const csv = BOM + tillCsv(_csvMedStampel(rows, undantag));
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = _csvFilnamn(filename) + ".csv";
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    laddaNer(blob, _csvFilnamn(filename) + ".csv");
     if (typeof _visaExportvarning === "function") _visaExportvarning();
     if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("CSV exporterad: " + (rows.length - 1) + " rader.");
   } catch (err) {
@@ -29723,7 +29914,7 @@ function _visaInaktivitetsvarning() {
 }
 function _rensaVidInaktivitet() {
   _doljInaktivitetsvarning();
-  const hadData = state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
+  const hadData = _harNagotAttRensa();
   _rensaAllData();
   if (hadData) {
     const notice = document.createElement("div");
@@ -33825,6 +34016,18 @@ function doljLaddning() {
   const el = document.getElementById("loading-overlay");
   if (el) el.style.display = "none";
 }
+function laddaNer(blob, filnamn) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filnamn;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1e3);
+  return filnamn;
+}
 var DATA_STIL = [["data-stil-bredd", "width"], ["data-stil-vanster", "left"], ["data-stil-mvanster", "marginLeft"]];
 function tillampaDataStil(rot) {
   if (!rot) return;
@@ -33843,7 +34046,7 @@ function hamtaFalt(row, possibleNames, role) {
   return vardeForRoll(row, possibleNames, role, _kolumnvalITillstandet());
 }
 function _importprofilLista() {
-  return [...state.importprofiler || [], ...inbyggdaProfiler()];
+  return [...state.importprofiler || [], ...INBYGGDA_PROFILER];
 }
 function _importprofilFor(headers) {
   const t = matchaImportprofil(headers || [], _importprofilLista());
@@ -35911,238 +36114,6 @@ function uppstartSidansInnehall() {
   });
 }
 
-// src/app/57-sakliga-skal.js
-var _skal = null;
-var SKAL_JA = "Ja, sakligt skäl finns";
-var _skalKr = (v) => svKr(v);
-var _skalPct = (v) => svPct(v * 100, 0);
-function _skalBelopp(t) {
-  const s = String(t ?? "").replace(/\s/g, "");
-  if (!/^\d+$/.test(s)) return null;
-  const v = Number(s);
-  return v <= 2e5 ? v : null;
-}
-var _skalGiltiga = () => _skal ? (
-  /** @type {any[]} */
-  _skal.rader.map((r) => ({ kategori: r.kategori, belopp: _skalBelopp(r.belopp), kommentar: r.kommentar })).filter((r) => r.belopp != null)
-) : [];
-function oppnaSkalDialog(nyckel, opener) {
-  const modal = document.getElementById("skal-modal");
-  if (!modal || !nyckel) return;
-  const iExport = medExportLage(() => _handlingsplanForifyllning());
-  const skarm = _handlingsplanForifyllning({ baraEgna: !hamtaData().length });
-  const i = iExport.nycklar.indexOf(nyckel), j = skarm.nycklar.indexOf(nyckel);
-  const rad = i >= 0 ? iExport.rows[i] : j >= 0 ? skarm.rows[j] : null;
-  const egen = _hpArEgen(nyckel);
-  _skal = {
-    nyckel,
-    kalla: nyckel.split("|")[0],
-    grupp: rad && rad[1] || (egen ? "Egen rad" : nyckel),
-    skillnadKr: i >= 0 ? iExport.skillnader[i] : null,
-    iExport: i >= 0 || egen,
-    konUnder: i >= 0 && !egen && _hpUtanBelopp(nyckel, iExport.minsta[i]),
-    rader: (_hpVarden(nyckel).skal || []).map((s) => ({ kategori: s.kategori, belopp: String(s.belopp), kommentar: s.kommentar || "" }))
-  };
-  _skalRita();
-  modal.style.display = "flex";
-  if (typeof fangaFokus === "function") fangaFokus(modal, opener || document.activeElement);
-}
-function stangSkalDialog() {
-  const modal = document.getElementById("skal-modal");
-  if (!modal || modal.style.display !== "flex") return;
-  if (typeof slappFokus === "function") slappFokus(modal);
-  modal.style.display = "none";
-  _skal = null;
-}
-function _skalOverstigerText(summa, skillnad) {
-  return `Skälen är tillsammans större än skillnaden (${_skalKr(summa)} mot ${_skalKr(skillnad)}). Ett belopp kan vara för högt, eller så räknar två skäl samma sak. Kontrollera beloppen.`;
-}
-function _skalSkillnadHtml() {
-  const s = (
-    /** @type {NonNullable<typeof _skal>} */
-    _skal
-  );
-  if (s.kalla === "egen") return '<p class="skal-skillnad">En egen rad har ingen medianskillnad att räkna andelar mot. Skälen redovisas med belopp. Skälen på en egen rad följer inte med i årsbokslutet.</p>';
-  if (!s.iExport) return `<p class="skal-skillnad">Gruppen är för liten för att redovisas (färre än ${kInstalld()} ${personOrd(kInstalld())}). Raden och skälen följer därför inte med i exporterna, och inga andelar räknas.</p>`;
-  if (s.konUnder) return `<p id="skal-kon-under" class="handlingsplan-varning" role="note">Medianskillnaden redovisas inte, eftersom ett kön i gruppen har färre än ${kInstalld()} ${personOrd(kInstalld())}. Belopp, andel och kommentar följer därför inte med i exporterna eller i årsbokslutet; där står bara kategorierna.</p>`;
-  if (s.skillnadKr == null) return '<p class="skal-skillnad">Gruppens medianskillnad redovisas inte. Skälen redovisas med belopp.</p>';
-  const par = s.kalla === "par";
-  if (s.skillnadKr <= 0) return par ? `<p class="skal-skillnad">${stor(termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad", genitiv: true }))} median är inte lägre än ${genitiv(T.jamforelse.bf)} (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>` : `<p class="skal-skillnad">Kvinnors median är inte lägre än mäns (${svTal(s.skillnadKr, 0)} kr/mån). Andelar räknas inte.</p>`;
-  const vad = par ? `${genitiv(T.jamforelse.bf)} median minus ${termFras(T.enhet, "bf", { adjektiv: "kvinnodominerad", genitiv: true })}` : "mäns median minus kvinnors i gruppen";
-  return `<p class="skal-skillnad"><strong>Medianskillnad ${svTal(s.skillnadKr, 0)} kr/mån</strong> <span class="text-dampad-sm">(${vad})</span></p>` + (par ? "" : '<p class="text-dampad-sm marg-0">Skälen gäller skillnaden mellan kvinnor och män i gruppen, inte gruppens avstånd till referensen.</p>');
-}
-function _skalRadHtml(r, i) {
-  const k = skalKategorier();
-  const vald = k.find((x) => x.id === r.kategori) || k[0];
-  const ogiltig = _skalBelopp(r.belopp) == null;
-  return `<tr class="skal-rad" data-skal-i="${i}"><td><select class="form-select skal-kategori" data-skal-i="${i}" aria-label="Kategori, skäl ${i + 1}">` + k.map((x) => `<option value="${esc(x.id)}" title="${esc(x.forklaring)}"${x.id === vald.id ? " selected" : ""}>${esc(x.namn)}</option>`).join("") + `</select><div class="text-dampad-xs skal-forklaring">${esc(vald.forklaring)}</div></td><td><input type="text" inputmode="numeric" class="skal-falt skal-belopp" data-skal-i="${i}" value="${esc(r.belopp)}" autocomplete="off" aria-label="Belopp i kr/mån, skäl ${i + 1}"${ogiltig && r.belopp !== "" ? ' aria-invalid="true"' : ""}${ogiltig ? ' aria-describedby="skal-belopp-fel"' : ""}></td><td class="t-tal skal-andel">${esc(_skalAndelText(r))}</td><td><input type="text" class="skal-falt skal-kommentar" data-skal-i="${i}" value="${esc(r.kommentar)}" maxlength="200" autocomplete="off" placeholder="Kort motivering, inga namn" aria-label="Kommentar, skäl ${i + 1}"></td><td><button type="button" class="btn-table-tool" data-skal-ta-bort="${i}" aria-label="Ta bort skäl ${i + 1}">Ta bort</button></td></tr>`;
-}
-function _skalAndelText(r) {
-  const b = _skalBelopp(r.belopp), n = _skal && _skal.skillnadKr;
-  return b != null && n && n > 0 ? _skalPct(b / n) : "–";
-}
-function _skalRita() {
-  const body = document.getElementById("skal-body");
-  if (!body || !_skal) return;
-  const s = _skal, fullt = s.rader.length >= 8;
-  body.innerHTML = `<h3 class="fs-lg marg-0">${esc(s.grupp)}</h3>${_skalSkillnadHtml()}` + (s.rader.length ? `<div class="table-container"><table class="data-table st-088 skal-tabell"><thead><tr><th scope="col">Kategori</th><th scope="col" class="t-hoger">Belopp (kr/mån)</th><th scope="col" class="t-hoger">Andel av skillnaden</th><th scope="col">Kommentar</th><th scope="col"><span class="sr-only">Ta bort</span></th></tr></thead><tbody>${s.rader.map(_skalRadHtml).join("")}</tbody></table></div>` : '<p class="text-dampad-sm">Inga skäl ännu. Lägg till ett skäl för varje kategori som förklarar en del av skillnaden.</p>') + `<div class="rad-bryt-mitt gap-8 marg-t-8"><button id="skal-lagg-till" class="btn btn-secondary btn-sm" type="button"${fullt ? " disabled" : ""}>Lägg till skäl</button><span class="text-dampad-sm">Högst 8 skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div><p id="skal-belopp-fel" class="handlingsplan-varning" role="status" hidden>Beloppet ska vara ett heltal mellan 0 och 200 000 kr. Skälet sparas när beloppet är giltigt.</p><p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p><div id="skal-status"></div>`;
-  _skalUppdatera();
-  const modal = document.getElementById("skal-modal");
-  if (modal && modal.style.display === "flex" && typeof _fokusfallor !== "undefined") {
-    const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
-    if (trap) {
-      modal.removeEventListener("keydown", trap.handler);
-      _fokusfallor.delete(modal);
-    }
-    fangaFokus(modal, opener, { flyttaFokus: false });
-  }
-}
-function _skalUppdatera() {
-  if (!_skal) return;
-  const s = _skal;
-  _hpSattSkal(s.nyckel, _skalGiltiga());
-  const sum = skalSammanstallning(_skalGiltiga(), s.iExport ? s.skillnadKr : null);
-  const status = document.getElementById("skal-status");
-  if (status) {
-    const summa = sum.forklaradAndel != null ? `Förklarat av skälen: ${_skalKr(sum.summa)} (${_skalPct(sum.forklaradAndel)}) · Återstår att förklara: ${_skalKr(
-      /** @type {number} */
-      sum.aterstar
-    )} (${_skalPct(
-      /** @type {number} */
-      sum.aterstarAndel
-    )})` : `Förklarat av skälen: ${_skalKr(sum.summa)}`;
-    const ja = _hpVarden(s.nyckel).sakligt === SKAL_JA;
-    status.innerHTML = `<p id="skal-summa" class="skal-summa" aria-live="polite">${esc(summa)}</p>` + (sum.overstiger ? `<p id="skal-overstiger" class="handlingsplan-varning" role="alert">${esc(_skalOverstigerText(
-      sum.summa,
-      /** @type {number} */
-      sum.skillnadKr
-    ))}</p>` : "") + (sum.forklaradAndel != null && sum.forklaradAndel >= 1 && !sum.overstiger && !ja ? `<div class="skal-forslag"><p class="text-dampad-sm marg-0">Beloppen du har angett täcker hela skillnaden. Bedömer organisationen att skälen är sakliga kan du välja <strong>Ja, sakligt skäl finns</strong>.</p><button id="skal-markera" class="btn btn-primary btn-sm" type="button">Välj ${SKAL_JA}</button></div>` : "");
-  }
-  let traff = 0;
-  document.querySelectorAll("#skal-body input.skal-kommentar").forEach((el) => {
-    const liknar = _hpLiknarPersonuppgift(
-      /** @type {HTMLInputElement} */
-      el.value
-    );
-    if (liknar) {
-      el.setAttribute("aria-describedby", "skal-varning");
-      traff++;
-    } else el.removeAttribute("aria-describedby");
-  });
-  const varning = document.getElementById("skal-varning");
-  if (varning) varning.hidden = !traff;
-  let fel = 0;
-  document.querySelectorAll("#skal-body input.skal-belopp").forEach((el) => {
-    if (_skalBelopp(
-      /** @type {HTMLInputElement} */
-      el.value
-    ) == null) {
-      el.setAttribute("aria-describedby", "skal-belopp-fel");
-      fel++;
-    } else el.removeAttribute("aria-describedby");
-  });
-  const beloppFel = document.getElementById("skal-belopp-fel");
-  if (beloppFel) beloppFel.hidden = !fel;
-  document.querySelectorAll("#handlingsplan-tbody [data-hp-skal]").forEach((b) => {
-    const btn = (
-      /** @type {HTMLElement} */
-      b
-    );
-    if (btn.dataset.hpSkal !== s.nyckel) return;
-    const sp = btn.querySelector(".hp-skal-sammanfattning");
-    const sk = btn.dataset.hpSkillnad;
-    const skillnad = sk === "" || sk == null ? null : Number(sk);
-    if (sp) sp.textContent = _hpSkalSammanfattning(s.nyckel, skillnad);
-    btn.setAttribute("aria-label", _hpSkalEtikett(s.nyckel, btn.dataset.hpGrupp || "", skillnad));
-  });
-}
-function uppstartSakligaSkal() {
-  document.addEventListener("click", (e) => {
-    const t = (
-      /** @type {HTMLElement} */
-      e.target
-    );
-    if (!t || !t.closest) return;
-    const gaTill = t.closest("[data-hp-ga-till]");
-    if (gaTill) {
-      e.preventDefault();
-      if (typeof stangGruppdossier === "function") stangGruppdossier();
-      if (typeof stangBasdossier === "function") stangBasdossier();
-      _hpGaTillRad(gaTill.getAttribute("data-hp-ga-till") || "");
-      return;
-    }
-    const oppna = t.closest("[data-hp-skal]");
-    if (oppna) {
-      oppnaSkalDialog(oppna.getAttribute("data-hp-skal") || "", oppna);
-      return;
-    }
-    if (!t.closest("#skal-modal")) return;
-    if (t.closest("[data-skal-close]")) {
-      stangSkalDialog();
-      return;
-    }
-    if (!_skal) return;
-    if (t.closest("#skal-lagg-till")) {
-      if (_skal.rader.length >= 8) return;
-      const anvanda = new Set(_skal.rader.map((r) => r.kategori));
-      const forsta = skalKategorier().find((k) => !anvanda.has(k.id)) || skalKategorier()[0];
-      _skal.rader.push({ kategori: forsta.id, belopp: "", kommentar: "" });
-      _skalRita();
-      const sel = [...document.querySelectorAll("#skal-body select.skal-kategori")].at(-1);
-      if (sel) sel.focus();
-      return;
-    }
-    const bort = t.closest("[data-skal-ta-bort]");
-    if (bort) {
-      _skal.rader.splice(Number(bort.getAttribute("data-skal-ta-bort")), 1);
-      _skalRita();
-      document.getElementById("skal-lagg-till")?.focus();
-      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Skälet är borttaget.");
-      return;
-    }
-    if (t.closest("#skal-markera")) {
-      const nyckel = _skal.nyckel;
-      _hpSatt(nyckel, "sakligt", SKAL_JA);
-      document.querySelectorAll("#handlingsplan-tbody select.hp-falt").forEach((el) => {
-        const sel = (
-          /** @type {HTMLSelectElement} */
-          el
-        );
-        if (sel.dataset.hpNyckel === nyckel && sel.dataset.hpFalt === "sakligt") sel.value = SKAL_JA;
-      });
-      _skalUppdatera();
-      document.getElementById("skal-summa")?.setAttribute("tabindex", "-1");
-      document.getElementById("skal-summa")?.focus();
-      if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Raden är markerad: sakligt skäl finns.");
-    }
-  });
-  ["input", "change"].forEach((typ) => document.getElementById("skal-modal")?.addEventListener(typ, (e) => {
-    const el = (
-      /** @type {HTMLInputElement} */
-      e.target
-    );
-    if (!_skal || !el || !el.dataset || el.dataset.skalI == null) return;
-    const r = _skal.rader[Number(el.dataset.skalI)];
-    if (!r) return;
-    if (el.classList.contains("skal-kategori")) {
-      r.kategori = el.value;
-      const f = el.parentElement && el.parentElement.querySelector(".skal-forklaring");
-      const k = skalKategorier().find((x) => x.id === el.value);
-      if (f && k) f.textContent = k.forklaring;
-    } else if (el.classList.contains("skal-belopp")) {
-      r.belopp = el.value;
-      if (_skalBelopp(el.value) == null && el.value !== "") el.setAttribute("aria-invalid", "true");
-      else el.removeAttribute("aria-invalid");
-      const andel = el.closest("tr")?.querySelector(".skal-andel");
-      if (andel) andel.textContent = _skalAndelText(r);
-    } else if (el.classList.contains("skal-kommentar")) r.kommentar = el.value.slice(0, 200);
-    _skalUppdatera();
-  }));
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && document.getElementById("skal-modal")?.style.display === "flex") stangSkalDialog();
-  });
-}
-
 // src/app/60-utskrift.js
 var HJALPKLASSER_CSS = `.t-hoger{text-align:right}.t-mitt{text-align:center}.t-tal{text-align:right;font-variant-numeric:tabular-nums}.f-dampad{color:${FARG.dampad}}.f-kritisk{color:${FARG.kritisk}}.st-088{font-size:0.88rem}.st-085{font-size:0.85rem}.st-09{font-size:0.9rem}.mb-14{margin-bottom:14px}.mb-10{margin-bottom:10px}.mb-16{margin-bottom:16px}.mt-8{margin-top:8px}.mt-14{margin-top:14px}.m-0{margin:0}.mr-6{margin-right:6px}.faltkolumn{display:flex;flex-direction:column;gap:3px;font-size:0.85rem}.finstilt{font-size:0.78rem;color:${FARG.dampad};margin-top:4px}.etikett-versal{font-size:0.78rem;color:${FARG.dampad};text-transform:uppercase;letter-spacing:0.05em}.fk-cell{padding:6px 12px 6px 0}.fk-ikon{font-size:1.4rem}.block-mb6{display:block;margin-bottom:6px}.underrubrik{margin:0 0 8px;font-size:0.95rem}`;
 function bibliotekCssForUtskrift() {
@@ -36282,7 +36253,10 @@ async function _byggUtskriftsrapportExport() {
   }
 }
 function skrivUtMallflik(viewId, heading) {
-  const view = document.getElementById(viewId);
+  medExportLage(() => _skrivUtMallflik(viewId, heading));
+}
+function _skrivUtMallflik(viewId, heading) {
+  const view = exportElement(viewId);
   if (!view) return;
   const clone = view.cloneNode(true);
   clone.querySelectorAll("details").forEach((d) => d.setAttribute("open", ""));
@@ -36585,16 +36559,6 @@ function _utkastTillBlock(html) {
   besok(rot);
   return block;
 }
-function _laddaNerBlob(blob, filnamn) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filnamn;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1e3);
-}
 async function _utkastFyllBilder(block) {
   const ut = [], saknas = [], ritade = /* @__PURE__ */ new Set();
   for (const b of block) {
@@ -36641,7 +36605,7 @@ async function _exportWordUtkastExport() {
   }
   try {
     const { blob, namn } = await byggWordUtkast();
-    _laddaNerBlob(blob, namn);
+    laddaNer(blob, namn);
     return true;
   } catch (err) {
     rapporteraFel("Word-utkast", err);
@@ -36927,10 +36891,7 @@ async function _exportZipExport() {
       }
     }
     const blob = await zip.generateAsync({ type: "blob" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "lonekartlaggning_export.zip";
-    a.click();
+    laddaNer(blob, "lonekartlaggning_export.zip");
     return true;
   } finally {
     if (typeof doljLaddning === "function") doljLaddning();

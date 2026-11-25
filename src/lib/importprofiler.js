@@ -215,8 +215,3 @@ export const INBYGGDA_PROFILER = Object.freeze([
     _inbyggd({ id: 'inbyggd-demodata', namn: 'Verktygets grundfält',
         rubriker: { bas: ['bas'], yrke: ['yrke', 'aid'], lon: ['lon'], alder: ['alder'], kon: ['kon'] } }),
 ]);
-
-/** De inbyggda profilerna. */
-export function inbyggdaProfiler() {
-    return INBYGGDA_PROFILER;
-}

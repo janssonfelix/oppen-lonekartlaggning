@@ -133,6 +133,15 @@ describe('säkerhet: en enda escaping-funktion', () => {
     });
 });
 
+// En nedladdningslänk som aldrig släpps håller filens innehåll (lönemått) kvar i minnet, också efter Rensa all data.
+describe('säkerhet: en enda väg för nedladdningar', () => {
+    it('bara laddaNer i 03-hjalpfunktioner.js skapar nedladdningslänkar', () => {
+        const filer = readdirSync(join(ROOT, 'src/app')).filter(f => f.endsWith('.js') && /URL\.createObjectURL/.test(läs(`src/app/${f}`)));
+        expect(filer).toEqual(['03-hjalpfunktioner.js']);
+        expect(läs('src/app/03-hjalpfunktioner.js')).toMatch(/revokeObjectURL\(url\)/);
+    });
+});
+
 describe('säkerhet: utskriftsfönstret', () => {
     it('rubriken escapas, fönstret får en egen CSP och inga inline-stilblock', () => {
         const w = createAppWindow();

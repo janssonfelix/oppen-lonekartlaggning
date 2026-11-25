@@ -16,11 +16,12 @@ står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.6). Jämförelsestatist
 | Del | Fil |
 |---|---|
 | Formelskyddet, CSV-texten och urklippets text | `src/lib/csv.js` (`neutraliseraCell`, `tillCsv`, `tillTsv`) |
-| Nedladdningen av CSV och exportnotisen | `src/app/22-exporthjalpare.js` (`_laddaNedCSV`, `_visaExportvarning`) |
+| Nedladdningen av en fil (alla exporter) | `src/app/03-hjalpfunktioner.js` (`laddaNer`) |
+| CSV-filen och exportnotisen | `src/app/22-exporthjalpare.js` (`_laddaNedCSV`, `_visaExportvarning`) |
 | Urklippet | `src/app/12-tillstand.js` (`_kopieraMatrisTillUrklipp`) |
 | Rapportmodellen, som Word-utkastet och PDF-rapporten ritas ur | `src/app/58-rapportmodell.js` (`rapportModell`, `rmTillHtml`) |
 | Word-utkastet som Office Open XML | `src/lib/docx.js` (`docxDelar`, `xmlText`); `src/app/62-word-utkast.js` (`byggWordUtkast`) |
-| PDF-rapporten (utskriften) | `src/app/60-utskrift.js` |
+| PDF-rapporten och utskriften av checklistan och handlingsplanen | `src/app/60-utskrift.js` (`skrivUtMallflik`) |
 | Excel-filen med alla flikar och protokollet | `src/app/24-excelexport.js` (`_excelAlltBok`, `exportJPAProtokoll`) |
 | ZIP-filen | `src/app/66-zip-export.js` |
 | Förhandsbeskedet vid knapparna | `src/app/59-exportbesked.js` (`ritaExportBesked`) |

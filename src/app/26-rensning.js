@@ -13,6 +13,7 @@ import { ovRitaLage, ritaKravstatus, skattningarSlapp } from './13-oversikt.js';
 import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
 import { _ritaDemoruta } from './20-demodata-diagnostik.js';
 import { visningNy } from './23-exportgrind.js';
+import { _stangBevisruta } from './27-berakningsbevis.js';
 import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
 import { sattInaktivitetstid } from './28-vad-lagras-inaktivitet.js';
 import { _fyllPaketFormular, _synkaKostnadsfalt, _synkaOrgTyp, lasInInbakatPaket, ritaPaketinfo } from './29-organisationspaket.js';
@@ -23,9 +24,12 @@ import { rapportGlomHopfallning } from './39-loneoversikt.js';
 import { laMinneSlapp } from './41-lika-arbete.js';
 import { jamforelseSattVal } from './42-jamforelse.js';
 import { _hpDemoNycklar, ritaHandlingsplan } from './56-handlingsplan.js';
+import { stangSkalDialog } from './57-sakliga-skal.js';
 import { _rmMinneSlapp } from './58-rapportmodell.js';
 import { bes8Stod, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { utforskaSlappMinne, utforskaSynkaSmaLas } from './70-utforska.js';
+import { stangGruppdossier } from './80-gruppdossier.js';
+import { stangBasdossier } from './81-basdossier.js';
 
 // ---- Rensa all data: lagringsminimering (art. 5.1 e, 25.2) ----
 /**
@@ -57,7 +61,8 @@ export const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distributio
     'outliers-table-wrap', 'print-report'];
 export const RENSA_TABELLER = ['rapport-table', 'matrix-table', 'la-oversikt', 'pag-avvikelse-tabell', 'paygap-table', 'skevhet-table', 'benchmark-table', 'prio-table'];
 export const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data-validation-report', 'snapshot-comparison', 'consistency-banner', 'process-tracker', 'likvardighet-content', 'forklaringsmodell-panel', 'blinder-oaxaca-card', 'livscykel-content', 'lonepolitik-content', 'ref-overblick', 'jmf-slutsatser', 'robusthet-body', 'fardigcheck-body', 'rapportunderlag-innehall', 'gap-uppdelning-innehall', 'pag-innehall', 'att-gora-borja', 'aidbas-lika', 'aidbas-individ', 'aidbas-likvardigt', 'aidbas-hierarki', 'ut-alla-grupper',
-    'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result'];   // Löneöversyns knappresultat
+    'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result',   // Löneöversyns knappresultat
+    'dossier-body', 'basdossier-body', 'evidence-modal-content', 'skal-body'];   // dialogerna med gruppens tal
 
 export function _rensaAllData({ inbakat = true } = {}) {
     visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
@@ -138,6 +143,9 @@ export function _rensaAllData({ inbakat = true } = {}) {
     if (state.likvardighet) state.likvardighet.result = null;
 
     // 2. Tear down renderad DOM som kan innehålla data
+    // Dialogerna med en grupps tal stängs först: en öppen dossier får inte stå kvar på skärmen efter rensningen vid
+    // inaktivitet. Innehållet töms med RENSA_OVRIGT nedan.
+    for (const stang of [stangGruppdossier, stangBasdossier, _stangBevisruta, stangSkalDialog]) if (typeof stang === 'function') stang();
     // Behållare som fylls helt av JavaScript (Struktur, Löneöversyn, Utforska).
     // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/dataskydd-app.test.js —
     // en ny vy som ritar lönedata utanför de rensade behållarna fångas där.

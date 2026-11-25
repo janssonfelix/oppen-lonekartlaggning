@@ -66,7 +66,7 @@ function oppnaSkalDialog(nyckel, opener) {
     modal.style.display = 'flex';
     if (typeof fangaFokus === 'function') fangaFokus(modal, opener || document.activeElement);
 }
-function stangSkalDialog() {
+export function stangSkalDialog() {
     const modal = document.getElementById('skal-modal');
     if (!modal || modal.style.display !== 'flex') return;
     if (typeof slappFokus === 'function') slappFokus(modal);

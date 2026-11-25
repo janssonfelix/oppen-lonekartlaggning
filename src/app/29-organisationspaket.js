@@ -12,7 +12,7 @@ import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, paketArGammalt, tolkaPaket
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
-import { idagDatum } from './03-hjalpfunktioner.js';
+import { idagDatum, laddaNer } from './03-hjalpfunktioner.js';
 import { _ritaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
@@ -455,11 +455,7 @@ async function skapaOrganisationsfil() {
     return { ok: true, meddelande };
 }
 function _laddaNerHtml(html, filnamn) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-    a.download = filnamn;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    laddaNer(new Blob([html], { type: 'text/html' }), filnamn);
 }
 
 // ---- Flytta till en ny version: paketet ur den gamla organisationsfilen in i en ny verktygsfil ----
@@ -522,8 +518,8 @@ function visaInbakatPaket() {
         + `${rad('Inbakat', inb.skapad)}${rad('Verktygets version', inb.verktygsversion)}${rad('Verktygsfilens kontrollsumma (SHA-256)', inb.verktygssha)}`
         + `${rad('Benämning på jämförelsestatistiken', obj?.profil?.jamforelseNamn)}${rad('Minsta gruppstorlek', inst.kTroskel)}${rad('Lägsta tillåtna minsta gruppstorlek', inst.kTroskelLagst)}`
         + `${rad('Rensning vid inaktivitet (min)', inst.inaktivitetMin)}${rad('Rensningstiden låst', inst.inaktivitetLast ? 'ja' : null)}${rad('Små grupper i exporten från Tabeller och egna vyer', inst.smaGrupperIExport === false ? 'inte tillåtet' : null)}`
-        + `${rad(`${stor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === 'mansdominerade' ? 'bara mansdominerade' : inst.jamforelse === 'alla' ? 'alla som inte är kvinnodominerade' : null)}</dl>`
-        + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? 'eget' : null)}`
+        + `${rad(`${stor(T.jamforelse.fl)} i likvärdigt arbete`, inst.jamforelse === 'mansdominerade' ? 'bara mansdominerade' : inst.jamforelse === 'alla' ? 'alla som inte är kvinnodominerade' : null)}`
+        + `${rad('Egna tabeller i rapporten', obj?.rapport?.tabeller?.length)}${rad(`Receptet per ${T.niva.en}`, obj?.rapport?.perBasRecept ? 'eget' : null)}</dl>`
         + tabell(obj?.referens?.namn || 'Ställningstagandet', obj?.referens?.rader, ['aid', 'bas', 'p10', 'med', 'p90'])
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
         + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
@@ -536,12 +532,7 @@ function laddaNerInbakatPaket() {
     let text = inb.text;
     try { text = JSON.stringify(JSON.parse(inb.text), null, 2); } catch (_e) { /* råtexten som den är */ }
     const blob = new Blob([text], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = _paketFilnamn(inb.organisation);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    meddelaSkarmlasare(`Paketet sparat: ${a.download}`);
+    meddelaSkarmlasare(`Paketet sparat: ${laddaNer(blob, _paketFilnamn(inb.organisation))}`);
 }
 const _stangPaketDialog = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; } };
 
@@ -572,12 +563,7 @@ export function uppstartOrganisationspaket() {
         const kontroll = tolkaPaket(JSON.stringify(paket));
         if (!kontroll.ok) { _paketStatus('Paketet kan inte sparas: ' + kontroll.fel, false); return; }
         const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = _paketFilnamn(paket.organisation.namn);
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        meddelaSkarmlasare(`Organisationspaket sparat: ${a.download}`);
+        meddelaSkarmlasare(`Organisationspaket sparat: ${laddaNer(blob, _paketFilnamn(paket.organisation.namn))}`);
     });
     document.getElementById('file-input-verktygsfil')?.addEventListener('change', e => {
         const inp = /** @type {HTMLInputElement} */ (e.target);

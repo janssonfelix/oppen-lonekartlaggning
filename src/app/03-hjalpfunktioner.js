@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { kronorSkillnad, talformat } from '../lib/figur.js';
-import { inbyggdaProfiler, matchaImportprofil } from '../lib/importprofiler.js';
+import { INBYGGDA_PROFILER, matchaImportprofil } from '../lib/importprofiler.js';
 import { vardeForRoll } from '../lib/inlasning.js';
 import { tillDirektivtecken } from '../lib/struktur.js';
 import { svPct, svTal } from '../lib/talformat.js';
@@ -16,6 +16,20 @@ export const ANSVARSFORBEHALL = 'Verktyget är ett stöd för arbetsgivarens ege
 
 export function visaLaddning() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }
 export function doljLaddning() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "none"; }
+
+/**
+ * Laddar ner en fil. Länken till filen släpps efter en sekund, så att filens innehåll inte ligger kvar i minnet efter
+ * nedladdningen (också efter Rensa all data). Svarar med filnamnet.
+ * @param {Blob} blob @param {string} filnamn
+ */
+export function laddaNer(blob, filnamn) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filnamn; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return filnamn;
+}
 
 // Uträknade mått (stapelbredd i procent, läge) får inte stå som style="…" i markeringen: CSP:n har inget style-src-attr
 // (ADR-30), så en sådan stil blockeras. Mallarna skriver måttet som data-stil-bredd="42%" (också -vanster, -mvanster),
@@ -49,7 +63,7 @@ export function hamtaFalt(row, possibleNames, role) {
 // delsträngsmatchningen ovan för de roller ingen profil täcker. _ipMatcha sorterar efter källan.
 /** Alla profiler som prövas: sessionens (paketets och konfigurationsfilens) och de inbyggda. */
 export function _importprofilLista() {
-    return [...(state.importprofiler || []), ...inbyggdaProfiler()];
+    return [...(state.importprofiler || []), ...INBYGGDA_PROFILER];
 }
 /** Profilen som gäller för rubrikerna, som { id, namn, kalla, mappning }, eller null. */
 export function _importprofilFor(headers) {
