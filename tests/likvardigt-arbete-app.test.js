@@ -311,7 +311,7 @@ describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () 
     it('kandidatparen ritas som ett par per rad med båda medianerna', () => {
         win.__lasInDemodata();
         const pairs = (win.__likvardighetspar() || {}).pairs || [];
-        if (!pairs.length) return;
+        expect(pairs.length).toBeGreaterThan(0);
         win.__pairs = pairs;
         const f = win.eval('_lvParFigur(window.__pairs)');
         expect(f.lager.map(l => l.marke)).toEqual(['intervall', 'punkt', 'punkt']);
@@ -321,13 +321,6 @@ describe('visualisering: § 3:10 — kandidatparen som bild + tabellexport', () 
         expect(f.lager[2].data.every(d => /%$/.test(d.etikett))).toBe(true);      // gapet står vid jämförelseyrket
     });
 
-    it('likvärdighetsfliken ritar kandidatparen i sin behållare', () => {
-        win.__lasInDemodata();
-        win.__ritaFlik('likvardighet');
-        const pairs = (win.__likvardighetspar() || {}).pairs || [];
-        const el = win.document.getElementById('chart-likvardighet-heatmap');
-        if (pairs.length) expect(el).not.toBeNull();
-    });
 
     it('tabellTillMatris läser rubrik + rader och rensar knappar/ikoner', () => {
         win.__ritaFlik('matrix');   // fyller matrix-table

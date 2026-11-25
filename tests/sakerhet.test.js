@@ -408,7 +408,7 @@ describe('diagram: beskrivning för skärmläsare, svenska talformat och Pareto'
     });
     it('Pareto: ritas av diagramkärnan med raka etiketter (inga lutande namn att krocka med)', () => {
         const svg = w.document.getElementById('chart-prio-pareto').querySelector(':scope > svg');
-        if (!svg) return;   // inga grupper under referensen i demodatan: kurvan visas inte
+        expect(svg).not.toBeNull();
         expect([...svg.querySelectorAll('text[data-axel="x"]')].every(t => !/rotate/.test(t.getAttribute('transform') || ''))).toBe(true);
     });
 });

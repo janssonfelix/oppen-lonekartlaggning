@@ -91,6 +91,8 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         expect(f.lager[1].data.map(d => d.fel)).toEqual(a.results.map(q => ({ lag: +q.ki.lag.toFixed(2), hog: +q.ki.hog.toFixed(2) })));
         expect(f.x.doman[0]).toBeLessThanOrEqual(Math.min(...a.results.map(q => q.ki.lag)));
         expect(f.x.doman[1]).toBeGreaterThanOrEqual(Math.max(...a.results.map(q => q.ki.hog)));
+        expect(f.y.skala).toBe('band');
+        expect(f.x.doman[0] < 0 && f.x.doman[1] > 0).toBe(true);   // axeln når noll
     });
     it('kvantilregressionen: över 2 000 personer räknas inget KI, och noten säger det', () => {
         const w = createAppWindow();
@@ -519,7 +521,7 @@ describe('[B3.12] multivariat analys: pedagogik (kronor, budget, per-BAS-diagram
         expect(() => win.__ritaRegressionskort()).not.toThrow();
         const card = win.document.getElementById('regression-card');
         const r = win.__runOLS();
-        if (r.error) return;                       // demodata gav ingen modell — hoppa
+        expect(r.error).toBeUndefined();
         expect(card.querySelector('#chart-perbas-gap')).not.toBeNull();
         expect(card.querySelector('#perbas-table')).not.toBeNull();
         // p/q är dolda som standard (klarspråk först)

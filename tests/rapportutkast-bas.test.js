@@ -150,15 +150,21 @@ describe('Word-utkastet och PDF-rapporten: Lönekartläggning per BAS-intervall'
         expect(w.__state.kLage).toBe('skarm');
     });
 
-    it('i exportläget med k = 25: BAS E finns inte, utelämnat säger det, och inget yrke under k har en rad', () => {
+    it('i exportläget med k = 25: BAS E finns inte och utelämnat säger det; med 20 har bara yrken som når k en rad', () => {
         const w = demo();
         w.eval('sattKTroskel(25, { fraga: false })');
         const a = w.eval('rapportModell()').avsnitt.find(x => x.id === 'basintervall');
         expect(a.delar.filter(p => p.typ === 'rubrik').map(p => p.text)).not.toContain('BAS-intervall E');
         expect(a.utelamnat.join(' ')).toMatch(/BAS E .*färre än 25 personer/);
-        for (const tab of a.delar.filter(p => p.typ === 'tabell')) {
-            for (const r of tab.rader) expect(r[2]).toMatch(/^(\d+) \/ (\d+)$/);
-            for (const r of tab.rader) { const [kv, ma] = r[2].split(' / ').map(Number); expect(kv).toBeGreaterThanOrEqual(25); expect(ma).toBeGreaterThanOrEqual(25); }
+        expect(a.delar.filter(p => p.typ === 'tabell')).toEqual([]);   // inget yrke i demodatan har 25 av varje kön
+        // Vid 20 står en av de tre tabellerna kvar (vid 10 har den minsta 15 av ett kön), och dess rader når tröskeln.
+        w.eval('sattKTroskel(20, { fraga: false })');
+        const tabeller = w.eval('rapportModell()').avsnitt.find(x => x.id === 'basintervall').delar.filter(p => p.typ === 'tabell');
+        expect(tabeller).toHaveLength(1);
+        for (const r of tabeller[0].rader) {
+            expect(r[2]).toMatch(/^(\d+) \/ (\d+)$/);
+            const [kv, ma] = r[2].split(' / ').map(Number);
+            expect(Math.min(kv, ma)).toBeGreaterThanOrEqual(20);
         }
     });
 
