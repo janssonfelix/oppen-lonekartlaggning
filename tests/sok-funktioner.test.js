@@ -18,6 +18,18 @@ const DYNAMISKA = ['avsnitt-ov-punkter',
     'avsnitt-lp-tabell', 'avsnitt-lp-kon', 'avsnitt-lp-efterlevnad', 'avsnitt-lp-tackning'];
 
 describe('Funktionssök', () => {
+    it('en träff med en enda person säger «1 person»', () => {
+        const w = createAppWindow(), d = w.document;
+        const rader = [];
+        for (let i = 0; i < 12; i++) rader.push({ bas: 'A', kon: i % 2 ? 'man' : 'kvinna', lon: 30000 + i * 100, alder: 40, yrke: '6000 Yrke', aid: '6000', yrkeLabel: 'Yrke', enhet: '' });
+        rader.push({ bas: 'Q', kon: 'kvinna', lon: 41000, alder: 40, yrke: '6000 Yrke', aid: '6000', yrkeLabel: 'Yrke', enhet: '' });
+        w.__state.data = rader;
+        w.eval('fyllValjare(); lasUppFlikar();');
+        skriv(w, 'bas q');
+        const under = [...d.querySelectorAll('#sok-grupp-lista [role="option"] .sok-under')].map(x => x.textContent);
+        expect(under).toContain(`${w.eval('stor(T.niva.en)')} · 1 person`);
+    });
+
     it('de dynamiska avsnitten har en post var och finns i sin flik när den ritats med demodata', () => {
         const w = createAppWindow(), d = w.document, reg = w.eval('SOK_FUNKTIONER');
         for (const id of DYNAMISKA) expect(d.getElementById(id), `${id} finns inte i index.html`).toBeNull();

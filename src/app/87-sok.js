@@ -130,7 +130,7 @@ function _sokRita() {
     const alt = (t, i) => t.typ === 'basdossier'
         ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-basdossier="${esc(t.bas)}" class="sok-underval" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">Intervallet på en sida, i rapportens ordning</span></li>`
         : t.typ === 'grupp'
-        ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>`
+        ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} ${t.n === 1 ? 'person' : 'personer'}</span></li>`
         : `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-funktion aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(_sokFunktionUnder(t))}</span></li>`;
     lista.innerHTML = _sokTraffar.length
         ? (grupper.length && funktioner.length ? grupp('Grupper', 'sok-rubrik-grupper', grupper.map(alt).join('')) : grupper.map(alt).join(''))

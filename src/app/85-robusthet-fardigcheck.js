@@ -25,6 +25,7 @@ import { _parForRedovisning, _parOverTroskel, _parUtelamnadeNot, kInstalld } fro
 import { T } from './09-termer.js';
 import { hamtaBasIntervall, hamtaData, policyFor, state } from './12-tillstand.js';
 import { bedomningUnderlag, statusMarke, UK_ETIKETT } from './13-oversikt.js';
+import { aidbasGrans } from './45-aid-bas-tabeller.js';
 import { medExportLage, visningNy } from './23-exportgrind.js';
 import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laSlutsats } from './41-lika-arbete.js';
@@ -34,17 +35,17 @@ import { _bes8Omraden } from './61-regler-och-praxis.js';
 // ---- Rang 3: Robusthetspanel ------------------------------------------------
 
 /**
- * Kör om § 3:10-kandidatlistan för flera kvinnotrösklar och mäter hur stabil
- * varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till likvardighetspar.
+ * Kör om § 3:10-kandidatlistan för flera kvinnotrösklar (standard: den inställda och 5 procentenheter på var sida)
+ * och mäter hur stabil varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till likvardighetspar.
  *
  * Panelen ligger utanför fliken Likvärdigt arbete och följer därför tröskeln som allt annat
  * (`_parForRedovisning`, ADR-38): ett par där någon grupp är under tröskeln namnges inte, och
  * `utelamnade` är antalet sådana par (olika par, räknade en gång över körningarna); `not` är meningen om dem.
  * @returns {null|{trösklar:number[], rows:Array<{key:string, label:string, hits:number, of:number}>, utelamnade:number, not:string}}
  */
-function robusthetLikvardighet(trösklar = [55, 60, 65]) {
+function robusthetLikvardighet(trösklar = [aidbasGrans() - 5, aidbasGrans(), aidbasGrans() + 5]) {
     if (typeof likvardighetspar !== 'function') return null;
-    const original = (state.likvardighet || {}).kvinnoTrosholdPct;
+    const original = aidbasGrans();
     const seen = new Map();
     const utelamnadePar = new Set();
     trösklar.forEach(t => {
@@ -129,7 +130,7 @@ export function _dkRitaTopp(del) {
     const robust = r ? (r.flippar ? `${r.flippar} nära en gräns` : 'Står sig') : 'Inte körd';
     host.innerHTML = _laSlutsats('Färdigcheck', f.length ? `${f.length} ${f.length === 1 ? 'punkt' : 'punkter'}` : 'Inga lösa trådar',
             f.length ? (varna ? `${varna} behöver en åtgärd eller en förklaring` : 'Att känna till — inget som behöver åtgärdas') : 'Verktyget hittar inget som missats')
-        + _laSlutsats('Robusthet', robust, r ? `${r.provade} slutsatser prövade på nytt` : 'Körs under Robusthet längre ned');
+        + _laSlutsats('Robusthet', robust, r ? `${r.provade} ${r.provade === 1 ? 'slutsats prövad' : 'slutsatser prövade'} på nytt` : 'Körs under Robusthet längre ned');
     _laNyckel('nyckel-dk-robusthet', robust);
     _laNyckel('nyckel-dk-rapportunderlag', n ? `${n} avsnitt` : '');
 }
@@ -246,11 +247,12 @@ function byggFardigcheck() {
             const andel = (personer / d.length) * 100;
             out.push({
                 id: 'maskerade', level: andel > 20 ? 'warn' : 'info', tab: null,
-                title: `${personer} personer (${svPct(andel, 0)}) ligger i ${maskerade} grupper som är för små för att redovisas`,
+                title: `${personer} ${personer === 1 ? 'person' : 'personer'} (${svPct(andel, 0)}) ligger i `
+                    + (maskerade === 1 ? 'en grupp som är för liten för att redovisas' : `${maskerade} grupper som är för små för att redovisas`),
                 detail: `De ingår i siffrorna per ${T.niva.en} men syns inte per ${T.enhet.en}. Vid hög andel bör du komplettera analysen per ${T.niva.en}.`
             });
         }
-    } catch (e) { rapporteraFel('Färdigcheck: BAS utan referens eller maskerade grupper', e); }
+    } catch (e) { rapporteraFel('Färdigcheck: grupper för små för att redovisas', e); }
 
     // 4. § 8-områden som lämnats tomma
     try {

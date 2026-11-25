@@ -30540,7 +30540,7 @@ function _sokRita() {
     return;
   }
   const grupp = (namn, id, innehall) => `<li role="group" aria-labelledby="${id}"><span role="presentation" class="sok-grupprubrik" id="${id}">${namn}</span><ul role="presentation" class="sok-grupplista">${innehall}</ul></li>`;
-  const alt = (t, i) => t.typ === "basdossier" ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-basdossier="${esc(t.bas)}" class="sok-underval" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">Intervallet på en sida, i rapportens ordning</span></li>` : t.typ === "grupp" ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} personer</span></li>` : `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-funktion aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(_sokFunktionUnder(t))}</span></li>`;
+  const alt = (t, i) => t.typ === "basdossier" ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-basdossier="${esc(t.bas)}" class="sok-underval" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">Intervallet på en sida, i rapportens ordning</span></li>` : t.typ === "grupp" ? `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(t.under)} · ${svTal(t.n, 0)} ${t.n === 1 ? "person" : "personer"}</span></li>` : `<li role="option" id="sok-traff-${i}" data-sok-index="${i}" data-sok-funktion aria-selected="${i === _sokAktiv}"><span class="sok-namn">${esc(t.namn)}</span><span class="sok-under">${esc(_sokFunktionUnder(t))}</span></li>`;
   lista.innerHTML = _sokTraffar.length ? (grupper.length && funktioner.length ? grupp("Grupper", "sok-rubrik-grupper", grupper.map(alt).join("")) : grupper.map(alt).join("")) + (funktioner.length ? grupp("Funktioner", "sok-rubrik-funktioner", funktioner.map((t, j) => alt(t, grupper.length + j)).join("")) : "") : `<li class="sok-ingen" role="presentation">${_sokHarData() ? "Ingen grupp eller funktion matchar." : "Ingen funktion matchar."}</li>`;
   lista.hidden = false;
   falt.setAttribute("aria-expanded", "true");
@@ -32127,9 +32127,9 @@ function vymodellRapportunderlag(rader, val) {
 }
 
 // src/app/85-robusthet-fardigcheck.js
-function robusthetLikvardighet(trösklar = [55, 60, 65]) {
+function robusthetLikvardighet(trösklar = [aidbasGrans() - 5, aidbasGrans(), aidbasGrans() + 5]) {
   if (typeof likvardighetspar !== "function") return null;
-  const original = (state.likvardighet || {}).kvinnoTrosholdPct;
+  const original = aidbasGrans();
   const seen = /* @__PURE__ */ new Map();
   const utelamnadePar = /* @__PURE__ */ new Set();
   trösklar.forEach((t) => {
@@ -32205,7 +32205,7 @@ function _dkRitaTopp(del) {
     "Färdigcheck",
     f.length ? `${f.length} ${f.length === 1 ? "punkt" : "punkter"}` : "Inga lösa trådar",
     f.length ? varna ? `${varna} behöver en åtgärd eller en förklaring` : "Att känna till — inget som behöver åtgärdas" : "Verktyget hittar inget som missats"
-  ) + _laSlutsats("Robusthet", robust, r ? `${r.provade} slutsatser prövade på nytt` : "Körs under Robusthet längre ned");
+  ) + _laSlutsats("Robusthet", robust, r ? `${r.provade} ${r.provade === 1 ? "slutsats prövad" : "slutsatser prövade"} på nytt` : "Körs under Robusthet längre ned");
   _laNyckel("nyckel-dk-robusthet", robust);
   _laNyckel("nyckel-dk-rapportunderlag", n ? `${n} avsnitt` : "");
 }
@@ -32311,12 +32311,12 @@ function byggFardigcheck() {
         id: "maskerade",
         level: andel > 20 ? "warn" : "info",
         tab: null,
-        title: `${personer} personer (${svPct(andel, 0)}) ligger i ${maskerade} grupper som är för små för att redovisas`,
+        title: `${personer} ${personer === 1 ? "person" : "personer"} (${svPct(andel, 0)}) ligger i ` + (maskerade === 1 ? "en grupp som är för liten för att redovisas" : `${maskerade} grupper som är för små för att redovisas`),
         detail: `De ingår i siffrorna per ${T.niva.en} men syns inte per ${T.enhet.en}. Vid hög andel bör du komplettera analysen per ${T.niva.en}.`
       });
     }
   } catch (e) {
-    rapporteraFel("Färdigcheck: BAS utan referens eller maskerade grupper", e);
+    rapporteraFel("Färdigcheck: grupper för små för att redovisas", e);
   }
   try {
     const areas = typeof _bes8Omraden === "function" ? _bes8Omraden() : [];
