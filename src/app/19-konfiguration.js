@@ -4,7 +4,7 @@ import { valideraArsbokslut } from '../lib/arsbokslut.js';
 import { gapVariablerArStandard, normaliseraGapVariabler } from '../lib/gapuppdelning.js';
 import { valideraImportprofiler } from '../lib/importprofiler.js';
 import { arInomGrans, filStorlekFel, installningsGrans } from '../lib/installningsgranser.js';
-import { konfigurationMedNyaNamn, konfigurationVersion, konfigurationVersionFel } from '../lib/konfiguration.js';
+import { KONFIGURATION_VERSION, konfigurationMedNyaNamn, konfigurationVersionFel } from '../lib/konfiguration.js';
 import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
 import { perBasReceptArStandard, valideraPerBasRecept } from '../lib/perbas.js';
 import { forklaringsmodellArStandard, normaliseraForklaringsmodell } from '../lib/regression.js';
@@ -13,7 +13,7 @@ import { valideraRecept } from '../lib/tabellrecept.js';
 import { svPct, svTal } from '../lib/talformat.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { idagDatum } from './03-hjalpfunktioner.js';
+import { idagDatum, laddaNer } from './03-hjalpfunktioner.js';
 import { _konFarRedovisas, _kVisaFel, _ritaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { COST_DEFAULTS, jmfNamn, orgNamn, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS, sattJmfNamn, sattOrgNamn } from './07-standardinstallningar.js';
@@ -55,7 +55,7 @@ function _konfigImportprofiler() {
  */
 function byggKonfiguration() {
     return {
-        version: konfigurationVersion(),
+        version: KONFIGURATION_VERSION,
         sparad: new Date().toISOString(),
         prioTrosklar: {
             atgardTroskel: state.prioConfig.atgardThreshold, akutMinstN: state.prioConfig.akutMinN,
@@ -583,10 +583,7 @@ export function uppstartKonfiguration() {
     document.getElementById('btn-config-save')?.addEventListener('click', () => {
         const cfg = byggKonfiguration();
         const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `lonekartlaggning_config_${idagDatum()}.json`;
-        a.click();
+        laddaNer(blob, `lonekartlaggning_config_${idagDatum()}.json`);
         const status = document.getElementById('config-status');
         if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
         // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,

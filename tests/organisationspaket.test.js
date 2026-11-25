@@ -82,6 +82,11 @@ describe('organisationspaket: delar och rader', () => {
         expect(r.delar.referens.rader).toHaveLength(2);
         expect(r.varningar.join(' ')).toMatch(/3 rader/);
     });
+    it('BAS i jämförelsestatistiken rensas som övriga texter', () => {
+        const p = byggPaket(underlag());
+        p.statistik.rader = [{ aid: '1', bas: ' <c>"', median: 30000 }];
+        expect(tolka(p).delar.statistik.rader[0].bas).toBe('C');
+    });
     it('alla rader ogiltiga: delen läses inte in', () => {
         const p = byggPaket(underlag());
         p.statistik.rader = [{ aid: '', median: 0 }];

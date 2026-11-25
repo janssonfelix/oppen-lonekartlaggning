@@ -9,7 +9,7 @@ import { arKvinna, arMan } from '../lib/kon.js';
 import { tolkaPaket } from '../lib/organisationspaket.js';
 import { ordForAntal, stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { _importprofilFor, _importprofilKalla, _importprofilLista, doljLaddning, importprofilText, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
+import { doljLaddning, _importprofilFor, _importprofilKalla, _importprofilLista, importprofilText, laddaNer, rapporteraFel, visaLaddning } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _hittaAnsvarKolumn, _lonefilensRubriker, minimeraLonerad } from './06-uppgiftsminimering.js';
 import { _kopplaNamnFalt, tillampaProfiletiketter, STANDARDPROFIL, sattJmfNamn, sattOrgNamn, synkaNamnFalt } from './07-standardinstallningar.js';
@@ -751,12 +751,7 @@ function laggTillImportprofilIPaket(profil) {
     const kontroll = tolkaPaket(JSON.stringify(paket));
     if (!kontroll.ok) return { ok: false, fel: 'Paketet kan inte skapas: ' + kontroll.fel };
     const blob = new Blob([JSON.stringify(paket, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = _paketFilnamn(paket.organisation.namn);
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    return { ok: true, filnamn: a.download };
+    return { ok: true, filnamn: laddaNer(blob, _paketFilnamn(paket.organisation.namn)) };
 }
 /** Rutan längst ned i kolumnmappningen: spara mappningen, eller vilken profil den redan är sparad som. */
 function _importprofilRuta(missing) {
@@ -1009,13 +1004,7 @@ export function uppstartFilinlasning() {
 
         // UTF-8 BOM så Excel öppnar med korrekt encoding
         const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'lonefil_mall.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        laddaNer(blob, 'lonefil_mall.csv');
         meddelaSkarmlasare('CSV-mall nedladdad: lonefil_mall.csv');
     });
     /** @type {HTMLElement} */ (datafilFalt).addEventListener("change", e => lasInStrukturfil(/** @type {HTMLInputElement} */ (e.target).files?.[0]));

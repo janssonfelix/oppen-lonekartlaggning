@@ -75,7 +75,7 @@ function _statistikRad(r) {
     const nKv = _talEllerNull(r.nKv), nMa = _talEllerNull(r.nMa);
     const andelKv = r.andelKv == null ? null : _tal(r.andelKv, 0, 100);
     if (p10 === undefined || p90 === undefined || Number.isNaN(nKv) || Number.isNaN(nMa) || andelKv === undefined) return null;
-    return { aid, aidFull: _text(r.aidFull) ?? aid, bas: typeof r.bas === 'string' ? r.bas.trim().toUpperCase().substring(0, 10) : '',
+    return { aid, aidFull: _text(r.aidFull) ?? aid, bas: (_text(r.bas) ?? '').toUpperCase().substring(0, 10),
              median, p10, p90, nKv, nMa, andelKv };
 }
 

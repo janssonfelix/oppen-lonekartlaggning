@@ -234,6 +234,8 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
             try { w.__ritaFlik(flik); } catch (_e) { /* en flik utan data får kasta — det som ritats räknas */ }
         }
         w.eval('ritaExtremvarden()');
+        // Dialogerna med en grupps tal: öppna när rensningen kommer, också när den kommer efter en tid utan aktivitet.
+        w.eval("oppnaGruppdossier(); oppnaBasdossier('A')");
         // Utskriftsrapporten byggs i dokumentet (window.print stubbas) — även den ska rensas.
         w.print = () => {};
         await w.eval('byggUtskriftsrapport()');
@@ -274,6 +276,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         expect(kvar()).toContain('figur-utan-chart-id');
         rensa(w);
         expect(kvar()).toEqual([]);
+        for (const id of ['dossier-modal', 'basdossier-modal']) expect(w.document.getElementById(id).style.display, id).toBe('none');
         expect(w.__utforskaMinne().rows).toBe(0);
         // Inget av diagramkärnans minne finns kvar: ingen figur på någon behållare (inte heller den bortkopplade),
         // inga lyssnare eller storleksbevakning, tomt register, tom portal, ingen ägare.

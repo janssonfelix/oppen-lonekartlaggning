@@ -172,7 +172,7 @@ function _visaInaktivitetsvarning() {
 
 function _rensaVidInaktivitet() {
     _doljInaktivitetsvarning();
-    const hadData = state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;
+    const hadData = _harNagotAttRensa();
     // Samma rensning som knappen, utan bekräftelsefrågan (ingen finns vid datorn).
     _rensaAllData();
     if (hadData) {

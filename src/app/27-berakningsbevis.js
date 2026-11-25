@@ -68,7 +68,7 @@ export function _oppnaBevisruta(p) {
     if (typeof fangaFokus === 'function') fangaFokus(modal);
 }
 
-function _stangBevisruta() {
+export function _stangBevisruta() {
     const modal = document.getElementById('evidence-modal');
     if (!modal) return;
     if (typeof slappFokus === 'function') slappFokus(modal);

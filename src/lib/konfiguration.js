@@ -11,8 +11,6 @@
 
 /** Versionen som skrivs. */
 export const KONFIGURATION_VERSION = 3;
-/** Versionen som skrivs. */
-export function konfigurationVersion() { return KONFIGURATION_VERSION; }
 /** Versionerna som läses: 2 med de gamla namnen, 3 med de nya. */
 export const KONFIGURATION_LASBARA = Object.freeze([2, 3]);
 

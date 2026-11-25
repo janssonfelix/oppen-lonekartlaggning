@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // ---- Word-utkast: hela dokumentationen som redigerbar .doc ----
 import { docxDelar } from '../lib/docx.js';
-import { idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
+import { idagDatum, laddaNer, rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSidfot } from './06-k-troskel.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
@@ -73,14 +73,6 @@ function _utkastTillBlock(html) {
     return block;
 }
 
-/** Laddar ner en fil (egen funktion så att testerna kan fånga den). */
-function _laddaNerBlob(blob, filnamn) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filnamn;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 /**
  * Fyller bildblocken med diagrammens PNG (rmDiagramBild i 58-rapportmodell.js). Ett diagram som inte ritas tas bort
@@ -123,7 +115,7 @@ async function _exportWordUtkastExport() {
     if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }
     try {
         const { blob, namn } = await byggWordUtkast();
-        _laddaNerBlob(blob, namn);
+        laddaNer(blob, namn);
         return true;
     } catch (err) {
         rapporteraFel('Word-utkast', err);

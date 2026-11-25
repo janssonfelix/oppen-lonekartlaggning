@@ -330,7 +330,7 @@ describe('Word-utkastet som .docx', () => {
         expect(word()).toMatch(/Utelämnar: .*BAS .*färre än 25 personer/);
         d.querySelector('[data-urval-fast="ledning"]').click();
         let fangad = null;
-        w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
+        w.laddaNer = (blob, namn) => { fangad = { blob, namn }; return namn; };
         expect(await w.eval('exportWordUtkast()')).toBe(true);
         const doc = await (await w.JSZip.loadAsync(await fangad.blob.arrayBuffer())).file('word/document.xml').async('string');
         expect(doc).toContain('4. Åtgärder och tidsplan');
@@ -348,7 +348,7 @@ describe('Word-utkastet som .docx', () => {
         await jszip(w);
         w.__lasInDemodata();
         let fangad = null;
-        w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
+        w.laddaNer = (blob, namn) => { fangad = { blob, namn }; return namn; };
         expect(await w.eval('exportWordUtkast()')).toBe(true);
         expect(fangad.namn).toMatch(/^Lonekartlaggning_\d{4}_dokumentation_UTKAST_DEMODATA_\d{4}-\d{2}-\d{2}\.docx$/);
         expect(fangad.blob.type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
@@ -364,7 +364,7 @@ describe('Word-utkastet som .docx', () => {
         w.__lasInDemodata();
         w.eval("_bes8Omraden = () => [{ title: 'Löneregler', status: 'Möjlig risk', note: 'Rad 1\\u0007 <b> & rad 2' }]");
         let fangad = null;
-        w._laddaNerBlob = (blob, namn) => { fangad = { blob, namn }; };
+        w.laddaNer = (blob, namn) => { fangad = { blob, namn }; return namn; };
         await w.eval('exportWordUtkast()');
         const zip = await w.JSZip.loadAsync(await fangad.blob.arrayBuffer());
         const doc = await zip.file('word/document.xml').async('string');
@@ -377,7 +377,7 @@ describe('Word-utkastet som .docx', () => {
         delete w.JSZip;
         let meddelande = '', nerladdad = false;
         w.alert = m => { meddelande = m; };
-        w._laddaNerBlob = () => { nerladdad = true; };
+        w.laddaNer = () => { nerladdad = true; };
         expect(await w.eval('exportWordUtkast()')).toBe(false);
         expect(meddelande).toMatch(/Word-utkastet kunde inte skapas/);
         expect(nerladdad).toBe(false);

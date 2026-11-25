@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     valideraImportprofil, valideraImportprofiler, matchaImportprofil, profilFranMappning, importprofilerTillJson,
-    normaliseraRubrik, INBYGGDA_PROFILER, inbyggdaProfiler, MAX_PROFILER, IMPORTPROFIL_FORMAT,
+    normaliseraRubrik, INBYGGDA_PROFILER, MAX_PROFILER, IMPORTPROFIL_FORMAT,
 } from '../src/lib/importprofiler.js';
 
 const profil = (over = {}) => ({
@@ -144,7 +144,6 @@ describe('profilFranMappning', () => {
 describe('INBYGGDA_PROFILER', () => {
     it('bara format projektet själv definierar: CSV-mallen, testdatan och demodatans fält', () => {
         expect(INBYGGDA_PROFILER.map(p => p.id)).toEqual(['inbyggd-csv-mallen', 'inbyggd-testdata', 'inbyggd-demodata']);
-        expect(inbyggdaProfiler()).toBe(INBYGGDA_PROFILER);
         for (const p of INBYGGDA_PROFILER) {
             expect(p.kalla).toBe('inbyggd');
             expect({ ...valideraImportprofil(p, { kalla: 'inbyggd' }), id: p.id }).toEqual(p);

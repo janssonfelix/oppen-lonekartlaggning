@@ -1164,7 +1164,6 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
     flex-shrink: 0;
 }
 .yrke-modal-header h2 { margin: 0; font-size: var(--fs-lg); }
-.yrke-modal-header .yrke-sub { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 4px; }
 .yrke-modal-content { flex: 1; overflow-y: auto; padding: 18px 22px; }
 
 @media (max-width: 720px) { }

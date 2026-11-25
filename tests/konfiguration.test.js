@@ -5,7 +5,7 @@
  * svenska. Appens sida (att en gammal fil ger samma tillstånd som en ny) prövas i tests/konfigurationsfil-app.test.js.
  */
 import { describe, it, expect } from 'vitest';
-import { KONFIGURATION_VERSION, KONFIGURATION_NAMNBYTEN, konfigurationVersion, konfigurationVersionFel, konfigurationMedNyaNamn } from '../src/lib/konfiguration.js';
+import { KONFIGURATION_VERSION, KONFIGURATION_NAMNBYTEN, konfigurationVersionFel, konfigurationMedNyaNamn } from '../src/lib/konfiguration.js';
 
 // En fil i version 2 med varje gammalt namn i tabellen (påhittade värden).
 const GAMMAL = {
@@ -42,7 +42,6 @@ const NY = {
 describe('konfigurationsfilens version', () => {
     it('skriver version 3 och läser 2 och 3', () => {
         expect(KONFIGURATION_VERSION).toBe(3);
-        expect(konfigurationVersion()).toBe(3);
         expect(konfigurationVersionFel(2)).toBeNull();
         expect(konfigurationVersionFel(3)).toBeNull();
         for (const v of [1, 4, '3', undefined]) expect(konfigurationVersionFel(v)).toMatch(/version 2 och 3/);

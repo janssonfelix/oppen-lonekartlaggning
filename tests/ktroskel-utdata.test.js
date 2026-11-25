@@ -177,6 +177,18 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         expect(excel).not.toContain('5300');
         expect(excel).toMatch(NOT);
     });
+    it('vid 10: den utskrivna handlingsplanen saknar paret, också när skärmen visar det; vid 5 står det med', () => {
+        const skriv = k => {
+            const w = fonsterPar(k);
+            w.eval('ritaHandlingsplan()');
+            let html = '';
+            w.open = () => ({ document: { write: h => { html += h; }, close() {}, createElement: t => w.document.createElement(t), head: w.document.head }, focus() {}, print() {} });
+            w.eval("skrivUtMallflik('view-handlingsplan', 'Handlingsplan')");
+            return normalisera(html);
+        };
+        expect(skriv(null)).not.toContain('5300');
+        expect(skriv(5)).toContain('5300');
+    });
     it('vid 10: robusthetspanelen namnger inte den lilla gruppen och anger antalet; vid 5 står den med', () => {
         const panel = w => { w.eval("_ritaRobusthetResultat(document.getElementById('robusthet-body'))"); return normalisera(w.document.getElementById('robusthet-body').textContent); };
         const vid10 = panel(fonsterPar(null));
