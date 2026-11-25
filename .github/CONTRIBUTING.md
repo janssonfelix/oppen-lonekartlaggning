@@ -64,6 +64,7 @@ och heter efter uttaget, inte efter organisationen.
   demoläget eller `npm run gen:testdata`, som skapar påhittad data.
 - **Organisationers referensdata och namn** — ställningstagande och statistik hör hemma i
   organisationens eget organisationspaket, inte i koden (skyddet S5, ADR-28).
+- **Skärmbilder och bildfiler**, inte heller i README.
 - **Nätverksanrop, lagring i webbläsaren eller externa resurser** — verktyget ska fungera
   utan nätverk och spara ingenting (skydden S1–S3 i `docs/utveckling/skydd.md`).
 

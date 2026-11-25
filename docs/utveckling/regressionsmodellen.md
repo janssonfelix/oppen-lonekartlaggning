@@ -367,7 +367,9 @@ normalfördelningen. Normalfördelningens fördelningsfunktion (`normalCdf`) är
 
 **Utanför t-kvantilen** ligger bootstrap-intervallen (percentilmetoden; mediankvoten med B = 2 000 för hela
 organisationen, 1 000 per BAS-intervall och 2 000 i gruppdossiern, kvantilregressionen med 200, avsnitt 6),
-konfidensbandet kring regressionslinjen i Ålder & karriär (fast 1,96) och trattens fält i Lika arbete (fast 1,96). De
+konfidensbandet kring regressionslinjen i Ålder & karriär (fast 1,96) och trattens fält i Lika arbete (fast 1,96).
+Trattens ritade fält är en normalapproximation med korrektion för små grupper; bedömningen av varje grupp görs med
+omkastning, utom för grupper över 300 personer, där normalformeln används. De
 räknas i `src/lib/osakerhet.js` (`organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `kvantilBootstrap`,
 `regressionslinjensBand`, `trattUnderlag`), där antalen dragningar och faktorerna är namngivna konstanter; appens
 funktioner (`raknaBootstrapKI`, `_laBootstrapGapKI`,
