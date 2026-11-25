@@ -61,7 +61,7 @@ describe('k-tröskeln styr varje flik', () => {
         expect(r.find(x => x.bas === 'E').status).toBe('too_few');
         expect(r.find(x => x.bas === 'S1').status).not.toBe('too_few');
     });
-    it('10 → 25 → 10 ger samma flikar som före ändringen (inga kvarlevande cacher)', async () => {
+    it('10 → 25 → 10 ger samma flikar som 10 från början (inga kvarlevande cacher)', async () => {
         const w = fonster(null);
         const bild = () => FLIKAR.map(f => { w.__ritaFlik(f); return normalisera(w.document.getElementById('view-' + f)?.textContent || ''); });
         // Grundtillstånd som efter en vanlig inläsning (32-filinlasning.js): också Översiktens delar är ritade.

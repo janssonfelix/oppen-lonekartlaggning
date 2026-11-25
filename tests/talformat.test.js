@@ -40,7 +40,7 @@ describe('CSV-exporten av en tabell: talen som de står på skärmen', () => {
 describe('Talet och enheten hålls ihop med ett hårt mellanslag (svPct, svKr)', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); });
-    it('Excel läser cellen som ett tal med enhet, och CSV och urklipp skriver vanliga mellanslag som förut', () => {
+    it('Excel läser cellen som ett tal med enhet, och CSV och urklipp skriver vanliga mellanslag', () => {
         expect(w.eval('_exportTalMedEnhet(svKr(36262))')).toEqual({ tal: 36262, enhet: 'kr', dec: 0 });
         expect(w.eval('_exportTalMedEnhet(svPct(-3.25, 2))')).toEqual({ tal: -3.25, enhet: '%', dec: 2 });
         const t = w.document.createElement('table');
@@ -260,7 +260,7 @@ describe('talformatet: svTal, svPct, svKr och svPoPct', () => {
         expect(svTal(-0.004, 2)).toBe('0,00');
         expect(talformat(-0.04, 'pct')).toMatch(/^0,0\s%$/);
     });
-    it('tal som inte ligger på en halva avrundas som förut', () => {
+    it('tal som inte ligger på en halva avrundas till närmaste', () => {
         expect(svKr(1600.49)).toBe(`1${NBSP}600${NBSP}kr`);
         expect(svKr(-1600.51)).toBe(`${MINUS}1${NBSP}601${NBSP}kr`);
         expect(svKr(-1600.49)).toBe(`${MINUS}1${NBSP}600${NBSP}kr`);

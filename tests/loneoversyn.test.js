@@ -273,7 +273,7 @@ describe('forecast: lönespann (lonespannPerBas)', () => {
     });
 });
 
-describe('forecast: individnivå-remediation (B)', () => {
+describe('forecast: lyft på individnivå mot likalönejämförelsen', () => {
     const data = () => [
         { bas: 'A', aid: '1', kon: 'man',    lon: 34000 },
         { bas: 'A', aid: '1', kon: 'man',    lon: 36000 },   // mäns median = 35000
@@ -298,7 +298,7 @@ describe('forecast: individnivå-remediation (B)', () => {
     });
 });
 
-describe('forecast: marknadspositionering (E)', () => {
+describe('forecast: marknadspositionering', () => {
     it('lyfter grupp under marknad × factor mot marknad', () => {
         const groups = [{ bas: 'A', aid: '1', n: 5, median: 30000 }];
         const market = new Map([['1', 35000]]);
@@ -341,7 +341,7 @@ describe('[B7.6] forecast: ett par per yrke i förslagen (ADR-69)', () => {
     });
 });
 
-describe('forecast: budgetkänslighet (F)', () => {
+describe('forecast: budgetkänslighet', () => {
     it('svep ger monotont ökande kostnad från 0', () => {
         const data = rows();
         const cand = [{ bas: 'A', aid: '5301', gapKr: 2000, n: 3 }];
@@ -439,7 +439,7 @@ describe('[B7.8] forecast: individlyft — minsta antal män bakom ett benchmark
     });
 });
 
-describe('[B7.3] fordela: lägst först (water-filling) med fem löner (characterization)', () => {
+describe('[B7.3] fordela: lägst först (water-filling) med fem löner', () => {
     // Löner 10 000, 12 000, 14 000, 16 000, 20 000. Vattenytan stiger från den lägsta lönen upp till nästa brytpunkt.
     const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
     const riktat = (value) => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'lowest' }];
@@ -463,7 +463,7 @@ describe('[B7.3] fordela: lägst först (water-filling) med fem löner (characte
     });
 });
 
-describe('fordela: tak vid median eller P25 (dist target, characterization)', () => {
+describe('fordela: tak vid median eller P25', () => {
     const femLoner = () => [10000, 12000, 14000, 16000, 20000].map(lon => ({ bas: 'A', aid: '1', kon: 'man', lon }));
     const tak = value => [{ bas: 'A', aid: '1', mode: 'kr', value, dist: 'target', targetLevel: 'median' }];
 
@@ -483,7 +483,7 @@ describe('fordela: tak vid median eller P25 (dist target, characterization)', ()
     });
 });
 
-describe('fordela: avrundning till lönesteg (roundStep 100, characterization)', () => {
+describe('fordela: avrundning till lönesteg (roundStep 100)', () => {
     it('påslaget 40 kr på 30 000 rundas nedåt till 0: ingen höjning alls', () => {
         const data = [{ bas: 'A', aid: '1', kon: 'man', lon: 30000 }];
         const a = fordela(data, { mode: 'kr', value: 40 }, [], 100);
@@ -508,7 +508,7 @@ describe('fordela: avrundning till lönesteg (roundStep 100, characterization)',
     });
 });
 
-describe('fordela: mode till (characterization)', () => {
+describe('fordela: höj till', () => {
     const data = () => [
         { bas: 'A', aid: '1', kon: 'man', lon: 30000 },
         { bas: 'A', aid: '1', kon: 'kvinna', lon: 31000 },

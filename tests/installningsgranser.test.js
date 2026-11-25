@@ -107,7 +107,7 @@ describe('appen prövar filstorleken innan filen läses', () => {
         expect(lasArrayBuffer).not.toHaveBeenCalled();
     });
 
-    it('ställningstagandet under 20 MB läses in som förut', async () => {
+    it('ställningstagandet under 20 MB läses in', async () => {
         const w = createAppWindow();
         papa(w);
         let utfall = null;

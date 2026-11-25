@@ -474,7 +474,7 @@ describe('[B1.6] bhJustera', () => {
     });
 });
 
-describe('median och kvantil: kanttillstånd (characterization)', () => {
+describe('median och kvantil: kanttillstånd', () => {
     it('median: ett värde är medianen', () => {
         expect(median([7])).toBe(7);
     });

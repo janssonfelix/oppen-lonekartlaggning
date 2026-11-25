@@ -92,7 +92,7 @@ describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
     });
 });
 
-describe('k-anonymitet, sortering, efterlevnad och dossiern — dossiern', () => {
+describe('gruppdossiern: hypotesrutan', () => {
     it('hypotesrutan i dossiern renderar markup i stället för att visa taggar', () => {
         win.__lasInDemodata();
         const key = win.__gruppdossierKandidater()[0].key;

@@ -106,7 +106,7 @@ describe('sektor: justerad skillnad med huvudregressionens kodning (ADR-78)', ()
         expect(v.justeratMedAlder).toBe(true);
         expect(v.justerat.pct).toBeCloseTo(sektorsTabell(vard(), { k: 10 })[0].justerat.pct, 10);
     });
-    it('k-tröskeln gäller som förut, också utan ålder: ett kön under k eller färre än 30 ger inget tal', () => {
+    it('k-tröskeln gäller också utan ålder: ett kön under k eller färre än 30 ger inget tal', () => {
         const fa = [...flera(25, i => rad('207011', 'kvinna', 30000 + i * 10, 0, i % 2 ? 'C' : 'B')),
                     ...flera(9, i => rad('207011', 'man', 32000 + i * 10, 0, i % 2 ? 'C' : 'B'))];
         const v = sektorsTabell(fa, { k: 10 })[0];
@@ -161,7 +161,7 @@ describe('sektor: kön och BAS går inte att skilja åt', () => {
         const v = sektorsTabell(seg(true), { k: 10 })[0];
         expect([v.justerat, v.justeratSkal]).toEqual([null, 'ejBas']);
     });
-    it('ett enda BAS-intervall: inget att justera för, talet visas som förut', () => {
+    it('ett enda BAS-intervall: inget att justera för, talet visas', () => {
         const ett = seg(false).map(r => ({ ...r, bas: 'C' }));
         const v = sektorsTabell(ett, { k: 10 })[0];
         expect(v.justeratSkal).toBe('ok');
@@ -176,7 +176,7 @@ describe('sektor: rubriken och bisatsen för den justerade skillnaden (en regel 
     it('utan ålder', () => {
         expect(sektorJusteradText([{ justeratMedAlder: false }])).toEqual({ medAlder: false, rubrik: 'Justerad (BAS)', justeradFor: 'BAS-intervall' });
     });
-    it('en tom tabell räknas som med ålder, som förut', () => {
+    it('en tom tabell räknas som med ålder', () => {
         expect(sektorJusteradText([]).medAlder).toBe(true);
     });
 });
@@ -236,7 +236,7 @@ describe('[B6.9] sektor: sammanräknade huvudområden (ADR-87)', () => {
     const tre = () => [...flera(30, () => rad('207011', 'kvinna', 30000)), ...flera(20, () => rad('207011', 'man', 31000)),
         ...flera(12, () => rad('502010', 'kvinna', 39000)), ...flera(25, () => rad('502010', 'man', 41000)),
         ...flera(3, () => rad('651010', 'man', 52000))];
-    it('utan små grupper räknas inget samman, och beloppet är detsamma som förut', () => {
+    it('utan små grupper räknas inget samman, och beloppet är detsamma som vid tröskeln 1', () => {
         const a = sektorernasAndel(tre().filter(r => r.aid !== '651010'), { k: 10 });
         expect(a.sammanslagna).toEqual([]);
         expect(sektorAndelNot(a, 10)).toBe('');
@@ -264,7 +264,7 @@ describe('[B6.9] sektor: sammanräknade huvudområden (ADR-87)', () => {
     it('på skärmen (tröskeln 1) räknas inget samman', () => {
         expect(sektorernasAndel(tre(), { k: 1 }).sammanslagna).toEqual([]);
     });
-    it('ett enda huvudområde: beloppet är noll, som förut', () => {
+    it('ett enda huvudområde: beloppet är noll', () => {
         const a = sektorernasAndel([...flera(12, () => rad('207011', 'kvinna', 30000)), ...flera(12, () => rad('207011', 'man', 33000))], { k: 10 });
         expect(a.sektorKr).toBeCloseTo(0, 9);
         expect(a.sammanslagna).toEqual([]);

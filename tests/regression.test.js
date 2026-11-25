@@ -97,7 +97,7 @@ describe('stegvisGap med vald modell (ADR-56)', () => {
     const basList = [...new Set(fx.rows.map(r => r.bas))].sort();
     const kor = modell => stegvisGap(rader(), fx.ageMean, basList, { golv: 10, modell: { yrkesgrupp: false, skal: '', ...modell } });
     const namn = steg => steg.map(s => s.name);
-    it('standardmodellen ger samma steg och tal som i dag (statsmodels-referensen)', () => {
+    it('standardmodellen ger stegen och talen i statsmodels-referensen', () => {
         const steg = kor({ bas: true, alder: true });
         expect(namn(steg)).toEqual(['Endast kön', '+ BAS-intervall', '+ Ålder', '+ Yrkesgrupp']);
         expect(steg[0].gapPct).toBeCloseTo(pct(ref.sekventiell.endastKon[1]), 8);

@@ -229,7 +229,7 @@ describe('pivottabell — gruppvillkor och k-regeln', () => {
     });
 });
 
-describe('nya dimensioner och uppdelning per kön', () => {
+describe('gruppnyckeln och uppdelningen per kön', () => {
     it('gruppnyckel: hela urvalet, yrkesgrupp inom BAS och lönespann', () => {
         const r = { bas: 'E', aid: '207', yrkeLabel: 'Förskollärare', yrke: '207 Förskollärare', lon: 32499, alder: 40, kon: 'kvinna', enhet: '' };
         expect(gruppnyckel(r, 'alla')).toBe('Hela urvalet');

@@ -548,7 +548,7 @@ describe('[R5] Löneöversyn: tröskelmålet (lyft i procent och kostnad) kräve
         expect(t).toMatch(/^– Könsuppdelade lönemått redovisas inte eftersom ett kön har färre än 10 personer i urvalet\.$/);
         expect(t).not.toMatch(/likalönslyft|Kostnad/);
     });
-    it('med hela urvalet visas lyftet som förut', () => {
+    it('med hela urvalet visas lyftet', () => {
         expect(resultat(fonster(null))).toMatch(/likalönslyft|Målet är redan uppfyllt/);
     });
     it('vid en tröskel över antalet kvinnor försvinner det igen', () => {

@@ -399,7 +399,7 @@ describe('Krav mot lön med många yrkesgrupper', () => {
     });
 });
 
-describe('sortering, Att göra, kopiering och Likvärdigt arbete — Likvärdigt arbete', () => {
+describe('Likvärdigt arbete: det sparade resultatet och poängläget', () => {
     it('Rapporttext räknar likvärdighetsparen en gång och sparar resultatet', () => {
         const w = createAppWindow();
         w.__lasInDemodata();

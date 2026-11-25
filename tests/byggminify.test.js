@@ -85,7 +85,7 @@ describe('förminskningen av sidan bevarar ordmellanrum', () => {
         expect(minifyHtml('<li><strong>Ålder</strong> <em>(valfri)</em> — utan ålder</li>')).toBe('<li><strong>Ålder</strong> <em>(valfri)</em> — utan ålder</li>');
         expect(minifyHtml('<a href="#x">Ett</a>  <code>två</code>')).toBe('<a href="#x">Ett</a> <code>två</code>');
     });
-    it('blanksteg mellan blockelement, och mellan ett block och ett textelement, tas bort som förut', () => {
+    it('blanksteg mellan blockelement, och mellan ett block och ett textelement, tas bort', () => {
         expect(minifyHtml('<ul>\n  <li>a</li>\n  <li>b</li>\n</ul>')).toBe('<ul><li>a</li><li>b</li></ul>');
         expect(minifyHtml('<div>\n  <span>a</span>\n</div>\n<p>\n  <em>b</em></p>')).toBe('<div><span>a</span></div><p><em>b</em></p>');
         expect(minifyHtml('<button>a</button> <button>b</button>')).toBe('<button>a</button><button>b</button>');

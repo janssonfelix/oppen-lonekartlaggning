@@ -334,6 +334,12 @@ describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisninga
         expect(filer.flatMap(f => läs(f).split('\n').map((r, i) => [r, i]).filter(([r]) => GRANSKNINGSKOD.test(r))
             .map(([r, i]) => `${f}:${i + 1} ${r.trim().slice(0, 80)}`))).toEqual([]);
     });
+    it('testernas namn säger vad som gäller, inte att det är som förut', () => {
+        const HISTORIA = /^\s*(?:describe|it)\b.*(?:som förut|som i dag|före ändringen|characterization\))/;
+        const filer = gå('tests').filter(f => f.endsWith('.js') && f !== 'tests/dokumentation-struktur.test.js');
+        expect(filer.flatMap(f => läs(f).split('\n').map((r, i) => [r, i]).filter(([r]) => HISTORIA.test(r))
+            .map(([r, i]) => `${f}:${i + 1} ${r.trim().slice(0, 80)}`))).toEqual([]);
+    });
     it('indextabellen och besluten har samma nummer, i samma ordning', () => {
         expect(beslutsnummer.length).toBeGreaterThan(20);
         expect(indexrader.map(m => Number(m[1]))).toEqual(beslutsnummer);

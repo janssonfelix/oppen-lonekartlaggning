@@ -1457,7 +1457,7 @@ describe('utskrift av den aktiva fliken (Ctrl+P)', () => {
     });
 });
 
-describe('sortering, Att göra, kopiering och Likvärdigt arbete — licens', () => {
+describe('Om verktyget: licenstexterna', () => {
     it('Om verktyget visar licenstexterna från den inbyggda mallen', () => {
         const w = createAppWindow();
         const t = w.document.createElement('template'); t.id = 'licenstexter';

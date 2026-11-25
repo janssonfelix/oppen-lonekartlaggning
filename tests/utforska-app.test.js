@@ -988,7 +988,7 @@ describe('Löneöversikten i Utforska', () => {
     });
 });
 
-describe('k-anonymitet, sortering, efterlevnad och dossiern — sortering', () => {
+describe('utforskartabellens sortering efter omritning', () => {
     it('utforskartabellen går att sortera även efter omritning', () => {
         win.__lasInDemodata();
         win.__ritaUtforska();
@@ -1001,7 +1001,7 @@ describe('k-anonymitet, sortering, efterlevnad och dossiern — sortering', () =
     });
 });
 
-describe('sortering, Att göra, kopiering och Likvärdigt arbete — sortering', () => {
+describe('sortering med en notrad', () => {
     it('sortering: en notrad (colspan, utan värde) stannar sist i sin grupp åt båda håll', () => {
         const w = createAppWindow();
         const d = w.document;

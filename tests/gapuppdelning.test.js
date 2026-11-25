@@ -106,7 +106,7 @@ describe('[B3.7] gapUppdelning', () => {
         // D räknas samman med F; under dem står AID Q och P i D och F1 i F.
         expect(u.ovrigaAntal.B).toBe(3);
     });
-    it('två små grupper som tillsammans når k räknas samman med varandra, och de andra namnges som förut', () => {
+    it('två små grupper som tillsammans når k räknas samman med varandra, och de andra namnges var för sig', () => {
         const r = [...flera(20, 'kvinna', 30000, 'A', 'A1'), ...flera(20, 'man', 31000, 'A', 'A1'),
                    ...flera(6, 'kvinna', 50000, 'B', 'B1'), ...flera(5, 'kvinna', 52000, 'C', 'C1'), ...bakgrund()];
         const u = gapUppdelning(r, { k: K });
@@ -312,7 +312,7 @@ describe('ADR-65: valbara förklaringsvariabler', () => {
         expect(gapVariablerArStandard(['aid', 'bas'])).toBe(false);
         expect(gapVariablerArStandard(['bas'])).toBe(false);
     });
-    it('delarnas namn och texter byggs ur variablerna; standardvalet ger dagens', () => {
+    it('delarnas namn och texter byggs ur variablerna; standardvalet ger A, B och C med BAS och AID', () => {
         const std = gapDelar(['bas', 'aid']);
         expect(std.map(d => `${d.id}. ${d.namn}`)).toEqual(['A. BAS-fördelning', 'B. AID inom BAS', 'C. Oförklarat: lön inom samma AID och BAS']);
         expect(std.map(d => d.betyder)).toEqual(['Kvinnor och män är olika fördelade över BAS-intervallen.',

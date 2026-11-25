@@ -364,7 +364,7 @@ describe('avsnittet följer modellen (ADR-56)', () => {
         expect(rader.some(t => /AID-etikett inom BAS/.test(t))).toBe(true);
         expect(rader.some(t => /^BAS-intervall/.test(t))).toBe(false);
     });
-    it('standardläget är som förut', () => {
+    it('standardläget räknar bort ålder och BAS-intervall', () => {
         const { kortText, figur, oaxText } = rita(null);
         expect(kortText).toMatch(/när ålder och BAS-intervall räknats bort/);
         expect(figur.x.ordning).toEqual(['Ojusterad skillnad', 'BAS-intervall', 'Ålder', 'Oförklarad skillnad', 'AID-etikett inom BAS']);
@@ -409,7 +409,7 @@ describe('huvudtalet följer modellen i nyckeltal, Att göra, Struktur och rappo
         expect(text).toMatch(/Efter hänsyn till ålder är den oförklarade löneskillnaden/);
         expect(text).toMatch(/BAS-intervall har kontrollerats/);
     });
-    it('standardläget: rapportmodellens rad och texter som förut', () => {
+    it('standardläget: rapportmodellens rad och texter nämner ålder och BAS-intervall', () => {
         const w = rita(null);
         const m = w.eval('rapportModell()');
         const lika = m.avsnitt.find(a => a.id === 'lika');
@@ -458,12 +458,12 @@ describe('metodbilagan följer förklaringsmodellen (ADR-56)', () => {
         expect(stegRad).not.toMatch(/ingår inte i huvudtalet/);
         expect(stegRad).toMatch(/huvudtalet/);
     });
-    it('standardmodellen: raderna är som förut', async () => {
+    it('standardmodellen: modellraden och stegraden', async () => {
         const { modellRad, stegRad } = await metodrader(null);
         expect(modellRad).toBe('OLS på log(månadslön) ~ kön + ålder + BAS-intervall (indikatorvariabler, första BAS som referens); HC3-robusta standardfel (Long & Ervin 2000)');
         expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för AID-etikett inom BAS (AID×BAS) utöver ålder, skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
     });
-    it('lönefil utan ålder: raderna är som förut (ADR-64)', async () => {
+    it('lönefil utan ålder: modellraden och stegraden säger att åldern saknas (ADR-64)', async () => {
         const { modellRad, stegRad } = await metodrader(null, { utanAlder: true });
         expect(modellRad).toBe('OLS på log(månadslön) ~ kön + BAS-intervall (indikatorer); lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)');
         expect(stegRad).toBe('Löneskillnad mellan könen med fasta effekter för AID-etikett inom BAS (AID×BAS), utan ålder (lönefilen saknar ålder), skattat med inomtransformation; visas som sista steg, ingår inte i huvudtalet');
@@ -495,7 +495,7 @@ describe('meningen under steget + Yrkesgrupp följer förklaringsmodellen (ADR-5
         expect(bilaga).toMatch(/Steget \+ AID-etikett inom BAS: /);
         expect(bilaga).not.toMatch(/räknar inte bort AID-etiketten/);
     });
-    it('standardmodellen: meningen är som förut', () => {
+    it('standardmodellen: meningen säger att huvudtalet inte räknar bort AID-etiketten', () => {
         const { kortNot, bilaga } = rita(null);
         expect(kortNot).toMatch(/samma AID-etikett, BAS-intervall och ålder \(fasta effekter för AID-etikett inom BAS\)/);
         expect(kortNot).toMatch(/Huvudtalet ovan räknar inte bort AID-etiketten\.$/);

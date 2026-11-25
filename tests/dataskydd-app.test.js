@@ -261,7 +261,7 @@ describe('Rensa all data tömmer Dokumentera', () => {
     });
 });
 
-describe('k-anonymitet, sortering, efterlevnad och dossiern — k-anonymitet', () => {
+describe('efterlevnadsdiagrammet och minsta gruppstorlek', () => {
     const rad = (bas, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: '5301 Test', aid: '5301', yrkeLabel: 'Test', enhet: '' });
 
     it('k-anonymitet: efterlevnadsdiagrammet redovisar inte BAS under tröskeln', () => {

@@ -354,7 +354,7 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
         expect(u.med).toContain('basintervall');
         expect(w.eval('rapportModell()').avsnitt.map(a => a.id)).toContain('basintervall');
     });
-    it('en äldre fil utan fast: den gamla listan för facklig dialog läses som Facklig dialog, med det nya avsnittet', () => {
+    it('en äldre fil utan fast: den gamla listan för facklig dialog läses som Facklig dialog, med avsnittet per BAS-intervall', () => {
         const w = demo();
         lasIn(w, { ordning: GAMLA_12, med: GAMLA_FACKLIG });
         expect(w.eval('rapportUrval()').namn).toBe('Facklig dialog');
