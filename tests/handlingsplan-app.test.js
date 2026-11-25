@@ -2,12 +2,10 @@
 // Copyright 2026 Felix Jansson
 // Handlingsplanen i appen: fälten, det som bara visas i första kolumnen, Kostnaden avser, en AID-kod med två texter
 // som en grupp, och tabellens tomma rader på utskriften.
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 import { laddaXlsx, fangaBocker } from './helpers/ktroskel-rigg.js';
 import { las } from './helpers/granssnitt-rigg.js';
-vi.setConfig({ testTimeout: 30000 });
-
 const demo = delatFonster(w => w.__lasInDemodata());
 // Demot förifyller sakliga skäl på tre rader (56-handlingsplan.js, _hpDemoSkal); testerna här börjar från en tom plan.
 const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); w.__state.handlingsplan = {}; return w; };
@@ -155,7 +153,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(w.__state.handlingsplan).toEqual({});
         expect(w.document.querySelectorAll('#handlingsplan-tbody .hp-falt')).toHaveLength(0);
     });
-    // S2 i punkt 26: åtgärden tog fyra rader i varje rad, och BAS-bokstaven hamnade ensam på en rad.
+    // Åtgärden tog fyra rader i varje rad, och BAS-bokstaven hamnade ensam på en rad.
     it('åtgärden för ett kandidatpar är kort, och BAS och bokstaven står ihop i gruppkolumnen', () => {
         const w = fonster();
         w.__ritaFlik('handlingsplan');

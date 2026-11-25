@@ -205,7 +205,7 @@ export function basIndikatorer(basLista) {
 // visas efter huvudtalet när det inte är valt, ADR-46); "+ Ansvar" läggs sist ovanpå den valda modellen.
 export function stegvisGap(rader0, alderMedel, basLista, { golv, modell = FORKLARINGSMODELL_STANDARD }) {
     const m = normaliseraForklaringsmodell(modell, { harAlder: harAlderIRader(rader0) }).modell;
-    // rows = de rader modellen kan räkna (B4): filtret ligger i _sekvensRigg, så att anroparen inte behöver det.
+    // rows = de rader modellen kan räkna: filtret ligger i _sekvensRigg, så att anroparen inte behöver det.
     const { rader: rows, y, isKv, ageC, bygg, skatta, steg } = _sekvensRigg(rader0, alderMedel, basLista);
     const olsVar = modellVariabler(m).filter(v => v !== 'yrkesgrupp');
     const ut = steg(olsVar).map(skatta);
@@ -230,7 +230,7 @@ export function stegvisGap(rader0, alderMedel, basLista, { golv, modell = FORKLA
  * sektor.js): log lön = kön + [ålder centrerad] + en indikator per BAS-intervall utom det alfabetiskt första, HC3 och
  * t-kvantil, med reservsteget utan BAS när modellen inte kan skattas (medBas = false; sektor.js ger då inget tal när
  * urvalet har minst två BAS-intervall, antalBas). Förklaringsmodellen läses inte: översikten
- * följer inte användarens val i Lika arbete. Raderna filtreras som i stegen (B4).
+ * följer inte användarens val i Lika arbete. Raderna filtreras som i stegen.
  * @param {any[]} rader0
  * @param {{medAlder?: boolean}} [opts] medAlder = lönefilen har ålder (ADR-64); anroparen ger den för hela filen
  * @returns {null | {pct:number, low:number, high:number, n:number, k:number, medBas:boolean, medAlder:boolean, antalBas:number}}
@@ -261,14 +261,14 @@ export function justeradSkillnad(rader0, { medAlder = harAlderIRader(rader0) } =
  * fullmodellen kön + BAS + ålder oberoende av vad som är valt, så att tabellen i panelen står still när man
  * kryssar. Yrkesgrupp mäts ovanpå fullmodellen (den är en tilläggsvariabel, aldrig i förslaget). Utan ålder i
  * lönefilen (ADR-64) är fullmodellen kön + BAS och ålder får ingen rad.
- * @param {any[]} rader0 råraderna; filtreras i _sekvensRigg (B4) @param {number} alderMedel @param {string[]} basLista
+ * @param {any[]} rader0 råraderna; filtreras i _sekvensRigg @param {number} alderMedel @param {string[]} basLista
  * @param {{golv:number, harYrke?:boolean}} opts harYrke = datat har AID eller yrke
  * @returns {{full:{status:string, gapPct?:number, R2?:number, k?:number},
  *   rader:Array<{variabel:'bas'|'alder'|'yrkesgrupp', deltaR2pp:number, gapUtan:number, gapMed:number, tillforLite:boolean, status:string}>,
  *   forslag:{tabort:string[]}}}
  */
 export function variabelTillfor(rader0, alderMedel, basLista, { golv: _golv, harYrke = false }) {
-    // Samma filter som i stegen (B4): lön > 0, kvinna eller man, ålder > 0 när lönefilen har ålder.
+    // Samma filter som i stegen: lön > 0, kvinna eller man, ålder > 0 när lönefilen har ålder.
     const harAlder = harAlderIRader(rader0);
     const { rader: rows, y, isKv, ageC, bygg, skatta } = _sekvensRigg(rader0, alderMedel, basLista, { medAlder: harAlder });
     const fit = vars => skatta({ name: vars.join('+'), X: bygg(vars) });
@@ -288,7 +288,7 @@ export function variabelTillfor(rader0, alderMedel, basLista, { golv: _golv, har
 
 // Det gemensamma underlaget för stegen: logaritmerad lön, könsindikator, centrerad ålder, BAS-indikatorer och
 // hjälparna som bygger en designmatris av valda variabler och skattar ett steg.
-// Raderna filtreras här (B4), som i gapPerBas: lön > 0 (annars log = -Infinity), kvinna eller man (annars
+// Raderna filtreras här, som i gapPerBas: lön > 0 (annars log = -Infinity), kvinna eller man (annars
 // kodas okänt kön som man) och ålder > 0 när ålder ingår (medAlder; standard = lönefilen har ålder, ADR-64).
 // `rader` är de rader som matriserna byggs av; anroparen använder dem för steg som läser raderna direkt.
 /** @param {any[]} rows0 @param {number} ageMean @param {string[]} basList @param {{medAlder?: boolean}} [opts] */
@@ -873,7 +873,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
         triedSteps,
         diagnostics,
         n: chosen.n, k: chosen.k, ageMean,
-        hHoga: chosen.hHoga ?? 0,             // observationer med hävstång > 0,99 (B4, teknisk specifikation)
+        hHoga: chosen.hHoga ?? 0,             // observationer med hävstång > 0,99 (teknisk specifikation)
         konPct: pct, konPctLow: pctLow, konPctHigh: pctHigh,
         // Samma skattning som kvinnors lön i % av mäns (log-modellen: exp(β) × 100 = 100 + konPct), måttet i
         // flikarnas nyckeltalsrader.

@@ -375,7 +375,7 @@ describe('Att göra: en stil på status', () => {
             expect(text).toMatch(/^(Hög|Medel|Låg)$/);
             expect(p.querySelector(text === 'Hög' ? 'svg.ikon-statusKritisk' : text === 'Medel' ? 'svg.ikon-statusVarning' : 'svg.ikon-bock')).toBeTruthy();
         }
-        // S7 i punkt 26: märket står alltid på en egen rad ovanför rubriken, oavsett rubrikens längd.
+        // Märket står alltid på en egen rad ovanför rubriken, oavsett rubrikens längd.
         for (const p of prio) expect(p.parentElement.classList.contains('ag-huvud')).toBe(true);
         expect(las('src/style.css')).toMatch(/\.ag-huvud \{[^}]*flex-direction: column/);
         const grupper = [...d.querySelectorAll('#action-checklist-container details.ag-grupp')];

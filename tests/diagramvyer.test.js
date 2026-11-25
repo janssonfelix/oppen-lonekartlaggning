@@ -927,7 +927,7 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         w.__v = [grupp(1, 'akut'), grupp(2, 'atgard'), grupp(12, 'ok', { diffPct: 0.5, annualGapTotal: 0 })];
         w.__cfg = { atgardThreshold: -5, bevakaThreshold: -2, analyseraThreshold: 5 };
         const f = w.eval("_prioMatrisFigur(window.__v, 'topp10', 'referensen', window.__cfg)");
-        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Under referens, liten grupp', 'Nära referens']);   // Prioriteringens egna ord (A5)
+        expect(f.lager.map(l => l.serie)).toEqual(['Börja här', 'Under referens, liten grupp', 'Nära referens']);   // Prioriteringens egna ord
         expect(f.y.skala).toBe('linjar');                                        // grupperna skiljer sig mindre än en tiopotens
         w.__v2 = [grupp(1, 'akut'), { ...grupp(2, 'atgard'), n: 400 }];
         expect(w.eval("_prioMatrisFigur(window.__v2, 'topp10', 'referensen', window.__cfg)").y.skala).toBe('log');
@@ -2135,7 +2135,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
     });
 });
 
-describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (etapp 1b, U7)', () => {
+describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna', () => {
     // Etikettens ruta i panelens koordinater ur textens attribut och ritarens teckenbredd (_rfBredd): samma ruta som
     // layoutens kollisionsberäkning.
     const rfBredd = (text, px) => w.eval('_rfBredd')(text, px);
@@ -2175,7 +2175,7 @@ describe('etiketter som inte täcker varandra: tratten, matrisen och trapporna (
         });
         expect(inga(svg, symboler)).toEqual([]);
     });
-    it('slumpens gränser: ett namn som förekommer i flera BAS-intervall får ·BAS i etiketten, som i matrisen (fixrunda 1)', () => {
+    it('slumpens gränser: ett namn som förekommer i flera BAS-intervall får ·BAS i etiketten, som i matrisen', () => {
         // Samma yrke i två BAS-intervall, båda utanför gränserna; ett tredje yrke bara en gång.
         const p = (yrke, bas, kvot) => ({ nyckel: yrke + '|' + bas, yrke, bas, aid: yrke.slice(0, 6), n: 80, nKv: 40, nMa: 40, medKv: 30000, medMa: 31000, kvot, gransLag: 95, gransHog: 105, utanfor: true });
         w.__u = { sigma: 0.05, halv: (a, b) => 8 * Math.sqrt(1 / a + 1 / b), punkter: [p('151011 Ekonom', 'C', 88), p('151011 Ekonom', 'D', 89), p('151010 Handläggare', 'C', 110)] };

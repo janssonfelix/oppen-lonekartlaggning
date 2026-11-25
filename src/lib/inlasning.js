@@ -493,7 +493,7 @@ export function minimeraRad(rad, rubriker, ansvarKolumn, referensar) {
 
 /**
  * Steget mellan raderna som PII-kontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
- * sprids jämnt över filen (B4). Delas av hittaKansligaKolumner och den strömmande CSV-inläsningen.
+ * sprids jämnt över filen. Delas av hittaKansligaKolumner och den strömmande CSV-inläsningen.
  * @param {number} n
  */
 export function _pnrSampelSteg(n) {
@@ -511,14 +511,14 @@ export function _pnrSampelSteg(n) {
  */
 export function hittaKansligaKolumner(rader) {
     if (!rader || !rader.length) return [];
-    // Jämnt över filen (B4): personnummer eller namn som bara finns längre ned ska också hittas.
+    // Jämnt över filen: personnummer eller namn som bara finns längre ned ska också hittas.
     const steg = _pnrSampelSteg(rader.length);
     const sample = rader.filter((_, i) => i % steg === 0);
     const cols = Object.keys(rader[0] || {});
     // Strikt PNR-mönster: kräver giltig månad (01-12) och dag (01-31) för att undvika
     // falska träffar på godtyckliga sifferserier som anställningsnummer.
     const PNR  = /^(?:19|20)?\d{2}[-/]?[01]\d[-/]?[0-3]\d[-+]?\d{4}$/;
-    // Personnamn (B4): två till fyra ord, med eller utan efternamnet först följt av komma — "Anna Andersson",
+    // Personnamn: två till fyra ord, med eller utan efternamnet först följt av komma — "Anna Andersson",
     // "Anna-Lisa Berg", "ANDERSSON, ANNA", "anna andersson". Alla ord har samma form (Versal-gemener, VERSALER eller
     // gemener), så att befattningar som "Lärare grundskola" (stor bokstav bara först) inte räknas som namn.
     const ORD = /^\p{L}{2,}(?:-\p{L}{2,})?$/u;

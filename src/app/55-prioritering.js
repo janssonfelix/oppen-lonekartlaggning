@@ -94,7 +94,7 @@ function _motiveringText(g) {
     }
 }
 
-// Prioriteringens egna ord för läget mot referensen (A5, ADR-62). De delar inte namn med uppmärksamhetstrappan för
+// Prioriteringens egna ord för läget mot referensen (ADR-62). De delar inte namn med uppmärksamhetstrappan för
 // skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat): Prioriteringen mäter löneläget mot er
 // referens, inte lönekartläggningens könsskillnader. Statusvärdena i src/lib/prioritering.js är oförändrade; «Nära
 // referens» har två färger, under uppföljningsgränsen och däröver. «Under referens, liten grupp» säger att Börja här

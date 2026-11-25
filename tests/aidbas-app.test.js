@@ -8,11 +8,9 @@
  * Underlaget är helt påhittat: 58 personer, samma fall som tests/aidbas.test.js, och en yrkesgrupp i två intervall
  * med båda könen över tröskeln så att tratten har två punkter för samma AID-kod.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 const rad = (bas, aid, kon, lon, label = `Yrke ${aid}`) => ({ bas, aid, yrke: `${aid} ${label}`, yrkeLabel: label, kon, lon, alder: 40, enhet: '' });
 const grupp = (bas, aid, kon, n, lon0, steg = 100) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon, lon0 + i * steg));

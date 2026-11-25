@@ -109,7 +109,7 @@ describe('ett bildspråk: linjeikoner, inga bildtecken', () => {
         rensat.eval('_rensaVidInaktivitet()');
         expect(BILDTECKEN.test(rensat.document.body.textContent.replace(/\s+/g, ' ').slice(-4000))).toBe(false);
         expect([...fynd]).toEqual([]);
-    }, 30000);
+    });
     it('filkortets märke och filnamnsraden bär bocken som linjeikon', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
@@ -128,7 +128,7 @@ describe('svenska ord i vyerna', () => {
         const synligt = [...w.document.querySelectorAll('h1, h2, h3, h4, option, summary, label, button, th, .slutsats, .stat-box, .insight-box, .dvr-row')].map(el => el.textContent.replace(/\s+/g, ' ').trim());
         const rester = synligt.filter(t => /(^|[\s(])vs\.?([\s)]|$)|\bOLS\b|[\s(]sd[\s):]|Compa-ratio|grön-cirkl|Z ≥/i.test(t));
         expect(rester.map(t => t.slice(0, 80))).toEqual([]);
-    }, 30000);
+    });
     it('Att göra förklarar korrigeringen i ord', () => {
         const kalla = las('src/app/18-atgardslista.js');
         expect(kalla).not.toContain('BH-FDR');
@@ -149,7 +149,7 @@ describe('rubriknivåerna hoppar inte', () => {
             }
         }
         expect(hopp).toEqual([]);
-    }, 30000);
+    });
     it('nyckeltalens etiketter är inga rubriker, och ett avsnitts rubrik står inte en gång till i avsnittet', () => {
         const d = allaFlikar().document;
         expect(d.querySelectorAll('.stat-box h1, .stat-box h2, .stat-box h3, .stat-box h4').length).toBe(0);
@@ -160,7 +160,7 @@ describe('rubriknivåerna hoppar inte', () => {
             for (const h of a.querySelectorAll('h2:not([hidden]), h3:not([hidden]), h4:not([hidden])')) if (!h.closest('summary') && h.textContent.trim() === titel) dubbla.push(titel);   // en dold rubrik är bara ett namn åt aria-labelledby
         }
         expect(dubbla).toEqual([]);
-    }, 30000);
+    });
 });
 
 describe('Om verktyget följer flikmallen', () => {
@@ -375,7 +375,7 @@ describe('procenttal i flikarna har en decimal', () => {
             if (/[+\u2212-]?\d+,\d\d\s%/.test(el.textContent)) fynd.add(el.textContent.trim().slice(0, 50));
         }
         expect([...fynd]).toEqual([]);
-    }, 30000);
+    });
 });
 
 describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () => {
@@ -475,7 +475,7 @@ describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () 
         w.__state.data = [];
         w.eval('bes8Stod()');
         expect(rader().map(l => l.textContent.trim())).toEqual(fast);
-    }, 30000);
+    });
 });
 
 describe('fokusmarkeringen', () => {

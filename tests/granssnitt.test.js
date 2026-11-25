@@ -80,12 +80,12 @@ describe('en exportknapp per kort', () => {
         const aldre = [...d.querySelectorAll('.view-panel button')].filter(b => !b.closest('.chart-export-meny')
             && /^Exportera (PNG|\(CSV\))$/.test(b.textContent.trim()));
         expect(aldre.map(b => b.id || b.textContent)).toEqual([]);
-        // S11 i punkt 26: knappen säger vad den exporterar, så att två knappar över varandra inte båda heter Exportera.
+        // Knappen säger vad den exporterar, så att två knappar över varandra inte båda heter Exportera.
         // Menyn Mer på Prioriteringens rader har exportmenyns form men är ingen export.
         const knappar = [...d.querySelectorAll('.view-panel .chart-export-btn')].filter(b => !b.closest('.prio-mer'));
         expect(knappar.length).toBeGreaterThan(20);
         expect(knappar.filter(b => !['Exportera diagrammet', 'Exportera tabellen'].includes(b.textContent.trim())).map(b => b.textContent.trim())).toEqual([]);
-    }, 30000);
+    });
     it('kandidatparens tabell har en meny Exportera med CSV och Excel', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
@@ -162,7 +162,7 @@ describe('samma skillnad sägs på ett sätt', () => {
         }
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och BAS-intervall'));
         expect(kort.textContent).toContain('kvinnors lön i % av mäns när dessa räknats bort');
-    }, 30000);
+    });
 });
 
 describe('Regler & praxis visar vad som är bedömt', () => {
@@ -246,7 +246,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
             expect(el.classList.contains('farg-' + (namn === 'Går ej att bedöma' ? 'dampad' : farg[namn]))).toBe(true);
         }
         const prio = w.eval('Object.values(PRIO_STATUS_INFO)');
-        // Prioriteringen har egna ord för läget mot referensen (A5, ADR-62); färgerna följer trappans.
+        // Prioriteringen har egna ord för läget mot referensen (ADR-62); färgerna följer trappans.
         expect(prio.map(p => p.label)).toEqual(['Börja här', 'Under referens, liten grupp', 'Nära referens, under', 'Nära referens', 'Över referens']);
         expect(prio.map(p => p.klass)).toEqual(['bricka-granska', 'bricka-granska', 'bricka-varning', 'bricka-ok', 'bricka-info']);
     });

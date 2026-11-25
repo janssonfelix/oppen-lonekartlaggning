@@ -96,7 +96,7 @@ describe('årsbokslut: hanteln och blocket i rapportunderlaget', () => {
         expect(h.rader.map(r => r.namn)).toEqual(['Kock (BAS B)', 'Undersköterska (BAS C)']);   // Vaktmästare är inte flaggad i år och Ny saknar förra året
         expect(h.rader[0]).toMatchObject({ fore: 98.2, efter: 93.1, riktning: 'fran' });
         expect(h.rader[1]).toMatchObject({ fore: 93.5, efter: 96.8, riktning: 'mot' });
-        expect(h.utelamnade).toBe(2);   // Ny (bara i år) och Vaktmästare (flaggad bara förra året, gap båda åren? nej: borta med gapNu null)
+        expect(h.utelamnade).toBe(2);   // Ny (saknar förra året) och Vaktmästare (saknas i år: gapNu är null)
         expect(hantelRader(null)).toEqual({ rader: [], utelamnade: 0 });
     });
     it('blocket bär nyckeltalen sida vid sida, flaggade grupper med namn och Att göra, och blir Word-HTML', () => {

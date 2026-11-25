@@ -10,11 +10,9 @@
  * Andelen till kvinnodominerade grupper står bara när den inte ger en del av den samlade kostnaden som differens.
  * Skärmen (tröskeln 1) visar varje grupp som förut.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { normalisera, iExport, fonsterKon, laddaXlsx, fangaBocker, ENSAM, X_KV, X_MA, PAR_KV, PAR_MA } from './helpers/ktroskel-rigg.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 const SAMLAD = 'Kostnad för grupper under tröskeln';
 // Bladet som rader: celler åtskilda med " | " (fangaBocker); en not är en rad utan avskiljare.

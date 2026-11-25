@@ -667,7 +667,7 @@ describe('inläsning i appen: kolumnvalet', () => {
         const loner = await lasIn(wX, fil);
         expect(loner).toHaveLength(40);
         expect(wX.__state._dataHeaders).toEqual(['Kön', 'Lön', 'BAS', 'AID', 'Lön_1']);
-    }, 20000);
+    });
 
     it('kolumnerna slås upp en gång per fil, inte för varje rad', async () => {
         const w = createAppWindow();

@@ -5,13 +5,9 @@
  * tests/helpers/ktroskel-invariant.js. Invarianten vid 10 körs i tests/ktroskel-invarianter.test.js:
  * varje förberedelse (samlaUtdata) tar omkring en minut, så de fördelas på två filer som körs på var sin arbetare.
  */
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { SENT_MELLAN, fonsterKon, samlaUtdata, sammanhang } from './helpers/ktroskel-rigg.js';
 import { invariantSvit } from './helpers/ktroskel-invariant.js';
-
-// Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
-// fäller olika tester från körning till körning.
-vi.setConfig({ testTimeout: 30000 });
 
 // Vid 25 är också mellangrupperna (20 personer) under tröskeln.
 invariantSvit(25, SENT_MELLAN);

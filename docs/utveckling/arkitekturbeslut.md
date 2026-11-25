@@ -112,6 +112,8 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-103 | Golvet för skattningar följer tröskeln bara i exportläget | Gällande | 2026-11-23 |
 | ADR-104 | Funktionerna i `src/app/` har svenska namn; tillståndets fält och DOM:ens id:n står kvar | Gällande | 2026-11-23 |
 | ADR-105 | Konfidensintervall och p-värden använder t-fördelningen vid alla frihetsgrader | Gällande | 2026-11-24 |
+| ADR-106 | Ingen juristgranskning före lansering; ett ansvarsförbehåll med samma lydelse överallt | Gällande | 2026-11-08 |
+| ADR-107 | EU-rapportmåtten bär en reservation om lönebegreppet | Gällande | 2026-11-08 |
 
 ## Besluten
 
@@ -774,3 +776,29 @@ talen jämförbara med statsmodels och R (`qt`, `pt`). *Följd:* på demodatan (
 några hundradelar av en procentenhet bredare och p-värdena större; ingen status ändras. Golden-facit ändras bara i
 metodbilagans mening om p-värden, eftersom dess underlag har färre än 100 frihetsgrader. *Gäller i dag:*
 `regressionsmodellen.md` §7.
+
+**ADR-106 — Ingen juristgranskning före lansering; ett ansvarsförbehåll med samma lydelse överallt.** Beslutat av
+underhållaren 2026-11-08 (fört in i loggen 2026-11-25; koden kallade det tidigare *beslut 8c*). Verktyget lanseras
+utan juristgranskning. I stället skrivs det juridiska övergripande: lagen och direktivet nämns, men verktyget påstår
+inte vad de kräver i detalj, inga paragrafer eller artiklar (ADR-16), och orden *utredningskrav*, *lagstadgat* och
+*direktivet kräver* är avförda. Ansvarsförbehållet säger att verktyget är ett stöd för arbetsgivarens egen
+lönekartläggning och att användaren ansvarar för användningen, tolkningen och den juridiska bedömningen. Lydelsen står
+en gång, som `ANSVARSFORBEHALL` i `src/app/03-hjalpfunktioner.js`, och samma text står på åtta ställen: Om verktyget,
+rapportunderlaget, Word/PDF (raden *Ansvar* under *Rättslig ram*), metodbladet i varje Excel-export, README, HR-
+sammanfattningen och körguiden. Bredvid står förbehållet att verktyget ännu inte är prövat med verklig lönedata.
+*Skäl:* en juristgranskning före lansering skulle binda verktyget vid en tolkning som underhållaren inte kan stå för,
+och en övergripande text med ett tydligt förbehåll håller ansvaret hos arbetsgivaren, som gör den juridiska
+bedömningen. *Vakt:* `tests/juridiksprak.test.js` (lydelsen på alla åtta ställen) och de avförda orden i
+`tests/dokumentation-sprak.test.js`. *Gäller i dag:* `lagrum.md`.
+
+**ADR-107 — EU-rapportmåtten bär en reservation om lönebegreppet.** Beslutat av underhållaren 2026-11-08 (fört in i
+loggen 2026-11-25; koden kallade det tidigare *beslut 7a*). Verktyget räknar på fast heltidsmånadslön, medan
+direktivets lönebegrepp omfattar total ersättning med rörliga delar och förmåner. Vid måtten för EU-rapporteringen står
+därför meningen *Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning,
+inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.* Den står i fliken Lönestruktur,
+som rad 2 i EU-lönerapportens sammanfattning, under tabellen i bladet EU-lönekartläggning, i rapportens avsnitt om
+lönetransparens (Rapporttext, Word, PDF), i rapportunderlaget, Om verktyget, körguiden och datauttagets §1b. Meningen
+finns en gång, `lonebegreppReservation()` i `src/lib/struktur.js`, utan artikelnummer (ADR-16). *Skäl:* måtten får
+inte läsas som färdiga tal för rapporteringen när lönefilen bara har den fasta lönen. *Avvisat:* att läsa in rörliga
+delar, som lönefilen inte har och som verktyget inte ska kräva. *Vakt:* `tests/exports.golden.test.js`. *Gäller i
+dag:* `src/lib/struktur.js`.

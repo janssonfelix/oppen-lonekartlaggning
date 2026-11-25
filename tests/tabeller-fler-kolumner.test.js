@@ -3,11 +3,9 @@
 // Växeln "Fler kolumner" (05-tabeller-och-lankar.js) i de breda tabellerna: grundvyn gömmer de sekundära
 // kolumnerna med hidden på rubrik och celler, full vy visar alla, statusen står nära namnet, exporterna tar alltid
 // med alla kolumner, och sorteringen och underradernas colspan fungerar i båda vyerna.
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { las } from './helpers/granssnitt-rigg.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 const TABELLER = [
     { flik: 'prioritering', id: 'prio-table', nyckel: 'prio', dolda: ['kvma', 'median', 'referens', 'avvikelsekr', 'kostnadpers', 'brist'],

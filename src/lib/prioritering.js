@@ -132,7 +132,7 @@ export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGran
     if (post.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: post.n });
     if (post.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: post.diffPct });
 
-    // Ett läge mot referensen, ingen bedömning (A5)
+    // Ett läge mot referensen, ingen bedömning
     const nara = Math.abs(naraGrans);
     if (Math.abs(post.diffPct) < nara && post.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
     return out;

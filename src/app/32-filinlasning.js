@@ -606,7 +606,7 @@ function lasInStrukturfil(file) {
           capturedHeaders = x.headers.filter(h => h);
           valjImportprofil(capturedHeaders);
           parseStats.totalRaw = x.rows.length;
-          const sensitive = hittaKansligaKolumner(x.rows);   // samplar själv jämnt över bladet (B4)
+          const sensitive = hittaKansligaKolumner(x.rows);   // samplar själv jämnt över bladet
           if (sensitive.length > 0) { rejectFile(sensitive); return; }
           x.rows.forEach(processRow);
           x.rows.length = 0;   // släpp raw rows (GDPR: minimera residens)
@@ -627,7 +627,7 @@ function lasInStrukturfil(file) {
       const radLista = [];
       for (let j = 1; j < linjer.length; j++) if (linjer[j] !== '') radLista.push(hdrInfo.line + j + 1);
       let radIdx = 0;
-      // Var ⌈n/50⌉:e datarad sparas för PII-kontrollen (B4); n = filens icke-tomma datarader.
+      // Var ⌈n/50⌉:e datarad sparas för PII-kontrollen; n = filens icke-tomma datarader.
       const sampelSteg = _pnrSampelSteg(radLista.length);
       Papa.parse(csvText, {
         header: true, skipEmptyLines: true, delimiter: detectedDelim,

@@ -5,10 +5,8 @@
  * `state._livscykelValdBas`, ett fält som aldrig sätts — valet bor i modulvariabeln `_livscykelValdBas`
  * (52-livscykel.js). Punkten räknades därför alltid på standardintervallet, oavsett vad kortet visade.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 describe('Att göra: livscykelanalysen följer kortets BAS-val', () => {
     it('byggAtgardslista anropar korLivscykelregression med det valda BAS-intervallet', () => {

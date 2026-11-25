@@ -9,7 +9,6 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { arKvinna, arMan } from '../src/lib/kon.js';
 
 /** Seedad Fisher–Yates (linjär kongruensgenerator), så att omkastningen är densamma varje gång. */
 function omkastad(lista, seed) {
@@ -48,10 +47,7 @@ function intervall(omkasta) {
     const oversikt = Object.fromEntries(w._laOversiktRader(d).map(o => [o.bas, { gap: o.gap, ci: o.ci, status: w.gapStatusKI(o).niva }]));
     const lika = Object.fromEntries(w.laLikaGrupper(d).grupper.map(g => [g.yrke, { niva: g.niva, sakerstalld: g.sakerstalld, flaggad: g.flaggad }]));
     const tratt = Object.fromEntries(w._laTrattUnderlag(d).punkter.map(p => [p.nyckel, { kvot: p.kvot, gransLag: p.gransLag, gransHog: p.gransHog, utanfor: p.utanfor }]));
-    const dossier = Object.fromEntries(w.gruppdossierKandidater().map(g => {
-        const kv = g.rows.filter(r => arKvinna(r)), ma = g.rows.filter(r => arMan(r));
-        return [g.key, w.byggGruppdossier(g.key).gap.ci];
-    }));
+    const dossier = Object.fromEntries(w.gruppdossierKandidater().map(g => [g.key, w.byggGruppdossier(g.key).gap.ci]));
     const kv = w._regKvantilBerakna({ direkt: true });
     // Kvantilregressionens punktskattningar räknas med IRLS och kan skilja i sista decimalerna med radordningen; här
     // jämförs bara intervallen.

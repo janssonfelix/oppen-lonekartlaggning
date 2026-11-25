@@ -3,6 +3,7 @@
 // Förhandsvisning av exporten (ADR-51): skärmen i exportläget tills användaren stänger av den, och vad ett
 // tröskelbyte räknar om.
 import { describe, it, expect, vi } from 'vitest';
+import { createAppWindow } from './helpers/app-harness.js';
 import { fonster, ritaAlla, oppnaFlik, synliga, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
 
 vi.setConfig({ testTimeout: 60000 });
@@ -50,6 +51,15 @@ describe('förhandsvisning: Som i exporten', () => {
         expect(w.eval('sattForhandsvisning(true)')).toBe(true);
         expect(w.eval('sattForhandsvisning(true)')).toBe(false);                 // redan på
         expect(w.eval('sattForhandsvisning(false)')).toBe(true);
+        // Utan lönefil: läget byts, men ingen flik ritas om.
+        const tom = createAppWindow();
+        tom.eval('window.__omritningar = 0; _ritaOmAllaFlikar = () => { window.__omritningar++; }');
+        expect(tom.eval('sattForhandsvisning(true)')).toBe(true);
+        expect(tom.__state.kLage).toBe('export');
+        expect(tom.__omritningar).toBe(0);
+        w.eval('window.__omritningar = 0; _ritaOmAllaFlikar = () => { window.__omritningar++; }');
+        w.eval('sattForhandsvisning(true)');
+        expect(w.__omritningar).toBe(1);                                         // med lönefil ritas flikarna om
     });
 });
 

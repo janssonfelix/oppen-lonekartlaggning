@@ -327,7 +327,7 @@ describe('förra året: tabellen per BAS-intervall i rapportunderlaget och BAS-h
     });
 });
 
-describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer med (fixrunda 1)', () => {
+describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer med', () => {
     const GAMLA_12 = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'atgarder', 'samverkan', 'beslut', 'regression', 'metod'];
     const GAMLA_FACKLIG = ['sammanfattning', 'regler', 'lika', 'likvardigt', 'struktur', 'referenser', 'perbas', 'samverkan', 'regression', 'metod'];
     const lasIn = (w, rapportUrval) => {
@@ -389,7 +389,7 @@ describe('färdiga urval sparas med sitt id, så att ett nytt avsnitt följer me
     });
 });
 
-describe('inledningen nämner ställningstagandet bara när ett är inläst (fixrunda 1)', () => {
+describe('inledningen nämner ställningstagandet bara när ett är inläst', () => {
     it('utkastet och rapportens avsnitt', () => {
         const w = demo();
         w.__ritaFlik('rapporttext');

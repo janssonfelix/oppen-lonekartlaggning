@@ -4,13 +4,9 @@
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare.
  */
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { normalisera, synliga, fonster, fonsterLitet, ritaAlla, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
-
-// Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
-// fäller olika tester från körning till körning.
-vi.setConfig({ testTimeout: 30000 });
 
 describe('k-tröskeln: standardvärde och validering', () => {
     let w;

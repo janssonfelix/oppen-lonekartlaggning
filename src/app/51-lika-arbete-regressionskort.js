@@ -114,7 +114,7 @@ function _bhTextFor(n) {
         + 'Varningstriangeln markerar grupper som är säkerställda i det råa p-värdet men inte efter justeringen; de bör inte presenteras som säkerställda.';
 }
 
-/** Meningen om ordningsberoendet under förklaringsbudgeten (S5): stegens ordning avgör vad som tillskrivs varje steg. */
+/** Meningen om ordningsberoendet under förklaringsbudgeten: stegens ordning avgör vad som tillskrivs varje steg. */
 function _budgetOrdningNot(budget) {
     if (!budget || budget.parts.length < 2) return '';
     const namn = { bas: 'BAS', alder: 'ålder', yrke: `${T.enhet.en} inom BAS` };

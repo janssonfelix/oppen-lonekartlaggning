@@ -57,7 +57,7 @@ describe('gränssnittets färger har en källa', () => {
     });
     it('sidans skal: bara tabellhuvud som kopieras till urklipp bär en av tabellens färger som hexkod', () => {
         const rader = läs('src/index.html').split('\n').filter(r => { const t = KODER.test(r); KODER.lastIndex = 0; return t; });
-        for (const r of rader) expect(r, r.trim().slice(0, 80)).toMatch(/<th [^>]*data-export-label/);
+        expect(rader.filter(r => !/<th [^>]*data-export-label/.test(r)).map(r => r.trim().slice(0, 80))).toEqual([]);
     });
     it('nära dubbletter av tabellens färger står inte i vyerna, sidan eller stilmallen (ADR-43)', () => {
         const NARA_DUBBLETTER = /#(991b1b|7f1d1d|8f1616|fde8e8|92400e|9a3412|7c2d12|78350f|7a4a04|fdf0d8|fef9c3|fff7d6|fff7ed|047857|065f46|0a544e|166534|064e3b|d1fae5|dcfce7|dff3ef|4f46e5|3730a3|e0e7ff|0c4a6e|fefefe|1e293b|0f172a|334155|374151|e2e8f0|cfd5df|fafbfc|f6f7f9|eef2f6|eef2f7|3b82f6|1e40af|1e3a5f|fca5a5|f87171|fbbf24|fef08a|fdba74|bbf7d0|34d399|a9b9ff|fffbf9)\b/gi;

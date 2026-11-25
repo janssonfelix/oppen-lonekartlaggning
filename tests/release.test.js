@@ -92,7 +92,7 @@ describe('release-grinden', () => {
     });
 });
 
-// B5 (beslut 11b): kontrollsumman som alternativ till cosign, med PowerShell-raden bredvid Linux/mac-raden.
+// Kontrollsumman som alternativ till cosign, med PowerShell-raden bredvid Linux/mac-raden.
 describe('kontrollsumman i RELEASE.txt och dokumenten', () => {
     const las = f => readFileSync(join(root, f), 'utf8');
     it('SECURITY.md och körguiden §0: stycket om kontrollsumman när cosign inte kan köras, med båda kommandona', () => {

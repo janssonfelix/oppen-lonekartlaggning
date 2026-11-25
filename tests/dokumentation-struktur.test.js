@@ -324,6 +324,21 @@ describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisninga
         const saknas = filer.flatMap(f => [...läs(f).matchAll(/ADR-(\d+)\b/g)].map(m => Number(m[1])).filter(n => !finns.has(n)).map(n => `${f}: ADR-${n}`));
         expect([...new Set(saknas)]).toEqual([]);
     });
+    // Koder ur interna granskningsomgångar (DR5, «Uppgift 6», «S5 i punkt 26», «beslut 8c») förklaras inte någonstans i repot, och
+    // flera krockade med skydden S1–S5 och riskanalysens id. En hänvisning går till ett ADR eller ett dokument.
+    const GRANSKNINGSKOD = /\b(?:D[RSTUVGF]\d+|Uppgift \d+|[Rr]ättning(?:somgång)? \d+|fixrunda \d+|[A-Z]\d+ i punkt \d+|etapp \d+[a-z]?|beslut \d+[a-z])\b/;
+    it('mönstret för granskningskoder fångar koderna men inte ADR, skydden eller BAS', () => {
+        for (const t of ['(DR1)', 'DS3: staplar', 'Uppgift 6', 'Rättning 1, DV2', 'fixrunda 1', 'S5 i punkt 26', 'etapp 1b', 'beslut 8c']) expect(GRANSKNINGSKOD.test(t), t).toBe(true);
+        for (const t of ['ADR-63', '(S4)', 'BAS D2', 'cell D2', 'docx', 'uppgiften']) expect(GRANSKNINGSKOD.test(t), t).toBe(false);
+    });
+    it('koden, verktygen och testerna hänvisar inte till granskningsomgångarnas koder', () => {
+        const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
+            e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
+        const filer = [...gå('src'), ...gå('tools'), ...gå('tests')]
+            .filter(f => /\.(js|mjs|html|css)$/.test(f) && f !== 'tests/dokumentation-struktur.test.js' && !f.startsWith('tools/data/'));
+        expect(filer.flatMap(f => läs(f).split('\n').map((r, i) => [r, i]).filter(([r]) => GRANSKNINGSKOD.test(r))
+            .map(([r, i]) => `${f}:${i + 1} ${r.trim().slice(0, 80)}`))).toEqual([]);
+    });
     it('indextabellen och besluten har samma nummer, i samma ordning', () => {
         expect(beslutsnummer.length).toBeGreaterThan(20);
         expect(indexrader.map(m => Number(m[1]))).toEqual(beslutsnummer);

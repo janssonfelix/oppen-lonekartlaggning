@@ -2380,7 +2380,7 @@ summary:focus-visible {
 /* Exporterna som en lista: en rad per underlag, med vad det innehåller och knappen till höger. */
 .export-lista { display: grid; }
 .export-lista .export-hub-row .btn { min-width: 150px; justify-content: center; }
-/* PDF-raden: organisationens namn står under beskrivningen och förklaringen (S9 i punkt 26), så att texten har radens
+/* PDF-raden: organisationens namn står under beskrivningen och förklaringen, så att texten har radens
    hela bredd som i Word-raden; knappen står kvar till höger. */
 .export-hub-row .export-org { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 360px; margin-top: 8px; }
 .export-org label { white-space: nowrap; }
@@ -3256,7 +3256,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .header-knappar { flex: 0 0 auto; }
 .header-knappar .sok-ruta { flex: 0 1 150px; min-width: 130px; }
 /* Med den utfällda sidomenyn (över 1 100 punkter) krymper rubriken och raden om lokal bearbetning inte; sökfältet
-   krymper i stället, så att det aldrig ligger över rubriken eller «Vad lagras?» (F7 i punkt 26). Knapparna behåller
+   krymper i stället, så att det aldrig ligger över rubriken eller «Vad lagras?». Knapparna behåller
    sin bredd och sin rad. Under 1 100 punkter är sidomenyn en ikonlist och sidhuvudet som förut. */
 @media (min-width: 1101px) {
     .top-header .header-title { flex: 1 0 auto; }
@@ -3324,7 +3324,7 @@ body.lage-kompakt .flik-intro-rad { margin-bottom: 10px; }
 .ag-grupp > summary { cursor: pointer; padding: 10px 14px; background: var(--yta); font-weight: 600; border-radius: 6px; list-style: none; }
 .ag-grupp > summary::-webkit-details-marker { display: none; }
 .ag-prio { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); font-weight: 700; white-space: nowrap; }
-/* Märket står alltid på en egen rad ovanför rubriken, oavsett rubrikens längd (S7 i punkt 26). */
+/* Märket står alltid på en egen rad ovanför rubriken, oavsett rubrikens längd. */
 .ag-huvud { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 
 /* ---- Pilen framför en hopfällbar rubrik ----

@@ -1,5 +1,5 @@
 /**
- * Vakt: ansvarsförbehållet och förbehållet om verklig data står där de ska (beslut 8c, ingen juristgranskning före
+ * Vakt: ansvarsförbehållet och förbehållet om verklig data står där de ska (ADR-106, ingen juristgranskning före
  * lansering). De juridiska formuleringar som inte får stå (utredningskrav, lagstadgat, vad direktivet kräver i detalj)
  * är avförda ord i tests/dokumentation-sprak.test.js, tillsammans med paragrafer och artiklar.
  */
@@ -34,7 +34,7 @@ describe('juridikspråk: ansvarsförbehållet står på alla åtta ställen', ()
 });
 
 describe('juridikspråk: förbehållet om verklig data står kvar, Word-förbehållet är struket', () => {
-    // Word-utkastet är prövat i Microsoft Word 365 och 2019 (B6); förbehållet får inte komma tillbaka.
+    // Word-utkastet är prövat i Microsoft Word 365 och 2019; förbehållet får inte komma tillbaka.
     for (const fil of ['README.md', 'docs/anvandare/sammanfattning-hr-chefer.md']) {
         it(fil, () => {
             const text = enRad(läs(fil));

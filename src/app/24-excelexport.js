@@ -225,7 +225,7 @@ function __excelAlltBokExport() {
 
     // Sheet: EU-Lönekartläggning
     const matrixSheet = tableToSheet('matrix-table');
-    // Reservationen om lönebegreppet (beslut 7a) under tabellen: rubrikraden och kolumnerna står kvar där de stod.
+    // Reservationen om lönebegreppet (ADR-107) under tabellen: rubrikraden och kolumnerna står kvar där de stod.
     if (matrixSheet) XLSX.utils.sheet_add_aoa(matrixSheet, [[], [EU_LONEBEGREPP_RESERVATION]], { origin: -1 });
     if (matrixSheet) XLSX.utils.book_append_sheet(wb, matrixSheet, 'EU-lönekartläggning');
 

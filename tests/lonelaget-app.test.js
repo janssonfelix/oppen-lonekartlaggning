@@ -2,10 +2,9 @@
 // Copyright 2026 Felix Jansson
 // Löneläget och Lönepolitik i appen: överblicken med bandkartan och statistikens spann, avsnitten mot ställningstagandet
 // och statistiken, överblicken i exporterna, att fliken följer referenserna och policyFor-kaskaden.
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { fonster as fonsterK, fangaBocker, laddaXlsx, SENT_SMA, SMA } from './helpers/ktroskel-rigg.js';
-vi.setConfig({ testTimeout: 30000 });
 const fonster = () => { const w = createAppWindow(); w.__lasInDemodata(); return w; };
 const medStatistik = (w, { spann = true } = {}) => {
     w.__state.statistik = [...new Set(w.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return spann ? { aid, bas, median: 34000, p10: 30000, p90: 39000 } : { aid, bas, median: 34000 }; });

@@ -1,5 +1,5 @@
 /**
- * Uppmärksamhetstrappan (ADR-59, beslut 1a): statusen sätts på statistisk signal, inte på storleken ensam.
+ * Uppmärksamhetstrappan (ADR-59): statusen sätts på statistisk signal, inte på storleken ensam.
  *
  *   Värt att granska — skillnaden är säkerställd (slumpens gränser för gruppen) OCH minst 3 % (verktygets
  *                      storleksgräns).

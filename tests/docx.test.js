@@ -148,8 +148,8 @@ describe('docx: bilder', () => {
     });
 });
 
-// Förberedelse för Word-testet (A9, förskott på B6): sådant som Word kan läsa annorlunda än LibreOffice.
-describe('docx: tabellerna som Word läser dem (A9)', () => {
+// Förberedelse för Word-testet: sådant som Word kan läsa annorlunda än LibreOffice.
+describe('docx: tabellerna som Word läser dem', () => {
     const c = s => ({ delar: [t(s)] });
     const tva = { typ: 'tabell', rader: [[c('Yrkesgrupper'), c('8')]] };
     const fem = { typ: 'tabell', rubrikrad: [c('Yrke'), c('n'), c('Median'), c('Mot'), c('Läge')], rader: [[c('A'), c('12'), c('30 000'), c('−3 %'), c('Lägre')]] };
@@ -174,7 +174,7 @@ describe('docx: tabellerna som Word läser dem (A9)', () => {
     });
 });
 
-// F5 i punkt 26: kolumnerna efter innehållet, så att ett ord i en cell inte bryts mitt i.
+// Kolumnerna efter innehållet, så att ett ord i en cell inte bryts mitt i.
 describe('docx: kolumnbredderna följer innehållet', () => {
     const c = s => ({ delar: [t(s)] });
     // Som Likvärdigt arbete i utkastet: en smal löpnummerkolumn, namn som långa ord, tal och en tom kolumn att fylla i.
@@ -250,9 +250,9 @@ describe('docx: kolumnbredderna följer innehållet', () => {
     });
 });
 
-// S5 i punkt 26: en ruta eller en rubrik delas inte mellan två sidor, och en ruta att fylla i står på samma sida som
+// En ruta eller en rubrik delas inte mellan två sidor, och en ruta att fylla i står på samma sida som
 // det den bedömer. Rutan själv hålls inte ihop med nästa: då skulle den följa med nästa avsnitts rubrik.
-describe('docx: rutor och rubriker hålls ihop över sidbrytningar (S5)', () => {
+describe('docx: rutor och rubriker hålls ihop över sidbrytningar', () => {
     const c = s => ({ delar: [t(s)] });
     const stilar = tolka(docxDelar([], OPT)['word/styles.xml']);
     const stilPPr = id => [...stilar.getElementsByTagName('w:style')].find(s => s.getAttribute('w:styleId') === id)

@@ -22,7 +22,7 @@ import { _RG_STEG_YRKE, forklaringsmodell, harAlder } from './50-regressionsmode
 import { exportHandlingsplan } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 
-// Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
+// Reservationen om lönebegreppet vid EU-rapportmåtten (ADR-107; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
 // bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
 export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 
@@ -103,7 +103,7 @@ export function _excelBladnamn(namn, reserv) {
 export function _laggTillMetodblad(wb, { undantag = '', extra = [] } = {}) {
     if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
     const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_metodbilaga()), ...extra];
-    // Ansvarsförbehållet (beslut 8c) står under Rättslig ram i varje Excel-export.
+    // Ansvarsförbehållet (ADR-106) står under Rättslig ram i varje Excel-export.
     const ram = rows.findIndex(rad => rad[0] === 'Rättslig ram');
     rows.splice(ram < 0 ? rows.length : ram + 1, 0, ['Ansvar', ANSVARSFORBEHALL]);
     if (undantag) {
@@ -111,7 +111,7 @@ export function _laggTillMetodblad(wb, { undantag = '', extra = [] } = {}) {
         rows.splice(i + 1, 0, ['Undantag från minsta gruppstorlek', kUndantagNot(undantag)]);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    // Kolumn A så bred som den längsta etiketten (rubriken på rad 1 räknas inte), högst 70 tecken (F6 i punkt 26).
+    // Kolumn A så bred som den längsta etiketten (rubriken på rad 1 räknas inte), högst 70 tecken.
     const etikett = Math.max(0, ...rows.slice(1).map(r => String(r[0] ?? '').length));
     ws['!cols'] = [{ wch: Math.min(70, etikett + 2) }, { wch: 88 }];
     try { XLSX.utils.book_append_sheet(wb, ws, 'Metod & parametrar'); } catch (_e) { /* dubblettnamn: hoppa */ }

@@ -4,10 +4,8 @@
 // tangentbord, grupperna i menyns ordning, kopiorna (samma figur som källan, egna filter, eget id, egen meny), att
 // kopiorna inte följer med i ZIP-filen, att en export ur en kopia går genom källan, och att flikarna utan grupp
 // förblir utan diagram. Och exportmenyn som varje diagram i verktyget har.
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 let win;
 

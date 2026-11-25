@@ -241,7 +241,7 @@ export function invertera(A) {
  *
  * Returnerar:
  *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
- * hHoga = antalet observationer med hävstång h_i > 0,99 (B4); antalet visas i regressionskortets tekniska specifikation.
+ * hHoga = antalet observationer med hävstång h_i > 0,99; antalet visas i regressionskortets tekniska specifikation.
  * Bara en observation med h = 1 (en ensam person i en indikator, residualen 0) får vikten 0 i HC3-köttet; övriga
  * bidrar med e²/(1 − h)², också de med hög hävstång.
  * hTillagg (valfri) läggs till hävstången per rad innan HC3 och hHoga räknas: när X är inomtransformerad ger

@@ -11,11 +11,9 @@
  * i BAS C, och ett stort yrke (6000) i BAS A för egna rader. Varje grupp i paret har en enda lön, ett sentinelvärde, så
  * att ett tal i utdata bara kan komma ur den gruppen: jämförelseyrkets median, skillnaden och förslagets belopp.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { normalisera, laddaXlsx, fangaBocker, oppnaFlik, fonsterParLikvardigt } from './helpers/ktroskel-rigg.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 const KV_LON = 36421, JMF_LON = 51373, GAP = JMF_LON - KV_LON;   // 14 952 kr
 const NOT_10 = '1 par med en grupp under 10 personer redovisas inte här.';

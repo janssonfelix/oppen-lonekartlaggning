@@ -4,14 +4,10 @@
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { utanTaggar } from '../src/lib/htmltext.js';
 import { normalisera, synliga, fonster, ritaAlla, oppnaFlik, KON_KV, KON_MA, ENSAM, KON_GAP, fonsterKon, harNagon, laddaXlsx, fangaBocker, utskriftAv, samlaUtdata, sammanhang, SJU_MAN, fonsterMan, tvaDec, somTal, andelText, SENT_MELLAN, SENT_SMA, iExport, byggDataset, elementText } from './helpers/ktroskel-rigg.js';
-
-// Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
-// fäller olika tester från körning till körning.
-vi.setConfig({ testTimeout: 30000 });
 
 describe('[R1] regressionens ojusterade steg ("Endast kön") kräver tröskeln för varje kön', () => {
     const NOT = /ojusterade steget[^.]*visas inte[^.]*färre än 10 personer/;
@@ -323,7 +319,7 @@ describe('omritning efter ändrad tröskel från gränssnittet: stegvis, med fö
         expect(w.eval('_ritaOmAllaFlikarStegvis()')).toBe(r2.klar);     // samma omritning, inte en till
         await r2.klar;
         expect(w.document.getElementById('omritning-ruta')).toBeNull();
-    }, 20000);   // ritar om alla flikar tre gånger: under full last räcker inte standardgränsen
+    });
 });
 
 describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)', () => {

@@ -35,7 +35,7 @@ const IND = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, 
 //   monster                  → "staplar med mönster"
 //   punktens etikett, referenslinjens etikett → "punkter med etikett och referenslinje med etikett"
 //   etikett på liten stapel INNE i domänen → "staplar: liten punkt inne i domänen med lång etikett" (vaktar filtret i _rfEtikettBeslut)
-// Uppgift 5 — varje val som ändrar geometrin har en figur med en liten punkt som INTE ligger sist i sin lista:
+// Varje val som ändrar geometrin har en figur med en liten punkt som INTE ligger sist i sin lista:
 //   band                     → "band med linje på talaxel", "band över kategorier"
 //   band, x.ordning ≠ data   → "band över kategorier i annan ordning än datan" (bandet sorteras efter axelns ordning:
 //                              sorteringen får inte bero på de små punkterna; en liten punkt mitt i datan och en först i ordningen)
@@ -85,7 +85,7 @@ export function ritfigurer() {
         // En liten stapel INNE i domänen (värdet sticker inte ut) med en lång etikett: utan filtret på dolda punkter i
         // etikettbeslutet skulle dess bredd avgöra om lagrets övriga etiketter ritas.
         ['staplar: liten punkt inne i domänen med lång etikett', bas({ lager: [{ marke: 'stapel', serie: 'S0', data: [{ x: 'A', y: 10, etikett: 'tio' }, { x: 'C', y: 5, liten: true, etikett: 'ETIK-HEMLIG-EN-MYCKET-LÅNG-ETIKETT-SOM-INTE-RYMS' }, { x: 'B', y: 9, etikett: 'nio' }] }, { marke: 'stapel', serie: 'S1', data: [{ x: 'A', y: 11 }, { x: 'C', y: 9 }, { x: 'B', y: 8 }] }] })],
-        // --- Uppgift 5: band, intervall, låda, ruta, färgskala, referenser ---
+        // --- band, intervall, låda, ruta, färgskala, referenser ---
         ['band med linje på talaxel', bas({ x: { skala: 'linjar' }, lager: [{ marke: 'band', serie: 'KI', kurva: 'monoton', data: [{ x: 1, lag: 8, hog: 12 }, { x: 2, lag: 91111, hog: 99333, liten: true, nyckel: 'NYCK-HEMLIG' }, { x: 3, lag: 9, hog: 14 }, { x: 4, lag: 10, hog: 15 }] }, { marke: 'linje', serie: 'Trend', kurva: 'monoton', data: [{ x: 1, y: 10 }, { x: 3, y: 11 }, { x: 4, y: 12 }] }] })],
         ['band över kategorier', bas({ lager: [{ marke: 'band', serie: 'KI', data: [{ x: 'A', lag: 8, hog: 12 }, { x: 'HEMLIG', lag: 91111, hog: 99333, liten: true }, { x: 'B', lag: 9, hog: 14 }, { x: 'C', lag: 10, hog: 15 }] }] })],
         ['band över kategorier i annan ordning än datan', bas({ x: { skala: 'band', ordning: ['HEMLIG', 'D', 'B', 'HEMLIG2', 'A', 'C'] }, lager: [{ marke: 'band', serie: 'KI', data: [{ x: 'A', lag: 8, hog: 12 }, { x: 'HEMLIG', lag: 91111, hog: 99333, liten: true }, { x: 'B', lag: 9, hog: 14 }, { x: 'HEMLIG2', lag: 1, hog: 98765, liten: true, nyckel: 'NYCK-HEMLIG' }, { x: 'C', lag: 10, hog: 15 }, { x: 'D', lag: 11, hog: 13 }] }] })],
