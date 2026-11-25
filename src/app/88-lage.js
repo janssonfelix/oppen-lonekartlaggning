@@ -28,8 +28,8 @@ function sattLage(nytt) {
 }
 
 // ---- Flikens inledning: en rad, resten bakom «Visa mer» ----
-// Varje .flik-intro läggs i en rad med en knapp. Knappen visas bara när texten faktiskt är avkortad. Valet gäller
-// fliken tills sidan laddas om; ingenting sparas. Anropas vid start och av flikar som bygger sin inledning själva.
+// Varje .flik-intro läggs i en rad med en knapp (dold i kompakt läge). Valet gäller fliken tills sidan laddas om;
+// ingenting sparas. Anropas vid start; ett nytt anrop lägger inte till en knapp till.
 function introRader(rot = document) {
     for (const intro of rot.querySelectorAll('.flik-intro')) {
         if (intro.parentElement && intro.parentElement.classList.contains('flik-intro-rad')) continue;

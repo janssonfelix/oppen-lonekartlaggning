@@ -9,6 +9,11 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Robusthetspanelen prövar kvinnotrösklar runt den inställda.** Panelen räknade alltid om vid 55, 60 och 65 %;
+  med tröskeln 50 eller 70 prövades aldrig den egna inställningen. Nu prövas den inställda och 5 procentenheter på
+  var sida.
+- **Färdigchecken och sökningen böjer antalen.** «1 personer … i 1 grupper» och «1 slutsatser prövade» i
+  Exportera, och «1 personer» under en träff i sökfältet, står nu i singular.
 - **Bubbeldiagrammet följer kvinnotröskeln.** Strecken för könsdominans i Tabeller och egna vyer stod fast på 40 och
   60 %; nu följer de tröskeln som Likvärdigt arbete använder.
 - **Årsjämförelsen skriver procentenheter.** Förändringen av en andel stod som «%-enheter» i panelen, rapporten och

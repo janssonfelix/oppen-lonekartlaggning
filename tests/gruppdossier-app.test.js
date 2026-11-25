@@ -142,6 +142,16 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
         // Slutsatsraden räknar bara de namngivna paren som prövade slutsatser.
         expect(w.document.getElementById('nyckel-dk-robusthet').textContent).toBe('Står sig');
     });
+    it('kvinnotrösklarna ligger runt den inställda, och färdigchecken böjer en enda liten grupp', () => {
+        const w = fonster();
+        expect(w.__robusthetLikvardighet().trösklar).toEqual([55, 60, 65]);
+        w.__state.likvardighet.kvinnoTrosholdPct = 70;
+        expect(w.__robusthetLikvardighet().trösklar).toEqual([65, 70, 75]);
+        expect(w.__state.likvardighet.kvinnoTrosholdPct).toBe(70);
+        w.__state.likvardighet.kvinnoTrosholdPct = 60;
+        const titlar = w.eval('byggFardigcheck()').map(i => i.title);
+        expect(titlar.some(t => /^6 personer \(7\s%\) ligger i en grupp som är för liten för att redovisas$/.test(t))).toBe(true);
+    });
     it('vid 5 namnges paret och ingen mening om utelämnade står kvar', () => {
         const w = fonster();
         w.eval('sattKTroskel(5, { fraga: false })');
