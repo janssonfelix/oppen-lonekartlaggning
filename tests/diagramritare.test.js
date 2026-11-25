@@ -3421,7 +3421,7 @@ describe('inga råa decimaltal i någon ritad figur', () => {
     }, 60000);
 });
 
-// ---- Urval: bortvalda punkter (figurens `urval`, val.bortvalda) ritas inte ----
+// ---- Urval: bortvalda punkter (figurens `urval`, val.filter) ritas inte ----
 // En bortvald punkt behandlas som en liten punkt utan visaSma: den ritas inte, index (data-l/data-i) pekar fortfarande
 // på originalfiguren, och domäner, kategoriordning, förklaring och delbilder räknas ur det synliga. Referenser rörs inte.
 describe('bortvalda', () => {
@@ -3433,7 +3433,7 @@ describe('bortvalda', () => {
     });
     const xEt = svg => alla(svg, '[data-axel="x"]').map(t => t.textContent);
     const yTal = svg => alla(svg, '[data-axel="y"]').map(t => Number(t.textContent.replace(/[\s  ]/g, '').replace('−', '-').replace(',', '.')));
-    const bort = (...v) => ({ bortvalda: new w.Set(v) });
+    const bort = (...v) => ({ filter: { kategori: new w.Map([['bas', new w.Set(v)]]) } });
 
     it('bortvalda kategorier försvinner från axeln; index är oförändrade', () => {
         const svg = rita(basFigur(), 600, bort('A', 'D'));
@@ -3470,28 +3470,28 @@ describe('bortvalda', () => {
         expect(svg.querySelector('path[data-marke="linje"][data-l="1"]')).not.toBeNull();
         expect(xEt(svg)).toEqual(['BAS A', 'BAS B']);      // kategorierna finns kvar genom punkterna utan fältet
     });
-    it('utan bortvalda (eller med en tom eller okänd mängd) är SVG:n byte för byte densamma som för figuren utan urval', () => {
+    it('utan bortvalda (eller med ett tomt eller okänt värde) är SVG:n byte för byte densamma som för figuren utan urval', () => {
         const f = basFigur({ referens: [{ typ: 'linje', y: 2.5 }] });
         const utanUrval = { ...f, urval: undefined };
         const ref = rita(utanUrval, 600).outerHTML;
         expect(rita(f, 600).outerHTML).toBe(ref);
-        expect(rita(f, 600, { bortvalda: new w.Set() }).outerHTML).toBe(ref);
+        expect(rita(f, 600, bort()).outerHTML).toBe(ref);
         expect(rita(f, 600, bort('X')).outerHTML).toBe(ref);
         // En figur utan urval bryr sig inte om bortvalda.
         expect(rita(utanUrval, 600, bort('A')).outerHTML).toBe(ref);
         w.__f = f; w.__g = utanUrval;
         const svgText = w.eval('figurTillSvg(window.__g, 1600, 900)');
-        expect(w.eval('figurTillSvg(window.__f, 1600, 900, { bortvalda: new Set() })')).toBe(svgText);
+        expect(w.eval('figurTillSvg(window.__f, 1600, 900, { filter: { kategori: new Map([["bas", new Set()]]) } })')).toBe(svgText);
         expect(w.eval('figurTillSvg(window.__f, 1600, 900)')).toBe(svgText);
     });
-    it('figurTillSvg och figurTillBild tar emot bortvalda', async () => {
+    it('figurTillSvg och figurTillBild tar emot filtret', async () => {
         w.__f = basFigur();
-        const svg = w.eval('figurTillSvg(window.__f, 1600, 900, { bortvalda: new Set(["A"]) })');
+        const svg = w.eval('figurTillSvg(window.__f, 1600, 900, { filter: { kategori: new Map([["bas", new Set(["A"])]]) } })');
         expect(svg).not.toMatch(/>BAS A</);
         expect(svg).toMatch(/>BAS B</);
-        const url = await w.eval('figurTillBild(window.__f, "svg", 1600, 900, { bortvalda: new Set(["A"]) })');
+        const url = await w.eval('figurTillBild(window.__f, "svg", 1600, 900, { filter: { kategori: new Map([["bas", new Set(["A"])]]) } })');
         expect(decodeURIComponent(url.slice(url.indexOf(',') + 1))).toBe(svg);
-        expect(w.eval('figurTillSvg(window.__f, 1600, 900, { bortvalda: ["A"] })')).toBe(w.eval('figurTillSvg(window.__f, 1600, 900)'));   // inte en mängd: ignoreras
+        expect(w.eval('figurTillSvg(window.__f, 1600, 900, { filter: new Set(["A"]) })')).toBe(w.eval('figurTillSvg(window.__f, 1600, 900)'));   // en mängd är inget filter
     });
 
     it('val.filter med kategori och intervall: båda verkar, index är oförändrade; ett tomt filter ger samma SVG', () => {
@@ -3506,9 +3506,9 @@ describe('bortvalda', () => {
         expect(xEt(svg)).toEqual(['BAS C', 'BAS D']);
         expect(svg.querySelector('[data-l="0"][data-i="2"]')).not.toBeNull();
         expect(svg.querySelector('[data-l="0"][data-i="1"]')).toBeNull();
-        // figurTillSvg tar emot filtret; filter går före det äldre bortvalda.
+        // figurTillSvg tar emot filtret.
         w.__f = f;
-        const t = w.eval('figurTillSvg(window.__f, 1600, 900, { filter: { kategori: new Map(), intervall: new Map([["n", { min: 35 }]]) }, bortvalda: new Set(["D"]) })');
+        const t = w.eval('figurTillSvg(window.__f, 1600, 900, { filter: { kategori: new Map(), intervall: new Map([["n", { min: 35 }]]) } })');
         expect(t).toMatch(/>BAS D</);
         expect(t).not.toMatch(/>BAS C</);
     });

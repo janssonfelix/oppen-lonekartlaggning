@@ -25,7 +25,7 @@ import { vymodellLonepolitik } from '../lib/vymodell-lonepolitik.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { aktiveraSortering } from './05-tabeller-och-lankar.js';
-import { _konUtelamnatNot, kTroskel, litetUnderlag } from './06-k-troskel.js';
+import { _konUtelamnatNot, kTroskel, LITET_UNDERLAG } from './06-k-troskel.js';
 import { kMaskNot } from './06-maskeringsnoter.js';
 import { orgNamn, diagramNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -257,9 +257,9 @@ function _lpFigurKonLagen(sum) {
     return { beskrivning: `Andel av kvinnorna respektive männen i policyspannets nedre, mellersta och övre tredjedel samt under och över spannet, staplat till 100 procent. Varje person räknas mot sitt ${genitiv(T.niva.en)} spann.`,
         y: { skala: 'band', ordning: rader.map(r => r[0]) }, x: { skala: 'linjar', titel: 'Andel av könet (%)', doman: [0, 100] }, hojd: 190,
         lager: _LP_LAGEN.map(([serie, farg], i) => ({ marke: 'stapel', lage: 'staplad', riktning: 'liggande', serie, farg,
-            data: rader.map(([namn, antal, n]) => { const a = +(100 * antal[i] / n).toFixed(1), fa = antal[i] > 0 && antal[i] < litetUnderlag();
+            data: rader.map(([namn, antal, n]) => { const a = +(100 * antal[i] / n).toFixed(1), fa = antal[i] > 0 && antal[i] < LITET_UNDERLAG;
                 return { y: namn, x: a, n, ...(fa ? { fa: true } : {}), ...(a >= 7 ? { etikett: svPct(a, 0) } : {}) }; }),
-            tips: d => [[d.y], [serie, talformat(d.x, 'pct')], ['Antal i könet', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${litetUnderlag()} personer`]] : [])] })) };
+            tips: d => [[d.y], [serie, talformat(d.x, 'pct')], ['Antal i könet', String(d.n)], ...(d.fa ? [['Litet underlag', `färre än ${LITET_UNDERLAG} personer`]] : [])] })) };
 }
 function _lpRitaKonLagen(vm) {
     const el = document.getElementById('chart-lp-konlagen'), kort = document.getElementById('lp-konlagen-kort'), not = document.getElementById('lp-konlagen-not');

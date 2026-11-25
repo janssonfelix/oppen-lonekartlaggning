@@ -31,8 +31,7 @@ const SKALOR = ['band', 'linjar', 'log'];
 export function talformat(v, namn, val) {
     const enhet = !val || val.enhet !== false;
     if (typeof v !== 'number' || !isFinite(v)) return '–';
-    // svTal avrundar som appens tabeller (halvorna bort från noll, ingen "−0"). Före enheten står ett vanligt
-    // mellanslag, som i diagrammen förut.
+    // svTal avrundar som appens tabeller (halvorna bort från noll, ingen "−0"). Före enheten står ett vanligt mellanslag.
     if (namn === 'kr') return svTal(v, 0) + (enhet ? ' kr' : '');
     if (namn === 'pct') return svTal(v, 1) + (enhet ? ' %' : '');
     if (namn === 'pctAbs') { const a = Math.abs(avrundaSymmetriskt(v, 1)); return svTal(a, Number.isInteger(a) ? 0 : 1) + (enhet ? ' %' : ''); }
@@ -54,8 +53,7 @@ export function kvantilpunkter(varden, antalMax = 20) {
     const v = (varden || []).filter(x => typeof x === 'number' && isFinite(x)).sort((a, b) => a - b);
     const antal = Math.min(antalMax, Math.floor(v.length / 2));
     if (antal < 1) return null;
-    const q = p => { const pos = (v.length - 1) * p, lo = Math.floor(pos), hi = Math.ceil(pos); return lo === hi ? v[lo] : v[lo] + (v[hi] - v[lo]) * (pos - lo); };
-    return { antal, varden: Array.from({ length: antal }, (_, i) => q((i + 0.5) / antal)) };
+    return { antal, varden: Array.from({ length: antal }, (_, i) => kvantil(v, (i + 0.5) / antal)) };
 }
 
 /**
@@ -228,7 +226,7 @@ export function ladstatistik(varden) {
 // ---- Urval: dimensioner användaren kan filtrera diagrammet på (figur.urval) ----
 // `figur.urval` är en lista med dimensioner, eller ett ensamt objekt (då en lista med ett element). En dimension är
 //   { typ: 'kategori', falt, namn, etikett?, visning? } — en knapp per värde, eller en hopfälld lista med
-//       kryssrutor (visning: 'lista', eller fler än URVAL_LISTA_MAX värden); utan typ är det en kategori (det äldre formatet)
+//       kryssrutor (visning: 'lista', eller fler än URVAL_LISTA_MAX värden); utan typ är det en kategori
 //   { typ: 'intervall', falt, namn, format?, etikett? } — fälten Minst och Högst
 // Ett filter döljer bara märken; inget tal räknas om — utom i ett härlett lager (harleddAv, se harleddaLager).
 
@@ -247,7 +245,7 @@ export function urvalSomLista(dim, antal) {
     return !!dim && (dim.visning === 'lista' || antal > URVAL_LISTA_MAX);
 }
 
-// Dimensionens typ: utan `typ` är den en kategori (det äldre formatet { falt, namn, etikett }).
+// Dimensionens typ: utan `typ` är den en kategori.
 function _urvalTyp(u) { return u && u.typ != null ? u.typ : 'kategori'; }
 // Figurens urval som en lista, utan att skapa nya objekt (används per datapunkt av arBortvald).
 function _urvalRa(figur) {
@@ -353,14 +351,9 @@ export function urvalSpann(figur, dim, { visaSma = false } = {}) {
     return min < max ? { min, max } : null;
 }
 
-// Filtret som { kategori: Map, intervall: Map }. En mängd (det äldre formatet) är de bortvalda värdena i figurens
-// första kategoridimension. Annat än ett objekt: inget filter.
-function _normaliseratFilter(figur, filter) {
+// Filtret som { kategori: Map, intervall: Map }, där en del som saknas är null. Annat än ett objekt: inget filter.
+function _normaliseratFilter(filter) {
     if (!filter || typeof filter !== 'object') return null;
-    if (typeof filter.has === 'function') {
-        const k = _urvalRa(figur).find(u => u && _urvalTyp(u) === 'kategori');
-        return k ? { kategori: new Map([[k.falt, filter]]), intervall: null } : null;
-    }
     const map = m => (m && typeof m.get === 'function' ? m : null);
     return { kategori: map(filter.kategori), intervall: map(filter.intervall) };
 }
@@ -370,23 +363,18 @@ function _normaliseratFilter(figur, filter) {
  * (kategori) eller ligger utanför intervallet (gränserna ingår, en gräns som saknas gäller inte). En punkt utan
  * fältet (t.ex. en referens) påverkas aldrig, och ett filter på ett fält som inte är en dimension i figuren gäller inte.
  * @param {any} figur
- * @param {{kategori?: Map<string, Set<string>>, intervall?: Map<string, {min?: number|null, max?: number|null}>}|Set<string>|null|undefined} filter
- *   en mängd (det äldre formatet) är de bortvalda värdena i figurens första kategoridimension
+ * @param {{kategori?: Map<string, Set<string>>, intervall?: Map<string, {min?: number|null, max?: number|null}>}|null|undefined} filter
  * @param {any} d
  */
 export function arBortvald(figur, filter, d) {
     if (!d || typeof d !== 'object' || !filter || typeof filter !== 'object') return false;
     // Anropas per datapunkt och ritning: inga nya objekt här.
     const f = /** @type {any} */ (filter);
-    const mangd = typeof f.has === 'function';
-    const kat = mangd ? null : (f.kategori && typeof f.kategori.get === 'function' ? f.kategori : null);
-    const int = mangd ? null : (f.intervall && typeof f.intervall.get === 'function' ? f.intervall : null);
-    let forstaKategori = true;
+    const kat = f.kategori && typeof f.kategori.get === 'function' ? f.kategori : null;
+    const int = f.intervall && typeof f.intervall.get === 'function' ? f.intervall : null;
     for (const u of _urvalRa(figur)) {
         if (!u || typeof u !== 'object') continue;
         const intervall = _urvalTyp(u) === 'intervall';
-        const b = !intervall && mangd && forstaKategori ? f : null;
-        if (!intervall) forstaKategori = false;
         const v = d[u.falt];
         if (v == null) continue;
         if (intervall) {
@@ -395,7 +383,7 @@ export function arBortvald(figur, filter, d) {
             if (typeof g.min === 'number' && v < g.min) return true;
             if (typeof g.max === 'number' && v > g.max) return true;
         } else {
-            const m = b || (kat && kat.get(u.falt));
+            const m = kat && kat.get(u.falt);
             if (m && typeof m.has === 'function' && m.has(String(v))) return true;
         }
     }
@@ -433,7 +421,7 @@ export function urvalIntervallText(dim, g) {
  * @returns {string[]}
  */
 export function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
-    const f = _normaliseratFilter(figur, filter);
+    const f = _normaliseratFilter(filter);
     if (!f) return [];
     const ut = [];
     for (const u of urvalLista(figur)) {
@@ -456,13 +444,12 @@ export function urvalBeskrivning(figur, filter, { visaSma = false } = {}) {
 }
 
 /**
- * Sant när filtret döljer något: ett bortvalt värde i en kategori eller en gräns i ett intervall (en mängd, det
- * äldre formatet: minst ett bortvalt värde). Annat än ett filter: falskt.
+ * Sant när filtret döljer något: ett bortvalt värde i en kategori eller en gräns i ett intervall. Annat än ett
+ * filter: falskt.
  * @param {any} filter
  */
 export function urvalAktivt(filter) {
     if (!filter || typeof filter !== 'object') return false;
-    if (typeof filter.has === 'function') return filter.size > 0;
     const kat = filter.kategori && typeof filter.kategori.values === 'function' ? [...filter.kategori.values()] : [];
     if (kat.some(s => s && s.size > 0)) return true;
     const int = filter.intervall && typeof filter.intervall.values === 'function' ? [...filter.intervall.values()] : [];
@@ -765,7 +752,7 @@ export function valideraFigur(figur, id = 'diagram') {
         if (!figur.y || figur.y.skala !== 'band') fel('paneler "auto" kräver bandskala på y');
         if (figur.lager.some(l => !(l.riktning === 'liggande' || l.marke === 'punkt') || l.panel != null)) fel('paneler "auto" kräver liggande lager (eller punkter) utan egen panel');
     }
-    // urval: dimensioner användaren kan filtrera på (BAS-intervall, antal …). Bara märken döljs; inget räknas om.
+    // urval: dimensioner användaren kan filtrera på (BAS-intervall, antal …). Märken döljs; bara härledda lager räknas om.
     if (figur.urval != null) {
         if (typeof figur.urval !== 'object') fel('urval måste vara en dimension eller en lista med dimensioner');
         const text = v => typeof v === 'string' && v.trim() !== '';

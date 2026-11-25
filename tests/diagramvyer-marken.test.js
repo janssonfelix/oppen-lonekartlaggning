@@ -1005,7 +1005,7 @@ describe('litet underlag: staplar som gäller få personer ritas med mönster', 
         w.eval('rensaFigur(window.__el)');
     });
     it('histogrammet: en stapel med färre än fem av könet är märkt, tipset och noten säger det', () => {
-        expect(w.eval('litetUnderlag()')).toBe(5);
+        expect(w.eval('LITET_UNDERLAG')).toBe(5);
         w.__kl = [{ fran: 30000, till: 32000, nKv: 12, nMa: 2 }, { fran: 32000, till: 34000, nKv: 8, nMa: 8 }, { fran: 34000, till: 36000, nKv: 0, nMa: 10 }];
         const f = w.eval('_konHistogramFigur(window.__kl, 20, 20, "x")');
         expect(f.lager[0].data.map(d => !!d.fa)).toEqual([false, false, false]);               // 12, 8 och 0 kvinnor: noll är inget litet underlag

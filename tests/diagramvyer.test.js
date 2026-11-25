@@ -1798,7 +1798,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
         expect(varden.length, id).toBeGreaterThanOrEqual(2);
         const hel = w3.eval('figurTillSvg(window.__f, 1400, 800, {})');
         w3.__v = varden[0];
-        const urval = w3.eval('figurTillSvg(window.__f, 1400, 800, { bortvalda: new Set([window.__v]) })');
+        const urval = w3.eval('figurTillSvg(window.__f, 1400, 800, { filter: { kategori: new Map([["bas", new Set([window.__v])]]) } })');
         const marken = s => (s.match(/data-marke="(punkt|stapel|intervall|lada|linje|yta)"/g) || []).length;
         expect(marken(urval)).toBeLessThan(marken(hel));
         expect(urval).not.toMatch(/NaN|undefined/);
