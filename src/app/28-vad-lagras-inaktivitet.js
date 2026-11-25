@@ -12,11 +12,9 @@ import { stangInstallningar } from './86-installningar.js';
 
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
 /**
- * Visar Data Residency-modal: schemat för state.data, antal rader, ungefärlig
- * minnesstorlek, och den första posten som exempel (fältet för AID-etikett kortat). Ger användaren
- * konkret insyn i exakt vad verktyget håller i RAM.
+ * Visar dialogen Vad lagras?: fälten i state.data, antal rader, ungefärlig minnesstorlek och den första posten som
+ * exempel (fältet för AID-etikett kortat), så att användaren ser vad verktyget håller i minnet.
  */
-
 export function oppnaVadLagras() {
     const modal = document.getElementById('data-residency-modal');
     const content = document.getElementById('data-residency-content');
@@ -77,7 +75,7 @@ export function oppnaVadLagras() {
                 Skyddar om du lämnar datorn olåst. När tiden har gått får du en varning och kan förlänga. Svarar du inte inom 60 sekunder rensas allt, som med knappen Rensa all data.
             </p>
             <div class="rad-bryt-mitt gap-10">
-                <label for="inactivity-timeout-select" class="fs-sm fw-600">Timeout:</label>
+                <label for="inactivity-timeout-select" class="fs-sm fw-600">Rensa efter:</label>
                 <select id="inactivity-timeout-select" class="ram-1-kant rund-4 pad-4-10"${last != null ? ' disabled aria-describedby="inactivity-last"' : ''}>
                     ${val.map(m => `<option value="${m}"${state.inactivityTimeoutMin === m ? ' selected' : ''}>${m === 0 ? 'Av' : `${m} minuter`}${m === INAKTIVITET_STANDARD_MIN ? ' (standard)' : ''}</option>`).join('')}
                 </select>
@@ -94,14 +92,11 @@ export function oppnaVadLagras() {
 
 // ---- Inaktivitetstimer med tvåfas-varning ----
 //
-// Lyssnar på användaraktivitet (mus/tangentbord/scroll/touch) och nollställer
-// timern. När timern når X% av timeout visas en modal som ber användaren
-// bekräfta att de fortfarande är där — om ingen reaktion inom 60 s rensas data
-// (motsvarande rensaAllData utan confirm-prompt).
+// Aktivitet (mus, tangentbord, rullning, pekskärm) flyttar fram tiden. En minut före den inställda tiden visas en
+// varning; svarar ingen inom 60 sekunder rensas allt, som med Rensa all data men utan bekräftelsefrågan.
 //
-// På som standard (90 minuter: dataskydd som standard enligt GDPR art. 25.2, med en tid som inte
-// avbryter ett normalt arbetspass). HR kan
-// ändra eller stänga av det i "Vad lagras?"-modalen.
+// På som standard (90 minuter: dataskydd som standard enligt GDPR art. 25.2, med en tid som inte avbryter ett normalt
+// arbetspass). Tiden ändras eller stängs av i dialogen Vad lagras?.
 // Tiden räknas på klockan (Date.now), inte med en lång setTimeout: webbläsarens timer står ofta still medan datorn
 // sover, och en dator som öppnas efter timmar visade annars underlaget tills resten av tiden gått. Intervallet prövar
 // klockan; det står också still under sömnen men prövar igen så snart datorn vaknar.
@@ -136,7 +131,7 @@ function _visaInaktivitetsvarning() {
         <div class="inactivity-warn-panel">
             <h2 class="fs-lg marg-0-0-10">Sessionen håller på att gå ut</h2>
             <p class="fs-md lh-1_55">
-                Verktyget har varit inaktivt i ${state.inactivityTimeoutMin} minuter. För att skydda känsliga uppgifter rensar vi tillfälligt minnet om <strong id="inactivity-countdown">60</strong> sekunder.
+                Verktyget har varit inaktivt i ${state.inactivityTimeoutMin} minuter. För att skydda känsliga uppgifter rensas minnet om <strong id="inactivity-countdown">60</strong> sekunder. Det går inte att ångra.
             </p>
             <p class="text-dampad-sm marg-0-0-14">
                 Är du fortfarande vid din arbetsstation?
@@ -176,7 +171,7 @@ function _rensaVidInaktivitet() {
     // Samma rensning som knappen, utan bekräftelsefrågan (ingen finns vid datorn).
     _rensaAllData();
     if (hadData) {
-        // Liten persistent notis så användaren förstår vad som hände när de kommer tillbaka
+        // En notis som står kvar, så att användaren ser vad som hände vid återkomsten
         const notice = document.createElement('div');
         notice.style.cssText = `position:fixed; top:20px; right:20px; background:${FARG.text}; color:white; padding:14px 18px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.25); z-index:99999; max-width:340px; font-size:0.88rem; line-height:1.5;`;
         notice.innerHTML = `<strong>${ikon('klocka')} Sessionen rensades</strong><br>Av säkerhetsskäl har all data raderats efter inaktivitet. Läs in filerna på nytt för att fortsätta. <button data-dismiss-parent class="bak-transparent ram-1-white rund-4 farg-white pekare marg-v-8 pad-2-8">OK</button>`;
@@ -236,7 +231,7 @@ export function uppstartVadLagrasInaktivitet() {
         const status = document.getElementById('inactivity-status');
         if (status) status.textContent = min > 0 ? `Aktiv (${min} min)` : 'Av';
     });
-    // Registrera aktivitets-lyssnare en gång — billiga (passive)
+    // Aktivitetslyssnarna registreras en gång (passiva)
     ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
         window.addEventListener(evt, () => {
             // Klockan prövas först: den som rör musen efter att datorn sovit förbi tiden förlänger inte sessionen.

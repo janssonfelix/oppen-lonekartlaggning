@@ -8,7 +8,7 @@ import { _kVisaFel, _synkaKTroskel } from './06-k-troskel.js';
 import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
 import { _rfRensaAlla } from './10-diagramritare.js';
 import { sattDiagramMarkering } from './11-markering.js';
-import { aterstallReferens, state } from './12-tillstand.js';
+import { aterstallReferens, nyPrognos, state } from './12-tillstand.js';
 import { ovRitaLage, ritaKravstatus, skattningarSlapp } from './13-oversikt.js';
 import { _fkSlapp, _fkVantar } from './17-forhandskontroll.js';
 import { _ritaDemoruta } from './20-demodata-diagnostik.js';
@@ -49,12 +49,6 @@ export function rensaAllData() {
     _rensaAllData();
 }
 
-/**
- * Själva rensningen, utan bekräftelsefråga. Enda rensningsvägen: används av
- * knappen "Rensa all data" och av den automatiska rensningen vid inaktivitet,
- * så att de aldrig kan glida isär. Vaktas av invarianten "Rensa all data: ingen
- * lönedata kvar" i tests/dataskydd-app.test.js, för båda vägarna.
- */
 // Behållare som fylls av JavaScript med innehåll som kan bära lönedata. Listorna används av "Rensa all data" och av
 // exportgrinden (23-exportgrind.js), som tömmer flikar som inte längre är ritade med gällande tröskel.
 export const RENSA_BEHALLARE = ['struktur-representation', 'struktur-distribution', 'struktur-eu', 'struktur-sektorer', 'forecast-outcome', 'explore-table',
@@ -64,6 +58,12 @@ export const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data
     'forecast-threshold-result', 'forecast-sensitivity', 'forecast-rem-result',   // Löneöversyns knappresultat
     'dossier-body', 'basdossier-body', 'evidence-modal-content', 'skal-body'];   // dialogerna med gruppens tal
 
+/**
+ * Själva rensningen, utan bekräftelsefråga. Enda rensningsvägen: används av
+ * knappen "Rensa all data" och av den automatiska rensningen vid inaktivitet,
+ * så att de aldrig kan glida isär. Vaktas av invarianten "Rensa all data: ingen
+ * lönedata kvar" i tests/dataskydd-app.test.js, för båda vägarna.
+ */
 export function _rensaAllData({ inbakat = true } = {}) {
     visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
     if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
@@ -131,18 +131,15 @@ export function _rensaAllData({ inbakat = true } = {}) {
     state.perBasRecept = null;
     state.forklaringsmodell = null;
     state.gapUppdelning = null;
-    // Rensa även historiska snapshots och anteckningar
-    state.forecast = { budget: { mode: 'pct', value: null }, generell: { mode: 'pct', value: null }, targets: [], minGroupN: 10, roundStep: 0, years: 1, scenarios: { A: null, B: null }, result: null };
+    state.forecast = nyPrognos();
     if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // knappresultaten räknas inte om på nästa underlag
-    // Rensa även beräkningscacher som kan innehålla
-    // spår av lönefördelningar (CI-värden, MDE-mått från power-analysen).
+    // Beräkningscacherna bär spår av lönefördelningarna (konfidensintervall, minsta detekterbara skillnad).
     state.bootstrapCI = null;
     state.powerAnalysis = null;
     if (typeof skattningarSlapp === 'function') skattningarSlapp();   // skattningarna vid andra golv (ADR-103)
-    state.dataAudit = null;
     if (state.likvardighet) state.likvardighet.result = null;
 
-    // 2. Tear down renderad DOM som kan innehålla data
+    // 2. Töm det ritade som kan bära lönedata
     // Dialogerna med en grupps tal stängs först: en öppen dossier får inte stå kvar på skärmen efter rensningen vid
     // inaktivitet. Innehållet töms med RENSA_OVRIGT nedan.
     for (const stang of [stangGruppdossier, stangBasdossier, _stangBevisruta, stangSkalDialog]) if (typeof stang === 'function') stang();

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// § 3:10 — Likvärdigt arbete (likvärdighetsanalys)
+// Likvärdigt arbete (likvärdighetsanalys, 3 kap. 9 § 2 diskrimineringslagen)
 // ============================================================
-// Beräkning och rendering av kandidatpar enligt DiskrL 3:10: kvinnodominerade
+// Beräkning och rendering av kandidatpar enligt 3 kap. 9 § 2: kvinnodominerade
 // yrken jämförs mot alla yrken som inte är kvinnodominerade (mansdominerade och
 // blandade, klassen synlig; filtret jamforelse = 'mansdominerade' ger bara de
 // mansdominerade, ADR-60) inom samma BAS-intervall
@@ -85,7 +85,7 @@ export function likvardighetResultat() {
 }
 
 /**
- * § 3:10-analys — state-adapter runt src/lib/likvardighet.js.
+ * likvärdighetsanalys — state-adapter runt src/lib/likvardighet.js.
  *
  * Algoritmen finns bara i lib, som appen importerar som alla andra kärnmoduler (ADR-98);
  * den här funktionen gör bara tre saker:
@@ -177,7 +177,7 @@ const LV_LAGRE_KRAV_DOLDA_KOLUMNER = ['bassteg'];
 // Nycklarna för kolumnerna med paret (data-kol) är historiska och står kvar; texten i kolumnen kommer ur termerna.
 const LV_KOL_KVDOM = 'yrke', LV_KOL_JAMF = 'jamfyrke';
 /**
- * Renderar § 3:10-flikens UI.
+ * Renderar fliken Likvärdigt arbete.
  *
  * Alltid-synliga steg:
  *   1. Diagnostik — vad parsern fann
@@ -421,7 +421,7 @@ export function ritaLikvardigtArbete() {
             </div>
         </details>`;
 
-    // ====== Sektion 4: § 3:10-kandidatpar (huvudtabellen) ======
+    // ====== Sektion 4: kandidatpar i likvärdigt arbete (huvudtabellen) ======
     const källBadge = p => {
         if (p.jamforKalla === 'intern') return `<span class="bak-ok-bg rund-8 farg-ok fs-xs pad-1-6" title="Ur organisationens egna löner (jämförelse inom organisationen)">intern</span>`;
         if (p.maKlassKort === 'lokal') return `<span class="bak-varning-bg rund-8 farg-varning fs-xs pad-1-6" title="jämförelsestatistiken, egen könsfördelning">Statistiken</span>`;
@@ -685,7 +685,7 @@ export function ritaLikvardigtArbete() {
     ritaKravMotLon();
 }
 
-// ---- § 3:10: kandidatparen som bild (visualiserings-Steg 2) -----------------
+// ---- Likvärdigt arbete: kandidatparen som bild (visualiserings-Steg 2) -----------------
 // Rena par-listan (kvinnodominerat yrke × jämförelseyrke, z = lönegap %) blir en
 // äkta 2D-matris. Tabellen finns kvar som tillgänglighetsalternativ (role="img"
 // + aria pekar dit). Färgen är enkelriktad (PALETT.sekventiell): rödare cell =
@@ -792,7 +792,7 @@ function _lvParFigur(pairs, max = 14) {
 }
 
 /**
- * Robust CSV-export för § 3:10. Använder _laddaNedCSV-helpern direkt —
+ * Robust CSV-export för Likvärdigt arbete. Använder _laddaNedCSV-helpern direkt —
  * INGA beroenden på XLSX-biblioteket. Detta är PRIMÄR exportväg (Excel-versionen
  * är sekundär).
  */
@@ -869,7 +869,7 @@ function _exportLikvardighetCSVExport() {
     _laddaNedCSV(rows, 'lonekartlaggning_likvardighet_' + idagDatum(), { undantag: 'Likvärdigt arbete' });
 }
 
-// Exporterar § 3:10-tabellen och ett metadatablad till Excel. Går alltid genom exportläget (ADR-51): djupräknaren
+// Exporterar tabellen i Likvärdigt arbete och ett metadatablad till Excel. Går alltid genom exportläget (ADR-51): djupräknaren
 // håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportLikvardighet(...a) { return medExportLage(() => _exportLikvardighetExport.apply(null, /** @type {any} */ (a))); }
 function _exportLikvardighetExport() {
@@ -1014,7 +1014,7 @@ function _exportLikvardighetExport() {
 export function uppstartLikvardigtArbete() {
     // Arbetsvärdering (poäng) läses ur strukturdatans valfria Poäng-kolumn —
     // se _harledArbetsvarderingUrData (anropas i _efterInlastData); någon egen uppladdning
-    // finns inte. Ekvivalensbandet ställs in i § 3:10-fliken.
+    // finns inte. Ekvivalensbandet ställs in i fliken Likvärdigt arbete.
     document.getElementById('arbvard-band')?.addEventListener('change', e => {
         const v = parseFloat(/** @type {HTMLInputElement} */ (e.target).value);
         if (state.likvardighet && isFinite(v) && v >= 0) state.likvardighet.poangBandPct = v;

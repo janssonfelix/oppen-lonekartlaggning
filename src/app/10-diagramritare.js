@@ -329,9 +329,6 @@ let _rfTipsAgare = null;   // behållaren vars verktygstips visas just nu (porta
 // egenskap. _rfSedda minns vilka som har suttit i dokumentet (se _rfStadaBehallare). Läses bara inne i funktioner.
 export const _rfBehallare = new Set();
 const _rfSedda = new WeakSet();
-// Behållare som ritaFigur någon gång har ritat i (också efter rensning; bär ingen data och håller ingen kvar i
-// minnet). Exportmenyn frågar _rfHarRitat: en meny som står kvar vid en behållare utan figur hör till kärnan.
-const _rfRitade = new WeakSet();
 
 function _rfEl(id) {
     const el = typeof id === 'string' ? document.getElementById(id) : id;
@@ -384,7 +381,6 @@ function _rfDoljTips(el) {
 }
 
 /** Har ritaFigur ritat i behållaren (också om den sedan rensats eller hamnat i felläge)? */
-export function _rfHarRitat(el) { return !!el && _rfRitade.has(el); }
 
 /**
  * Släpper behållare som har suttit i dokumentet men inte gör det längre (vyn har byggt om sin HTML utan
@@ -938,7 +934,6 @@ export function ritaFigur(id, figur, val) {
     _rfStadaBehallare(el);
     _rfBehallare.add(el);
     if (el.isConnected) _rfSedda.add(el);
-    _rfRitade.add(el);
     try {
         valideraFigur(figur, el.id || 'diagram');
         el._figur = figur;

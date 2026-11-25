@@ -35,7 +35,7 @@ import { _bes8Omraden } from './61-regler-och-praxis.js';
 // ---- Rang 3: Robusthetspanel ------------------------------------------------
 
 /**
- * Kör om § 3:10-kandidatlistan för flera kvinnotrösklar (standard: den inställda och 5 procentenheter på var sida)
+ * Kör om kandidatlistan i likvärdigt arbete för flera kvinnotrösklar (standard: den inställda och 5 procentenheter på var sida)
  * och mäter hur stabil varje kandidatgrupp är. Ändrar inte state: tröskeln skickas som argument till likvardighetspar.
  *
  * Panelen ligger utanför fliken Likvärdigt arbete och följer därför tröskeln som allt annat

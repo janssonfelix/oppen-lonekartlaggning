@@ -786,7 +786,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         const rader = bas.slice(1).filter(r => r[0] !== '' && r[0] !== '—');
         expect(rader.map(r => r[1])).toEqual(['E']);
         const q = pb.E.q;
-        expect(rader[0][9]).toBe(q < 0.001 ? '< 0.001' : String(+q.toFixed(4)));
+        expect(rader[0][9]).toBe(q < 0.001 ? '< 0,001' : String(+q.toFixed(4)));
         expect(rader[0][11]).toBe('Ja');
         expect(antalBas(forsatt)).toBe('1');
     });
@@ -816,7 +816,7 @@ describe('protokollet för gemensam lönebedömning: BAS-intervallen väljs efte
         const { bas } = await protokollet(w);
         const prot = bas.slice(1).filter(r => r[1] === 'E');
         expect(prot).toHaveLength(1);
-        expect(prot[0][9]).toBe(p < 0.001 ? '< 0.001' : String(+p.toFixed(4)));
+        expect(prot[0][9]).toBe(p < 0.001 ? '< 0,001' : String(+p.toFixed(4)));
         expect(prot[0][9]).toBe(prot[0][8]);
     });
 });

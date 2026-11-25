@@ -139,7 +139,7 @@ export function _sattDiagramMetodNot(chartId, text) {
 }
 
 /**
- * Får ett § 3:10-par redovisas i underlaget? Båda yrkesgrupperna ska nå tröskeln. Endast fliken
+ * Får ett par i likvärdigt arbete redovisas i underlaget? Båda yrkesgrupperna ska nå tröskeln. Endast fliken
  * Likvärdigt arbete och dess egen export (Excel, CSV) är undantagna (dokumenterat); alla andra utdata
  * — Rapportunderlaget, Word-utkastet, utskriften, protokollet, Att göra, handlingsplanen och
  * gruppdossiern — använder denna regel (via _parForRedovisning).
@@ -150,7 +150,7 @@ export function _parOverTroskel(p) { return parNarK(p, kTroskel()); }
 export function _parUtelamnadeNot(antal, k = kTroskel()) { return parUtelamnadeNot(antal, k); }
 
 /**
- * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
+ * Delar en lista par i likvärdigt arbete i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
  * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
  * objekten är desamma som i indata. Gränsen är kTroskel(), det som gäller i läget; Löneöversyns
  * förslag anger den inställda tröskeln, kInstalld(), också på skärmen (ADR-69).
@@ -296,12 +296,12 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
     // bootstrapen sekunder. På skärmen är golvet alltid K_STANDARD (ADR-103), så det händer bara i förhandsvisningen;
-    // exportens golv räknas när en export läser det (bootstrapKIGallande, styrkaGallande). § 3:10-paren läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
+    // exportens golv räknas när en export läser det (bootstrapKIGallande, styrkaGallande). paren i likvärdigt arbete läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
     // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
     if (golvAndrat && typeof tomStatistikcacher === 'function') tomStatistikcacher({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
     else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
-    // Löneöversynens förslag ur § 3:10-par som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
+    // Löneöversynens förslag ur par i likvärdigt arbete som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
     if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
     _synkaKTroskel();

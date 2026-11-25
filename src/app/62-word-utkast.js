@@ -8,10 +8,6 @@ import { hamtaData, state } from './12-tillstand.js';
 import { medExportLage } from './23-exportgrind.js';
 import { rapportModell, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 
-/**
- * Bygger dokumentationsutkastets HTML-kropp (testbar; ren av nedladdning).
- * Läser state/DOM men returnerar bara en sträng.
- */
 /** Utkastet som HTML, ritat ur rapportmodellen (58-rapportmodell.js). */
 function _byggWordUtkastHtml() { return rmTillHtml(rapportModell()); }
 
@@ -64,7 +60,7 @@ function _utkastTillBlock(html) {
             else if (tag === 'figure' && n.hasAttribute('data-rm-bild')) block.push({ typ: 'bild', id: n.getAttribute('data-rm-bild'), flik: n.getAttribute('data-rm-flik'), text: n.textContent.trim() });
             else if (tag === 'div' && klass.contains('fillin')) block.push({ typ: 'stycke', stil: 'fyllIn', delar: trimma(delarAv(n)) });
             else if (tag === 'div' && klass.contains('draftbox')) block.push({ typ: 'stycke', stil: 'utkastruta', delar: trimma(delarAv(n)) });
-            else if (tag === 'p') block.push({ typ: 'stycke', delar: trimma(delarAv(n)), ...(klass.contains('muted') || klass.contains('report-muted') ? { stil: 'dampad' } : {}) });
+            else if (tag === 'p') block.push({ typ: 'stycke', delar: trimma(delarAv(n)), ...(klass.contains('muted') ? { stil: 'dampad' } : {}) });
             else if (tag === 'div' || tag === 'section') besok(n);
             else { const d = trimma(delarAv(n)); if (d.length) block.push({ typ: 'stycke', delar: d }); }
         }
@@ -72,7 +68,6 @@ function _utkastTillBlock(html) {
     besok(rot);
     return block;
 }
-
 
 /**
  * Fyller bildblocken med diagrammens PNG (rmDiagramBild i 58-rapportmodell.js). Ett diagram som inte ritas tas bort
@@ -90,7 +85,7 @@ async function _utkastFyllBilder(block) {
 
 /** Bygger Word-utkastet som .docx: filen som Blob och dess namn. Används av knappen och av ZIP-exporten. */
 export async function byggWordUtkast() {
-    if (typeof JSZip === 'undefined') throw new Error('zip-biblioteket saknas');
+    if (typeof JSZip === 'undefined') throw new Error('en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt');
     const year = new Date().getFullYear();
     const stamp = idagDatum();
     const demo = state.isDemo;

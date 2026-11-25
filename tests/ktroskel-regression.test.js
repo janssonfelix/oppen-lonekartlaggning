@@ -119,7 +119,7 @@ describe('[R4] Löneöversynens scenariojämförelse maskerar ett rågap som spa
         w.__ritaFlik('loneoversyn');
         const o = w.__state.forecast.result;
         // Antalet som utfallet på skärmen anger (grupper över tröskeln); kortet saknas när inget går om.
-        const m = w.document.getElementById('forecast-outcome').textContent.match(/Spillover: (\d+) grupp/);
+        const m = w.document.getElementById('forecast-outcome').textContent.match(/Omkörning: (\d+) grupp/);
         const filtrerat = m ? Number(m[1]) : 0;
         expect((o.leapfrog || []).length).toBeGreaterThan(filtrerat);   // den ensamma personen går om andra grupper
         w.eval("_fcSparaScenario('A')");

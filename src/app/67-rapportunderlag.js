@@ -134,6 +134,20 @@ export function ritaRapportunderlag() {
 // Blockets element-id för hopplänkar (block-id:n innehåller ':').
 function _ruBlockId(id) { return 'ru-' + String(id).replace(/[^A-Za-z0-9_-]/g, '-'); }
 
+/** Skriver HTML och ren text till urklippet. Falskt när webbläsaren saknar stödet eller nekar. */
+async function _skrivUrklipp(html, text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
+            await navigator.clipboard.write([new ClipboardItem({
+                'text/html': new Blob([html], { type: 'text/html' }),
+                'text/plain': new Blob([text], { type: 'text/plain' }),
+            })]);
+            return true;
+        }
+    } catch (_e) { /* nekat — anroparens reserv */ }
+    return false;
+}
+
 /** Kopierar alla avsnittsblock (utan yrkes- och parblock) i en kopiering. */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function kopieraRapportAvsnitt(...a) { return medExportLage(() => _kopieraRapportAvsnittExport.apply(null, /** @type {any} */ (a))); }
@@ -142,15 +156,7 @@ async function _kopieraRapportAvsnittExport() {
     if (!avsnitt.length) return 'saknas';
     const html = avsnitt.map(b => tillWordHtml(b)).join('\n');
     const text = avsnitt.map(b => tillText(b)).join('\n\n');
-    try {
-        if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
-            await navigator.clipboard.write([new ClipboardItem({
-                'text/html': new Blob([html], { type: 'text/html' }),
-                'text/plain': new Blob([text], { type: 'text/plain' }),
-            })]);
-            return 'urklipp';
-        }
-    } catch (_e) { /* nekat — reserven nedan */ }
+    if (await _skrivUrklipp(html, text)) return 'urklipp';
     // Reserv: visa avsnitten samlade, markera dem och försök kopiera; annars Ctrl+C.
     const box = document.getElementById('ru-alla-avsnitt');
     const sel = window.getSelection();
@@ -179,16 +185,7 @@ function kopieraRapportBlock(...a) { return medExportLage(() => _kopieraRapportB
 async function _kopieraRapportBlockExport(id) {
     const b = _rapportBlockSenast.get(id);
     if (!b) return 'saknas';
-    const html = tillWordHtml(b), text = tillText(b);
-    try {
-        if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
-            await navigator.clipboard.write([new ClipboardItem({
-                'text/html': new Blob([html], { type: 'text/html' }),
-                'text/plain': new Blob([text], { type: 'text/plain' }),
-            })]);
-            return 'urklipp';
-        }
-    } catch (_e) { /* nekat — reserven nedan */ }
+    if (await _skrivUrklipp(tillWordHtml(b), tillText(b))) return 'urklipp';
     const blockEl = [...document.querySelectorAll('.ru-block[data-block-id]')].find(x => /** @type {HTMLElement} */ (x).dataset.blockId === id);
     const el = blockEl && blockEl.querySelector('.ru-innehall');
     if (!el) return 'saknas';
@@ -218,8 +215,7 @@ function _dataUrlTillBlob(dataUrl) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function kopieraRapportDiagram(...a) { return medExportLage(() => _kopieraRapportDiagramExport.apply(null, /** @type {any} */ (a))); }
 async function _kopieraRapportDiagramExport(id) {
-    const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find(g => g.id === id)
-        || (id !== 'chart-likvardighet-heatmap' ? RAPPORT_DIAGRAM.find(g => g.id === id) : null);
+    const def = _rapportDiagramLista(_rapportParLage.harPar, _rapportParLage.exkluderade).find(g => g.id === id);
     if (!def) return 'saknas';
     // Ritas alltid om: ett tidigare ritat diagram kan gälla ett annat urval än blocken.
     try { ritaFlik(def.flik); } catch (_e) { /* ritas inte — hanteras nedan */ }

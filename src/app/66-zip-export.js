@@ -11,7 +11,7 @@ import { ritaExportBesked } from './59-exportbesked.js';
 import { byggWordUtkast } from './62-word-utkast.js';
 import { diagramUrval } from './74-alla-diagram.js';
 
-// Export ZIP
+// ---- ZIP-exporten: Word-utkastet, Excel-filen med alla flikar och diagrammen som bilder ----
 
 /**
  * Diagrammen som följer med i ZIP-filen: alla som är ritade just nu och som får exporteras, i id-ordning.
@@ -52,7 +52,7 @@ async function _exportZipExport() {
         for (const knapp of document.querySelectorAll('.nav-item[data-tab]')) {
             if (/** @type {HTMLInputElement} */ (knapp).disabled || /** @type {HTMLElement} */ (knapp).hidden) continue;
             const flik = knapp.getAttribute('data-tab');
-            if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info', 'forvaltare'].includes(flik)) continue;      // som förut: inga diagram hämtas där
+            if (!flik || ['dokumentera', 'rapporttext', 'arbetet', 'info', 'forvaltare'].includes(flik)) continue;   // flikarna utan diagram
             try { ritaFlik(flik); } catch (e) { rapporteraFel(`ZIP: ${flik}`, e); }
         }
         // Jämförelsen med förra året (Spara och jämför år) har sina två hantlar när ett bokslut är inläst; panelen ritas

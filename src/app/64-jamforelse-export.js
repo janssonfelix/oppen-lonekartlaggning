@@ -15,17 +15,10 @@ import { _laggTillMetodblad, _tillampaTalformat, _visaExportvarning, SV_TALFORMA
 import { medExportLage } from './23-exportgrind.js';
 
 /**
- * Exporterar samlad benchmark-jämförelse till Excel-fil.
- *
- * Innehåller ALLA percentiler (P10/Median/P90 + bredd P90/P10) för:
- *   - Organisationen (beräknat från CSV-data)
- *   - Extern jämförelsestatistik (state.statistik) — om laddat och har percentilen
- *   - Lönepolitiskt ställningstagande (state.policy) — om laddat
- *
- * Plus diff (kr och %) mot vardera referens per percentil. Inkluderar metadata-flik
- * med profil, version, datum, n total. Hoppar över k-maskerade grupper.
- *
- * Inte beroende av vilken metric-knapp som är vald i UI:t — alla värden exporteras alltid.
+ * Jämförelsen mot jämförelsestatistiken och ställningstagandet som Excel-fil: P10, median och P90 (och kvoten
+ * P90/P10) för organisationen, jämförelsestatistiken och ställningstagandet, med skillnaden i kronor och procent mot
+ * varje referens, och ett blad med uppgifter om exporten. Grupper under minsta gruppstorlek står inte med. Alla mått
+ * följer med, oavsett vilket mått fliken visar.
  */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportJamforelseExcel(...a) { return medExportLage(() => _exportJamforelseExcelExport.apply(null, /** @type {any} */ (a))); }
@@ -42,13 +35,12 @@ function _exportJamforelseExcelExport() {
 
     const profileLabel = state.profile.benchmarkLabel;
 
-    // Hjälpare: round eller null
     const rOrNull = v => (v && isFinite(v)) ? Math.round(v) : null;
     const pctOrNull = (org, ref) => (org && ref) ? Number(((org / ref - 1) * 100).toFixed(2)) : null;
     const diffOrNull = (org, ref) => (org && ref) ? Math.round(org - ref) : null;
     const breddOrNull = (p10, p90) => (p10 && p90 && p10 > 0) ? Number((p90 / p10).toFixed(3)) : null;
 
-    // Header-rad: 30+ kolumner. Multi-line-grupperade headers via två rader.
+    // Två rubrikrader: den första grupperar kolumnerna, den andra namnger dem.
     const headerRow1 = [
         '', '', '', '',
         orgNamn(), '', '', '',
@@ -58,12 +50,12 @@ function _exportJamforelseExcelExport() {
     const headerRow2 = [
         stor(T.enhet.en), 'BAS', 'Matchning', 'N (organisationen)',
         'P10', 'Median', 'P90', 'Bredd P90/P10',
-        'P10', 'Diff P10 (kr)', 'Diff P10 (%)',
-        'Median', 'Diff Median (kr)', 'Diff Median (%)',
-        'P90', 'Diff P90 (kr)', 'Diff P90 (%)',
-        'P10', 'Diff P10 (kr)', 'Diff P10 (%)',
-        'Median', 'Diff Median (kr)', 'Diff Median (%)',
-        'P90', 'Diff P90 (kr)', 'Diff P90 (%)'
+        'P10', 'Skillnad P10 (kr)', 'Skillnad P10 (%)',
+        'Median', 'Skillnad median (kr)', 'Skillnad median (%)',
+        'P90', 'Skillnad P90 (kr)', 'Skillnad P90 (%)',
+        'P10', 'Skillnad P10 (kr)', 'Skillnad P10 (%)',
+        'Median', 'Skillnad median (kr)', 'Skillnad median (%)',
+        'P90', 'Skillnad P90 (kr)', 'Skillnad P90 (%)'
     ];
 
     // Raderna kommer ur src/lib/jamforelse.js — samma som tabellen och diagrammen.
@@ -84,17 +76,15 @@ function _exportJamforelseExcelExport() {
     const nGroups = rader.length;
     const nPersoner = rader.reduce((s, r) => s + r.n, 0);
 
-    // Bygg arket
     const aoa = [headerRow1, headerRow2, ...dataRows];
     const sheet = XLSX.utils.aoa_to_sheet(aoa);
 
-    // Slå ihop celler för grupp-headers (rad 1)
+    // Gruppernas rubriker på rad 1 spänner över sina kolumner.
     if (!sheet['!merges']) sheet['!merges'] = [];
     sheet['!merges'].push({ s: { r: 0, c: 4 },  e: { r: 0, c: 7 } });   // Organisationen (4 kolumner)
     sheet['!merges'].push({ s: { r: 0, c: 8 },  e: { r: 0, c: 16 } });  // Jämförelse (9 kolumner)
     sheet['!merges'].push({ s: { r: 0, c: 17 }, e: { r: 0, c: 25 } });  // Ställningstagande (9 kolumner)
 
-    // Kolumnbredd
     sheet['!cols'] = [
         { wch: 42 }, { wch: 6 }, { wch: 12 }, { wch: 6 },
         { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
@@ -106,15 +96,15 @@ function _exportJamforelseExcelExport() {
         { wch: 10 }, { wch: 12 }, { wch: 12 }
     ];
 
-    // Frys första 2 raderna (headers) + första kolumnen (yrke)
+    // Rubrikraderna och första kolumnen står kvar när man rullar.
     sheet['!freeze'] = { xSplit: 1, ySplit: 2 };
 
-    // Metadata-flik
+    // Bladet Metadata
     const meta = [
-        ['Öppen lönekartläggning — Samlad Jämförelse-export', ''],
+        ['Öppen lönekartläggning — jämförelsen med alla percentiler', ''],
         ['', ''],
-        ['Genererad', new Date().toISOString()],
-        ['Verktyg version', APP_VERSION],
+        ['Genererad', new Date().toLocaleString('sv-SE')],
+        ['Verktygets version', APP_VERSION],
         ['', ''],
         ['Aktiv profil', state.profile.name],
         ['Jämförelseinstitution', profileLabel],
@@ -124,22 +114,20 @@ function _exportJamforelseExcelExport() {
         [`Antal grupper utelämnade, minsta gruppstorlek (n<${kTroskel()})`, maskedGroups.length],
         ...(maskedGroups.length ? [['  - vilka', maskedGroups.join(', ')]] : []),
         ['', ''],
-        ['Jämförelsestatistik laddat', hasStat ? 'Ja' : 'Nej'],
-        ['  - innehåller P10', state.statistikHasP10 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
-        ['  - innehåller P90', state.statistikHasP90 ? 'Ja' : 'Nej (saknas i uppladdad fil)'],
+        ['Jämförelsestatistik inläst', hasStat ? 'Ja' : 'Nej'],
+        ['  - innehåller P10', state.statistikHasP10 ? 'Ja' : 'Nej (saknas i den inlästa filen)'],
+        ['  - innehåller P90', state.statistikHasP90 ? 'Ja' : 'Nej (saknas i den inlästa filen)'],
         ['Matchning', `AID + BAS: samma AID och samma BAS. Endast AID: en rad med samma AID som saknar BAS. Rader för andra ${T.niva.fl} används aldrig. – = statistik saknas.`],
         ['Referens', referensNamn() + referensKalla()],
         ['', ''],
-        ['Diff-kolumner: positiva värden = organisationen ligger över referensen.', ''],
-        ['Negativa värden = organisationen ligger under referensen.', ''],
-        ['Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.', ''],
-        [`Minsta gruppstorlek (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
+        ['Skillnadskolumnerna: ett positivt värde betyder att organisationen ligger över referensen, ett negativt att den ligger under.', ''],
+        ['En tom cell: referensvärdet saknas i den inlästa filen eller gäller inte gruppen.', ''],
+        [`Minsta gruppstorlek: grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} står inte med.`, '']
     ];
     const metaSheet = XLSX.utils.aoa_to_sheet(meta);
     metaSheet['!cols'] = [{ wch: 48 }, { wch: 32 }];
 
-    // Applicera svenska nummerformat på data-kolumnerna.
-    // Jämförelse-arket har två header-rader (group + sub) — applicera mot sub-header (rad 1).
+    // Svenska talformat efter kolumnrubrikerna, som står på rad 2.
     _tillampaTalformat(sheet, SV_TALFORMAT, 1);
     // P10 och P90 är kronor som medianen, men rubrikerna har inget nyckelord i SV_TALFORMAT (och "Bredd P90/P10"
     // är en kvot): de får medianens format här.
@@ -151,7 +139,6 @@ function _exportJamforelseExcelExport() {
         }
     });
 
-    // Bygg workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, sheet, 'Jämförelse_alla_percentiler');
     XLSX.utils.book_append_sheet(wb, metaSheet, 'Metadata');

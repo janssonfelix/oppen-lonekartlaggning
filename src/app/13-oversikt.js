@@ -276,7 +276,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
         return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ...stegLikaArbete({ regressionOk: ok, t, d }) };
     }, { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' }));
 
-    // 4. § 3:10 Likvärdigt arbete (antal kandidatpar)
+    // 4. Likvärdigt arbete (3 kap. 9 § 2) (antal kandidatpar)
     rows.push(safe(() => {
         if (!hasData) return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' };
         const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
@@ -289,7 +289,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
         return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', ...steg, detail: steg.detail + (not && steg.status !== 'inget' ? ' ' + not : '') };
     }, { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
-    // 5. § 3:11 Handlingsplan: raderna på fliken (förifyllda och egna) och statusen som fyllts i där (56-handlingsplan.js).
+    // 5. Handlingsplan (3 kap. 13 §): raderna på fliken (förifyllda och egna) och statusen som fyllts i där (56-handlingsplan.js).
     rows.push(safe(() => {
         if (!hasData) return { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' };
         const rader = typeof _handlingsplanForifyllning === 'function' ? _handlingsplanForifyllning().rows : [];
@@ -310,7 +310,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
         };
     }, { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' }));
 
-    // 6. § 3:13 Samverkan — kan inte auto-härledas. Hör till Åtgärder: samverkan och uppföljning står på Handlingsplan.
+    // 6. Samverkan (3 kap. 11 §) — kan inte auto-härledas. Hör till Åtgärder: samverkan och uppföljning står på Handlingsplan.
     rows.push({ n: 6, tab: 'handlingsplan', avsnitt: 'hp-samverkan', title: '6. Samverkan med facket', status: 'manuell', detail: 'Manuellt steg: samverka om kartläggningen, analysen och åtgärderna och dokumentera samverkan. Stöd finns i kortet Samverkan & uppföljning på Handlingsplan; protokollet för gemensam lönebedömning finns under Exportera.' });
 
     // 7. Rapporttext — kan inte auto-härledas
@@ -319,7 +319,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
     // 8. Dokumentation — kan inte auto-härledas
     rows.push({ n: 8, tab: 'dokumentera', title: '8. Dokumentation', status: 'manuell', detail: 'Manuellt steg: ladda ner Word-utkastet under Exportera, fyll i de gula fälten [HR fyller i] och spara filen som organisationens dokumentation.' });
 
-    // 9. § 3:11–13 Uppföljning. Verktyget stödjer EN kartläggning — uppföljningen
+    // 9. Uppföljning (3 kap. 13 §). Verktyget stödjer EN kartläggning — uppföljningen
     // av handlingsplanen sker i arbetsgivarens egen process, som samverkan och
     // dokumentation ovan.
     rows.push({ n: 9, tab: 'dokumentera', title: '9. Uppföljning av handlingsplanen', status: 'manuell', detail: 'Manuellt steg: följ upp planens åtgärder i organisationens egen process. Handlingsplanen exporteras under Exportera.' });

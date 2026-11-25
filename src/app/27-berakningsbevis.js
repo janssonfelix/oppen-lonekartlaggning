@@ -76,7 +76,7 @@ export function _stangBevisruta() {
 }
 
 /**
- * Bygger bevis-payload för ett § 3:10-par.
+ * Bygger bevis-payload för ett par i likvärdigt arbete.
  * @param {Object} p - par-objekt från likvardighetspar
  */
 export function _bevisForLikvardighetspar(p) {

@@ -70,7 +70,7 @@ export function byggGruppdossier(key, delat = null) {
         justerat = (perBas || []).find(p => p.bas === g.bas) || null;
     } catch (_e) { justerat = null; }
 
-    // § 3:10-paren; vymodellen väljer gruppens och utelämnar dem där den andra gruppen är under tröskeln.
+    // paren i likvärdigt arbete; vymodellen väljer gruppens och utelämnar dem där den andra gruppen är under tröskeln.
     let par = [];
     try { par = (likvardighetResultat() || {}).pairs || []; }
     catch (e) { rapporteraFel('Gruppdossier: likvärdigt arbete', e); }
@@ -207,7 +207,7 @@ function _gdRitaInnehall(d) {
            ${d.compliance ? `<p>${d.compliance.under} av ${d.compliance.n} under P10 · ${d.compliance.over} över P90.</p>` : ''}`
         : missing(`Ingen policyreferens träffar denna grupp (varken på ${T.kod.en} eller ${T.niva.en}).`);
 
-    // 5. § 3:10
+    // 5. Likvärdigt arbete
     const lvRow = p => `<li>${esc(gruppNamn({ aid: p.maAid, yrke: p.maLabel }))} — skillnad ${svPct(p.gapPct, 1)} (${kr(p.gapKr)})</li>`;
     const lvNot = d.lvUtelamnade ? `<p class="gd-note">${esc(_parUtelamnadeNot(d.lvUtelamnade))}</p>` : '';
     const lvInner = (d.lvAsSubject.length || d.lvAsComparator.length)

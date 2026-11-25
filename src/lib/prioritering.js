@@ -26,7 +26,6 @@ import { konsMedianer } from './struktur.js';
 
 // Prioriteringsmodellens tal. Alla är verktygets egna val, inte hämtade från någon extern källa.
 // Bevisrutan i appen hämtar dem genom prioKonstanter(), så förklaringarna och poängen visar samma tal.
-/** Avvikelsen i procent som ger full avvikelsepoäng (sev): över detta tas poängen upp till 100. */
 /** Standardvärdena för statusarnas trösklar (ändras i Inställningar). */
 export const PRIO_CONFIG_DEFAULTS = Object.freeze({
     atgardThreshold:    -5,   // %, gränsvärde för Åtgärd/AKUT
@@ -40,6 +39,7 @@ export const PRIO_WEIGHTS_DEFAULTS = Object.freeze({
     volym:        30,   // viktning av gruppens volym
     jamstalldhet: 20    // viktning av jämställdhet (lönegap kön)
 });
+/** Avvikelsen i procent som ger full avvikelsepoäng (sev): över detta tas poängen upp till 100. */
 export const AVVIKELSE_TAK = 30;
 /** Antalet personer i gruppen som ger full volympoäng (vol). */
 export const VOLYM_TAK = 50;
@@ -107,7 +107,7 @@ export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGran
     const rows = post._rows || [];
     if (!rows.length) return out;
 
-    // Varningen gäller skattningens säkerhet, inte läget (beslut av produktägaren 2026-10-16; tidigare ett fast 5)
+    // Varningen gäller skattningens säkerhet, inte läget (beslut av produktägaren 2026-10-16)
     if (post.kvN < kInstalld || post.maN < kInstalld) out.push({ kod: 'underlag', type: 'warn', kvN: post.kvN, maN: post.maN, k: kInstalld });
 
     if (mdePct != null && Math.abs(post.diffPct) < mdePct && post.n < 30) out.push({ kod: 'styrka', type: 'info', diffPct: post.diffPct, mdePct });
@@ -223,16 +223,16 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
         const volScore  = Math.min(VOLYM_TAK, g.rows.length) / VOLYM_TAK * 100;
         const gapScore  = gapPct !== null ? Math.min(GAP_TAK, Math.abs(gapPct)) / GAP_TAK * 100 : 0;
         const riktningsvikt = diffPct < 0 ? RIKTNING_UNDER : RIKTNING_OVER;
-        // E: Bristyrke ger en bonus-multiplikator i prioriteringen
+        // Ett bristyrke ger en bonusmultiplikator i prioriteringen
         const isBrist = bristAids && bristAids.has(g.aid);
         const bristMultiplier = isBrist ? BRIST_MULTIPLIKATOR : 1.0;
         const priorityIndex = prioIndex({
             sevScore, volScore, gapScore, riktningsvikt,
             bristMultiplier, vikter: prioWeights
         });
-        // C: Genomsnittlig revision per anställd (kr/månad) — för snabbavläsning
+        // Kostnaden per person och månad: avståndet från gruppens median upp till referensen
         const costPerPerson = diffKr < 0 ? Math.abs(diffKr) : 0;
-        // B: "Snabb vinst"-flagga — liten kostnad/person men signifikant procentuellt lyft
+        // Snabb vinst: liten kostnad per person men en tydlig avvikelse i procent
         const isQuickWin = costPerPerson > 0 && costPerPerson < SNABB_VINST_KR && Math.abs(diffPct) > SNABB_VINST_AVVIKELSE
             && g.rows.length >= SNABB_VINST_MIN_N;
 
@@ -254,8 +254,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
             sevScore, volScore, gapScore, riktningsvikt, bristMultiplier,
             priorityIndex,
             status,
-            // Behåll referens till rader för motivation-suggestion-engine.
-            // Lättviktig kostnad — rader är samma minimerade objekt som finns i state.data.
+            // Raderna för motiveringsförslagen (motiveringsgrunder); samma minimerade objekt som i state.data.
             _rows: g.rows
         });
     });

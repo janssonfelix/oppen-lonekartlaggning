@@ -132,7 +132,7 @@ function _lpBandkartaKort(vm) {
     if (!vm.modell.hasPolicy) { rensaFigur(el); el.innerHTML = ''; kort.hidden = true; return; }
     kort.hidden = false;
     const forklaring = document.getElementById('lp-bandkarta-forklaring');
-    if (forklaring) forklaring.textContent = `Grå stapel = ${referensKortnamn()}:s P10–P90. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} ${personOrd(kTroskel())}). Punkt = ${genitiv(T.enhet.bf)} median: ${adjektiv('kvinnodominerad', T.enhet)}, ${adjektiv('mansdominerad', T.enhet)} eller ${adjektiv('blandad', T.enhet)}.`;
+    if (forklaring) forklaring.textContent = `Grå stapel = P10–P90 i ${referensKortnamn()}. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} ${personOrd(kTroskel())}). Punkt = ${genitiv(T.enhet.bf)} median: ${adjektiv('kvinnodominerad', T.enhet)}, ${adjektiv('mansdominerad', T.enhet)} eller ${adjektiv('blandad', T.enhet)}.`;
     if (!vm.modell.byBas.length) { _lpIngetDiagram(el, `Ställningstagandet har inga rader för underlagets ${T.niva.fl} eller ${T.kod.fl}.`); return; }
     _lpRitaBandkarta(vm.bandkarta);
 }
@@ -318,7 +318,7 @@ function _lpFigurEfterlevnadMitt(rows) {
 export function _lpIngetDiagram(el, text) {
     rensaFigur(el);
     const p = document.createElement('p');
-    p.style.cssText = 'color:var(--text-muted);font-size:0.9rem;margin:8px 0;';
+    p.className = 'text-dampad-sm marg-8-0';
     p.textContent = text;
     el.appendChild(p);
 }

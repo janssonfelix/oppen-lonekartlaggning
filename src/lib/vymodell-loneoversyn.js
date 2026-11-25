@@ -281,7 +281,7 @@ export function lutningUrval(rader, niva) {
  * Förslagens kandidatpar (regel R2, ADR-69): bara par där båda grupperna når den inställda tröskeln `k`, också på
  * skärmen, som kandidater med den kvinnodominerade gruppen, skillnaden i kronor och storleken på paret; `not` är
  * meningen om de utelämnade.
- * @param {any[]} allaPar § 3:10-paren ur Likvärdigt arbete @param {number} k den inställda tröskeln
+ * @param {any[]} allaPar paren i likvärdigt arbete ur Likvärdigt arbete @param {number} k den inställda tröskeln
  */
 export function forslagskandidater(allaPar, k) {
     const r = parForRedovisning(allaPar, k);
@@ -320,7 +320,7 @@ export function villkorsgrupper(rader, { villkor, minN, arKvDom }) {
 }
 
 /**
- * Prövar de riktade rader som verktyget föreslog ur § 3:10-par (`kalla: 'par'`) mot den inställda tröskeln `k`
+ * Prövar de riktade rader som verktyget föreslog ur par i likvärdigt arbete (`kalla: 'par'`) mot den inställda tröskeln `k`
  * (regel R2, ADR-69). En rad vars par finns i minnet (`ursprung(rad)`: storleken på grupperna) avgörs säkert; en rad
  * utan den uppgiften står kvar bara när parlistan är fullständig, yrket har par och alla når k. Rader som användaren
  * lagt till själv står kvar. Ett sparat scenario som räknades med en rad som inte står sig tas bort.
@@ -411,10 +411,11 @@ export function vymodellTroskelmal(rader, { k, malPct, malOk = true, signifikans
 /**
  * Känsligheten (kanslighetskurva i tio steg) vid tröskeln `k`: det råa gapet är null när ett kön är under k.
  * `storsta` är det största råa gapet i belopp (minst 0,01), som staplarna mäts mot.
- * @param {any[]} rader @param {any[]} kandidater @param {any} kostnadsval @param {number} k
+ * `minN` är minsta antal personer i gruppen för riktning, som i knappen för att minska skillnaderna.
+ * @param {any[]} rader @param {any[]} kandidater @param {any} kostnadsval @param {number} k @param {number} [minN=0]
  */
-export function vymodellKanslighet(rader, kandidater, kostnadsval, k) {
-    const kurva = kanslighetskurva(rader, kandidater, kostnadsval, 10);
+export function vymodellKanslighet(rader, kandidater, kostnadsval, k, minN = 0) {
+    const kurva = kanslighetskurva(rader, kandidater, kostnadsval, 10, minN);
     if (!konFarRedovisasFor(rader, k)) kurva.forEach(c => { c.rawGap = null; });
     return { kurva, storsta: Math.max(...kurva.map(c => Math.abs(c.rawGap || 0)), 0.01) };
 }

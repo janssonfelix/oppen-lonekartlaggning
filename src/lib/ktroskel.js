@@ -146,7 +146,7 @@ export function parUtelamnadeNot(antal, k) {
 }
 
 /**
- * Delar en lista § 3:10-par i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
+ * Delar en lista par i likvärdigt arbete i de som får redovisas utanför fliken Likvärdigt arbete och antalet som
  * utelämnas. `not` är meningen om de utelämnade (tom när inga utelämnats). Ordningen bevaras och
  * objekten är desamma som i indata.
  * @param {any[]|undefined} allaPar

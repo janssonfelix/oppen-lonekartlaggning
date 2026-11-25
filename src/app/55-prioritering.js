@@ -34,12 +34,11 @@ import { _laNyckel } from './41-lika-arbete.js';
 // Samlar yrkesgrupper × BAS, beräknar avvikelse mot vald referens
 // och rangordnar efter ett sammansatt prioriteringsindex.
 /**
- * Bygger prioriteringslistan: beräknar avvikelse mot referens, kostnad för utjämning
- * (inkl. PO-påslag och beräkningsperiod), läget mot referensen (Börja här/Under referens, liten grupp/Nära referens/Över referens),
- * jämställdhetsindex, och en sammanvägd prio-poäng (avvikelse·volym·jämställdhet).
- * Driver "Prioritering"-tabben + EU-kartläggningens åtgärdslista.
- * @param {string} reference - Referens-mätsticka: 'stallningstagande'|'statistik'
- * @returns {Array<Object>} Lista av prio-items, sorterade på score desc.
+ * Bygger prioriteringslistan: avvikelsen mot referensen, kostnaden för att nå den (med PO-påslag och
+ * beräkningsperiod), läget mot referensen, skillnaden mellan könen och det sammanvägda prioriteringsindexet.
+ * Används av fliken Prioritering och av åtgärdslistan.
+ * @param {string} reference - referensen: 'stallningstagande'|'statistik'
+ * @returns {Array<Object>} posterna, högst prioriteringsindex först
  */
 export function raknaPrioritering(reference) {
     // Modellen (grupperingen, indexet, k-regeln) ligger i src/lib/prioritering.js (ADR-98).
@@ -62,15 +61,14 @@ export function raknaPrioritering(reference) {
     });
 }
 
-// ---- AI-fri "förslag till motivering"-engine ----
+// ---- Motiveringsförslag ----
 /**
- * Genererar regelbaserade förslag på testbara hypoteser/sakliga skäl för
- * en prio-rad. INGEN AI/LLM — bara deterministiska regler över datan.
- * Förslagen är frågor HR själv borde ställa, inte färdiga motiveringar.
+ * Regelbaserade förslag på hypoteser och sakliga skäl att pröva för en prioriteringspost: bara fasta regler över
+ * gruppens rader, ingen språkmodell. Förslagen är frågor att ställa, inte färdiga motiveringar.
  *
  * Reglerna och deras ordning: motiveringsgrunder i src/lib/prioritering.js.
  *
- * @param {Object} item - Prio-item med _rows.
+ * @param {Object} item - prioriteringspost med _rows
  * @returns {Array<{type:'warn'|'info'|'ok'|'flag', text:string}>}
  */
 export function byggMotiveringsforslag(item) {
@@ -171,12 +169,11 @@ function _byggPrioEtikett(item, rank, mode) {
     return isTop10 ? `#${rank} ${fullLabel}` : fullLabel;
 }
 
-// Avrunda kostnader till "snygga" referensvärden (10k, 25k, 50k, 100k, 250k, 500k, 1M, ...)
+// Storlekslegendens tre nivåer: 10, 30 och 100 % av den största kostnaden, uppåt avrundad till en jämn tiopotens.
 function _jamnaKostnadsnivaer(maxCost) {
     if (!maxCost || maxCost <= 0) return [10000, 50000, 100000];
     const log10 = Math.floor(Math.log10(maxCost));
     const base  = Math.pow(10, log10);
-    // Tre nivåer: 10%, 30%, 100% av size cap (rough)
     const cap = base * Math.ceil(maxCost / base);
     return [Math.round(cap * 0.1), Math.round(cap * 0.3), Math.round(cap)];
 }
@@ -264,9 +261,9 @@ export function ritaPrioritering() {
             paretoSummary.innerHTML = `
                 <div class="farg-primary fw-700 marg-b-4">Total: ${_formateraKostnad(totalParetoCost)}</div>
                 <div class="text-dampad-xs marg-b-6">${state.costSettings.months} månader × PO-påslag ${svPoPct(state.costSettings.poPct)}</div>
-                <div>Topp <strong>${n50}</strong> grupper = 50%</div>
-                <div>Topp <strong>${n80}</strong> grupper = 80%</div>
-                <div class="finstilt">Alla under-betalda grupper sammanställda. Fokus på topp 80%-gränsen ger maximal kostnadseffekt.</div>
+                <div>De <strong>${n50}</strong> första grupperna står för 50 %</div>
+                <div>De <strong>${n80}</strong> första grupperna står för 80 %</div>
+                <div class="finstilt">Alla grupper under referensen. De grupper som tillsammans står för 80 % av kostnaden är där en åtgärd gör mest.</div>
             `;
         }
     } else if (paretoEl) {
@@ -289,7 +286,7 @@ export function ritaPrioritering() {
     if (s2) s2.textContent = _formateraKostnad(levels[1]);
     if (s3) s3.textContent = _formateraKostnad(levels[2]) + '+';
 
-    // Audit
+    // Metodikrutan: grupperna som inte kom med
     const baseP = byggGrundurval();
     // Räkna grupper utan referens
     const dForCount = hamtaData();
@@ -321,14 +318,14 @@ export function ritaPrioritering() {
         ],
         formler: [
             ['Avvikelse %', '<code>(organisationens median / referensens median) − 1</code> i %'],
-            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPoPct(state.costSettings.poPct)}/100) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
-            ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${state.prioWeights.avvikelse}% + volym·${state.prioWeights.volym}% + jämställdhet·${state.prioWeights.jamstalldhet}%)</code>, skala 0-100`],
-            ['Riktningsvikt', `${prioKonstanter().RIKTNING_UNDER.toFixed(1)} om under referens, ${prioKonstanter().RIKTNING_OVER.toFixed(1)} om över (under-betalning vägs tyngre)`],
-            ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: under ${state.prioConfig.atgardThreshold} % och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: under ${state.prioConfig.atgardThreshold} % och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: under ${state.prioConfig.bevakaThreshold} % <br>• Över referens: över +${state.prioConfig.analyseraThreshold} % <br>• Nära referens: däremellan`]
+            ['Kostnad att nå referensen', `<code>|avvikelse kr/mån| × ${state.costSettings.months} mån × (1 + ${svPoPct(state.costSettings.poPct)}) × antal personer</code> (endast om under referens, inkl. PO-påslag)`],
+            ['Prioriteringsindex', `<code>riktningsvikt × (avvikelse·${svPoPct(state.prioWeights.avvikelse)} + volym·${svPoPct(state.prioWeights.volym)} + jämställdhet·${svPoPct(state.prioWeights.jamstalldhet)})</code>, skala 0–100`],
+            ['Riktningsvikt', `${svTal(prioKonstanter().RIKTNING_UNDER, 1)} om under referens, ${svTal(prioKonstanter().RIKTNING_OVER, 1)} om över (en grupp under referensen vägs tyngre)`],
+            ['Läge mot referensen', `Läget sätts efter avvikelsen mot referensen: <br>• Börja här: mer än ${_prioGrans(state.prioConfig.atgardThreshold)} under och minst ${state.prioConfig.akutMinN} personer <br>• Under referens, liten grupp: mer än ${_prioGrans(state.prioConfig.atgardThreshold)} under och färre än ${state.prioConfig.akutMinN} personer <br>• Nära referens, under: mer än ${_prioGrans(state.prioConfig.bevakaThreshold)} under <br>• Över referens: mer än ${_prioGrans(state.prioConfig.analyseraThreshold)} över <br>• Nära referens: däremellan`]
         ],
         notes: [
             `Aktuell referens: <strong>${ref === 'stallningstagande' ? esc(referensNamn()) + ' (per BAS)' : 'jämförelsestatistiken (per AID)'}</strong>`,
-            ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Börja här: −5 % och minst 10 personer, Nära referens, under: −2 %, Över referens: +5 %)`] : []),
+            ...(JSON.stringify(state.prioConfig) !== JSON.stringify(PRIO_CONFIG_DEFAULTS) ? [`<strong>${ikon('kugghjul')} Anpassad konfiguration aktiv</strong> – tröskelvärdena har justerats från standardvärdena (Börja här: mer än ${_prioGrans(PRIO_CONFIG_DEFAULTS.atgardThreshold)} under och minst ${PRIO_CONFIG_DEFAULTS.akutMinN} personer, Nära referens, under: mer än ${_prioGrans(PRIO_CONFIG_DEFAULTS.bevakaThreshold)} under, Över referens: mer än ${_prioGrans(PRIO_CONFIG_DEFAULTS.analyseraThreshold)} över)`] : []),
             'Tabellen visar de 30 högst prioriterade grupperna',
             'Bubblornas storlek visar kostnaden för perioden, den vågräta axeln avvikelsen och den lodräta antalet personer (logaritmisk skala)'
         ]
@@ -355,15 +352,15 @@ export function ritaPrioritering() {
         const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : '–';
         const quickwinBadge = i.isQuickWin ? ' <span title="Snabb vinst" class="hjalpmarke hjalp-markor">' + ikon('blixt', 14) + '</span>' : '';
         const bristBadge    = i.isBrist    ? ' <span title="Bristyrke" class="hjalpmarke hjalp-markor">' + ikon('statusVarning', 14) + '</span>' : '';
-        // Power-varning per grupp: visa ⚠️ när gruppens MDE > observerad avvikelse
-        // eller när någon köns-cell har < 5 personer.
+        // Varning för låg statistisk styrka: gruppens minsta detekterbara skillnad är större än avvikelsen, eller ett
+        // kön har färre än 5 personer.
         const groupMDE = raknaGruppMDE(i.kvN, i.maN);
         const lowPower = groupMDE && (groupMDE.tooSmall || groupMDE.mdePct > Math.abs(i.diffPct));
         const powerBadge = lowPower
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
         const rowKey = `${i.aid}|${i.bas}`;
-        // Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
+        // Knappen Motiveringsförslag: förslagen räknas när raden fälls ut, inte i förväg
         const suggestionBtn = i._rows && i._rows.length
             ? `<button class="btn-suggest" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">Motiveringsförslag</button>`
             : '';
@@ -399,7 +396,7 @@ export function ritaPrioritering() {
                 <button class="btn-evidence" data-prio-row="1" type="button" title="Visa beräkningen bakom prioritetsindex" aria-label="Visa beräkningen för ${esc(i.yrke)}">${ikon('sok')}</button>${merMeny}</div>
             </td>
         `;
-        // Cache item-referensen på TR så suggestion-handler kan plocka upp den
+        // Posten på raden, för beviset och motiveringsförslagen
         tr._prioItem = i;
         tbody.appendChild(tr);
     });
@@ -407,7 +404,7 @@ export function ritaPrioritering() {
     // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset).
     flerKolumner('prio-table', PRIO_DOLDA_KOLUMNER, 'prio');
 
-    // Bevis-popup för prio-rader
+    // Bevisrutan för raderna
     tbody.querySelectorAll('.btn-evidence[data-prio-row]').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -418,7 +415,7 @@ export function ritaPrioritering() {
         });
     });
 
-    // Suggestion-toggle-handler: expanderar en sub-rad under den klickade
+    // Motiveringsförslagen fälls ut på en egen rad under den klickade
     tbody.querySelectorAll('.btn-suggest').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -495,7 +492,7 @@ function _lasPrioVikter() {
     };
     const sumEl = document.getElementById('prio-w-sum');
     const sum = state.prioWeights.avvikelse + state.prioWeights.volym + state.prioWeights.jamstalldhet;
-    if (sumEl) sumEl.textContent = `Summa: ${sum} (normaliseras till 100% automatiskt)`;
+    if (sumEl) sumEl.textContent = `Summa: ${svTal(sum, 0)} (räknas om till 100 %)`;
 }
 
 // Kostnadsberäknings-inputs (månader + PO-påslag)
@@ -526,17 +523,16 @@ function _kostnadAndrad() {
     if (aktiv && aktiv !== 'prioritering' && typeof ritaFlik === 'function') ritaFlik(aktiv);
 }
 
-// ---- Print-to-PDF: komplett rapport ----
-// Använder webbläsarens inbyggda "Skriv ut → Spara som PDF". Inga externa beroenden.
-
 // ---- Figurer för diagramkärnan (ADR-39, steg 3) ----
 // Kostnadsfördelningen (Pareto) som liggande, sorterade staplar på EN axel — inte staplar och en linje mot var sin
 // axel, där höjd och läge läses mot olika skalor. Den
 // kumulativa andelen står som text vid varje stapel i stället för som en linje mot en andra axel, och grupperna som
 // tillsammans når 80 % av kostnaden är en egen serie.
 const PRIO_KOSTNAD_MAX = 15;
-/** Meningen under kostnadsdiagrammet: vad de grupper som inte ritas står för. Tom när alla ritas. */
-/** @param {ReturnType<typeof kostnadskurva>} kurva */
+/**
+ * Meningen under kostnadsdiagrammet: vad de grupper som inte ritas står för. Tom när alla ritas.
+ * @param {ReturnType<typeof kostnadskurva>} kurva
+ */
 function _prioKostnadNot({ ovriga, ovrigaSumma: summa, total: totalt }) {
     if (!ovriga || !(totalt > 0)) return '';
     return `Diagrammet visar de ${PRIO_KOSTNAD_MAX} grupper som kostar mest. Övriga ${ovriga} grupper står tillsammans för ${talformat(summa, 'kr')} per ${periodOrd(state.costSettings)} (${svPct(100 * summa / totalt, 0)} av kostnaden) och finns i tabellen nedan.`;
@@ -648,7 +644,7 @@ export function uppstartPrioritering() {
     document.getElementById('prio-label-mode')?.addEventListener('change', ritaPrioritering);
     document.getElementById('prio-filter-quickwin')?.addEventListener('change', ritaPrioritering);
     document.getElementById('prio-filter-brist')?.addEventListener('change', ritaPrioritering);
-    // F: Stegvis konsekvensanalys — visar effekt om vi gör topp N
+    // Stegvis konsekvensanalys: kostnaden om de N första grupperna åtgärdas
     document.getElementById('btn-prio-consequence')?.addEventListener('click', () => {
         const panel = document.getElementById('prio-consequence-panel');
         if (!panel) return;
@@ -666,7 +662,7 @@ export function uppstartPrioritering() {
             if (checkpoints.includes(idx + 1)) {
                 const pctOfTotal = totalCost > 0 ? svTal(cumCost / totalCost * 100, 0) : '0';
                 const personerLyfta = items.slice(0, idx + 1).reduce((s, x) => s + x.n, 0);
-                rows += `<tr><td>Topp <strong>${idx + 1}</strong></td><td class="t-hoger">${fmt.format(personerLyfta)} pers</td><td class="t-hoger">${_formateraKostnad(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
+                rows += `<tr><td>De <strong>${idx + 1}</strong> första</td><td class="t-hoger">${fmt.format(personerLyfta)}</td><td class="t-hoger">${_formateraKostnad(cumCost)}</td><td class="t-hoger">${pctOfTotal} %</td></tr>`;
             }
         });
         panel.innerHTML = `

@@ -36,7 +36,7 @@ import { idagDatum } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _kUndantagFor, kIndividRad, kStampelFor } from './06-k-troskel.js';
 import { APP_VERSION } from './08-version.js';
-import { _rfExportFigur, _rfHarRitat, figurTillBild } from './10-diagramritare.js';
+import { _rfExportFigur, figurTillBild } from './10-diagramritare.js';
 import { _kopieraMatrisTillUrklipp, state } from './12-tillstand.js';
 import { _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
 import { exportSakra, medExportLage } from './23-exportgrind.js';
@@ -99,12 +99,6 @@ function diagramexportFilnamn(gd, ext, datum = new Date()) {
 function _diagramexportCell(v) {
     if (typeof v !== 'number' || Number.isInteger(v) || !isFinite(v)) return v;
     return String(Math.round(v * 100) / 100).replace('.', ',');
-}
-
-// Har ritaFigur ritat i behållaren? Ja om den bär en figur, eller har burit en (felläge eller rensad: menyn står kvar
-// utan figur, och svarar då att det inte finns något att exportera).
-function _diagramexportKarna(gd) {
-    return !!gd && (!!gd._figur || _rfHarRitat(gd));
 }
 
 /** Behållaren som gäller nu: en omritning i exportgrinden kan ha ersatt den med en ny med samma id. */
@@ -240,10 +234,10 @@ async function __diagramexportBildExport(gd, val, underlag) {
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exporteraDiagram(...a) { return medExportLage(() => _exporteraDiagramExport.apply(null, /** @type {any} */ (a))); }
 function _exporteraDiagramExport(gd, val) {
-    // Underlaget bestäms här, en gång (ett anrop av vyns exportMedSma).
-    const underlag = _diagramexportKarna(gd) ? _diagramexportUnderlag(gd) : undefined;
+    // Underlaget bestäms här, en gång (ett anrop av vyns exportMedSma). Menyn finns bara på diagram som ritaFigur
+    // ritat; utan något att exportera (felläge, rensat): ingen fil, ingenting på urklipp.
+    const underlag = _diagramexportUnderlag(gd);
     gd = _diagramexportAktuell(gd);
-    // Ett diagram från diagramkärnan utan något att exportera: ingen fil, ingenting på urklipp.
     if (underlag === null) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));
     // Räknat för ett underlag som inte går att rita (inga personer, eller vyns beräkning gav ingen figur): inget att exportera.
     if (underlag && underlag.underlag && underlag.underlag.tom) return Promise.reject(new Error('Det finns inget att exportera i diagrammet.'));

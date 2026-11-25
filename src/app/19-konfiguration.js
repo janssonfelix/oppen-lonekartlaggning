@@ -207,7 +207,7 @@ function _tillampaKonfiguration(cfg) {
             throw new Error('bristAids får endast innehålla strängar eller nummer.');
         tmp.bristAids = new Set(cfg.bristAids.map(String));
     }
-    // likvardighet: validera fält (§ 3:10-inställningar)
+    // likvardighet: validera fält (likvärdighetsanalysens inställningar)
     if (cfg.likvardighet != null) {
         if (typeof cfg.likvardighet !== 'object') throw new Error('likvardighet måste vara ett objekt.');
         const lv = {};
@@ -286,7 +286,7 @@ function _tillampaKonfiguration(cfg) {
                 targetLevel: t.malniva === 'p25' ? 'p25' : 'median',
                 pool: ['equity', 'marknad', 'befordran', 'övrigt'].includes(t.pott) ? t.pott : 'övrigt',
                 // Valfritt (en fil utan fältet har bara egna rader): en rad verktyget själv
-                // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
+                // föreslog ur par i likvärdigt arbete bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
                 // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
                 // med noten om gruppen är under tröskeln (ADR-38, regel R2).
                 ...(t.kalla === 'par' ? { kalla: 'par' } : {})
