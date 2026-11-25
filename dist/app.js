@@ -20154,9 +20154,6 @@ function uppstartReglerOchPraxis() {
 }
 
 // src/app/80-gruppdossier.js
-function _gdBootstrapGapKI(kvLons, maLons, B) {
-  return medianKvotKIGiltiga(kvLons, maLons, { B });
-}
 function gruppdossierKandidater() {
   return gruppdossierGrupper(hamtaData(), kTroskel());
 }
