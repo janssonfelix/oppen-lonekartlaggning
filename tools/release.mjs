@@ -33,7 +33,7 @@ const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 export const KODVAGAR = ['src', 'vendor', 'tools/bundle.mjs', 'tools/build-app.mjs', 'tools/gen-version.mjs', 'tools/lib/minify-css.mjs', 'tools/lib/minify-html.mjs'];
 const PUNKT = 'oppna-punkter.md punkt 17b';
 // Kontrollsummans kommandon i dist/RELEASE.txt (tools/bundle.mjs skriver dem) och i SECURITY.md och körguiden §0:
-// alternativet när cosign inte kan köras (beslut 11b). Skyddar mot en skadad eller förväxlad fil, inte en utbytt.
+// alternativet när cosign inte kan köras (SECURITY.md). Skyddar mot en skadad eller förväxlad fil, inte en utbytt.
 export const VERIFIERING = Object.freeze({
     powershell: 'Get-FileHash .\\oppen-lonekartlaggning.html -Algorithm SHA256',
     linux: 'sha256sum oppen-lonekartlaggning.html',

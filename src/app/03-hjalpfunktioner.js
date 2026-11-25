@@ -11,7 +11,7 @@ import { klickaFlik, flikMal } from './31-navigering.js';
 import { _kolumnval } from './32-filinlasning.js';
 import { sidindexGaTill } from './89-sidindex.js';
 
-/** Ansvarsförbehållet (beslut 8c): samma lydelse i Om verktyget, Word/PDF, Excel och rapportunderlaget. tests/juridiksprak.test.js vaktar. */
+/** Ansvarsförbehållet (ADR-106): samma lydelse i Om verktyget, Word/PDF, Excel och rapportunderlaget. tests/juridiksprak.test.js vaktar. */
 export const ANSVARSFORBEHALL = 'Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.';
 
 export function visaLaddning() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }

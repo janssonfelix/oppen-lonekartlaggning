@@ -174,7 +174,7 @@ export function tillDirektivtecken(gapPct) {
 }
 
 /**
- * Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a): verktyget räknar på fast heltidsmånadslön, direktivets
+ * Reservationen om lönebegreppet vid EU-rapportmåtten (ADR-107): verktyget räknar på fast heltidsmånadslön, direktivets
  * lönebegrepp omfattar mer. Står vid måtten i fliken Lönestruktur, i EU-lönerapportens Excel, i rapportens avsnitt om
  * lönetransparens och i rapportunderlaget. Inga artikelnummer (ADR-16).
  */

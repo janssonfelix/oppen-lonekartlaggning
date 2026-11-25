@@ -22,7 +22,7 @@ import { _RG_STEG_YRKE, forklaringsmodell, harAlder } from './50-regressionsmode
 import { exportHandlingsplan } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 
-// Reservationen om lönebegreppet vid EU-rapportmåtten (beslut 7a; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
+// Reservationen om lönebegreppet vid EU-rapportmåtten (ADR-107; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
 // bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
 export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 
@@ -103,7 +103,7 @@ export function _excelBladnamn(namn, reserv) {
 export function _laggTillMetodblad(wb, { undantag = '', extra = [] } = {}) {
     if (typeof XLSX === 'undefined' || !XLSX.utils || !wb) return;
     const rows = [['Metod & parametrar — reproducerbarhet och tolkning'], [''], ...(_metodbilaga()), ...extra];
-    // Ansvarsförbehållet (beslut 8c) står under Rättslig ram i varje Excel-export.
+    // Ansvarsförbehållet (ADR-106) står under Rättslig ram i varje Excel-export.
     const ram = rows.findIndex(rad => rad[0] === 'Rättslig ram');
     rows.splice(ram < 0 ? rows.length : ram + 1, 0, ['Ansvar', ANSVARSFORBEHALL]);
     if (undantag) {

@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 
-// A5 (beslut 4a): Prioriteringen mäter löneläget mot er referens och har egna ord, så att de inte förväxlas med
+// ADR-62: Prioriteringen mäter löneläget mot er referens och har egna ord, så att de inte förväxlas med
 // uppmärksamhetstrappan för skillnaden mellan kvinnor och män (Värt att granska, Följ upp, Balanserat).
 describe('Prioritering: egna ord och rätt rubrik', () => {
     const TRAPPAN = /Värt att granska|Följ upp|Balanserat/;

@@ -117,7 +117,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['BAS-nivå', /BAS-nivå(?!\s+[A-ZÅÄÖ]\b)/],
         ['strukturdata', /[Ss]trukturdata|[Ss]trukturfil/],
         ['osakliga gap', /osakliga gap/],
-        // Juridiska formuleringar hålls övergripande (beslut 8c, ingen juristgranskning före lansering): verktyget påstår
+        // Juridiska formuleringar hålls övergripande (ADR-106, ingen juristgranskning före lansering): verktyget påstår
         // inte vad direktivet kräver i detalj. "ingen anmälningsplikt" får stå; "anmälningspliktig" inte.
         ['anmälningspliktig', /anmälningspliktig/iu],
         ['utredningsgräns', /utrednings(?:krav|gräns|tröskel|steg)|obligatorisk utredning|(?:bör|ska|måste) utredas/iu],

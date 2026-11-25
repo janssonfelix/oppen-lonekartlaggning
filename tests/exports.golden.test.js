@@ -338,7 +338,7 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
         expect(metod).toMatch(/Löneskillnadens tecken \| Verktyget räknar/);
         expect(text(eu)).not.toMatch(/\| -8(\.\d+)? \||\| 92(\.\d+)? \|/);
     });
-    it('reservationen om lönebegreppet står överst i EU-lönerapporten och under tabellen i bladet EU-lönekartläggning (beslut 7a)', () => {
+    it('reservationen om lönebegreppet står överst i EU-lönerapporten och under tabellen i bladet EU-lönekartläggning (ADR-107)', () => {
         const mening = 'Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.';
         expect(blad(eu, 'Sammanfattning')[1]).toEqual(['Lönebegrepp', mening]);
         const matris = blad(alla, 'EU-lönekartläggning');
