@@ -408,7 +408,7 @@ och §11.
 **ADR-71 — Trappan i livscykeln, protokollet och Prioriteringen; ingen färg på storleken ensam.** Livscykelns nyckeltal
 och protokollets BAS-intervall följer trappan, och en skillnad mellan kvinnors och mäns lön färgas inte på storleken
 ensam. *Avvisat:* en fast gräns för tabellcellernas färg; att pröva *Skillnad kön* i Prioriteringen (två utslag för
-samma fråga); att välja på det råa p-värdet. *Gäller i dag:* `regressionsmodellen.md` §7 och punkt 9e i `oppna-punkter.md`.
+samma fråga); att välja på det råa p-värdet. *Gäller i dag:* `regressionsmodellen.md` §7.
 
 **ADR-72 — Definitionerna av kvinnodominerat heter efter lydelsen.** Valen heter *Mer än X %* och *X % eller mer*;
 nycklarna `'do'` och `'scb'` står kvar för sparade filer. Etiketten SCB hade inget stöd. *Avvisat:* att döpa valen efter
@@ -426,7 +426,8 @@ huvudområde, som handboken för kodning, i stället för *yrke* och *yrkesgrupp
 BAS-intervall. Orden står som variabler med ordformer och genus i `src/lib/termer.js`, så att en annan uppsättning byts
 på ett ställe, och vakten i `tests/termer.test.js` håller dem borta från resten av gränssnittet. *Avvisat:* påhittade
 ord (grupp, AID-grupp), som inte blev tydligare; att behålla *yrke*, som handboken inte använder om
-etiketterna. *Gäller i dag:* `src/lib/termer.js` och `bygge-och-test.md` §13.
+etiketterna; att låta organisationspaketet bära termerna, så en annan uppsättning (till exempel för en annan bransch)
+kräver ett eget bygge. *Gäller i dag:* `src/lib/termer.js` och `bygge-och-test.md` §13.
 
 **ADR-75 — Kort ordform i kolumnrubriker, och Word-utkastets täta läge.** En kolumnrubrik där hela termen inte ryms
 får begreppets korta form (*AID* för AID-etikett), på skärmen och i rapporten, medan exporternas etiketter behåller hela

@@ -58,7 +58,9 @@ varje cell i en CSV-fil och i urklippet genom `neutraliseraCell`:
 
 **CSV-filen** (`tillCsv`, `_laddaNedCSV`) har semikolon som avgränsare, radsluten CRLF, en inledande UTF-8 BOM och
 citattecken kring en cell som innehåller avgränsaren, ett citattecken eller en radbrytning. **Urklippet** (`tillTsv`) är
-tabbavgränsad text med samma formelskydd. Excel-filerna skriver text som textceller och berörs inte av skyddet.
+tabbavgränsad text med samma formelskydd. Excel-filerna skriver text som textceller och berörs inte av skyddet. De har inga cellstilar, eftersom den inbäddade
+SheetJS community inte skriver dem: en etikett som är bredare än kolumnens tak (70 tecken) radbryts inte, utan syns hel
+i cellen eller formelfältet.
 
 ## 3. Word-utkastet
 
