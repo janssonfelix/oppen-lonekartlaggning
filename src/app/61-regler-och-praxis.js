@@ -90,7 +90,7 @@ export function bes8Uppdatera() {
 // eller när fliken inte kan räkna, står radens fasta text kvar.
 const BES8_STOD = {
     likvardighet(d) {
-        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
+        const lv = likvardighetResultat();
         if (!lv || !Array.isArray(lv.pairs) || !d.length) return null;
         const { totalt, sakra } = lvParAntal(lv);
         return totalt ? `Likvärdigt arbete har ${svTal(totalt, 0)} par att titta närmare på, ${svTal(sakra, 0)} med säker skillnad.`

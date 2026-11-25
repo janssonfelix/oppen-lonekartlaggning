@@ -188,13 +188,13 @@ export function kStampelFor(undantag) { return kStampelForVid(undantag, kInstall
 export function _kUndantagFor(el, medSma) {
     if (!el || typeof el.closest !== 'function') return '';
     // En kopia i Alla diagram (74-alla-diagram.js) bär samma figur som källan, och stämpeln följer källans flik.
-    const kalla = typeof diagramKopiaKalla === 'function' ? diagramKopiaKalla(el) : null;
+    const kalla = diagramKopiaKalla(el);
     const arFigur = !!el._figur;
     return kUndantag({
         iLikvardighet: !!(el.closest('#view-likvardighet') || (kalla && kalla.closest('#view-likvardighet'))),
         arFigur,
         figurMedSma: arFigur && !!(typeof medSma === 'boolean' ? medSma : _rfExportFigur(el)?.visaSma),
-        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && typeof utforskaSmaIExport === 'function' && !!utforskaSmaIExport(),
+        utforskaMedSma: !arFigur && (el.id === 'explore-table' || el.id === 'chart-explore') && !!utforskaSmaIExport(),
     });
 }
 
@@ -299,11 +299,11 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     // exportens golv räknas när en export läser det (bootstrapKIGallande, styrkaGallande). paren i likvärdigt arbete läser ingen tröskel och står kvar (antalet små grupper i deras diagnostik
     // räknas när resultatet läses, likvardighetResultat). Det som är ritat bär den gamla tröskeln och ritas om.
     const golvAndrat = statGolv() !== golvFore;
-    if (golvAndrat && typeof tomStatistikcacher === 'function') tomStatistikcacher({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
-    else if (typeof ritGenerationNy === 'function') ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
+    if (golvAndrat) tomStatistikcacher({ recompute: false, likvardighet: false });   // räknas om i bakgrunden nedan
+    else ritGenerationNy();   // allt som är ritat hittills bär den gamla tröskeln
     // Löneöversynens förslag ur par i likvärdigt arbete som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
-    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
+    _fcRensaParMal();
     _synkaKTroskel();
     // Från gränssnittet ritas allt om stegvis, med förlopp (stegvis); program och tester får det direkt.
     /** @type {Promise<void>|null} */
@@ -332,11 +332,11 @@ function _skattningarIBakgrunden() {
             if (state.data.length) {
                 try { raknaBootstrapKI(); } catch (_e) { state.bootstrapCI = null; }
                 try { state.powerAnalysis = raknaStyrkeanalys(); } catch (_e) { state.powerAnalysis = null; }
-                if (typeof ritaNyckeltal === 'function') ritaNyckeltal();
-                if (typeof ritaUnderlagetsKvalitet === 'function') ritaUnderlagetsKvalitet();
+                ritaNyckeltal();
+                ritaUnderlagetsKvalitet();
                 const oppen = document.querySelector('.nav-item.active[data-tab]');
                 const flik = oppen ? oppen.getAttribute('data-tab') : null;
-                if ((flik === 'matrix' || flik === 'prioritering') && typeof ritaFlik === 'function') ritaFlik(flik);
+                if (flik === 'matrix' || flik === 'prioritering') ritaFlik(flik);
             }
         } catch (e) { rapporteraFel('skattningar i bakgrunden', e); }
         finally {
@@ -363,50 +363,47 @@ export function _omritningForsok(namn, fn) { try { fn(); } catch (e) { rapporter
 
 // Stegen i omritningen efter ändrad tröskel, i ordning: [namn, fliken steget ritar (null: ingen enskild flik), funktion].
 export function _omritningssteg() {
-    if (!state.data.length || typeof ritaFlik !== 'function') return [];
+    if (!state.data.length) return [];
     const steg = [];
     // Först töms de flikar som inte syns: de bär tal från den gamla tröskeln tills de ritas om (exportgrinden).
     steg.push(['flikar som inte syns', null, () => {
         const oppen = document.querySelector('.nav-item.active[data-tab]');
-        if (typeof tomFlikarUtom === 'function') tomFlikarUtom(new Set(['dashboard', ...(oppen ? [oppen.getAttribute('data-tab')] : [])]));
+        tomFlikarUtom(new Set(['dashboard', ...(oppen ? [oppen.getAttribute('data-tab')] : [])]));
     }]);
     // Översikt och Filer och kvalitet: nyckeltal, kompliansöversikt, underlagets kvalitet, processöversikten, Att göra,
     // inläsningsrapporten, extremvärdeslistan och A/B-jämförelsen. Var uppstår löneskillnaden ritas med Lönestruktur.
-    steg.push(['nyckeltal', 'dashboard', () => { if (typeof ritaNyckeltal === 'function') ritaNyckeltal(); }]);
-    steg.push(['kompliansöversikt', 'dashboard', () => { if (typeof ritaKravstatus === 'function') ritaKravstatus(); }]);
+    steg.push(['nyckeltal', 'dashboard', () => { ritaNyckeltal(); }]);
+    steg.push(['kompliansöversikt', 'dashboard', () => { ritaKravstatus(); }]);
     // Underlagets kvalitet, Att göra och processöversikten läser samma regression: den körs en gång i omritningen och
     // skickas vidare, som punkterna nedan (ADR-17: ett värde inom omritningen, ingen cache). Kastar den ritar varje del
     // med en egen körning. Mellan stegen kan en tidtagare byta underlaget (en fil som läses klart, rensningen vid
     // inaktivitet) utan att gå genom händelserna som rutan stoppar; därför skickas regressionen bara vidare så länge det
     // den läser (underlaget, k och förklaringsmodellen) är oförändrat, annars räknar steget en egen.
     // Detsamma gäller punkterna.
-    const indata = () => ({ data: state.data, rest: `${kInstalld()}|${JSON.stringify(typeof forklaringsmodell === 'function' ? forklaringsmodell() : null)}` });
+    const indata = () => ({ data: state.data, rest: `${kInstalld()}|${JSON.stringify(forklaringsmodell())}` });
     const oforandrat = f => { const nu = indata(); return !!f && f.data === nu.data && f.rest === nu.rest; };
     /** @type {any} */ let reg;
     /** @type {any} */ let regFangst = null;
     steg.push(['underlagets kvalitet', 'dashboard', () => {
-        if (typeof ritaUnderlagetsKvalitet !== 'function') return;
         regFangst = indata();
-        reg = typeof korOLSRegression === 'function' ? korOLSRegression() : undefined;
+        reg = korOLSRegression();
         ritaUnderlagetsKvalitet({ reg });
     }]);
     // Processöversikten läser samma punkter som Att göra: listan byggs en gång och skickas vidare (ingen cache).
     /** @type {any[]|undefined} */ let punkter;
     /** @type {any} */ let punktFangst = null;
     steg.push(['Att göra', 'dashboard', () => {
-        if (typeof ritaAtgardslista !== 'function') return;
         punktFangst = indata();
         punkter = ritaAtgardslista({ reg: oforandrat(regFangst) ? reg : undefined });
     }]);
     steg.push(['processöversikten', 'dashboard', () => {
-        if (typeof ritaKartlaggningensSteg !== 'function') return;
         ritaKartlaggningensSteg({ punkter: oforandrat(punktFangst) ? punkter : undefined, reg: oforandrat(regFangst) ? reg : undefined });
     }]);
-    steg.push(['extremvärden', 'dashboard', () => { if (typeof ritaExtremvarden === 'function') ritaExtremvarden(); }]);
-    steg.push(['inläsningsrapporten', 'dashboard', () => { if (typeof ritaValideringsrapport === 'function') ritaValideringsrapport(); }]);
+    steg.push(['extremvärden', 'dashboard', () => { ritaExtremvarden(); }]);
+    steg.push(['inläsningsrapporten', 'dashboard', () => { ritaValideringsrapport(); }]);
     steg.push(['A/B-jämförelsen', 'dashboard', () => {
         const ab = document.getElementById('snapshot-comparison');
-        if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
+        if (ab && ab.style.display !== 'none') ritaOgonblicksbildJamforelse();
     }]);
     // Bara den öppna fliken. De övriga är inaktuella tills de öppnas eller en export behöver dem (exportgrinden).
     // Översikt är redan ritad av stegen ovan (ritaFlik('dashboard') gör inget annat).
@@ -415,7 +412,7 @@ export function _omritningssteg() {
     // En öppen gruppdossier byggdes med den gamla tröskeln.
     steg.push(['gruppdossiern', null, () => {
         const dossier = document.getElementById('dossier-body');
-        if (dossier && dossier.innerHTML.trim() && typeof ritaGruppdossier === 'function') ritaGruppdossier();
+        if (dossier && dossier.innerHTML.trim()) ritaGruppdossier();
     }]);
     return steg;
 }
@@ -469,7 +466,7 @@ export function uppstartKTroskel() {
     document.getElementById('k-troskel')?.addEventListener('change', e => {
         const r = sattKTroskel(/** @type {HTMLInputElement} */ (e.target).value, { stegvis: true });
         _kVisaFel(r.ok || r.nekad ? '' : r.fel);
-        const sag = () => { if (r.ok && typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`Minsta gruppstorlek är nu ${r.varde}.`); };
+        const sag = () => { if (r.ok) meddelaSkarmlasare(`Minsta gruppstorlek är nu ${r.varde}.`); };
         if (r.klar) r.klar.then(sag); else sag();
     });
     document.getElementById('btn-k-aterstall')?.addEventListener('click', () => {
@@ -479,6 +476,6 @@ export function uppstartKTroskel() {
     // Länken i varningen: öppna inställningarna med fokus i fältet.
     document.getElementById('k-troskel-varning-lank')?.addEventListener('click', e => {
         e.preventDefault();
-        if (typeof oppnaInstallningar === 'function') oppnaInstallningar({ fokus: 'k-troskel' });
+        oppnaInstallningar({ fokus: 'k-troskel' });
     });
 }

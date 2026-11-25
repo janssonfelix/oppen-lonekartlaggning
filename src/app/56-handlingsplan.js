@@ -103,7 +103,7 @@ function _hpTaBortEgen(nyckel) {
     if (!_hpArEgen(nyckel) || !state.handlingsplan || !state.handlingsplan[nyckel]) return;
     delete state.handlingsplan[nyckel];
     ritaHandlingsplan();
-    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Raden är borttagen.');
+    meddelaSkarmlasare('Raden är borttagen.');
 }
 
 /** Raderna i handlingsplanen: de förifyllda från Prioritering och Likvärdigt arbete, sedan de egna. `baraEgna` hoppar
@@ -124,7 +124,7 @@ export function _handlingsplanForifyllning({ baraEgna = false } = {}) {
         minsta.push(Number.isFinite(nMin) ? nMin : null);
     };
     if (!baraEgna) try {
-        const ref = (typeof _valdPrioReferens === 'function') ? _valdPrioReferens() : 'stallningstagande';
+        const ref = _valdPrioReferens();
         const hasRef = ref === 'stallningstagande' ? state.policy.length : state.statistik.length;
         if (hasRef) {
             const thr = (state.prioConfig && state.prioConfig.atgardThreshold != null) ? state.prioConfig.atgardThreshold : -5;
@@ -180,7 +180,7 @@ export function _hpKostnadAvser(underlag) {
 }
 
 // Ett fritextfält som liknar ett personnummer eller en e-postadress får en varning; texten står kvar.
-export function _hpLiknarPersonuppgift(t) { return !!t && typeof liknarPersonuppgift === 'function' && liknarPersonuppgift(t); }
+export function _hpLiknarPersonuppgift(t) { return !!t && liknarPersonuppgift(t); }
 function _hpUppdateraVarning() {
     const tbody = document.getElementById('handlingsplan-tbody');
     const varning = document.getElementById('handlingsplan-varning');
@@ -460,7 +460,7 @@ function _exportHandlingsplanExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), 'Vägledning');
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
-    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Handlingsplansunderlag exporterat.');
+    meddelaSkarmlasare('Handlingsplansunderlag exporterat.');
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

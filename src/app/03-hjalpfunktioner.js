@@ -84,11 +84,8 @@ export function _importprofilKalla(kalla) {
  */
 export function importprofilText(p, headers = state._dataHeaders) {
     if (!p) return '';
-    let andrad = false;
-    if (typeof _kolumnval === 'function') {
-        const { auto, eff } = _kolumnval(headers || []);
-        andrad = Object.keys(auto).concat(Object.keys(eff)).some(r => (eff[r] || '') !== (auto[r] || ''));
-    }
+    const { auto, eff } = _kolumnval(headers || []);
+    const andrad = Object.keys(auto).concat(Object.keys(eff)).some(r => (eff[r] || '') !== (auto[r] || ''));
     return `Känd uppsättning${andrad ? ', ändrad' : ''}: ${p.namn} (${_importprofilKalla(p.kalla)})`;
 }
 
@@ -194,7 +191,7 @@ export function uppstartHjalpfunktioner() {
         if (goto) {
             const nav = document.querySelector('.nav-item[data-tab="' + flikMal(goto.getAttribute('data-goto-tab')) + '"]');
             const avsnitt = goto.getAttribute('data-goto-avsnitt');
-            const tillAvsnitt = () => { if (nav && avsnitt && typeof sidindexGaTill === 'function') sidindexGaTill(avsnitt); };
+            const tillAvsnitt = () => { if (nav && avsnitt) sidindexGaTill(avsnitt); };
             // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
             if (nav && !(/** @type {HTMLInputElement} */ (nav).disabled)) klickaFlik(nav, { uppskjut: e.isTrusted, efter: tillAvsnitt });
             else { if (nav) /** @type {HTMLElement} */ (nav).click(); tillAvsnitt(); }

@@ -84,7 +84,7 @@ export function byggJamforelse() {
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
         const diag = document.getElementById('jmf-diagram'); if (diag) diag.innerHTML = '';
         // Samma kolumner som när statistik finns, så att den tomma tabellen inte blir bredare än skärmen.
-        if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
+        flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
         return;
     }
 
@@ -138,7 +138,7 @@ export function byggJamforelse() {
             + `${block(r, 'p10')}${block(r, 'median')}${block(r, 'p90')}</tr>`;
     }
     tbody.innerHTML = html || `<tr><td colspan="13" class="farg-dampad pad-24 ta-mitt">Inga ${T.enhet.fl} i urvalet.</td></tr>`;
-    if (typeof flerKolumner === 'function') flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
+    flerKolumner('benchmark-table', JMF_DOLDA_KOLUMNER, 'jamforelse');
     try { ritaJamforelseDiagram(rader, kalla); } catch (e) { rapporteraFel('Löneläget: diagrammen', e); }
 
     // Antalen gäller samma urval som tabellen (filtren på BAS och sektor).

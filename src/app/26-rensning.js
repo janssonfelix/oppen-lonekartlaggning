@@ -66,13 +66,13 @@ export const RENSA_OVRIGT = ['action-checklist-container', 'outlier-list', 'data
  */
 export function _rensaAllData({ inbakat = true } = {}) {
     visningNy();   // också rensningen efter en tid utan aktivitet: ingen ritad flik visas igen (ADR-81)
-    if (typeof laMinneSlapp === 'function') laMinneSlapp();   // minnet håller en referens till dataraderna
+    laMinneSlapp();   // minnet håller en referens till dataraderna
     _rmMinneSlapp();   // förhandsbeskedets minne (58-rapportmodell.js)
     // 0. Utforska håller egna referenser till raderna (senaste modellen,
     //    urvalets värdelistor, diagrammets exportfunktion) — släpp dem också,
     //    annars finns hela underlaget kvar i minnet efter rensningen.
-    if (typeof utforskaSlappMinne === 'function') utforskaSlappMinne();
-    if (typeof rapportGlomHopfallning === 'function') rapportGlomHopfallning();
+    utforskaSlappMinne();
+    rapportGlomHopfallning();
 
     // 1. Nolla state-objektet
     state.data = [];
@@ -81,16 +81,16 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // Organisationspaketets låsningar (ADR-47) följer med paketet; en låst rensningstid går tillbaka till standard.
     const inaktivitetVarLast = state.paketLas.inaktivitetMin != null;
     state.paketLas = { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
-    if (inaktivitetVarLast && typeof sattInaktivitetstid === 'function') sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
-    if (typeof utforskaSynkaSmaLas === 'function') utforskaSynkaSmaLas();
-    if (typeof _kVisaFel === 'function') _kVisaFel('');   // ett felmeddelande vid fältet hör till det rensade läget
-    if (typeof _synkaKTroskel === 'function') _synkaKTroskel();
+    if (inaktivitetVarLast) sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
+    utforskaSynkaSmaLas();
+    _kVisaFel('');   // ett felmeddelande vid fältet hör till det rensade läget
+    _synkaKTroskel();
     aterstallReferens();   // ADR-28: ingen referens (ingen inbyggd)
     state.profile = { ...STANDARDPROFIL };   // neutral profil (demoläget och paket sätter en egen)
-    if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
-    if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
-    if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
-    if (typeof jamforelseSattVal === 'function') jamforelseSattVal({ bas: '', sektor: '' });
+    tillampaProfiletiketter();
+    _synkaOrgTyp();
+    synkaNamnFalt();
+    jamforelseSattVal({ bas: '', sektor: '' });
     // Organisationspaketet (ADR-28): grundinställningarna kom ur paketet — tillbaka till standard.
     if (state.paket) state.costSettings = { ...state.costSettings, poPct: COST_DEFAULTS.poPct, months: COST_DEFAULTS.months };
     state.paket = null;
@@ -99,17 +99,17 @@ export function _rensaAllData({ inbakat = true } = {}) {
     state.statistikHasP10 = false;
     state.statistikHasP90 = false;
     state.statistikHasKon = false;
-    if (typeof _synkaKostnadsfalt === 'function') _synkaKostnadsfalt();
-    if (typeof ritaPaketinfo === 'function') ritaPaketinfo();
+    _synkaKostnadsfalt();
+    ritaPaketinfo();
     const paketStatus = document.getElementById('paket-status');
     if (paketStatus) { paketStatus.textContent = ''; paketStatus.className = 'status-msg'; }
-    if (typeof _fyllPaketFormular === 'function') _fyllPaketFormular();
+    _fyllPaketFormular();
     state.statistik = [];
     state.isDemo = false;   // lämna demoläge
     state.demoStort = false;
-    if (typeof _ritaDemoruta === 'function') _ritaDemoruta();
+    _ritaDemoruta();
     state._interntFel = [];   // interna fel gällde det rensade underlaget
-    if (typeof visaInterntFel === 'function') visaInterntFel();
+    visaInterntFel();
     state._lastStructureFile = null;   // släpp filreferensen (GDPR: inget kvar i RAM)
     state.arbetsvardering = null;
     state.columnMap = null;
@@ -117,7 +117,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // organisationsfil kommer det inbakade paketets profiler tillbaka med paketet sist i rensningen.
     state.importprofiler = [];
     state.importprofil = null;
-    if (typeof _fkSlapp === 'function') _fkSlapp();   // förhandskontrollen och en fil som väntar på Läs in
+    _fkSlapp();   // förhandskontrollen och en fil som väntar på Läs in
     state.ansvarKolumn = null;
     state._dataHeaders = [];
     state.scenarios = [];
@@ -132,17 +132,17 @@ export function _rensaAllData({ inbakat = true } = {}) {
     state.forklaringsmodell = null;
     state.gapUppdelning = null;
     state.forecast = nyPrognos();
-    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // knappresultaten räknas inte om på nästa underlag
+    _fcGlomKnappresultat();   // knappresultaten räknas inte om på nästa underlag
     // Beräkningscacherna bär spår av lönefördelningarna (konfidensintervall, minsta detekterbara skillnad).
     state.bootstrapCI = null;
     state.powerAnalysis = null;
-    if (typeof skattningarSlapp === 'function') skattningarSlapp();   // skattningarna vid andra golv (ADR-103)
+    skattningarSlapp();   // skattningarna vid andra golv (ADR-103)
     if (state.likvardighet) state.likvardighet.result = null;
 
     // 2. Töm det ritade som kan bära lönedata
     // Dialogerna med en grupps tal stängs först: en öppen dossier får inte stå kvar på skärmen efter rensningen vid
     // inaktivitet. Innehållet töms med RENSA_OVRIGT nedan.
-    for (const stang of [stangGruppdossier, stangBasdossier, _stangBevisruta, stangSkalDialog]) if (typeof stang === 'function') stang();
+    for (const stang of [stangGruppdossier, stangBasdossier, _stangBevisruta, stangSkalDialog]) stang();
     // Behållare som fylls helt av JavaScript (Struktur, Löneöversyn, Utforska).
     // Vaktas av invarianten "Rensa all data: ingen lönedata kvar" i tests/dataskydd-app.test.js —
     // en ny vy som ritar lönedata utanför de rensade behållarna fångas där.
@@ -156,13 +156,13 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // Diagram ritade med diagramkärnan (ADR-39) bär sin figur — med lönevärden — som egenskap på behållaren och
     // har lyssnare, storleksbevakning och ett verktygstips i sidans portal. De hittas genom ritarens register,
     // inte på id: också behållare utan "chart-"-id, i tomt läge eller som har lämnat dokumentet rensas.
-    if (typeof sattDiagramMarkering === 'function') sattDiagramMarkering(null);   // markeringen namnger en grupp
+    sattDiagramMarkering(null);   // markeringen namnger en grupp
     // Flikens topp (slutsatser och nyckeltal) namnger grupper och bär tal: den töms tillsammans med allt annat.
     // Urvalsraden i Ålder & karriär bär flikens BAS-väljare, som hör till sidan: där töms bara texten bredvid.
     document.querySelectorAll('.slutsatser, .urvalsrad:not(#ak-urval)').forEach(el => { el.innerHTML = ''; });
     { const t = document.getElementById('ak-urval-text'); if (t) t.textContent = ''; }
     document.querySelectorAll('.avsnitt-nyckel').forEach(el => { el.textContent = ''; el.classList.remove('ar-kritisk', 'ar-granska'); });
-    if (typeof _rfRensaAlla === 'function') _rfRensaAlla();
+    _rfRensaAlla();
     // Exportmenyerna har också id som börjar med chart- (chart-export-N): de är inte diagram och ska stå kvar.
     document.querySelectorAll('[id^="chart-"]:not(.chart-export-meny)').forEach(el => {
         el.innerHTML = '';
@@ -171,12 +171,12 @@ export function _rensaAllData({ inbakat = true } = {}) {
         .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
     // § 8-ställningens bedömningar (status + anteckning) — nollställ
     document.querySelectorAll('.bes8-field').forEach(el => { /** @type {HTMLInputElement} */ (el).value = ''; });
-    if (typeof bes8Uppdatera === 'function') bes8Uppdatera();
-    if (typeof bes8Stod === 'function') bes8Stod();
+    bes8Uppdatera();
+    bes8Stod();
     // Handlingsplanens ifyllda fält (sakligt skäl, ansvarig, tidsplan, status) — nollställ och rita mallen tom
     state.handlingsplan = {};
     if (typeof _hpDemoNycklar !== 'undefined') _hpDemoNycklar.clear();
-    if (typeof ritaHandlingsplan === 'function') ritaHandlingsplan();
+    ritaHandlingsplan();
     // Rapporttextens utkast bär fynden i klarspråk, också ett redigerat: det töms och markeringen tas bort.
     const utkast = document.getElementById('struktur-narrative');
     if (utkast) { /** @type {HTMLTextAreaElement} */ (utkast).value = ''; delete utkast.dataset.dirty; }
@@ -193,18 +193,16 @@ export function _rensaAllData({ inbakat = true } = {}) {
     // Löneläget, Överblick: bandkartans och statistikspannets kort (diagrammen är redan rensade ovan).
     for (const id of ['lp-bandkarta-kort', 'jmf-statlage-kort']) { const kort = document.getElementById(id); if (kort) kort.hidden = true; }
     { const t = document.getElementById('lp-bandkarta-forklaring'); if (t) t.textContent = ''; }
-    if (typeof ovRitaLage === 'function') ovRitaLage();   // Översikt blir åter en uppladdningssida
+    ovRitaLage();   // Översikt blir åter en uppladdningssida
     ['underlagets-kvalitet-status','underlagets-kvalitet-rader'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
 
     // 3. Återställ uppladdningsceller
-    if (typeof aterstallFilruta === 'function') {
-        aterstallFilruta('upload-cell-data',    'upload-cell required', 'Obligatorisk');
-        aterstallFilruta('upload-cell-policy',  'upload-cell optional', 'Valfritt');
-        aterstallFilruta('upload-cell-stat',    'upload-cell optional', 'Valfritt');
-        aterstallFilruta('upload-cell-history', 'upload-cell optional', 'Valfritt');
-    }
+    aterstallFilruta('upload-cell-data',    'upload-cell required', 'Obligatorisk');
+    aterstallFilruta('upload-cell-policy',  'upload-cell optional', 'Valfritt');
+    aterstallFilruta('upload-cell-stat',    'upload-cell optional', 'Valfritt');
+    aterstallFilruta('upload-cell-history', 'upload-cell optional', 'Valfritt');
     document.querySelectorAll('input[type="file"]').forEach(inp => { /** @type {HTMLInputElement} */ (inp).value = ''; });
-    if (typeof ritaReferensKort === 'function') ritaReferensKort();
+    ritaReferensKort();
     ['data-status','policy-status','stat-status','config-status'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.textContent = ''; el.className = 'status-msg'; el.innerHTML = ''; }
@@ -215,15 +213,15 @@ export function _rensaAllData({ inbakat = true } = {}) {
         const el = document.getElementById(id);
         if (el) { /** @type {HTMLInputElement} */ (el).disabled = true; el.setAttribute('title', 'Läs in lönefilen för att öppna fliken'); }
     });
-    if (typeof _visaJamforelseFlik === 'function') _visaJamforelseFlik(false);
+    _visaJamforelseFlik(false);
     state.filnamn = { data: null, policy: null, statistik: null };
-    if (typeof ritaFilrutor === 'function') ritaFilrutor();
-    if (typeof navigeraTill === 'function') navigeraTill('dashboard');
+    ritaFilrutor();
+    navigeraTill('dashboard');
 
     uppdateraDataskyddsbesked();
-    if (typeof ritaKravstatus === 'function') ritaKravstatus();
+    ritaKravstatus();
     meddelaSkarmlasare('All data har raderats ur minnet.');
     // Organisationsfil: paketet är en del av filen och kommer tillbaka efter rensningen, som vid start.
-    if (inbakat && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
+    if (inbakat) lasInInbakatPaket();
     visningNy();   // och det som ritades under rensningen visas inte igen heller
 }

@@ -101,8 +101,8 @@ export function ritaLonepolitik() {
     _lpRitaKonPosition(vm);
     _lpRitaKonLagen(vm);
     _lpRitaEfterlevnad(vm);
-    if (typeof aktiveraSortering === 'function') aktiveraSortering('lonepolitik-table');
-    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('lonepolitik-table', 'lonepolitik');
+    aktiveraSortering('lonepolitik-table');
+    laggTillTabellverktyg('lonepolitik-table', 'lonepolitik');
 }
 
 function _lpTackningHtml(vm) {
@@ -510,6 +510,6 @@ export function uppstartLonepolitik() {
     document.addEventListener('change', e => {
         if (!e.target || /** @type {HTMLElement} */ (e.target).id !== 'lp-komplians-vy') return;
         _lpEfterlevnadVy = /** @type {HTMLInputElement} */ (e.target).value === 'mitt' ? 'mitt' : 'staplad';
-        if (typeof ritaLonepolitik === 'function') ritaLonepolitik();
+        ritaLonepolitik();
     });
 }

@@ -107,27 +107,27 @@ function _efterInlastData() {
     if (state.isDemo) {
         state.profile = { ...STANDARDPROFIL };
         // Demots sakliga skäl hör till demots grupper: en riktig fil kan ha samma AID och BAS.
-        if (typeof _hpRensaDemoSkal === 'function') _hpRensaDemoSkal();
+        _hpRensaDemoSkal();
         if (state.policyKalla === 'demo') {
             aterstallReferens();
             aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         }
         if (state.statistikKalla === 'demo') _tomStatistik();   // tömmer också filrutan
-        if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
-        if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
+        synkaNamnFalt();
+        _synkaOrgTyp();
         tillampaProfiletiketter();
-        if (typeof ritaReferensKort === 'function') ritaReferensKort();
+        ritaReferensKort();
     }
     state.isDemo = false;   // verklig uppladdning lämnar demoläge
     state.demoStort = false;
     // Löneöversyns knappresultat (målet för skillnaden, känslighetskurvan, individnivån) gällde det förra underlaget.
-    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();
-    if (typeof _ritaDemoruta === 'function') _ritaDemoruta();
+    _fcGlomKnappresultat();
+    _ritaDemoruta();
     /** @type {HTMLElement} */ (document.getElementById("dashboard-summary")).style.display = "grid";
     const poangCount = _harledArbetsvarderingUrData();
     // Föreslagna riktade rader (kalla: 'par') prövas mot paren i den nya lönefilen, också när de lästs in ur en
     // konfigurationsfil innan det fanns en lönefil att pröva dem mot (ADR-69). Egna rader står kvar.
-    if (typeof _fcRensaParMal === 'function') _fcRensaParMal();
+    _fcRensaParMal();
     lasUppFlikar();
     ritaNyckeltal();
     fyllValjare();
@@ -145,7 +145,7 @@ function _efterInlastData() {
     ritaKartlaggningensSteg({ reg });
     uppdateraDataskyddsbesked();
     // Starta inaktivitetstimern (på som standard, kan stängas av)
-    if (typeof _aterstallInaktivitetstimer === 'function') _aterstallInaktivitetstimer();
+    _aterstallInaktivitetstimer();
     ritaKonsistenskontroll();
     ritaExtremvarden();
     ritaValideringsrapport();
@@ -540,7 +540,7 @@ function lasInStrukturfil(file) {
             state.importprofil = nyImportprofil;
             state.forhandskontroll = fk;
             // En ny lönefil: urvalet i diagrammen (vilka BAS-intervall som visas) gällde den förra.
-            if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();
+            _rfUrvalGlom();
             state.data = parsed;
             state._lastStructureFile = file;
             state.filnamn = { ...(state.filnamn || {}), data: file ? file.name : null };

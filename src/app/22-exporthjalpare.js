@@ -33,7 +33,7 @@ export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 // ============================================================
 export function _metodbilaga() {
     const total = (state.data && state.data.length) || 0;
-    const used  = (typeof hamtaData === 'function' ? hamtaData().length : total);
+    const used  = hamtaData().length;
     const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
     const medAlder = harAlder();
     // Förklaringsmodellen (ADR-56): raderna säger den modell huvudtalet räknas med. Med ålder i lönefilen och BAS som
@@ -66,7 +66,7 @@ export function _metodbilaga() {
             : `OLS på log(månadslön) ~ ${modellText}; lönefilen saknar ålder, så analysen körs utan åldersjustering; HC3-robusta standardfel (Long & Ervin 2000)`],
         [`Steg ${stegEtikett(_RG_STEG_YRKE)} (dekomponeringen)`, stegText],
         // Var uppstår löneskillnaden (ADR-65): raden finns bara när variablerna inte är standardvalet BAS och AID.
-        ...(typeof gapVariabler === 'function' && !gapVariablerArStandard(gapVariabler())
+        ...(!gapVariablerArStandard(gapVariabler())
             ? [['Var uppstår löneskillnaden (variabler)', gapVariabler().length > 1
                 ? `Skillnaden i medellön delas med ${gapVariablerIText(gapVariabler())}, i den ordningen (standard: BAS och AID). Ordningen påverkar delarna.`
                 : `Skillnaden i medellön delas med ${gapVariablerIText(gapVariabler())} (standard: BAS och AID).`]] : []),
@@ -484,8 +484,8 @@ export function _laddaNedCSV(rows, filename, { undantag = '' } = {}) {
         const csv = BOM + tillCsv(_csvMedStampel(rows, undantag));
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         laddaNer(blob, _csvFilnamn(filename) + '.csv');
-        if (typeof _visaExportvarning === 'function') _visaExportvarning();
-        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('CSV exporterad: ' + (rows.length - 1) + ' rader.');
+        _visaExportvarning();
+        meddelaSkarmlasare('CSV exporterad: ' + (rows.length - 1) + ' rader.');
     } catch (err) {
         alert('CSV-export misslyckades: ' + (err.message || String(err)));
     }

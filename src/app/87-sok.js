@@ -112,7 +112,7 @@ function _sokRita() {
     if (!falt || !lista) return;
     const text = /** @type {HTMLInputElement} */ (falt).value.trim();
     // Under varje BAS-träff en rad som öppnar BAS-dossiern: ett eget alternativ, så att pilarna och Retur når det.
-    const kand = typeof basdossierKandidater === 'function' && _sokHarData() ? basdossierKandidater() : [];
+    const kand = _sokHarData() ? basdossierKandidater() : [];
     const grupper = sokTraffar(text).flatMap(t => {
         const bas = t.nyckel.startsWith('bas:') ? t.nyckel.slice(4) : null;
         if (bas != null && !kand.some(x => x.bas === bas)) return [{ ...t, typ: 'grupp' }];   // raden öppnar bara ett intervall som går att öppna
@@ -186,7 +186,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
         const tillAvsnitt = () => {
             if (!p.avsnitt) return;
             // Ett avsnitt i en underflik som inte visas (Tabeller och egna vyer: Egna vyer eller Alla diagram) visar den först.
-            if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(document.getElementById(p.avsnitt));
+            utVisaUnderflikFor(document.getElementById(p.avsnitt));
             if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
             window.scrollTo(0, 0);
             /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });

@@ -85,7 +85,7 @@ export function diagramexportRubrik(gd) {
 
 /** <DEMO_>Flik_Rubrik_ÅÅÅÅ-MM-DD.ext (en kopia i Alla diagram: källans flik) */
 function diagramexportFilnamn(gd, ext, datum = new Date()) {
-    const kalla = typeof diagramKopiaKalla === 'function' ? diagramKopiaKalla(gd) : null;
+    const kalla = diagramKopiaKalla(gd);
     const panel = (kalla || gd).closest ? (kalla || gd).closest('.view-panel') : null;
     const flik = panel && panel.id ? panel.id.replace(/^view-/, '') : 'diagram';
     const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
@@ -113,7 +113,7 @@ function _diagramexportUnderlagExport(gd) {
     if (!exportTillaten(gd)) return null;
     // Exportgrinden (23-exportgrind.js): diagrammets flik ska vara ritad med det som gäller nu. Ett diagram som en
     // omritning har ersatt (det gamla elementet sitter inte kvar i sidan) har inget att exportera.
-    if (typeof exportSakra === 'function' && !exportSakra(gd)) {
+    if (!exportSakra(gd)) {
         // Omritningen kan ha ersatt behållaren: då gäller den nya med samma id.
         const ny = gd.isConnected === false && gd.id ? document.getElementById(gd.id) : null;
         if (!ny || ny === gd || !exportSakra(ny)) return null;
@@ -228,7 +228,7 @@ async function __diagramexportBildExport(gd, val, underlag) {
     document.body.appendChild(a);
     a.click();
     a.remove();
-    if (typeof _visaExportvarning === 'function') _visaExportvarning();
+    _visaExportvarning();
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.

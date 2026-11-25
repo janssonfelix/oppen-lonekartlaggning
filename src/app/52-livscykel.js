@@ -303,7 +303,7 @@ export function ritaLivscykel(given) {
     // (i exportläget, där kurvan kan vara utelämnad) ritas ingenting.
     const behallare = document.getElementById('lifecycle-chart');
     if (kurvaUtelamnad || !behallare) { /* ingen figur: noten står i stället */ }
-    else if (typeof iExportLage === 'function' && iExportLage()) _ritaLivscykelDiagram(result, behallare);
+    else if (iExportLage()) _ritaLivscykelDiagram(result, behallare);
     else requestAnimationFrame(() => { if (behallare.isConnected) _ritaLivscykelDiagram(result, behallare); });
 
     // Koppla BAS-dropdown

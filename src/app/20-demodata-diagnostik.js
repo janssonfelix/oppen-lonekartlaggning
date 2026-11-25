@@ -60,11 +60,11 @@ function _lasInDemoReferens({ stort = false } = {}) {
     state.policyKortnamn = DEMO_REFERENS.namn;
     state.policyKalla = 'demo';
     state.profile = { ...state.profile, name: DEMO_ORGANISATION, orgTyp: 'kommun' };
-    if (typeof _synkaOrgTyp === 'function') _synkaOrgTyp();
-    if (typeof synkaNamnFalt === 'function') synkaNamnFalt();
-    if (typeof tillampaProfiletiketter === 'function') tillampaProfiletiketter();
-    if (typeof ritaReferensKort === 'function') ritaReferensKort();
-    if (typeof markeraFilrutaInlast === 'function') markeraFilrutaInlast('upload-cell-policy', 'Demo');
+    _synkaOrgTyp();
+    synkaNamnFalt();
+    tillampaProfiletiketter();
+    ritaReferensKort();
+    markeraFilrutaInlast('upload-cell-policy', 'Demo');
 }
 // Det stora demots påhittade jämförelsestatistik (21-stort-demo.js). Det lilla demot har ingen: en kvarvarande från
 // det stora tas bort.
@@ -79,7 +79,7 @@ function _lasInDemoStatistik({ stort = false } = {}) {
         _tomStatistik();
     }
     if (state.likvardighet) state.likvardighet.result = null;   // likvärdighetsparen jämförs mot statistiken
-    if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
+    synkaJamforelseFlik();
 }
 
 // Det som det lilla och det stora demot (21-stort-demo.js) gör lika: frågan om befintlig data, rensningen av verkliga
@@ -90,9 +90,9 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     // Demots egen statistik (statistikKalla 'demo') är ingen verklig del: den ersätts eller tas bort nedan.
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || (state.statistik.length && state.statistikKalla !== 'demo')) _rensaAllData({ inbakat: false });
-    if (typeof _rfUrvalGlom === 'function') _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
+    _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
     state.data = skapa();
-    if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();   // Löneöversyns knappresultat gällde det förra underlaget
+    _fcGlomKnappresultat();   // Löneöversyns knappresultat gällde det förra underlaget
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
     _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
@@ -125,7 +125,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     /** @type {HTMLElement} */ (document.getElementById('data-status')).className = 'status-msg';
     markeraFilrutaInlast('upload-cell-data', 'Testdata');
     // Exempel på sakliga skäl på tre rader i handlingsplanen, så att tabellerna i rapporten och Excel syns.
-    if (typeof _hpDemoSkal === 'function') try { _hpDemoSkal(); } catch (e) { rapporteraFel('Demot: sakliga skäl', e); }
+    try { _hpDemoSkal(); } catch (e) { rapporteraFel('Demot: sakliga skäl', e); }
     visningNy();   // ett nytt underlag: ingen ritad flik visas igen som den är (ADR-81)
     return true;
 }

@@ -71,12 +71,12 @@ export function oppnaBasdossier(bas, opener) {
     if (!modal) return;
     ritaBasdossier(bas);
     modal.style.display = 'flex';
-    if (typeof fangaFokus === 'function') fangaFokus(modal, opener || document.activeElement);
+    fangaFokus(modal, opener || document.activeElement);
 }
 export function stangBasdossier() {
     const modal = document.getElementById('basdossier-modal');
     if (!modal || modal.style.display !== 'flex') return;
-    if (typeof slappFokus === 'function') slappFokus(modal);
+    slappFokus(modal);
     modal.style.display = 'none';
 }
 

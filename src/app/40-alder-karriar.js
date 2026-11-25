@@ -30,7 +30,7 @@ export const KOHORT_FORBEHALL = 'Kurvorna bygger på ett tvärsnitt av lönerna 
 /** Utan ålder i lönefilen (ADR-64) ritas fliken inte, och det en tidigare fil ritade i den töms. */
 function _akTomUtanAlder() {
     const andra = new Set([...document.querySelectorAll('.nav-item[data-tab]')].map(b => b.getAttribute('data-tab') || '').filter(t => t && t !== 'kon'));
-    if (typeof tomFlikarUtom === 'function') tomFlikarUtom(andra);
+    tomFlikarUtom(andra);
 }
 /**
  * Lönedelen av fliken (ADR-99): vymodellAlderOchLon i src/lib/vymodell-alder-karriar.js räknar, maskerar och väljer;

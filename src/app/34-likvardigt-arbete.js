@@ -670,14 +670,14 @@ export function ritaLikvardigtArbete() {
         });
     });
 
-    if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-table');
-    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('likvardighet-table', 'likvardighet');
+    aktiveraSortering('likvardighet-table');
+    laggTillTabellverktyg('likvardighet-table', 'likvardighet');
     // Grundvyn gömmer det sekundära; talen finns också i beviset (förstoringsglaset i kolumnen Bevis).
-    if (typeof flerKolumner === 'function') flerKolumner('likvardighet-table', LV_DOLDA_KOLUMNER, 'likvardighet');
+    flerKolumner('likvardighet-table', LV_DOLDA_KOLUMNER, 'likvardighet');
     if (document.getElementById('likvardighet-lagre-krav-table')) {
-        if (typeof aktiveraSortering === 'function') aktiveraSortering('likvardighet-lagre-krav-table');
-        if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
-        if (typeof flerKolumner === 'function') flerKolumner('likvardighet-lagre-krav-table', LV_LAGRE_KRAV_DOLDA_KOLUMNER, 'lvLagreKrav');
+        aktiveraSortering('likvardighet-lagre-krav-table');
+        laggTillTabellverktyg('likvardighet-lagre-krav-table', 'likvardighet_lagre_krav');
+        flerKolumner('likvardighet-lagre-krav-table', LV_LAGRE_KRAV_DOLDA_KOLUMNER, 'lvLagreKrav');
     }
 
     // Kandidatparen som bild (visualiserings-Steg 2), om det finns par.
@@ -999,8 +999,8 @@ function _exportLikvardighetExport() {
         XLSX.writeFile(wb, filename);
 
         stegnamn = 'efter-steg';
-        if (typeof _visaExportvarning === 'function') _visaExportvarning();
-        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Likvärdighetsanalys exporterad: ' + pairs.length + ' par.');
+        _visaExportvarning();
+        meddelaSkarmlasare('Likvärdighetsanalys exporterad: ' + pairs.length + ' par.');
     } catch (err) {
         const msg = err && err.message ? err.message : String(err);
         const stackPreview = err && err.stack ? ('\n\nStack:\n' + String(err.stack).split('\n').slice(0, 4).join('\n')) : '';

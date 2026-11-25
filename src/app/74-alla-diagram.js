@@ -60,7 +60,7 @@ export function diagramKopiaKalla(el) {
  */
 export function diagramUrval(behallare, ritat) {
     return behallare.filter(el => el && el.id && el.isConnected && !arDiagramKopia(el) && exportTillaten(el) && ritat(el))
-        .filter(el => { const u = typeof _rfExportFigur === 'function' ? _rfExportFigur(el) : null; return !u || !u.tom; });
+        .filter(el => { const u = _rfExportFigur(el); return !u || !u.tom; });
 }
 
 /** Är elementet dolt i sin flik (hidden, display: none eller .dold utan inline-stil), fram till panelen? Ett diagram i
@@ -95,7 +95,7 @@ function utValjUnderflik(namn) {
     if (egna) egna.hidden = _utUnderflik !== 'egna';
     if (alla) alla.hidden = _utUnderflik !== 'alla';
     if (_utUnderflik === 'alla') utAllaDiagramRita();
-    if (_utFlikVisas() && typeof sidindexBygg === 'function') sidindexBygg('utforska');
+    if (_utFlikVisas()) sidindexBygg('utforska');
 }
 /** Visar underfliken som elementet ligger i, om den är dold (sökningen och länkar till ett avsnitt i fliken). */
 export function utVisaUnderflikFor(el) {

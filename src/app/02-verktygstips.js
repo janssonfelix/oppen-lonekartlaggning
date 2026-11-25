@@ -57,7 +57,7 @@ export function _doljDiagramtips() {
         _diagramtipsElement.classList.remove('visible');
         _diagramtipsElement.textContent = '';
     }
-    if (typeof _rfTipsDolt === 'function') _rfTipsDolt();
+    _rfTipsDolt();
 }
 
 // ---- Punkt-sampling för stora punktmoln (prestanda) ----

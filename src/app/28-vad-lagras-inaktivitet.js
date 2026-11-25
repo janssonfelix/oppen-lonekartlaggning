@@ -87,7 +87,7 @@ export function oppnaVadLagras() {
         </div>`;
 
     modal.style.display = 'flex';   // som övriga modaler: .glossary-modal centrerar sin panel
-    if (typeof fangaFokus === 'function') fangaFokus(modal);
+    fangaFokus(modal);
 }
 
 // ---- Inaktivitetstimer med tvåfas-varning ----
@@ -219,7 +219,7 @@ export function uppstartVadLagrasInaktivitet() {
     // Knappen står i panelen Inställningar. Har rensningen gjorts stängs panelen, och Översikt visas som uppladdningssida.
     document.getElementById('btn-clear-all-data')?.addEventListener('click', () => {
         rensaAllData();
-        if (!state.data.length && typeof stangInstallningar === 'function') stangInstallningar();
+        if (!state.data.length) stangInstallningar();
     });
     document.getElementById('btn-data-residency')?.addEventListener('click', oppnaVadLagras);
     // Tidsväljaren ritas om vid varje öppning; lyssnaren sitter på innehållet en gång och gäller hur dialogen än öppnas (även från sökningen).
@@ -241,12 +241,12 @@ export function uppstartVadLagrasInaktivitet() {
     });
     document.getElementById('data-residency-close')?.addEventListener('click', () => {
         const m = document.getElementById('data-residency-modal');
-        if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; }
+        if (m) { slappFokus(m); m.style.display = 'none'; }
     });
     document.getElementById('data-residency-modal')?.addEventListener('click', e => {
         if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) {
             const m = document.getElementById('data-residency-modal');
-            if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; }
+            if (m) { slappFokus(m); m.style.display = 'none'; }
         }
     });
 }

@@ -51,7 +51,7 @@ export function tillampaProfiletiketter() {
         if (attr) el.setAttribute(attr, text); else el.textContent = text;
     });
     // En mall i data-k-tooltip behåller {k} och {golv}; tröskeln fylls i därefter (06-k-troskel.js).
-    if (typeof _fyllKTexter === 'function') _fyllKTexter();
+    _fyllKTexter();
     const p = state.profile;
     document.querySelectorAll('[data-profile-label]').forEach(el => {
         const key = el.getAttribute('data-profile-label') || '';
@@ -99,7 +99,7 @@ export function synkaNamnFalt() {
 function _namnAndrat() {
     synkaNamnFalt();
     tillampaProfiletiketter();
-    if (typeof ritaOmReferens === 'function') ritaOmReferens();
+    ritaOmReferens();
 }
 export function sattOrgNamn(text) {
     const n = normaliseraNamn(text);
@@ -126,7 +126,7 @@ export function _kopplaNamnFalt(id, satt) {
         const r = satt(/** @type {HTMLInputElement} */ (el).value);
         const fel = el.closest('.upload-cell, .ref-namn-rad, .namn-falt')?.querySelector('.upload-namn-fel');
         if (fel) { fel.textContent = r.ok ? '' : r.fel; /** @type {HTMLElement} */ (fel).hidden = r.ok; }
-        if (!r.ok) { synkaNamnFalt(); if (typeof ritaReferensKort === 'function') ritaReferensKort(); }
+        if (!r.ok) { synkaNamnFalt(); ritaReferensKort(); }
     });
 }
 

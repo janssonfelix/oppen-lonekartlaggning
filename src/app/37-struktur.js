@@ -158,7 +158,6 @@ function _stSynkaUtkastValjare() {
  * @param {number} k
  */
 function _stUtkastPerBas(k) {
-    if (typeof basdossierKandidater !== 'function') return null;
     const kand = basdossierKandidater();
     if (!kand.length) return null;
     const policyDel = state.policy.length ? 'läget mot ställningstagandet, ' : '';
@@ -544,7 +543,7 @@ function _exportEuRapportExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Skillnad i lönefördelningen');
     _laggTillMetodblad(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
     XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
-    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('EU-lönerapport exporterad.');
+    meddelaSkarmlasare('EU-lönerapport exporterad.');
 }
 
 // Kvartilens lönespann utan enskilda löner: bara gränserna mellan kvartilerna
@@ -571,7 +570,7 @@ export function uppstartStruktur() {
         document.getElementById('struktur-narrative-omfang')?.addEventListener('change', e => {
             state.utkastPerBas = /** @type {HTMLSelectElement} */ (e.target).value !== 'hela';
             const nb = document.getElementById('struktur-narrative');
-            if (nb && nb.dataset.dirty) { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
+            if (nb && nb.dataset.dirty) { meddelaSkarmlasare('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
             medExportLage(ritaStrukturUtkast);
         });
         document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
