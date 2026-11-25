@@ -24,7 +24,7 @@ function sattLage(nytt) {
         const k = document.getElementById(id);
         if (k) k.setAttribute('aria-pressed', String(l === namn));
     }
-    if (andrat && typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(l === 'kompakt' ? 'Kompakt läge: förklaringarna är undanfällda.' : 'Vägledande läge: förklaringarna visas.');
+    if (andrat) meddelaSkarmlasare(l === 'kompakt' ? 'Kompakt läge: förklaringarna är undanfällda.' : 'Vägledande läge: förklaringarna visas.');
 }
 
 // ---- Flikens inledning: en rad, resten bakom «Visa mer» ----

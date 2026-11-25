@@ -390,8 +390,8 @@ function _ritaUtforskaTabell(model, typ, inkl) {
     // innerHTML bygger ett NYTT thead; sorteringsflaggan sitter på tabellnoden
     // och måste nollställas, annars är sorteringen död från andra renderingen.
     table._sortInit = false;
-    if (typeof aktiveraSortering === 'function') aktiveraSortering('explore-table');
-    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg('explore-table', 'utforska');
+    aktiveraSortering('explore-table');
+    laggTillTabellverktyg('explore-table', 'utforska');
     const container = table.closest('.table-container');
     const verktyg = container && container.previousElementSibling;
     if (verktyg && verktyg.classList.contains('table-tools')) /** @type {HTMLElement} */ (verktyg).hidden = tom;
@@ -485,8 +485,8 @@ export function utforskaSlappMinne() {
     _utforskaTillstand = null;
     const gd = document.getElementById('chart-explore');
     if (gd) rensaFigur(gd);
-    if (typeof utforskaUrvalSlappMinne === 'function') utforskaUrvalSlappMinne();
-    if (typeof nedborrningGlom === 'function') nedborrningGlom();
+    utforskaUrvalSlappMinne();
+    nedborrningGlom();
 }
 
 // ---- Wiring ----
@@ -507,7 +507,7 @@ function utforskaTillRapport() {
     state.rapportTabeller = [...(state.rapportTabeller || []), recept];
     if (namnEl) namnEl.value = '';
     satt(`Tillagd: ${recept.namn} (${state.rapportTabeller.length} ${state.rapportTabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}). Ordningen ändras under Exportera.`, true);
-    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`Tabellen ${recept.namn} är tillagd i rapporten.`);
+    meddelaSkarmlasare(`Tabellen ${recept.namn} är tillagd i rapporten.`);
     return recept;
 }
 

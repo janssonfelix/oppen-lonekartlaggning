@@ -64,8 +64,8 @@ export function sattForklaringsmodell(v, { rita = true } = {}) {
     const andrad = JSON.stringify(ny) !== JSON.stringify(state.forklaringsmodell);
     state.forklaringsmodell = ny;
     if (andrad && rita) {
-        if (typeof ritGenerationNy === 'function') ritGenerationNy();
-        if (typeof _ritaOmAllaFlikar === 'function') _ritaOmAllaFlikar();
+        ritGenerationNy();
+        _ritaOmAllaFlikar();
     }
     return { ok: true, modell, varningar, andrad };
 }

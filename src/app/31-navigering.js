@@ -298,10 +298,10 @@ function _visningAndras(e) {
 
 /** Det som görs när en flik har ritats: markeringen i tabellerna och autocomplete på nya fält. */
 function _efterRitning(flik) {
-    if (typeof _mkTabeller === 'function' && diagramMarkering()) _mkTabeller();
+    if (diagramMarkering()) _mkTabeller();
     // Fält som fliken skapade får autocomplete="off" redan nu (observatören i 01-html-och-tillganglighet.js
     // gör det annars strax efter).
-    if (typeof stangAutofyll === 'function') stangAutofyll(document.getElementById('view-' + flik) || document);
+    stangAutofyll(document.getElementById('view-' + flik) || document);
 }
 
 // ---- Tabs ----
@@ -419,12 +419,12 @@ function _ritaFlik(target) {
         if (d.length) ritaKvalitetssakring();
         _ritaTungtBlock(target, ['rapport-urval', 'besked-word', 'besked-pdf', 'besked-excel', 'besked-zip'], () => medExportLage(() => ritaExportBesked()));
     });
-    else if (target === "arbetet")     medExportLage(() => { if (typeof ritaArsjamforelse === 'function') ritaArsjamforelse(); });
+    else if (target === "arbetet")     medExportLage(() => { ritaArsjamforelse(); });
     else if (target === "dashboard" && d.length) ritaOversiktDelar();
     else if (target === "filer"     && d.length) ritaFilerDelar();
     else if (target === "info")  ritaOmVerktyget();
     else if (target === "handlingsplan") ritaHandlingsplan();
-    else if (target === "bestammelser") { if (typeof bes8Uppdatera === 'function') bes8Uppdatera(); if (typeof bes8Stod === 'function') bes8Stod(); }
+    else if (target === "bestammelser") { bes8Uppdatera(); bes8Stod(); }
     // Förhandskontrollen står i Filer och kvalitet också medan en fil väntar på Läs in, innan något är inläst.
     if (target === "filer") ritaForhandskontroll();
     // Sidans navigering hör till fliken som visas. Ritas en annan flik (t.ex. för att
@@ -484,7 +484,7 @@ export function uppdateraAktivFlik() {
 /** Fäller ut ett avsnitt som en länk leder till: elementet självt om det är ett hopfällt avsnitt, och varje hopfällt
  *  avsnitt det ligger i. Annars landar länken på en rubrik vars innehåll inte syns. */
 export function oppnaHopfallda(el) {
-    if (typeof utVisaUnderflikFor === 'function') utVisaUnderflikFor(el);   // underfliken i Tabeller och egna vyer som avsnittet står i
+    utVisaUnderflikFor(el);   // underfliken i Tabeller och egna vyer som avsnittet står i
     for (let n = el; n; n = n.parentElement) {
         if (n.tagName === 'DETAILS' && !(/** @type {HTMLDetailsElement} */ (n).open)) /** @type {HTMLDetailsElement} */ (n).open = true;
     }
@@ -602,7 +602,7 @@ export function uppstartNavigering() {
             oppnaHopfallda(ankare);
             if (typeof ankare.scrollIntoView === 'function') ankare.scrollIntoView({ block: 'start' });
         };
-        if (!(target && typeof navigeraTill === 'function' && navigeraTill(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
+        if (!(target && navigeraTill(target, { uppskjut: e.isTrusted, efter: tillAnkare }))) tillAnkare();
     });
     document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!menyOppen()));
     document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));

@@ -275,7 +275,7 @@ function _regKvantilBerakna({ direkt = false } = {}) {
                 if (!(_regKvantilMinne && _regKvantilMinne.nyckel === nyckel)) rakna();
                 // Kortet ritas om bara om det fortfarande visar samma underlag, och inte mitt i en export (den ritar själv).
                 const kort = document.getElementById('regression-card');
-                if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !(typeof iExportLage === 'function' && iExportLage())) ritaRegressionskort();
+                if (kort && kort.dataset.kvantilNyckel === nyckel && state.data.length && !iExportLage()) ritaRegressionskort();
             } catch (e) { rapporteraFel('kvantilregressionens intervall', e); }
             finally { _regKvantilBakgrund = null; visningNy(); resolve(); }   // intervallet är klart: Lönestruktur ritas om nästa gång (ADR-81)
         }, 0));

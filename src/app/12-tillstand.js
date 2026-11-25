@@ -253,7 +253,7 @@ export function sattReferensNamn(namn) {
 export function ritaOmReferens() {
     for (const fn of [ritaReferensKort, uppdateraAktivFlik, ritaKravstatus, ritaKonsistenskontroll,
                       ritaAtgardslista, ritaKartlaggningensSteg]) {
-        if (typeof fn === 'function') { try { fn(); } catch (e) { rapporteraFel(`Omritning (${fn.name})`, e); } }   // en vy får inte stoppa de andra
+        try { fn(); } catch (e) { rapporteraFel(`Omritning (${fn.name})`, e); }   // en vy får inte stoppa de andra
     }
 }
 
@@ -333,7 +333,7 @@ export function _exportText(rot) {
 function tabellTillMatris(...a) { return medExportLage(() => _tabellTillMatrisExport.apply(null, /** @type {any} */ (a))); }
 function _tabellTillMatrisExport(tableId) {
     // Raderna lämnar verktyget (CSV, urklipp): exportläget, och tabellens flik ritad med det som gäller nu (ADR-51).
-    const table = typeof exportElement === 'function' ? exportElement(tableId) : document.getElementById(tableId);
+    const table = exportElement(tableId);
     if (!table) return [];
     const rows = [];
     // En beskrivning av urvalet (Utforska) blir exportens första rad.
@@ -372,7 +372,7 @@ function __kopieraTabellTillUrklippExport(tableId, btn) {
 export function _kopieraMatrisTillUrklipp(rows, btn, { undantag = '' } = {}) {
     const tsv = tillTsv(_tsvMedStampel(rows, undantag));
     kopieraTextTillUrklipp(tsv, () => {
-        if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Kopierat: ' + (rows.length - 1) + ' rader.');
+        meddelaSkarmlasare('Kopierat: ' + (rows.length - 1) + ' rader.');
         // Knappens innehåll (ikonen och texten) läggs tillbaka som det var.
         if (btn) { const o = btn.innerHTML; btn.textContent = 'Kopierad'; setTimeout(() => { btn.innerHTML = o; }, 1500); }
     }, 'Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.');

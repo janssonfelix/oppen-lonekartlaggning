@@ -658,7 +658,7 @@ export function ritaLikaArbeteTopp({ reg: given } = {}) {
     /** @type {number|null} */ let personer = null;
     try { const r = flaggaIndivider(d, { minGrupp: statGolv(), grans: _pagGrans() }); personer = r.provade.kv + r.provade.ma ? r.flaggade.length : null; }
     catch (e) { rapporteraFel('Lika arbete: toppen', e); }
-    const grans = typeof _pagGrans === 'function' ? svTal(_pagGrans(), 0) : '10';
+    const grans = svTal(_pagGrans(), 0);
     ut.innerHTML = [
         rader.length ? _laSlutsats(`${stor(T.enhet.fl)} att granska`, `${granska.length} av ${rader.length}`, granska.length ? 'säkerställd skillnad, minst 3 %' : 'ingen säkerställd skillnad på 3 %', granska.length > 0 ? 'granska' : false,
             'Värt att granska: skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)')

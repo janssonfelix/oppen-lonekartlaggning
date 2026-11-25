@@ -28,17 +28,17 @@ import { _hpArEgen, _hpSkalUnderlag } from './56-handlingsplan.js';
 
 /** Årets bokslut ur det inlästa underlaget, eller null utan underlag. */
 export function byggArsbokslutNu() {
-    if (!state.data.length || typeof byggArsbokslut !== 'function') return null;
+    if (!state.data.length) return null;
     return medExportLage(() => {
         const d = hamtaData();
         const k = kTroskel();
         const bild = byggOgonblicksbild();
-        const lika = typeof laLikaGrupper === 'function' ? laLikaGrupper(d, k) : { grupper: [] };   // flaggad = Värt att granska (ADR-59)
+        const lika = laLikaGrupper(d, k);   // flaggad = Värt att granska (ADR-59)
         /** @type {any} */ let lv = null;
-        try { lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null; } catch (_e) { lv = null; }
+        try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
         const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
         const klara = state._actionChecklistDone || new Set();
-        const punkter = typeof byggAtgardslista === 'function' ? byggAtgardslista() : [];
+        const punkter = byggAtgardslista();
         return byggArsbokslut({
             ar: new Date().getFullYear(), skapat: idagDatum(), k, verktyg: `v${APP_VERSION}`,
             nyckeltal: { n: bild.n, nKv: bild.nKv, nMa: bild.nMa, medKv: bild.medianKv, medMa: bild.medianMa,
@@ -59,7 +59,6 @@ export function byggArsbokslutNu() {
  * Anropas i exportläget, så en rad under tröskeln finns inte i förifyllningen.
  */
 function _abBedomningarNu() {
-    if (typeof _hpSkalUnderlag !== 'function') return [];
     return _hpSkalUnderlag().grupper.filter(g => !_hpArEgen(g.nyckel))
         .map(g => ({ nyckel: g.nyckel, grupp: g.grupp, n: g.antal, nMin: g.nMin, skillnadKr: g.skillnadKr,
             // Ett kön under minsta gruppstorlek: bara kategorierna (lib-valideringen gör samma sak vid inläsning).
@@ -69,7 +68,7 @@ function _abBedomningarNu() {
 /** Jämförelsen mellan förra årets bokslut och årets, eller null utan bokslut eller underlag. Byggs i exportläget. */
 export function arsjamforelse() {
     const forra = state.forraArsbokslut;
-    if (!forra || !state.data.length || typeof jamforArsbokslut !== 'function') return null;
+    if (!forra || !state.data.length) return null;
     const nu = byggArsbokslutNu();
     const j = nu ? jamforArsbokslut(forra, nu) : null;
     return nu && j ? { forra, nu, j } : null;

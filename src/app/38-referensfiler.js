@@ -32,7 +32,7 @@ function _lasInReferens(rader, filnamn) {
     state.policyNamn = namn;
     state.policyKortnamn = namn;
     ritaReferensKort();
-    if (typeof ritaPaketinfo === 'function') { ritaPaketinfo(); uppdateraPaketKnapp(); }
+    ritaPaketinfo(); uppdateraPaketKnapp();
     return policy.length;
 }
 
@@ -87,7 +87,7 @@ export function uppstartReferensfiler() {
         if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
         const fil = document.getElementById('file-input-policy');
         if (fil) /** @type {HTMLInputElement} */ (fil).value = '';   // samma fil ska kunna laddas upp igen
-        if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
+        aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         ritaOmReferens();
     });
     policyFilval.addEventListener("change", e => {
@@ -224,7 +224,7 @@ export function uppstartReferensfiler() {
                 statStatus.className = "status-msg success";
                 markeraFilrutaInlast('upload-cell-stat', 'Inläst');
                 state.filnamn.statistik = file.name; ritaFilrutor();
-                if (typeof ritaPaketinfo === 'function') { ritaPaketinfo(); uppdateraPaketKnapp(); }
+                ritaPaketinfo(); uppdateraPaketKnapp();
                 synkaJamforelseFlik();
                 doljLaddning(); ritaKravstatus();
                 ritaKonsistenskontroll();

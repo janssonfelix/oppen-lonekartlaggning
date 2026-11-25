@@ -85,7 +85,7 @@ export function sattLonemanad(v) {
 
 /** Andelen kvinnor nationellt för en AID-kod (SKR:s personalstatistik, organisationstypen i Inställningar), eller null. */
 function _aidbasNationell(aid) {
-    const r = typeof skrKvinnoandel === 'function' ? skrKvinnoandel(aid, { del: _skrDel() }) : null;
+    const r = skrKvinnoandel(aid, { del: _skrDel() });
     return r && typeof r.pct === 'number' ? r.pct : null;
 }
 /** De fyra tabellerna ur underlaget, med verktygets regler. */
@@ -189,9 +189,9 @@ function _aidbasTabellHtml(id, kolumner, rader, { not = '', tom = 'Inga grupper 
  */
 function _aidbasEfter(id, dolda, nyckel) {
     if (!document.getElementById(id)) return;
-    if (typeof aktiveraSortering === 'function') aktiveraSortering(id);
-    if (typeof laggTillTabellverktyg === 'function') laggTillTabellverktyg(id, document.getElementById(id)?.getAttribute('data-aidbas-fil') || id);
-    if (dolda && nyckel && typeof flerKolumner === 'function') flerKolumner(id, dolda, nyckel);
+    aktiveraSortering(id);
+    laggTillTabellverktyg(id, document.getElementById(id)?.getAttribute('data-aidbas-fil') || id);
+    if (dolda && nyckel) flerKolumner(id, dolda, nyckel);
 }
 function _aidbasNyckel(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
 

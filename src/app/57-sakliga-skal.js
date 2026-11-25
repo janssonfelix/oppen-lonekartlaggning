@@ -64,12 +64,12 @@ function oppnaSkalDialog(nyckel, opener) {
     };
     _skalRita();
     modal.style.display = 'flex';
-    if (typeof fangaFokus === 'function') fangaFokus(modal, opener || document.activeElement);
+    fangaFokus(modal, opener || document.activeElement);
 }
 export function stangSkalDialog() {
     const modal = document.getElementById('skal-modal');
     if (!modal || modal.style.display !== 'flex') return;
-    if (typeof slappFokus === 'function') slappFokus(modal);
+    slappFokus(modal);
     modal.style.display = 'none';
     _skal = null;
 }
@@ -197,8 +197,8 @@ export function uppstartSakligaSkal() {
         const gaTill = t.closest('[data-hp-ga-till]');
         if (gaTill) {
             e.preventDefault();
-            if (typeof stangGruppdossier === 'function') stangGruppdossier();
-            if (typeof stangBasdossier === 'function') stangBasdossier();
+            stangGruppdossier();
+            stangBasdossier();
             _hpGaTillRad(gaTill.getAttribute('data-hp-ga-till') || '');
             return;
         }
@@ -222,7 +222,7 @@ export function uppstartSakligaSkal() {
             _skal.rader.splice(Number(bort.getAttribute('data-skal-ta-bort')), 1);
             _skalRita();
             document.getElementById('skal-lagg-till')?.focus();
-            if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Skälet är borttaget.');
+            meddelaSkarmlasare('Skälet är borttaget.');
             return;
         }
         if (t.closest('#skal-markera')) {
@@ -235,7 +235,7 @@ export function uppstartSakligaSkal() {
             _skalUppdatera();
             document.getElementById('skal-summa')?.setAttribute('tabindex', '-1');
             document.getElementById('skal-summa')?.focus();
-            if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Raden är markerad: sakligt skäl finns.');
+            meddelaSkarmlasare('Raden är markerad: sakligt skäl finns.');
         }
     });
     ['input', 'change'].forEach(typ => document.getElementById('skal-modal')?.addEventListener(typ, e => {

@@ -27,7 +27,7 @@ function installningarOppna() {
 export function oppnaInstallningar({ fokus = null } = {}) {
     const m = document.getElementById('installningar-modal');
     if (!m) return;
-    if (typeof sattMeny === 'function') sattMeny(false, { fokus: false });
+    sattMeny(false, { fokus: false });
     _instRita();
     const oppnare = document.activeElement;
     m.style.display = 'flex';
@@ -72,7 +72,7 @@ function _instRita() {
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
           lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',
-          lage: `${typeof _pagGrans === 'function' ? _pagGrans() : 10} % under förväntad lön`, andrad: typeof _pagGrans === 'function' && _pagGrans() !== 10 },
+          lage: `${_pagGrans()} % under förväntad lön`, andrad: _pagGrans() !== 10 },
         // Fliken Filer och kvalitet är öppen utan lönefil, men avsnittet med tröskeln är dolt tills en fil är inläst.
         { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', kraverData: true, namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
           lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
@@ -127,10 +127,10 @@ function _ipTaBort(id) {
     // Gällde profilen för den inlästa filen nollas den, så att filrutan inte nämner en borttagen profil.
     if (state.importprofil && state.importprofil.id === id) {
         state.importprofil = null;
-        if (typeof ritaFilrutor === 'function') ritaFilrutor();
+        ritaFilrutor();
     }
     _instRitaImportprofiler();
-    if (typeof visaKolumnmappningOmBehov === 'function' && (state._dataHeaders || []).length) visaKolumnmappningOmBehov();
+    if ((state._dataHeaders || []).length) visaKolumnmappningOmBehov();
     /** @type {HTMLElement|null} */ (document.getElementById('inst-importprofiler-rubrik'))?.focus();
     meddelaSkarmlasare(`Importprofilen ${p.namn} är borttagen för sessionen.`);
 }

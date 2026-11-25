@@ -18,9 +18,7 @@ import { kopplaFlikarnasTillganglighet } from './63-tangentbordsnavigering.js';
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartSist() {
-    if (typeof ritaKartlaggningensSteg === 'function') {
-        try { ritaKartlaggningensSteg(); } catch (_e) { /* icke-kritisk vid boot */ }
-    }
+    try { ritaKartlaggningensSteg(); } catch (_e) { /* icke-kritisk vid boot */ }
     kopplaFlikarnasTillganglighet();
     tillampaProfiletiketter();  // Tillämpa default-profil vid uppstart
     _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
@@ -37,8 +35,8 @@ export function uppstartSist() {
         // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i
         // DOM:en förrän dokumentet är klart (i jsdom-riggen körs skriptet efter hela dokumentet).
         const inbakat = () => {
-            if (!demo && typeof lasInInbakatPaket === 'function') lasInInbakatPaket();
-            else if (demo && document.getElementById('inbakat-organisationspaket') && typeof _paketStatus === 'function') _paketStatus('Det inbakade paketet används inte i demoläget.', false);
+            if (!demo) lasInInbakatPaket();
+            else if (demo && document.getElementById('inbakat-organisationspaket')) _paketStatus('Det inbakade paketet används inte i demoläget.', false);
         };
         // Finns blocket redan (dokumentet färdigtolkat, t.ex. i testriggen) läses det direkt; annars när dokumentet är klart.
         if (document.getElementById('inbakat-organisationspaket') || document.readyState !== 'loading') inbakat();

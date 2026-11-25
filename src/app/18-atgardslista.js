@@ -27,7 +27,7 @@ import { bedomningUnderlag } from './13-oversikt.js';
 import { _fkAttGora } from './17-forhandskontroll.js';
 import { _laddaNedCSV } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { likvardighetResultat, likvardighetspar } from './34-likvardigt-arbete.js';
+import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
 import { konsklassOrd } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
@@ -53,14 +53,14 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
     const items = [];
     if (!state.data.length) return items;
     // Regressionen körs en gång här och skickas vidare till det som läser den (ADR-17: ingen cache, bara ett värde).
-    const reg = endastGrupper ? null : (given || (typeof korOLSRegression === 'function' ? korOLSRegression() : null));
+    const reg = endastGrupper ? null : (given || korOLSRegression());
 
     // Punkterna per grupp (prioriteringen och likvärdighetsparen) bär AID-koden; sektorsöversikten
     // räknar bara dem och bygger därför inte de tunga, organisationsövergripande delarna.
     if (!endastGrupper) {
         // === 1. Underlagets kvalitet (ADR-19) — en punkt per kriterium som inte är OK ===
         try {
-            const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag({ reg }) : null;
+            const uk = bedomningUnderlag({ reg });
             if (uk) uk.kriterier.filter(c => c.status !== 'ok').forEach(c => items.push({
                 id: 'dq-' + c.id,
                 kategori: 'Underlagets kvalitet',
@@ -96,7 +96,7 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
                 }
             }
             // Förhandskontrollen av lönefilen (17-forhandskontroll.js): varningarna tills filen läses om utan dem.
-            if (typeof _fkAttGora === 'function') items.push(..._fkAttGora(new Set(items.map(i => i.id))));
+            items.push(..._fkAttGora(new Set(items.map(i => i.id))));
         } catch (e) { rapporteraFel('Att göra: underlagets kvalitet', e); }
 
         // === Lika arbete: BAS-intervall med statusen Värt att granska (ADR-59): den råa medianskillnadens bootstrap-KI
@@ -140,10 +140,8 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
     // === 2. Prioriteringsanalysen (AKUT, åtgärd, bevaka) ===
     try {
         if (state.policy.length || state.statistik.length) {
-            const ref = (typeof _valdPrioReferens === 'function')
-                ? _valdPrioReferens()
-                : (/** @type {HTMLInputElement} */ (document.querySelector('input[name="prio-ref"]:checked'))?.value || 'stallningstagande');
-            const prioItems = (typeof raknaPrioritering === 'function') ? raknaPrioritering(ref) : [];
+            const ref = _valdPrioReferens();
+            const prioItems = raknaPrioritering(ref);
             prioItems.filter(i => i.status === 'akut').forEach(i => {
                 const fmt = new Intl.NumberFormat('sv-SE');
                 items.push({
@@ -174,23 +172,21 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
     // Paren kommer i första hand ur organisationens egna yrken; jämförelsestatistiken är
     // bara en reserv. Därför krävs ingen inläst statistik för att paren ska komma med.
     try {
-        if (typeof likvardighetspar === 'function') {
-            const lv = likvardighetResultat();
-            // Minsta gruppstorlek: par med en grupp under tröskeln tas bort FÖRE begränsningen till 20
-            // (undantaget gäller bara fliken Likvärdigt arbete); meningen om dem: _attGoraParNot().
-            _parForRedovisning(lv?.pairs).par.slice(0, 20).forEach(p => {
-                items.push({
-                    id: `lv-${p.kvAid}-${p.maAid}-${p.kvBas}`, aid: p.kvAid || null,
-                    kategori: 'Likvärdigt arbete',
-                    prioritet: p.gapPct >= 10 ? 'hög' : 'medel',
-                    titel: `${p.kvLabel || p.kvAid} (BAS ${p.kvBas}, ${svPct(p.kvKvinnoPct, 0)} kv) ligger ${_agPct(p.gapPct)} % under ${p.maLabel || p.maAid} (${svPct(p.maKvAndel, 0)} kv${p.maKlass ? `, ${konsklassOrd(p.maKlass)}` : ''})`,
-                    // ADR-60: jämförelseyrket är ett yrke som inte är kvinnodominerat; klassen står i titeln.
-                    detalj: `Organisationens median ${Math.round(p.kvMedian).toLocaleString('sv-SE')} kr mot ${p.jamforKalla === 'extern' ? 'jämförelsestatistikens' : genitiv(T.jamforelse.bf)} ${Math.round(p.maMedian).toLocaleString('sv-SE')} kr. Granska om kraven är likvärdiga och dokumentera sakliga skäl.`,
-                    tab: 'likvardighet',
-                    källa: 'Likvärdighetsanalys'
-                });
+        const lv = likvardighetResultat();
+        // Minsta gruppstorlek: par med en grupp under tröskeln tas bort FÖRE begränsningen till 20
+        // (undantaget gäller bara fliken Likvärdigt arbete); meningen om dem: _attGoraParNot().
+        _parForRedovisning(lv?.pairs).par.slice(0, 20).forEach(p => {
+            items.push({
+                id: `lv-${p.kvAid}-${p.maAid}-${p.kvBas}`, aid: p.kvAid || null,
+                kategori: 'Likvärdigt arbete',
+                prioritet: p.gapPct >= 10 ? 'hög' : 'medel',
+                titel: `${p.kvLabel || p.kvAid} (BAS ${p.kvBas}, ${svPct(p.kvKvinnoPct, 0)} kv) ligger ${_agPct(p.gapPct)} % under ${p.maLabel || p.maAid} (${svPct(p.maKvAndel, 0)} kv${p.maKlass ? `, ${konsklassOrd(p.maKlass)}` : ''})`,
+                // ADR-60: jämförelseyrket är ett yrke som inte är kvinnodominerat; klassen står i titeln.
+                detalj: `Organisationens median ${Math.round(p.kvMedian).toLocaleString('sv-SE')} kr mot ${p.jamforKalla === 'extern' ? 'jämförelsestatistikens' : genitiv(T.jamforelse.bf)} ${Math.round(p.maMedian).toLocaleString('sv-SE')} kr. Granska om kraven är likvärdiga och dokumentera sakliga skäl.`,
+                tab: 'likvardighet',
+                källa: 'Likvärdighetsanalys'
             });
-        }
+        });
     } catch (e) { rapporteraFel('Att göra: likvärdigt arbete', e); }
 
     if (!endastGrupper) {
@@ -220,21 +216,19 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
         // === 5. Handlingsplan: förifyllda rader där rullistan Sakliga skäl prövade? är tom (56-handlingsplan.js) ===
         // En egen rad räknas inte: den är ingen grupp ur underlaget. Punkten försvinner när varje rad har ett val.
         try {
-            if (typeof _handlingsplanForifyllning === 'function') {
-                const seed = _handlingsplanForifyllning();
-                const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
-                if (utan) items.push({
-                    id: 'hp-sakliga-skal', kategori: 'Handlingsplan', prioritet: 'medel',
-                    titel: `${utan} ${utan === 1 ? 'grupp i handlingsplanen är inte bedömd' : 'grupper i handlingsplanen är inte bedömda'} än`,
-                    detalj: 'Välj för varje rad i handlingsplanen om sakliga skäl finns eller om en åtgärd behövs. Skälen anger du med kategori och belopp under knappen Sakliga skäl på raden.',
-                    tab: 'handlingsplan', källa: 'Handlingsplan'
-                });
-            }
+            const seed = _handlingsplanForifyllning();
+            const utan = seed.rows.filter((r, i) => !_hpArEgen(seed.nycklar[i]) && !r[3]).length;
+            if (utan) items.push({
+                id: 'hp-sakliga-skal', kategori: 'Handlingsplan', prioritet: 'medel',
+                titel: `${utan} ${utan === 1 ? 'grupp i handlingsplanen är inte bedömd' : 'grupper i handlingsplanen är inte bedömda'} än`,
+                detalj: 'Välj för varje rad i handlingsplanen om sakliga skäl finns eller om en åtgärd behövs. Skälen anger du med kategori och belopp under knappen Sakliga skäl på raden.',
+                tab: 'handlingsplan', källa: 'Handlingsplan'
+            });
         } catch (e) { rapporteraFel('Att göra: handlingsplanen', e); }
 
         // === 6. Livscykelanalys — växande gap ===
         try {
-            const life = (typeof korLivscykelregression === 'function') ? korLivscykelregression(_livscykelValdBas) : null;
+            const life = korLivscykelregression(_livscykelValdBas);
             if (life && life.ok && livscykelMonster(life) === 'växande') {   // samma regel som livscykelanalysen (src/lib/vymodell-livscykel.js)
                 items.push({
                     id: 'livscykel-vaxer',
@@ -267,7 +261,7 @@ function _attGoraLank(it, text, klass = '') {
 /** Meningen om par i likvärdigt arbete som utelämnats ur listan (grupp under tröskeln), annars tom sträng. */
 function _attGoraParNot() {
     try {
-        if (!state.data.length || typeof likvardighetspar !== 'function') return '';
+        if (!state.data.length) return '';
         return _parForRedovisning(likvardighetResultat()?.pairs).not;
     } catch (_e) { return ''; }
 }

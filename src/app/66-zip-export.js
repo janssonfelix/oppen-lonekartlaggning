@@ -38,7 +38,7 @@ async function _exportZipExport() {
     if (typeof JSZip === 'undefined') { alert('Exporten kunde inte starta: en del av verktyget saknas i filen. Ladda om sidan; hjälper det inte, hämta verktyget på nytt.'); return false; }
     if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }
     const zip = new JSZip();
-    if (typeof visaLaddning === 'function') visaLaddning();
+    visaLaddning();
     try {
         // Excel-filen först: den byggs utan väntan, före Word-utkastets bilder.
         // Ett fel i en del stoppar inte de andra: det rapporteras, och filen får det som gick att bygga.
@@ -67,9 +67,9 @@ async function _exportZipExport() {
         laddaNer(blob, 'lonekartlaggning_export.zip');
         return true;
     } finally {
-        if (typeof doljLaddning === 'function') doljLaddning();
+        doljLaddning();
         const oppen = document.querySelector('.nav-item.active[data-tab]');
-        if (oppen && oppen.getAttribute('data-tab') === 'dokumentera' && typeof ritaExportBesked === 'function') ritaExportBesked();
+        if (oppen && oppen.getAttribute('data-tab') === 'dokumentera') ritaExportBesked();
     }
 }
 

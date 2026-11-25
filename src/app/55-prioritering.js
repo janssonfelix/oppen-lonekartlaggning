@@ -520,7 +520,7 @@ function _kostnadAndrad() {
     if (!state.data.length) return;
     ritaPrioritering();
     const aktiv = document.querySelector('.nav-item.active')?.getAttribute('data-tab');
-    if (aktiv && aktiv !== 'prioritering' && typeof ritaFlik === 'function') ritaFlik(aktiv);
+    if (aktiv && aktiv !== 'prioritering') ritaFlik(aktiv);
 }
 
 // ---- Figurer för diagramkärnan (ADR-39, steg 3) ----

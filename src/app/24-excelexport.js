@@ -57,7 +57,6 @@ function _excelAlltBladExport() {
  * ingen rad har skäl. Förifyllningen räknas i exportläget, så en grupp under tröskeln följer inte med.
  */
 function _excelSkalRader() {
-    if (typeof _hpSkalUnderlag !== 'function') return null;
     const { grupper, perKategori: pk } = _hpSkalUnderlag();
     if (!grupper.length) return null;
     const pct = v => (v == null ? '' : Math.round(v * 1000) / 10);
@@ -77,7 +76,7 @@ function _excelSkalRader() {
 /** Raderna i bladet Egna tabeller, eller null när inga recept finns. Tal som tal, med kolumnrubriken som enhet. */
 function _excelEgnaRader() {
     const recept = state.rapportTabeller || [];
-    if (!recept.length || typeof receptTillTabeller !== 'function') return null;
+    if (!recept.length) return null;
     const tal = (v, typ) => (v == null || typeof v !== 'number' || !isFinite(v) ? (v == null ? '' : v) : (typ === 'kr' || typ === 'antal' ? Math.round(v) : Math.round(v * 100) / 100));
     const rows = [['Egna tabeller', `byggda i Tabeller och egna vyer; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
     for (const r of recept) {
@@ -96,7 +95,7 @@ function _excelEgnaRader() {
 
 /** Raderna i bladet Per BAS, eller null utan underlag. */
 function _excelPerBasRader() {
-    const pb = typeof rmPerBasUnderlag === 'function' ? rmPerBasUnderlag(hamtaData(), kTroskel()) : null;
+    const pb = rmPerBasUnderlag(hamtaData(), kTroskel());
     if (!pb || !pb.intervall.length) return null;
     const tal = v => (v == null || !isFinite(v) ? '' : Math.round(v));
     const pct = v => (v == null || !isFinite(v) ? '' : Math.round(v * 10) / 10);
@@ -163,7 +162,7 @@ function _excelDiagramBlad() {
         ['Åldersgrupp', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre'],
         ...alder.visade.map(a => [a.namn, a.nKv, a.nMa, Math.round(a.medKv), Math.round(a.medMa), r1(a.gap), a.ci ? r1(a.ci.lo) : '', a.ci ? r1(a.ci.hi) : ''])]]);
     // Lönepolitik: bara när ett ställningstagande är inläst och matchar underlaget (75-lonepolitik.js).
-    const lp = typeof _lpExcelBlad === 'function' ? _lpExcelBlad() : null;
+    const lp = _lpExcelBlad();
     if (lp) ut.push(['Lönepolitik', lp]);
     const referenser = _rrExcelBlad();
     if (referenser) ut.push(['Referenser', referenser]);
@@ -361,7 +360,7 @@ function _exportJPAProtokollExport() {
 
     // paren i likvärdigt arbete hämtas EN GÅNG här, så att försättssidan och flik 3b alltid är konsistenta, och ur samma resultat som
     // fliken visar (likvardighetResultat, som nollställs när underlaget eller valen ändras).
-    const lvResult = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
+    const lvResult = likvardighetResultat();
     // Minsta gruppstorlek: protokollet redovisar bara par där båda grupperna når tröskeln (undantaget gäller
     // bara fliken Likvärdigt arbete); antalet som utelämnats anges i stället.
     const lvRedovisning = _parForRedovisning(lvResult?.pairs);

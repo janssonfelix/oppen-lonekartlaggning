@@ -244,7 +244,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
 
     // Ett analyssteg är klart först när dess punkter i Att göra är hanterade — att analysen
     // har körts räcker inte (ADR-29). Listan byggs en gång för alla steg.
-    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => (typeof byggAtgardslista === 'function' ? byggAtgardslista({ reg: givenReg }) : []), []) : []);
+    const punkter = Array.isArray(givna) ? givna : (hasData ? safe(() => byggAtgardslista({ reg: givenReg }), []) : []);
     const klarmarkerade = state._actionChecklistDone || new Set();
     const hanterade = kategorier => _agHanterade(punkter, klarmarkerade, kategorier);   // src/lib/attgora.js
 
@@ -257,7 +257,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
 
     // 2. § 8 Regler & praxis (kvalitativ bedömning per område)
     rows.push(safe(() => {
-        const areas = (typeof _bes8Omraden === 'function') ? _bes8Omraden() : [];
+        const areas = _bes8Omraden();
         const total = areas.length || 6;
         const done = areas.filter(a => a && a.status).length;
         return {
@@ -270,7 +270,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
     // 3. § 9 Lika arbete (oförklarat gap + antal grupper att förklara/åtgärda)
     rows.push(safe(() => {
         if (!hasData) return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, status: 'ej', detail: 'Kräver inläst underlag.' };
-        const reg = givenReg || ((typeof korOLSRegression === 'function') ? korOLSRegression() : null);
+        const reg = givenReg || korOLSRegression();
         const ok = !!(reg && !reg.error);
         const { t, d } = hanterade(['Lika arbete', 'Lika arbete, fördjupning']);
         return { n: 3, tab: 'matrix', title: `3. Lika arbete — samma ${T.enhet.en}`, ...stegLikaArbete({ regressionOk: ok, t, d }) };
@@ -279,7 +279,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
     // 4. Likvärdigt arbete (3 kap. 9 § 2) (antal kandidatpar)
     rows.push(safe(() => {
         if (!hasData) return { n: 4, tab: 'likvardighet', title: '4. Likvärdigt arbete', status: 'ej', detail: 'Kräver inläst underlag.' };
-        const lv = typeof likvardighetResultat === 'function' ? likvardighetResultat() : null;
+        const lv = likvardighetResultat();
         // Antalet står bredvid antalet hanterade punkter i Att göra, som utelämnar par med en grupp
         // under tröskeln — därför räknas de redovisade paren och de utelämnade nämns. Finns bara utelämnade
         // par säger steget det självt (tillståndet `inget`, knappen leder till fliken).
@@ -292,7 +292,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
     // 5. Handlingsplan (3 kap. 13 §): raderna på fliken (förifyllda och egna) och statusen som fyllts i där (56-handlingsplan.js).
     rows.push(safe(() => {
         if (!hasData) return { n: 5, tab: 'handlingsplan', title: '5. Handlingsplan', status: 'ej', detail: 'Kräver inläst underlag.' };
-        const rader = typeof _handlingsplanForifyllning === 'function' ? _handlingsplanForifyllning().rows : [];
+        const rader = _handlingsplanForifyllning().rows;
         const t = rader.length;
         const genomforda = rader.filter(r => r[7] === 'Genomförd').length;
         const planerade = rader.filter(r => r[7] === 'Planerad' || r[7] === 'Pågår').length;
@@ -384,7 +384,7 @@ export function ovRitaLage() {
     // Filer och kvalitet: Underlagets kvalitet har inget att visa före inläsningen (sidindexet och sökningen hoppar över det då).
     const kvalitet = document.getElementById('avsnitt-ov-kvalitet');
     if (kvalitet) kvalitet.hidden = !har;
-    if (typeof sokUppdatera === 'function') sokUppdatera();   // sökfältet i sidhuvudet: en öppen träfflista stängs när lönefilen läses in eller rensas
+    sokUppdatera();   // sökfältet i sidhuvudet: en öppen träfflista stängs när lönefilen läses in eller rensas
     if (har !== _ovHadeData) {
         // Läget byter: stegen står hopfällda under Fördjupning, före inläsning (under startytan) som efter.
         const proc = document.getElementById('avsnitt-ov-process');
@@ -456,7 +456,7 @@ export function ritaOversiktDelar() {
         ['processöversikten', () => ritaKartlaggningensSteg({ punkter, reg })]];   // Var uppstår löneskillnaden ritas av Lönestruktur (ritaFlik('struktur'))
     for (const [namn, fn] of delar) { try { fn(); } catch (e) { rapporteraFel(`Översikt (${namn})`, e); } }
     const ab = document.getElementById('snapshot-comparison');
-    if (ab && ab.style.display !== 'none' && typeof ritaOgonblicksbildJamforelse === 'function') ritaOgonblicksbildJamforelse();
+    if (ab && ab.style.display !== 'none') ritaOgonblicksbildJamforelse();
 }
 
 // ---- Populate BAS selects ----

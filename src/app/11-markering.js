@@ -72,11 +72,11 @@ function _mkEtikett(nyckel) {
  * `null` tar bort allt.
  */
 export function sattDiagramMarkering(nyckel, { lagg = false } = {}) {
-    if (typeof visningNy === 'function') visningNy();   // markeringen visas i alla flikar (ADR-81)
+    visningNy();   // markeringen visas i alla flikar (ADR-81)
     if (!nyckel) _markering = [];
     else if (lagg) _markering = _markering.includes(nyckel) ? _markering.filter(k => k !== nyckel) : [..._markering, nyckel];
     else _markering = _markering.length === 1 && _markering[0] === nyckel ? [] : [nyckel];
-    if (typeof _rfMarkeraAlla === 'function') _rfMarkeraAlla();
+    _rfMarkeraAlla();
     _mkTabeller();
     _mkRitaRad();
 }
@@ -159,7 +159,7 @@ function _mkRitaRad() {
     rad.appendChild(text);
     if (_mkDossierNyckel()) rad.appendChild(_mkKnapp('dossier', 'Öppna gruppdossier'));
     // Ett markerat BAS-intervall: dess dossier (81-basdossier.js) ett klick bort, som gruppdossiern för en yrkesgrupp.
-    if (_mkBorrBas() != null && typeof basdossierKandidater === 'function' && basdossierKandidater().some(x => x.bas === _mkBorrBas())) rad.appendChild(_mkKnapp('basdossier', 'Öppna BAS-dossiern'));
+    if (_mkBorrBas() != null && basdossierKandidater().some(x => x.bas === _mkBorrBas())) rad.appendChild(_mkKnapp('basdossier', 'Öppna BAS-dossiern'));
     if (_mkBorrBas() != null) {
         const b = _mkKnapp('borra', `Visa ${T.enhet.bfl}`);
         b.title = `Öppnar Tabeller och egna vyer med ${T.enhet.bfl} i ${T.niva.bf}. Där visas också grupper under tröskeln, markerade; de följer inte med i en export om du inte väljer det.`;
@@ -181,7 +181,7 @@ function _mkKnapp(vad, text) {
 function _mkDossierNyckel() {
     if (_markering.length !== 1 || !_markering[0].startsWith('grupp:')) return null;
     const nyckel = _markering[0].slice(6);
-    return typeof gruppdossierKandidater === 'function' && gruppdossierKandidater().some(c => c.key === nyckel) ? nyckel : null;
+    return gruppdossierKandidater().some(c => c.key === nyckel) ? nyckel : null;
 }
 
 // ---- Nedborrning: från ett markerat BAS-intervall till dess yrkesgrupper i Utforska ----
@@ -192,7 +192,7 @@ function _mkDossierNyckel() {
 let _mkTillbaka = null;   // { bas, urval, gruppVillkor, rad, kolumn, flik } eller null
 
 function _mkBorrBas() {
-    return _markering.length === 1 && _markering[0].startsWith('bas:') && typeof utforskaSattUrval === 'function' ? _markering[0].slice(4) : null;
+    return _markering.length === 1 && _markering[0].startsWith('bas:') ? _markering[0].slice(4) : null;
 }
 function nedborrningTillUtforska() {
     const bas = _mkBorrBas();
@@ -207,7 +207,7 @@ function nedborrningTillUtforska() {
     /** @type {HTMLInputElement} */ (kolumn).value = 'ingen';
     _mkBorrRad();
     const nav = document.querySelector('.nav-item[data-tab="utforska"]');
-    if (nav && nav !== aktiv) /** @type {HTMLElement} */ (nav).click(); else if (typeof ritaUtforska === 'function') ritaUtforska();
+    if (nav && nav !== aktiv) /** @type {HTMLElement} */ (nav).click(); else ritaUtforska();
 }
 function nedborrningTillbaka() {
     const t = _mkTillbaka;
@@ -219,7 +219,7 @@ function nedborrningTillbaka() {
     if (kolumn) /** @type {HTMLInputElement} */ (kolumn).value = t.kolumn;
     _mkBorrRad();
     const nav = t.flik && t.flik !== 'utforska' ? document.querySelector(`.nav-item[data-tab="${t.flik}"]`) : null;
-    if (nav) /** @type {HTMLElement} */ (nav).click(); else if (typeof ritaUtforska === 'function') ritaUtforska();
+    if (nav) /** @type {HTMLElement} */ (nav).click(); else ritaUtforska();
 }
 /** Glömmer vägen tillbaka ("Rensa all data"): det sparade urvalet namnger grupper. */
 export function nedborrningGlom() { _mkTillbaka = null; _mkBorrRad(); }
@@ -251,7 +251,7 @@ export function uppstartMarkering() {
     // (dialogerna har klassen glossary-modal, de äldre modal; båda visas med display: flex).
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape' || document.querySelector('.modal[style*="flex"], .glossary-modal[style*="flex"]')) return;
-        if (typeof _rfPenselRensaAlla === 'function') _rfPenselRensaAlla();
+        _rfPenselRensaAlla();
         if (_markering.length) sattDiagramMarkering(null);
     });
 }

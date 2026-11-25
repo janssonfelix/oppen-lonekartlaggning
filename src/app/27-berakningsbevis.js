@@ -65,13 +65,13 @@ export function _oppnaBevisruta(p) {
         ${p.footer ? `<p class="text-dampad-sm lh-1_55 marg-14-0-0">${p.footer}</p>` : ''}
     `;
     modal.style.display = 'flex';
-    if (typeof fangaFokus === 'function') fangaFokus(modal);
+    fangaFokus(modal);
 }
 
 export function _stangBevisruta() {
     const modal = document.getElementById('evidence-modal');
     if (!modal) return;
-    if (typeof slappFokus === 'function') slappFokus(modal);
+    slappFokus(modal);
     modal.style.display = 'none';
 }
 

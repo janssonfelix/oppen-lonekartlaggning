@@ -851,7 +851,7 @@ function _exportPrognosExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, `loneoversyn_prognos_${idagDatum()}.xlsx`);
-    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Löneöversynens prognosunderlag exporterat.');
+    meddelaSkarmlasare('Löneöversynens prognosunderlag exporterat.');
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

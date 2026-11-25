@@ -165,7 +165,7 @@ export const RM_MATT = Object.freeze({ p10: 'P10', p25: 'P25', med: 'Median', p7
  * @param {number} k
  */
 export function rmPerBasUnderlag(d, k) {
-    if (typeof perBasTabeller !== 'function' || !d.length) return null;
+    if (!d.length) return null;
     return perBasTabeller(d, { k, referens: (aid, bas) => policyFor(aid, bas), statistik: state.statistik, recept: state.perBasRecept,
         referensNamn: referensKortnamn(), statistikNamn: state.statistik.length ? (state.statistikNamn || 'Jämförelsestatistik') : 'Jämförelsestatistik' });
 }
@@ -300,7 +300,6 @@ function rmBasintervallAvsnitt(k, bi) {
  * @param {(avsnitt: string, del?: string) => any[]} diagram
  */
 function rmArsjamforelseAvsnitt(diagram) {
-    if (typeof arsjamforelse !== 'function') return null;
     const jf = arsjamforelse();
     if (!jf) return null;
     const { forra, nu, j } = jf;

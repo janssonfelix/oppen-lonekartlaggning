@@ -644,7 +644,7 @@ function _rfRitaOm(el, { overgang = true } = {}) {
     _rfNotis(el, svg);
     if (fokus != null) _rfFokusera(el, fokus);
     // Länkade vyer (11-markering.js): den markerade gruppen framhävs också i en nyritad bild.
-    if (typeof _mkTillampa === 'function') _mkTillampa(el);
+    _mkTillampa(el);
     // Tangentbord: ritytan går att nå med Tab när det finns märken att gå mellan; ett tidigare fokusmärke är borta.
     if (el._rfKoppling) el._rfKoppling.fokus = null;
     const yta = _rfRityta(el);
@@ -858,7 +858,7 @@ function _rfTangentTill(el, m, nr, antal) {
     const r = m.getBoundingClientRect ? m.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
     if (html) { _visaDiagramtips(html, r.left + r.width / 2, r.top); _rfTipsAgare = el; } else _rfDoljTips(el);
     const serie = t && t.lager.serie ? `${t.lager.serie}. ` : '';
-    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(`${serie}${_rfTipsText(rader) || 'Datapunkt'} (${nr + 1} av ${antal})`);
+    meddelaSkarmlasare(`${serie}${_rfTipsText(rader) || 'Datapunkt'} (${nr + 1} av ${antal})`);
 }
 function _rfTangentSlapp(el) {
     const k = el._rfKoppling;
@@ -870,7 +870,7 @@ function _rfAktivera(el, m, e) {
     const t = _rfTraff(el, m);
     if (!t) return;
     const nycklar = t.d && t.d.markering;
-    if (Array.isArray(nycklar) && nycklar.length && typeof sattDiagramMarkering === 'function') {
+    if (Array.isArray(nycklar) && nycklar.length) {
         try { sattDiagramMarkering(String(nycklar[nycklar.length - 1]), { lagg: !!(e && (e.ctrlKey || e.metaKey || e.shiftKey)) }); } catch (fel) { rapporteraFel(_rfPlats('diagrammarkering', el), fel); }
     }
     const fn = el._figurVal && el._figurVal.vidKlick;
@@ -1840,7 +1840,7 @@ function _rfPenselRensa(el) {
     for (const m of el.querySelectorAll(':scope > svg [data-penslad], :scope > svg circle[data-marke="punkt"][opacity]')) { m.removeAttribute('opacity'); m.removeAttribute('data-penslad'); }
     const ruta = el.querySelector(':scope > svg rect[data-del="pensel"]');
     if (ruta) ruta.remove();
-    if (typeof _mkTillampa === 'function') _mkTillampa(el);
+    _mkTillampa(el);
 }
 export function _rfPenselRensaAlla() { for (const el of _rfBehallare) _rfPenselRensa(el); }
 

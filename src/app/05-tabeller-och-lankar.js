@@ -318,8 +318,7 @@ export function uppstartTabellerOchLankar() {
         if (!state.flerKolumner) state.flerKolumner = {};
         state.flerKolumner[cfg.nyckel] = !state.flerKolumner[cfg.nyckel];
         tillampaFlerKolumner(tableId);
-        if (typeof meddelaSkarmlasare === 'function')
-            meddelaSkarmlasare(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
+        meddelaSkarmlasare(state.flerKolumner[cfg.nyckel] ? 'Alla kolumner visas.' : 'Tabellen visar färre kolumner.');
     });
     // Global delegation för cross-link-knappar
     document.addEventListener('click', e => {

@@ -44,7 +44,6 @@ import { _bes8Omraden } from './61-regler-och-praxis.js';
  * @returns {null|{trösklar:number[], rows:Array<{key:string, label:string, hits:number, of:number}>, utelamnade:number, not:string}}
  */
 function robusthetLikvardighet(trösklar = [aidbasGrans() - 5, aidbasGrans(), aidbasGrans() + 5]) {
-    if (typeof likvardighetspar !== 'function') return null;
     const original = aidbasGrans();
     const seen = new Map();
     const utelamnadePar = new Set();
@@ -83,7 +82,6 @@ function robusthetLikvardighet(trösklar = [aidbasGrans() - 5, aidbasGrans(), ai
  * @returns {null|{refs:string[], rows:Array<{key:string,label:string,hits:number,of:number,ranks:Object}>, tooFew:boolean}}
  */
 function robusthetPrioritering(topN = 10) {
-    if (typeof raknaPrioritering !== 'function') return null;
     const refs = [];
     if ((state.policy || []).length) refs.push('stallningstagande');
     if ((state.statistik || []).length) refs.push('statistik');
@@ -212,7 +210,7 @@ function byggFardigcheck() {
 
     // 1. Flaggade grupper utan rad i handlingsplanen
     try {
-        const ref = (typeof _valdPrioReferens === 'function') ? _valdPrioReferens() : 'statistik';
+        const ref = _valdPrioReferens();
         const items = raknaPrioritering(ref) || [];
         const flagged = items.filter(i => i.diffPct < 0);
         // Av dem: de som ligger mer än granskningsgränsen under, alltså Prioriteringens Börja här och Under referens,
@@ -229,7 +227,7 @@ function byggFardigcheck() {
     } catch (e) { rapporteraFel('Färdigcheck: flaggade grupper utan åtgärd', e); }
 
     // 2. BAS utan policyreferens
-    if ((state.policy || []).length && typeof policyFor === 'function') {
+    if ((state.policy || []).length) {
         const utan = hamtaBasIntervall().filter(b => !policyFor(null, b));
         if (utan.length) {
             out.push({
@@ -256,7 +254,7 @@ function byggFardigcheck() {
 
     // 4. § 8-områden som lämnats tomma
     try {
-        const areas = (typeof _bes8Omraden === 'function') ? _bes8Omraden() : [];
+        const areas = _bes8Omraden();
         const tomma = areas.filter(a => !a.status);
         if (tomma.length) {
             out.push({
@@ -282,7 +280,7 @@ function byggFardigcheck() {
 
     // 6. Datakvalitet
     try {
-        const uk = (typeof bedomningUnderlag === 'function') ? bedomningUnderlag() : null;
+        const uk = bedomningUnderlag();
         if (uk && uk.status !== 'ok') {
             out.push({
                 id: 'datakvalitet', level: uk.status === 'kritisk' ? 'warn' : 'info', tab: 'dashboard',

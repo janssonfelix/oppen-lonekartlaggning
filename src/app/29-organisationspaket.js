@@ -52,7 +52,7 @@ export function _synkaKostnadsfalt() {
     const man = document.getElementById('prio-cost-months');
     if (po) /** @type {HTMLInputElement} */ (po).value = state.costSettings.poPct;
     if (man) /** @type {HTMLInputElement} */ (man).value = String(state.costSettings.months);
-    if (typeof _lasKostnadsinstallningar === 'function') _lasKostnadsinstallningar();
+    _lasKostnadsinstallningar();
 }
 
 // Tar bort jämförelsestatistiken (när ett nytt paket saknar den eller vid rensning).
@@ -63,10 +63,10 @@ export function _tomStatistik() {
     state.statistikHasP10 = false;
     state.statistikHasP90 = false;
     state.statistikHasKon = false;
-    if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-stat', 'upload-cell optional', 'Valfritt');
+    aterstallFilruta('upload-cell-stat', 'upload-cell optional', 'Valfritt');
     const ss = document.getElementById('stat-status');
     if (ss) { ss.textContent = ''; ss.className = 'status-msg'; }
-    if (typeof synkaJamforelseFlik === 'function') synkaJamforelseFlik();
+    synkaJamforelseFlik();
 }
 
 export function _paketStatus(text, ok) {
@@ -143,7 +143,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         sattInaktivitetstid(INAKTIVITET_STANDARD_MIN);
         if (!referens && state.policyKalla === 'paket') {
             aterstallReferens();
-            if (typeof aterstallFilruta === 'function') aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
+            aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
             const ps = document.getElementById('policy-status');
             if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
         }
@@ -158,7 +158,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     state.paketLas = { kTroskelLagst: nyttGolv, inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
                        smaGrupperIExport: installningar.smaGrupperIExport !== false };
     if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
-    if (typeof utforskaSynkaSmaLas === 'function') utforskaSynkaSmaLas();
+    utforskaSynkaSmaLas();
     // ADR-38: frågar vid sänkning under standard; nekad bekräftelse behåller värdet.
     // Omritningen görs en gång, sist (se nedan), eftersom paketet ändrar mer än tröskeln.
     let kAndrad = false;
@@ -267,7 +267,7 @@ export function _fyllPaketFormular() {
 
 /** Finns egna tabeller eller ett eget recept per BAS att ta med i paketet? */
 function _paketHarRecept() {
-    return (state.rapportTabeller || []).length > 0 || (state.perBasRecept != null && typeof perBasReceptArStandard === 'function' && !perBasReceptArStandard(state.perBasRecept));
+    return (state.rapportTabeller || []).length > 0 || (state.perBasRecept != null && !perBasReceptArStandard(state.perBasRecept));
 }
 /** Rapportens recept ur formuläret: null när rutan inte är ikryssad eller inget finns. */
 function _paketRapportUrFormular() {
@@ -521,7 +521,7 @@ function visaInbakatPaket() {
         + tabell(obj?.statistik?.namn || 'Jämförelsestatistiken', obj?.statistik?.rader, ['aid', 'bas', 'median', 'p10', 'p90', 'andelKv'])
         + `<details class="bakgrund-panel marg-t-12"><summary>Råtext (JSON)</summary><pre class="fs-xs max-hojd-420 rulla">${esc(obj ? JSON.stringify(obj, null, 2) : inb.text)}</pre></details>`;
     modal.style.display = 'flex';
-    if (typeof fangaFokus === 'function') fangaFokus(modal);
+    fangaFokus(modal);
 }
 function laddaNerInbakatPaket() {
     const inb = state.paketInbakat;
@@ -531,7 +531,7 @@ function laddaNerInbakatPaket() {
     const blob = new Blob([text], { type: 'application/json' });
     meddelaSkarmlasare(`Paketet sparat: ${laddaNer(blob, _paketFilnamn(inb.organisation))}`);
 }
-const _stangPaketDialog = () => { const m = document.getElementById('paket-modal'); if (m) { if (typeof slappFokus === 'function') slappFokus(m); m.style.display = 'none'; } };
+const _stangPaketDialog = () => { const m = document.getElementById('paket-modal'); if (m) { slappFokus(m); m.style.display = 'none'; } };
 
 // Organisationstypen (kommun, region eller båda) styr vilken del av SKR:s personalstatistik som
 // är referens för kvinnoandel (ADR-34). Värdet bor i profilen och följer med paket och konfiguration.

@@ -78,13 +78,13 @@ export function byggGruppdossier(key, delat = null) {
     // Prioritering + hypoteser
     let prio = null, forslag = [];
     try {
-        const ref = (typeof _valdPrioReferens === 'function') ? _valdPrioReferens() : 'statistik';
+        const ref = _valdPrioReferens();
         // raknaPrioritering grupperar på AID-kod och BAS, som dossiern: högst en post per grupp.
         let alla;
         if (!delat) alla = raknaPrioritering(ref);
         else { if (!delat.prio.has(ref)) delat.prio.set(ref, raknaPrioritering(ref)); alla = delat.prio.get(ref); }
         prio = (alla || []).find(i => i.aid === g.aid && i.bas === g.bas) || null;
-        if (prio && typeof byggMotiveringsforslag === 'function') {
+        if (prio) {
             forslag = byggMotiveringsforslag(prio) || [];
         }
     } catch (e) { rapporteraFel('Gruppdossier: prioriteringen', e); }
@@ -103,12 +103,12 @@ export function oppnaGruppdossier(preselectKey) {
     if (!modal) return;
     ritaGruppdossier(preselectKey);
     modal.style.display = 'flex';
-    if (typeof fangaFokus === 'function') fangaFokus(modal);
+    fangaFokus(modal);
 }
 export function stangGruppdossier() {
     const modal = document.getElementById('dossier-modal');
     if (!modal) return;
-    if (typeof slappFokus === 'function') slappFokus(modal);
+    slappFokus(modal);
     modal.style.display = 'none';
 }
 
@@ -140,8 +140,8 @@ export function ritaGruppdossier(preselectKey) {
     // måste därför läggas om medan modalen är öppen.
     const modal = document.getElementById('dossier-modal');
     if (modal && modal.style.display === 'flex') {
-        if (typeof slappFokus === 'function') slappFokus(modal);
-        if (typeof fangaFokus === 'function') fangaFokus(modal);
+        slappFokus(modal);
+        fangaFokus(modal);
     }
 }
 
@@ -306,6 +306,6 @@ export function uppstartGruppdossier() {
         const d = sel ? medExportLage(() => byggGruppdossier(/** @type {HTMLInputElement} */ (sel).value)) : null;   // texten lämnar verktyget (ADR-51)
         if (!d) { alert(`Gruppen har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`); return; }
         const txt = medExportLage(() => gruppdossierSomText(d));
-        kopieraTextTillUrklipp(txt, () => { if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare('Dossier kopierad.'); });
+        kopieraTextTillUrklipp(txt, () => { meddelaSkarmlasare('Dossier kopierad.'); });
     });
 }

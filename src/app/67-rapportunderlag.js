@@ -86,11 +86,11 @@ export function ritaRapportunderlag() {
     if (!hamtaData().length) {
         _rapportBlockSenast = new Map();
         host.innerHTML = '<p class="ru-tom">Läs in underlag för att få rapportunderlaget.</p>';
-        if (typeof _dkRitaTopp === 'function') _dkRitaTopp({ block: null });
+        _dkRitaTopp({ block: null });
         return;
     }
     const block = rapportunderlagBlock();
-    if (typeof _dkRitaTopp === 'function') _dkRitaTopp({ block: block.length });
+    _dkRitaTopp({ block: block.length });
     _rapportBlockSenast = new Map(block.map(b => [b.id, b]));
     const grupp = (rubrik, lista) => lista.length
         ? `<h3 class="ru-grupprubrik">${esc(rubrik)}</h3>` + lista.map(b => `
@@ -176,7 +176,7 @@ async function _kopieraRapportAvsnittExport() {
 function _rapportKvitto(knapp, text) {
     const k = knapp && knapp.parentElement && knapp.parentElement.querySelector('.ru-kvitto');
     if (k) k.textContent = text;
-    if (typeof meddelaSkarmlasare === 'function') meddelaSkarmlasare(text);
+    meddelaSkarmlasare(text);
 }
 
 /** Kopierar ett block som formaterad text + ren text. Reserv: markera och kopiera. */
