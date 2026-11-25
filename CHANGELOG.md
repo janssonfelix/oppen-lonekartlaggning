@@ -9,6 +9,16 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **Regressionskortet säger bara det modellen räknar bort.** Utan ålder i modellen stod det att skillnaden «kan
+  inte motiveras med arbetar i andra BAS-intervall»; nu står «att kvinnor arbetar i andra BAS-intervall». Kortets
+  inledning, analysen per BAS-intervall och BAS-effekterna i den tekniska specifikationen nämnde ålder också när
+  modellen eller lönefilen saknar ålder; nu följer de modellen.
+- **Symbolförklaringen i regressionskortet stämmer med tabellen.** Den sa att en säkerställd skillnad under 3 %
+  saknar märke, men den får ögat; nu står också vad varningstriangeln betyder.
+- **Livscykelns modelljämförelse namnger huvudmodellen som den är vald.** Kolumnen hette alltid «BAS-indikatorer,
+  linjär ålder», också när ålder var vald bort.
+- **Jämförelseexporten lovar inga färger.** Metadatabladet sa att positiva skillnader är gröna och negativa röda,
+  men Excel-filen färgar inga celler.
 - **Ålder & karriär säger rätt mått.** Diagrammets beskrivning sa att en lön som sjunker med åldern «ökar med −300
   kr per år»; nu står att den minskar. Åldersstrukturens rad om ett äldre eller yngre intervall talade om medelåldern
   och organisationssnittet, men talet är skillnaden mellan medianåldrar; nu säger texten det.

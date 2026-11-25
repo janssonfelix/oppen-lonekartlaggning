@@ -130,8 +130,8 @@ function _exportJamforelseExcelExport() {
         ['Matchning', `AID + BAS: samma AID och samma BAS. Endast AID: en rad med samma AID som saknar BAS. Rader för andra ${T.niva.fl} används aldrig. – = statistik saknas.`],
         ['Referens', referensNamn() + referensKalla()],
         ['', ''],
-        ['Diff-kolumner: positiva värden (grön) = organisationen ligger över referens.', ''],
-        ['Negativa värden (röd) = organisationen ligger under referens.', ''],
+        ['Diff-kolumner: positiva värden = organisationen ligger över referensen.', ''],
+        ['Negativa värden = organisationen ligger under referensen.', ''],
         ['Tomma celler = referensvärde saknas i uppladdad fil eller ej tillämpligt.', ''],
         [`Minsta gruppstorlek (n<${kTroskel()}) = grupper med färre än ${kTroskel()} ${personOrd(kTroskel())} exkluderas helt.`, '']
     ];
