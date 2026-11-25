@@ -70,16 +70,6 @@ beslutades står i referensen för området eller i beslutsloggen. Syfte och avg
     och bekräftar för sin installation.
 21. **Inför användning hos fler arbetsgivare:** licens- eller användaravtal, prismodell och support; en beskriven
     väg in för andra arbetsvärderingssystem än BAS; för offentlig sektor offentlighetsprincipen och
-    arkivering av utdata, mall för konsekvensbedömning; en jurist-granskad metodbeskrivning och en handledning
-    för facklig samverkan. (Textförslaget till information till de anställda, tillgänglighetsredogörelsen och
-    säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`; textförslaget är inte juridiskt granskat.)
-
-**Juridiska frågor.** Hänvisningarna gicks igenom 2026-10-19 (status *Förslag* i [`lagrum.md`](lagrum.md): inte
-juridiskt granskade). Beslut som följde: verktyget hänvisar övergripande
-och lagrummen står bara i [`lagrum.md`](lagrum.md) (ADR-16); kvinnodominerat arbete är mer än 60 % kvinnor;
-direktivet beskrivs som inte infört i Sverige, med möjlig direkt verkan mot kommun och region. Genomfört
-och kvar att pröva juridiskt: 5 %-gränsen används bara för gemensam lönebedömning, aldrig för att flagga lika eller
-likvärdigt arbete (ADR-59); inläsningen avvisar kolumner vars rubrik antyder fackmedlemskap, hälsa eller andra
-särskilda kategorier (`hittaKansligaKolumner`). Fliken *Handlingsplan* behåller namnet, som är neutralt (beslut
-2026-11-15). Protokollet för gemensam lönebedömning är kartlagt led för led mot art. 10.2 a–g i [`lagrum.md`](lagrum.md).
-Ingen juridisk granskning har gjorts; varje arbetsgivare stämmer av mot sin egen rådgivning.
+    arkivering av utdata, mall för konsekvensbedömning; en handledning för facklig
+    samverkan. (Textförslaget till information till de anställda, tillgänglighetsredogörelsen och
+    säkerhetsbeskrivningen på en sida finns i `docs/anvandare/`.)
