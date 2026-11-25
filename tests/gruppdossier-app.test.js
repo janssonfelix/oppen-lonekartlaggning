@@ -157,6 +157,41 @@ describe('robusthetspanelen följer minsta gruppstorlek (ADR-38)', () => {
 });
 
 describe('gruppdossiern', () => {
+    it('prioriteringens läge heter som i Prioritering, på skärmen och i textkopian', () => {
+        const etiketter = Object.values(win.eval('PRIO_STATUS_INFO')).map(i => i.label);
+        const d = win.__gruppdossierKandidater().map(g => win.__byggGruppdossier(g.key)).find(x => x && x.prio);
+        expect(d).toBeTruthy();
+        const rad = win.__gruppdossierSomText(d).split('\n').find(r => r.startsWith('Prioritering: '));
+        expect(etiketter).toContain(rad.slice('Prioritering: '.length).split(' · ')[0]);
+        win.eval(`oppnaGruppdossier(${JSON.stringify(d.key)})`);
+        const kort = [...win.document.querySelectorAll('#dossier-body .gd-card')].find(c => /Hur angeläget/.test(c.textContent));
+        expect(etiketter).toContain(kort.querySelector('strong').textContent);
+        win.eval('stangGruppdossier()');
+    });
+
+    it('Kopiera: en grupp under tröskeln säger att den inte kopieras, och nekat urklipp går via textfältet', async () => {
+        const w = createAppWindow(); w.__lasInDemodata();
+        w.eval('sattKTroskel(25, { fraga: false })');   // demots grupper har minst 10 personer
+        const larm = [], kopior = [];
+        w.alert = t => larm.push(t);
+        w.document.execCommand = kom => { kopior.push([kom, w.document.body.lastElementChild?.value]); return true; };
+        const liten = w.__gruppdossierKandidater().find(g => g.rows.length < 25);
+        expect(liten).toBeTruthy();
+        w.eval(`oppnaGruppdossier(${JSON.stringify(liten.key)})`);
+        w.navigator.clipboard = { writeText: () => Promise.reject(new Error('nekad')) };
+        w.document.getElementById('btn-dossier-copy').click();
+        await new Promise(r => setTimeout(r, 0));
+        expect(larm).toEqual(['Gruppen har färre än 25 personer och kopieras inte.']);
+        expect(kopior).toEqual([]);
+        const stor = w.__gruppdossierKandidater().find(g => g.rows.length >= 25);
+        w.eval(`oppnaGruppdossier(${JSON.stringify(stor.key)})`);
+        w.document.getElementById('btn-dossier-copy').click();
+        await new Promise(r => setTimeout(r, 0));
+        expect(kopior).toHaveLength(1);
+        expect(kopior[0][0]).toBe('copy');
+        expect(kopior[0][1]).toMatch(/^Gruppdossier: /);
+    });
+
     it('gruppNamn skriver koden en gång', () => {
         const w = createAppWindow();
         const namn = g => w.eval(`gruppNamn(${JSON.stringify(g)})`);

@@ -14259,6 +14259,7 @@ function ritaAlderOchLon(bas) {
     document.getElementById("kon-color-by")?.value || "kon"
   );
   const scope2 = isAll ? "hela urvalet" : `${T.niva.en} ${bas}`;
+  const trendOrd = (reg) => `${reg.m < 0 ? "minskar" : "ökar"} med ${Math.abs(Math.round(reg.m))} kr per år`;
   const { utan } = vm;
   const skal = `färre än ${k} ${personOrd(k)} av ${kvOk || maOk ? "könet" : "vartdera könet"} finns i urvalet`;
   ritaFigur("chart-kon-scatter", _konPunktmolnFigur({
@@ -14277,7 +14278,7 @@ function ritaAlderOchLon(bas) {
     ciKv: vm.ciKv,
     ciMa: vm.ciMa,
     pol: isAll ? null : policyFor(null, bas),
-    beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` + (konOk && trendKv && trendMa ? `Kvinnors trend ökar med ${Math.round(trendKv.m)} kr per år, mäns med ${Math.round(trendMa.m)} kr per år. ` : `${trendKv ? `Kvinnors trend ökar med ${Math.round(trendKv.m)} kr per år. ` : ""}${trendMa ? `Mäns trend ökar med ${Math.round(trendMa.m)} kr per år. ` : ""}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ""}`) + `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` + (vm.trendAlla ? ` Trend för hela urvalet: ${vm.trendAlla.m >= 0 ? "+" : "−"}${svTal(Math.abs(vm.trendAlla.m), 0)} kr per år.` : "")
+    beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` + (konOk && trendKv && trendMa ? `Kvinnors trend ${trendOrd(trendKv)}, mäns ${trendOrd(trendMa)}. ` : `${trendKv ? `Kvinnors trend ${trendOrd(trendKv)}. ` : ""}${trendMa ? `Mäns trend ${trendOrd(trendMa)}. ` : ""}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ""}`) + `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` + (vm.trendAlla ? ` Trend för hela urvalet: ${vm.trendAlla.m >= 0 ? "+" : "−"}${svTal(Math.abs(vm.trendAlla.m), 0)} kr per år.` : "")
   }), { hojd: 420 });
   const boxEl = document.getElementById("chart-kon-boxplot");
   const lada = _konLadFigurFor(vm.lada, scope2, k);
@@ -14686,8 +14687,8 @@ function ritaAldersstruktur(bas) {
   if (vm.pension === "manga") risks.push(`<strong>Många nära pension:</strong> ${svPct(andel60, 1)} av ${scopeShort} är 60 år eller äldre. Med riktåldern 60–67 kan en stor del gå i pension inom 0–7 år. Planera för att deras kunskap förs vidare.`);
   else if (vm.pension === "uppsikt") risks.push(`<strong>Håll uppsikt – nära pension:</strong> ${svPct(andel60, 1)} är 60 år eller äldre.`);
   if (vm.atervaxt) risks.push(`<strong>Brist på återväxt:</strong> Endast ${svPct(andelU40, 1)} är under 40 år.`);
-  if (vm.avvikelse === "aldre") risks.push(`Medelåldern är ${svTal(alderDiff, 1)} år <em>högre</em> än organisationssnittet.`);
-  else if (vm.avvikelse === "yngre") risks.push(`Medelåldern är ${svTal(Math.abs(alderDiff), 1)} år <em>lägre</em> än organisationssnittet.`);
+  if (vm.avvikelse === "aldre") risks.push(`Medianåldern är ${svTal(alderDiff, 1)} år <em>högre</em> än i organisationen.`);
+  else if (vm.avvikelse === "yngre") risks.push(`Medianåldern är ${svTal(Math.abs(alderDiff), 1)} år <em>lägre</em> än i organisationen.`);
   const riskEl = document.getElementById("demo-risk-insight");
   if (riskEl) {
     if (risks.length === 0) {
@@ -20255,6 +20256,7 @@ function ritaGruppdossier(preselectKey) {
     if (typeof fangaFokus === "function") fangaFokus(modal);
   }
 }
+var _gdPrioLage = (status) => PRIO_STATUS_INFO[status] && PRIO_STATUS_INFO[status].label || status || "–";
 function gruppNamn(g) {
   const aid = String(g.aid ?? ""), yrke = String(g.yrke ?? "").trim();
   if (!yrke || yrke === aid) return aid;
@@ -20297,7 +20299,7 @@ function _gdRitaInnehall(d) {
            ${d.lvAsComparator.length ? `<p><strong>Gruppen används som ${T.jamforelse.en} för:</strong></p><ul class="gd-list">${d.lvAsComparator.map((p) => `<li>${esc(gruppNamn({ aid: p.kvAid, yrke: p.kvLabel }))} — skillnad ${svPct(p.gapPct, 1)}</li>`).join("")}</ul>` : ""}${lvNot}` : lvNot || missing("Gruppen ingår inte i någon jämförelse av likvärdigt arbete.");
   const benchInner = d.bench && d.bench.median > 0 ? `<p>Extern median: <strong>${kr2(d.bench.median)}</strong> · organisationen: <strong>${kr2(d.median)}</strong>
            (${svPct((d.median / d.bench.median - 1) * 100, 1)})</p>` : missing("Ingen matchande rad i jämförelsestatistiken.");
-  const prioInner = d.prio ? `<p>Status: <strong>${esc(d.prio.status || "–")}</strong> · avvikelse mot referens (${esc(d.prio.refSource || "–")}): <strong>${pct(d.prio.diffPct)}</strong></p>
+  const prioInner = d.prio ? `<p>Läge mot referensen: <strong>${esc(_gdPrioLage(d.prio.status))}</strong> · avvikelse mot referens (${esc(d.prio.refSource || "–")}): <strong>${pct(d.prio.diffPct)}</strong></p>
            <p>Kostnad att lyfta till referensens median: <strong>${kr2(d.prio.annualGapTotal)}/${periodOrd(state.costSettings)}</strong> (${kr2(d.prio.costPerPerson)}/person).</p>` : missing("Gruppen finns inte i prioriteringslistan (saknar referens eller ligger över den).");
   const hypInner = d.suggestions.length ? `<ul class="gd-list">${d.suggestions.map((s) => `<li class="gd-hyp gd-hyp-${esc(s.type || "info")}">${s.text}</li>`).join("")}</ul>` : missing("Inga regelbaserade hypoteser utlöstes för denna grupp.");
   return `
@@ -20330,7 +20332,7 @@ function gruppdossierSomText(d, { stampel = true } = {}) {
   if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
   if (d.adjusted && d.adjusted.status === "ok") L.push(`Skillnad när åldern räknats bort (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);
   if (d.pol) L.push(`Referensspann ${referensKortnamn()}: ${kr2(d.pol.p10)}–${kr2(d.pol.p90)} (${d.polLevel})` + (d.band && d.band.position != null ? ` · position ${svPct(d.band.position * 100, 0)}` : ""));
-  if (d.prio) L.push(`Prioritering: ${d.prio.status} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr2(d.prio.annualGapTotal)} per ${periodOrd(state.costSettings)}`);
+  if (d.prio) L.push(`Prioritering: ${_gdPrioLage(d.prio.status)} · avvikelse ${svPct(d.prio.diffPct, 1)} · ${kr2(d.prio.annualGapTotal)} per ${periodOrd(state.costSettings)}`);
   const somText = (h) => htmlTillText(h);
   if (d.suggestions.length) {
     L.push("Frågor att undersöka:");
@@ -20370,14 +20372,14 @@ function uppstartGruppdossier() {
       /** @type {HTMLInputElement} */
       sel.value
     )) : null;
-    if (!d) return;
+    if (!d) {
+      alert(`Gruppen har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`);
+      return;
+    }
     const txt = medExportLage(() => gruppdossierSomText(d));
-    const done = () => {
+    kopieraTextTillUrklipp(txt, () => {
       if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Dossier kopierad.");
-    };
-    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => {
     });
-    else done();
   });
 }
 
@@ -22335,13 +22337,10 @@ function uppstartBasdossier() {
       );
       const txt = sel ? basdossierText(sel.value) : null;
       if (!txt) {
-        meddelaSkarmlasare(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`);
+        alert(`${stor(T.niva.bf)} har färre än ${kInstalld()} ${personOrd(kInstalld())} och kopieras inte.`);
         return;
       }
-      const klart = () => meddelaSkarmlasare("BAS-dossiern kopierad.");
-      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(txt).then(klart).catch(() => {
-      });
-      else klart();
+      kopieraTextTillUrklipp(txt, () => meddelaSkarmlasare("BAS-dossiern kopierad."));
     }
   });
   document.addEventListener("keydown", (e) => {
@@ -33951,7 +33950,7 @@ function __kopieraTabellTillUrklippExport(tableId, btn) {
 }
 function _kopieraMatrisTillUrklipp(rows, btn, { undantag = "" } = {}) {
   const tsv = tillTsv(_tsvMedStampel(rows, undantag));
-  const done = () => {
+  kopieraTextTillUrklipp(tsv, () => {
     if (typeof meddelaSkarmlasare === "function") meddelaSkarmlasare("Kopierat: " + (rows.length - 1) + " rader.");
     if (btn) {
       const o = btn.innerHTML;
@@ -33960,11 +33959,13 @@ function _kopieraMatrisTillUrklipp(rows, btn, { undantag = "" } = {}) {
         btn.innerHTML = o;
       }, 1500);
     }
-  };
-  const fallback = () => {
+  }, "Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.");
+}
+function kopieraTextTillUrklipp(text, klart, nekad = "Webbläsaren tillät inte kopieringen.") {
+  const reserv = () => {
     try {
       const ta = document.createElement("textarea");
-      ta.value = tsv;
+      ta.value = text;
       ta.setAttribute("readonly", "");
       ta.style.position = "fixed";
       ta.style.opacity = "0";
@@ -33972,16 +33973,13 @@ function _kopieraMatrisTillUrklipp(rows, btn, { undantag = "" } = {}) {
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      done();
+      klart();
     } catch (_e) {
-      alert("Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.");
+      alert(nekad);
     }
   };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(tsv).then(done).catch(fallback);
-  } else {
-    fallback();
-  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(klart).catch(reserv);
+  else reserv();
 }
 function uppstartTillstand() {
   aktiveraHuvudtabeller();
