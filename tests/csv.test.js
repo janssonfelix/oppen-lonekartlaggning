@@ -77,37 +77,18 @@ describe('CSV-exporten: svenska tal lämnas orörda', () => {
         expect(tillTsv([[`${MINUS}3,25 %`, '-31 417 kr', `-1${NNBSP}250`, '012345', '-A1', null]]))
             .toBe(`-3,25 %\t-31 417 kr\t-1${NNBSP}250\t012345\t'-A1\t`);
     });
-    it('formelskyddet gäller som förut i både CSV och urklipp', () => {
+    it('formelskyddet gäller i både CSV och urklipp', () => {
+        // Yrkes- och enhetsnamn kommer ur lönefilen: en fientlig fil kunde annars smyga in en formel ("CSV-injektion").
         for (const v of ['-A1', '=1+2', '+46 70 x', '@SUMMA(A1)', '-2 dagar', '-']) {
             expect(cell(v), v).toBe("'" + v);
             expect(tillTsv([[v]]), v).toBe("'" + v);
         }
+        expect(cell('\t=1')).toBe("'\t=1");   // i urklippet blir tabben ett blanksteg, se nedan
+        expect(cell('=HYPERLINK("http://x","klick")')).toBe(`"'=HYPERLINK(""http://x"",""klick"")"`);
     });
     it('en tabb eller radbrytning i en cell blir mellanslag i urklippet, så att raden hålls ihop och skyddet gäller', () => {
         expect(tillTsv([['5310 Undersköterska\nnatt', 31000]])).toBe('5310 Undersköterska natt\t31000');
         expect(tillTsv([['a\r\n=1+2', 'b\tc']])).toBe('a =1+2\tb c');
         expect(tillTsv([['\n=1+2']])).toBe(' =1+2');   // ledande blanksteg: Excel läser det som text
-    });
-});
-
-
-// CSV- och urklippsexport: en cell som börjar med = + - @ (eller tabb/radbrytning)
-// tolkas som formel när filen öppnas eller klistras in i Excel. Yrkes- och
-// enhetsnamn kommer ur lönefilen, så en fientlig fil kunde annars smyga in en
-// formel i HR:s export ("CSV-injektion", OWASP).
-describe('export: formler i celler neutraliseras', () => {
-    const rad = celler => tillCsv([celler]);
-    it('formelstart får ett inledande apostrof-tecken', () => {
-        expect(rad(['=HYPERLINK("http://x","klick")'])).toBe(`"'=HYPERLINK(""http://x"",""klick"")"`);
-        expect(rad(['+1+1'])).toBe("'+1+1");
-        expect(rad(['@SUM(A1)'])).toBe("'@SUM(A1)");
-        expect(rad(['-2+3'])).toBe("'-2+3");
-        expect(rad(['\t=1'])).toBe("'\t=1");
-    });
-    it('vanliga tal och formaterade värden lämnas orörda', () => {
-        expect(rad([-5, 3.25, '-3,2 %', '+12', '−', '31 417 kr', '-1 250 kr', 'Förskollärare'])).toBe("-5;3.25;-3,2 %;+12;−;31 417 kr;-1 250 kr;Förskollärare");
-    });
-    it('urklippet neutraliseras på samma sätt', () => {
-        expect(tillTsv([['=1+1', 'a'], ['-7', '@x']])).toBe("'=1+1\ta\n-7\t'@x");
     });
 });

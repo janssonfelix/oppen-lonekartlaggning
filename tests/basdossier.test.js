@@ -249,9 +249,8 @@ describe('BAS-dossiern: status som i Lika arbete, och sökrutans rad', () => {
         skriv(w, 'bas e');
         expect(w.document.querySelector('#sok-grupp-lista [data-sok-basdossier="E"]')).toBeNull();
         const meddelanden = [];
-        w.eval('window.meddelaSkarmlasare = undefined');
         w.__ann = m => meddelanden.push(m);
-        w.eval('const _org = meddelaSkarmlasare; meddelaSkarmlasare = m => { window.__ann(m); }');
+        w.eval('meddelaSkarmlasare = m => window.__ann(m)');
         w.eval("oppnaBasdossier('E')");
         expect(w.document.getElementById('basdossier-select').value).toBe('A');
         expect(meddelanden.join(' ')).toMatch(/BAS E.*visas inte.*BAS A/);

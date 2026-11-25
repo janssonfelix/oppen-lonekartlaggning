@@ -124,6 +124,49 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
         expect(samverkan.querySelector('.ptrack-status').dataset.status).toBe('manuell');
         expect(dok.querySelector('.ptrack-status').dataset.status).toBe('manuell');
     });
+
+    const steg = (w, re) => [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => re.test(r.textContent));
+    const status = (w, re) => steg(w, re).querySelector('.ptrack-status').dataset.status;   // klar | delvis | ej | manuell
+
+    it('processöversikten: lika och likvärdigt arbete är inte klara medan punkter återstår i Att göra', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.__ritaKartlaggningensSteg();
+        expect(status(w, /3\. Lika arbete/)).toBe('delvis');
+        expect(status(w, /4\. Likvärdigt arbete/)).toBe('delvis');
+        expect(steg(w, /4\. Likvärdigt arbete/).textContent).toMatch(/0 av \d+ kandidatpar hanterade/);
+        // När alla punkter för lika respektive likvärdigt arbete är hanterade blir stegen klara.
+        const punkter = w.eval('byggAtgardslista()');
+        const done = w.__state._actionChecklistDone || (w.__state._actionChecklistDone = new w.Set());
+        punkter.filter(p => ['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete'].includes(p.kategori)).forEach(p => done.add(p.id));
+        w.__ritaKartlaggningensSteg();
+        expect(status(w, /3\. Lika arbete/)).toBe('klar');
+        expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
+    });
+
+    it('processöversikten: inga kandidatpar betyder att likvärdigt arbete är klart', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.__state.likvardighet.result = { pairs: [] };
+        w.__ritaKartlaggningensSteg();
+        expect(status(w, /4\. Likvärdigt arbete/)).toBe('klar');
+    });
+
+    it('Att göra: kandidatparen i likvärdigt arbete kommer med även utan jämförelsestatistik', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        expect(w.__state.statistik.length).toBe(0);
+        expect(w.eval('byggAtgardslista()').filter(p => p.kategori === 'Likvärdigt arbete').length).toBeGreaterThan(0);
+    });
+
+    it('Börja här: könsrelaterade fynd går före avvikelser mot lönepolitiken, utan dubblerad rubrik', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.eval('ritaAtgardslista()');
+        const forsta = w.document.querySelector('#att-gora-borja li .att-gora-kat').textContent;
+        expect(['Lika arbete', 'Lika arbete, fördjupning', 'Likvärdigt arbete']).toContain(forsta.trim());
+        expect(w.eval('byggAtgardslista()').filter(p => /^(Börja här|Värt att granska):/.test(p.titel))).toEqual([]);
+    });
 });
 
 describe('#1 röktest: varje flik renderar utan kast', () => {
