@@ -223,5 +223,5 @@ describe('gruppdossiern', () => {
             if (/\d\.\d/.test(text)) fel.push(text.split('\n').find(r => /\d\.\d/.test(r)));
         }
         expect(fel).toEqual([]);
-    }, 30000);
+    });
 });

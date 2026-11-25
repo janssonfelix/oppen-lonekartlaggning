@@ -336,7 +336,7 @@ describe('[B7.6] forecast: ett par per yrke i förslagen (ADR-69)', () => {
         const data = [];
         for (let i = 0; i < 12; i++) data.push({ bas: 'C', aid: '5300', kon: 'kvinna', lon: 36421 });
         for (let i = 0; i < 20; i++) data.push({ bas: 'D', aid: '5400', kon: 'kvinna', lon: 30000 });
-        const kurva = kanslighetskurva(data, cand, { months: 1, poPct: 0 }, 1);
+        const kurva = kanslighetskurva(data, cand, { months: 1, poPct: 0 });
         expect(kurva[1].kostnad).toBe(21690 * 12 + 500 * 20);
     });
 });
@@ -345,7 +345,7 @@ describe('forecast: budgetkänslighet (F)', () => {
     it('svep ger monotont ökande kostnad från 0', () => {
         const data = rows();
         const cand = [{ bas: 'A', aid: '5301', gapKr: 2000, n: 3 }];
-        const curve = kanslighetskurva(data, cand, { months: 12, poPct: 0 }, 4);
+        const curve = kanslighetskurva(data, cand, { months: 12, poPct: 0 });
         expect(curve).toHaveLength(5);
         expect(curve[0].kostnad).toBe(0);
         for (let i = 1; i < curve.length; i++) expect(curve[i].kostnad).toBeGreaterThanOrEqual(curve[i - 1].kostnad);

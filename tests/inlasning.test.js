@@ -303,7 +303,7 @@ describe('[B9.4] inlasning: en lönerad (tolkaLonerad)', () => {
     });
 
     it('hela raden normaliseras: BAS, kön, lön, yrke, AID och poäng', () => {
-        const rec = tolkaLonerad({ bas: 'BAS B', kon: 'K', lon: '32.500,50', alder: '38', poang: '342,5', yrke: '203010 Förskollärare' }, 2026);
+        const rec = tolkaLonerad({ bas: 'BAS B', kon: 'K', lon: '32.500,50', alder: '38', poang: '342,5', yrke: '203010 Förskollärare' });
         expect(rec).toEqual({
             bas: 'B', yrke: '203010 Förskollärare', aid: '203010', yrkeLabel: 'Förskollärare', lon: 32500.5, alder: 38,
             kon: 'kvinna', poang: 342.5, ansvarskoder: null, ansvarsgrupp: null, _lonStatus: 'ok', _alderStatus: 'ok'

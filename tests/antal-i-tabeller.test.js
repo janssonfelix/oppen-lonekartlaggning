@@ -3,11 +3,9 @@
  * kön där måttet är könsuppdelat. En modelltabell bär n i sin rubrikrad (caption). Exporten bär samma antal som
  * skärmen. Antalen räknas här direkt ur underlaget, oberoende av verktygets egna räkningar.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
-vi.setConfig({ testTimeout: 30000 });
-
 const arKv = r => r.kon.includes('kvinna'), arMa = r => r.kon === 'man' || r.kon === 'män';
 const ren = s => String(s ?? '').replace(/[\s  ]+/g, ' ').trim();
 const rubriker = tabell => [...tabell.querySelectorAll('thead th')].map(th => ren(th.textContent));

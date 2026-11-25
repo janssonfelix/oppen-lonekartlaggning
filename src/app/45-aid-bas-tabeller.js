@@ -124,7 +124,7 @@ const AIDBAS_KOL = {
     individ: [[_AIDBAS_NIVA, 'text', r => r.bas], [_AIDBAS_KOD, 'text', r => r.aid], [_AIDBAS_NAMN, 'text', r => r.yrke], ['Antal kvinnor', 'antal', r => r.nKv], ['Antal män', 'antal', r => r.nMa],
               ['Analys genomförd', 'text', () => ''], ['Resultat', 'text', () => '']]
 };
-// Kolumnerna som grundvyn gömmer bakom Fler kolumner (F12, F14 i etapp 1b): gränserna och direktivmarkeringen i Lika
+// Kolumnerna som grundvyn gömmer bakom Fler kolumner: gränserna och direktivmarkeringen i Lika
 // arbete, de nationella kolumnerna och spridningen i Likvärdigt arbete. Statusen och klassningen står kvar.
 const AIDBAS_LIKA_DOLDA_KOLUMNER = ['nedre', 'ovre', 'direktiv'];
 const AIDBAS_LV_DOLDA_KOLUMNER = ['nationellt', 'brukar', 'spridning'];

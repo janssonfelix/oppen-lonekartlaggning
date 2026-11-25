@@ -1124,7 +1124,7 @@ describe('utskriften ur rapportmodellen', () => {
         expect(rubriker(ledning).some(r => /^Bilagor:/.test(r))).toBe(false);
         // Väljaren för mallar är borta.
         expect(w2.document.getElementById('pdf-template')).toBeNull();
-    }, 30000);
+    });
 });
 
 // ---- Svenskt talformat och språkrester ----
@@ -1215,7 +1215,7 @@ describe('svenskt talformat i alla vyer, utan att exporterna ändras', () => {
             if (traffar.size) kvar[flik] = [...traffar].slice(0, 5);
         }
         expect(kvar).toEqual({});
-    }, 30000);   // ritar varje flik: över standardgränsen 5 s när hela sviten körs parallellt
+    });
 });
 
 describe('ett bildspråk — linjeikoner i stället för bildtecken', () => {

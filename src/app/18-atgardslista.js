@@ -4,7 +4,7 @@
 // ÅTGÄRDSLISTA — samlad checklist från alla flikar
 // ============================================================================
 // byggAtgardslista är UTTÖMMANDE — den samlar varje grupp/par/flagga
-//   som HR behöver agera på, grupperad efter källa (U2): Lika arbete, Lika arbete, fördjupning, Likvärdigt
+//   som HR behöver agera på, grupperad efter källa: Lika arbete, Lika arbete, fördjupning, Likvärdigt
 //   arbete, Löneläge mot referens och underlagets kvalitet. HR kan klicka av punkterna när de hanterat dem.
 //   State sparas på state._actionChecklist (i minnet — försvinner vid reload).
 import { borjaHar } from '../lib/attgora.js';

@@ -350,7 +350,7 @@ export function ritaHandlingsplan() {
         // första cellen och speglas i utskriftens gruppkolumn (_hpSpegla). Antal berörda står efter gruppen; en egen rad
         // har inget antal.
         const antal = `<td class="t-hoger hp-bara-utskrift">${r[8] != null ? esc(String(r[8])) : ''}</td>`;
-        // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften (S2 i punkt 26); exporterna
+        // BAS och bokstaven hålls ihop med ett hårt mellanslag på skärmen och i utskriften; exporterna
         // och fältens etiketter har ett vanligt.
         const gruppHtml = esc(g).replace(/ · BAS (\S+)$/, ' · BAS&nbsp;$1');
         const under = innehall => `<span class="hp-under hp-bara-skarm" data-noprint>${innehall}</span>`;

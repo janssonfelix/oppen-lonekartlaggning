@@ -70,7 +70,7 @@ function _tillNiva(bredd, mal) {
     return vidNiva(lag);
 }
 /**
- * Kolumnbredderna efter innehållet (F5 i punkt 26), ungefär som en webbläsare fördelar en tabell. Först ryms det
+ * Kolumnbredderna efter innehållet, ungefär som en webbläsare fördelar en tabell. Först ryms det
  * längsta ordet och det hela talet i varje datacell, så att ett namn inte bryts mitt i och ett belopp står på en rad;
  * sedan rubrikernas längsta ord; sist hela texten. Ryms ett steg inte, delar de bredaste kolumnerna på det som fattas.
  * Tabellen fyller textytan. `ryms` säger om datacellerna och rubrikernas ord rymdes.
@@ -124,7 +124,7 @@ function _tabell(b, hallIhop = false) {
             `<w:tc><w:tcPr><w:tcW w:w="${bredder[k]}" w:type="dxa"/>${rubrik ? '<w:shd w:val="clear" w:color="auto" w:fill="F0F0F0"/>' : ''}</w:tcPr>`
             + _stycke((c.delar || []).map(d => (rubrik ? { ...d, fet: true } : d)), undefined, sz, sista && hallIhop) + '</w:tc>').join('')}</w:tr>`;
     };
-    // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver (A9): Word räknar
+    // Bredden i samma enhet (dxa) som kolumnerna och cellerna, och tblLook som Word själv skriver: Word räknar
     // annars om en procentbredd mot cellbredderna, och LibreOffice och Word kan rita tabellen olika.
     const look = b.rubrikrad ? 'w:val="04A0" w:firstRow="1"' : 'w:val="0480" w:firstRow="0"';
     // Det täta läget skriver alla fyra sidorna, topp och botten med stilens värden: Word nollar en sida som saknas.
@@ -155,13 +155,13 @@ function _bild(b, nr) {
 
 function _dokument(block) {
     let nr = 0;
-    // En ruta att fylla i står på samma sida som stycket eller tabellraden före, det som den bedömer (S5 i punkt 26).
+    // En ruta att fylla i står på samma sida som stycket eller tabellraden före, det som den bedömer.
     // Rutan själv hålls inte ihop med nästa: då skulle den följa med nästa avsnitts rubrik.
     const foreRuta = i => i + 1 < block.length && block[i + 1].typ === 'stycke' && block[i + 1].stil === 'fyllIn';
     const delar = block.map((b, i) => (b.typ === 'rubrik' ? _stycke(b.delar, `Heading${b.niva}`)
         : b.typ === 'tabell' ? _tabell(b, foreRuta(i))
         : b.typ === 'bild' ? _bild(b, _harBild(b) ? ++nr : 0) : _stycke(b.delar, STIL[b.stil], undefined, foreRuta(i)))
-        // Två tabeller i följd skiljs av ett tomt stycke; utan det slår Word ihop dem till en tabell (A9).
+        // Två tabeller i följd skiljs av ett tomt stycke; utan det slår Word ihop dem till en tabell.
         + (b.typ === 'tabell' && i + 1 < block.length && block[i + 1].typ === 'tabell' ? '<w:p/>' : ''));
     if (!block.length || block[block.length - 1].typ === 'tabell') delar.push('<w:p/>');   // stycke före sectPr
     return `${XML}<w:document xmlns:w="${W}" xmlns:r="${R}" xmlns:wp="${WP}" xmlns:a="${A}" xmlns:pic="${PIC}"><w:body>${delar.join('')}`

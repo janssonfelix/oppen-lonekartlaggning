@@ -328,7 +328,7 @@ export function ritaLivscykel(given) {
 }
 
 /**
- * Bygger bevis-payload för en BAS-rad i livscykelöversikten (B8). `utanKurva`: kurvan för det valda intervallet visas
+ * Bygger bevis-payload för en BAS-rad i livscykelöversikten. `utanKurva`: kurvan för det valda intervallet visas
  * inte (`livscykelKurvaUtelamnad`); då skrivs ingen nivåfaktor mot det, eftersom raden delad med faktorn är det
  * intervallets lönenivå.
  */

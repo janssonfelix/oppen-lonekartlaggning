@@ -400,7 +400,7 @@ describe('k-anonymitet: utskriften ur rapportmodellen mot referensen', () => {
         const lackor = SENTINEL.filter(s => text.includes(String(s)));
         expect(lackor).toEqual([]);
         expect(el.textContent).toMatch(/visas inte här|färre än \d+ personer/);
-    }, 30000);
+    });
 });
 
 describe('k-anonymitet: var uppstår löneskillnaden', () => {

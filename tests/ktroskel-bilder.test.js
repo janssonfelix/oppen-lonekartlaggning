@@ -5,12 +5,8 @@
  * flera filer så att Vitest fördelar den över flera arbetare. Testerna prövar meningen, inte vilka grupper som syns,
  * och kör därför på den lilla fixturen (fonsterLitet).
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { fonsterLitet } from './helpers/ktroskel-rigg.js';
-
-// Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
-// fäller olika tester från körning till körning.
-vi.setConfig({ testTimeout: 30000 });
 
 describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
     const MENING = 'Minsta gruppstorlek för redovisning: 6. Tröskeln är sänkt från standardvärdet 10.';

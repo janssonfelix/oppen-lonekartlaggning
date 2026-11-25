@@ -184,7 +184,7 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     const H = isFinite(+hv) && +hv > 0 ? +hv : _RF.hojd;
     const syn = _rfSynligt(figurIn, val);
     const lod = _rfLodratLayout(figurIn, val, B, H, px, syn);
-    // Stapeletiketterna (U1) — en kedja framåt, ingen omgång till:
+    // Stapeletiketterna — en kedja framåt, ingen omgång till:
     //  1. märkenas marginaler (rumBas) och y-axelns marginalmått (yMarg) räknas UTAN etikettrum,
     //  2. de ger ytans höjd och panelbredden — kategoriaxlarnas verkliga längder, som etikettrummet inte rör
     //     (rummet krymper bara värdeaxelns pixelomfång; marginalerna behåller måtten från 1),
@@ -294,7 +294,7 @@ function _rfByggRadpaneler(figurIn, delar, bredd, val) {
 }
 
 // ====================================================================
-// Sidan: ritaFigur, verktygstips, klick, förklaring, storlek, fel (Uppgift 6)
+// Sidan: ritaFigur, verktygstips, klick, förklaring, storlek, fel
 //
 // ritaFigur sätter ritarens SVG i en behållare och kopplar det som sidan gör med den. Behållaren bär:
 //   el._figur       ORIGINALFIGUREN — också de små punkterna. Läses BARA för uppslag av ett märke som finns i

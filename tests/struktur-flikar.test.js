@@ -10,7 +10,7 @@ import { createAppWindow } from './helpers/app-harness.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-describe('Uppgift 1: Filer och kvalitet', () => {
+describe('Filer och kvalitet', () => {
     it('Filer och kvalitet bär filrutorna, kvaliteten och extremvärdena; Översikt inte', () => {
         const d = createAppWindow().document, filer = d.getElementById('view-filer'), ov = d.getElementById('view-dashboard');
         expect(filer).toBeTruthy();
@@ -35,7 +35,7 @@ describe('Uppgift 1: Filer och kvalitet', () => {
     });
 });
 
-describe('Uppgift 1: kolumnmappningen', () => {
+describe('kolumnmappningen', () => {
     it('en lönefil med okända kolumner visar Filer och kvalitet med mappningen, även om en annan flik var öppen', () => {
         const w = createAppWindow(), d = w.document;
         d.querySelector('.nav-item[data-tab="info"]').click();
@@ -46,7 +46,7 @@ describe('Uppgift 1: kolumnmappningen', () => {
     });
 });
 
-describe('Uppgift 2: Lönestruktur', () => {
+describe('Lönestruktur', () => {
     it('Lönestruktur visar struktur, BAS-skevhet, regression och gapuppdelningen; Lika arbete bara yrkesgrupperna', () => {
         const w = createAppWindow(); w.__lasInDemodata();
         const d = w.document, synlig = id => d.getElementById(id).style.display === 'block';
@@ -106,7 +106,7 @@ describe('Uppgift 2: Lönestruktur', () => {
     });
 });
 
-describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
+describe('Rapporttext, Exportera och Spara och jämför år', () => {
     it('Rapporttext bär auto-utkastet och rapportunderlaget; Exportera färdigcheck, robusthet, urval och exporter; Arbetet spara, ögonblicksbild, årsjämförelse, självdiagnostik', () => {
         const d = createAppWindow().document, i = (vy, id) => d.getElementById(vy).contains(d.getElementById(id));
         expect(i('view-rapporttext', 'struktur-narrative') && i('view-rapporttext', 'rapportunderlag')).toBe(true);
@@ -191,7 +191,7 @@ describe('Uppgift 3: Rapporttext, Exportera och Spara och jämför år', () => {
     });
 });
 
-describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', () => {
+describe('Prioriteringens trösklar och viktning i Inställningar', () => {
     it('Prioriteringens trösklar och viktning står i Inställningar-dialogen, och fliken länkar dit', () => {
         const d = createAppWindow().document, m = d.getElementById('installningar-modal');
         for (const id of ['prio-cfg-atgard', 'prio-cfg-akutN', 'prio-cfg-bevaka', 'prio-cfg-analysera', 'prio-cfg-reset', 'prio-w-avvikelse', 'prio-w-volym', 'prio-w-jamstalldhet', 'prio-w-reset'])
@@ -227,7 +227,7 @@ describe('Uppgift 4: Prioriteringens trösklar och viktning i Inställningar', (
     });
 });
 
-describe('Uppgift 5: menyn i rapportens ordning', () => {
+describe('menyn i rapportens ordning', () => {
     it('menyknapparnas aria-controls nämner flikens paneler (PANELGRUPPER), redan i index.html', () => {
         const w = createAppWindow(), d = w.document, grupper = w.eval('PANELGRUPPER');
         // 63-tangentbordsnavigering.js sätter attributet vid start; markeringen i index.html ska säga samma sak.

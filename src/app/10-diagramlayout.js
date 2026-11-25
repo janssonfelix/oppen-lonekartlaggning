@@ -264,7 +264,7 @@ export function _rfEtikettRum(synliga, doms, figur, dold) {
         const yNyckel = l.axel === 'y2' ? 'y2' : 'y';
         // Punkter och linjer vid axelns ände ska inte klippas mitt itu: lämna en marginal på talaxlar.
         if (l.marke === 'punkt' || l.marke === 'linje') {
-            const r = l.data.reduce((m, d) => Math.max(m, d && !dold(d) && _rfTal(d.storlek) ? d.storlek : 0), l.storlek || 4) + 2;   // bara ritade punkter (S1)
+            const r = l.data.reduce((m, d) => Math.max(m, d && !dold(d) && _rfTal(d.storlek) ? d.storlek : 0), l.storlek || 4) + 2;   // bara ritade punkter
             marginal('x', r);
             marginal(yNyckel, r);
         }
@@ -306,7 +306,7 @@ export const _rfDomanSorterad = skala => skala.domain().map(Number).sort((a, b) 
 
 // ETT beslut per stapellager: ritas lagrets etiketter? Svaret är en Map lagerindex → Set med de datapunkter vars
 // etikett ritas; ett lager som saknas i den får inga etiketter. Både etikettrummet (_rfStapelEtikettRum) och
-// ritningen (_rfStapel) läser detta enda resultat — rum reserveras alltså om och endast om etiketten ritas (U1).
+// ritningen (_rfStapel) läser detta enda resultat — rum reserveras alltså om och endast om etiketten ritas.
 //
 // Fristående staplar (bredvid/överlagrad): alla lagrets etiketter eller inga. De ritas om en textrad (liggande)
 // eller den bredaste etiketten + 4 px (stående) ryms i stapelns plats — samma plats som ritningen använder

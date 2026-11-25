@@ -4999,7 +4999,7 @@ function huvudregression(rader, { modell: modellIn = null, medAlder = harAlderIR
     k: chosen.k,
     ageMean,
     hHoga: chosen.hHoga ?? 0,
-    // observationer med hävstång > 0,99 (B4, teknisk specifikation)
+    // observationer med hävstång > 0,99 (teknisk specifikation)
     konPct: pct,
     konPctLow: pctLow,
     konPctHigh: pctHigh,

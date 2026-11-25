@@ -3,10 +3,8 @@
  * #skal-modal, förslaget att markera raden som sakligt förklarad, Att göra-punkten, gruppens skillnad och
  * konfigurationsfilen. Demodata; raderna rensas på skäl först så att testerna inte beror på demots förifyllning.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-vi.setConfig({ testTimeout: 30000 });
-
 const fonster = () => {
     const w = createAppWindow();
     w.__lasInDemodata();

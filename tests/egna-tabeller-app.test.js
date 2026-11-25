@@ -2,10 +2,8 @@
 // Copyright 2026 Felix Jansson
 // Egna tabeller i rapporten (ADR-52): från Utforska till Word, PDF, Excel och konfigurationsfilen, och receptet för
 // avsnittet per BAS-intervall.
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 const fonster = () => {
     const w = createAppWindow();

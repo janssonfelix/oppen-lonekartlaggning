@@ -9,11 +9,9 @@
  * så kostnaden till kvinnodominerade grupper är hennes påslag, 2 procent av hennes lön. Skärmen visar talet som förut.
  * Scenarierna lämnar inte verktyget (de finns bara i minnet och i fliken).
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { normalisera, iExport, ENSAM } from './helpers/ktroskel-rigg.js';
-
-vi.setConfig({ testTimeout: 30000 });
 
 const rad = (bas, aid, kon, lon) => ({ bas, kon, lon, alder: 40, yrke: `${aid} Yrke ${aid}`, aid, yrkeLabel: `Yrke ${aid}`, enhet: '' });
 const grupp = (bas, aid, n, lon0, kon) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon || (i % 2 ? 'man' : 'kvinna'), lon0 + i * 10));

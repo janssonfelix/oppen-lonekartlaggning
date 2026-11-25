@@ -243,7 +243,7 @@ describe('[B3.5] kvantilregressionAllaTau på indikatormodellen (ADR-63)', () =>
         const q = kvantilregressionAllaTau(fx.rows.map(r => ({ ...r })));
         for (const r of q.results) expect(r.konPct).toBe(pct(kvantilregression(d.X, d.y, r.tau).beta[1]));
     });
-    it('konvergerat: hela β mot toleransen i lib, könskoefficienten för kortet (S2)', () => {
+    it('konvergerat: hela β mot toleransen i lib, könskoefficienten för kortet', () => {
         const d = kvantilDesign(fx.rows.map(r => ({ ...r })), FORKLARINGSMODELL_STANDARD);
         // Vid τ = 0,9 kryper intercept och BAS-indikatorer vid varvtaket, men könskoefficienten står still.
         const p90 = kvantilregression(d.X, d.y, 0.9);

@@ -179,7 +179,7 @@ describe('utanSmaGrupper: kategoriordningen', () => {
     });
 });
 
-describe('utanSmaGrupper: paneler (U2)', () => {
+describe('utanSmaGrupper: paneler', () => {
     const HEM = { x: 'A', y: 98765, liten: true, etikett: 'ETIK-HEMLIG', nyckel: 'NYCK-HEMLIG' };
     const trePaneler = () => bas({ paneler: ['HemligPanel', 'Kvinna', 'Man'], lager: [
         { marke: 'punkt', panel: 'Kvinna', serie: 'K', data: [{ x: 'A', y: 1 }] },

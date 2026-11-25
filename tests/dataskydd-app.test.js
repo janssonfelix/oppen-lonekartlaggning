@@ -238,6 +238,7 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         for (const [vad, el] of Object.entries(karnan)) {
             expect(Object.keys(el).filter(k => k.startsWith('_') && k !== '_chartExportAttached'), vad).toEqual([]);
             expect(el.textContent, vad).toBe('');
+            expect(el.querySelector('svg'), vad).toBeNull();
         }
         expect(w.__rfBehallare()).toEqual([]);
         expect(portal.textContent).toBe('');
@@ -342,7 +343,7 @@ describe('autocomplete="off" på alla fält, också de som skapas efter start', 
     const utan = d => [...d.querySelectorAll('input, textarea, select')]
         .filter(el => el.type !== 'file' && el.getAttribute('autocomplete') !== 'off')
         .map(el => `${el.tagName.toLowerCase()}#${el.id || '?'}[name=${el.name || ''}][type=${el.type || ''}]`);
-    it('efter att alla flikar ritats och riktade rader lagts till saknar inget fält attributet', { timeout: 30000 }, async () => {
+    it('efter att alla flikar ritats och riktade rader lagts till saknar inget fält attributet', async () => {
         const w = fonster(null);
         for (const f of menyflikar(w)) w.__ritaFlik(f);
         w.__state.forecast.targets.push({ bas: 'A', aid: '5300', mode: 'kr', value: 500, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' });

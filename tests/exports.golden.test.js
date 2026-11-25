@@ -273,7 +273,7 @@ describe('golden: bladen ur HTML-tabellerna bär cellerna som vyn visar dem (typ
         expect(cell('Prioritering', 'F2')).toMatchObject({ t: 's', v: '14/3' });     // inte 14 mars
         expect(cell('Prioritering', 'I2')).toMatchObject({ t: 'n', v: -4, z: PCT2 }); // inte −0.04
         expect(cell('Prioritering', 'J2')).toMatchObject({ t: 'n', v: -1200, z: KR });
-        expect(cell('Prioritering', 'D2')).toMatchObject({ t: 's', v: 'Nära referens, under' });  // inte prioriteringsindexet; Prioriteringens egna ord (A5)
+        expect(cell('Prioritering', 'D2')).toMatchObject({ t: 's', v: 'Nära referens, under' });  // inte prioriteringsindexet; Prioriteringens egna ord
         expect(cell('Prioritering', 'A2').z).toBe('0');
         expect(cell('Prioritering', 'A2').v).toBeCloseTo(16.87, 2);                   // sorteringsvärdet förfinar "17"
     });
@@ -574,7 +574,7 @@ describe('golden: lönefil utan ålder (ADR-64)', () => {
 });
 
 /**
- * Bladnamnen och metodbladets etikettkolumn (S4 och F6 i punkt 26). Excel godtar ett bladnamn på högst 31 tecken utan
+ * Bladnamnen och metodbladets etikettkolumn. Excel godtar ett bladnamn på högst 31 tecken utan
  * : \ / ? * [ ]; SheetJS kastar ett fel för ett sådant namn, och ett blad som läggs till inom try hoppas då tyst över.
  * Namnet fångas därför när bladet läggs till, före SheetJS prövning.
  */

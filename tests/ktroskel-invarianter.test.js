@@ -6,14 +6,10 @@
  * körs vid 25 i tests/ktroskel-invarianter-25.test.js, med sakliga skäl (I8): förberedelsen tar omkring en minut,
  * så de två förberedelserna ligger i var sin fil.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { normalisera, oppnaFlik, iExport, byggKonDataset, KON_KOSTNAD, MELLAN, SMA, KON_BAS, KON_KV, KON_MA, ENSAM, KON_GAP, KON_GAP_1, KON_DOLDA, fonsterKon, harNagon, laddaXlsx, fangaBocker, sammanhang, SENT_MELLAN, SENT_SMA, X_KV, X_MA, PAR_KV, PAR_MA } from './helpers/ktroskel-rigg.js';
 import { invariantSvit } from './helpers/ktroskel-invariant.js';
-
-// Sviten ritar om hela verktyget i varje test. Under full last tar ett test 4–6 s, så standardgränsen 5 s
-// fäller olika tester från körning till körning.
-vi.setConfig({ testTimeout: 30000 });
 
 describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', () => {
     it('individnivån: på skärmen visas jämförelsen också mot få män (skärmen maskerar inget, ADR-51)', () => {
