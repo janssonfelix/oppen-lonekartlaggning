@@ -12807,7 +12807,7 @@ function _pagRitaAvvikelse(d, grans) {
   }
   const fa = _pagAvvikelseTabell(rader, grans);
   const not = document.getElementById("pag-diagram-not");
-  if (not) not.textContent = `Bara ${T.niva.fl} där minst ${kTroskel()} kvinnor och ${kTroskel()} män har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.` + (fa ? ` Andelar märkta med * gäller färre än ${litetUnderlag()} personer: ett litet underlag, som inte ska läsas som ett mönster.` : "");
+  if (not) not.textContent = `Bara ${T.niva.fl} där ${kTroskel() > 1 ? `minst ${kTroskel()} kvinnor och ${kTroskel()} män` : "både kvinnor och män"} har prövats. En avvikelse är inte i sig osaklig — tabellen visar var det finns mest att titta närmare på.` + (fa ? ` Andelar märkta med * gäller färre än ${litetUnderlag()} personer: ett litet underlag, som inte ska läsas som ett mönster.` : "");
 }
 function uppstartPersonerAttGranska() {
   markeraUtanExport(document.getElementById("pag-diagram-ruta"), "individer");
@@ -19913,9 +19913,9 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
     ...harStatistik ? [ruta("Medianen mot statistiken", _rrPct(tal.vagdMedianMotStatistikPct))] : []
   ].join("") + "</div>";
 }
-function _rrHantelFigur(rader, { harStatistik }) {
+function _rrHantelFigur(rader, { harStatistik, harStallningstagande }) {
   const serier = [
-    { namn: "Ställningstagandet", nyckel: "stallningstagande", farg: PALETT.semantic.neutral },
+    ...harStallningstagande ? [{ namn: "Ställningstagandet", nyckel: "stallningstagande", farg: PALETT.semantic.neutral }] : [],
     ...harStatistik ? [{ namn: "Statistiken", nyckel: "statistik", farg: PALETT.semantic.trend }] : [],
     { namn: "Organisationen", nyckel: "org", farg: PALETT.semantic.mork }
   ];
@@ -19948,7 +19948,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
     ];
   });
   return {
-    beskrivning: `Månadslönen per ${T.enhet.en}, med ${serier.map((s) => s.namn.toLowerCase()).join(", ").replace(/, ([^,]*)$/, " och $1")} bredvid varandra i raden; ställningstagandet är referenspunkten. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
+    beskrivning: `Månadslönen per ${T.enhet.en}, med ${serier.map((s) => s.namn.toLowerCase()).join(", ").replace(/, ([^,]*)$/, " och $1")} bredvid varandra i raden${harStallningstagande ? "; ställningstagandet är referenspunkten" : ""}. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
     urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal],
     x: { skala: "linjar", format: "kr", titel: "Månadslön (kr)" },
     y: { skala: "band", ordning: rader.map((r) => r.namn), etikettMax: 40 },
@@ -20023,7 +20023,7 @@ function ritaReferensOverblick() {
         <p class="muted">Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget är var medianen ligger i spannet (0 = P10, 100 = P90). Ett förslag på referens står bara med när det inte är ställningstagandet, och det är ett förslag, ingen regel.</p>
         ${_rrTalHtml(o.tal, har)}
         ${_rrTabellHtml(_rrKolumner(har), o.grupper)}
-        <h3 class="jmf-diagram-rubrik">Lönerna mot ställningstagandet och statistiken</h3>
+        <h3 class="jmf-diagram-rubrik">Lönerna mot ${[har.harStallningstagande && "ställningstagandet", har.harStatistik && "statistiken"].filter(Boolean).join(" och ")}</h3>
         <div class="jmf-diagram-yta"><div id="chart-ref-hantel"></div></div>
         <p class="muted">${flera ? `Visar de ${_RR_MAX} första ${T.enhet.bfl} av ${o.grupper.length} — tabellen har alla. ` : ""}${utanSpann ? "P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median." : ""}</p>
         ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ""}`;
@@ -26857,7 +26857,7 @@ var AIDBAS_LIKA_DOLDA_KOLUMNER = ["nedre", "ovre", "direktiv"];
 var AIDBAS_LV_DOLDA_KOLUMNER = ["nationellt", "brukar", "spridning"];
 function _aidbasSmaNot(sma, golv) {
   if (!sma.length) return "";
-  return `Grupper med färre än ${golv} ${personOrd(golv)} redovisas inte som egen rad (${sma.length}): ${sma.map((s) => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} kvinnor, ${s.nMa} män)`).join("; ")}.`;
+  return `Grupper med färre än ${golv} ${personOrd(golv)} redovisas inte som egen rad (${sma.length}): ${sma.map((s) => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} ${s.nKv === 1 ? "kvinna" : "kvinnor"}, ${s.nMa} ${s.nMa === 1 ? "man" : "män"})`).join("; ")}.`;
 }
 function _aidbasStatus(r) {
   return r.samladMedian ? `Könsuppdelningen är för liten (ett kön n < ${kTroskel()})` : gapStatusNiva(r.niva).serie;

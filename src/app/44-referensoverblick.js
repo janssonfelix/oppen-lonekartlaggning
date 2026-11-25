@@ -88,9 +88,9 @@ function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
 // En rad per yrkesgrupp på en gemensam lönelinje, med ställningstagandet, statistiken och organisationen bredvid
 // varandra i raden: bandet är P10–P90, strecket medianen. Serierna skiljs med färg och förklaring, så att radens
 // etikett bara behöver säga yrkesgruppen. En referens med bara median får inget band, bara strecket.
-function _rrHantelFigur(rader, { harStatistik }) {
+function _rrHantelFigur(rader, { harStatistik, harStallningstagande }) {
     const serier = [
-        { namn: 'Ställningstagandet', nyckel: 'stallningstagande', farg: PALETT.semantic.neutral },
+        ...(harStallningstagande ? [{ namn: 'Ställningstagandet', nyckel: 'stallningstagande', farg: PALETT.semantic.neutral }] : []),
         ...(harStatistik ? [{ namn: 'Statistiken', nyckel: 'statistik', farg: PALETT.semantic.trend }] : []),
         { namn: 'Organisationen', nyckel: 'org', farg: PALETT.semantic.mork }
     ];
@@ -109,7 +109,7 @@ function _rrHantelFigur(rader, { harStatistik }) {
               data: med.map(d => ({ y: d.y, x: d.v.median, forskjutning, ...falt(d) })), tips: d => [[d.y], [s.namn], ['Median', kr(d.x)]] }
         ];
     });
-    return { beskrivning: `Månadslönen per ${T.enhet.en}, med ${serier.map(s => s.namn.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' och $1')} bredvid varandra i raden; ställningstagandet är referenspunkten. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
+    return { beskrivning: `Månadslönen per ${T.enhet.en}, med ${serier.map(s => s.namn.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' och $1')} bredvid varandra i raden${harStallningstagande ? '; ställningstagandet är referenspunkten' : ''}. Bandet är P10–P90 och strecket medianen. Samma värden står i tabellen ovanför.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.sektor, URVAL.antal], x: { skala: 'linjar', format: 'kr', titel: 'Månadslön (kr)' }, y: { skala: 'band', ordning: rader.map(r => r.namn), etikettMax: 40 },
         hojd: 80 + serier.length * 18 * rader.length,
         lager };
@@ -177,7 +177,7 @@ export function ritaReferensOverblick() {
         <p class="muted">Ställningstagandet är referenspunkten: löneläget och statistiken mäts mot det. Läget är var medianen ligger i spannet (0 = P10, 100 = P90). Ett förslag på referens står bara med när det inte är ställningstagandet, och det är ett förslag, ingen regel.</p>
         ${_rrTalHtml(o.tal, har)}
         ${_rrTabellHtml(_rrKolumner(har), o.grupper)}
-        <h3 class="jmf-diagram-rubrik">Lönerna mot ställningstagandet och statistiken</h3>
+        <h3 class="jmf-diagram-rubrik">Lönerna mot ${[har.harStallningstagande && 'ställningstagandet', har.harStatistik && 'statistiken'].filter(Boolean).join(' och ')}</h3>
         <div class="jmf-diagram-yta"><div id="chart-ref-hantel"></div></div>
         <p class="muted">${flera ? `Visar de ${_RR_MAX} första ${T.enhet.bfl} av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? 'P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median.' : ''}</p>
         ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ''}`;

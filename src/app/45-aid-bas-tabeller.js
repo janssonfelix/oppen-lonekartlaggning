@@ -131,7 +131,7 @@ const AIDBAS_LV_DOLDA_KOLUMNER = ['nationellt', 'brukar', 'spridning'];
 /** Noten om grupperna under golvet: namn och antal, inga löner. '' när alla grupper har en rad. */
 function _aidbasSmaNot(sma, golv) {
     if (!sma.length) return '';
-    return `Grupper med färre än ${golv} ${personOrd(golv)} redovisas inte som egen rad (${sma.length}): ${sma.map(s => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} kvinnor, ${s.nMa} män)`).join('; ')}.`;
+    return `Grupper med färre än ${golv} ${personOrd(golv)} redovisas inte som egen rad (${sma.length}): ${sma.map(s => `${s.aid} ${s.yrke} · BAS ${s.bas} (${s.nKv} ${s.nKv === 1 ? 'kvinna' : 'kvinnor'}, ${s.nMa} ${s.nMa === 1 ? 'man' : 'män'})`).join('; ')}.`;
 }
 /** Statusen för en rad i Lika arbete AID x BAS, med orden i tabellen per AID-etikett (ADR-90). */
 function _aidbasStatus(r) {
