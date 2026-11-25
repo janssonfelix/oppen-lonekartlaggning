@@ -9,6 +9,15 @@ referensen för området (`docs/README.md` listar dem) och i pull requesten.
 
 ## Oförlöst
 
+- **En liten grupp delar inte längre ett diagram i delbilder.** Ett liggande diagram med fler än femton kategorier
+  delas i delbilder om femton. En kategori med bara grupper under minsta gruppstorleken räknades med i delningen, så
+  att den exporterade bilden kunde få en tom sista del («16–16») som visade att en grupp till fanns. Nu räknas bara
+  det som ritas.
+- **Regnmolnets median och kvartiler räknas ur alla.** Med fler än 8 000 personer i ett lager ritas bara ett urval
+  av punkterna; molnets kurva, median och kvartiler räknades då också ur urvalet. Nu räknas de ur alla, som i
+  verktygstipset.
+- **Mönstret `linjer` på staplar är vågrätt.** Det ritades i samma sneda vinkel som ränderna som markerar en liten
+  grupp; nu går det inte att förväxla med dem.
 - **Robusthetspanelen prövar kvinnotrösklar runt den inställda.** Panelen räknade alltid om vid 55, 60 och 65 %;
   med tröskeln 50 eller 70 prövades aldrig den egna inställningen. Nu prövas den inställda och 5 procentenheter på
   var sida.

@@ -8234,9 +8234,10 @@ function _rfMonster(g, x0, y0, w, h, monster2) {
   const yta = g.append("svg").attr("data-marke", "monster").attr("pointer-events", "none").attr("overflow", "hidden").attr("x", x0).attr("y", y0).attr("width", w).attr("height", h);
   const steg = 7;
   if (monster2 === "linjer") {
-    const antal = Math.min(_RF_RANDER.max, Math.ceil((w + h) / steg));
-    for (let r = 0; r <= antal; r++) {
-      yta.append("line").attr("x1", r * steg - h).attr("x2", r * steg).attr("y1", h).attr("y2", 0).attr("stroke", FARG.vit).attr("stroke-opacity", 0.6).attr("stroke-width", 1.2);
+    const antal = Math.min(_RF_RANDER.max, Math.ceil(h / steg));
+    for (let r = 0; r < antal; r++) {
+      const y = r * steg + steg / 2;
+      yta.append("line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y).attr("stroke", FARG.vit).attr("stroke-opacity", 0.6).attr("stroke-width", 1.2);
     }
     return;
   }
@@ -8619,13 +8620,15 @@ function _rfLada(g, l, li, c) {
   const svarm = l.punkter === "svarm", alla = svarm || l.punkter === "alla";
   const individer = _rfLadIndivider(c.figur, l, c.dold, ys);
   const steg = (alla || l.form === "regnmoln") && individer.length > PUNKTMOLN_MAX_PUNKTER ? Math.ceil(individer.length / PUNKTMOLN_MAX_PUNKTER) : 1;
+  const valda = /* @__PURE__ */ new Set();
   const grupper = /* @__PURE__ */ new Map();
   individer.forEach((o, n) => {
-    if (n % steg) return;
+    if (n % steg === 0) valda.add(o);
     const k = _rfLadKategori(o.d);
     if (!grupper.has(k)) grupper.set(k, []);
     grupper.get(k).push(o);
   });
+  const urval = (punkter) => steg > 1 ? punkter.filter((o) => valda.has(o)) : punkter;
   let ritade = 0, kvantilRadie = (
     /** @type {number|null} */
     null
@@ -8652,7 +8655,7 @@ function _rfLada(g, l, li, c) {
       streck("kvartil", s2.q1, 1);
       streck("kvartil", s2.q3, 1);
       streck("median", s2.median, 2.5);
-      const ordnade = [...punkter.filter((p) => !p.d.liten), ...punkter.filter((p) => p.d.liten)];
+      const prov = urval(punkter), ordnade = [...prov.filter((p) => !p.d.liten), ...prov.filter((p) => p.d.liten)];
       ordnade.forEach(({ d, i }, n) => {
         const m = g.append("circle").attr("data-marke", "individ").attr("data-l", li).attr("data-i", i).attr("cx", mitt - kant - _RF.individ - (_rfSprid(n) + 0.5) * Math.max(0, halv - kant - 2 * _RF.individ)).attr("cy", ys(d.y)).attr("r", _RF.individ).attr("fill", d.farg || farg).attr("fill-opacity", 0.6);
         if (d.liten) m.attr("stroke", PALETT.semantic.neutral).attr("stroke-width", 1.2).attr("stroke-dasharray", "2 1.5").attr("fill-opacity", 0.15);
@@ -8679,7 +8682,7 @@ function _rfLada(g, l, li, c) {
       continue;
     }
     if (alla) {
-      const ordnade = [...punkter.filter((p) => !p.d.liten), ...punkter.filter((p) => p.d.liten)];
+      const prov = urval(punkter), ordnade = [...prov.filter((p) => !p.d.liten), ...prov.filter((p) => p.d.liten)];
       const sidled = svarm ? _rfSvarm(ordnade.map((p) => ys(p.d.y)), ordnade.filter((p) => !p.d.liten).length, _RF.individ, Math.max(_RF.individ, plats / 2 - _RF.individ)) : null;
       ordnade.forEach(({ d, i }, n) => {
         const m = g.append("circle").attr("data-marke", "individ").attr("data-l", li).attr("data-i", i).attr("cx", mitt + (sidled ? sidled[n] : _rfSprid(n) * bw * 0.8)).attr("cy", ys(d.y)).attr("r", _RF.individ).attr("fill", d.farg || farg).attr("fill-opacity", svarm ? 0.85 : 0.6);
@@ -34256,7 +34259,7 @@ function _rfRitaForklaring(svg, L, syn, px, H, notRader) {
 }
 function _rfByggSvg(figurIn, bredd, val = {}) {
   if (figurIn.paneler === "auto") {
-    const delar = _rfRadpanelDelar(figurIn, _rfBortvalda(val));
+    const delar = _rfRadpanelDelar(figurIn, val);
     if (delar) return _rfByggRadpaneler(figurIn, delar, bredd, val);
     figurIn = { ...figurIn, paneler: void 0 };
   }
@@ -34302,9 +34305,11 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
   return svg.node();
 }
 var RF_RADPANEL_MAX = 15;
-function _rfRadpanelDelar(figurIn, bortvalda) {
+function _rfRadpanelDelar(figurIn, val) {
   if (!figurIn.y || figurIn.y.skala !== "band" || figurIn.x.skala === "band" || !figurIn.lager.every((l) => l.riktning === "liggande" || l.marke === "punkt")) return null;
-  const kat = skalDoman({ ...figurIn, lager: figurIn.lager.map((l) => ({ ...l, data: l.data.filter((d) => d && !arBortvald(figurIn, bortvalda, d)) })) }, "y");
+  const bortvalda = _rfBortvalda(val), visaSma = !!val.visaSma;
+  const ritas = (d) => d && (visaSma || !d.liten) && !arBortvald(figurIn, bortvalda, d);
+  const kat = skalDoman({ ...figurIn, lager: figurIn.lager.map((l) => ({ ...l, data: l.data.filter(ritas) })) }, "y");
   if (kat.length <= RF_RADPANEL_MAX) return null;
   const delar = [];
   for (let i = 0; i < kat.length; i += RF_RADPANEL_MAX) delar.push(kat.slice(i, i + RF_RADPANEL_MAX));

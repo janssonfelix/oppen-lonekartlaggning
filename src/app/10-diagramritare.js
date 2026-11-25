@@ -174,7 +174,7 @@ function _rfRitaForklaring(svg, L, syn, px, H, notRader) {
  */
 function _rfByggSvg(figurIn, bredd, val = {}) {
     if (figurIn.paneler === 'auto') {
-        const delar = _rfRadpanelDelar(figurIn, _rfBortvalda(val));
+        const delar = _rfRadpanelDelar(figurIn, val);
         if (delar) return _rfByggRadpaneler(figurIn, delar, bredd, val);
         figurIn = { ...figurIn, paneler: undefined };
     }
@@ -231,19 +231,22 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
 
 // ---- Radpaneler: små multiplar för många kategorier ----
 // En liggande figur med `paneler: 'auto'` och fler än RF_RADPANEL_MAX kategorier på y ritas som flera delbilder om
-// högst så många kategorier, i figurens ordning (bara de som har en punkt som inte är bortvald), staplade under varandra med samma x-axel (samma domän) och en
+// högst så många kategorier, i figurens ordning (bara de som har en punkt som ritas), staplade under varandra med samma x-axel (samma domän) och en
 // rubrik per del ("1–15", "16–30" …). Varje delbild är figuren med punkterna utanför delen utbytta mot null: data-l
 // och data-i pekar därför på samma punkt som i hela figuren, och tips, klick och tangentbord fungerar som vanligt.
 // Förklaringen står bara under den sista delen, rubriken (export) över den första. Diagramdatan påverkas inte.
 const RF_RADPANEL_MAX = 15;
 /**
- * Kategorierna i delar om högst RF_RADPANEL_MAX, eller null när figuren inte ska delas. Bortvalda punkter räknas
- * inte: en kategori som bara har bortvalda punkter får ingen plats, och delningen görs ur det som återstår.
- * @param {any} figurIn @param {any} [bortvalda]  filtret (se _rfBortvalda)
+ * Kategorierna i delar om högst RF_RADPANEL_MAX, eller null när figuren inte ska delas. Bortvalda punkter och små
+ * punkter utan visaSma räknas inte: en kategori som bara har sådana får ingen plats (inte heller i delarnas antal,
+ * rubriker eller marginal), och delningen görs ur det som återstår.
+ * @param {any} figurIn @param {any} val  ritningens alternativ (visaSma och filtret, se _rfBortvalda)
  */
-function _rfRadpanelDelar(figurIn, bortvalda) {
+function _rfRadpanelDelar(figurIn, val) {
     if (!figurIn.y || figurIn.y.skala !== 'band' || figurIn.x.skala === 'band' || !figurIn.lager.every(l => l.riktning === 'liggande' || l.marke === 'punkt')) return null;
-    const kat = skalDoman({ ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(d => d && !arBortvald(figurIn, bortvalda, d)) })) }, 'y');
+    const bortvalda = _rfBortvalda(val), visaSma = !!val.visaSma;
+    const ritas = d => d && (visaSma || !d.liten) && !arBortvald(figurIn, bortvalda, d);
+    const kat = skalDoman({ ...figurIn, lager: figurIn.lager.map(l => ({ ...l, data: l.data.filter(ritas) })) }, 'y');
     if (kat.length <= RF_RADPANEL_MAX) return null;
     const delar = [];
     for (let i = 0; i < kat.length; i += RF_RADPANEL_MAX) delar.push(kat.slice(i, i + RF_RADPANEL_MAX));

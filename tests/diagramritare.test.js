@@ -659,6 +659,17 @@ describe('DR10: små grupper lämnar inga spår utan visaSma', () => {
         expect(svg.getAttribute('data-nedsamplat')).toBe(`${p.length}/${max * 2}`);
         expect(ser(svg)).not.toContain('NYCKEL');
     });
+    it('regnmoln med fler individer än taket: medianen räknas ur alla, bara punkterna nedsamplas', () => {
+        const max = w.eval('PUNKTMOLN_MAX_PUNKTER');
+        // Jämna index 100, udda 300, och tre till på 300: hela gruppens median är 300, varannan individs är 100.
+        const data = Array.from({ length: max + 3 }, (_, i) => ({ x: 'G', y: i < max && i % 2 === 0 ? 100 : 300 }));
+        const svg = rita({ beskrivning: 'r', x: { skala: 'band' }, y: { skala: 'linjar', doman: [0, 400] },
+            lager: [{ marke: 'lada', form: 'regnmoln', data }] });
+        const median = svg.querySelector('[data-marke="median"]');
+        const hog = svg.querySelector(`[data-marke="individ"][data-i="${max}"]`);
+        expect(Number(median.getAttribute('y1'))).toBeCloseTo(Number(hog.getAttribute('cy')), 5);
+        expect(svg.getAttribute('data-nedsamplat')).toBe(`${alla(svg, '[data-marke="individ"]').length}/${max + 3}`);
+    });
 });
 
 describe('DR11: smärre rättelser', () => {
@@ -1370,6 +1381,8 @@ describe('mönster på staplar och stapel på avkortad axel', () => {
         const panel = alla(svg, 'svg[data-del="panel"] svg[data-marke="monster"]');
         expect(panel).toHaveLength(2);
         expect(panel[0].querySelectorAll('line').length).toBeGreaterThan(0);
+        // Vågräta: de sneda ränderna betyder liten grupp och får inte förväxlas med en status.
+        for (const l of panel[0].querySelectorAll('line')) expect(l.getAttribute('y1')).toBe(l.getAttribute('y2'));
         expect(panel[1].querySelectorAll('circle').length).toBeGreaterThan(0);
         expect(svg.outerHTML).not.toMatch(/<pattern|<defs|url\(| id=/);
         expect(alla(svg, '[data-del="forklaring"] svg[data-marke="monster"]')).toHaveLength(2);
@@ -3369,6 +3382,16 @@ describe('radpaneler: små multiplar för fler än femton kategorier', () => {
         const delar = alla(rita(f, 800), ':scope > svg[data-del="radpanel"]');
         const vanster = delar.map(d => d.querySelector('[data-del="rityta"] > g').getAttribute('transform'));
         expect(new Set(vanster).size).toBe(1);
+    });
+    it('en kategori med bara små punkter delar inte bilden och lämnar inget spår utan visaSma', () => {
+        const f = hantel(16);
+        f.y.ordning[15] = 'HEMLIG grupp med ett mycket långt namn som annars breddar marginalen';
+        f.lager.forEach(l => { l.data[15] = { ...l.data[15], y: f.y.ordning[15], liten: true }; });
+        const svg = rita(f, 800);
+        expect(svg.getAttribute('data-radpaneler')).toBeNull();
+        expect(ser(svg)).not.toContain('HEMLIG');
+        expect(svg.querySelector('[data-del="rityta"] > g').getAttribute('transform')).toBe(rita(hantel(15), 800).querySelector('[data-del="rityta"] > g').getAttribute('transform'));
+        expect(rita(f, 800, { visaSma: true }).getAttribute('data-radpaneler')).toBe('2');
     });
     it('diagramdatan är densamma som utan delning, och valideringen kräver en liggande figur', () => {
         const f = hantel(40);
