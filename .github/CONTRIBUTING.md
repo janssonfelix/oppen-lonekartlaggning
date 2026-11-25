@@ -30,7 +30,7 @@ datorn** — det styr hur vi tar emot bidrag.
    - Det som syns är sett i webbläsaren, och ett diagram också med ett underlag med många AID-etiketter —
      demodatan har bara åtta.
    - Ny eller ändrad funktionalitet finns med i bildspelet för nya användare (`site/genomgang.html`): skriv i
-     beskrivningen vilka bilder som berörs. Bildspelet byggs om ur demot av underhållaren (steg 4 i *Släppa en
+     beskrivningen vilka bilder som berörs. Bildspelet byggs om ur demot av underhållaren (steg 5 i *Släppa en
      version*, `docs/utveckling/bygge-och-test.md`).
 4. Beskriv ändringen och varför den behövs.
 
