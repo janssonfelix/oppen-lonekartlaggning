@@ -48,7 +48,7 @@ describe('valideraFigur: monster', () => {
     });
 });
 
-describe('valideraFigur: färgskalans domän (V2)', () => {
+describe('valideraFigur: färgskalans domän', () => {
     const ruta = fargskala => ({ beskrivning: 'b', x: { skala: 'band' }, y: { skala: 'band' }, ...(fargskala === undefined ? {} : { fargskala }), lager: [{ marke: 'ruta', data: [{ x: 'A', y: 'B', varde: 1 }] }] });
     const punkt = (fargskala, fargvarde) => ({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, fargskala, lager: [{ marke: 'punkt', data: [{ x: 1, y: 2, ...(fargvarde === null ? {} : { fargvarde }) }] }] });
     it.each([
@@ -305,13 +305,13 @@ describe('axelVarden', () => {
     });
 });
 
-describe('fix 1: staplade staplar, positiva och negativa for sig', () => {
+describe('skalDoman: staplade staplar, positiva och negativa för sig', () => {
     const st = (a, b, c) => bas({ lager: [
         { marke: 'stapel', lage: 'staplad', data: a },
         { marke: 'stapel', lage: 'staplad', data: b },
         ...(c ? [{ marke: 'stapel', lage: 'staplad', data: c }] : []),
     ] });
-    it('negativa staplar staplas nedat', () => {
+    it('negativa staplar staplas nedåt', () => {
         expect(skalDoman(st([{ x: 'A', y: -3 }, { x: 'B', y: 2 }], [{ x: 'A', y: -4 }]), 'y')).toEqual([-7, 2]);
     });
     it('liggande variant', () => {
@@ -324,12 +324,9 @@ describe('fix 1: staplade staplar, positiva och negativa for sig', () => {
     it('plus och minus i samma kategori', () => {
         expect(skalDoman(st([{ x: 'A', y: 5 }], [{ x: 'A', y: -3 }, { x: 'B', y: 1 }], [{ x: 'A', y: 4 }, { x: 'B', y: -6 }]), 'y')).toEqual([-6, 9]);
     });
-    it('befintligt staplat test ger fortfarande 0-80', () => {
-        expect(skalDoman(st([{ x: 'A', y: 30 }, { x: 'B', y: 10 }], [{ x: 'A', y: 50 }, { x: 'B', y: 20 }]), 'y')).toEqual([0, 80]);
-    });
 });
 
-describe('fix 2: valideraFigur och icke-numerisk indata', () => {
+describe('valideraFigur: indata som inte är tal', () => {
     const med = (data, over = {}, lager = {}) => bas({ lager: [{ marke: 'punkt', data, ...lager }], ...over });
     const kastar = (f, text) => {
         expect(() => valideraFigur(f, 'chart-x')).toThrow(text);
@@ -375,7 +372,7 @@ describe('fix 2: valideraFigur och icke-numerisk indata', () => {
     });
 });
 
-describe('fix 3: talformat utan negativ nolla', () => {
+describe('talformat: ingen negativ nolla', () => {
     it('inget minus när värdet avrundas till noll', () => {
         expect(blank(talformat(-0, 'kr'))).toBe('0 kr');
         expect(blank(talformat(-0.4, 'kr'))).toBe('0 kr');

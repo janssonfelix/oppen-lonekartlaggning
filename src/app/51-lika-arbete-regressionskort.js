@@ -700,7 +700,7 @@ export function ritaRegressionskort() {
     }).join(' &nbsp;|&nbsp; ');
 
     // Tolkning – plain language sammanfattning
-    // #10 Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har, som det råa gapet framför det
+    // Lägg till bootstrap-CI på det råa lönegapet där det nämns. Intervallet har, som det råa gapet framför det
     // (rawGapPct), verktygets tecken: negativt när kvinnor ligger lägre.
     const ki = bootstrapKIGallande(), rawCIsuffix = ki ? formateraKI(ki.gapPct) : '';
     const tolkning = isSig
@@ -709,7 +709,7 @@ export function ritaRegressionskort() {
             : `Det finns en statistiskt säkerställd oförklarad löneskillnad på ${svPct(Math.abs(r.konPct), 1)}, men den är under verktygets storleksgräns på 3 %. Lagen kräver att du analyserar också den: dokumentera de sakliga skälen och följ upp den över tid.`)
         : `<strong>Den råa löneskillnaden (${_raGapText(r, v => svPct(v, 1) + rawCIsuffix)})</strong> ${fmT.fras ? `försvinner när verktyget räknar bort att kvinnor och män skiljer sig i ${esc(fmT.forklarasAv)}` : 'är statistiskt obetydligt redan utan kontroller'}. Återstående skillnad (${sign}${svPct(r.konPct, 1)}) är statistiskt obetydlig: underlaget är förenligt med att ingen verklig oförklarad skillnad finns.`;
 
-    // #5 Statistisk transparens: flagga när underlaget gör skattningen
+    // Statistisk transparens: flagga när underlaget gör skattningen
     // osäker — så HR inte övertolkar ett punktvärde som bygger på tunt data.
     // Tröskelvärdena är verktygets egna gränser (inte lagstadgade): n<50 = litet
     // urval; <15 obs/parameter = överanpassningsrisk; KI-bredd >10 p.e. =

@@ -38,7 +38,7 @@ import { sattRapportUrval } from './58-rapportmodell.js';
 import { _bes8Omraden, bes8Uppdatera } from './61-regler-och-praxis.js';
 import { byggArsbokslutNu, ritaArsjamforelse } from './73-arsbokslut.js';
 
-// ---- #17 Spara/ladda konfiguration som JSON ----
+// ---- Spara/ladda konfiguration som JSON ----
 /** Sessionens egna importprofiler för konfigurationsfilen; inget fält alls när de saknas. */
 function _konfigImportprofiler() {
     const egna = (state.importprofiler || []).filter(p => p.kalla === 'konfiguration')
@@ -487,7 +487,7 @@ function _tillampaKonfiguration(cfg) {
     return { varningar };
 }
 
-// ---- #18 A/B-jämförelse via snapshot ----
+// ---- A/B-jämförelse via snapshot ----
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 export function byggOgonblicksbild(...a) { return medExportLage(() => _byggOgonblicksbildExport.apply(null, /** @type {any} */ (a))); }
 function _byggOgonblicksbildExport() {

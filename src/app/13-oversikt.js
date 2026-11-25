@@ -142,7 +142,7 @@ export function ritaUnderlagetsKvalitet({ reg } = {}) {
     if (detaljer) detaljer.hidden = false;
 }
 
-// ---- #10 Bootstrap-CI för mediankvoten kvinnor/män ----
+// ---- Bootstrap-CI för mediankvoten kvinnor/män ----
 /**
  * 95-procentigt percentil-bootstrapintervall för mediankvoten kvinnor/män i hela organisationen
  * (organisationensKvotKI i src/lib/osakerhet.js: B = 2000, seedat ur datat). Skrivs till state.bootstrapCI, som
@@ -205,7 +205,7 @@ export function formateraKI(ci, decimals = 1) {
     return ` <span class="ci-bracket" title="95% bootstrap-konfidensintervall (B=${B})">[95 % KI: ${intervall}]</span>`;
 }
 
-// ---- #9 Power-analys: minsta detekterbara effektstorlek ----
+// ---- Power-analys: minsta detekterbara effektstorlek ----
 /**
  * Minsta upptäckbara lönegap (procent) för regressionens könskoefficient vid 80 % styrka och α = 0,05, med σ för
  * log(lön) inom grupp (styrkeanalys i src/lib/osakerhet.js; golvet för grupperna är statGolv()).

@@ -78,7 +78,7 @@ function ritaRiktadeRader() {
     // lägger på färre personer än tröskeln är tillåten (egen simulering, ADR-38 R2): beloppet räknas som
     // för andra rader, och noten under raden säger vad det bygger på (riktadRadInfo i src/lib/vymodell-loneoversyn.js).
     host.innerHTML = t.map((tg, i) => {
-        // #13 Isolerad kostnad för raden (vad den äter av potten) och antalet den berör
+        // Isolerad kostnad för raden (vad den äter av potten) och antalet den berör
         const info = riktadRadInfo(dAll, tg, { roundStep: state.forecast.roundStep, k: kInstalld() });
         const basOpts = basList.map(b => `<option value="${esc(b)}"${tg.bas === b ? ' selected' : ''}>${esc(b)}</option>`).join('');
         const aids = _fcAidForBas(tg.bas || basList[0]);
@@ -278,7 +278,7 @@ function ritaPrognos() {
     // Det råa gapet visas som kvinnors medianlön i procent av mäns (andelAvMan); pilen säger om den närmar sig 100.
     const ra = vm.ra;
     const andelCell = ra ? `${andelAvMan(ra.fore)} till <strong>${andelAvMan(ra.efter)}</strong>${riktningsord(ra.riktning, 'närmar sig 100 %', 'längre från 100 %')}` : '';
-    // #12 Enkel före/efter-stapel på |rågap| (mindre = bättre)
+    // Enkel före/efter-stapel på |rågap| (mindre = bättre)
     const gapBar = () => {
         if (!ra || ra.fore == null || ra.efter == null) return '';
         const scale = Math.max(Math.abs(ra.fore), Math.abs(ra.efter), 0.01);
@@ -288,7 +288,7 @@ function ritaPrognos() {
             <div class="rad-mitt gap-6"><span class="text-dampad-xs bredd-42">Efter</span><div class="bak-kant rund-5 flex-1 hojd-10 klipp"><div class="hojd-100p ${{ '-1': 'bg-ok', 0: 'bg-dampad', 1: 'bg-kritisk' }[ra.riktning]}" data-stil-bredd="${w(ra.efter)}%"></div></div></div>
         </div>`;
     };
-    // #8 Stegvis plan över N år (DiskrL 3:11)
+    // Stegvis plan över N år (DiskrL 3:11)
     const years = state.forecast.years || 1;
     let stagedHtml = '';
     if (vm.plan) {

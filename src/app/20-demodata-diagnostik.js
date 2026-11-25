@@ -30,7 +30,7 @@ import { lsBasVymodell, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
 import { _formateraPVarde, korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { _hpDemoSkal } from './56-handlingsplan.js';
 
-// ---- #16 Testdata + självdiagnostik ----
+// ---- Testdata + självdiagnostik ----
 // genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen importerar dem.
 
 // Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
@@ -98,7 +98,7 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
     _harledArbetsvarderingUrData();   // demodata saknar poäng → rensar ev. kvarvarande
     state.ansvarKolumn = { namn: 'Ansvarskod (demo)', godkand: true, giltiga: 1 };
-    state.isDemo = true;   // #9: markera som demoläge — syntetisk data, aldrig verklig analys
+    state.isDemo = true;   // markera som demoläge — syntetisk data, aldrig verklig analys
     state.demoStort = stort;   // bannern och filraden säger vilket demo det är
     _lasInDemoReferens({ stort });   // demot är självständigt; rensningen tar bort referensen igen
     _lasInDemoStatistik({ stort });
@@ -163,7 +163,7 @@ export function lasInDemodata() {
     _ritaDemoruta();
 }
 
-// #9 Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata
+// Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata
 // aldrig förväxlas med verklig analys. Banner-elementet finns i index.html.
 // Döljer även första-intryck-hinten när data finns (anropas i alla data-lägesbyten).
 export function _ritaDemoruta() {
@@ -177,14 +177,14 @@ export function _ritaDemoruta() {
     if (val) val.hidden = state.data.length > 0 && !state.isDemo;
     const h = document.getElementById('first-run-hint');
     if (h) h.style.display = state.data.length ? 'none' : '';
-    // #5 Export-hubben är bara meningsfull när det finns data att exportera
+    // Export-hubben är bara meningsfull när det finns data att exportera
     const hub = document.getElementById('export-hub');
     if (hub) hub.style.display = state.data.length ? 'block' : 'none';   // 'block', inte '': klassen .dold i markeringen döljer annars kortet
 }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartDemodataDiagnostik() {
-    // #9: samma demoladdning nås från självdiagnostiken, den synliga "Prova"-knappen
+    // samma demoladdning nås från självdiagnostiken, den synliga "Prova"-knappen
     // OCH länken i första-intryck-hinten.
     // Lönefilskortet i Filer och kvalitet har samma val (upload-demo-litet; det stora demot i 21-stort-demo.js).
     ['btn-test-load', 'first-run-demo-link', 'upload-demo-litet'].forEach(id =>

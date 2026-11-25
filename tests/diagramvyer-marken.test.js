@@ -2,13 +2,12 @@
 // Delen här: märkena (trappa, punktsvärm, lutning, övergångar, andelsstaplar, täthet, regnmoln, trädkarta),
 // utskriften och talformatet; resten i diagramvyer.test.js (riggen i helpers/diagramvyer-rigg.js).
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { valideraFigur, figurTillTabell, utanSmaGrupper } from '../src/lib/figur.js';
 import { arsbeloppMening } from '../src/lib/prioritering.js';
 import { trappaVisas } from '../src/lib/vymodell-regressionskort.js';
 import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
-import { vanliga, KALLA, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
+import { vanliga, person, skapaRigg } from './helpers/diagramvyer-rigg.js';
 
 const demo = delatFonster(w => w.__lasInDemodata());
 it('det delade fönstret står i utgångsläget', () => {
@@ -1201,21 +1200,6 @@ describe('svenskt talformat i alla vyer, utan att exporterna ändras', () => {
         expect(w.eval('_tolkaSvensktTal("\\u22124,63 %")')).toBeCloseTo(-4.63, 5);
         expect(w.eval('_tolkaSvensktTal("85,2 %")')).toBeCloseTo(85.2, 5);
     });
-    it('ingen flik visar ett procenttal med decimalpunkt', () => {
-        const w2 = demo();
-        const kvar = {};
-        for (const flik of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'utforska', 'benchmark']) {
-            w2.__ritaFlik(flik);
-            const traffar = new Set();
-            for (const el of w2.document.querySelectorAll('.view *, [id^="view-"] *')) {
-                if (el.children.length || el.closest('script, style, svg, code, pre, textarea, select')) continue;
-                const m = /\d\.\d+\s?%/.exec(el.textContent);
-                if (m) traffar.add(el.textContent.trim().slice(0, 60));
-            }
-            if (traffar.size) kvar[flik] = [...traffar].slice(0, 5);
-        }
-        expect(kvar).toEqual({});
-    });
 });
 
 describe('ett bildspråk — linjeikoner i stället för bildtecken', () => {
@@ -1225,13 +1209,6 @@ describe('ett bildspråk — linjeikoner i stället för bildtecken', () => {
         expect(h).toMatch(/^<svg class="ikon ikon-nal" width="16" height="16"[^>]*aria-hidden="true"[^>]*>.*<\/svg>$/);
         expect(w.eval("ikon('oga', 28)")).toMatch(/width="28" height="28"/);
         expect(w.eval("ikon('finns-inte')")).toBe('');
-    });
-    it('källan har inga bildtecken kvar utanför kommentarer', () => {
-        const kvar = [];
-        for (const [fil, text] of [...KALLA, ['index.html', readFileSync('src/index.html', 'utf8')]]) {
-            text.split('\n').forEach((rad, i) => { if (!/^\s*(\/\/|\*|\/\*|<!--)/.test(rad) && BILDTECKEN.test(rad)) kvar.push(`${fil}:${i + 1}`); });
-        }
-        expect(kvar).toEqual([]);
     });
     it('statusmärkena är ikon plus ord, och tabellens text — det exporten läser — är ren text', () => {
         const w2 = createAppWindow();

@@ -20,13 +20,10 @@ const läs = f => readFileSync(join(root, f), 'utf8');
 const appDelar = readdirSync(join(root, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
 
 describe('dokumentation: användarnära texter', () => {
-    const anvandartexter = ['src/index.html', 'src/app/60-utskrift.js', 'src/app/62-word-utkast.js',
-        'src/app/65-om-verktyget.js', 'src/app/04-ordlista.js', 'src/app/06-k-troskel.js',
-        'src/app/06-kvinnoandel-referens.js', 'src/app/06-maskeringsnoter.js', 'src/app/06-uppgiftsminimering.js',
-        'src/app/51-lika-arbete-regressionskort.js', 'src/app/52-livscykel.js', 'docs/anvandare/korguide.md', 'docs/anvandare/sammanfattning-hr-chefer.md',
-        'docs/anvandare/pilotchecklista.md', 'docs/anvandare/datauttag.md', 'docs/dataskydd/dataskydd.md',
-        'docs/anvandare/sakerhetsbeskrivning.md', 'docs/anvandare/tillganglighetsredogorelse.md', 'docs/anvandare/information-till-anstallda.md',
-        'docs/dataskydd/riskanalys.md'];
+    // Allt användaren kan läsa: appens och bibliotekets källfiler, sidan och användar- och dataskyddsdokumenten.
+    const anvandartexter = [...appDelar.map(f => `src/app/${f}`),
+        ...readdirSync(join(root, 'src/lib')).filter(f => f.endsWith('.js')).map(f => `src/lib/${f}`), 'src/index.html',
+        ...['docs/anvandare', 'docs/dataskydd'].flatMap(d => readdirSync(join(root, d)).filter(f => f.endsWith('.md')).map(f => `${d}/${f}`))];
 
     // p-värdet är sannolikheten för ett så stort utslag OM det inte fanns någon
     // verklig skillnad — inte sannolikheten att resultatet "beror på slump".
@@ -41,12 +38,9 @@ describe('dokumentation: användarnära texter', () => {
             expect(P_FEL.test(t), t).toBe(false);
         expect(KI_FEL.test('Det "verkliga" värdet ligger med 95 % sannolikhet inom det angivna intervallet.')).toBe(true);
     });
-    for (const fil of anvandartexter) {
-        it(`${fil}: förklarar inte p-värdet som sannolikheten att resultatet beror på slump`, () => {
-            expect(läs(fil)).not.toMatch(P_FEL);
-            expect(läs(fil)).not.toMatch(KI_FEL);
-        });
-    }
+    it('ingen användartext förklarar p-värdet som sannolikheten att resultatet beror på slump', () => {
+        expect(anvandartexter.filter(f => P_FEL.test(läs(f)) || KI_FEL.test(läs(f)))).toEqual([]);
+    });
 
     // Hänvisningar med sökväg ska finnas relativt roten eller det hänvisande dokumentet;
     // ett bart filnamn (t.ex. "datauttag.md" i appens hjälptext) ska finnas någonstans i repot.
@@ -54,7 +48,7 @@ describe('dokumentation: användarnära texter', () => {
         const ut = [];
         const gå = dir => {
             for (const e of readdirSync(join(root, dir), { withFileTypes: true })) {
-                if (e.name === 'node_modules' || e.name.startsWith('.')) continue;   // dolda kataloger: git och lokala verktyg
+                if (e.name === 'node_modules' || (e.name.startsWith('.') && e.name !== '.github')) continue;   // dolda kataloger: git och lokala verktyg
                 const rel = dir ? `${dir}/${e.name}` : e.name;
                 if (e.isDirectory()) gå(rel); else if (e.name.endsWith('.md')) ut.push(rel);
             }
@@ -125,7 +119,7 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         ['direktivet kräver', /enligt (?:eu-?)?direktivet (?:bör|ska|säger)|direktiv\S* (?:bör|ska|säger|kräver)\b/iu],
         ['unexplained gender pay gap', /unexplained gender pay gap/iu],
         ['diskrimineringsindikerande', /diskrimineringsindikerande/iu],
-        // Klarspråksputsen (K-OR7): "Nära pension", och svenska ord i stället för de engelska och tekniska termerna.
+        // Klarspråket: "Nära pension", och svenska ord i stället för de engelska och tekniska termerna.
         // Ordlistan får ange den engelska termen inom parentes som förklaring ("(eng. privacy by design)").
         ['Successionszon', /[Ss]uccessions(?:zon|risk)/],
         ['conditional gap', /[Cc]onditional gap/],

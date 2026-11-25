@@ -923,7 +923,7 @@ body.meny-utan-glidning .sidebar { transition: none !important; }
 .upload-badge.loaded   { background: var(--status-ok-bg); color: var(--status-ok); }
 .upload-badge.varning  { background: var(--status-varning-bg); color: var(--status-varning); }
 
-/* #6 "Låser upp"-rad: visar vilken flik/funktion varje fil aktiverar (🔓 speglar 🔒 på låsta flikar) */
+/* "Låser upp"-rad: visar vilken flik/funktion varje fil aktiverar (🔓 speglar 🔒 på låsta flikar) */
 .upload-unlocks {
     margin: 4px 0 8px;
     font-size: var(--fs-xs);
@@ -1811,7 +1811,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 .gdpr-banner svg { color: var(--status-ok); flex-shrink: 0; }
 .gdpr-banner strong { font-weight: 700; }
 
-/* #9 Demoläge-banner: tydlig, varm signalfärg så syntetisk data aldrig förväxlas med verklig */
+/* Demoläge-banner: tydlig, varm signalfärg så syntetisk data aldrig förväxlas med verklig */
 .demo-mode-banner {
     display: flex;
     align-items: center;
@@ -1865,7 +1865,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
 .btn.btn-fara:hover { background: var(--status-kritisk-bg); }
 .btn.btn-fara:focus-visible { outline-color: var(--status-kritisk); }
 
-/* #10 Bootstrap CI-suffix på lönegapssiffror */
+/* Bootstrap CI-suffix på lönegapssiffror */
 .ci-bracket {
     font-size: var(--fs-xs);
     color: var(--text-muted);
@@ -1875,7 +1875,7 @@ td > .k-mask-note { position: sticky; left: 0; max-width: calc(100cqw - 24px); w
     border-bottom: 1px dotted var(--text-muted);
 }
 
-/* #13 Motivation-suggestion-block i prio-tabellen */
+/* Motivation-suggestion-block i prio-tabellen */
 .motivation-suggestions {
     background: var(--yta);
     padding: 10px 14px;

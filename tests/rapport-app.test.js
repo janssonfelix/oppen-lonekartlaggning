@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // Rapporten i appen: metodbilagan, Word-utkastet och .docx-filen, bilagan med gruppdossierer, rapportunderlaget med
-// diagrammen och kopieringen, och innehållsförteckningen på sidan.
+// diagrammen och kopieringen, innehållsförteckningen på sidan och vad exportläget kostar (ADR-51).
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow, delatFlikfonster } from './helpers/app-harness.js';
 
@@ -15,10 +15,10 @@ beforeAll(() => {
     win.__lasInDemodata();   // blocken nedan läser demodatan
 });
 
-describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
+describe('röktest: metod-appendix + rapportbyggare', () => {
     it('metod-appendix byggs och innehåller demo-flagga + modellspec', () => {
         const data = JSON.stringify(win.__metodbilaga());
-        expect(data).toContain('DEMODATA');          // #9 demoläge syns
+        expect(data).toContain('DEMODATA');          // demoläge syns
         expect(data).toContain('HC3');                // modellspec finns
     });
 });
@@ -513,6 +513,42 @@ describe('reservationen om lönebegreppet vid EU-rapportmåtten', () => {
         const block = w.eval('rapportunderlagBlock()');
         expect(ren(JSON.stringify(block.find(b => b.rubrik === 'Struktur och lönetransparens')))).toContain(MENING);
         expect(ren(w.eval('OM_AVSNITT.overview()'))).toContain(MENING);
+    });
+});
+
+// Exportläget (ADR-51) i ett eget fönster med demodatan och Utforska ritad.
+const demoMedUtforska = () => {
+    const w = createAppWindow();
+    w.__lasInDemodata();
+    w.__ritaFlik('utforska');
+    return w;
+};
+describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
+    it('rapportModellBada ger samma modell som rapportModell() och rapportModell({ alla: true }) ur ett bygge', () => {
+        const w = demoMedUtforska();
+        // Metodbilagans exporttidpunkt har sekunder: två modeller byggda på var sin sida om ett sekundskifte (som på
+        // en långsam CI-maskin) är ändå samma modell, så tidpunkten jämförs inte.
+        const utanTid = m => JSON.stringify(m).replace(/"Exporttidpunkt","[^"]*"/g, '"Exporttidpunkt","<TID>"');
+        const bada = w.eval('rapportModellBada()');
+        expect(utanTid(bada.urval)).toBe(utanTid(w.eval('rapportModell()')));
+        expect(utanTid(bada.alla)).toBe(utanTid(w.eval('rapportModell({ alla: true })')));
+        expect(bada.alla.avsnitt.length).toBeGreaterThanOrEqual(bada.urval.avsnitt.length);
+    });
+    it('Lika arbetes minne har ett rum per tröskel: ett lägesbyte räknar inte om översiktens rader', () => {
+        const w = demoMedUtforska();
+        expect(w.eval('const a = _laOversiktRader(hamtaData()); medExportLage(() => _laOversiktRader(hamtaData())); _laOversiktRader(hamtaData()) === a')).toBe(true);
+        expect(w.eval('medExportLage(() => _laOversiktRader(hamtaData())) === _laOversiktRader(hamtaData())')).toBe(false);
+    });
+    it('efter en export ritas Översikt tillbaka bara när exporten ritade den', () => {
+        const w = demoMedUtforska();
+        w.__ritaFlik('dashboard');
+        let antal = 0;
+        w.ritaNyckeltal = () => { antal++; };
+        w.__ritaFlik('dokumentera');                       // ritar inga andra flikar
+        expect(antal).toBe(0);
+        w.eval("medExportLage(() => ritaFlik('dashboard'))");   // som ZIP-exporten
+        expect(antal).toBe(2);                                     // en gång i exportläget, en gång tillbaka
+        expect(w.__state.kLage).toBe('skarm');
     });
 });
 
