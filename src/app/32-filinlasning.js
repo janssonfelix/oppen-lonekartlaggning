@@ -118,7 +118,7 @@ function _efterInlastData() {
         tillampaProfiletiketter();
         if (typeof ritaReferensKort === 'function') ritaReferensKort();
     }
-    state.isDemo = false;   // #9: verklig uppladdning lämnar demoläge
+    state.isDemo = false;   // verklig uppladdning lämnar demoläge
     state.demoStort = false;
     // Löneöversyns knappresultat (målet för skillnaden, känslighetskurvan, individnivån) gällde det förra underlaget.
     if (typeof _fcGlomKnappresultat === 'function') _fcGlomKnappresultat();
@@ -325,7 +325,7 @@ function lasInStrukturfil(file) {
     // Kolumnmappningen läser om den senast inlästa filen, också en som inte gav några rader; den sätts i finishLoad.
     visaLaddning();
     _profilBesked = '';
-    let capturedHeaders = null;   // #11: rubriker för kolumnmappnings-guiden
+    let capturedHeaders = null;   // rubriker för kolumnmappnings-guiden
 
     // GDPR Art. 25.2: minimal data resident i minnet under parsning.
     // Streaming step-mode → en rad i taget. Var ⌈n/50⌉:e rad (_pnrSampelSteg) sparas
@@ -548,8 +548,8 @@ function lasInStrukturfil(file) {
             state._dataHeaders = capturedHeaders || [];
             _senasteInlasningLyckades = true;
             _efterInlastData();
-            visaKolumnmappningOmBehov();   // #11: visa guide om obligatoriska kolumner saknas
-            // #2: redovisa detekterat format (transparens)
+            visaKolumnmappningOmBehov();   // visa guide om obligatoriska kolumner saknas
+            // redovisa detekterat format (transparens)
             if (dataStatus) {
                 dataStatus.textContent += ` · ${metaText}${ansvarNot}`;
                 if (parseStats.alderFromBirthYear > 0) {
@@ -676,7 +676,7 @@ function _beskedEfterOversikt(franOversikt) {
     if (document.querySelector('#column-map-panel select.colmap-saknas')) _visaKolumnmappning();
 }
 
-// #11: Kolumnmappnings-guide. Visas efter inläsning om en obligatorisk roll
+// Kolumnmappnings-guide. Visas efter inläsning om en obligatorisk roll
 // inte kunde auto-matchas mot någon CSV-rubrik (olika personalsystem döper
 // kolumner olika). Låter användaren peka ut rätt kolumn och läsa in igen.
 export const KOLUMNMAPPNING_ROLLER = [
@@ -973,7 +973,7 @@ export function ritaFilrutor() {
     }
 }
 
-// #8: kollapsa uppladdningsraden när data lästs in så att översikten/insikterna
+// kollapsa uppladdningsraden när data lästs in så att översikten/insikterna
 // hamnar överst. Återställs av rensaAllData.
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */

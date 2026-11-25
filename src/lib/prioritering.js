@@ -254,7 +254,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
             sevScore, volScore, gapScore, riktningsvikt, bristMultiplier,
             priorityIndex,
             status,
-            // #13 Behåll referens till rader för motivation-suggestion-engine.
+            // Behåll referens till rader för motivation-suggestion-engine.
             // Lättviktig kostnad — rader är samma minimerade objekt som finns i state.data.
             _rows: g.rows
         });

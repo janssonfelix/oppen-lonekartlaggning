@@ -485,7 +485,7 @@ export function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
 }
 
 /**
- * Steg 3 (#5) — bygg kandidatpar med ARBETSVÄRDERINGSPOÄNG som krav-proxy
+ * Steg 3 — bygg kandidatpar med ARBETSVÄRDERINGSPOÄNG som krav-proxy
  * istället för BAS. Parar över BAS-gränser: ett jämförelseyrke kvalificerar om
  * dess poäng ≤ det kvinnodominerade yrkets poäng × (1 + band) — dvs likvärdiga
  * eller lägre krav (DiskrL 3:10). Bara organisationens egna jämförelseetiketter
@@ -645,7 +645,7 @@ export function likvardighetsparUr({ data = [], statistik = [], nationellKlass =
     // återskapa. Bara tester injicerar en egen rng.
     const rng = opts.rng;
 
-    const poangByKey = opts.poangByKey || null;   // #5: arbetsvärdering som krav-proxy
+    const poangByKey = opts.poangByKey || null;   // arbetsvärdering som krav-proxy
     const bandPct = opts.poangBandPct ?? 5;
     const golv = opts.aldersGolv ?? ALDERS_GOLV_STANDARD;   // minsta jämförelseyrke för åldersjusteringen
 

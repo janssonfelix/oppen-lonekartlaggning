@@ -6266,7 +6266,7 @@ function prioritera(rader, { referensFor, kTroskel: kTroskel2, prioConfig, prioW
       bristMultiplier,
       priorityIndex,
       status,
-      // #13 Behåll referens till rader för motivation-suggestion-engine.
+      // Behåll referens till rader för motivation-suggestion-engine.
       // Lättviktig kostnad — rader är samma minimerade objekt som finns i state.data.
       _rows: g.rows
     });
@@ -33664,7 +33664,7 @@ var state = {
   paketInbakat: null,
   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
   isDemo: false,
-  // #9: true när syntetisk demodata är inläst (aldrig verklig analys)
+  // true när syntetisk demodata är inläst (aldrig verklig analys)
   demoStort: false,
   // true i det stora demot (5 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
   prioConfig: { ...PRIO_CONFIG_DEFAULTS },
@@ -33694,16 +33694,16 @@ var state = {
   // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
   profile: { ...STANDARDPROFIL },
   filnamn: { data: null, policy: null, statistik: null },
-  // filrutornas status (ADR-36)  // #14 lokalkalibrering
+  // filrutornas status (ADR-36)
   kTroskel: K_STANDARD,
   // minsta gruppstorlek för redovisning (ADR-38); ändras bara av sattKTroskel()
   // Organisationspaketets låsningar (ADR-47): golv för tröskeln, låst rensningstid (minuter) och om små grupper
   // får tas med i Utforskas export. Sätts bara av lasInPaket(); Rensa all data återställer dem.
   paketLas: { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true },
   bootstrapCI: null,
-  // #10 cache av 95 % KI för mediankvot
+  // cache av 95 % KI för mediankvot
   powerAnalysis: null,
-  // #9 cache av MDE-beräkning
+  // cache av MDE-beräkning
   // Löneöversyn/prognos: budget-först-fördelning (pott → generellt + riktat).
   // Simuleringen rör aldrig state.data — allt räknas på en kopia.
   forecast: {
@@ -33739,17 +33739,17 @@ var state = {
     // 0 = alla par där jämförelseyrket ligger högre; 5 % är ett valbart filter (ADR-61)
     topN: 20,
     poangBandPct: 5,
-    // #5: ekvivalensband för arbetsvärderingspoäng (±%)
+    // ekvivalensband för arbetsvärderingspoäng (±%)
     result: null
     // senaste beräkning för render-tabell + JPA
   },
-  // #5: valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i § 3:10.
+  // valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i § 3:10.
   // null = använd BAS-rank. byKey: Map<'AID|BAS' eller 'AID', poäng>.
   arbetsvardering: null,
   // Lönemånaden underlaget gäller (fritext, t.ex. "2026-10"): står på bladen per AID och BAS. Ingen uppgift i
   // lönefilen säger det, så användaren anger den; tomt skrivs ut som "inte angiven".
   lonemanad: "",
-  // #11: manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
+  // manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
   // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
   columnMap: null,
   // Importprofiler (src/lib/importprofiler.js): sparade kolumnmappningar som bara bär rubriknamn, med källan

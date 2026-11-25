@@ -105,7 +105,7 @@ export function _rensaAllData({ inbakat = true } = {}) {
     if (paketStatus) { paketStatus.textContent = ''; paketStatus.className = 'status-msg'; }
     if (typeof _fyllPaketFormular === 'function') _fyllPaketFormular();
     state.statistik = [];
-    state.isDemo = false;   // #9: lämna demoläge
+    state.isDemo = false;   // lämna demoläge
     state.demoStort = false;
     if (typeof _ritaDemoruta === 'function') _ritaDemoruta();
     state._interntFel = [];   // interna fel gällde det rensade underlaget

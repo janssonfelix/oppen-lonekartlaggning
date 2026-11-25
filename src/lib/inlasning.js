@@ -339,7 +339,7 @@ export function _hittaRubrik(rubriker, sokord, roll) {
 }
 
 /**
- * Rubriken som bär rollen bland `headers`: #11 den manuella kolumnmappningen, därefter importprofilen som gäller för
+ * Rubriken som bär rollen bland `headers`: den manuella kolumnmappningen, därefter importprofilen som gäller för
  * filen (roll → filens rubrik), och för roller ingen av dem täcker namnet (_hittaRubrik). En vald rubrik gäller bara om
  * filen har den. undefined när ingen rubrik passar.
  * @param {{columnMap?: Object<string,string>|null, importprofil?: {mappning: Object<string,string>}|null}} [val] -
@@ -359,7 +359,7 @@ export function vardeForRoll(rad, sokord, roll, val = {}) {
     return key == null ? "" : rad[key];
 }
 
-// #11: vilken rubrik auto-matchar varje roll (samma logik som hamtaFalt,
+// vilken rubrik auto-matchar varje roll (samma logik som hamtaFalt,
 // utan columnMap-override). Returnerar { roll: rubrik|null }.
 export function gissaKolumnmappning(rubriker) {
     const map = {};
@@ -618,7 +618,7 @@ export function _gissaTabellformat(byte) {
     return 'text';
 }
 
-// #2: Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
+// Robust CSV-inläsning. Excel-exporterad CSV är ofta Windows-1252 (inte
 // UTF-8) och ibland kommaseparerad. Vi detekterar teckenkodning och avgränsare
 // LOKALT (TextDecoder i webbläsaren, inga nätverksanrop) innan parsning så att
 // å/ä/ö inte mojibakar och raderna inte hamnar i en enda kolumn.

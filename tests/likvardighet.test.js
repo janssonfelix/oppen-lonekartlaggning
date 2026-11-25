@@ -513,7 +513,7 @@ describe('konstanter', () => {
 });
 
 // ===================================================================
-describe('byggParPoang — #5: arbetsvärdering som krav-proxy', () => {
+describe('byggParPoang — arbetsvärdering som krav-proxy', () => {
     // Kvinnodominerat yrke med LÄGRE lön, jämförelseyrke i ANNAN BAS men
     // likvärdiga krav enligt poäng → ska paras (BAS-läge skulle missa det).
     const kv = [{ aid: '5301', bas: 'B', label: 'Undersköterska', n: 10, nKv: 8,

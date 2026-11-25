@@ -4,7 +4,7 @@
 // bildspråket är linjeikoner. Varje test faller om felet det vaktar kommer tillbaka. Delen här: talen, statusorden och
 // exportknapparna; resten i granssnitt-vyer.test.js (riggen i helpers/granssnitt-rigg.js).
 import { describe, it, expect } from 'vitest';
-import { createAppWindow, delatFonster, utgangslage } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, utgangslage, MENYFLIKAR } from './helpers/app-harness.js';
 import { las, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -65,10 +65,9 @@ describe('samma tal i samma precision på sidan', () => {
 });
 
 describe('en exportknapp per kort', () => {
-    const FLIKAR = ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska'];
     it('varje diagram har en exportmeny, ingen behållare har två, och ingen fristående exportknapp står bredvid', () => {
         const w = demo();
-        for (const flik of FLIKAR) w.__ritaFlik(flik);
+        for (const flik of MENYFLIKAR) w.__ritaFlik(flik);
         const d = w.document;
         const namn = el => (el.closest('.card, .diagramkort')?.querySelector('h2, h3, h4')?.textContent || el.id || '').trim().slice(0, 40);
         const varder = [...d.querySelectorAll('.view-panel .chart-export-host')];

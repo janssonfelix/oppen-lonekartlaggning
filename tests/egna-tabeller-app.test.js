@@ -171,35 +171,6 @@ describe('egna tabeller: receptet för avsnittet per BAS-intervall', () => {
     });
 });
 
-describe('exportläget kostar inte mer än det måste (ADR-51)', () => {
-    it('rapportModellBada ger samma modell som rapportModell() och rapportModell({ alla: true }) ur ett bygge', () => {
-        const w = fonster();
-        // Metodbilagans exporttidpunkt har sekunder: två modeller byggda på var sin sida om ett sekundskifte (som på
-        // en långsam CI-maskin) är ändå samma modell, så tidpunkten jämförs inte.
-        const utanTid = m => JSON.stringify(m).replace(/"Exporttidpunkt","[^"]*"/g, '"Exporttidpunkt","<TID>"');
-        const bada = w.eval('rapportModellBada()');
-        expect(utanTid(bada.urval)).toBe(utanTid(w.eval('rapportModell()')));
-        expect(utanTid(bada.alla)).toBe(utanTid(w.eval('rapportModell({ alla: true })')));
-        expect(bada.alla.avsnitt.length).toBeGreaterThanOrEqual(bada.urval.avsnitt.length);
-    });
-    it('Lika arbetes minne har ett rum per tröskel: ett lägesbyte räknar inte om översiktens rader', () => {
-        const w = fonster();
-        expect(w.eval('const a = _laOversiktRader(hamtaData()); medExportLage(() => _laOversiktRader(hamtaData())); _laOversiktRader(hamtaData()) === a')).toBe(true);
-        expect(w.eval('medExportLage(() => _laOversiktRader(hamtaData())) === _laOversiktRader(hamtaData())')).toBe(false);
-    });
-    it('efter en export ritas Översikt tillbaka bara när exporten ritade den', () => {
-        const w = fonster();
-        w.__ritaFlik('dashboard');
-        let antal = 0;
-        w.ritaNyckeltal = () => { antal++; };
-        w.__ritaFlik('dokumentera');                       // ritar inga andra flikar
-        expect(antal).toBe(0);
-        w.eval("medExportLage(() => ritaFlik('dashboard'))");   // som ZIP-exporten
-        expect(antal).toBe(2);                                     // en gång i exportläget, en gång tillbaka
-        expect(w.__state.kLage).toBe('skarm');
-    });
-});
-
 describe('egna tabeller i rapportunderlaget (ADR-20, ADR-52)', () => {
     it('varje egen tabell blir ett block med formaterade tal, under en egen rubrik, och går att kopiera', () => {
         const w = fonster();

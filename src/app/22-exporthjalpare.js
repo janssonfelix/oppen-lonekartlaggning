@@ -27,7 +27,7 @@ import { gapVariabler } from './68-var-uppstar-gapet.js';
 export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 
 // ============================================================
-// #8 Reproducerbarhets-appendix — identiska metod- och parameteruppgifter i
+// Reproducerbarhets-appendix — identiska metod- och parameteruppgifter i
 // ALLA exporter, så varje flaggat resultat går att återskapa och försvara i
 // samverkan/tvist. Två format: aoa-rader (Excel) och HTML (print/rapport).
 // ============================================================
@@ -514,7 +514,7 @@ export function _visaExportvarning(bodyHtml) {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartExporthjalpare() {
-    // #5 Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
+    // Export-hubb: direktexporter för de state-drivna underlagen (kräver inte att
     // respektive flik besökts). Flikarna med egna underlag nås från länkraden under exporterna (data-go-to-tab).
     document.getElementById('btn-hub-jpa')?.addEventListener('click', () => exportJPAProtokoll());
     document.getElementById('btn-hub-handlingsplan')?.addEventListener('click', () => exportHandlingsplan());

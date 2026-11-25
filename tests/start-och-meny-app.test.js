@@ -26,7 +26,7 @@ beforeAll(() => {
     win = createAppWindow();
 });
 
-describe('#1 röktest: boot', () => {
+describe('röktest: boot', () => {
     it('det delade fönstret står i utgångsläget', () => {
         expect(utgangslage(win)).toEqual({ troskel: 10, dialoger: 0, flik: 'dashboard' });
     });
@@ -72,14 +72,14 @@ describe('#1 röktest: boot', () => {
     });
 });
 
-describe('#1 röktest: demodata + full pipeline', () => {
+describe('röktest: demodata + full pipeline', () => {
     it('lasInDemodata kör hela pipelinen utan kast', () => {
         expect(() => win.__lasInDemodata()).not.toThrow();
         expect(win.__state.data.length).toBe(260);   // självdiagnostikens 200 + tre yrken i BAS C (kandidatpar)
         expect(win.__state.isDemo).toBe(true);
     });
 
-    it('#9 demo-banner blir synlig', () => {
+    it('demo-banner blir synlig', () => {
         expect(win.document.getElementById('demo-mode-banner').style.display).toBe('flex');
     });
 });
@@ -169,7 +169,7 @@ describe('process-tracker: statusar härleds ur inläst data', () => {
     });
 });
 
-describe('#1 röktest: varje flik renderar utan kast', () => {
+describe('röktest: varje flik renderar utan kast', () => {
     const tabs = ['rapport', 'kon', 'demografi', 'benchmark', 'matrix',
         'prioritering', 'struktur', 'loneoversyn', 'likvardighet', 'utforska', 'benchmark', 'kvalitet', 'info'];
     it.each(tabs)('ritaFlik("%s")', (t) => {

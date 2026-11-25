@@ -1,11 +1,9 @@
 // Gemensam rigg för vyerna som ritas med diagramkärnan (tests/diagramvyer*.test.js, ADR-39).
-import { readFileSync, readdirSync } from 'node:fs';
 import { createAppWindow } from './app-harness.js';
 
 // talformat skriver hårda mellanslag i belopp; jämför med vanliga.
 export const vanliga = rader => rader.map(r => r.map(c => String(c).replace(/[\u00a0\u202f]/g, ' ')));
 
-export const KALLA = readdirSync('src/app').filter(f => /^\d\d-.*\.js$/.test(f)).map(f => [f, readFileSync(`src/app/${f}`, 'utf8')]);
 export const figurMedLiten = () => ({ beskrivning: 'B', x: { skala: 'band' }, y: { skala: 'linjar' },
     lager: [{ marke: 'stapel', serie: 'S', farg: '#2563eb', data: [{ x: 'A', y: 30000 }, { x: 'HEMLIG', y: 77777, liten: true }] }] });
 export const person = (bas, kon, lon, extra = {}) => ({ bas, kon, lon, alder: 40, yrke: '5301 Test', aid: '5301', yrkeLabel: 'Test', enhet: '', ...extra });

@@ -6,21 +6,20 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { createAppWindow, delatFonster } from './helpers/app-harness.js';
+import { createAppWindow, delatFonster, MENYFLIKAR } from './helpers/app-harness.js';
 import { rot, las, papa, vanta, csvFil, okandaRader } from './helpers/granssnitt-rigg.js';
 
 // Testerna som söker igenom alla flikar läser två delade fönster med demodatan, där flikarna har ritats en gång: att
 // rita dem är det dyra, inte att läsa. Ordningen spelar ingen roll (prövat: samma dokument, bortsett från
 // exportmenyernas löpnummer). Vakten i delatFonster fäller det test som ändrar tillståndet.
-const ALLA_FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'info'];
+const ALLA_FLIKAR = [...MENYFLIKAR, 'info'];
 const allaFlikar = delatFonster(w => { w.__lasInDemodata(); for (const f of ALLA_FLIKAR) w.__ritaFlik(f); });
-// Med en pott och ett generellt påslag, så att Löneöversyn ritar prognosen. Procenttestet läser också Exportera, som det
-// förut inte ritade.
+// Med en pott och ett generellt påslag, så att Löneöversyn ritar prognosen.
 const medPott = delatFonster(w => {
     w.__lasInDemodata();
     w.__state.forecast.budget = { mode: 'pct', value: 2 };
     w.__state.forecast.generell = { mode: 'pct', value: 1 };
-    for (const f of ['dashboard', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'kon', 'benchmark', 'utforska', 'dokumentera']) w.__ritaFlik(f);
+    for (const f of MENYFLIKAR) w.__ritaFlik(f);
 });
 
 describe('tomma lägen som inte låter som fel', () => {
@@ -315,7 +314,7 @@ describe('kantränderna', () => {
     });
 });
 
-describe('slutgranskningens fynd', () => {
+describe('inläsningen, regressionskortet, menyn och Löneöversyns ord', () => {
     const lasIn = async (w, rader) => { papa(w); w.lasInStrukturfil(csvFil(w, rader)); await vanta(() => w.document.getElementById('data-status').textContent && !/läser|Läser/.test(w.document.getElementById('data-status').textContent)); };
     it('en fil som saknar en obligatorisk kolumn men har läsbara rader läses in, och kolumnmappningen säger vad som saknas', async () => {
         const w = createAppWindow();
@@ -376,9 +375,17 @@ describe('procenttal i flikarna har en decimal', () => {
         }
         expect([...fynd]).toEqual([]);
     });
+    it('ingen flik visar ett procenttal med decimalpunkt', () => {
+        const fynd = new Set();
+        for (const el of medPott().document.querySelectorAll('[id^="view-"] *')) {
+            if (el.children.length || el.closest('script, style, svg, code, pre, textarea, select')) continue;
+            if (/\d\.\d+\s?%/.test(el.textContent)) fynd.add(el.textContent.trim().slice(0, 60));
+        }
+        expect([...fynd]).toEqual([]);
+    });
 });
 
-describe('småsaker i texter och etiketter (granskning 2026-10-30, steg H)', () => {
+describe('småsaker i texter och etiketter', () => {
     it('Lika arbetes kolumn Dominans skriver ut orden, också i cellens text för exporten', () => {
         const w = createAppWindow();
         w.__lasInDemodata();

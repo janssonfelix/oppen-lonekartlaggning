@@ -97,7 +97,7 @@ describe('likvärdigt arbete: appen delegerar till lib', () => {
         expect(sedd.opts).toEqual({ kvinnoTrosholdPct: 55, kvDomDefinition: 'scb', jamforelse: 'mansdominerade', minGapPct: 3, topN: 20, k: 15 });
     });
 
-    it('skickar med arbetsvärderingen i poäng-läge (#5)', () => {
+    it('skickar med arbetsvärderingen i poäng-läge', () => {
         let sedd = null;
         const byKey = new Map([['5301|B', 100]]);
         const state = {

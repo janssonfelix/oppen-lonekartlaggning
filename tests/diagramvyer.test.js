@@ -1766,7 +1766,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
         w2.__cfg = cfg; w2.eval('tillampaKonfiguration(window.__cfg)');
         w2.__state.statistik = [...new Set(w2.__hamtaData().map(r => `${r.aid}|${r.bas}`))].map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
         w2.__state.statistikHasP10 = true; w2.__state.statistikHasP90 = true;
-        for (const t of ['dashboard', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'demografi', 'prioritering', 'loneoversyn', 'arbetet']) w2.__ritaFlik(t);
+        for (const t of ['dashboard', 'benchmark', 'matrix', 'likvardighet', 'struktur', 'kon', 'prioritering', 'loneoversyn', 'arbetet']) w2.__ritaFlik(t);
     });
     const figur = id => { const el = fonster().document.getElementById(id); return el && el._figur; };
     const BAS_KAT = /(^|· )BAS (\S+)$/;
@@ -1888,7 +1888,7 @@ describe('BAS-urval på diagrammen där BAS är en dimension', () => {
 describe('Diagramfilter v3: filtren i vyerna', () => {
     const fonster = delatFonster(w2 => {
         w2.__lasInDemodata();
-        for (const t of ['kon', 'demografi', 'struktur', 'matrix', 'likvardighet']) w2.__ritaFlik(t);
+        for (const t of ['kon', 'struktur', 'matrix', 'likvardighet']) w2.__ritaFlik(t);
     });
     // Figuren utan filter och härledning: bilden utan filter ska vara byte för byte densamma som den.
     const utanFilter = f => ({ ...f, urval: undefined, lager: f.lager.map(l => { const { harleddAv: _h, ...rest } = l; return rest; }) });

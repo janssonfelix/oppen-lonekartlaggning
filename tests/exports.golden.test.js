@@ -344,9 +344,9 @@ describe('tecknet i EU-lönerapporten (EU 2023/970 art. 9)', () => {
         const matris = blad(alla, 'EU-lönekartläggning');
         expect(matris[matris.length - 1][0]).toBe(mening);
     });
-    it('bladnamnen har diakriter och håller Excels regler (högst 31 tecken, inga []:*?/\\)', () => {
+    // Excels regler för bladnamn prövas för alla arbetsböcker i 'Excel: bladnamnen och metodbladets etikettkolumn'.
+    it('bladnamnen har diakriter', () => {
         const namn = [...alla.SheetNames, ...eu.SheetNames];
-        for (const n of namn) { expect(n.length, n).toBeLessThanOrEqual(31); expect(n, n).not.toMatch(/[[\]:*?/\\]/); }
         for (const n of ['EU-lönekartläggning', 'Löneskillnad', 'Könsskevhet']) expect(alla.SheetNames).toContain(n);
         expect(namn.join('|')).not.toMatch(/Lonesk|Konssk|Lonekart|Jamfor|Sakliga skal\b|granser\b|per alder/);
     });

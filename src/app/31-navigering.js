@@ -564,7 +564,7 @@ export function uppstartNavigering() {
             };
             const titleEl = document.getElementById("page-title");
             if (titleEl) titleEl.textContent = titles[target] || target;
-            // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade (granskning 2026-10-30).
+            // En ny flik börjar överst: annars står läsaren kvar där förra fliken slutade.
             // Före ritningen, så att det som görs efter den (efter: ett avsnitt att visa) får sista ordet.
             window.scrollTo(0, 0);
             // Användarens eget klick (eller ett flikbyte som begär det) visar fliken först och räknar den sedan (ADR-80).

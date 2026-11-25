@@ -62,7 +62,7 @@ export function raknaPrioritering(reference) {
     });
 }
 
-// ---- #13 AI-fri "förslag till motivering"-engine ----
+// ---- AI-fri "förslag till motivering"-engine ----
 /**
  * Genererar regelbaserade förslag på testbara hypoteser/sakliga skäl för
  * en prio-rad. INGEN AI/LLM — bara deterministiska regler över datan.
@@ -355,7 +355,7 @@ export function ritaPrioritering() {
         const costPerPersonTxt = i.costPerPerson > 0 ? fmt.format(Math.round(i.costPerPerson)) : '–';
         const quickwinBadge = i.isQuickWin ? ' <span title="Snabb vinst" class="hjalpmarke hjalp-markor">' + ikon('blixt', 14) + '</span>' : '';
         const bristBadge    = i.isBrist    ? ' <span title="Bristyrke" class="hjalpmarke hjalp-markor">' + ikon('statusVarning', 14) + '</span>' : '';
-        // #2 Power-varning per grupp: visa ⚠️ när gruppens MDE > observerad avvikelse
+        // Power-varning per grupp: visa ⚠️ när gruppens MDE > observerad avvikelse
         // eller när någon köns-cell har < 5 personer.
         const groupMDE = raknaGruppMDE(i.kvN, i.maN);
         const lowPower = groupMDE && (groupMDE.tooSmall || groupMDE.mdePct > Math.abs(i.diffPct));
@@ -363,7 +363,7 @@ export function ritaPrioritering() {
             ? ` <span title="Låg statistisk styrka — gruppens minsta detekterbara effekt ≈ ${svPct(groupMDE.mdePct, 1)}, ${groupMDE.tooSmall ? 'och underlaget per kön är litet (<5)' : 'större än observerad avvikelse'}. Tolka resultatet med försiktighet." class="farg-varning hjalpmarke fs-0_92em hjalp-markor">${ikon('statusVarning', 14)}</span>`
             : '';
         const rowKey = `${i.aid}|${i.bas}`;
-        // #13 Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
+        // Förslag-knapp: suggestionerna beräknas vid expand, inte i förväg
         const suggestionBtn = i._rows && i._rows.length
             ? `<button class="btn-suggest" data-row-key="${esc(rowKey)}" type="button" title="Visa förslag på sakliga skäl-hypoteser" aria-label="Visa motiveringsförslag för ${esc(i.yrke)}" aria-expanded="false">Motiveringsförslag</button>`
             : '';
@@ -418,7 +418,7 @@ export function ritaPrioritering() {
         });
     });
 
-    // #13 Suggestion-toggle-handler: expanderar en sub-rad under den klickade
+    // Suggestion-toggle-handler: expanderar en sub-rad under den klickade
     tbody.querySelectorAll('.btn-suggest').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();

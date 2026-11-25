@@ -30,6 +30,9 @@ const utvMd = UTV_DOK.map(läs).join('\n');
 const appReadme = läs('src/app/README.md');
 const pkg = JSON.parse(läs('package.json'));
 const appDelar = readdirSync(join(root, 'src', 'app')).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
+// Alla filer under en katalog, med sökväg från roten.
+const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
 
 describe('dokumentation: src/app/README.md speglar katalogen', () => {
     it('varje källmodul finns i deltabellen', () => {
@@ -251,15 +254,11 @@ describe('dokumentation: dataskyddstexterna följer ADR-14 och ADR-15', () => {
     // Utforska visar små grupper tonade och exporten utelämnar dem bara när rutan
     // är urkryssad (ADR-14); formler i CSV/urklipp neutraliseras (ADR-15). De texter
     // ett dataskyddsombud läser först beskriver just det.
-    const texter = ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md',
-                    'src/app/60-utskrift.js', 'src/app/62-word-utkast.js', 'src/app/65-om-verktyget.js',
-                    'src/app/04-ordlista.js', 'src/app/06-k-troskel.js', 'src/app/06-kvinnoandel-referens.js',
-                    'src/app/06-maskeringsnoter.js', 'src/app/06-uppgiftsminimering.js'];
-    for (const fil of texter) {
-        it(`${fil}: påstår inte att små grupper aldrig syns i någon utdata`, () => {
-            expect(läs(fil)).not.toMatch(/redovisas inte i någon utdata/);
-        });
-    }
+    const texter = [...appDelar.map(f => `src/app/${f}`), 'src/index.html',
+        ...['docs/anvandare', 'docs/dataskydd'].flatMap(d => readdirSync(join(root, d)).filter(f => f.endsWith('.md')).map(f => `${d}/${f}`))];
+    it('ingen text påstår att små grupper aldrig syns i någon utdata', () => {
+        expect(texter.filter(f => /redovisas inte i någon utdata/.test(läs(f)))).toEqual([]);
+    });
     for (const fil of ['docs/dataskydd/dataskydd.md', 'docs/dataskydd/riskanalys.md']) {
         it(`${fil}: beskriver undantaget i Utforska (ADR-14) och formelskyddet (ADR-15)`, () => {
             const t = läs(fil);
@@ -317,23 +316,19 @@ const beslutsnummer = [...adrMd.matchAll(/^\*\*ADR-(\d+) —/gm)].map(m => Numbe
 describe('arkitekturbesluten: numren som koden pekar på finns, och hänvisningarna går att följa', () => {
     it('varje ADR som koden, testerna och dokumenten pekar på finns i arkitekturbesluten', () => {
         const finns = new Set(beslutsnummer);
-        const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
-            e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
         const filer = [...gå('src'), ...gå('tools'), ...gå('tests'), ...gå('docs')]
             .filter(f => /\.(js|mjs|html|css|md)$/.test(f));
         const saknas = filer.flatMap(f => [...läs(f).matchAll(/ADR-(\d+)\b/g)].map(m => Number(m[1])).filter(n => !finns.has(n)).map(n => `${f}: ADR-${n}`));
         expect([...new Set(saknas)]).toEqual([]);
     });
-    // Koder ur interna granskningsomgångar (DR5, «Uppgift 6», «S5 i punkt 26», «beslut 8c») förklaras inte någonstans i repot, och
+    // Koder och namn ur interna granskningsomgångar (DR5, «Uppgift 6», «S5 i punkt 26», «beslut 8c», «fix 2», «slutgranskningens fynd», en gammal funktionslistas «#9») förklaras inte någonstans i repot, och
     // flera krockade med skydden S1–S5 och riskanalysens id. En hänvisning går till ett ADR eller ett dokument.
-    const GRANSKNINGSKOD = /\b(?:D[RSTUVGF]\d+|Uppgift \d+|[Rr]ättning(?:somgång)? \d+|fixrunda \d+|[A-Z]\d+ i punkt \d+|etapp \d+[a-z]?|beslut \d+[a-z])\b/;
+    const GRANSKNINGSKOD = /\b(?:D[RSTUVGF]\d+|Uppgift \d+|[Rr]ättning(?:somgång)? \d+|fixrunda \d+|fix \d+(?=:)|[A-Z]\d+ i punkt \d+|etapp \d+[a-z]?|beslut \d+[a-z]|[A-Z]-[A-Z]{2}\d+|[Ss]lutgranskning\w*|granskning \d{4}-\d\d-\d\d)\b|\(V\d+\)|(?:\/\/|\/\*|<!--|\*|-- |(?:describe|it)\(['`]|— )\s*#\d{1,2}\b|\(#\d{1,2}\)/;
     it('mönstret för granskningskoder fångar koderna men inte ADR, skydden eller BAS', () => {
-        for (const t of ['(DR1)', 'DS3: staplar', 'Uppgift 6', 'Rättning 1, DV2', 'fixrunda 1', 'S5 i punkt 26', 'etapp 1b', 'beslut 8c']) expect(GRANSKNINGSKOD.test(t), t).toBe(true);
-        for (const t of ['ADR-63', '(S4)', 'BAS D2', 'cell D2', 'docx', 'uppgiften']) expect(GRANSKNINGSKOD.test(t), t).toBe(false);
+        for (const t of ['(DR1)', 'DS3: staplar', 'Uppgift 6', 'Rättning 1, DV2', 'fixrunda 1', 'fix 2: indata', 'S5 i punkt 26', 'etapp 1b', 'beslut 8c', 'Klarspråket (K-OR7)', 'domänen (V2)', 'slutgranskningens fynd', 'granskning 2026-10-30', '// #9: demoläge', "describe('#1 röktest'", '// ---- #13 Förslag', 'poäng-läge (#5)']) expect(GRANSKNINGSKOD.test(t), t).toBe(true);
+        for (const t of ['ADR-63', '(S4)', 'BAS D2', 'cell D2', 'docx', 'uppgiften', '[B3.7]', 'A-Z0', 'granskningen', "'#,##0'", '<strong>#1, #2</strong>', "toBe('#1 207011 Yrke')", "'#2563eb'"]) expect(GRANSKNINGSKOD.test(t), t).toBe(false);
     });
     it('koden, verktygen och testerna hänvisar inte till granskningsomgångarnas koder', () => {
-        const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
-            e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
         const filer = [...gå('src'), ...gå('tools'), ...gå('tests')]
             .filter(f => /\.(js|mjs|html|css)$/.test(f) && f !== 'tests/dokumentation-struktur.test.js' && !f.startsWith('tools/data/'));
         expect(filer.flatMap(f => läs(f).split('\n').map((r, i) => [r, i]).filter(([r]) => GRANSKNINGSKOD.test(r))
@@ -376,7 +371,6 @@ describe('testdata: helt syntetisk generator', () => {
 });
 
 describe('dokumentation: skripten som nämns finns', () => {
-    const pkg = JSON.parse(läs('package.json'));
     it('varje npm-skript som kör ett verktyg pekar på en fil som finns', () => {
         const saknas = Object.entries(pkg.scripts).flatMap(([namn, cmd]) =>
             [...cmd.matchAll(/node (tools\/\S+)/g)].map(m => m[1]).filter(f => !existsSync(join(root, f))).map(f => `${namn}: ${f}`));
@@ -390,7 +384,6 @@ describe('dokumentation: skripten som nämns finns', () => {
 });
 
 describe('dokumentation: en Definition of Done, och npm run kontroll kör CI:s steg', () => {
-    const pkg = JSON.parse(läs('package.json'));
     // Ett avsnitt i ett Markdown-dokument: från rubriken till nästa rubrik på samma eller högre nivå.
     const avsnitt = (text, rubrik) => {
         const start = text.indexOf(rubrik);
@@ -478,8 +471,6 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
 });
 
 describe('dokumentation: licens MIT', () => {
-    const gå = dir => readdirSync(join(root, dir), { withFileTypes: true }).flatMap(e =>
-        e.isDirectory() ? gå(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
     it('LICENSE är MIT-texten med upphovspersonen och TREDJEPARTSLICENSER.md hänvisar till den', () => {
         const l = läs('LICENSE');
         expect(l).toMatch(/^MIT License\n\nCopyright \(c\) 2026 Felix Jansson/);
