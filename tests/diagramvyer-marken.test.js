@@ -1021,8 +1021,16 @@ describe('litet underlag: staplar som gäller få personer ritas med mönster', 
         w2.__ritaFlik('kon');
         const not = w2.document.getElementById('kon-histogram-not');
         const fa = w2.document.getElementById('chart-kon-histogram')._figur.lager.some(l => l.data.some(d => d.fa));
-        expect(not.hidden).toBe(!fa);
-        if (fa) expect(not.textContent).toMatch(/färre än 5 personer av könet/);
+        expect(fa).toBe(false);
+        expect(not.hidden).toBe(true);
+        // Tre män bland kvinnornas löner, resten högre: en stapel med färre än fem män, och noten visas.
+        w2.__state.data = [...Array.from({ length: 30 }, (_, i) => rad('kvinna', 30000 + i * 200)),
+            ...[31000, 31100, 31200].map(l => rad('man', l)), ...Array.from({ length: 27 }, (_, i) => rad('man', 45000 + i * 200))];
+        w2.eval('fyllValjare(); lasUppFlikar();');
+        w2.__ritaFlik('kon');
+        expect(w2.document.getElementById('chart-kon-histogram')._figur.lager.some(l => l.data.some(d => d.fa))).toBe(true);
+        expect(not.hidden).toBe(false);
+        expect(not.textContent).toMatch(/färre än 5 personer av könet/);
     });
 });
 

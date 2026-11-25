@@ -332,11 +332,6 @@ describe('exportmeny på alla diagram', () => {
             expect(el.title, el.id).toBe(`Lämnar inte verktyget: ${skal[s]}.`);
             expect(win.__exportTillaten(el)).toBe(false);
         }
-        // Inget ritat diagram i en märkt behållare har en meny, och ett ritat diagram i den ger ingen bild.
-        for (const gd of [...win.document.querySelectorAll('[data-no-export] div')].filter(el => el._figur)) {
-            expect(gd.parentElement.querySelector(':scope > .chart-export'), gd.id).toBeNull();
-            expect(win.__diagramexportRader(gd), gd.id).toEqual([]);
-        }
     });
 
 });

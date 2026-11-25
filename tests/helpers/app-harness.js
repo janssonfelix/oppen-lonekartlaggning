@@ -104,7 +104,6 @@ export function createAppWindow({ url = 'http://localhost/', html: sida = html }
         __lasInDemodata: lasInDemodata,
         __likvardighetspar: likvardighetspar,
         __metodbilaga: _metodbilaga,
-        __stRepresentationPerBas: representationPerBas,
         __hamtaData: hamtaData,
         __tabellkopia: _tabellkopiaForExport,
         __groupedAoa: _grupperadKopiaTillAoa,

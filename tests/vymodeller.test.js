@@ -952,7 +952,7 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln (v
         expect(vid(10).summaVisas).toBe(true);
         expect(vid(25).rem.count).toBe(0);   // inget BAS-intervall eller yrke har 25 män utom B, där ingen ligger under
         const smal = vymodellIndividlyft(underlag(), { gapPct: 5, k: 16 });
-        for (const g of smal.visade) expect(g.count).toBeGreaterThanOrEqual(16);
+        expect(smal.visade).toEqual([]);   // A har 15 berörda: under 16 får gruppen ingen egen rad
         expect(smal.dolda).toBe(smal.rem.perGroup.length - smal.visade.length);
         expect(smal.summaVisas).toBe(smal.rem.count >= 16);
         expect(individlyftGrupper(smal.rem, 16)).toEqual(smal.visade);

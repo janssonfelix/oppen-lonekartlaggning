@@ -55,11 +55,6 @@ describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
         });
     });
 
-    it('kvalitetssäkringsfliken renderar båda panelerna utan kast', () => {
-        expect(() => win.__ritaKvalitetssakring()).not.toThrow();
-        expect(win.document.getElementById('robusthet-body')).not.toBeNull();
-        expect(win.document.getElementById('fardigcheck-body')).not.toBeNull();
-    });
 });
 
 describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {

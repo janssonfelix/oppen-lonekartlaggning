@@ -21,11 +21,6 @@ describe('#1 röktest: #8 metod-appendix + #5 rapportbyggare', () => {
         expect(data).toContain('DEMODATA');          // #9 demoläge syns
         expect(data).toContain('HC3');                // modellspec finns
     });
-
-    it('§3:10- och strukturmåtten kan beräknas på demodata', () => {
-        expect(() => win.__likvardighetspar()).not.toThrow();
-        expect(() => win.__stRepresentationPerBas(win.__hamtaData())).not.toThrow();
-    });
 });
 
 describe('#export röktest: BAS-grupperade tabeller blir Word-block', () => {

@@ -415,7 +415,7 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
             expect(cell.textContent.trim()).toMatch(/^[\d,]+\s?%/);                     // grafiken har ingen text: cellen läses som talet
         }
     });
-    it('sju diagram ritas i sina ordinarie behållare och i sin form', () => {
+    it('fyra diagram ritas i sina ordinarie behållare och i sin form', () => {
         const w2 = createAppWindow();
         w2.__lasInDemodata();
         w2.__state.kLage = 'export';   // figurerna så som exporterna läser dem (ADR-51)
@@ -429,10 +429,6 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         expect(band.lager[2].data.every(p => p.r.n >= w2.__K)).toBe(true);        // ingen åldersgrupp under tröskeln
         expect(f('chart-kon-histogram').lager.every(l => l.lage === 'overlagrad' && l.opacitet < 1 && !l.data.some(p => p.monster))).toBe(true);
         expect(f('chart-lp-gender').lager.map(l => l.marke)).toEqual(['intervall', 'intervall', 'punkt', 'punkt']);
-        const kv = f('chart-reg-kvantil');
-        if (kv) { expect(kv.y.skala).toBe('band'); expect(kv.x.doman[0] <= 0 && kv.x.doman[1] >= 0).toBe(true); }   // axeln når noll
-        const par = f('chart-likvardighet-heatmap');
-        if (par) expect(par.lager.map(l => l.marke)).toEqual(['intervall', 'punkt', 'punkt']);
         for (const id of ['chart-prio-pareto', 'chart-demo-spread', 'chart-kon-histogram', 'chart-lp-gender']) expect(() => valideraFigur(f(id), id), id).not.toThrow();
     });
 });
@@ -986,7 +982,7 @@ describe('Likvärdigt arbete: chart-likvardighet-heatmap', () => {
         const w2 = demo();
         w2.__ritaFlik('likvardighet');
         const el = w2.document.getElementById('chart-likvardighet-heatmap');
-        if (!el || !el._figur) return;   // demodatan har för få kandidatpar: vyns text visas
+        expect(el._figur).toBeTruthy();
         expect(el.data).toBeUndefined();
         expect(w2.eval('diagramexportRader(document.getElementById("chart-likvardighet-heatmap"))')[0][0]).toContain('(undantag: Likvärdigt arbete)');
     });

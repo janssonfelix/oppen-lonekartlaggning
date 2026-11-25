@@ -89,10 +89,17 @@ describe('överblicken: löneläget och statistiken mot ställningstagandet', ()
     it('grupper utanför listans bild nämns: tabellen har alla', () => {
         const w = fonster(); medStatistik(w);
         w.__ritaFlik('benchmark');
-        const rader = w.document.querySelectorAll('#ref-tabell tbody tr').length;
-        const antal = new Set(w.document.getElementById('chart-ref-hantel')._figur.y.ordning).size;
-        expect(antal).toBeLessThanOrEqual(25);
-        if (rader > 25) expect(w.document.getElementById('ref-overblick').textContent).toMatch(/tabellen har alla/);
+        expect(w.document.querySelectorAll('#ref-tabell tbody tr').length).toBeLessThanOrEqual(25);
+        expect(w.document.getElementById('ref-overblick').textContent).not.toMatch(/tabellen har alla/);
+        // 30 grupper (AID-etikett i BAS-intervall): bilden visar 25, noten säger att tabellen har alla.
+        w.__state.data = Array.from({ length: 30 }, (_, g) => ['kvinna', 'man'].flatMap(kon => [0, 1].map(i => ({
+            aid: String(100000 + g), yrke: `${100000 + g} Yrke ${g}`, bas: 'C', lon: 30000 + g * 100 + i * 50, kon, alder: 40, radnr: g * 4 + i }))))
+            .flat();
+        medStatistik(w);
+        w.__ritaFlik('benchmark');
+        expect(w.document.querySelectorAll('#ref-tabell tbody tr').length).toBe(30);
+        expect(new Set(w.document.getElementById('chart-ref-hantel')._figur.y.ordning).size).toBe(25);
+        expect(w.document.getElementById('ref-overblick').textContent).toMatch(/Visar de 25 första .* av 30 — tabellen har alla/);
     });
 });
 
@@ -311,16 +318,19 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         const band = el(w, 'chart-lp-bandmap')._figur, stat = el(w, 'chart-jmf-statlage')._figur;
         for (const l of stat.lager.filter(x => x.marke === 'punkt')) {
             const klass = l.serie.split(' · ')[0];
-            const motsv = band.lager.find(b => b.serie === `${klass} yrkesgrupp`);
-            if (motsv) expect(l.farg).toBe(motsv.farg);
+            const motsv = band.lager.find(b => b.marke === 'punkt' && b.serie.startsWith(`${klass} `) && /dominerad|Blandad/.test(b.serie));
+            expect(motsv, l.serie).toBeDefined();
+            expect(l.farg, l.serie).toBe(motsv.farg);
             for (const p of l.data) expect(/^Kvinno/.test(klass) ? p.kvAndel >= 60 : /^Mans/.test(klass) ? p.kvAndel <= 40 : p.kvAndel > 40 && p.kvAndel < 60).toBe(true);
         }
-        const bandPts = band.lager.filter(l => /yrkesgrupp$/.test(l.serie)).flatMap(l => l.data);
+        const bandPts = band.lager.filter(l => l.marke === 'punkt' && /^(Kvinnodominerad|Mansdominerad|Blandad) /.test(l.serie)).flatMap(l => l.data);
+        let jamforda = 0;
         for (const p of punkter(stat)) {
             const b = bandPts.find(q => q.yrke === p.yrke && q.bas === p.bas);
-            if (b) expect(p.forskjutning).toBe(b.forskjutning);
+            if (b) { jamforda++; expect(p.forskjutning).toBe(b.forskjutning); }   // en punkt matchad på endast AID har ingen motsvarighet
             expect(Math.abs(p.forskjutning)).toBeLessThanOrEqual(0.18);
         }
+        expect(jamforda).toBeGreaterThan(0);
     });
     it('filtren i Mot jämförelsestatistiken påverkar inte överblicken', () => {
         const w = medBlandad();
