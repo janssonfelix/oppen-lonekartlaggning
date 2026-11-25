@@ -25,6 +25,7 @@ import { _kvantilTipsRader } from './03-hjalpfunktioner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { GAP_STATUS, gapStatus, PALETT } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
+import { aidbasGrans } from './45-aid-bas-tabeller.js';
 import { _utforskaFormatera, _utforskaAidBas, _utNycklar, UTFORSKA_MATT_ETIKETT } from './70-utforska.js';
 
 function _utforskaAxelrubrik(matt) {
@@ -232,8 +233,8 @@ function _figBubbla(model) {
         legend: false,
         x: { skala: 'linjar', titel: 'Andel kvinnor (%) — bubblans storlek visar antal personer', doman: [0, 100] }, y: { skala: 'linjar', titel: 'Median, kronor/månad', format: 'kr' },
         hojd: 460,
-        // 40 % och 60 %: gränserna för könsdominans som § 3:10-analysen använder.
-        referens: [40, 60].map(x => ({ x, streck: 'prickad', farg: PALETT.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
+        // Gränserna för könsdominans som Likvärdigt arbete använder: kvinnotröskeln (standard 60 %) och samma gräns för män.
+        referens: [100 - aidbasGrans(), aidbasGrans()].map(x => ({ x, streck: 'prickad', farg: PALETT.semantic.neutral, tjocklek: 1, etikett: `${x} %` })),
         lager: [{ marke: 'punkt', serie: 'Grupper', farg: PALETT.serie[0], opacitet: 0.8, kant: FARG.vit,
             data: pts.map(c => ({ x: (c.nKv / (c.nKv + c.nMa)) * 100, y: c.value, storlek: Math.max(4, 22 * Math.sqrt(c.n / maxN)),
                                   rad: c.rad, kol: null, n: c.n, ..._utforskaMarkering(model, c.rad), ...(c.liten ? { liten: true } : {}) })),

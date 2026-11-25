@@ -541,7 +541,7 @@ export function egenTabellBlock(t, { id, urval, demo, troskelNot }) {
 export function arsjamforelseBlock(j, { id = 'arsjamforelse', forraAr, nuAr, urval, demo, troskelNot }) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     const skriv = (v, typ) => (v == null ? '–' : typ === 'kr' ? _kr(v) : typ === 'pct' ? _pct(v, 1) : formatTal(v, 0));
-    const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${skriv(Math.abs(v), typ)}${typ === 'pct' ? '-enheter' : ''}`);
+    const diff = (v, typ) => (v == null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : '±'}${typ === 'pct' ? `${formatTal(Math.abs(v), 1)} procentenheter` : skriv(Math.abs(v), typ)}`);
     const g = j.grupper, p = j.punkter;
     const namn = l => l.map(gruppMedBas).join(', ');
     const st = [`Jämfört med lönekartläggningen ${forraAr}. Lönemått bara för ${T.enhet.fl} där båda könen når minsta gruppstorlek; skillnaden är kvinnors medianlön mot mäns.`,

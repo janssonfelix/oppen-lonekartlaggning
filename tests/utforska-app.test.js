@@ -720,6 +720,13 @@ describe('Utforska: Visa, noter, export och diagram', () => {
         expect($('explore-chart-title').textContent).toBe('Median mot andel kvinnor för hela urvalet');
     });
 
+    it('bubbeldiagrammets streck för könsdominans följer kvinnotröskeln i Likvärdigt arbete', () => {
+        grund(); satt('explore-typ', 'bubbla'); rita();
+        expect($('chart-explore')._figur.referens.map(r => r.x)).toEqual([40, 60]);
+        win.__state.likvardighet.kvinnoTrosholdPct = 70; rita();
+        expect($('chart-explore')._figur.referens.map(r => r.x)).toEqual([30, 70]);
+        win.__state.likvardighet.kvinnoTrosholdPct = 60;
+    });
     it('antal per kön följer med i exporten som kolumnen n (K/M) redan gör', () => {
         const w = createAppWindow();
         const r = (kon, i) => ({ bas: 'A', kon, lon: 30000 + i, alder: 40, yrke: '100 X', aid: '100', yrkeLabel: 'X', enhet: '' });

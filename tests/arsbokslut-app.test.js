@@ -36,6 +36,7 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
         cfg.arsbokslut.ar = cfg.arsbokslut.ar - 1;
         cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`;
         cfg.arsbokslut.grupper[0].flaggad = !cfg.arsbokslut.grupper[0].flaggad;   // en grupp bytte läge
+        cfg.arsbokslut.nyckeltal.kvotPct -= 1.5;                                     // kvoten steg 1,5 procentenheter
         const w = fonster(null);
         w.__cfg = cfg;
         w.eval('tillampaKonfiguration(window.__cfg)');
@@ -48,6 +49,10 @@ describe('[B8.2] årsbokslutet i verktyget', () => {
         expect(host.querySelectorAll('table').length).toBeGreaterThanOrEqual(2);
         expect(host.textContent).toMatch(/Nya flaggade \(\d+\)|Inte längre flaggade \(\d+\)/);
         for (const s of [...SENT_SMA]) expect(host.textContent).not.toContain(String(s));
+        // Skillnaden i kvoten står i procentenheter, på skärmen och i rapporten.
+        expect(host.textContent).toContain('+1,5 procentenheter');
+        expect(JSON.stringify(w.eval('rapportModell({ alla: true })'))).toContain('+1,5 procentenheter');
+        expect(host.textContent + JSON.stringify(w.eval('rapportModell({ alla: true })'))).not.toContain('%-enheter');
         expect(w.__state.kLage).toBe('skarm');
         // Rensa all data tar bort det.
         w.eval('_rensaAllData({ inbakat: false })');

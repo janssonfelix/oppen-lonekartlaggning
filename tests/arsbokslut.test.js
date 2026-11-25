@@ -108,6 +108,10 @@ describe('årsbokslut: hanteln och blocket i rapportunderlaget', () => {
         expect(b.stycken.join(' ')).toMatch(/2 inte längre flaggade \(Vaktmästare \(BAS B\), Undersköterska \(BAS C\)\)/);
         expect(b.stycken.join(' ')).toMatch(/Att göra: 2025 var 1 av 2 punkter avbockade, 2026 1 av 2/);
         expect(b.stycken.at(-1)).toBe('Urval: Hela organisationen.');
+        // Skillnaden i ett procenttal står i procentenheter, utskrivet som i resten av verktyget.
+        const pctRader = b.tabell.rader.filter(r => /%/.test(r[1]) && r[3] !== '–');
+        expect(pctRader.length).toBeGreaterThan(0);
+        expect(pctRader.every(r => /^[+−±][\d,]+ procentenheter$/.test(r[3]))).toBe(true);
         expect(tillWordHtml(b)).toContain('<h3>Jämförelse med förra året</h3>');
     });
 });
