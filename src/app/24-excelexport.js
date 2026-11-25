@@ -621,7 +621,7 @@ function _exportJPAProtokollExport() {
         ['Lönetransparensdirektivet, gemensam lönebedömning', 'Bedömningen görs tillsammans med arbetstagarnas företrädare; åtgärder inom rimlig tid.'],
         ['Diskrimineringslagen, lönekartläggning', 'Lagen kräver att du prövar om en skillnad har samband med kön. En skillnad som har sakliga skäl, till exempel ansvar eller erfarenhet, är inte osaklig.'],
         ['Diskrimineringslagen, likvärdigt arbete', 'Likvärdigt arbete bedöms utifrån de krav arbetet ställer (kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden).'],
-        ['Diskrimineringslagen, kvinnodominerat arbete', `Arbetsgivaren ska analysera om kvinnodominerade arbeten har lägre lön än arbeten som inte är kvinnodominerade och har likvärdiga eller lägre krav i arbetet. Verktyget jämför med ${T.enhet.fl} på samma nivå som inte är kvinnodominerade; könsandelen i ${T.jamforelse.bf} står i tabellen. BAS-rank används i flik 3b som ordinal proxy för arbetskrav — slutgiltig kravvärdering kräver kvalitativ granskning.`],
+        ['Diskrimineringslagen, kvinnodominerat arbete', `Arbetsgivaren ska analysera om kvinnodominerade arbeten har lägre lön än arbeten som inte är kvinnodominerade och har likvärdiga eller lägre krav i arbetet. Verktyget jämför med ${T.enhet.fl} på samma nivå som inte är kvinnodominerade; könsandelen i ${T.jamforelse.bf} står i tabellen. I blad 3b mäts kraven med ordningen mellan ${T.niva.bfl}, eller med arbetsvärderingspoäng när lönefilen har dem — slutgiltig kravvärdering kräver kvalitativ granskning.`],
         ['Diskrimineringslagen, åtgärder', 'Löneskillnader som saknar sakliga skäl ska rättas så snart som möjligt och senast inom tre år.'],
         ['', ''],
         ['— Statistisk metodik —', ''],

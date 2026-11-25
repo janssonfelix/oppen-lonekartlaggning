@@ -82,7 +82,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `importprofiler` | – |
 |  | `csv` | – |
 |  | `talformat` | `stat` |
-|  | `forhandskontroll` | `termer` |
+|  | `forhandskontroll` | `stat`, `termer` |
 |  | `datakvalitet` | `falt`, `forhandskontroll`, `kon`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | `organisationspaket` |
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `ktroskel`, `perbas`, `tabellrecept`, `termer` |
@@ -97,7 +97,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 | Diagram, rapport och utforskning | `figur` | `kon`, `stat`, `talformat` |
 |  | `docx` | `htmltext` |
 |  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `jamforelse`, `kon`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `talformat`, `termer` |
-|  | `arsbokslut` | `aid`, `kon`, `sakligaskal`, `stat`, `termer` |
+|  | `arsbokslut` | `aid`, `kon`, `ktroskel`, `sakligaskal`, `stat`, `termer` |
 |  | `tabellrecept` | `namn`, `termer`, `utforska` |
 |  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |
 |  | `urval` | `falt`, `termer` |

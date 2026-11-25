@@ -202,7 +202,7 @@ const _inbyggd = o => {
     return Object.freeze(p);
 };
 export const INBYGGDA_PROFILER = Object.freeze([
-    // CSV-mallen som lönefilens ruta laddar ner (strukturdata_mall.csv).
+    // CSV-mallen som lönefilens ruta laddar ner (lonefil_mall.csv).
     _inbyggd({ id: 'inbyggd-csv-mallen', namn: 'Verktygets CSV-mall',
         rubriker: { bas: ['BAS-intervall'], yrke: ['AID'], lon: ['Manadslon'], alder: ['Alder'], kon: ['Kon'], poang: ['Poang'] } }),
     // Testdatans personalfil (npm run gen:testdata, tools/lib/testdata.mjs). Kolumnen Ansvar är ett kännetecken men

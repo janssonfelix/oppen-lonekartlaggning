@@ -4,8 +4,8 @@
 // En systemförvaltare samlar organisationens benämningar, grundinställningar, lönepolitiska
 // ställningstagande och jämförelsestatistik i en fil (skapaPaket); handläggarna läser in
 // den i ett steg (lasInPaket). Tolkning och validering bor i src/lib/organisationspaket.js
-// (_opTolkaPaket / _opByggPaket). Paketet lagras aldrig — det läses in varje session.
-import { installningsGrans } from '../lib/installningsgranser.js';
+// (tolkaPaket / byggPaket). Paketet lagras aldrig — det läses in varje session.
+import { filStorlekFel } from '../lib/installningsgranser.js';
 import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
 import { bakaIn, filnamnForslag, flyttaOrganisationsfil, MALL_ID, normaliseraFilnamn } from '../lib/organisationsfil.js';
 import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, paketArGammalt, tolkaPaket } from '../lib/organisationspaket.js';
@@ -32,8 +32,6 @@ import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _lasKostnadsinstallningar } from './55-prioritering.js';
 import { utforskaSynkaSmaLas } from './70-utforska.js';
-
-const PAKET_MAX_FILSTORLEK = installningsGrans('fil').paket;   // gränsen bor i src/lib/installningsgranser.js (FIL_MAX)
 
 /** Låsningarna utan något satt (ADR-47). */
 function _paketLasStandard() { return { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true }; }
@@ -374,15 +372,16 @@ export function _paketFilnamn(org) {
 
 /**
  * Formulärets fel som hindrar att ett paket sparas (minsta gruppstorlek och låsningarna), som ett färdigt besked,
- * eller null. Samma vakter för Spara paketet och för Lägg till i organisationspaketet.
+ * eller null. Samma vakter för Spara paketet och för organisationsfilen.
+ * @param {string} [inledning] - Vad som inte blev av.
  * @returns {string|null}
  */
-function _paketFormularFel() {
+function _paketFormularFel(inledning = 'Paketet sparades inte.') {
     // Ett ogiltigt värde för minsta gruppstorlek får inte tyst falla bort ur paketet (tomt fält = paketet anger inget).
     const kText = _paketText('paket-k');
-    if (kText !== '' && kTolka(kText) == null) return 'Paketet sparades inte. Minsta gruppstorlek: ' + _paketKFel();
+    if (kText !== '' && kTolka(kText) == null) return `${inledning} Minsta gruppstorlek: ${_paketKFel()}`;
     const lasFel = _paketLasFel();
-    return lasFel ? 'Paketet sparades inte. ' + lasFel : null;
+    return lasFel ? `${inledning} ${lasFel}` : null;
 }
 
 /**
@@ -427,15 +426,13 @@ async function _sha256Hex(buf) {
 }
 /**
  * Bakar in det gällande paketet (formuläret + inlästa delar) i den utpekade verktygsfilen och laddar ner
- * resultatet. Paketet valideras som vid sparande; filen som text rörs bara av _ofBakaIn (inget skript ändras).
+ * resultatet. Paketet valideras som vid sparande; filen som text rörs bara av bakaIn (inget skript ändras).
  * @returns {Promise<{ok:boolean, meddelande:string}>}
  */
 async function skapaOrganisationsfil() {
     if (!_verktygsfil) return { ok: false, meddelande: 'Peka ut verktygsfilen du öppnade.' };
-    const kText = _paketText('paket-k');
-    if (kText !== '' && kTolka(kText) == null) { const m = 'Organisationsfilen skapades inte. Minsta gruppstorlek: ' + _paketKFel(); _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
-    const lasFel = _paketLasFel();
-    if (lasFel) { const m = 'Organisationsfilen skapades inte. ' + lasFel; _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
+    const formFel = _paketFormularFel('Organisationsfilen skapades inte.');
+    if (formFel) { _organisationsfilStatus(formFel, false); return { ok: false, meddelande: formFel }; }
     const paket = skapaPaket();
     const kontroll = tolkaPaket(JSON.stringify(paket));
     if (!kontroll.ok) { const m = 'Paketet kan inte bakas in: ' + kontroll.fel; _organisationsfilStatus(m, false); return { ok: false, meddelande: m }; }
@@ -592,8 +589,9 @@ export function uppstartOrganisationspaket() {
         const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
         /** @type {HTMLInputElement} */ (e.target).value = '';   // samma fil ska kunna läsas in igen
-        if (file.size > PAKET_MAX_FILSTORLEK) {
-            _paketStatus('Filen är för stor för att vara ett organisationspaket (högst 5 MB).', false);
+        const forStor = filStorlekFel(file.size, 'paket');
+        if (forStor) {
+            _paketStatus(forStor, false);
             return;
         }
         const reader = new FileReader();

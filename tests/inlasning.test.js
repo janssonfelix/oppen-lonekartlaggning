@@ -132,6 +132,8 @@ describe('[B9.5] inlasning: yrke (_stadaYrkesfalt)', () => {
         ['101010 Ledning', '101010 Ledning'],
         ['203010 Förskollärare', '203010 Förskollärare'],
         ['101010 — Ledning', '101010 Ledning'],
+        ['101010 – Ledning', '101010 Ledning'],
+        ['101010, Ledning', '101010 Ledning'],
         ['101010', '101010'],
         ['Ledning', 'Ledning'],
         ['101010 Lärare grundskola', '101010 Lärare grundskola'],

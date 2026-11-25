@@ -134,7 +134,7 @@ function _efterInlastData() {
     ritaLoneoversikt();
     const bas = hamtaBasIntervall();
     dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
-    if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
+    if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poängen mäter kraven i Likvärdigt arbete)`;
     dataStatus.className = "status-msg success";
     markeraFilrutaInlast('upload-cell-data', 'Inläst');
     ritaKravstatus();
@@ -157,7 +157,7 @@ function _efterInlastData() {
     // Bootstrap-CI, åtgärdslista och skevhet tar merparten av inläsningstiden
     // vid stora underlag. De körs EFTER att gränssnittet målats (deferrade i två steg så
     // statusnotisen hinner synas). Flikbesök renderar ändå on-demand via
-    // ritaFlik, och exporterna self-heal:ar (se exportAlltTillExcel).
+    // ritaFlik, och exporterna räknar själva det som saknas (se exportAlltTillExcel).
     const DEFER_NOTE = ' · förbereder analyser i bakgrunden…';
     setTimeout(() => {
         if (dataStatus) dataStatus.textContent += DEFER_NOTE;
@@ -330,7 +330,7 @@ function lasInStrukturfil(file) {
     // GDPR Art. 25.2: minimal data resident i minnet under parsning.
     // Streaming step-mode → en rad i taget. Var ⌈n/50⌉:e rad (_pnrSampelSteg) sparas
     // i en sample-buffer på högst 50 rader för hittaKansligaKolumner (värdebaserad upptäckt
-    // över hela filen, B4). Varje rad processas direkt till `parsed[]`, som bara har de
+    // över hela filen). Varje rad processas direkt till `parsed[]`, som bara har de
     // minimerade fälten; kontrollen körs när filen är läst, och fälls filen släpps allt.
     const SAMPLE_SIZE = 50;
     /** @type {any[]|null} */
@@ -741,8 +741,8 @@ function sparaImportprofil(namn) {
     return { ok: true, profil: p };
 }
 /**
- * Bygger ett nytt organisationspaket ur det inlästa paketets egna delar och profilen, och laddar ner det. Samma
- * vakter som Spara paketet: ett ogiltigt värde i paketformuläret ger ingen nedladdning.
+ * Bygger ett nytt organisationspaket ur det inlästa paketets egna delar och profilen, och laddar ner det. Paketet
+ * prövas som vid inläsning; formuläret Skapa paket läses inte.
  */
 function laggTillImportprofilIPaket(profil) {
     if (!state.paket) return { ok: false, fel: 'Inget organisationspaket är inläst.' };
@@ -838,27 +838,26 @@ export function visaKolumnmappningOmBehov() {
     if (!panel) return;
     if (!headers.length) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
 
-    const esc2 = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const { auto, eff, profil } = _kolumnval(headers);
-    const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc2(importprofilText(profil))}</p>` : '';
+    const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc(importprofilText(profil))}</p>` : '';
     const missing = KOLUMNMAPPNING_ROLLER.filter(r => r.required && !eff[r.role]);
 
     const selects = KOLUMNMAPPNING_ROLLER.map(({ role, label, required, tips }) => {
         const opts = ['<option value="">— ingen —</option>']
-            .concat(headers.map(h => `<option value="${esc2(h)}"${eff[role] === h ? ' selected' : ''}>${esc2(h)}</option>`))
+            .concat(headers.map(h => `<option value="${esc(h)}"${eff[role] === h ? ' selected' : ''}>${esc(h)}</option>`))
             .join('');
         const saknas = required && !eff[role];
         return `<label class="faltkolumn">
-            <span>${esc2(label)}${required ? ' <span class="f-kritisk">*</span>' : ' <span class="f-dampad">(valfri)</span>'}${tips ? ` <span class="f-dampad">(${esc2(tips)})</span>` : ''}</span>
+            <span>${esc(label)}${required ? ' <span class="f-kritisk">*</span>' : ' <span class="f-dampad">(valfri)</span>'}${tips ? ` <span class="f-dampad">(${esc(tips)})</span>` : ''}</span>
             <select data-colmap-role="${role}" class="form-select${saknas ? ' colmap-saknas' : ''}">${opts}</select>
         </label>`;
     }).join('');
 
     const head = missing.length
         ? `<strong class="f-kritisk">${ikon('statusVarning')} Kolumnmappning behövs</strong>
-           <p class="fs-sm lh-1_5 marg-6-0">Verktyget kunde inte auto-känna igen ${missing.map(m => `<strong>${esc2(m.label)}</strong>`).join(', ')}. Peka ut rätt kolumn nedan och läs in igen.</p>
-           <p class="colmap-rubriker f-dampad fs-sm lh-1_5 marg-6-0">Filens rubriker: ${headers.map(h => `<code>${esc2(h)}</code>`).join(', ')}</p>${profilRad}`
-        : `<strong>${ikon('bock')} Kolumner auto-matchade</strong>
+           <p class="fs-sm lh-1_5 marg-6-0">Verktyget kände inte igen ${missing.map(m => `<strong>${esc(m.label)}</strong>`).join(', ')}. Peka ut rätt kolumn nedan och läs in igen.</p>
+           <p class="colmap-rubriker f-dampad fs-sm lh-1_5 marg-6-0">Filens rubriker: ${headers.map(h => `<code>${esc(h)}</code>`).join(', ')}</p>${profilRad}`
+        : `<strong>${ikon('bock')} Kolumnerna kändes igen</strong>
            <p class="text-dampad-sm marg-6-0">Verktyget kände igen alla obligatoriska kolumner. Justera vid behov om någon matchats fel.</p>${profilRad}`;
 
     panel.innerHTML = `
@@ -869,7 +868,7 @@ export function visaKolumnmappningOmBehov() {
                 <div class="rutnat gap-12 kolumner-auto-200 marg-10-0">${selects}</div>
                 <div class="rad-bryt gap-10">
                     <button id="colmap-apply" class="btn btn-primary btn-sm" type="button">Tillämpa mappning &amp; läs in igen</button>
-                    <button id="colmap-reset" class="btn btn-secondary btn-sm" type="button">Återställ till auto</button>
+                    <button id="colmap-reset" class="btn btn-secondary btn-sm" type="button">Återställ verktygets val</button>
                 </div>
                 ${_importprofilRuta(missing)}
             </div>
@@ -914,8 +913,6 @@ export function visaKolumnmappningOmBehov() {
         if (f) lasInStrukturfil(f);
     });
 }
-
-// ============================================================
 
 // ---- Markera upload-cell som "loaded" + visuell badge ----
 export function markeraFilrutaInlast(cellId, badgeText) {
@@ -973,9 +970,6 @@ export function ritaFilrutor() {
     }
 }
 
-// kollapsa uppladdningsraden när data lästs in så att översikten/insikterna
-// hamnar överst. Återställs av rensaAllData.
-
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartFilinlasning() {
     kopplaSlappyta("drop-area-data", "file-input-data");
@@ -1015,7 +1009,7 @@ export function uppstartFilinlasning() {
     });
     document.getElementById('btn-kolumnmappning')?.addEventListener('click', () => {
         // Panelen byggs av visaKolumnmappningOmBehov; knappen fäller ut den och visar den.
-        if (typeof visaKolumnmappningOmBehov === 'function') visaKolumnmappningOmBehov();
+        visaKolumnmappningOmBehov();
         _visaKolumnmappning();
     });
     _kopplaNamnFalt('org-namn', sattOrgNamn);

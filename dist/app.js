@@ -2158,7 +2158,7 @@ var _inbyggd = (o) => {
   return Object.freeze(p);
 };
 var INBYGGDA_PROFILER = Object.freeze([
-  // CSV-mallen som lönefilens ruta laddar ner (strukturdata_mall.csv).
+  // CSV-mallen som lönefilens ruta laddar ner (lonefil_mall.csv).
   _inbyggd({
     id: "inbyggd-csv-mallen",
     namn: "Verktygets CSV-mall",
@@ -2214,7 +2214,7 @@ function tolkaTalStrikt(v) {
   return { status: "ok", value: n, raw };
 }
 function _yrkeEtikett(s) {
-  return s.replace(/^\d+\s*[—\-:.\s]*/, "").trim().replace(/[<>"'&]/g, "");
+  return s.replace(/^\d+\s*[—–\-:.,\s]*/, "").trim().replace(/[<>"'&]/g, "");
 }
 function _stadaYrkesfalt(varde) {
   if (!varde) return "";
@@ -3424,7 +3424,8 @@ var _FIL_NAMN = Object.freeze({
   lonefil: "Lönefilen",
   stallningstagande: "Filen med ställningstagandet",
   jamforelsestatistik: "Filen med jämförelsestatistiken",
-  konfiguration: "Konfigurationsfilen"
+  konfiguration: "Konfigurationsfilen",
+  paket: "Filen med organisationspaketet"
 });
 function filStorlekFel(storlek, typ) {
   const grans = FIL_MAX[typ];
@@ -3435,7 +3436,6 @@ function filStorlekFel(storlek, typ) {
 // src/lib/organisationspaket.js
 var PAKET_FORMAT = "lonekartlaggning-organisationspaket";
 var PAKET_VERSION = 1;
-var PAKET_MAX_BYTE = installningsGrans("fil").paket;
 var MAX_TEXT2 = 200;
 var PNR2 = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
 var EPOST2 = /\S+@\S+\.\S+/;
@@ -3601,7 +3601,8 @@ function paketArGammalt(avserAr, idag) {
 }
 function tolkaPaket(text) {
   if (typeof text !== "string") return { ok: false, fel: "Filen kunde inte läsas." };
-  if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: "Filen är för stor för att vara ett organisationspaket (högst 5 MB)." };
+  const forStor = filStorlekFel(text.length, "paket");
+  if (forStor) return { ok: false, fel: forStor };
   let o;
   try {
     o = JSON.parse(text);
@@ -5620,11 +5621,6 @@ function _fkKorta(v) {
   const s = String(v).trim();
   return s.length > MAX_RA ? s.slice(0, MAX_RA) + "…" : s;
 }
-function _fkMedian(sorterade) {
-  const n = sorterade.length;
-  if (!n) return null;
-  return n % 2 ? sorterade[(n - 1) / 2] : (sorterade[n / 2 - 1] + sorterade[n / 2]) / 2;
-}
 var _fkRader = (n) => `${n} ${n === 1 ? "rad" : "rader"}`;
 var _fkPersoner = (n) => `${n} ${n === 1 ? "person" : "personer"}`;
 var _fkOchLista = (v) => v.length < 2 ? v.join("") : `${v.slice(0, -1).join(", ")} och ${v[v.length - 1]}`;
@@ -5707,7 +5703,7 @@ function byggForhandskontroll({ rader = [], data = [], konVarden = [], parseStat
   const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0);
   const ovanliga = basVarden.map((b) => b.bas).filter((b) => !FK_BAS.test(b));
   const loner = data.map((r) => r.lon).filter((v) => typeof v === "number" && v > 0).sort((a, b) => a - b);
-  const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
+  const lon = loner.length ? { min: loner[0], median: median(loner), max: loner[loner.length - 1] } : null;
   const aldrar = data.map((r) => r.alder).filter((v) => typeof v === "number" && v > 0).sort((a, b) => a - b);
   const utanforAlder = (a) => typeof a === "number" && a > 0 && (a < FK_ALDER_MIN || a > FK_ALDER_MAX);
   const utanfor = aldrar.filter(utanforAlder).length;
@@ -17196,7 +17192,7 @@ function skalUnderlag(rader, k) {
 // src/lib/arsbokslut.js
 var ARSBOKSLUT_VERSION = 2;
 var MAX_TEXT3 = 200;
-var ARSBOKSLUT_K_MIN = 3;
+var ARSBOKSLUT_K_MIN = K_MIN;
 var _tal4 = (v) => typeof v === "number" && isFinite(v) ? v : null;
 var _heltal = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi ? v : null;
 var _text3 = (v) => typeof v === "string" ? v.trim().slice(0, MAX_TEXT3) : "";
@@ -17247,7 +17243,7 @@ function bokslutBasRad(rader, bas, k) {
 function valideraArsbokslut(o) {
   if (!o || typeof o !== "object" || Array.isArray(o)) return null;
   const ar = _heltal(o.ar, 2e3, 2100);
-  const kFil = _heltal(o.k, 1, 1e3);
+  const kFil = _heltal(o.k, 1, K_MAX);
   const k = kFil == null ? null : Math.max(ARSBOKSLUT_K_MIN, kFil);
   const skapat = typeof o.skapat === "string" && /^\d{4}-\d{2}-\d{2}$/.test(o.skapat) ? o.skapat : null;
   if (ar == null || k == null || !skapat) return null;
@@ -21273,7 +21269,7 @@ function byggKonfiguration() {
     // regressionens variabler och skälet (ADR-56); null = standard
     gapUppdelning: state.gapUppdelning ? { variabler: [...state.gapUppdelning.variabler] } : null,
     // uppdelningens variabler i ordning (ADR-65); null = standard
-    // Bug-fix: Set-objekt serialiseras inte korrekt med spread/JSON
+    // En Set blir en lista: JSON.stringify skriver inte Set.
     bristAids: Array.from(state.bristAids || []),
     likvardighet: state.likvardighet ? {
       kvinnoTroskelPct: state.likvardighet.kvinnoTrosholdPct,
@@ -21332,12 +21328,12 @@ function byggKonfiguration() {
     // användarinitierade nedladdningen.
     // Innehåller INGA råa individrader; kan innehålla användarförfattad text
     // (avsedd på gruppnivå) och ska hanteras som övriga exportfiler.
-    bes8: (typeof _bes8Omraden === "function" ? _bes8Omraden() : []).map((a) => ({ n: a.n, status: a.status, anteckning: a.note })),
+    bes8: _bes8Omraden().map((a) => ({ n: a.n, status: a.status, anteckning: a.note })),
     // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
-    handlingsplan: typeof _hpForKonfiguration === "function" ? _hpForKonfiguration() : [],
+    handlingsplan: _hpForKonfiguration(),
     attGoraKlara: Array.from(state._actionChecklistDone || []),
     // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
-    arsbokslut: (typeof byggArsbokslutNu === "function" ? byggArsbokslutNu() : null) || state.forraArsbokslut || null,
+    arsbokslut: byggArsbokslutNu() || state.forraArsbokslut || null,
     orgNamn: orgNamn(""),
     jmfNamn: jmfNamn(""),
     strukturNarrativ: (() => {
@@ -21483,7 +21479,7 @@ function _tillampaKonfiguration(cfg) {
         dist: ["flat", "lowest", "target"].includes(t.fordelning) ? t.fordelning : "lowest",
         targetLevel: t.malniva === "p25" ? "p25" : "median",
         pool: ["equity", "marknad", "befordran", "övrigt"].includes(t.pott) ? t.pott : "övrigt",
-        // Valfritt och bakåtkompatibelt (filer utan fältet läses som förut): en rad verktyget själv
+        // Valfritt (en fil utan fältet har bara egna rader): en rad verktyget själv
         // föreslog ur § 3:10-par bär kalla: 'par', prövas mot den inställda tröskeln när filen läses in
         // och rensas när tröskeln höjs (ADR-69); en rad utan fältet är användarens egen och står kvar
         // med noten om gruppen är under tröskeln (ADR-38, regel R2).
@@ -21549,7 +21545,7 @@ function _tillampaKonfiguration(cfg) {
     tmp.rapportTabeller = giltiga;
   }
   if (cfg.arsbokslut != null) {
-    const a = typeof valideraArsbokslut === "function" ? valideraArsbokslut(cfg.arsbokslut) : null;
+    const a = valideraArsbokslut(cfg.arsbokslut);
     if (!a) varningar.push("Filens årsbokslut gick inte att läsa och hoppas över.");
     else tmp.arsbokslut = a;
   }
@@ -21576,7 +21572,7 @@ function _tillampaKonfiguration(cfg) {
     kAndrad = kr2.andrad === true;
     if (!kr2.ok && kr2.fel) {
       varningar.push(`Filens minsta gruppstorlek ${tmp.kTroskel} används inte: ${kr2.fel}`);
-      if (typeof _kVisaFel === "function") _kVisaFel(kr2.fel);
+      _kVisaFel(kr2.fel);
     }
   }
   state.bristAids = tmp.bristAids || /* @__PURE__ */ new Set();
@@ -21585,7 +21581,7 @@ function _tillampaKonfiguration(cfg) {
   if (tmp.perBasRecept) state.perBasRecept = perBasReceptArStandard(tmp.perBasRecept) ? null : tmp.perBasRecept;
   state.forklaringsmodell = forklaringsmodellArStandard(fm.modell) ? null : fm.modell;
   state.gapUppdelning = gapVariablerArStandard(gu.variabler) ? null : { variabler: gu.variabler };
-  if (tmp.lonemanad != null && typeof sattLonemanad === "function") sattLonemanad(tmp.lonemanad);
+  if (tmp.lonemanad != null) sattLonemanad(tmp.lonemanad);
   if (tmp.forhandskontrollStopp != null) state.forhandskontrollStopp = tmp.forhandskontrollStopp;
   if (tmp.likvardighet) {
     state.likvardighet = { ...state.likvardighet, ...tmp.likvardighet, result: null };
@@ -21593,8 +21589,8 @@ function _tillampaKonfiguration(cfg) {
   if (tmp.forecast) {
     state.forecast = /** @type {any} */
     tmp.forecast;
-    if (typeof _fcRensaParMal === "function") _fcRensaParMal();
-    if (typeof ritaLoneoversyn === "function" && document.getElementById("view-loneoversyn")) {
+    _fcRensaParMal();
+    if (document.getElementById("view-loneoversyn")) {
       try {
         ritaLoneoversyn();
       } catch (_e) {
@@ -21607,17 +21603,17 @@ function _tillampaKonfiguration(cfg) {
     if (s) s.value = a.status;
     if (t) t.value = a.note;
   });
-  if (typeof bes8Uppdatera === "function") bes8Uppdatera();
+  bes8Uppdatera();
   if (tmp.handlingsplan) {
     state.handlingsplan = tmp.handlingsplan;
-    if (typeof _hpDemoNycklar !== "undefined") _hpDemoNycklar.clear();
-    if (typeof ritaHandlingsplan === "function") ritaHandlingsplan();
+    _hpDemoNycklar.clear();
+    ritaHandlingsplan();
   }
   if (tmp.actionChecklistDone) state._actionChecklistDone = new Set(tmp.actionChecklistDone);
   if (tmp.importprofiler && tmp.importprofiler.length) state.importprofiler = [...(state.importprofiler || []).filter((p) => p.kalla !== "konfiguration"), ...tmp.importprofiler];
   if (tmp.arsbokslut) {
     state.forraArsbokslut = tmp.arsbokslut;
-    if (typeof ritaArsjamforelse === "function") medExportLage(() => ritaArsjamforelse());
+    medExportLage(() => ritaArsjamforelse());
   }
   if (tmp.orgName) sattOrgNamn(tmp.orgName);
   if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);
@@ -21727,8 +21723,7 @@ function ritaOgonblicksbildJamforelse() {
     if (a == null || b == null) return '<span class="f-dampad">–</span>';
     const d = a - b;
     const sgn = d >= 0 ? "+" : "";
-    const klass = Math.abs(d) < 0.01 ? "f-dampad" : d > 0 ? "fg-ok" : "f-kritisk";
-    return `<span class="${klass} halvfet">${sgn}${fmt2 ? fmt2(d) : fmt(d)}</span>`;
+    return `<span class="${Math.abs(d) < 0.01 ? "f-dampad" : "halvfet"}">${sgn}${fmt2 ? fmt2(d) : fmt(d)}</span>`;
   };
   const rows = [
     ["Antal personer (n)", snap.n, cur.n, fmt],
@@ -21753,7 +21748,7 @@ function ritaOgonblicksbildJamforelse() {
             <h4 class="fs-md marg-0-0-6">Jämförelse: ögonblicksbild och nuvarande analys</h4>
             <p class="text-dampad-xs marg-0-0-10">Ögonblicksbild: ${esc(snap.label)} (${new Date(snap.timestamp).toLocaleString("sv-SE")}) — Nuvarande: ${esc(cur.label)}</p>
             <table class="data-table st-088">
-                <thead><tr><th>Mått</th><th class="t-hoger">Ögonblicksbild</th><th class="t-hoger">Nuvarande</th><th class="t-hoger">Δ (nuvarande − snapshot)</th></tr></thead>
+                <thead><tr><th>Mått</th><th class="t-hoger">Ögonblicksbild</th><th class="t-hoger">Nuvarande</th><th class="t-hoger">Skillnad (nuvarande − ögonblicksbild)</th></tr></thead>
                 <tbody>${tableHtml}</tbody>
             </table>
         </div>
@@ -22578,7 +22573,7 @@ function _efterInlastData() {
   ritaLoneoversikt();
   const bas = hamtaBasIntervall();
   dataStatus.textContent = `${state.data.length} rader · ${bas.length} BAS`;
-  if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poäng som krav-proxy i likvärdighetsanalysen)`;
+  if (poangCount > 0) dataStatus.textContent += ` · arbetsvärdering: ${poangCount} befattningar (poängen mäter kraven i Likvärdigt arbete)`;
   dataStatus.className = "status-msg success";
   markeraFilrutaInlast("upload-cell-data", "Inläst");
   ritaKravstatus();
@@ -23215,21 +23210,20 @@ function visaKolumnmappningOmBehov() {
     panel.innerHTML = "";
     return;
   }
-  const esc2 = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const { auto, eff, profil } = _kolumnval(headers);
-  const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc2(importprofilText(profil))}</p>` : "";
+  const profilRad = profil ? `<p class="colmap-kand fs-sm marg-6-0">${esc(importprofilText(profil))}</p>` : "";
   const missing = KOLUMNMAPPNING_ROLLER.filter((r) => r.required && !eff[r.role]);
   const selects = KOLUMNMAPPNING_ROLLER.map(({ role, label, required, tips }) => {
-    const opts = ['<option value="">— ingen —</option>'].concat(headers.map((h) => `<option value="${esc2(h)}"${eff[role] === h ? " selected" : ""}>${esc2(h)}</option>`)).join("");
+    const opts = ['<option value="">— ingen —</option>'].concat(headers.map((h) => `<option value="${esc(h)}"${eff[role] === h ? " selected" : ""}>${esc(h)}</option>`)).join("");
     const saknas = required && !eff[role];
     return `<label class="faltkolumn">
-            <span>${esc2(label)}${required ? ' <span class="f-kritisk">*</span>' : ' <span class="f-dampad">(valfri)</span>'}${tips ? ` <span class="f-dampad">(${esc2(tips)})</span>` : ""}</span>
+            <span>${esc(label)}${required ? ' <span class="f-kritisk">*</span>' : ' <span class="f-dampad">(valfri)</span>'}${tips ? ` <span class="f-dampad">(${esc(tips)})</span>` : ""}</span>
             <select data-colmap-role="${role}" class="form-select${saknas ? " colmap-saknas" : ""}">${opts}</select>
         </label>`;
   }).join("");
   const head = missing.length ? `<strong class="f-kritisk">${ikon("statusVarning")} Kolumnmappning behövs</strong>
-           <p class="fs-sm lh-1_5 marg-6-0">Verktyget kunde inte auto-känna igen ${missing.map((m) => `<strong>${esc2(m.label)}</strong>`).join(", ")}. Peka ut rätt kolumn nedan och läs in igen.</p>
-           <p class="colmap-rubriker f-dampad fs-sm lh-1_5 marg-6-0">Filens rubriker: ${headers.map((h) => `<code>${esc2(h)}</code>`).join(", ")}</p>${profilRad}` : `<strong>${ikon("bock")} Kolumner auto-matchade</strong>
+           <p class="fs-sm lh-1_5 marg-6-0">Verktyget kände inte igen ${missing.map((m) => `<strong>${esc(m.label)}</strong>`).join(", ")}. Peka ut rätt kolumn nedan och läs in igen.</p>
+           <p class="colmap-rubriker f-dampad fs-sm lh-1_5 marg-6-0">Filens rubriker: ${headers.map((h) => `<code>${esc(h)}</code>`).join(", ")}</p>${profilRad}` : `<strong>${ikon("bock")} Kolumnerna kändes igen</strong>
            <p class="text-dampad-sm marg-6-0">Verktyget kände igen alla obligatoriska kolumner. Justera vid behov om någon matchats fel.</p>${profilRad}`;
   panel.innerHTML = `
         <details class="card${missing.length ? " ram-v-3-kritisk" : ""}" open>
@@ -23239,7 +23233,7 @@ function visaKolumnmappningOmBehov() {
                 <div class="rutnat gap-12 kolumner-auto-200 marg-10-0">${selects}</div>
                 <div class="rad-bryt gap-10">
                     <button id="colmap-apply" class="btn btn-primary btn-sm" type="button">Tillämpa mappning &amp; läs in igen</button>
-                    <button id="colmap-reset" class="btn btn-secondary btn-sm" type="button">Återställ till auto</button>
+                    <button id="colmap-reset" class="btn btn-secondary btn-sm" type="button">Återställ verktygets val</button>
                 </div>
                 ${_importprofilRuta(missing)}
             </div>
@@ -23392,7 +23386,7 @@ function uppstartFilinlasning() {
     )?.click();
   });
   document.getElementById("btn-kolumnmappning")?.addEventListener("click", () => {
-    if (typeof visaKolumnmappningOmBehov === "function") visaKolumnmappningOmBehov();
+    visaKolumnmappningOmBehov();
     _visaKolumnmappning();
   });
   _kopplaNamnFalt("org-namn", sattOrgNamn);
@@ -24505,7 +24499,6 @@ function uppstartUtforska() {
 }
 
 // src/app/29-organisationspaket.js
-var PAKET_MAX_FILSTORLEK = installningsGrans("fil").paket;
 function _paketLasStandard() {
   return { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true };
 }
@@ -24840,11 +24833,11 @@ function _paketFilnamn(org) {
   const slug = String(org).toLowerCase().replace(/[åä]/g, "a").replace(/ö/g, "o").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return `${slug || "organisation"}.lonepaket.json`;
 }
-function _paketFormularFel() {
+function _paketFormularFel(inledning = "Paketet sparades inte.") {
   const kText2 = _paketText("paket-k");
-  if (kText2 !== "" && kTolka(kText2) == null) return "Paketet sparades inte. Minsta gruppstorlek: " + _paketKFel();
+  if (kText2 !== "" && kTolka(kText2) == null) return `${inledning} Minsta gruppstorlek: ${_paketKFel()}`;
   const lasFel = _paketLasFel();
-  return lasFel ? "Paketet sparades inte. " + lasFel : null;
+  return lasFel ? `${inledning} ${lasFel}` : null;
 }
 function skapaPaketMedImportprofil(profil) {
   const p = state.paket, d = p.delar || {};
@@ -24890,17 +24883,10 @@ async function _sha256Hex(buf) {
 }
 async function skapaOrganisationsfil() {
   if (!_verktygsfil) return { ok: false, meddelande: "Peka ut verktygsfilen du öppnade." };
-  const kText2 = _paketText("paket-k");
-  if (kText2 !== "" && kTolka(kText2) == null) {
-    const m = "Organisationsfilen skapades inte. Minsta gruppstorlek: " + _paketKFel();
-    _organisationsfilStatus(m, false);
-    return { ok: false, meddelande: m };
-  }
-  const lasFel = _paketLasFel();
-  if (lasFel) {
-    const m = "Organisationsfilen skapades inte. " + lasFel;
-    _organisationsfilStatus(m, false);
-    return { ok: false, meddelande: m };
+  const formFel = _paketFormularFel("Organisationsfilen skapades inte.");
+  if (formFel) {
+    _organisationsfilStatus(formFel, false);
+    return { ok: false, meddelande: formFel };
   }
   const paket = skapaPaket();
   const kontroll = tolkaPaket(JSON.stringify(paket));
@@ -25092,8 +25078,9 @@ function uppstartOrganisationspaket() {
     );
     if (!file) return;
     e.target.value = "";
-    if (file.size > PAKET_MAX_FILSTORLEK) {
-      _paketStatus("Filen är för stor för att vara ett organisationspaket (högst 5 MB).", false);
+    const forStor = filStorlekFel(file.size, "paket");
+    if (forStor) {
+      _paketStatus(forStor, false);
       return;
     }
     const reader = new FileReader();
@@ -28397,7 +28384,7 @@ function _exportJPAProtokollExport() {
     ["Lönetransparensdirektivet, gemensam lönebedömning", "Bedömningen görs tillsammans med arbetstagarnas företrädare; åtgärder inom rimlig tid."],
     ["Diskrimineringslagen, lönekartläggning", "Lagen kräver att du prövar om en skillnad har samband med kön. En skillnad som har sakliga skäl, till exempel ansvar eller erfarenhet, är inte osaklig."],
     ["Diskrimineringslagen, likvärdigt arbete", "Likvärdigt arbete bedöms utifrån de krav arbetet ställer (kunskap och färdigheter, ansvar, ansträngning och arbetsförhållanden)."],
-    ["Diskrimineringslagen, kvinnodominerat arbete", `Arbetsgivaren ska analysera om kvinnodominerade arbeten har lägre lön än arbeten som inte är kvinnodominerade och har likvärdiga eller lägre krav i arbetet. Verktyget jämför med ${T.enhet.fl} på samma nivå som inte är kvinnodominerade; könsandelen i ${T.jamforelse.bf} står i tabellen. BAS-rank används i flik 3b som ordinal proxy för arbetskrav — slutgiltig kravvärdering kräver kvalitativ granskning.`],
+    ["Diskrimineringslagen, kvinnodominerat arbete", `Arbetsgivaren ska analysera om kvinnodominerade arbeten har lägre lön än arbeten som inte är kvinnodominerade och har likvärdiga eller lägre krav i arbetet. Verktyget jämför med ${T.enhet.fl} på samma nivå som inte är kvinnodominerade; könsandelen i ${T.jamforelse.bf} står i tabellen. I blad 3b mäts kraven med ordningen mellan ${T.niva.bfl}, eller med arbetsvärderingspoäng när lönefilen har dem — slutgiltig kravvärdering kräver kvalitativ granskning.`],
     ["Diskrimineringslagen, åtgärder", "Löneskillnader som saknar sakliga skäl ska rättas så snart som möjligt och senast inom tre år."],
     ["", ""],
     ["— Statistisk metodik —", ""],

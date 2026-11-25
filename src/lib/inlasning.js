@@ -110,11 +110,11 @@ export function tolkaTalStrikt(v) {
 
 // ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
 
-// Etiketten i fältet för AID-etikett: resten efter AID-koden och vanliga separatorer (—, -, :, ., whitespace), utan
+// Etiketten i fältet för AID-etikett: resten efter AID-koden och vanliga separatorer (—, –, -, :, ., komma, blanksteg), utan
 // HTML-meta-tecknen < > " ' &. De strippas vid inläsningen så att de aldrig kan smitas in i en innerHTML-template ens
 // om en framtida renderingsplats glömmer esc() — CSP + esc() + inläsningen; tre lager. `s` är redan trimmad.
 function _yrkeEtikett(s) {
-    return s.replace(/^\d+\s*[—\-:.\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    return s.replace(/^\d+\s*[—–\-:.,\s]*/, '').trim().replace(/[<>"'&]/g, '');
 }
 
 /**

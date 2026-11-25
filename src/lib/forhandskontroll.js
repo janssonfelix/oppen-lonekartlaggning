@@ -15,6 +15,7 @@
  * ur filen, eftersom de också står i Att göra, vars punkter kan exporteras.
  */
 import { STANDARDTERMER as T } from './termer.js';
+import { median } from './stat.js';
 
 
 /** Antal rader i tolkningen. */
@@ -56,11 +57,6 @@ function _fkKorta(v) {
     if (v == null) return '';
     const s = String(v).trim();
     return s.length > MAX_RA ? s.slice(0, MAX_RA) + '…' : s;
-}
-function _fkMedian(sorterade) {
-    const n = sorterade.length;
-    if (!n) return null;
-    return n % 2 ? sorterade[(n - 1) / 2] : (sorterade[n / 2 - 1] + sorterade[n / 2]) / 2;
 }
 const _fkRader = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
 const _fkPersoner = n => `${n} ${n === 1 ? 'person' : 'personer'}`;
@@ -187,7 +183,7 @@ export function byggForhandskontroll({ rader = [], data = [], konVarden = [], pa
     const basVarden = [...perBas.entries()].map(([bas, antal]) => ({ bas, antal })).sort((a, b) => (a.bas < b.bas ? -1 : a.bas > b.bas ? 1 : 0));
     const ovanliga = basVarden.map(b => b.bas).filter(b => !FK_BAS.test(b));
     const loner = data.map(r => r.lon).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
-    const lon = loner.length ? { min: loner[0], median: _fkMedian(loner), max: loner[loner.length - 1] } : null;
+    const lon = loner.length ? { min: loner[0], median: median(loner), max: loner[loner.length - 1] } : null;
     const aldrar = data.map(r => r.alder).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
     const utanforAlder = a => typeof a === 'number' && a > 0 && (a < FK_ALDER_MIN || a > FK_ALDER_MAX);
     const utanfor = aldrar.filter(utanforAlder).length;

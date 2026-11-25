@@ -14,13 +14,12 @@ import { valideraRecept } from './tabellrecept.js';
 import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
 import { valideraImportprofiler } from './importprofiler.js';
 import { STANDARDTERMER as T } from './termer.js';
-import { installningsGrans } from './installningsgranser.js';
+import { installningsGrans, filStorlekFel } from './installningsgranser.js';
 import { K_MAX, K_MIN } from './ktroskel.js';
 
 
 export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 export const PAKET_VERSION = 1;
-export const PAKET_MAX_BYTE = installningsGrans('fil').paket;   // gränsen bor i installningsgranser.js
 
 const MAX_TEXT = 200;
 const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
@@ -237,7 +236,8 @@ export function paketArGammalt(avserAr, idag) {
  */
 export function tolkaPaket(text) {
     if (typeof text !== 'string') return { ok: false, fel: 'Filen kunde inte läsas.' };
-    if (text.length > PAKET_MAX_BYTE) return { ok: false, fel: 'Filen är för stor för att vara ett organisationspaket (högst 5 MB).' };
+    const forStor = filStorlekFel(text.length, 'paket');
+    if (forStor) return { ok: false, fel: forStor };
     let o;
     try { o = JSON.parse(text); } catch (_e) { return { ok: false, fel: 'Filen är inte ett organisationspaket (den går inte att läsa som JSON). Be systemförvaltaren om en ny fil.' }; }
     if (!o || typeof o !== 'object' || Array.isArray(o)) return { ok: false, fel: 'Filen är inte ett organisationspaket.' };

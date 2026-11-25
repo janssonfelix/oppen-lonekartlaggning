@@ -13,7 +13,7 @@
 
 const MB = 1024 * 1024;
 
-/** Högsta tillåtna filstorlek i byte, per filtyp. Organisationspaketet är samma gräns som förut (5 MB). */
+/** Högsta tillåtna filstorlek i byte, per filtyp. */
 export const FIL_MAX = Object.freeze({
     lonefil: 50 * MB,
     stallningstagande: 20 * MB,
@@ -80,7 +80,8 @@ const _FIL_NAMN = Object.freeze({
     lonefil: 'Lönefilen',
     stallningstagande: 'Filen med ställningstagandet',
     jamforelsestatistik: 'Filen med jämförelsestatistiken',
-    konfiguration: 'Konfigurationsfilen'
+    konfiguration: 'Konfigurationsfilen',
+    paket: 'Filen med organisationspaketet'
 });
 
 /**

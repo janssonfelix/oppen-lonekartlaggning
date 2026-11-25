@@ -7,19 +7,20 @@
 // och Att göra-punkternas läge. Aldrig individer, aldrig lönedata. Modulen är ren: ingen DOM, inget state.
 // Yrkesgruppernas och intervallens rader bär lönespridningen (P90 − P10) / median, räknad där n ≥ k (lonespridning).
 // Version 2: handlingsplanens sakliga skäl per grupp (bedomningar: kategori och belopp, aldrig kommentarerna), så att
-// jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses som förut, utan skäl.
+// jämförelsen kan visa fördelningen per kategori båda åren. Ett bokslut från version 1 läses utan skäl.
 
 import { median, kvantil } from './stat.js';
 import { STANDARDTERMER as T } from './termer.js';
 import { valideraSkal, skalPerKategori, skalSammanstallning, skalKategorier } from './sakligaskal.js';
 import { aidAvRad, aidAvYrke } from './aid.js';
 import { arKvinna, arMan } from './kon.js';
+import { K_MIN, K_MAX } from './ktroskel.js';
 
 
 export const ARSBOKSLUT_VERSION = 2;
 const MAX_TEXT = 200;
-/** Den lägsta tröskel ett bokslut kan bära (samma som verktygets K_MIN): ett lägre k i filen höjs hit. */
-export const ARSBOKSLUT_K_MIN = 3;
+/** Den lägsta tröskel ett bokslut kan bära, verktygets K_MIN: ett lägre k i filen höjs hit. */
+export const ARSBOKSLUT_K_MIN = K_MIN;
 
 const _tal = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const _heltal = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi ? v : null);
@@ -85,7 +86,7 @@ export function bokslutBasRad(rader, bas, k) {
 export function valideraArsbokslut(o) {
     if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
     const ar = _heltal(o.ar, 2000, 2100);
-    const kFil = _heltal(o.k, 1, 1000);
+    const kFil = _heltal(o.k, 1, K_MAX);
     const k = kFil == null ? null : Math.max(ARSBOKSLUT_K_MIN, kFil);
     const skapat = typeof o.skapat === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.skapat) ? o.skapat : null;
     if (ar == null || k == null || !skapat) return null;
