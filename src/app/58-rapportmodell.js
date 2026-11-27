@@ -470,7 +470,7 @@ export function rapportModellBada({ besked = false, ateranvand = false } = {}) {
 // Avsnitten beror inte på urvalet (utom bilagan med gruppdossierer, som byggs för sig). När bara urvalet ändras — ett
 // kryss, en flytt eller ett färdigt urval i listan under Exportera — räknas förhandsbeskedet ur det som byggdes senast,
 // i stället för att varje avsnitt räknas om (det kostar sekunder på stora underlag). Minnet bär bara det beskedet
-// räknar: avsnittens id, rubriker, delarnas typ, om ett diagram ritas och de utelämnade texterna (aggregerade antal; inga personrader och
+// räknar: avsnittens id, rubriker, delarnas typ och de utelämnade texterna (aggregerade antal; inga personrader och
 // inga resultat), och k och underlagets kvalitet för undertiteln.
 // Ingen fil ritas ur det (bara `besked` får använda det), så regressionen räknas fortfarande om till varje export
 // (ADR-17). Minnet gäller bara så länge ingenting annat har hänt: varje annan inmatning i sidan (_rmHandelser), ett
@@ -486,7 +486,7 @@ function _rmMinnesNyckel() {
 }
 /** Ett avsnitt som förhandsbeskedet ser det: id, rubrik, delarnas typ och det utelämnade. */
 function _rmLattAvsnitt(a) {
-    return a && { id: a.id, numrerad: a.numrerad, rubrik: a.rubrik, utelamnat: [...(a.utelamnat || [])], delar: a.delar.map(p => (p.typ === 'diagram' ? { typ: p.typ, ritas: p.ritas } : { typ: p.typ })) };
+    return a && { id: a.id, numrerad: a.numrerad, rubrik: a.rubrik, utelamnat: [...(a.utelamnat || [])], delar: a.delar.map(p => ({ typ: p.typ })) };
 }
 /**
  * @param {{alla?: boolean, bada?: boolean, besked?: boolean, ateranvand?: boolean}} [val] besked: för förhandsbeskedet,
@@ -497,8 +497,6 @@ function _rapportModellExport({ alla = false, bada = false, besked = false, ater
     const nyckel = _rmMinnesNyckel();
     const giltigt = besked && ateranvand && _rmMinne && _rmMinne.nyckel.length === nyckel.length && _rmMinne.nyckel.every((v, i) => v === nyckel[i]);
     const b = giltigt ? /** @type {any} */ (_rmMinne).avsnitt : _rmAvsnittenUtanUrval();
-    // Förhandsbeskedet räknar bara de diagram som ritas (rmBesked); svaret följer med i minnet.
-    if (besked && !giltigt) { const ritade = new Set(); for (const a of [...b.fasta, b.egna, b.arsjamf]) for (const p of a?.delar || []) if (p.typ === 'diagram') p.ritas = rmDiagramRitas(p, ritade); }
     if (!giltigt) _rmMinne = { nyckel, avsnitt: { ...b, egna: _rmLattAvsnitt(b.egna), arsjamf: _rmLattAvsnitt(b.arsjamf), fasta: b.fasta.map(_rmLattAvsnitt) } };
     const { harData, k, year, today, urval, dqStatus, egna, arsjamf } = b;
     // Bilagan med gruppdossierer byggs bara när den följer med i urvalet. Listan över alla avsnitt (alla, bada) bär den
@@ -793,16 +791,17 @@ export function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
 
 /** Vad en export ur modellen kommer att innehålla och utelämna — underlaget till förhandsbeskedet. */
 export function rmBesked(m) {
-    const delar = m.avsnitt.flatMap(a => a.delar), ritade = new Set();
-    // Ett diagram räknas när det ritas, som i filen (rmDiagramBild): förhandsbeskedets modell bär svaret (`ritas`).
-    const diagram = delar.filter(p => p.typ === 'diagram' && (p.ritas ?? rmDiagramRitas(p, ritade))).length;
+    const delar = m.avsnitt.flatMap(a => a.delar);
+    // Diagramdelarna i urvalet, utan att någon flik ritas: filen utelämnar ett diagram utan något att visa över
+    // tröskeln (rmDiagramBild), så antalet är det högsta filen kan få.
+    const diagram = delar.filter(p => p.typ === 'diagram').length;
     return { avsnitt: m.avsnitt.length, tabeller: delar.filter(p => p.typ === 'tabell').length, diagram,
         fyllIn: delar.filter(p => p.typ === 'fyllIn').length, utelamnat: [...new Set(m.avsnitt.flatMap(a => a.utelamnat || []))], urval: m.urval };
 }
 
 /**
- * Ritas diagramdelen? Fliken som äger diagrammet ritas först, en gång per flik i `ritade`. Samma prov för filen
- * (rmDiagramBild) och förhandsbeskedet (rmBesked).
+ * Ritas diagramdelen? Fliken som äger diagrammet ritas först, en gång per flik i `ritade`. Provet för filerna
+ * (rmDiagramBild).
  */
 export function rmDiagramRitas(del, ritade = new Set()) {
     if (del.flik && !ritade.has(del.flik)) { ritade.add(del.flik); try { ritaFlik(del.flik); } catch (e) { rapporteraFel(`rapportens diagram (${del.flik})`, e); } }

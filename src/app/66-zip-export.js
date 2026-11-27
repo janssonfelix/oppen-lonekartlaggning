@@ -4,6 +4,7 @@ import { doljLaddning, laddaNer, rapporteraFel, visaLaddning } from './03-hjalpf
 import { _rfBehallare } from './10-diagramritare.js';
 import { diagramRitat, diagramTillBild } from './11-diagramexport.js';
 import { hamtaData, state } from './12-tillstand.js';
+import { _visaExportvarning } from './22-exporthjalpare.js';
 import { exportSakraAlla, medExportLage } from './23-exportgrind.js';
 import { _excelAlltBok } from './24-excelexport.js';
 import { ritaFlik } from './31-navigering.js';
@@ -62,6 +63,7 @@ async function _exportZipExport() {
         }
         const blob = await zip.generateAsync({ type: 'blob' });
         laddaNer(blob, 'lonekartlaggning_export.zip');
+        _visaExportvarning();
         return true;
     } finally {
         doljLaddning();

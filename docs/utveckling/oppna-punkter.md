@@ -19,8 +19,8 @@ beslutades står i referensen för området eller i beslutsloggen. Syfte och avg
    besök utan ändring visar den färdigritade fliken (ADR-81). Senaste mätningen (`npm run perf`, Chromium, 55 000
    syntetiska rader, 2026-11-15): uppladdning till klart gränssnitt ~3,7 s (budget 5 s) och till klara
    bakgrundsanalyser ~7,5 s; en ändrad minsta gruppstorlek tar 1,9 s. Äldre mätningar står i git-historiken.
-   2026-11-27 faller svepet: fliken Exportera tar 6,6 s mot budgeten 5 s. Fliken var lika långsam förut, men
-   svepet fällde den inte då.
+   2026-11-27 tar fliken Exportera 2,6 s (budget 5 s) och förhandsbeskedet 1,8–1,9 s: beskedet ritar inga flikar
+   och säger «högst N diagram».
 
 **Kod och bygge:**
 6. **En arbetare i testkörningen kraschar ibland i Node** (SIGSEGV, V8:s skräpsamlare). Punkten avslutades
@@ -49,10 +49,8 @@ beslutades står i referensen för området eller i beslutsloggen. Syfte och avg
     sämre. I1–I1b och I6 har redan sina regler i Node (`vymodeller.test.js`, `figur.test.js`), och jsdom prövar
     kopplingen; att pröva I6 för ett diagram i stället för fem sparar omkring 24 s processortid, omkring 1 % av sviten.
 
-29. **Menyn bakom en knapp i ett smalt fönster (ADR-82) prövas inte i webbläsaren.** Röktestet prövar menyn som
-    ikoner vid 900 punkter; menyn fälls ihop bakom knappen först vid en smalare bredd, och den prövas bara i jsdom.
 30. **Genomgången (`site/genomgang.html`) byggs ur en mall utanför repot.** En rättning i den incheckade filen skrivs
-    över vid nästa bygge om mallen inte rättas, och sidan har ingen egen CSP.
+    över vid nästa bygge om mallen inte rättas.
 31. **Exportvägarna i k-riggen och listorna över vad exportgrinden tömmer (`tomFlikarUtom`) skrivs för hand.**
     Demosvepet hittar en ny väg ut ur källan, men en ny väg kommer in i riggen och listorna först när någon lägger
     den där (`k-troskeln.md` §9 och §11).

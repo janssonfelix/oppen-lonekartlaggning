@@ -41,11 +41,13 @@ export function ritaExportBesked({ baraUrval = false } = {}) {
     /** @type {any} */ let bada = null;
     try { bada = rapportModellBada({ besked: true, ateranvand: baraUrval }); alla = bada.alla; b = rmBesked(bada.urval); } catch (e) { rapporteraFel('Förhandsbesked: Word-utkastet', e); }
     if (b) {
-        satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'), `${b.fyllIn} fält att fylla i`]))}`
+        // Beskedet ritar inga flikar; filen utelämnar ett diagram utan något att visa över tröskeln (rmBesked).
+        const diagram = (b.diagram ? 'högst ' : '') + _ebAntal(b.diagram, 'diagram', 'diagram');
+        satt('besked-word', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), diagram, `${b.fyllIn} fält att fylla i`]))}`
             + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(' · '))}` : '<br><strong>Utelämnar:</strong> ingenting'));
         // PDF-rapporten är samma modell; flikarnas tabeller följer med som bilagor när inget avsnitt är bortvalt.
         const hela = !!alla && arHelaDokumentationen(bada.urval, alla);
-        satt('besked-pdf', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), _ebAntal(b.diagram, 'diagram', 'diagram'),
+        satt('besked-pdf', `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, 'avsnitt', 'avsnitt'), _ebAntal(b.tabeller, 'tabell', 'tabeller'), diagram,
             hela ? 'bilagor med flikarnas tabeller och diagram' : 'inga bilagor (ett kortare urval är just avsnitten)']))}`
             + `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(' · ') : 'ingenting')}`);
         _laNyckel('nyckel-ex-urval', b.urval);

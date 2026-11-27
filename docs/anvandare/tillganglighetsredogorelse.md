@@ -24,8 +24,10 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 - **Tangentbordet:** jsdom-testerna prövar pilarna, Home och End i menyn (`tests/start-och-meny-app.test.js`), och
   fokus, dialogerna, de sorterbara tabellerna, de hopfällbara grupperna och förklaringarna (ⓘ) med tangentbordet
   (`tests/a11y-tangentbord.test.js`). Röktestet
-  i Chromium, Firefox och WebKit prövar två saker. Avsnittens rubriker nås med Tab och fälls ut med Enter. Vid
-  900 punkter är menyn ihopfälld till ikoner som behåller sina namn, och ingen flik är bredare än fönstret.
+  i Chromium, Firefox och WebKit prövar tre saker. Avsnittens rubriker nås med Tab och fälls ut med Enter. Vid
+  900 punkter är menyn ihopfälld till ikoner som behåller sina namn, och ingen flik är bredare än fönstret. Vid
+  640 punkter ligger menyn bakom knappen Meny: ett klick visar den, ett val öppnar fliken, och ingen flik är bredare
+  än fönstret.
 
 ## Det som stöds
 

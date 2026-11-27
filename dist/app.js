@@ -17487,6 +17487,7 @@ function _exportPrognosExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), "Fördelning");
   _laggTillMetodblad(wb);
   XLSX.writeFile(wb, demoFilnamn(`loneoversyn_prognos_${idagDatum()}.xlsx`));
+  _visaExportvarning();
   meddelaSkarmlasare("Löneöversynens prognosunderlag exporterat.");
 }
 function uppstartLoneoversyn() {
@@ -18519,6 +18520,7 @@ function _exportHandlingsplanExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), "Vägledning");
   _laggTillMetodblad(wb);
   XLSX.writeFile(wb, demoFilnamn(`handlingsplan_underlag_${idagDatum()}.xlsx`));
+  _visaExportvarning();
   meddelaSkarmlasare("Handlingsplansunderlag exporterat.");
 }
 function uppstartHandlingsplan() {
@@ -19149,6 +19151,7 @@ function _exportEuRapportExport() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), "Skillnad i lönefördelningen");
   _laggTillMetodblad(wb, { extra: [["Löneskillnadens tecken i den här filen", DIREKTIV_METOD]] });
   XLSX.writeFile(wb, demoFilnamn(`eu_lonerapport_${idagDatum()}.xlsx`));
+  _visaExportvarning();
   meddelaSkarmlasare("EU-lönerapport exporterad.");
 }
 function _kvartilSpann(x, kr2) {
@@ -21446,7 +21449,7 @@ function _rmMinnesNyckel() {
   ];
 }
 function _rmLattAvsnitt(a) {
-  return a && { id: a.id, numrerad: a.numrerad, rubrik: a.rubrik, utelamnat: [...a.utelamnat || []], delar: a.delar.map((p) => p.typ === "diagram" ? { typ: p.typ, ritas: p.ritas } : { typ: p.typ }) };
+  return a && { id: a.id, numrerad: a.numrerad, rubrik: a.rubrik, utelamnat: [...a.utelamnat || []], delar: a.delar.map((p) => ({ typ: p.typ })) };
 }
 function _rapportModellExport({ alla = false, bada = false, besked = false, ateranvand = false } = {}) {
   const nyckel = _rmMinnesNyckel();
@@ -21455,10 +21458,6 @@ function _rapportModellExport({ alla = false, bada = false, besked = false, ater
     /** @type {any} */
     _rmMinne.avsnitt
   ) : _rmAvsnittenUtanUrval();
-  if (besked && !giltigt) {
-    const ritade = /* @__PURE__ */ new Set();
-    for (const a of [...b.fasta, b.egna, b.arsjamf]) for (const p of a?.delar || []) if (p.typ === "diagram") p.ritas = rmDiagramRitas(p, ritade);
-  }
   if (!giltigt) _rmMinne = { nyckel, avsnitt: { ...b, egna: _rmLattAvsnitt(b.egna), arsjamf: _rmLattAvsnitt(b.arsjamf), fasta: b.fasta.map(_rmLattAvsnitt) } };
   const { harData, k, year, today, urval, dqStatus, egna, arsjamf } = b;
   const dossierer = harData ? rmDossierAvsnitt(k, { stub: !rapportUrval().med.includes("dossierer"), besked }) : null;
@@ -21793,8 +21792,8 @@ function rmTillHtml(m, { utskrift = false, bilder = null } = {}) {
   return demo + `<h1>${esc(m.titel)}</h1><p class="muted">${esc(m.undertitel)}</p>` + ruta + m.avsnitt.map((a) => utskrift ? `<section class="rm-avsnitt" data-rm-avsnitt="${esc(a.id)}">${avsnitt(a)}</section>` : avsnitt(a)).join("");
 }
 function rmBesked(m) {
-  const delar = m.avsnitt.flatMap((a) => a.delar), ritade = /* @__PURE__ */ new Set();
-  const diagram = delar.filter((p) => p.typ === "diagram" && (p.ritas ?? rmDiagramRitas(p, ritade))).length;
+  const delar = m.avsnitt.flatMap((a) => a.delar);
+  const diagram = delar.filter((p) => p.typ === "diagram").length;
   return {
     avsnitt: m.avsnitt.length,
     tabeller: delar.filter((p) => p.typ === "tabell").length,
@@ -32030,13 +32029,14 @@ function ritaExportBesked({ baraUrval = false } = {}) {
     rapporteraFel("Förhandsbesked: Word-utkastet", e);
   }
   if (b) {
-    satt("besked-word", `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, "avsnitt", "avsnitt"), _ebAntal(b.tabeller, "tabell", "tabeller"), _ebAntal(b.diagram, "diagram", "diagram"), `${b.fyllIn} fält att fylla i`]))}` + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(" · "))}` : "<br><strong>Utelämnar:</strong> ingenting"));
+    const diagram = (b.diagram ? "högst " : "") + _ebAntal(b.diagram, "diagram", "diagram");
+    satt("besked-word", `<strong>Innehåller:</strong> ${esc(_ebText([b.urval, _ebAntal(b.avsnitt, "avsnitt", "avsnitt"), _ebAntal(b.tabeller, "tabell", "tabeller"), diagram, `${b.fyllIn} fält att fylla i`]))}` + (b.utelamnat.length ? `<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.join(" · "))}` : "<br><strong>Utelämnar:</strong> ingenting"));
     const hela = !!alla && arHelaDokumentationen(bada.urval, alla);
     satt("besked-pdf", `<strong>Innehåller:</strong> ${esc(_ebText([
       b.urval,
       _ebAntal(b.avsnitt, "avsnitt", "avsnitt"),
       _ebAntal(b.tabeller, "tabell", "tabeller"),
-      _ebAntal(b.diagram, "diagram", "diagram"),
+      diagram,
       hela ? "bilagor med flikarnas tabeller och diagram" : "inga bilagor (ett kortare urval är just avsnitten)"
     ]))}<br><strong>Utelämnar:</strong> ${esc(b.utelamnat.length ? b.utelamnat.join(" · ") : "ingenting")}`);
     _laNyckel("nyckel-ex-urval", b.urval);
@@ -36545,6 +36545,7 @@ async function _exportWordUtkastExport() {
   try {
     const { blob, namn } = await byggWordUtkast();
     laddaNer(blob, namn);
+    _visaExportvarning();
     return true;
   } catch (err) {
     rapporteraFel("Word-utkast", err);
@@ -36821,6 +36822,7 @@ async function _exportZipExport() {
     }
     const blob = await zip.generateAsync({ type: "blob" });
     laddaNer(blob, "lonekartlaggning_export.zip");
+    _visaExportvarning();
     return true;
   } finally {
     doljLaddning();

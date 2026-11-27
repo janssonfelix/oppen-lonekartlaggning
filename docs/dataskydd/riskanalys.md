@@ -524,9 +524,8 @@ där som en lista i avsnitt 4, under samma namn och med hur vart och ett är byg
 - **Export-känslighetsnotis**: efter en sparad fil visas en påminnelse om
   förvaringsdisciplin (behörighetsstyrd disk, ej okrypterad e-post). Notisen säger att filen innehåller
   lönedata och ska hanteras som personuppgifter; den lovar inte att filen bara innehåller aggregat. Den visas efter
-  CSV-filerna, Excel-filen med alla flikar, protokollet, Löneöversiktens, prioriteringens, likvärdighetens och
-  jämförelsestatistikens Excel-filer, diagrambilderna och konfigurationsfilen, men inte efter ZIP-filen,
-  Word-utkastet, Löneöversyns prognosfil, handlingsplanens Excel-fil och EU-lönerapporten.
+  varje fil som bär lönedata: CSV-filerna, varje Excel-fil, ZIP-filen, Word-utkastet, diagrambilderna och (med egen
+  text) konfigurationsfilen.
 - **Exporter som hör till ett undantag säger det:** de bär tillägget "Den här filen kan även innehålla
   grupper under tröskeln (undantag: …)". Det gäller likvärdighetsexportens CSV och metodblad och diagramdata
   från fliken Likvärdigt arbete. Det gäller också tabell-CSV:n, urklipp och diagramdata från Tabeller och egna

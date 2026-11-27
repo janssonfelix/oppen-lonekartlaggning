@@ -168,7 +168,8 @@ function diagramexportRader(gd, underlag) {
 function _diagramexportRubrikFot(gd, datum = new Date(), dolt = [], harlett = [], underlag = '') {
     const dag = idagDatum(datum);
     const urval = typeof gd._exportBeskrivning === 'string' && gd._exportBeskrivning ? ` · Urval: ${gd._exportBeskrivning}` : '';
-    // Ett zoomat diagram exporteras som det visas: fotraden säger att bilden är ett utsnitt.
+    // Ett zoomat diagram finns i exporten bara med Förhandsvisa på (annars ritas fliken om utan utsnitt): fotraden säger
+    // då att bilden är ett utsnitt.
     // Vyns anteckning (val.exportAnteckning) står först i fotraden: en mening om det bilden visar, räknad av vyn
     // ur värden som får visas.
     const v = !underlag && gd._figurVal && typeof gd._figurVal.exportAnteckning === 'string' ? gd._figurVal.exportAnteckning.trim() : '';
