@@ -175,6 +175,8 @@ export async function flikarOchDiagram() {
         // Skärmbild bara av ett synligt diagram (livscykeldiagrammet ligger i ett hopfällt avsnitt).
         if (BILDER && await page.locator(`#${id}`).isVisible()) { mkdirSync(BILDER, { recursive: true }); await page.locator(`#${id}`).screenshot({ path: join(BILDER, `${NAMN}-${id}.png`) }); }
         for (const [val, ext] of [['png-dokument', 'png'], ['svg', 'svg']]) {
+            // En export ritar om fliken, och livscykeldiagrammet ritas en bildruta senare: vänta in exportmenyn.
+            await page.waitForFunction(i => document.getElementById(i)?.parentElement.querySelector('.chart-export-btn'), id, { timeout: 5000 });
             await page.evaluate(i => document.getElementById(i).parentElement.querySelector('.chart-export-btn').click(), id);
             const [nedladdning] = await Promise.all([
                 page.waitForEvent('download', { timeout: 10000 }),

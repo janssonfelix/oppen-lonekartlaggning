@@ -12,6 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { regexEscape } from './helpers/regex.js';
 import { lasMatris } from '../tools/valideringsrapport.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -71,7 +72,7 @@ describe('spårbarhetsmatrisen', () => {
                 if (!existsSync(join(ROOT, fil))) { fel.push(`${r.ID}: ${fil} finns inte`); väntande = []; continue; }
                 const text = läs(fil);
                 for (const fn of väntande) {
-                    if (!new RegExp(`(?:function\\*?\\s+|\\b(?:const|let|var)\\s+)${fn.replace(/\$/g, '\\$')}\\b`).test(text)) {
+                    if (!new RegExp(`(?:function\\*?\\s+|\\b(?:const|let|var)\\s+)${regexEscape(fn)}\\b`).test(text)) {
                         fel.push(`${r.ID}: ${fn} finns inte i ${fil}`);
                     }
                 }

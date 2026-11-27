@@ -211,7 +211,7 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
             expect(jobb, f).toContain(`cosign sign-blob --yes --bundle ${f}.sigstore.json ${f}`);
             expect(jobb, f).toContain(`dist/${f}.sigstore.json`);
             // ... och får en attestering av ursprunget (ADR-101).
-            expect(jobb.slice(jobb.indexOf('actions/attest-build-provenance@')), f).toMatch(new RegExp(`^ {12}dist/${f.replace(/\./g, '\\.')}$`, 'm'));
+            expect(jobb.slice(jobb.indexOf('actions/attest-build-provenance@')), f).toMatch(new RegExp(`^ {12}dist/${regexEscape(f)}$`, 'm'));
         }
     });
     it('ci.yml och release.yml: ett andra bygge i en ny katalog jämförs med filen (reproducerbart bygge, ADR-101)', () => {
