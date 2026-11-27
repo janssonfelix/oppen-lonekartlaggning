@@ -57,6 +57,14 @@ describe('[B7.10] prioritera: gruppering och k-regel', () => {
     it('tom indata ger en tom lista', () => {
         expect(kör([])).toEqual([]);
     });
+    it('lika index sorteras på BAS och sedan AID-kod, oberoende av filens ordning', () => {
+        // Fyra grupper med samma löner och samma referens: samma index.
+        const rader = [...grupp('5302 Y', 'B', 30000, 10, 30000, 10), ...grupp('5301 X', 'B', 30000, 10, 30000, 10),
+            ...grupp('5302 Y', 'A', 30000, 10, 30000, 10), ...grupp('5301 X', 'A', 30000, 10, 30000, 10)];
+        const ordning = r => kör(r, { referensFor: () => ({ median: 35000, kalla: 'testref' }) }).map(i => `${i.bas}${i.aid}`);
+        expect(ordning(rader)).toEqual(['A5301', 'A5302', 'B5301', 'B5302']);
+        expect(ordning(rader.slice().reverse())).toEqual(['A5301', 'A5302', 'B5301', 'B5302']);
+    });
 
     it('grupper under kTroskel tas inte med (n = 18 < 20)', () => {
         const rader = grupp('5301 Undersköterska', 'B', 30000, 9, 31000, 9);
@@ -376,7 +384,7 @@ describe('[B7.12] motiveringsgrunder: reglerna bakom motiveringsförslagen', () 
     const post = (kv, ma, falt = {}) => ({ _rows: [...kv.map(([l, a]) => rad('kvinna', l, a)), ...ma.map(([l, a]) => rad('man', l, a))],
         kvN: kv.length, maN: ma.length, n: kv.length + ma.length, diffPct: -20, ...falt });
     const lika = (n, lon = 30000, alder = 0) => Array.from({ length: n }, () => [lon, alder]);
-    const OPT = { kInstalld: 10, kTroskel: 10, mdePct: null, naraGrans: -2 };
+    const OPT = { kInstalld: 10, kTroskel: 10, mdePct: null, naraGrans: -2, analyseraGrans: 5, akutMinN: 10 };
     const koder = (item, opt = {}) => motiveringsgrunder(item, { ...OPT, ...opt }).map(g => g.kod);
     // a kvinnor och b män av tio vardera på 20 000 kr, resten på 30 000 kr
     const kvintil = (a, b, nKv = 10) => post([...lika(a, 20000), ...lika(nKv - a)], [...lika(b, 20000), ...lika(10 - b)]);
@@ -425,6 +433,13 @@ describe('[B7.12] motiveringsgrunder: reglerna bakom motiveringsförslagen', () 
     it('over: mer än 5 % över referensen, inte vid 5', () => {
         expect(motiveringsgrunder(post(lika(10), lika(10), { diffPct: 5.1 }), OPT)).toContainEqual({ kod: 'over', type: 'info', diffPct: 5.1 });
         expect(koder(post(lika(10), lika(10), { diffPct: 5 }))).not.toContain('over');
+    });
+
+    it('over och nara följer inställningarna: gränsen för Analysera och minsta antal för Börja här', () => {
+        expect(koder(post(lika(10), lika(10), { diffPct: 6 }), { analyseraGrans: 8 })).not.toContain('over');
+        expect(koder(post(lika(10), lika(10), { diffPct: 8.1 }), { analyseraGrans: 8 })).toContain('over');
+        expect(koder(post(lika(7), lika(7), { diffPct: 1 }), { akutMinN: 15 })).not.toContain('nara');
+        expect(koder(post(lika(5), lika(5), { diffPct: 1 }), { akutMinN: 10 })).toContain('nara');
     });
 
     it('nara: inom uppföljningsgränsen åt båda hållen med minst 10 personer, inte vid gränsen', () => {

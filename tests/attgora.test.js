@@ -3,7 +3,7 @@
  * Ordningen i Börja här och när ett analyssteg räknas som klart.
  */
 import { describe, it, expect } from 'vitest';
-import { attGoraRang, borjaHar, hanterade, stegLikaArbete, stegLikvardigt } from '../src/lib/attgora.js';
+import { ATTGORA_PAR_MAX, attGoraRang, borjaHar, hanterade, parKortadNot, stegLikaArbete, stegLikvardigt } from '../src/lib/attgora.js';
 
 const p = (id, kategori, prioritet = 'hög') => ({ id, kategori, prioritet });
 
@@ -59,6 +59,14 @@ describe('attgora: processöversiktens steg (ADR-29)', () => {
         expect(stegLikvardigt({ analys: true, antalPar: 2, t: 2, d: 2 }).status).toBe('klar');
         // Par som inte kom med i Att göra (t = 0) räknas inte som hanterade.
         expect(stegLikvardigt({ analys: true, antalPar: 2, t: 0, d: 0 }).status).toBe('delvis');
+    });
+    it('likvärdigt arbete: Att göra tar högst ATTGORA_PAR_MAX par, och steget säger när listan är kortad', () => {
+        const fler = ATTGORA_PAR_MAX + 5;
+        expect(parKortadNot(ATTGORA_PAR_MAX)).toBe('');
+        expect(parKortadNot(fler)).toBe(`Att göra tar med de ${ATTGORA_PAR_MAX} kandidatpar som har störst skillnad, av ${fler}; övriga granskas i fliken Likvärdigt arbete.`);
+        const s = stegLikvardigt({ analys: true, antalPar: fler, t: ATTGORA_PAR_MAX, d: ATTGORA_PAR_MAX });
+        expect(s.detail).toContain(`${ATTGORA_PAR_MAX} av ${ATTGORA_PAR_MAX} kandidatpar hanterade i Att göra. ${parKortadNot(fler)}`);
+        expect(stegLikvardigt({ analys: true, antalPar: 2, t: 2, d: 2 }).detail).not.toContain('övriga granskas');
     });
 });
 

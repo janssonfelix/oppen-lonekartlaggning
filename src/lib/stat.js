@@ -9,7 +9,7 @@
  *
  * Funktioner exporterade:
  *   - median, kvantil, linjarRegression     (Stat-objektet i appen pekar hit)
- *   - matrisprodukt, transponera, invertera (matrisalgebra)
+ *   - matrisprodukt, invertera              (matrisalgebra)
  *   - anpassaOLS                            (OLS + HC3-robusta SE)
  *   - normalCdf                             (Φ; t-fördelningen vid df > 1e6)
  *   - bhJustera                             (Benjamini–Hochberg-korrigering för många tester)
@@ -40,6 +40,13 @@ export function median(varden) {
     const s = [...varden].sort((a, b) => a - b);
     const m = Math.floor(s.length / 2);
     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+/** Median av en STIGANDE sorterad lista utan positionerna i `bort` (stigande, unika), utan att listan kopieras. */
+export function medianUtanPositioner(s, bort) {
+    const n = s.length - bort.length;
+    const vid = p => { let q = p; for (const b of bort) { if (b <= q) q++; else break; } return s[q]; };
+    return n % 2 ? vid((n - 1) / 2) : (vid(n / 2 - 1) + vid(n / 2)) / 2;
 }
 
 /**
@@ -143,8 +150,8 @@ function _regOfullstandigBeta(x, a, b) {
 /**
  * t-fördelningens CDF P(T ≤ t | df), exakt via den regulariserade ofullständiga
  * betafunktionen: P(|T| > t) = I_x(df/2, 1/2) med x = df / (df + t²).
- * Konvergerar mot normalfördelningen när df → ∞. (Tidigare Hills approximation,
- * som vid df = 5 gav kvantilen 2,62 i stället för 2,57; ADR-45.)
+ * Konvergerar mot normalfördelningen när df → ∞. (ADR-45: Hills approximation
+ * gav vid df = 5 kvantilen 2,62 i stället för 2,57.)
  * @param {number} t  - teststatistika
  * @param {number} df - frihetsgrader (n − k)
  * @returns {number} P(T ≤ t)
@@ -206,11 +213,6 @@ export function matrisprodukt(A, B) {
     return C;
 }
 
-/** Transponatet Aᵀ. */
-export function transponera(A) {
-    return A[0].map((_, i) => A.map(r => r[i]));
-}
-
 /**
  * Matrisinvers via Gauss-Jordan med partial pivoting.
  * @param {number[][]} A
@@ -240,7 +242,11 @@ export function invertera(A) {
  * OLS-estimat med klassisk + HC3-robusta vcov (Long & Ervin 2000).
  *
  * Returnerar:
- *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga }
+ *   { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga, utanSpridning }
+ * utanSpridning = residualerna saknar spridning: varje residual är i kvadratiskt medel högst SPRIDNING_TOL gånger
+ * utfallets nivå (max |y|, minst 1). Då är anpassningen exakt (eller utfallet konstant), och standardfel, p-värde och
+ * intervall är flyttalsbrus; anroparen redovisar ingen osäkerhet. Koefficienter under samma tolerans sätts då till 0, så
+ * att ett konstant utfall ger exakt 0 i stället för bruset.
  * hHoga = antalet observationer med hävstång h_i > 0,99; antalet visas i regressionskortets tekniska specifikation.
  * Bara en observation med h = 1 (en ensam person i en indikator, residualen 0) får vikten 0 i HC3-köttet; övriga
  * bidrar med e²/(1 − h)², också de med hög hävstång.
@@ -250,7 +256,7 @@ export function invertera(A) {
  * @param {number[][]} X - n×k designmatris.
  * @param {number[]} y    - n-vektor.
  * @param {number[]|null} [hTillagg] - n-vektor som läggs till hävstången h_i (gruppdelen vid inomtransformation).
- * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number}}
+ * @returns {null | {beta:number[], R2:number, n:number, k:number, vcovHC3:number[][], vcovClassic:number[][], rss:number, adjR2:number, sigma2:number, XtXinv:number[][], hHoga:number, utanSpridning:boolean}}
  */
 export function anpassaOLS(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
@@ -270,7 +276,7 @@ export function anpassaOLS(X, y, hTillagg = null) {
     }
     const XtXinv = invertera(XtX);
     if (!XtXinv) return null;
-    const beta = matrisprodukt(XtXinv, Xty.map(v => [v])).map(r => r[0]);
+    let beta = matrisprodukt(XtXinv, Xty.map(v => [v])).map(r => r[0]);
 
     const yhat = X.map((row, i) => { let s = 0; for (const a of nz[i]) s += row[a] * beta[a]; return s; });
     const resid = y.map((yi, i) => yi - yhat[i]);
@@ -280,6 +286,9 @@ export function anpassaOLS(X, y, hTillagg = null) {
         rss += resid[i] * resid[i];
         tss += (y[i] - ymean) ** 2;
     }
+    const tol = SPRIDNING_TOL * y.reduce((m, v) => Math.max(m, Math.abs(v)), 1);
+    const utanSpridning = rss <= n * tol * tol;
+    if (utanSpridning) beta = beta.map(b => (Math.abs(b) < tol ? 0 : b));
     const R2 = tss > 0 ? 1 - rss / tss : 0;
     const sigma2 = n - k > 0 ? rss / (n - k) : 0;
 
@@ -312,8 +321,21 @@ export function anpassaOLS(X, y, hTillagg = null) {
     const vcovHC3 = matrisprodukt(breadMeat, XtXinv);
     const adjR2 = (n - k) > 0 ? 1 - (1 - R2) * (n - 1) / (n - k) : 0;
 
-    return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga };
+    return { beta, R2, n, k, vcovHC3, vcovClassic, rss, adjR2, sigma2, XtXinv, hHoga, utanSpridning };
 }
+
+/** Den relativa toleransen för en residual utan spridning i anpassaOLS: långt över flyttalsbruset (omkring 1e-15 av
+ * nivån) och långt under en verklig löneskillnad (en krona på 100 000 kr är 1e-5 i log-lön). */
+export const SPRIDNING_TOL = 1e-9;
+
+/** z för 95 % tvåsidigt: trattens fält och slumpens gränser (konfidensbandet kring regressionslinjen använder t-kvantilen). */
+export const Z_95 = 1.96;
+/** Faktorn i minsta upptäckbara skillnad: 1,96 (α = 0,05 tvåsidigt) + 0,842 (styrka 80 %). */
+export const Z_STYRKA = 2.802;
+/** σ ur medianens absoluta avvikelse: 1,4826 × MAD är σ vid normalfördelning. */
+export const MAD_TILL_SIGMA = 1.4826;
+/** Medianens standardfel i förhållande till medelvärdets vid normalfördelning (√(π/2)). */
+export const MEDIAN_SE_FAKTOR = 1.2533;
 
 /** Percentilintervallets svans: andelen av de sorterade dragningarna som ligger under den nedre gränsen, och lika
  * många över den övre. */

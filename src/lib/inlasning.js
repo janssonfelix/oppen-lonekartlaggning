@@ -2,8 +2,8 @@
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — tolkningen av indata: talen, könet, BAS-intervallet, AID-koden i ställningstagandet,
- * fältet för AID-etikett (yrket), kärnan i uppgiftsminimeringen (en lönerad → de vitlistade fälten), detektorn
- * för känsliga kolumner och upptäckten av personnamn i fältet för AID-etikett.
+ * fältet för AID-etikett (yrket), kärnan i uppgiftsminimeringen (en lönerad → de vitlistade fälten),
+ * inläsningskontrollen (personnummer och namnkolumner) och upptäckten av personnamn i fältet för AID-etikett.
  *
  * Fältet för AID-etikett maskeras inte (ADR-85): verktyget behåller koden och högst 40 tecken av etiketten, utan
  * tecknen < > " ' &. Ser fältet ut att innehålla personnamn varnar inläsningen (yrkeNamnNyckel, sallsyntaNamnrader).
@@ -14,7 +14,8 @@
  * _hittaAnsvarKolumn och minimeraLonerad) läser tillståndet. Funktionerna utan adapter behåller namnen de hade i
  * appen.
  */
-import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp, arAnsvarskodRubrik as _anArRubrik, andelGiltiga as _anAndelGiltiga } from './ansvar.js';
+import { tolkaAnsvarskod as _anTolka, ansvarsgrupp as _anGrupp, andelGiltiga as _anAndelGiltiga } from './ansvar.js';
+import { AID_SEPARATORER, sifferprefixAvYrke } from './aid.js';
 import { matchaImportprofil } from './importprofiler.js';
 
 // ---- Talen ----
@@ -110,18 +111,20 @@ export function tolkaTalStrikt(v) {
 
 // ---- Textfälten: AID-etiketten, BAS, AID i ställningstagandet och kön ----
 
-// Etiketten i fältet för AID-etikett: resten efter AID-koden och vanliga separatorer (—, –, -, :, ., komma, blanksteg), utan
-// HTML-meta-tecknen < > " ' &. De strippas vid inläsningen så att de aldrig kan smitas in i en innerHTML-template ens
-// om en framtida renderingsplats glömmer esc() — CSP + esc() + inläsningen; tre lager. `s` är redan trimmad.
+// Etiketten i fältet för AID-etikett: resten efter AID-koden (sifferprefixAvYrke) och separatorerna (AID_SEPARATORER),
+// utan HTML-meta-tecknen < > " ' &. De strippas vid inläsningen så att de aldrig kan smitas in i en innerHTML-template
+// ens om en framtida renderingsplats glömmer esc() — CSP + esc() + inläsningen; tre lager. `s` är redan trimmad.
 function _yrkeEtikett(s) {
-    return s.replace(/^\d+\s*[—–\-:.,\s]*/, '').trim().replace(/[<>"'&]/g, '');
+    const aid = sifferprefixAvYrke(s);
+    const rest = aid ? s.slice(aid.length).replace(new RegExp(`^[${AID_SEPARATORER}]*`), '') : s;
+    return rest.trim().replace(/[<>"'&]/g, '');
 }
 
 /**
  * Fältet för AID-etikett (yrket) vid inläsning (GDPR Art. 25.1: bara det analysen behöver).
  *
  * Källsystem exporterar ofta yrket som "12345 — Sjuksköterska" eller liknande. Verktyget behåller:
- *   - AID:      ledande siffergrupp (\d+)
+ *   - AID:      ledande siffergrupp (sifferprefixAvYrke: följd av blanksteg, en separator eller slutet)
  *   - Etikett:  resten efter AID och separatorerna, med tecknen < > " ' & borttagna
  *   - Längd:    etiketten kortas till 40 tecken (efter rensningen)
  *
@@ -136,8 +139,7 @@ export function _stadaYrkesfalt(varde) {
     if (!varde) return "";
     const s = varde.toString().trim();
     if (!s) return "";
-    const aidMatch = s.match(/^(\d+)/);
-    const aid = aidMatch ? aidMatch[1] : "";
+    const aid = sifferprefixAvYrke(s) ?? "";
     let label = _yrkeEtikett(s);
     // Kortningen sist — yrkesetiketter är sällan över 40 tecken
     if (label.length > 40) label = label.substring(0, 40).trim() + '…';
@@ -148,33 +150,25 @@ export function _stadaYrkesfalt(varde) {
 /**
  * Namnmönstren som upptäckten av personnamn i fältet för AID-etikett prövar med (yrkeNamnNyckel): "Förnamn
  * Efternamn" (två ord i Versal-gemener i rad) och "Efternamn, Förnamn" (båda i versaler eller båda i Versal-gemener).
- * Ordgränsen är en fångad föregående icke-bokstav, eftersom \b inte fungerar före Å/Ä/Ö ("Örjan Östberg") och
- * lookbehind saknas i Safari före 16.4. Utan /g, så att test() inte bär tillstånd mellan anropen.
+ * Bokstäverna är alla bokstäver (\p{Lu}, \p{Ll}), så att också "Zoë Müller" räknas. Ordgränsen är en fångad
+ * föregående icke-bokstav, eftersom \b inte fungerar före Å/Ä/Ö ("Örjan Östberg") och lookbehind saknas i Safari före
+ * 16.4. Utan /g, så att test() inte bär tillstånd mellan anropen.
  */
 export const YRKE_NAMNMONSTER = Object.freeze([
-    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ][a-zåäö]+\s+[A-ZÅÄÖ][a-zåäö]+)/,
-    /(^|[^A-Za-zÅÄÖåäö])([A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?, [A-ZÅÄÖ]{2,}(?:-[A-ZÅÄÖ]{2,})?|[A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?, [A-ZÅÄÖ][a-zåäö]+(?:-[A-ZÅÄÖ][a-zåäö]+)?)(?![A-Za-zÅÄÖåäö])/,
+    /(^|\P{L})(\p{Lu}\p{Ll}+\s+\p{Lu}\p{Ll}+)/u,
+    /(^|\P{L})(\p{Lu}{2,}(?:-\p{Lu}{2,})?, \p{Lu}{2,}(?:-\p{Lu}{2,})?|\p{Lu}\p{Ll}+(?:-\p{Lu}\p{Ll}+)?, \p{Lu}\p{Ll}+(?:-\p{Lu}\p{Ll}+)?)(?!\p{L})/u,
 ]);
-
-/**
- * Om fältet för AID-etikett har ett namnmönster: texten efter AID-koden har något av mönstren i YRKE_NAMNMONSTER —
- * två eller fler ord i Versal-gemener i rad ("Anna Andersson", "Sjuksköterska Anna Andersson", "Anna-Lisa Berg")
- * eller "Efternamn, Förnamn" ("Andersson, Anna", "ANDERSSON, ANNA"). Prövas på råvärdet före kortningen (efter
- * AID-koden och separatorerna, med tecknen < > " ' & borttagna), så att ett namn som kortningen klipper också räknas.
- *
- * Mönstret ensamt träffar också etiketter med versal på två ord ("Sjuksköterska Natt"). Därför avgör mönstret bara
- * vilka texter som räknas; varningen gäller de som också är sällsynta i filen (sallsyntaNamnrader).
- * @param {*} varde - Fältets råvärde.
- * @returns {boolean}
- */
-export function yrkeLiknarNamn(varde) {
-    return yrkeNamnNyckel(varde) !== '';
-}
 
 /**
  * Nyckeln som en text med namnmönster räknas under: etikettexten efter AID-koden i gemener, med blanksteg slagna
  * samman till ett, så att skiftläge och extra blanksteg räknas som samma text. Tom sträng när texten saknar
- * namnmönster (yrkeLiknarNamn). Nyckeln finns bara i inläsningens tillfälliga räknare och släpps när filen är läst.
+ * namnmönster (något av YRKE_NAMNMONSTER). Nyckeln finns bara i inläsningens tillfälliga räknare och släpps när
+ * filen är läst.
+ *
+ * Mönstret prövas på råvärdet före kortningen (efter AID-koden och separatorerna, med tecknen < > " ' & borttagna),
+ * så att ett namn som kortningen klipper också räknas. Det träffar också etiketter med versal på två ord
+ * ("Sjuksköterska Natt"); därför avgör det bara vilka texter som räknas, och varningen gäller de som också är
+ * sällsynta i filen (sallsyntaNamnrader).
  * @param {*} varde - Fältets råvärde.
  * @returns {string}
  */
@@ -244,15 +238,14 @@ export function _normaliseraBas(varde) {
 
 /**
  * Normaliserar AID i det lönepolitiska ställningstagandet så att den matchar
- * den AID som härleds ur lönedatans yrkesfält (`r.yrke.match(/^(\d+)/)`).
+ * den AID som härleds ur lönedatans yrkesfält (sifferprefixAvYrke).
  * Tar sifferprefixet när det finns ("207 Förskollärare" → "207"), annars den
  * rensade strängen. Tom sträng betyder "ingen AID" (= BAS-nivårad).
  */
 export function _normaliseraPolicyAid(varde) {
     if (!varde) return "";
     const v = _utanHtmlTecken(varde).trim();
-    const m = v.match(/^(\d+)/);
-    return m ? m[1] : v;
+    return sifferprefixAvYrke(v) ?? v;
 }
 
 /**
@@ -263,6 +256,9 @@ export function _normaliseraPolicyAid(varde) {
  * Åäö bevaras innan värdet slås upp, så att "Män" mappas till 'man' (en
  * normalisering som stryker alla icke-[a-z]-tecken skulle göra det till "mn").
  *
+ * Ett värde med ett tillägg inom parentes ("Kvinna (F)", "Man (M)", "F (kvinna)") är det kön som båda delarna anger;
+ * anger delarna olika kön är värdet okänt.
+ *
  * Siffervärden (t.ex. "1"/"2") mappas medvetet INTE — kodningen är system-
  * specifik och en gissning vore farligare än att visa raderna som "okänt kön"
  * i inläsningsrapporten (exempelvärdena visas där).
@@ -272,30 +268,40 @@ export function _normaliseraPolicyAid(varde) {
  */
 export function _normaliseraKon(varde) {
     if (!varde) return "";
-    const s = varde.toString().toLowerCase().replace(/[^a-zåäö]/g, '');
-    const MAP = {
-        k: 'kvinna', kv: 'kvinna', kvinna: 'kvinna', kvinnor: 'kvinna',
-        f: 'kvinna', female: 'kvinna', w: 'kvinna', woman: 'kvinna',
-        m: 'man', ma: 'man', man: 'man', 'män': 'man', male: 'man'
-    };
-    return MAP[s] || s;
+    const v = varde.toString();
+    const delar = v.match(/^([^()]*)\(([^()]*)\)\s*$/);
+    if (delar) {
+        const [fore, inom] = [_konOrd(delar[1]), _konOrd(delar[2])];
+        if (fore === inom) return fore;
+    }
+    return _konOrd(v);
+}
+const _KON = Object.freeze({
+    k: 'kvinna', kv: 'kvinna', kvinna: 'kvinna', kvinnor: 'kvinna',
+    f: 'kvinna', female: 'kvinna', w: 'kvinna', woman: 'kvinna',
+    m: 'man', ma: 'man', man: 'man', 'män': 'man', male: 'man'
+});
+function _konOrd(t) {
+    const s = t.toLowerCase().replace(/[^a-zåäö]/g, '');
+    return Object.hasOwn(_KON, s) ? _KON[s] : s;
 }
 
-// ---- Kolumnerna: vilken rubrik som bär vilket fält (flyttade från src/app/03-hjalpfunktioner.js och 06) ----
+// ---- Kolumnerna: vilken rubrik som bär vilket fält ----
 
 // GDPR uppgiftsminimering (Art. 5(1)(c)): vitlista över tillåtna datafält. Verktyget extraherar ENBART dessa roller
 // från lönefilen. Alla övriga kolumner ignoreras helt även om de finns i filen.
 export const TILLATNA_FALT = {
     bas:     ["bas","basintervall"],
-    // Yrke matchas via mönster på rensat kolumnnamn (lowercase, å→a, ö→o, alfanum).
-    // Ordningen spelar roll — specifika mönster först, generella sist.
+    // Sökorden jämförs med rubrikens rensade namn och ord (gemener, bara a–z och 0–9, så att å, ä och ö faller bort:
+    // "Lön" blir "ln"); hur nära de ska passa står vid _hittaRubrik. Yrkets ordning spelar roll — specifika först:
     //   - "aidetik"    → "AID-etikett" (export ur lönestatistiksystem)
     //   - "yrkesgrupp" → "Yrkesgrupp"
     //   - "yrke"       → "Yrke", "Yrkesnamn", "Yrkeskod"
     //   - "befattning" → "Befattning"
+    //   - "aidkod"     → "AIDkod" (i ett ord, där det korta "aid" varken är ett helt ord eller ett ordslut)
     //   - "aid"        → fallback för CSV som har enbart "AID"-kolumn (vanligt!)
     //                    Måste vara sist så mer-specifika mönster matchas först.
-    yrke:    ["aidetik","yrkesgrupp","yrke","befattning","aid"],
+    yrke:    ["aidetik","yrkesgrupp","yrke","befattning","aidkod","aid"],
     lon:     ["mnadsln","lon","ln"],
     alder:   ["lder","alder"],
     kon:     ["kon","kn"],
@@ -314,29 +320,53 @@ export function rubrikgrupper() {
     return Object.values(TILLATNA_FALT);
 }
 
+// Korta sökord ("ln", "kn", "kon", "bas", "aid") är delsträngar av vanliga rubriker som "Anställningsnr", "Tekniker",
+// "Kontor", "Databas" och "Löneart". Därför får ett sökord bara inleda eller avsluta ett ord när det har minst
+// SOKORD_BORJAR_ORD tecken ("Yrkesnamn", "Totalpoäng"), och bara stå var som helst i rubriken när det har minst
+// SOKORD_DELSTRANG tecken ("AID-etikett"). Lönens sökord får alltid avsluta ett ord: svenska sammansättningar med lön
+// slutar på lön ("Grundlön", "Heltidslön").
+const SOKORD_BORJAR_ORD = 4;
+const SOKORD_DELSTRANG = 5;
+const SOKORD_ALLTID_ORDSLUT = new Set(TILLATNA_FALT.lon);
+
+const _rensaRubrik = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
 /**
- * Rubriken vars rensade namn (gemener, bara a–z och 0–9) är lika med något av sökorden, prövade i tur och ordning, så
- * att "Kön" går före "Kontor". Annars, sökord för sökord, den rubrik som är lika med sökordet eller den kortaste som
- * innehåller det, så att "Grundlön" går före "Lönetillägg" för sökordet "ln". Yrkets sökord är en prioritetsordning och
- * prövas bara sökord för sökord, så att "AID-etikett" går före "AID".
+ * Rubriken som bär rollen, efter rubrikens rensade namn (gemener, bara a–z och 0–9) och dess ord (rubriken delad på
+ * allt som inte är bokstav eller siffra, varje ord rensat). Först den rubrik vars rensade namn är lika med något av
+ * sökorden, prövade i tur och ordning, så att "Kön" går före "Kontor". Annars, sökord för sökord, den rubrik som passar
+ * på bästa nivå: 1) hela namnet eller ett ord är lika med sökordet ("Överenskommen lön per månad"); 2) ett ord slutar
+ * med sökordet, om det har minst SOKORD_BORJAR_ORD tecken eller är lönens ("Grundlön", "Totalpoäng"; inte "Databas");
+ * 3) ett ord börjar med sökordet, om det har minst SOKORD_BORJAR_ORD tecken ("Yrkesnamn");
+ * 4) namnet innehåller sökordet, om det har minst SOKORD_DELSTRANG tecken ("AID-etikett"). Inom en nivå gäller den
+ * kortaste rubriken, och vid lika den första, så att "Ålder (år)" går före "Anställningsålder". Yrkets sökord är en
+ * prioritetsordning och prövas bara sökord för sökord, så att "AID-etikett" går före "AID".
  */
 export function _hittaRubrik(rubriker, sokord, roll) {
-    // Yrkesmönstret "aid" matchar på delsträng — en kolumn för AID:s ansvarskod ("AID-ansvar")
-    // får aldrig tas för yrke (ADR-33).
-    const hoppa = h => roll === 'yrke' && _anArRubrik(h);
-    const rensade = (rubriker || []).map(h => h == null || hoppa(h) ? null : String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
-    const ord = sokord.map(s => s.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    // Yrkets sökord "aid" är ett ord i "AID-ansvar": en kolumn för AID:s ansvarskod får aldrig tas för yrke (ADR-33).
+    const hoppa = h => roll === 'yrke' && _arAnsvarskodRubrik(h);
+    const rensade = (rubriker || []).map(h => h == null || hoppa(h) ? null : _rensaRubrik(String(h)));
+    const rubrikord = (rubriker || []).map(h => h == null ? [] : String(h).split(/[^\p{L}\p{N}]+/u).map(_rensaRubrik));
+    const ord = sokord.map(_rensaRubrik);
     // Yrkets sökord är en prioritetsordning (TILLATNA_FALT), de andra rollernas olika stavningar av samma sak.
     if (roll !== 'yrke') for (const s of ord) { const i = rensade.indexOf(s); if (i >= 0) return rubriker[i]; }
-    // Sökord för sökord: exakt, annars den kortaste rubriken som innehåller det ("Ålder (år)" före "Anställningsålder").
+    const niva = (r, o, s) => r === s || o.includes(s) ? 1
+        : (s.length >= SOKORD_BORJAR_ORD || SOKORD_ALLTID_ORDSLUT.has(s)) && o.some(w => w.endsWith(s)) ? 2
+        : s.length >= SOKORD_BORJAR_ORD && o.some(w => w.startsWith(s)) ? 3
+        : s.length >= SOKORD_DELSTRANG && r.includes(s) ? 4 : 0;
     for (const s of ord) {
-        let bast = rensade.indexOf(s);
-        if (bast >= 0) return rubriker[bast];
-        rensade.forEach((r, i) => { if (r !== null && r.includes(s) && (bast < 0 || r.length < rensade[bast].length)) bast = i; });
+        let bast = -1, bastNiva = 0;
+        rensade.forEach((r, i) => {
+            const n = r === null ? 0 : niva(r, rubrikord[i], s);
+            if (n && (bast < 0 || n < bastNiva || n === bastNiva && r.length < rensade[bast].length)) { bast = i; bastNiva = n; }
+        });
         if (bast >= 0) return rubriker[bast];
     }
     return undefined;
 }
+
+/** Kolumnrubrik som anger AID:s ansvarskod (sökorden i TILLATNA_FALT.ansvar) — aldrig bara "Ansvar". */
+function _arAnsvarskodRubrik(rubrik) { return _hittaRubrik([rubrik], TILLATNA_FALT.ansvar) !== undefined; }
 
 /**
  * Rubriken som bär rollen bland `headers`: den manuella kolumnmappningen, därefter importprofilen som gäller för
@@ -385,7 +415,7 @@ export function _faltIRad(rad, rubriker, roll) {
 
 /**
  * Kolumnen med AID:s ansvarskod: manuell mappning först, annars första rubrik som
- * arAnsvarskodRubrik känner igen. Aldrig kolumnen "Ansvar".
+ * _arAnsvarskodRubrik känner igen. Aldrig kolumnen "Ansvar".
  * @param {string[]} rubriker
  * @param {{columnMap?: Object<string,string>|null, importprofil?: {mappning: Object<string,string>}|null}} [val]
  * @returns {string|null}
@@ -398,7 +428,7 @@ export function hittaAnsvarKolumn(rubriker, val = {}) {
     // En importprofil som pekar ut ansvarskoden (godkänns ändå bara med ≥ 95 % giltiga värden).
     const profil = val.importprofil && val.importprofil.mappning.ansvar;
     if (profil && (rubriker || []).includes(profil)) return profil;
-    return (rubriker || []).find(r => _anArRubrik(r)) ?? null;
+    return (rubriker || []).find(_arAnsvarskodRubrik) ?? null;
 }
 
 /**
@@ -408,6 +438,84 @@ export function hittaAnsvarKolumn(rubriker, val = {}) {
 export function _bedomAnsvarKolumn(namn, varden) {
     const giltiga = _anAndelGiltiga(varden);
     return { namn, godkand: giltiga != null && giltiga >= 0.95, giltiga };
+}
+
+// ---- Jämförelsestatistikens fil ----
+
+// Sökorden per kolumn i statistikfilen, med samma ordregel som lönefilen (_hittaRubrik). Könens antal och andel står
+// som hela rubriken utan mellanrum ("Kvinnor, antal" → kvinnorantal); "%" läses som ordet procent.
+const STATISTIK_SOKORD = {
+    aid: ['aid', 'aidkod', 'yrkesgrupp'],
+    bas: TILLATNA_FALT.bas,
+    median: ['median'],
+    p10: ['p10', '10e', '10'],
+    p90: ['p90', '90e', '90'],
+    nKv: ['kvinnorantal', 'antalkvinnor', 'kvantal'],
+    nMa: ['mnantal', 'manantal', 'antalmn', 'antalman', 'maantal'],
+    andelKv: ['andelkvinnor', 'kvinnoandel', 'kvinnorandel', 'procentkvinnor', 'kvinnorprocent']
+};
+// Medianen och percentilerna tas aldrig ur en kolumn för ett kön eller en skillnad ("Median kvinnor", "Diff LPS Median").
+const _KON_ELLER_SKILLNAD = /^(kvinn|kv$|mn$|man$|diff|skillnad)/;
+
+/** Antalet rader vars AID och BAS redan stått på en tidigare rad. */
+export function dubbletterAidBas(rader) {
+    const sett = new Set();
+    let n = 0;
+    for (const r of rader) {
+        const k = `${r.aid ?? ''}|${r.bas ?? ''}`;
+        if (sett.has(k)) n++; else sett.add(k);
+    }
+    return n;
+}
+
+/**
+ * Jämförelsestatistikens fil: kolumnerna och raderna. AID och median krävs; BAS, P10, P90 och könsfördelningen är
+ * valfria. En cell som inte är ett tal saknas (null; P10 och P90 0, som i organisationspaketet). Andelen kvinnor är en
+ * decimal när alla värden i kolumnen är högst 1, annars procent; saknas den räknas den ur antalen i raden. En rad
+ * utan AID eller med en median som inte är ett tal över noll läses inte (ogiltiga). P10, P90 och könsfördelningen
+ * finns när någon rad har dem.
+ * @param {string[]} rubriker - Filens rubriker.
+ * @param {Array<Object<string,*>>} rader - Raderna, nycklade på rubrikerna.
+ * @returns {{fel: string} | {fel?: undefined, rader: any[], harP10: boolean, harP90: boolean, harKon: boolean,
+ *   ogiltiga: number, dubbletter: number}}
+ */
+export function tolkaStatistikfil(rubriker, rader) {
+    const lasbara = rubriker.map(h => String(h ?? '').replace(/%/g, ' procent '));
+    const utanKonOchSkillnad = lasbara.filter(h => !h.split(/[^\p{L}\p{N}]+/u).map(_rensaRubrik).some(w => _KON_ELLER_SKILLNAD.test(w)));
+    const kolumn = (roll, bland = lasbara) => {
+        const h = _hittaRubrik(bland, STATISTIK_SOKORD[roll], roll === 'aid' ? 'yrke' : roll);
+        return h === undefined ? null : rubriker[lasbara.indexOf(h)];
+    };
+    const k = {
+        aid: kolumn('aid'), bas: kolumn('bas'), nKv: kolumn('nKv'), nMa: kolumn('nMa'), andelKv: kolumn('andelKv'),
+        median: kolumn('median', utanKonOchSkillnad), p10: kolumn('p10', utanKonOchSkillnad), p90: kolumn('p90', utanKonOchSkillnad)
+    };
+    const aidKol = k.aid;
+    if (aidKol == null || k.median == null) return { fel: 'Filen saknar kolumnen AID eller Median. Kontrollera rubrikraden och läs in filen igen.' };
+    const tal = (r, kol) => { if (kol == null) return null; const t = tolkaTalStrikt(r[kol]); return t.status === 'ok' ? t.value : null; };
+    const andelar = rader.map(r => tal(r, k.andelKv));
+    const decimal = andelar.some(a => a != null) && andelar.every(a => a == null || a <= 1);
+    const ut = [];
+    rader.forEach((r, i) => {
+        const aidFull = _utanHtmlTecken(r[aidKol] ?? '').trim();
+        const median = tal(r, k.median);
+        if (!aidFull || median == null || !(median > 0)) return;
+        const p10 = tal(r, k.p10), p90 = tal(r, k.p90);
+        const nKv = tal(r, k.nKv), nMa = tal(r, k.nMa);
+        let andelKv = andelar[i] != null && decimal ? andelar[i] * 100 : andelar[i];
+        if (andelKv == null && nKv != null && nMa != null && nKv + nMa > 0) andelKv = nKv / (nKv + nMa) * 100;
+        ut.push({
+            aid: _normaliseraPolicyAid(aidFull), aidFull, bas: k.bas == null ? '' : _normaliseraBas(r[k.bas]),
+            median, p10: p10 != null && p10 > 0 ? p10 : 0, p90: p90 != null && p90 > 0 ? p90 : 0,
+            nKv: nKv != null && nKv >= 0 ? nKv : null,
+            nMa: nMa != null && nMa >= 0 ? nMa : null,
+            andelKv: andelKv != null && andelKv >= 0 && andelKv <= 100 ? andelKv : null
+        });
+    });
+    return {
+        rader: ut, ogiltiga: rader.length - ut.length, dubbletter: dubbletterAidBas(ut),
+        harP10: ut.some(x => x.p10 > 0), harP90: ut.some(x => x.p90 > 0), harKon: ut.some(x => x.andelKv != null)
+    };
 }
 
 // ---- En lönerad ----
@@ -435,9 +543,8 @@ export function tolkaLonerad(falt, referensar, medAnsvar = false) {
     // AID och etikett hålls isär. `r.yrke` är "AID Etikett"-strängen (den som vyerna visar);
     // `r.aid` och `r.yrkeLabel` ger ren AID-kod respektive enbart etikett-delen
     // för analyser som behöver något entydigt nyckel (t.ex. paret i likvärdigt arbete).
-    const aidMatch = yrkeFull.match(/^(\d+)/);
-    const aid      = aidMatch ? aidMatch[1] : "";
-    const yrkeLabel = aid ? yrkeFull.replace(/^\d+\s*/, '').trim() : yrkeFull;
+    const aid      = sifferprefixAvYrke(yrkeFull) ?? "";
+    const yrkeLabel = aid ? yrkeFull.slice(aid.length).trim() : yrkeFull;
     // Ålderskolumnen innehåller ibland FÖDELSEÅR (1900–<referensår−15>) i stället för
     // ålder — ett värde ≥ 1900 är omöjligt som ålder, så omtolkningen är säker.
     // Statusen 'birthyear' räknas i inläsningsrapporten (transparens).
@@ -470,7 +577,7 @@ export function tolkaLonerad(falt, referensar, medAnsvar = false) {
 
 /**
  * Extraherar ENBART vitlistade fält ur en lönerad — GDPR Art. 5(1)(c) uppgiftsminimering. Säkerställer att verktyget
- * aldrig laddar identifierande fält (PNR, namn, e-post) även om användarens fil innehåller dem. Råvärdena slås upp i
+ * aldrig laddar identifierande fält (personnummer, namn, e-post) även om användarens fil innehåller dem. Råvärdena slås upp i
  * raden (rubrikerna ur lonefilensRubriker, och den godkända ansvarskolumnen) och tolkas av tolkaLonerad.
  * Appens minimeraLonerad (src/app/06-uppgiftsminimering.js) skickar tillståndets ansvarskolumn och innevarande år.
  * @param {Object<string,*>} rad - Rå rad (PapaParse-objekt).
@@ -492,7 +599,7 @@ export function minimeraRad(rad, rubriker, ansvarKolumn, referensar) {
 }
 
 /**
- * Steget mellan raderna som PII-kontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
+ * Steget mellan raderna som inläsningskontrollen samplar i en fil med n rader: ⌈n/50⌉ (minst 1), så att högst 50 rader
  * sprids jämnt över filen. Delas av hittaKansligaKolumner och den strömmande CSV-inläsningen.
  * @param {number} n
  */
@@ -501,84 +608,49 @@ export function _pnrSampelSteg(n) {
 }
 
 /**
- * PNR-detektor: identifierar kolumner som innehåller personnummer, e-post eller namn.
- * Kombinerar headerbaserad upptäckt (rubrikens namn) med värdebaserad upptäckt
- * (samplar 50 rader jämnt över filen, var ⌈n/50⌉:e rad, och matchar mot regex). Trösklar är konservativa för att
- * minimera falska positiv på godtyckliga sifferserier (t.ex. anställningsnummer). Den strömmande CSV-inläsningen
- * samlar själv var ⌈n/50⌉:e rad (_pnrSampelSteg) och lämnar högst 50 rader hit.
+ * Inläsningskontrollen: kolumnerna som stoppar lönefilen. Skyddet ligger i vad verktyget läser in (minimeraRad);
+ * stoppet är en signal om att uttaget inte är gallrat enligt instruktionen, så att användaren rättar uttaget. Två saker
+ * stoppar: personnummer (rubriken, eller minst tre av de samplade värdena i personnummerformat) och en namnkolumn
+ * (bara rubriken). Värdena samplas jämnt över filen, var ⌈n/50⌉:e rad (_pnrSampelSteg); den strömmande
+ * CSV-inläsningen samlar själv raderna och lämnar högst 50 hit.
  * @param {Array<Object>} rader - Råa CSV-rader.
+ * @param {string[]} [rubriker] - Filens rubriker. Utan dem prövas alla nycklar i raderna; en rad kan sakna en kolumn
+ *   (en kort rad i CSV), så kolumnerna tas aldrig ur en enda rad.
  * @returns {Array<{col:string, reason:string}>} Tom array om inga känsliga kolumner.
  */
-export function hittaKansligaKolumner(rader) {
-    if (!rader || !rader.length) return [];
-    // Jämnt över filen: personnummer eller namn som bara finns längre ned ska också hittas.
+export function hittaKansligaKolumner(rader, rubriker = [...new Set(rader.flatMap(r => Object.keys(r)))]) {
+    // Jämnt över filen: personnummer som bara finns längre ned ska också hittas.
     const steg = _pnrSampelSteg(rader.length);
     const sample = rader.filter((_, i) => i % steg === 0);
-    const cols = Object.keys(rader[0] || {});
     // Strikt PNR-mönster: kräver giltig månad (01-12) och dag (01-31) för att undvika
     // falska träffar på godtyckliga sifferserier som anställningsnummer.
-    const PNR  = /^(?:19|20)?\d{2}[-/]?[01]\d[-/]?[0-3]\d[-+]?\d{4}$/;
-    // Personnamn: två till fyra ord, med eller utan efternamnet först följt av komma — "Anna Andersson",
-    // "Anna-Lisa Berg", "ANDERSSON, ANNA", "anna andersson". Alla ord har samma form (Versal-gemener, VERSALER eller
-    // gemener), så att befattningar som "Lärare grundskola" (stor bokstav bara först) inte räknas som namn.
-    const ORD = /^\p{L}{2,}(?:-\p{L}{2,})?$/u;
-    /** @param {string} w */
-    const form = w => (/^\p{Lu}\p{Ll}+(?:-\p{Lu}\p{Ll}+)?$/u.test(w) ? 'T' : w === w.toUpperCase() ? 'U' : w === w.toLowerCase() ? 'L' : '');
-    /** @param {string} v */
-    const liknarNamn = v => {
-        const delar = v.split(',');
-        if (delar.length > 2 || delar.some(d => !d.trim())) return false;
-        const ord = delar.flatMap(d => d.trim().split(/[ ]+/));
-        if (ord.length < 2 || ord.length > 4 || !ord.every(w => ORD.test(w))) return false;
-        const f = form(ord[0]);
-        return f !== '' && ord.every(w => form(w) === f);
-    };
+    const PNR  = /^(?:19|20)?\d{2}[-/]?(?:0[1-9]|1[0-2])[-/]?(?:0[1-9]|[12]\d|3[01])[-+]?\d{4}$/;
 
     const issues = [];
-    cols.forEach(col => {
-        // Rubriken normaliseras: gemener, å/ä→a och ö→o, övriga tecken bort — så att
-        // "Förnamn", "Fornamn" och "FÖRNAMN" alla matchar mönstren nedan.
-        const lcCol = col.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]/g, '');
-        // Header-baserad upptäckt
-        if (/personnummer|personnr|^pnr$|socialsecurity|ssn/.test(lcCol)) {
+    rubriker.forEach(col => {
+        // Rubriken normaliseras: gemener, å/ä→a och ö→o, övriga tecken bort — så att "Förnamn", "Fornamn" och
+        // "FÖRNAMN" alla matchar mönstren nedan. Mönstren prövas på hela rubriken utan mellanrum (lcCol: "Social
+        // security") eller på vart och ett av dess ord: ^ och $ är då ordets början och slut.
+        const ord = String(col).split(/[^\p{L}\p{N}]+/u)
+            .map(w => w.toLowerCase().replace(/[åä]/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]/g, '')).filter(Boolean);
+        const lcCol = ord.join('');
+        // "pnr" och "ssn" bara som hela ord: som delsträng träffar de "Adressnr" och "Passnr".
+        if (/personnummer|personnr|socialsecurity/.test(lcCol) || ord.some(w => /^(pnr|ssn)$/.test(w))) {
             issues.push({ col, reason: 'Kolumnrubriken antyder personnummer' });
-            return;
-        }
-        if (/^epost$|^email$|^mail$|epostadress|emailaddress/.test(lcCol)) {
-            issues.push({ col, reason: 'Kolumnrubriken antyder e-postadress' });
             return;
         }
         if (/^namn$|fornamn|efternamn|fullname|^name$/.test(lcCol)) {
             issues.push({ col, reason: 'Kolumnrubriken antyder personnamn' });
             return;
         }
-        // Särskilda kategorier av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk
-        // åskådning, sexualliv, genetik, biometri): hör inte hemma i underlaget och ska inte ens passera
-        // minnet. Bara rubriken prövas; värdena saknar igenkännbart format. Mönstren är valda så att
-        // vanliga rubriker går fria: "sjuk" kräver frånvaro/skrivning/dom (inte Sjukhus), "politisk" inte
-        // Lönepolitik, "religion" som eget ord (inte Religionskunskap), "fack" följt av medlem/lig/forbund/foren
-        // (inte Fackområde).
-        if (/fack(medlem|lig|forbund|foren)|^medlemskap|halsa|halsotillstand|sjuk(franvaro|skriv|dom)|diagnos|etni(sk|citet)|^religion$|trosuppfattning|politisk|sexuel|funktionsned|genetisk|biometri/.test(lcCol)) {
-            issues.push({ col, reason: 'Kolumnrubriken antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet eller liknande)' });
-            return;
-        }
-        // Värdebaserad upptäckt (samplar 50 rader)
-        let pnrCount = 0, emailCount = 0, nameCount = 0;
-        sample.forEach(r => {
-            const v = (r[col] ?? '').toString().trim();
-            if (!v) return;
-            if (PNR.test(v)) pnrCount++;
-            else if (v.includes('@') && /\.[a-z]{2,}$/i.test(v)) emailCount++;
-            else if (liknarNamn(v)) nameCount++;
-        });
-        if (pnrCount >= 3)        issues.push({ col, reason: `Innehåller värden i personnummer-format (${pnrCount} av ${sample.length} sampelvärden matchar)` });
-        else if (emailCount >= 3) issues.push({ col, reason: `Innehåller e-postadresser (${emailCount} av ${sample.length} sampelvärden)` });
-        else if (nameCount >= 5)  issues.push({ col, reason: `Innehåller troligtvis personnamn (${nameCount} av ${sample.length} sampelvärden)` });
+        let pnrCount = 0;
+        sample.forEach(r => { if (PNR.test((r[col] ?? '').toString().trim())) pnrCount++; });
+        if (pnrCount >= 3) issues.push({ col, reason: `Innehåller värden i personnummer-format (${pnrCount} av ${sample.length} sampelvärden matchar)` });
     });
     return issues;
 }
 
-// ---- Filtexten: teckenkodning, avgränsare och rubrikrad (flyttade från src/app/32-filinlasning.js) ----
+// ---- Filtexten: teckenkodning, avgränsare och rubrikrad ----
 
 /**
  * Den sista raden och kolumnen (räknade från 0) som har en cell med värde i ett Excelblad, eller null för ett tomt blad.
@@ -605,7 +677,7 @@ export function bladetsSlut(blad) {
  * Identifierar filformat via magiska bytes (accept-attributet är bara rådgivande
  * — användare kan välja "Alla filer" och lägga en Excel-fil i en CSV-ruta).
  *   - "xlsx"       : ZIP-container (PK..) — .xlsx
- *   - "xls-legacy" : OLE2-container — gammalt .xls (stöds ej av mini-bygget)
+ *   - "xls-legacy" : OLE2-container — gammalt .xls (läses inte: SheetJS-bygget xlsx.mini läser inte .xls)
  *   - "text"       : allt annat — behandlas som CSV/text
  * @param {Uint8Array} byte
  * @returns {'xlsx'|'xls-legacy'|'text'}
@@ -640,11 +712,8 @@ export function _avkodaCsv(buffert) {
         // Strikt UTF-8: kastar om byten inte är giltig UTF-8 (typiskt Windows-1252-åäö).
         return { text: new TextDecoder('utf-8', { fatal: true }).decode(buffert), encoding: 'UTF-8' };
     } catch (_e) {
-        try {
-            return { text: new TextDecoder('windows-1252').decode(buffert), encoding: 'Windows-1252' };
-        } catch (_e2) {
-            return { text: new TextDecoder('utf-8').decode(buffert), encoding: 'UTF-8 (osäker)' };
-        }
+        // Windows-1252 avkodar varje byte och kastar inte.
+        return { text: new TextDecoder('windows-1252').decode(buffert), encoding: 'Windows-1252' };
     }
 }
 
@@ -663,40 +732,68 @@ export function _gissaAvgransare(text) {
     return bestN > 0 ? best : ';';
 }
 
+/** Så många rader från filens början som rubrikraden söks bland, i CSV och Excel. */
+export const RUBRIKRAD_SOKDJUP = 20;
+
 /**
- * Hittar rubrikraden i CSV-text och dess avgränsare. Exportverktyg lägger
- * ofta försättsrader före rubrikerna ("Rapport uttagen 2026-01-15;;;;"), och
- * de får inte tas för rubriker. Vi provar de
- * 15 första raderna × alla avgränsare och väljer den kombination som matchar
- * flest kända kolumnroller (synonymGroups = array av normaliserade substrängar
- * per roll, t.ex. rubrikgrupper()).
+ * Hur väl en rad ser ut som rubrikraden: antalet celler som är rubrik för en roll, med samma ordregel som kolumnvalet
+ * (_hittaRubrik). En cell räknas för högst en roll och en roll högst en gång, så att en titelcell som nämner
+ * kolumnerna ("Månadslön per kön, ålder och BAS") räknas en gång.
+ * @param {string[]} celler
+ * @param {Array<Array<string>>} sokordsgrupper - En grupp synonymer per roll.
+ */
+export function rubrikradTraffar(celler, sokordsgrupper) {
+    const tagna = new Set();
+    for (const c of celler) {
+        const roll = sokordsgrupper.findIndex((g, i) => !tagna.has(i) && _hittaRubrik([c], g) !== undefined);
+        if (roll >= 0) tagna.add(roll);
+    }
+    return tagna.size;
+}
+
+/**
+ * Rubrikraden bland de RUBRIKRAD_SOKDJUP första raderna: den första rad där en importprofils alla kännetecken finns,
+ * annars raden med flest rubrikceller (rubrikradTraffar), och vid lika den senare, eftersom försättsraderna står
+ * före rubrikerna. En rad kan delas i celler på flera sätt (CSV: en delning per avgränsare); vid lika gäller den
+ * första delningen.
+ * @param {Array<Array<string[]>>} rader - Per rad dess möjliga delningar i celler (Excel: en).
+ * @param {Array<Array<string>>} sokordsgrupper - En grupp synonymer per roll.
+ * @param {number} [minTraffar=2] - Så många roller som måste kännas igen; annars rad 0.
+ * @param {any[]} [profiler] - Importprofiler (lönefilen).
+ * @returns {{line: number, delning: number, hits: number}} hits 0 och line 0 när ingen rad räcker.
+ */
+export function hittaRubrikrad(rader, sokordsgrupper, minTraffar = 2, profiler = []) {
+    let bast = { line: 0, delning: 0, hits: -1 };
+    for (let i = 0; i < Math.min(RUBRIKRAD_SOKDJUP, rader.length); i++) {
+        for (let d = 0; d < rader[i].length; d++) {
+            const celler = rader[i][d].map(c => String(c ?? '').trim());
+            if (profiler.length && matchaImportprofil(celler, profiler)) return { line: i, delning: d, hits: sokordsgrupper.length };
+            const hits = rubrikradTraffar(celler, sokordsgrupper);
+            if (hits > bast.hits || (hits === bast.hits && i > bast.line)) bast = { line: i, delning: d, hits };
+        }
+    }
+    return bast.hits >= minTraffar ? bast : { line: 0, delning: 0, hits: 0 };
+}
+
+const _AVGRANSARE = [';', ',', '\t', '|'];
+
+/**
+ * Hittar rubrikraden i CSV-text och dess avgränsare. Exportverktyg lägger ofta försättsrader före rubrikerna
+ * ("Rapport uttagen 2026-01-15;;;;"), och de får inte tas för rubriker. Varje rad delas med varje avgränsare som
+ * förekommer i den, och raden väljs som i Excel (hittaRubrikrad).
  *
  * @param {string} text - Avkodad filtext.
- * @param {Array<Array<string>>} sokordsgrupper - En grupp synonymer per roll.
+ * @param {Array<Array<string>>} sokordsgrupper - En grupp synonymer per roll, t.ex. rubrikgrupper().
  * @param {number} [minTraffar=2] - Min antal roller som måste matcha.
- * @param {any[]} [profiler] - Importprofiler (lönefilen): den första raden där en profils alla kännetecken finns är
- *          rubrikraden, också när den har färre delsträngsträffar än en försättsrad.
+ * @param {any[]} [profiler] - Importprofiler (lönefilen), som i hittaRubrikrad.
  * @returns {{line:number, delim:string|null, hits:number}} line = 0-baserat radindex;
  *          vid ingen träff: line 0 + avgränsaren från _gissaAvgransare.
  */
 export function _hittaCsvRubrik(text, sokordsgrupper, minTraffar = 2, profiler = []) {
-    const lines = text.split(_RADSLUT).slice(0, 15);
-    /** @type {{line: number, delim: string|null, hits: number}} */
-    let best = { line: 0, delim: null, hits: -1 };
-    for (let i = 0; i < lines.length; i++) {
-        if (!lines[i] || !lines[i].trim()) continue;
-        for (const d of [';', ',', '\t', '|']) {
-            const raa = lines[i].split(d).map(c => c.replace(/^"+|"+$/g, ''));
-            if (raa.length < 2) continue;
-            if (profiler.length && matchaImportprofil(raa, profiler)) return { line: i, delim: d, hits: sokordsgrupper.length };
-            const cells = raa.map(c => c.toLowerCase().replace(/[^a-z0-9]/g, ''));
-            let hits = 0;
-            for (const group of sokordsgrupper) {
-                if (group.some(syn => cells.some(c => c.includes(syn)))) hits++;
-            }
-            if (hits > best.hits) best = { line: i, delim: d, hits };
-        }
-    }
-    if (best.hits >= minTraffar) return best;
-    return { line: 0, delim: _gissaAvgransare(text), hits: 0 };
+    const delningar = text.split(_RADSLUT).slice(0, RUBRIKRAD_SOKDJUP).map(rad => _AVGRANSARE
+        .map(d => ({ d, celler: rad.split(d).map(c => c.replace(/^"+|"+$/g, '')) }))
+        .filter(x => x.celler.length > 1));
+    const r = hittaRubrikrad(delningar.map(rad => rad.map(x => x.celler)), sokordsgrupper, minTraffar, profiler);
+    if (!r.hits) return { line: 0, delim: _gissaAvgransare(text), hits: 0 };
+    return { line: r.line, delim: delningar[r.line][r.delning].d, hits: r.hits };
 }

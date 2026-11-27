@@ -127,7 +127,7 @@ export async function beskedPdfZip() {
             const flikar = new Set(bilder.map(n => { const el = document.getElementById(n.slice(8, -4)); const p = el && el.closest('.view-panel'); return p ? p.id : '?'; }));
             return { word, excel, bilder: bilder.length, wordBilder: wz ? Object.keys(wz.files).filter(n => n.startsWith('word/media/')).length : 0, blad: wb ? wb.SheetNames : [], besked: excelAlltBlad(), flikar: [...flikar],
                 granska: bilder.some(n => /pag|granska/.test(n)), overlapp: document.getElementById('loading-overlay').style.display }; }, byte.toString('base64'));
-        ok(fil.suggestedFilename() === 'lonekartlaggning_export.zip' && !!z.word && z.wordBilder >= 4, `ZIP-filen bär Word-utkastet med sina bilder (${z.word}, ${z.wordBilder} bilder)`);
+        ok(fil.suggestedFilename() === 'DEMO_lonekartlaggning_export.zip' && !!z.word && z.wordBilder >= 4, `ZIP-filen bär Word-utkastet med sina bilder (${z.word}, ${z.wordBilder} bilder)`);
         ok(z.excel === 'lonekartlaggning_komplett.xlsx' && JSON.stringify(z.blad) === JSON.stringify(z.besked), `ZIP-filen bär Excel-filen med alla flikar (${z.blad.length} blad, samma som förhandsbeskedet: ${z.blad.join(",")} | ${z.besked.join(",")})`);
         ok(z.bilder >= 15 && z.flikar.length >= 5 && !z.granska, `ZIP-filen bär diagrammen i alla flikar, också de som inte öppnats (${z.bilder} bilder ur ${z.flikar.length} paneler), utom Personer att granska`);
         ok(z.overlapp === 'none', 'väntrutan är borta när filen är klar');

@@ -13,13 +13,18 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 import { JSDOM } from 'jsdom';
+import * as espree from 'espree';
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
+import { byggdText } from '../../tools/build-app.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..', '..');
 const html = readFileSync(join(root, 'src', 'index.html'), 'utf8');
 const d3Src = readFileSync(join(root, 'vendor', 'd3.min.js'), 'utf8');
 const appSrc = readFileSync(join(root, 'dist', 'app.js'), 'utf8').replace(/^\uFEFF/, '');
+// Sviten prövar dist/app.js: är bygget inte detsamma som källan ger, prövas en gammal app. Jämförelsen gör samma
+// esbuild-steg som bygget (tools/build-app.mjs), så den ser varje fil bygget läser, och den beror inte på filernas tider.
+if (byggdText() !== appSrc) throw new Error('dist/app.js är inte byggd ur källan som den ser ut nu: kör `npm run build:app` först.');
 
 // ---- Minne och kompilering ----
 // Sviterna skapar hundratals fönster per fil. Att tolka d3 och app.js (1,3 MB källkod) på nytt i varje fönster och
@@ -197,6 +202,53 @@ export function tillstandsavtryck(w) {
     return ut;
 }
 
+// Appens toppnivåminnen: dist/app.js är ett klassiskt skript, så det som deklareras med let, const eller var på
+// toppnivån är globalt i fönstret och nås med eval.
+let _toppnamn = null;
+const toppnivanamn = () => (_toppnamn ??= espree.parse(appSrc, { ecmaVersion: 'latest' }).body
+    .filter(s => s.type === 'VariableDeclaration').flatMap(s => s.declarations.map(d => d.id.name)));
+
+/** Ett värde som jämförbar text: Set och Map som listor, ett element som sin tagg och sitt id, en funktion som sin text. */
+function _somText(w, v) {
+    const sedda = new WeakSet();
+    return JSON.stringify(v, (_k, x) => {
+        if (typeof x === 'function') return `[funktion ${String(x).length}]`;
+        if (!x || typeof x !== 'object') return x;
+        if (x instanceof w.Node) return `[${x.nodeName}${x.id ? '#' + x.id : ''}${x.isConnected ? '' : ' utanför dokumentet'}]`;
+        if (sedda.has(x)) return '[sedd]';
+        sedda.add(x);
+        return x instanceof w.Set ? [...x] : x instanceof w.Map ? { Map: [...x] } : x;
+    }) ?? String(v);
+}
+
+/**
+ * Allt i ett fönster som en rensning ska återställa, nycklat så att två fönster kan jämföras post för post:
+ * (a) dokumentet: varje element med id (och body) med sina attribut och sitt innehåll, där ett inre element med id står
+ * som en hänvisning och jämförs för sig; (b) formulärfältens värden; (c) `state`, hela; (d) toppnivåminnena.
+ */
+export function fonsteravtryck(w) {
+    const d = w.document, ut = {};
+    const satt = (nyckel, varde) => { let k = nyckel, i = 1; while (k in ut) k = `${nyckel} (${++i})`; ut[k] = varde; };
+    const rita = (n, rot = false) => {
+        if (n.nodeType === 3) return n.data;
+        if (n.nodeType !== 1) return '';
+        const attr = [...n.attributes].map(a => `${a.name}="${a.value}"`).sort().join(' ');
+        const text = `<${n.nodeName} ${attr}>${[...n.childNodes].map(c => rita(c)).join('')}</${n.nodeName}>`;
+        if (rot || !n.id) return text;
+        satt(`dokument #${n.id}`, text);
+        return `[#${n.id}]`;
+    };
+    satt('dokument body', rita(d.body, true));
+    satt('dokument title', d.title);
+    for (const f of d.querySelectorAll('input, select, textarea')) {
+        const namn = f.id || (f.name ? `${f.name}${f.type === 'radio' ? '=' + f.value : ''}` : `i #${f.closest('[id]')?.id}`);
+        satt(`fält ${namn}`, f.type === 'checkbox' || f.type === 'radio' ? String(f.checked) : f.value);
+    }
+    for (const k of Object.keys(w.__state)) satt(`state ${k}`, _somText(w, w.__state[k]));
+    for (const n of toppnivanamn()) satt(`toppnivå ${n}`, _somText(w, w.eval(n)));
+    return ut;
+}
+
 /**
  * Ett fönster som testerna i gruppen delar (hela filen på toppnivå, annars en describe): skapas i beforeAll, stängs i
  * afterAll. Bara för tester som läser; afterEach fäller det test som lämnar tillståndet ändrat, så att nästa test
@@ -224,14 +276,17 @@ export const MENYFLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet'
  * Ett delat fönster med demodatan som klickar fram varje flik i MENYFLIKAR en gång och sparar en kopia av det som då
  * syns (flikens paneler och sidhuvudet), för tester som söker igenom flikarna: att rita dem är det dyra. Testerna läser
  * kopiorna. Anropas på filens toppnivå, som delatFonster.
+ * @param {(w: any) => any} [lasIn] - underlaget; standard är demodatan
+ * @param {string[]} [flikar]
  * @returns {{ flikfonster: () => any, ritade: Map<string, {paneler: any[], titel: string}> }}
  */
-export function delatFlikfonster() {
+export function delatFlikfonster(lasIn = w => w.__lasInDemodata(), flikar = MENYFLIKAR) {
     const ritade = new Map();
     const flikfonster = delatFonster(w => {
-        w.__lasInDemodata();
-        for (const flik of MENYFLIKAR) {
-            w.document.querySelector(`.nav-item[data-tab="${flik}"]`).click();
+        lasIn(w);
+        for (const flik of flikar) {
+            const knapp = w.document.querySelector(`.nav-item[data-tab="${flik}"]`);
+            knapp.disabled = false; knapp.click();
             ritade.set(flik, {
                 paneler: [...w.document.querySelectorAll('.view-panel')].filter(p => p.style.display === 'block' || p.classList.contains('active')).map(p => p.cloneNode(true)),
                 titel: w.document.getElementById('page-title').textContent,

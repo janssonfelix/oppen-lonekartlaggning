@@ -7,7 +7,7 @@
  * en känd avvikare och ett BAS-intervall under golvet, trattens underlag och kvantilregressionens intervall.
  * Att appens adaptrar ger samma tal som funktionerna här prövas i tests/osakerhet-adapter.test.js.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { percentilintervall, median } from '../src/lib/stat.js';
 import { mulberry32, slumpFor } from '../src/lib/rng.js';
 import { slumpensGranser } from '../src/lib/status.js';
@@ -15,8 +15,9 @@ import { kvantilregressionAllaTau, kvantilDesign, FORKLARINGSMODELL_STANDARD } f
 import {
     organisationensKvotKI, medianKvotKI, medianKvotKIGiltiga, konskvotPerGrupp, regressionslinjensBand, mdeProcent, styrkeanalys, sigmaInomGrupp,
     gruppMde, extremvarden, trattUnderlag, kvantilBootstrap, osakerhetKonstanter,
-    B_ORGANISATION, B_PER_GRUPP, B_DOSSIER, Z_95, Z_STYRKA, BALANSGRANS, MDE_SIGMA_MIN_RESIDUALER, EXTREMVARDE_Z, KVANTIL_KI_B
+    B_ORGANISATION, B_PER_GRUPP, B_DOSSIER, BALANSGRANS, MDE_SIGMA_MIN_RESIDUALER, EXTREMVARDE_Z, KVANTIL_KI_B
 } from '../src/lib/osakerhet.js';
+import { Z_95, Z_STYRKA } from '../src/lib/stat.js';
 
 // Påhittade löner: deterministiska, osorterade, med en del lika värden.
 const loner = (n, s, bas = 30000) => Array.from({ length: n }, (_, i) => bas + Math.round(((i * 7919 + s) % 1000) * 4 + (i % 7) * 3));
@@ -125,12 +126,26 @@ describe('[B4.4] regressionslinjensBand', () => {
         const [vid0, vid1, vid2] = band;
         expect(vid1.x).toBe(1);
         expect(vid1.y).toBeCloseTo(4 / 3, 12);
+        // Halva bredden är t(0,975; 1) · se, t = 12,706 (tabellvärde).
         // vid x = 1: se = √(1/6 · 1/3)
-        expect(vid1.lo).toBeCloseTo(4 / 3 - 1.96 * Math.sqrt(1 / 18), 12);
-        expect(vid1.hi).toBeCloseTo(4 / 3 + 1.96 * Math.sqrt(1 / 18), 12);
+        expect((vid1.hi - vid1.y) / Math.sqrt(1 / 18)).toBeCloseTo(12.706, 3);
+        expect(vid1.y - vid1.lo).toBeCloseTo(vid1.hi - vid1.y, 12);
         // vid x = 0: se = √(1/6 · (1/3 + 1/2)) = √5/6
-        expect(vid0.lo).toBeCloseTo(-1 / 6 - 1.96 * Math.sqrt(5) / 6, 12);
-        expect(vid2.hi - vid2.y).toBeCloseTo(1.96 * Math.sqrt(5) / 6, 12);
+        expect((vid0.y - vid0.lo) / (Math.sqrt(5) / 6)).toBeCloseTo(12.706, 3);
+        expect((vid2.hi - vid2.y) / (Math.sqrt(5) / 6)).toBeCloseTo(12.706, 3);
+    });
+    it('n = 10: halva bredden vid x̄ är t(0,975; 8) · s · √(1/n), t = 2,306', () => {
+        const fel = [0.4, -0.3, 0.1, -0.2, 0.5, -0.5, 0.2, -0.1, 0.3, -0.4];
+        const data = fel.map((e, x) => [x, 2 * x + 1 + e]);
+        // s med minsta kvadrat-formlerna, oberoende av koden: b = Σ(x − x̄)(y − ȳ)/Σ(x − x̄)², a = ȳ − b·x̄.
+        const n = 10, mx = 4.5, my = data.reduce((sum, p) => sum + p[1], 0) / n;
+        const b = data.reduce((sum, [x, y]) => sum + (x - mx) * (y - my), 0) / data.reduce((sum, [x]) => sum + (x - mx) ** 2, 0);
+        const a = my - b * mx;
+        const s = Math.sqrt(data.reduce((sum, [x, y]) => sum + (y - a - b * x) ** 2, 0) / (n - 2));
+        const [, mitt] = regressionslinjensBand(data, 0, 9, 3);
+        expect(mitt.x).toBe(4.5);
+        expect(mitt.hi - mitt.y).toBeCloseTo(2.306 * s * Math.sqrt(1 / n), 3);
+        expect(mitt.y - mitt.lo).toBeCloseTo(2.306 * s * Math.sqrt(1 / n), 3);
     });
     it('färre än tre punkter eller utan spridning i x ger inget band', () => {
         expect(regressionslinjensBand([[0, 0], [1, 1]], 0, 1)).toBeNull();
@@ -146,8 +161,9 @@ describe('[B4.4] regressionslinjensBand', () => {
         expect(bredd(mitt)).toBeLessThan(bredd(tio[0]));
         expect(bredd(mitt)).toBeLessThan(bredd(tio[29]));
         const fyrtio = regressionslinjensBand(serie(4), 0, 9);
-        // Samma residualmönster fyra gånger: σ är nästan densamma och bredden går ungefär som 1/√n.
-        const kvot = bredd(fyrtio[0]) / bredd(tio[0]);
+        // Samma residualmönster fyra gånger: σ är nästan densamma och bredden går ungefär som 1/√n, sedan
+        // kvantilernas kvot bortdragen: t(0,975; 38) = 2,024 och t(0,975; 8) = 2,306.
+        const kvot = (bredd(fyrtio[0]) / bredd(tio[0])) / (2.024 / 2.306);
         expect(kvot).toBeGreaterThan(0.45);
         expect(kvot).toBeLessThan(0.5);
     });
@@ -284,7 +300,6 @@ describe('[B4.8] kvantilBootstrap', () => {
         const a = kor({ B: 40, rng: mulberry32(11) });
         expect(a).toEqual(kor({ B: 40, rng: mulberry32(11) }));
         expect(a.kiB).toBe(40);
-        expect(a.kiUtelamnad).toBe('');
         for (const r of a.results) {
             expect(r.ki.lag).toBeLessThanOrEqual(r.ki.hog);
             expect(r.ki.lag).toBeLessThan(r.konPct + 2);
@@ -299,5 +314,19 @@ describe('[B4.8] kvantilBootstrap', () => {
         const c = kor({ B: 20, rng: slumpFor(raw.filter(arKv).map(d => d.lon), raw.filter(d => !arKv(d)).map(d => d.lon)) });
         expect(b).toEqual(c);
         expect(KVANTIL_KI_B).toBe(200);
+    });
+    it('dragningar som inte konvergerat räknas bort: konvergerar ingen ges inget intervall', async () => {
+        // Kvantilregressionen ersätts med en som ger samma skattning men aldrig säger att den konvergerat.
+        vi.resetModules();
+        vi.doMock('../src/lib/regression.js', async orig => {
+            const m = /** @type {any} */ (await orig());
+            return { ...m, kvantilregression: (...a) => { const f = m.kvantilregression(...a); return f && { ...f, konvergerat: false, andring: f.andring.map(() => 1) }; } };
+        });
+        try {
+            const { kvantilBootstrap: utanKonvergens } = await import('../src/lib/osakerhet.js');
+            const ut = utanKonvergens(raw, modell, qr.results.map(r => ({ ...r, ki: null })), arKv, { B: 20, rng: mulberry32(11) });
+            expect(ut.results.map(r => r.ki)).toEqual(qr.results.map(() => null));
+            expect(ut.diffKi).toBeNull();
+        } finally { vi.doUnmock('../src/lib/regression.js'); vi.resetModules(); }
     });
 });

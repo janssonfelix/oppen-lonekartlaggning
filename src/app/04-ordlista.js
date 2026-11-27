@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
+import { esc, fangaFokus, stangDialog } from './01-html-och-tillganglighet.js';
 import { _kText } from './06-k-troskel.js';
 import { termText } from './09-termer.js';
 
@@ -62,7 +62,7 @@ const ORDLISTA = [
     { cat:'Struktur', term:'Heltidsekvivalent (FTE) lön', short:'Lön omräknad till 100% tjänstgöring', long:'Den lön personen skulle ha haft vid heltidstjänst. Används för att rättvist jämföra deltids- och heltidsanställda. Verktyget förutsätter att månadslönerna i lönefilen redan är omräknade till heltid.' },
 
     // Verktyget
-    { cat:'Verktyget', term:'Underlagets kvalitet', short:'Hur väl underlaget räcker för analysen — svagaste kriteriet avgör', long:'Fem kriterier: jämförbarhet (andel av personalen i {niva.fl} där båda könen har minst {k} personer), statistisk styrka (minsta könsskillnad analysen kan upptäcka), fullständighet (rader som föll bort vid inläsningen), rimlighet (orimliga löner, åldrar eller BAS) och modell (om regressionen kunde ta hänsyn till både ålder och BAS). Varje kriterium får OK, Varning eller Kritisk, och underlaget får samma status som det svagaste. Könsfördelningen i organisationen är ett fynd, inte ett kvalitetsmått.' },
+    { cat:'Verktyget', term:'Underlagets kvalitet', short:'Hur väl underlaget räcker för analysen — svagaste kriteriet avgör', long:'Kriterierna är jämförbarhet (andel av personalen i {niva.fl} där båda könen har minst {k} personer), statistisk styrka (minsta könsskillnad analysen kan upptäcka), fullständighet (rader som föll bort vid inläsningen), rimlighet (orimliga löner, åldrar eller BAS) och modell (om regressionen kunde ta hänsyn till både ålder och BAS), och när lönefilen har {kod.fl} också AID-kodningens kriterier. Varje kriterium får OK, Varning eller Kritisk, och underlaget får samma status som det svagaste. Könsfördelningen i organisationen är ett fynd, inte ett kvalitetsmått.' },
     { cat:'Verktyget', term:'Prioriteringsindex', short:'Rangordningsmått 0-100 i Prioriteringen', long:'Kombinerar avvikelsens storlek (50%), gruppens volym (30%) och jämställdhetsläget (20%). Negativ avvikelse väger 2× tyngre än positiv, och bristyrken får en bonus på 1,2×. Används för att rangordna åtgärder i Prioriteringen.' },
     { cat:'Verktyget', term:'Nära pension', short:'Anställda som är 60 år eller äldre', long:'Personer i den här åldern kan gå i pension inom 0–7 år (riktåldersintervallet 60–67). Planera för att deras kunskap förs vidare. Verktyget markerar {niva.fl} där mer än 25 procent är 60 år eller äldre; över 15 procent: håll uppsikt.' },
     { cat:'Verktyget', term:'Brist på återväxt', short:'Låg andel anställda under 40 år', long:'När mindre än 15 % av gruppen är under 40 år. Det tyder på att få yngre anställs, alltså ett strukturellt problem i rekryteringen.' },
@@ -95,7 +95,7 @@ const STATISTIK_101 = `
 <details class="bak-accent-yta ram-1-accent-kant rund-8 marg-0-0-14 pad-14-16" open>
     <summary class="farg-accent-mork pekare fs-md fw-700 pad-4-0 ej-markerbar">Statistik 101 — kort introduktion för icke-statistiker</summary>
     <div class="fs-md lh-1_7 marg-t-10">
-        <h4 class="farg-accent-mork marg-10-0-4">Vad är medianvärde?</h4>
+        <h3 class="farg-accent-mork marg-10-0-4 fs-md">Vad är medianvärde?</h3>
         <p>Sortera alla löner från lägst till högst. Mittersta värdet är medianen. Hälften tjänar mer, hälften mindre. Den påverkas mindre än medelvärdet av enstaka mycket höga löner.</p>
 
         <h4 class="farg-accent-mork marg-14-0-4">Vad är en löneskillnad?</h4>
@@ -128,7 +128,7 @@ const STATISTIK_101 = `
             <li><strong>R² i lönemodeller:</strong> 50–70 % är vanligt</li>
             <li><strong>Ålderseffekt:</strong> 0,5–1,5 % löneökning per år är typiskt</li>
             <li><strong>BAS-effekt per steg:</strong> 8–15 % per BAS-steg är vanligt</li>
-            <li><strong>Lönespridning (P90/P10):</strong> 1,3–1,5 är normalt; över 1,7 = bred</li>
+            <li><strong>Lönespridning (P90/P10):</strong> 1,3–1,5 är normalt; över 1,5 = bred</li>
         </ul>
     </div>
 </details>
@@ -172,13 +172,7 @@ export function oppnaOrdlista() {
     ritaOrdlista('');
     fangaFokus(m);
 }
-function stangOrdlista() {
-    const m = document.getElementById('glossary-modal');
-    if (m) {
-        slappFokus(m);
-        m.style.display = 'none';
-    }
-}
+function stangOrdlista() { stangDialog(document.getElementById('glossary-modal')); }
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartOrdlista() {
@@ -194,17 +188,10 @@ export function uppstartOrdlista() {
         const m = document.getElementById('symbols-modal');
         if (m) { m.style.display = 'flex'; fangaFokus(m); }
     });
-    document.getElementById('symbols-close')?.addEventListener('click', () => {
-        const m = document.getElementById('symbols-modal');
-        if (m) { slappFokus(m); m.style.display = 'none'; }
-    });
-    document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', () => {
-        const m = document.getElementById('symbols-modal');
-        if (m) { slappFokus(m); m.style.display = 'none'; }
-    });
+    const stangSymboler = () => stangDialog(document.getElementById('symbols-modal'));
+    document.getElementById('symbols-close')?.addEventListener('click', stangSymboler);
+    document.querySelector('#symbols-modal .glossary-backdrop')?.addEventListener('click', stangSymboler);
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') {
-            /** @type {HTMLElement} */ (document.getElementById('symbols-modal')).style.display = 'none';
-        }
+        if (e.key === 'Escape' && document.getElementById('symbols-modal')?.style.display === 'flex') stangSymboler();
     });
 }

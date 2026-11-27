@@ -5,6 +5,7 @@ import { gapAllaVariabler, gapDelar, gapDelarIText, gapOvrigaText, gapStandardVa
 import { personOrd } from '../lib/namn.js';
 import { andelAvSkillnaden, gapTrappa, vymodellVarUppstarGapet } from '../lib/vymodell-var-uppstar-gapet.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
+import { DEMO_MARKE } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -12,11 +13,6 @@ import { ritaFigur } from './10-diagramritare.js';
 import { PALETT } from './10-diagramtema.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { harAlder } from './50-regressionsmodeller.js';
-/**
- * Kort i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (ADR-65; standard BAS och AID ger
- * BAS-fördelning (A), AID inom BAS (B) och lön inom samma AID och BAS (C)), med de grupper som bidrar mest.
- * Beräkningen bor i src/lib/gapuppdelning.js och vymodellen i src/lib/vymodell-var-uppstar-gapet.js. Anropas av Lönestruktur.
- */
 // Åtgärd och länk per variabel som delen förklarar; den sista delen ("inom") har nyckeln null.
 const _GU_ATGARD = {
     bas: { atgard: 'Hör till karriärvägar och rekrytering — inte till lönesättningen.', flik: 'struktur', flikNamn: 'Lönestruktur' },
@@ -93,7 +89,12 @@ function _guPct(v, dec = 1) {
     return `${new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)}\u00a0%`;
 }
 
-/** Kortet (ADR-99): vymodellVarUppstarGapet i src/lib/vymodell-var-uppstar-gapet.js räknar; här ritas texten och trappan. */
+/**
+ * Kort i Lönestruktur: gapet i medellön delat efter de valda förklaringsvariablerna (ADR-65; standard BAS och AID ger
+ * BAS-fördelning (A), AID inom BAS (B) och lön inom samma AID och BAS (C)), med de grupper som bidrar mest.
+ * Beräkningen bor i src/lib/gapuppdelning.js och vymodellen (vymodellVarUppstarGapet, ADR-99) i
+ * src/lib/vymodell-var-uppstar-gapet.js; här ritas texten och trappan. Anropas av Lönestruktur.
+ */
 export function ritaGapUppdelning() {
     const host = document.getElementById('gap-uppdelning');
     const body = document.getElementById('gap-uppdelning-innehall');
@@ -102,7 +103,7 @@ export function ritaGapUppdelning() {
     const vm = vymodellVarUppstarGapet(hamtaData(), { k: kTroskel(), variabler: gapVariabler() });
     if (!vm) { host.hidden = true; body.innerHTML = ''; return; }
     host.hidden = false;
-    const demo = state.isDemo ? '<p class="gu-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
+    const demo = state.isDemo ? `<p class="gu-demo"><strong>${DEMO_MARKE}</strong></p>` : '';
     if (vm.forFa) {
         body.innerHTML = demo + `<p>För få personer för att dela upp skillnaden: ett kön har färre än ${kTroskel()} ${personOrd(kTroskel())} i urvalet.</p>`;
         return;

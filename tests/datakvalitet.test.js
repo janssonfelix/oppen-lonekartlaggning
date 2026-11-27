@@ -37,7 +37,7 @@ describe('bedomUnderlag', () => {
     const ok = { k: 10, audit: audit(40), mde: 1.5, modell: 'full' };
     const status = (res, id) => res.kriterier.find(c => c.id === id).status;
 
-    it('allt bra ger OK och fem kriterier i fast ordning', () => {
+    it('allt bra ger OK och datakvalitetens kriterier i fast ordning', () => {
         const res = bedomUnderlag(bra, ok);
         expect(res.status).toBe('ok');
         expect(res.kriterier.map(c => c.id)).toEqual(['jamforbarhet', 'styrka', 'fullstandighet', 'rimlighet', 'modell']);
@@ -69,17 +69,17 @@ describe('bedomUnderlag', () => {
         expect(c.varde).toBeCloseTo(4, 10);
         expect(c.status).toBe('varning');
     });
-    it('rimlighet: lön under 15 000 eller över 250 000, ålder utanför 16–75, BAS som inte är en bokstav', () => {
+    it('rimlighet: lön under 15 000 eller över 250 000, ålder som saknas eller ligger utanför 16–75, BAS som inte är en bokstav', () => {
         const r = [...grupp('A', 50, 49), rad('A', 'man', 14999)];         // 1/100 = 1 %
         expect(status(bedomUnderlag(r, ok), 'rimlighet')).toBe('ok');
+        expect(bedomUnderlag(r, ok).kriterier.find(c => c.id === 'rimlighet').text).toMatch(/^1 rad \(/);
         // 15 och 76 ligger precis utanför förhandskontrollens åldersgräns, 16 och 75 precis innanför.
         const r2 = [...grupp('A', 48, 46), rad('A', 'man', 250001), rad('A', 'man', 30000, 15),
             rad('A', 'man', 30000, 76), rad('7', 'man'), rad('A', 'kvinna', 30000, 16), rad('A', 'kvinna', 30000, 75)];  // 4/100
         const rim = bedomUnderlag(r2, ok).kriterier.find(c => c.id === 'rimlighet');
         expect(rim.status).toBe('varning');
         expect(rim.varde).toBeCloseTo(4, 10);
-        expect(rim.text).toContain('ålder utanför 16–75');
-        expect(rim.text).toBe('4 rader (4 %) har lön under 15\u00a0000 eller över 250\u00a0000 kr, ålder utanför 16–75 eller BAS som inte är en bokstav.');
+        expect(rim.text).toBe('4 rader (4 %) har lön under 15\u00a0000 eller över 250\u00a0000 kr, ålder som saknas eller ligger utanför 16–75 eller BAS som inte är en bokstav.');
         const r3 = [...grupp('A', 47, 47), ...Array.from({ length: 6 }, () => rad('A', 'man', 12000))];
         expect(status(bedomUnderlag(r3, ok), 'rimlighet')).toBe('kritisk');
     });

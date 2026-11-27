@@ -167,10 +167,10 @@ describe('vakt: avförda ord och lagrum i användartexten (språkgenomgången 20
         for (const t of ['§ 8-bedömningarna', '9 §', '§§ 1–11']) expect(traffar(t, LAGRUM_DOK), t).not.toEqual([]);
         for (const t of ['(§6.4)', 'riskanalysen §8 punkt 1', '`organisationspaket.md` §5']) expect(traffar(t, LAGRUM_DOK), t).toEqual([]);
     });
-    it('strängfiltret prövar text men inte identifierare, kommentarer, synonymer eller ordlistans sok-fält', () => {
+    it('strängfiltret prövar text, också strängarna i en mallsträngs uttryck, men inte identifierare, kommentarer, synonymer eller ordlistans sok-fält', () => {
         const src = "const lonegapPct = 1; // Lönegapets form\n/* Gapet */ x('gap-uppdelning', 'Gapet visar');\n"
             + "{ synonymer: ['lönegap'] } { sok:'lönegap gap k-anonymitet' } y(`Läs in ${'Strukturdata'} först`);";
-        expect(textLiteraler(appKalla('x.js', src))).toEqual(['Gapet visar', 'Läs in   först']);
+        expect(textLiteraler(appKalla('x.js', src))).toEqual(['Gapet visar', 'Läs in   först', 'Strukturdata']);
         expect(etikettVarden("gap: { etikett: 'gap', enhet: '%' }, x: { label: 'medellön' }, y: { rubrik: \"Lönegap\" }"))
             .toEqual(['gap', 'medellön', 'Lönegap']);
         expect(htmlText('<th id="lonegap" class="gap" title="Lönegap">Kvinnor</th>')).toBe('<th [Lönegap] >Kvinnor</th>');

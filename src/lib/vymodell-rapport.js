@@ -11,11 +11,12 @@
 import { basEffekterForRedovisning, parForRedovisning, regStegForRedovisning } from './ktroskel.js';
 import { arKvinna, arMan } from './kon.js';
 import { likaArbeteGrupper } from './rapportunderlag.js';
-import { direktivMarkering, perBasSignal, statusNiva } from './status.js';
+import { direktivMarkering, statusNiva } from './status.js';
 import { konsMedianer, representationPerBas } from './struktur.js';
-import { receptTillTabeller } from './tabellrecept.js';
+import { receptTillTabeller, receptUtanTabellSkal } from './tabellrecept.js';
 import { basdossierIntervall } from './vymodell-basdossier.js';
 import { oversiktNiva, oversiktPerBas } from './vymodell-lonestruktur.js';
+import { perBasRegression } from './vymodell-regressionskort.js';
 
 // ---- Urvalet: vilka avsnitt som följer med, och i vilken ordning ----
 
@@ -160,9 +161,10 @@ export const RM_IAKTTAGELSE_PE = 15;
  *   och direktivmarkeringen.
  * - `regression`: säkerställd och minst 3 % (`kritisk`), stegen och BAS-effekterna så som de får redovisas
  *   (regStegForRedovisning, basEffekterForRedovisning) och regressionerna per BAS-intervall som skattats, med
- *   `sakerstalld` (perBasSignal 'titta'); null utan modell.
+ *   `sakerstalld` (nivån 'titta' i perBasRegression, efter korrigeringen för många tester); null utan modell.
  * - `basintervall`: intervallen som når k (`kandidater`, basdossierIntervall) och de med lönerader som inte gör det.
- * - `egna`: varje recept med tabellerna ur receptTillTabeller (bara grupper som når k).
+ * - `egna`: varje recept med tabellerna ur receptTillTabeller (bara grupper som når k), och `skal` (receptUtanTabellSkal)
+ *   när receptet inte gav någon tabell.
  * @param {any[]} rader
  * @param {{k:number, golv:number, bas:string[], reg?:any, lika?:any, lvPar?:any[]|null, oversikt?:any[], recept?:any[],
  *   basEffektNot?:(utelamnade:string[]) => string}} val
@@ -198,10 +200,14 @@ export function vymodellRapport(rader, { k, golv, bas, reg = null, lika, lvPar =
             kritisk: statusNiva(Math.abs(reg.konPct), isFinite(reg.konPctLow) && isFinite(reg.konPctHigh) ? (reg.konPctLow > 0 || reg.konPctHigh < 0) : null) === 'granska',
             steg: regStegForRedovisning(reg, k),
             basEffekter: basEffekterForRedovisning(reg, k, basEffektNot),
-            perBas: (reg.perBas || []).filter(pb => pb.status === 'ok').map(pb => ({ ...pb, sakerstalld: perBasSignal(pb.gapPct, pb.pValue < 0.05, pb.pValue < 0.05).niva === 'titta' })),
+            // Samma signal som fliken, Excel och protokollet: q-värdet efter korrigeringen för många tester (perBasRegression).
+            perBas: perBasRegression(reg.perBas).rader.filter(pb => pb.status === 'ok').map(pb => ({ ...pb, sakerstalld: pb.niva === 'titta' })),
         } : null,
         basintervall: { kandidater, utelamnade: bas.filter(b => !kand.has(b) && rader.some(r => r.bas === b && r.lon > 0)) },
-        egna: rader.length ? recept.map(r => ({ recept: r, tabeller: receptTillTabeller(rader, r, { k }) })) : [],
+        egna: rader.length ? recept.map(r => {
+            const tabeller = receptTillTabeller(rader, r, { k });
+            return { recept: r, tabeller, skal: tabeller.length ? null : receptUtanTabellSkal(rader, r, { k }) };
+        }) : [],
     };
 }
 

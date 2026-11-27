@@ -60,7 +60,6 @@ Läge anges alltid i skärmens axlar: x är vågrät, y lodrät. En liggande sta
 |---|---|
 | `beskrivning` | Obligatorisk, icke-tom sträng. Blir bildens `aria-label` — också i exporten. |
 | `x`, `y` | Axlar (nedan). Obligatoriska. |
-| `y2` | Höger axel, bara `skala: 'linjar'`. Ett lager väljer den med `axel: 'y2'`. Ritas aldrig omvänd och har ingen nollinje. |
 | `lager` | Minst ett lager (nedan). |
 | `referens` | Lista med zoner och linjer (nedan). Prövas inte av `valideraFigur`. |
 | `fargskala` | Krävs för `ruta` och för `punkt` med `fargvarde` (nedan). |
@@ -72,7 +71,7 @@ Läge anges alltid i skärmens axlar: x är vågrät, y lodrät. En liggande sta
 | `underlag` | `{ dimensioner, rader, k, rita, kon? }`: vad ett sammanfattande diagram kan **räknas om** för (avsnitt 3, *Underlaget*). `dimensioner` är kategorier `{ typ: 'kategori', falt, namn, varde?, ordning?, etikett?, visning? }`; `varde(rad)` läser värdet ur personraden (annars `rad[falt]`), `ordning(a, b)` sorterar värdena. `rader` är personerna i hela det underlag vyn ritar, `k` tröskeln, `rita(valdaRader, { beskrivning })` ger figuren för urvalet (utan `underlag`) eller en text som visas som tomt läge. `kon(rad)` ger `'kv'`, `'ma'` eller `null` (annars avgörs könet med `arKvinna` och `arMan`); ett annat värde räknas som okänt kön, och personen räknas då inte i skyddsregeln. `valideraFigur` kräver en icke-tom lista med kategorier med `falt` och `namn`, inga dubbletter, `varde` och `ordning` som funktioner, `rader` som lista, `rita` som funktion och `k` som heltal ≥ 1. Vyerna tar dimensionerna ur `UNDERLAG` (`10-diagramtema.js`). |
 
 **Axel:** `{ skala: 'band' | 'linjar' | 'log', titel?, format?, doman?: [a, b], ordning?: string[],
-omvand?: boolean, nollinje?: boolean, etikettMax?: number, dold?: boolean }`.
+nollinje?: boolean, etikettMax?: number, dold?: boolean }`.
 - `dold` tar bort axelns markeringar, stödlinjer och (för `x`) axellinjen. För figurer där lägena inte är värden (trädkarta).
 - `doman` gäller talaxlar: två olika ändliga tal (större än noll på en log-axel). Med `doman` rundas axeln
   inte av till jämna tal. Utan `doman` räknas domänen ur de punkter som ritas; staplar tar med noll.
@@ -90,7 +89,7 @@ omvand?: boolean, nollinje?: boolean, etikettMax?: number, dold?: boolean }`.
 ### Lager
 
 Gemensamt för alla lager: `marke`, `data`, `serie?` (namnet i förklaringen och i diagramdatan), `farg?`
-(annars paletten efter lagrets index i figuren), `panel?`, `axel?: 'y2'`, `legend?: false` (ingen egen post i
+(annars paletten efter lagrets index i figuren), `panel?`, `legend?: false` (ingen egen post i
 förklaringen), `tips?` (funktion, avsnitt 3), `harleddAv?` (nedan).
 
 **Härlett lager.** `harleddAv: { lager: ['Kvinna'], berakna: punkter => data, minN?, namn?, villkor? }` gör lagret
@@ -112,12 +111,12 @@ och finns till för `tips`.
 
 | Märke | Datapunkt | Lagrets val |
 |---|---|---|
-| `stapel` | `{ x, y, etikett?, fel?: { lag, hog }, farg?, monster? }` (`monster` på en datapunkt ger just den stapeln mönstret, t.ex. en stapel med en annan status; vågräta linjer eller prickar, aldrig de sneda ränderna som markerar en liten grupp) | `riktning?: 'liggande'`; `lage?: 'bredvid'` (standard) \| `'staplad'` \| `'overlagrad'`; `bredd?` (andel av bandet, bara `overlagrad`); `opacitet?`; `absolut?: true` (lagret ritas åt det negativa hållet i en divergerande stapel men bär en storlek: diagramdatan skriver värdet utan tecken); `etikettKant?: true` (vit kant kring stapeletiketterna, när andra märken kan ligga på dem); `monster?: 'linjer'` \| `'prickar'` (vitt mönster över fyllningen, också i förklaringens ruta — för status som inte får bäras av färgen ensam) |
-| `punkt` | `{ x, y, storlek?, fargvarde?, farg?, forskjutning?, etikett?, fel?: { lag, hog } }` (`fel`: punktens osäkerhet, ritad som ett streck genom punkten längs värdeaxeln — y, eller x när lagret har `riktning: 'liggande'`; intervallets ändar räknas in i axelns omfång. `etikett`: text över punkten, högst 28 tecken, hela texten i `<title>`; etiketter som skulle skriva över varandra flyttas isär i höjdled. `etikettLage: 'under'` \| `'over'` på datapunkten ställer etiketten på den sidan av punkten, och bredvid märket, förbi den bredaste stapel bandet rymmer, när den inte ryms där: värdet vid änden av en stapel i en trappa, utanför stapeln. Gäller när lagret saknar `etikettLage`) | `symbol?: 'cirkel'` (standard) \| `'romb'` \| `'kvadrat'` \| `'streck'` \| `'triangelVanster'` \| `'triangelHoger'` (cirkel, romb, kvadrat och streck ritas också som prov i förklaringen, så att formen och inte bara färgen skiljer serierna); `riktning?: 'liggande'` (bara för `fel`); `storlek?` (radie, standard 4); `opacitet?`; `kant?` (färg på en 1 px kant); `ofylld?: boolean` (bara cirkel, romb och kvadrat: punkten ritas som en ring i lagrets färg utan fyllning, `fill="none"`, och lagrets `kant` gäller inte; provet i förklaringen är också en ring. Ringens inre tar emot pekaren som en fylld punkt. För en andra status i samma färg — i Löneläget statistikens matchning: fylld = AID + BAS, ofylld = Endast AID. `valideraFigur` avvisar `ofylld` på andra märken och symboler); `etikettLage?: 'vanster'` \| `'hoger'` (etiketten bredvid punkten i stället för över den; på en värdeaxel får x rum vid kanten så att etiketten ryms, högst samma tak som stapeletiketterna, och på en kategoriaxel klipps den, så där används `'undvik'`) \| `'auto'` (till höger, till vänster vid panelens högerkant) \| `'undvik'` (etiketten ställs där den varken täcker en ritad punkt, en referenslinje eller en annan etikett, och får en hänvisningslinje när den står en bit från punkten; nedan); `utanData?: true` (lagret bär bara etiketter till värden som står i ett annat lager, och får inga rader i diagramdatan — gäller alla märken utom `ruta`) |
+| `stapel` | `{ x, y, etikett?, fel?: { lag, hog }, farg? }` | `riktning?: 'liggande'`; `lage?: 'bredvid'` (standard) \| `'staplad'` \| `'overlagrad'`; `bredd?` (andel av bandet, bara `overlagrad`); `opacitet?`; `absolut?: true` (lagret ritas åt det negativa hållet i en divergerande stapel men bär en storlek: diagramdatan skriver värdet utan tecken) |
+| `punkt` | `{ x, y, storlek?, fargvarde?, farg?, forskjutning?, etikett?, fel?: { lag, hog } }` (`fel`: punktens osäkerhet, ritad som ett streck genom punkten längs värdeaxeln — y, eller x när lagret har `riktning: 'liggande'`; intervallets ändar räknas in i axelns omfång. `etikett`: text över punkten, högst 28 tecken, hela texten i `<title>`; etiketter som skulle skriva över varandra flyttas isär i höjdled. `etikettLage: 'under'` \| `'over'` på datapunkten ställer etiketten på den sidan av punkten, och bredvid märket, förbi den bredaste stapel bandet rymmer, när den inte ryms där: värdet vid änden av en stapel i en trappa, utanför stapeln. Gäller när lagret saknar `etikettLage`) | `symbol?: 'cirkel'` (standard) \| `'romb'` \| `'kvadrat'` \| `'streck'` \| `'triangelHoger'` (cirkel, romb, kvadrat och streck ritas också som prov i förklaringen, så att formen och inte bara färgen skiljer serierna); `riktning?: 'liggande'` (bara för `fel`); `storlek?` (radie, standard 4); `opacitet?`; `kant?` (färg på en 1 px kant); `ofylld?: boolean` (bara cirkel, romb och kvadrat: punkten ritas som en ring i lagrets färg utan fyllning, `fill="none"`, och lagrets `kant` gäller inte; provet i förklaringen är också en ring. Ringens inre tar emot pekaren som en fylld punkt. För en andra status i samma färg — i Löneläget statistikens matchning: fylld = AID + BAS, ofylld = Endast AID. `valideraFigur` avvisar `ofylld` på andra märken och symboler); `etikettLage?: 'vanster'` \| `'hoger'` (etiketten bredvid punkten i stället för över den; på en värdeaxel får x rum vid kanten så att etiketten ryms, högst samma tak som stapeletiketterna, och på en kategoriaxel klipps den, så där används `'undvik'`) \| `'undvik'` (etiketten ställs där den varken täcker en ritad punkt, en referenslinje eller en annan etikett, och får en hänvisningslinje när den står en bit från punkten; nedan); `utanData?: true` (lagret bär bara etiketter till värden som står i ett annat lager, och får inga rader i diagramdatan — gäller alla märken utom `ruta`) |
 | `linje` | `{ x, y }`; `y: null` bryter linjen | `streck?: 'hel'` \| `'streckad'` \| `'prickad'`; `kurva?: 'monoton'`; `punkter?: boolean`; `tjocklek?` (standard 2) |
 | `band` | `{ x, lag, hog }` | `kurva?: 'monoton'`; `opacitet?` (standard 0,18) |
 | `intervall` | `{ x \| y, lag, hog, farg?, forskjutning? }` | `riktning?: 'liggande'`; `tjocklek?` (standard 6); `opacitet?` |
-| `lada` | en per individ: `{ x, y, farg? }` | `avvikare?: false` (lådan ritas utan de enskilda lönerna utanför morrhåren — en avvikare är en person); `punkter?: 'avvikare'` (standard: låda med morrhår och avvikare) \| `'alla'` (varje individ som punkt, utspridda i sidled, ingen låda) \| `'svarm'` (varje individ som punkt, packade intill varandra utan att täcka varandra, så att fördelningens form syns); `form?: 'fiol'` (en täthetskurva speglad kring kategorins mitt i stället för lådan, med median och kvartiler som streck; kurvan skattas med normalkärna och Silvermans bandbredd ur värdena mellan morrhårens ändar, går mellan dem och ritar varken morrhår eller avvikarpunkter. Den är lådan i allt annat: tips, klick, tangentbord, små individer och diagramdata) \| `form?: 'regnmoln'` (en halv täthetskurva till höger om kategorins mitt, median och kvartiler som streck, och varje individ som en punkt till vänster; kurvan är ett aggregat som lådan, punkterna är individer som i `punkter: 'alla'`) \| `form?: 'kvantiler'` med `antal?: 20 \| 50` (standard 20; kvantilpunktdiagram: gruppen som `antal` lika stora andelar, varje andel en prick vid sin kvantil, staplade i sidled där de annars skulle täcka varandra, med samma prickstorlek i hela lagret; antalet är högst halva gruppen, så att en prick aldrig står för färre än två personer — `kvantilpunkter` i `src/lib/figur.js`. Prickarna är ett aggregat: träffen ger lådans sammanfattning med `kvantil: { nr, antal, varde }`, och diagramdatan är en rad per prick med kvantilens värde, aldrig individer) |
+| `lada` | en per individ: `{ x, y, farg? }` | `avvikare?: false` (lådan ritas utan de enskilda lönerna utanför morrhåren — en avvikare är en person); `punkter?: 'avvikare'` (standard: låda med morrhår och avvikare) \| `'alla'` (varje individ som punkt, utspridda i sidled, ingen låda) \| `'svarm'` (varje individ som punkt, packade intill varandra utan att täcka varandra, så att fördelningens form syns); `form?: 'regnmoln'` (en halv täthetskurva till höger om kategorins mitt, median och kvartiler som streck, och varje individ som en punkt till vänster; kurvan skattas med normalkärna och Silvermans bandbredd ur värdena mellan morrhårens ändar och går mellan dem; kurvan är ett aggregat som lådan, punkterna är individer som i `punkter: 'alla'`) \| `form?: 'kvantiler'` med `antal?: 20 \| 50` (standard 20; kvantilpunktdiagram: gruppen som `antal` lika stora andelar, varje andel en prick vid sin kvantil, staplade i sidled där de annars skulle täcka varandra, med samma prickstorlek i hela lagret; antalet är högst halva gruppen, så att en prick aldrig står för färre än två personer — `kvantilpunkter` i `src/lib/figur.js`. Prickarna är ett aggregat: träffen ger lådans sammanfattning med `kvantil: { nr, antal, varde }`, och diagramdatan är en rad per prick med kvantilens värde, aldrig individer) |
 | `ruta` | `{ x, y, varde, text? }` | `visaText?: boolean` |
 | `yta` | `{ x0, x1, y0, y1, namn?, varde?, fargvarde?, farg?, etikett?, undertext? }` — en fri rektangel mellan två hörn på talaxlar (trädkarta: vyn räknar lägena). Färgen är punktens `farg`, annars färgskalan för `fargvarde`, annars lagrets. I diagramdatan: en rad per yta med `namn` (annars `etikett`) och `varde` | `opacitet?`; `etikettLage?: 'topp'` (bara etiketten, ingen undertext). Etiketten ritas uppe till vänster när ytan rymmer den |
 
@@ -156,15 +155,16 @@ och finns till för `tips`.
 
 ### Färgskala
 
-`{ typ: 'sekventiell' | 'divergerande' | 'tvafarg', doman: [a, b], mitt?, titel?, format?, farger? }`. En
+`{ typ: 'sekventiell' | 'divergerande', doman: [a, b], mitt?, titel?, format?, farger? }`. En
 skala per figur, gemensam för alla lager och paneler. `doman` är två ändliga tal; lika tal vidgas med ±1 och
 omvänd ordning ger omvänd skala. `mitt` (strikt inom domänen) lägger skalans mittfärg där. `farger`
-(`[[andel 0–1, färg], …]`, minst två) ersätter paletten. Skalan följer bara `fargskala` — aldrig lagrens
+(`[[andel 0–1, färg], …]`, minst två) ersätter paletten, som annars är `PALETT.divergerande` för `divergerande` och
+`PALETT.sekventiellNeutral` för `sekventiell`. Skalan följer bara `fargskala` — aldrig lagrens
 data — och ritas som en färgstapel i högermarginalen med ändvärdena och titeln.
 
 ### Referenser
 
-- Zon: `{ typ: 'zon', x0?, x1? | y0?, y1?, axel?: 'y2', farg?, opacitet?, etikett?, textfarg? }`. Ritas under
+- Zon: `{ typ: 'zon', x0?, x1? | y0?, y1?, farg?, opacitet?, etikett?, textfarg? }`. Ritas under
   märkena. En gräns som saknas är panelens kant. Etiketten ritas överst i zonen, ovanpå märkena. En etikett i en
   lodrät zon som inte ryms på en rad men hel på högst tre bryts vid ordgränsen (aldrig vid ett hårt mellanslag, som i
   «5 %»); annars kortas den (hela texten i `<title>`),
@@ -174,7 +174,7 @@ data — och ritas som en färgstapel i högermarginalen med ändvärdena och ti
   raderna där den inte täcker en annan text (punkterna räknas då inte); finns ingen sådan rad ritas etiketten inte.
   På en bandaxel är gränserna kategorinamn och zonen täcker dem inklusive; saknas en gränskategori bland de
   ritade kategorierna ritas ingen zon.
-- Linje: `{ typ?: 'linje', x | y, axel?: 'y2', streck?, farg?, tjocklek?, etikett?, textfarg? }`. `etikett` står vid linjens
+- Linje: `{ typ?: 'linje', x | y, streck?, farg?, tjocklek?, etikett?, textfarg? }`. `etikett` står vid linjens
   högra ände (överst för en lodrät linje), i linjens färg. Ritas över märkena, över hela
   panelen. På en bandaxel ligger den mitt i kategorins band.
 
@@ -206,9 +206,10 @@ Enda vägen att sätta ett diagram i sidan. `id` är ett element eller ett id. R
 | `hojd` | Höjd i pixlar; annars figurens `hojd`, annars 320. |
 | `bredd` | Fast bredd. Diagrammet ritas då inte om när behållaren ändrar storlek. |
 | `tomtext` | Texten i tomt läge; annars "Inget att visa". |
-| `vidKlick` | `vidKlick(d, { serie, marke, panel, axel, index })` vid klick på ett märke. |
+| `vidKlick` | `vidKlick(d, { serie, marke, panel, index })` vid klick på ett märke. |
 | `exportMedSma` | **Funktion** som svarar om små grupper ska följa med i exporten. Frågas en gång per export. Bara svaret exakt `true` räknas som ja; saknas den, kastar den eller svarar den något annat (också ett löfte), följer de inte med. |
 | `exportBeskrivning` | Sträng som blir raden `Urval: …` i diagramdatan. |
+| `exportAnteckning` | En mening om det bilden visar, först i den exporterade bildens fotrad. Står inte med när bilden är räknad för en del av personerna (Räknat för). |
 
 Bredden är `val.bredd`, annars behållarens, annars 640 (en dold behållare har bredden 0); ritaren ritar aldrig
 smalare än 320. En `ResizeObserver` ritar om efter 100 ms när bredden ändrats, och genast när behållaren går
@@ -234,9 +235,8 @@ dölja färgerna). Markeringen är aldrig bara färg.
 risk. `tips` anropas en gång per märke och ritning och utan `this`. Kastar den rapporteras felet och inget
 tips visas. Portalen är gemensam för sidan; ett dolt tips töms alltid.
 
-**Klick: `vidKlick(d, { serie, marke, panel, axel, index })`.** Andra argumentet är ett nytt, fryst objekt:
-`panel` är lagrets plats i `figur.paneler` (inte panelen klicket skedde i), `axel` är `'y'` eller `'y2'`,
-`index` lagrets plats i figuren. Hanteraren får aldrig lagret självt — dess data bär de små punkterna.
+**Klick: `vidKlick(d, { serie, marke, panel, index })`.** Andra argumentet är ett nytt, fryst objekt:
+`panel` är lagrets plats i `figur.paneler` (inte panelen klicket skedde i) och `index` lagrets plats i figuren. Hanteraren får aldrig lagret självt — dess data bär de små punkterna.
 
 **Vad `d` är.** För en låda (allt i ett lådlager utom individpunkterna) är `d` ett nytt objekt `{ x }` och
 `sammanfattning` är `{ q1, median, q3, lag, hog, n }`, räknad ur samma individer som den ritade lådan.
@@ -275,7 +275,8 @@ aktivt och inget fält är fel); den nollställer alla dimensioner, tömmer fäl
   språk annars lämnar ett tomt värde för "1,5". Tomt fält är ingen gräns. Ett tal som inte går att läsa, eller Minst
   större än Högst, markerar fältet (`aria-invalid="true"`), ändrar inget och står först i noten ("<namn>: Minst är
   större än högst. Filtret är oförändrat."). Ett intervall får dölja allt: då står "Inga grupper i urvalet" i
-  behållaren (`data-rf="tom"`), och raderna och noten står kvar.
+  behållaren (`data-rf="tom"`), och raderna och noten står kvar. Exportmenyns bild har då inget att exportera;
+  diagramdatan har alla rader.
 - Kategori som lista (`visning: 'lista'` eller fler än 12 värden; `aria-label="Visa <namn>"`): en hopfälld
   `<details data-urval-lista>` vars `<summary data-urval-summering>` säger "AID-etikett: 12 av 40" ("AID-etikett: alla
   40" när inget är bortvalt). Inuti: ett sökfält (`<input type="search" data-urval-sok aria-label="Sök <namn>">`) som
@@ -293,8 +294,8 @@ urval: utan BAS A, BAS N; 10–50 personer i gruppen. Talen i texten och tabelle
 `urvalBeskrivning`). Behållaren bär filtret i `_figurFilter`. Valet minns per diagram och dimension (`<id>|<falt>`)
 under sessionen, också över `rensaFigur`. En kategori minns sina bortvalda värden: varje `ritaFigur` tar minnet ∩
 figurens värden, och vore alla bortvalda visas alla. Ett intervall minns `{ min, max }` och gäller också när figurens
-tal ligger utanför; noten säger då vad som gäller. `_rfUrvalGlom()` glömmer det; `_rfRensaAlla`, lönefilens
-inläsning och demots inläsning (`_lasInDemounderlag`, litet och stort demo) anropar den. Urvalet sparas inte i
+tal ligger utanför; noten säger då vad som gäller. `_rfUrvalGlom()` glömmer det; `_rfRensaAlla` anropar den, och
+ett nytt underlag (lönefilens och demots inläsning) glömmer urvalet och markeringen genom `glomForraUnderlaget`. Urvalet sparas inte i
 konfigurationsfilen. Exportmenyns PNG/SVG ritas med urvalet och fotraden får " · Urval i diagrammet: utan BAS A,
 BAS N; 10–50 personer i gruppen" (samma text som noten); diagramdatan har alla rader och raden "Urval i diagrammet:
 …". `diagramTillBild` (rapport, utskrift, ZIP, rapportunderlag) ritar alltid allt.
@@ -395,7 +396,7 @@ etikett `'BAS {v}'`). Lådorna och histogrammet i Ålder & karriär har huvudomr
 åldersgrupp huvudområde och AID-etikett, percentilerna och kvartilerna i Lönestruktur huvudområde och BAS. Testerna står i `tests/figur.test.js`, `tests/diagramurval.test.js`
 (*underlag: Räkna för*) och `tests/ktroskel-invarianter.test.js` (I6: precis under och precis över regeln i exportläget).
 
-**Rubrik och fotrad i exporten.** `figurTillSvg` och `figurTillBild` tar `rubrik` och `fot` (en rad var, avkortas).
+**Rubrik och fotrad i exporten.** `figurTillSvg` och `figurTillBild` tar `rubrik` och `fot` (rubriken på en rad och avkortad; foten bryts på så många rader som behövs, eftersom den bär urvalet).
 Exportmenyn och den gemensamma bildvägen sätter dem: rubriken är kortets rubrik, foten "Lönekartläggning <datum>"
 följt av urvalet om vyn har angett `exportBeskrivning`. Skärmens diagram har varken rubrik eller fot — kortet har
 dem redan. Utskriften sätter egna rubriker och får därför bilderna utan.
@@ -418,8 +419,9 @@ områdets omfång (ur de ritade punkterna i området, med lite luft) som domän 
 diagrammet säger att det är ett utsnitt, med knappen "Visa hela diagrammet". Figuren ändras inte: utsnittet är en
 kopia med andra domäner och samma lager (`_rfZoomad`), så tips, klick och markering fungerar som vanligt. Det som
 hamnar utanför klipps av panelen. En ny figur från vyn (`ritaFigur`) och `rensaFigur` tar bort utsnittet; en
-storleksändring behåller det. Bildexporten ritar utsnittet och fotraden slutar med "Utsnitt av diagrammet";
-diagramdatan bär som alltid alla rader som får visas. Inget behövs av vyn.
+storleksändring behåller det. Utsnittet följer inte med i exporten: bilden ritas ur figuren (`figurTillBild`), inte
+ur utsnittet, och exporten ritar om fliken i exportläget, vilket ger en ny figur utan utsnitt. Bilden och diagramdatan
+visar alltså hela diagrammet. Inget behövs av vyn.
 
 **Närmaste punkt.** När pekaren är över ritytan men inte på ett märke får den närmaste ritade punkten (märkena
 `punkt`, `individ` och linjernas träffpunkter) verktygstipset inom 24 bildpunkter och klicket inom 12, och en
@@ -443,7 +445,9 @@ datapunkter en `nyckel` om de ska följas mellan figurer och inte ligger på en 
 **Tangentbord.** Ritytan är ett fokuserbart område (`tabindex="0"`). Piltangenterna går mellan de ritade märkena
 (höger/ned till nästa, vänster/upp till föregående; serie för serie), Home och End till första och sista, Enter eller mellanslag gör
 det ett klick gör, Escape lämnar. Märket med fokus får `data-fokus` och en synlig ring, och dess tips visas och
-läses upp. Märken som inte ritas — små grupper, dolda serier, bortvalda punkter — finns inte i ordningen.
+läses upp. Märken som inte ritas — små grupper, dolda serier, bortvalda punkter — finns inte i ordningen, och inte
+heller märkena i ett lager utan `tips`: en markering vars värde står i ett annat lager (nivåstrecken i en trappa,
+strecket mellan två punkter) läses då inte upp som en datapunkt utan värde.
 
 ## 4. SVG:n
 
@@ -452,7 +456,7 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   rect                                  bakgrund, bara i exporten
   g[data-del=rityta][role=img][aria-label=Diagramyta]
     g[transform]
-      text[data-axel=y], text[data-axel=y2], axeltitlar
+      text[data-axel=y], axeltitlar
       per panel: g[transform]
         line                            stödlinjer
         svg[data-del=panel]             klipper till panelen
@@ -472,7 +476,7 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   hjälpmedel når dem.
 - `data-marke` har värdena `stapel`, `punkt`, `linje`, `linjepunkt`, `litenpunkt`, `kvantilpunkt`, `band`, `intervall`,
   `lada`, `median`, `kvartil`, `morrhar`, `avvikare`, `individ`, `ruta`, `rutatext`, `yta`, `etikett`, `punktetikett`,
-  `hanvisning`, `fel`, `rander`, `monster`, `fargstapel`, `zon`, `zonetikett`, `referenslinje`, `nollinje`.
+  `linjeetikett`, `ytetikett`, `hanvisning`, `fel`, `rander`, `fargstapel`, `zon`, `zonetikett`, `referenslinje`, `nollinje`.
 - `data-l` är lagrets index i figuren som skickades in och `data-i` punktens index i lagrets data — alltid,
   med eller utan små grupper, dolda serier och bortvalda punkter. De bärs av märken som går att träffa: `stapel`, `punkt`,
   `linjepunkt`, `litenpunkt`, `kvantilpunkt`, `intervall`, `individ`, `ruta`, `yta` och `lada` (lådans `data-i` är den första ritade
@@ -483,8 +487,8 @@ svg[role=group][aria-label=<beskrivning>][width][height][viewBox]   (+ data-neds
   punktetiketter, referenslinjernas etiketter, ytans andra rad och exportens fotrad — har `_rfLitenPx`, som aldrig
   går under golvet 11 px (`DIAGRAM_TYPSNITT.minsta`). Ingen text i en figur är alltså mindre än 11 px. Exporten ritar med
   samma storlekar i den logiska bredden och skalas sedan (avsnitt 6).
-- Det finns tre slags inre `<svg>`: panelen (`data-del="panel"`), ränderna i en liten yta
-  (`data-marke="rander"`) och mönstret på en yta (`data-marke="monster"`). Diagrammets egen svg är `:scope > svg` i behållaren.
+- Det finns två slags inre `<svg>`: panelen (`data-del="panel"`) och ränderna i en liten yta
+  (`data-marke="rander"`). Diagrammets egen svg är `:scope > svg` i behållaren.
 - Egenskaper på behållaren (inget skrivs som attribut): `_figur` (originalet, med små punkter),
   `_figurVal`, `_figurDolda`, `_figurFilter`, `_figurBredd`, `_rfKoppling`, `_exportBeskrivning`, `_rfUrvalFel`, och
   bara med ett aktivt filter som har räknat om härledda lager `_rfVisadFigur`, `_rfRitadVisad` och `_rfHarlett`.
@@ -542,7 +546,9 @@ bilden, diagramdatan och stämpeln.
 **Stämpeln** (`_kUndantagFor`). Allt i fliken Likvärdigt arbete (`#view-likvardighet`) får tillägget
 "(undantag: Likvärdigt arbete)", vad exporten än bär: fliken redovisar
 grupper under tröskeln, och en stämpel som varnar i onödan är ofarlig. Ett diagram från kärnan utanför den
-fliken får "(undantag: valt i Tabeller och egna vyer)" bara när exporten faktiskt bär små grupper.
+fliken får "(undantag: valt i Tabeller och egna vyer)" bara när exporten faktiskt bär små grupper. Tillägget står i
+diagramdatans rad 1. Bilden (PNG, SVG, bilderna i ZIP-filen) bär det inte: den bär bara noten om sänkt tröskel när
+tröskeln är under 10 (`_kSanktNot`).
 
 **Rensning.**
 - `rensaFigur(id)` kopplar loss lyssnare och storleksbevakning, döljer behållarens tips, tar bort figuren och
@@ -573,11 +579,11 @@ ett trasigt diagram.
    det eller en ordning som bygger på det syns i bilden och i exporten.
 5. **Sätt alltid `farg` på lagren.** Utan `farg` tas färgen ur paletten efter lagrets index i figuren; ett
    lager där alla punkter är små och som därför inte ritas lämnar då en lucka i färgföljden.
-6. **Stämpeln.** I Likvärdigt arbete bär varje export undantaget. Annars bär den "valt i Tabeller och egna vyer" bara när
-   `exportMedSma` svarar ja. En vy som redovisar små grupper utan att märka dem `liten` får alltså ingen
+6. **Stämpeln.** I Likvärdigt arbete bär diagramdatan undantaget. Annars bär den "valt i Tabeller och egna vyer" bara när
+   `exportMedSma` svarar ja. Bilden bär inget undantag, bara noten om sänkt tröskel under 10 (§6). En vy som redovisar små grupper utan att märka dem `liten` får alltså ingen
    varning utanför Likvärdigt arbete — märk dem.
-7. **`beskrivning`, axel- och paneltitlar, serienamn, `tomtext` och `exportBeskrivning` exporteras som de är
-   skrivna.** De får inte namnge en liten grupp eller bära ett värde ur den.
+7. **`beskrivning`, axel- och paneltitlar, serienamn, `tomtext`, `exportBeskrivning` och `exportAnteckning`
+   exporteras som de är skrivna.** De får inte namnge en liten grupp eller bära ett värde ur den.
 8. **Rita om efter att en behållare satts in igen.** En behållare som tas ur dokumentet rensas vid nästa
    `ritaFigur` (vilket diagram som helst). Sätts den in igen är den tom.
 9. **`rensaFigur` innan en behållare byts ut.** Annars lever figuren, med lönevärden, kvar till nästa
@@ -619,7 +625,8 @@ ett trasigt diagram.
 - Lådor ritas bara stående.
 - Staplar kräver en bandaxel för kategorin (inga staplar på en talaxel, t.ex. histogram med tal på x).
 - Det finns inga fria anteckningar i bilden (text på punkter och etiketter på referenslinjer och zoner finns).
-- Punktsymbolerna är cirkel, romb, kvadrat, streck och två trianglar; trianglarna har inget prov i förklaringen.
+- Punktsymbolerna är cirkel, romb, kvadrat, streck och en triangel som pekar åt höger; triangeln har inget prov i
+  förklaringen.
   Ofylld finns bara per lager (`ofylld`), inte per punkt: en vy som blandar fyllda och ofyllda punkter i en serie
   delar den i två lager (statistikens spann i Löneläget har sex: tre klasser för könsdominans, fylld och ofylld).
 - Kärnan flyttar inte isär punkter som ligger på varandra (bara deras etiketter); en vy kan göra det med

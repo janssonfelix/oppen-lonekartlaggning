@@ -25,11 +25,11 @@
  * Bygger på: docs/utveckling/regressionsmodellen.md avsnitt 7 och ADR-86.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B4.1, B4.2 och B4.4–B4.8).
  */
-import { median, linjarRegression, percentilintervall } from './stat.js';
+import { median, linjarRegression, percentilintervall, tKvantil, Z_95, Z_STYRKA, MAD_TILL_SIGMA, MEDIAN_SE_FAKTOR } from './stat.js';
 import { slumpFor } from './rng.js';
 import { slumpensGranser } from './status.js';
 import { bootstrapMedianer } from './likvardighet.js';
-import { kvantilDesign, kvantilregression } from './regression.js';
+import { konKonvergerat, kvantilDesign, kvantilregression } from './regression.js';
 import { arKvinna, arMan } from './kon.js';
 import { konsMedianerUrLoner } from './struktur.js';
 import { aidAvRad, namnrader } from './aid.js';
@@ -44,12 +44,8 @@ export const B_DOSSIER = 2000;
 export const KVOT_MIN_N = 3;
 /** Minsta antal giltiga dragningar (männens median över noll) för att dossierns intervall ska ges. */
 export const DOSSIER_MIN_GILTIGA = 20;
-/** z för 95 % tvåsidigt: konfidensbandet kring regressionslinjen och trattens fält. */
-export const Z_95 = 1.96;
 /** Konfidensbandet: minsta antal punkter för en linje med spridning, och antalet punkter längs linjen. */
 export const BAND_MIN_N = 3, BAND_STEG = 30;
-/** Faktorn i minsta upptäckbara skillnad: 1,96 (α = 0,05 tvåsidigt) + 0,842 (styrka 80 %). */
-export const Z_STYRKA = 2.802;
 /** Jämn könsfördelning i styrkeanalysen: det mindre könet är minst 40 % av alla. */
 export const BALANSGRANS = 0.4;
 /** Minsta antal personer för styrkeanalysen. */
@@ -62,10 +58,6 @@ export const MDE_GOD = 3, MDE_GODTAGBAR = 7;
 export const MDE_FOR_LITEN = 5;
 /** Extremvärdesgränsen: avståndet från BAS-intervallets medel på log-skala, i standardavvikelser. */
 export const EXTREMVARDE_Z = 3;
-/** Trattens σ ur medianens absoluta avvikelse: 1,4826 × MAD är σ vid normalfördelning. */
-export const MAD_TILL_SIGMA = 1.4826;
-/** Medianens standardfel i förhållande till medelvärdets vid normalfördelning (√(π/2)). */
-export const MEDIAN_SE_FAKTOR = 1.2533;
 /** Rättningen av trattens normalformel för små grupper: 1 + 0,6 / (det mindre könets antal). */
 export const SMA_GRUPPER_RATTNING = 0.6;
 /** Kvantilregressionens bootstrap: antalet omsamplingar och största antal personer som intervallet räknas för. */
@@ -118,6 +110,14 @@ export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } =
     };
 }
 
+/** Kvinnors median i procent av mäns i varje bootstrapdragning; NaN där männens median inte är positiv. */
+function _kvotDragningar(kvLoner, maLoner, B, rng) {
+    const m = bootstrapMedianer(kvLoner, maLoner, B, rng || slumpFor(kvLoner, maLoner));   // seedad ur datat → reproducerbart KI
+    const ratios = new Array(B);
+    for (let b = 0; b < B; b++) ratios[b] = m.ma[b] > 0 ? (m.kv[b] / m.ma[b]) * 100 : NaN;
+    return ratios;
+}
+
 /**
  * 95-procentigt percentil-bootstrapintervall för kvinnors median i procent av mäns, för en grupp (BAS-intervall,
  * åldersgrupp). En dragning där männens median inte är positiv ger 100.
@@ -128,13 +128,7 @@ export function organisationensKvotKI(rader, golv, { B = B_ORGANISATION, rng } =
  */
 export function medianKvotKI(kvLoner, maLoner, { B = B_PER_GRUPP, rng } = {}) {
     if (kvLoner.length < KVOT_MIN_N || maLoner.length < KVOT_MIN_N) return null;
-    const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLoner, maLoner, B, rng || slumpFor(kvLoner, maLoner));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mKv = m.kv[b], mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (mKv / mMa) * 100 : 100;
-    }
-    ratios.sort((a, b) => a - b);
+    const ratios = _kvotDragningar(kvLoner, maLoner, B, rng).map(v => (isNaN(v) ? 100 : v)).sort((a, b) => a - b);
     const { lag, hog } = percentilintervall(ratios);
     return { lo: lag, hi: hog };
 }
@@ -169,13 +163,7 @@ export function konskvotPerGrupp(grupper, { k, ki = false }) {
  */
 export function medianKvotKIGiltiga(kvLoner, maLoner, { B = B_DOSSIER, rng } = {}) {
     if (kvLoner.length < KVOT_MIN_N || maLoner.length < KVOT_MIN_N) return null;
-    const ratios = new Array(B);
-    const m = bootstrapMedianer(kvLoner, maLoner, B, rng || slumpFor(kvLoner, maLoner));   // seedad ur datat → reproducerbart KI
-    for (let b = 0; b < B; b++) {
-        const mMa = m.ma[b];
-        ratios[b] = mMa > 0 ? (m.kv[b] / mMa) * 100 : NaN;
-    }
-    const ok = ratios.filter(v => isFinite(v)).sort((a, b) => a - b);
+    const ok = _kvotDragningar(kvLoner, maLoner, B, rng).filter(v => isFinite(v)).sort((a, b) => a - b);
     if (ok.length < DOSSIER_MIN_GILTIGA) return null;
     const { lag, hog } = percentilintervall(ok);
     return { lo: lag, hi: hog };
@@ -185,7 +173,8 @@ export function medianKvotKIGiltiga(kvLoner, maLoner, { B = B_DOSSIER, rng } = {
 
 /**
  * 95-procentigt konfidensband för en enkel linjär regressionslinje.
- * SE av MEDELPREDIKTIONEN vid x: σ × √(1/n + (x−x̄)²/Σ(xi−x̄)²), där σ² = RSS/(n−2). Ger punkter {x, y, lo, hi}
+ * SE av MEDELPREDIKTIONEN vid x: σ × √(1/n + (x−x̄)²/Σ(xi−x̄)²), där σ² = RSS/(n−2). Halva bredden är
+ * t(0,975; n−2) · SE: σ skattas ur underlaget, så små grupper får ett bredare band (ADR-108). Ger punkter {x, y, lo, hi}
  * jämnt spridda över [minX, maxX].
  * @param {Array<[number, number]>} data  [x, y]-par
  * @param {number} minX
@@ -207,13 +196,14 @@ export function regressionslinjensBand(data, minX, maxX, steg = BAND_STEG) {
         rss += (data[i][1] - yhat) ** 2;
     }
     if (ssX <= 0) return null;
-    const sigma2 = rss / Math.max(1, n - 2);
+    const sigma2 = rss / (n - 2);   // n ≥ BAND_MIN_N = 3
+    const t = tKvantil(0.975, n - 2);
     const out = [];
     for (let i = 0; i < steg; i++) {
         const x = minX + (maxX - minX) * (i / (steg - 1));
         const y = reg.m * x + reg.b;
         const se = Math.sqrt(Math.max(0, sigma2 * (1 / n + (x - meanX) ** 2 / ssX)));
-        out.push({ x, y, lo: y - Z_95 * se, hi: y + Z_95 * se });
+        out.push({ x, y, lo: y - t * se, hi: y + t * se });
     }
     return out;
 }
@@ -448,14 +438,15 @@ function _kvantilRadordning(a, b) {
  * referensintervallet är det första som finns i omsamplingen och ett intervall som inte kom med inte ger en
  * nollkolumn; könskoefficienten beror inte på referensen eller centreringen. Ålder centreras på hela urvalets medel,
  * och varje omsampling startar IRLS i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare.
- * Ett intervall ges när minst hälften av omsamplingarna gav en skattning. IRLS-skattningen är en approximation av
+ * En omsampling vars könskoefficient inte konvergerade inom varvtaket (konKonvergerat) räknas bort som en som inte gick att skatta. Ett intervall
+ * ges när minst hälften av omsamplingarna gav en skattning. IRLS-skattningen är en approximation av
  * kvantillösningen; intervallet bootstrappar approximationen.
  * @param {any[]} rader0  kvantilDesign(...).rader: raderna som punktskattningen räknades på (i vilken ordning som helst)
  * @param {any} modell  förklaringsmodellen
  * @param {Array<{tau:number, error?:boolean, ki?:any}>} results  punktskattningarna; `ki` skrivs in i dem
  * @param {(d: any) => boolean} arKv
  * @param {{B?: number, rng?: () => number}} [val]  rng: generatorn; utan den seedad ur lönerna per kön
- * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number, kiUtelamnad:string}}
+ * @returns {{results: Array<any>, diffKi: {lag:number, hog:number}|null, kiB:number}}
  */
 export function kvantilBootstrap(rader0, modell, results, arKv, { B = KVANTIL_KI_B, rng } = {}) {
     const rnd = rng || slumpFor(rader0.filter(arKv).map(d => d.lon), rader0.filter(d => !arKv(d)).map(d => d.lon));   // seedad ur datat → reproducerbart KI
@@ -482,7 +473,8 @@ export function kvantilBootstrap(rader0, modell, results, arKv, { B = KVANTIL_KI
             const b0 = helBeta[k];
             const start = b0 ? kolumner.map(c => { const j = hel.kolumner.indexOf(c); return j >= 0 ? b0[j] : 0; }) : null;
             const fit = kvantilregression(X, y, r.tau, undefined, undefined, start);
-            return fit ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
+            // En dragning som inte konvergerat (samma regel som punktskattningen) räknas bort som en som inte gick att skatta.
+            return fit && konKonvergerat(fit) ? (Math.exp(fit.beta[1]) - 1) * 100 : null;
         });
         konPct.forEach((v, k) => { if (v != null) prov[k].push(v); });
         const p10 = i10 >= 0 ? konPct[i10] : null, p90 = i90 >= 0 ? konPct[i90] : null;
@@ -494,5 +486,5 @@ export function kvantilBootstrap(rader0, modell, results, arKv, { B = KVANTIL_KI
         return v.length < B / 2 ? null : percentilintervall(v);
     };
     results.forEach((r, k) => { if (!r.error) r.ki = intervall(prov[k]); });
-    return { results, diffKi: intervall(diffProv), kiB: B, kiUtelamnad: '' };
+    return { results, diffKi: intervall(diffProv), kiB: B };
 }

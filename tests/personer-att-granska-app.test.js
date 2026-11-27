@@ -41,6 +41,19 @@ describe('Personer att granska', () => {
         grans.dispatchEvent(new w.Event('input'));
         expect(w.document.getElementById('pag-innehall').textContent).toContain('30 %');
     });
+    it('en ändrad gräns ritar om panelens nyckeltal och rutan överst i fliken, som en ny ritning', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.document.querySelector('.nav-item[data-tab="matrix"]').click();
+        const tal = () => ['nyckel-la-personer', 'la-slutsatser'].map(id => w.document.getElementById(id).textContent);
+        const grans = w.document.getElementById('pag-grans');
+        grans.value = '5';
+        grans.dispatchEvent(new w.Event('input'));
+        const efter = tal();
+        w.__ritaFlik('matrix');
+        expect(efter).toEqual(tal());
+        expect(efter[1]).toContain('minst 5 % under förväntad lön');
+    });
     it('gränsfältet kläms: tomt → 10, 100 → 30, "abc" → 10', () => {
         const w = createAppWindow();
         oppna(w);

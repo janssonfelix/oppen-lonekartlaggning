@@ -13,7 +13,7 @@ import { statistikFor } from './jamforelse.js';
 import { arKvinna, arMan } from './kon.js';
 import { median } from './stat.js';
 import { konsMedianer } from './struktur.js';
-import { JAMN_KONSFORDELNING, oversiktNiva, oversiktPerBas } from './vymodell-lonestruktur.js';
+import { oversiktNiva, oversiktPerBas, underrepresenteratKon } from './vymodell-lonestruktur.js';
 
 /**
  * Nyckeltalen överst, eller null utan underlag. Kvoten (kvinnors median i procent av mäns) bara när båda könen når k
@@ -38,7 +38,8 @@ const kortLage = (antal, av, kritisk) => (av === 0 ? 'na' : antal === 0 ? 'ok' :
  * 'na' (inget att räkna).
  * - `gap` och `skev`: bara BAS-intervall där båda könen når k (jamforbaraBas, det exporterna kan jämföra, ADR-51).
  *   Säkerställd skillnad är statusen Värt att granska i översikten per BAS-intervall (ADR-59; oversiktNiva med
- *   golvet), kritisk från tre intervall. Ojämn könsfördelning: ett kön under 40 % av intervallet; aldrig kritisk.
+ *   golvet), kritisk från tre intervall. Ojämn könsfördelning: ett kön under 40 % av intervallet, bedömt på andelen
+ *   med en decimal som i tabellen (underrepresenteratKon); aldrig kritisk.
  *   `maskerade` är antalet intervall där ett kön är under k.
  * - `referens`: intervall med minst k personer och en rad med P10 i ställningstagandet, där intervallets median ligger
  *   under P10; kritisk från två. null utan ställningstagande (`policyFor` saknas).
@@ -58,9 +59,9 @@ export function kravstatus(rader, { bas, k, golv, oversikt, policyFor, statistik
     let gap = 0, skev = 0;
     for (const b of jb.jamforbara) {
         const df = rader.filter(r => r.bas === b);
-        const nKv = df.filter(r => arKvinna(r)).length, nMa = df.filter(r => arMan(r)).length, tot = nKv + nMa;
+        const nKv = df.filter(r => arKvinna(r)).length, nMa = df.filter(r => arMan(r)).length;
         if (granskaBas.has(b)) gap++;
-        if (nKv / tot < JAMN_KONSFORDELNING / 100 || nMa / tot < JAMN_KONSFORDELNING / 100) skev++;
+        if (underrepresenteratKon(nKv, nMa)) skev++;
     }
     const av = jb.jamforbara.length;
 

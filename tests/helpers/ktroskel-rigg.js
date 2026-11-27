@@ -7,8 +7,10 @@
  *
  * Utbruten ur ktroskel.test.js när sviten delades i åtta filer, så att Vitest fördelar dem över arbetare.
  */
+import { readdirSync, readFileSync } from 'node:fs';
+import * as espree from 'espree';
 import { createAppWindow } from './app-harness.js';
-import { attributtext } from './attributtext.js';
+import { attributtext, egenText } from './attributtext.js';
 
 export const STORA = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'], TOPP = 'S7';
 export const MELLAN = ['A', 'B', 'C', 'D'], SENT_MELLAN = [31417, 32719, 33827, 34513];
@@ -38,9 +40,9 @@ export const EXPORTLAGE_UNDANTAG = `#view-utforska, #personer-att-granska, ${LV_
 // Sentinelvärden som syns utanför de undantagna vyerna.
 export function synliga(win, varden) {
     const ut = new Set();
-    for (const el of win.document.body.querySelectorAll('*')) {
-        if (el.closest(EXPORTLAGE_UNDANTAG) || el.children.length) continue;
-        const text = normalisera(`${el.textContent} ${attributtext(el)}`);
+    for (const el of [win.document.body, ...win.document.body.querySelectorAll('*')]) {
+        if (el.closest(EXPORTLAGE_UNDANTAG)) continue;
+        const text = normalisera(`${egenText(el)} ${attributtext(el)}`);
         for (const v of varden) if (text.includes(String(v))) ut.add(v);
     }
     return [...ut].sort();
@@ -109,7 +111,7 @@ export const KON_BAS = ['Y1', 'Y2', 'Y3'];
 export const KON_KV = [22157, 22391, 22613];
 export const KON_MA = [44519, 45613, 46817];
 export const ENSAM = 31973, X_KV = 33211, X_MA = 41077, PAR_KV = 29417, PAR_MA = 38963;
-export const J_KV = 22043;
+export const J_KV = 22191;
 export const KON_GAP = KON_BAS.flatMap((_, i) => {
     const pct = (KON_KV[i] / KON_MA[i] - 1) * 100, kvot = KON_KV[i] / KON_MA[i] * 100;
     return [pct.toFixed(2), kvot.toFixed(2)].flatMap(s => [s.replace('-', ''), s.replace('-', '').replace('.', ',')]);
@@ -125,9 +127,13 @@ export const KON_GAP_CELL = KON_BAS.flatMap((bas, i) => [(1 - KON_KV[i] / KON_MA
     .map(v => new RegExp(`(?:^|\\| )${bas} \\|[^\\n]*\\| [-−+]?${v.toFixed(1).replace('.', '[.,]')}(?= \\||$)`, 'm')));
 // Kostnaden att lyfta de 30 kvinnorna i Y1–Y3 till männens median: 30 × (männens lön − kvinnornas).
 export const KON_KOSTNAD = KON_BAS.map((_, i) => 30 * (KON_MA[i] - KON_KV[i]));
-// Får aldrig synas utanför undantagen vid 10 eller högre: enskildas och små gruppers löner, männens i Y1–Y3
-// och kostnader som räknats ur dem.
-export const KON_DOLDA = [...KON_MA, ENSAM, X_KV, X_MA, PAR_KV, PAR_MA, ...KON_KOSTNAD];
+// Kostnaderna avrundade som verktyget skriver kronor i tusental: «671 tkr» (Prioritering) och hela tusental (kostnaden i
+// src/lib/prioritering.js). Formen «0,7 Mkr» är för kort för en textsökning och söks inte.
+export const KON_KOSTNAD_TUSENTAL = KON_KOSTNAD.flatMap(v => [`${Math.round(v / 1000)} tkr`, Math.round(v / 1000) * 1000]);
+// Får aldrig synas utanför undantagen vid 10 eller högre: enskildas och små gruppers löner, männens i Y1–Y3, de tre
+// kvinnornas i 7501 (J_KV: ett kön under tröskeln i en grupp över den, med kvinnorna som det lilla könet) och
+// kostnader som räknats ur dem.
+export const KON_DOLDA = [...KON_MA, J_KV, ENSAM, X_KV, X_MA, PAR_KV, PAR_MA, ...KON_KOSTNAD, ...KON_KOSTNAD_TUSENTAL];
 
 export function byggKonDataset() {
     const rader = byggDataset();
@@ -176,15 +182,74 @@ export async function laddaXlsx(w) {
     w.eval(readFileSync(new URL('../../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
     w.alert = () => {};
 }
+// ---- Vägarna ut, härledda ur bygget ----
+// Ett anrop som lämnar verktyget: en nedladdning (laddaNer och diagrammens bildlänk), en arbetsbok, urklippet, ett
+// utskriftsfönster och webbläsarens utskrift av PDF-rapporten. Sökningen går i dist/app.js, som fönstren kör, så att
+// anropsstacken (noteraUtvag) och källan har samma rader.
+const UTVAG = /(?<!function )\bladdaNer\(|\.download = |XLSX\.write(?:File)?\(|navigator\.clipboard\.write(?:Text)?\(|execCommand\(["']copy["']\)|window\.open\(|window\.print\(/g;
+let _bygget = null;
+/** dist/app.js med varje funktions läge (också de anonyma) och radernas början. */
+function _byggetsFunktioner() {
+    if (_bygget) return _bygget;
+    const src = readFileSync(new URL('../../dist/app.js', import.meta.url), 'utf8');
+    const funktioner = [];
+    const ga = (n, namn = null) => {
+        if (!n || typeof n.type !== 'string') return;
+        if (/Function/.test(n.type)) funktioner.push({ namn: n.id?.name ?? namn, fran: n.range[0], till: n.range[1] });
+        const barnNamn = n.type === 'VariableDeclarator' ? n.id.name : (n.type === 'Property' || n.type === 'MethodDefinition') ? n.key.name : null;
+        for (const v of Object.values(n)) if (Array.isArray(v)) v.forEach(c => ga(c, barnNamn)); else if (v && typeof v.type === 'string') ga(v, barnNamn);
+    };
+    ga(espree.parse(src, { ecmaVersion: 'latest', sourceType: 'script', range: true }));
+    const radStart = [0, ...[...src.matchAll(/\n/g)].map(m => m.index + 1)];
+    return (_bygget = { src, funktioner, radStart });
+}
+/** Den innersta funktionen som omsluter ett läge i bygget. */
+const _innersta = (funktioner, i) => funktioner.filter(f => f.fran <= i && i < f.till).sort((x, y) => (x.till - x.fran) - (y.till - y.fran))[0] ?? null;
+/** Varje väg ut i appen: källfilen, funktionen som gör anropet (namnet, när den har ett) och dess läge i bygget. */
+export function utvagarIKallan() {
+    const { src, funktioner } = _byggetsFunktioner();
+    const moduler = [...src.matchAll(/^\/\/ (src\/[\w/.-]+\.js)$/gm)];
+    return [...src.matchAll(UTVAG)].map(m => {
+        const f = _innersta(funktioner, m.index);
+        return { fil: moduler.filter(x => x.index < m.index).at(-1)[1].replace('src/app/', ''), funktion: f?.namn ?? '(anonym)', fran: f?.fran ?? -1 };
+    });
+}
+/** Noterar funktionerna i appen på anropsstacken när något lämnar verktyget (w.__utvagar: deras lägen i bygget). */
+export function noteraUtvag(w) {
+    const { funktioner, radStart } = _byggetsFunktioner();
+    w.__utvagar ??= new Set();
+    for (const m of new Error().stack.matchAll(/app\.js:(\d+):(\d+)/g)) {
+        const f = _innersta(funktioner, radStart[Number(m[1]) - 1] + Number(m[2]) - 1);
+        if (f) w.__utvagar.add(f.fran);
+    }
+}
+
 // Varje arbetsbok som en export skriver, som { filnamn: text } (ett blad per stycke, celler åtskilda med " | ").
 export function fangaBocker(w, kor) {
     const ut = {};
     w.XLSX.writeFile = (wb, namn) => {
+        noteraUtvag(w);
         ut[namn] = normalisera(wb.SheetNames.map(b => `[${b}]\n` + w.XLSX.utils.sheet_to_json(wb.Sheets[b], { header: 1, raw: true })
             .map(r => r.map(c => String(c ?? '')).join(' | ')).join('\n')).join('\n'));
     };
     kor();
     return ut;
+}
+// Varje export som skriver en Excel-arbetsbok (XLSX.writeFile), som [namn, kör]. ZIP-filens arbetsbok skrivs med XLSX.write.
+export const ARBETSBOCKER = [
+    ['Excel alla flikar', w => w.eval('exportAlltTillExcel()')], ['protokollet', w => w.eval('exportJPAProtokoll()')],
+    ['EU-lönerapporten', w => w.eval('exportEuRapport()')], ['handlingsplanen', w => w.eval('exportHandlingsplan()')],
+    ['jämförelseexporten', w => w.eval('exportJamforelseExcel()')], ['Löneöversyn', w => w.eval('exportPrognos()')],
+    ['Löneöversikten', w => w.document.getElementById('btn-export-excel').click()],
+    ['prioriteringslistan', w => w.document.getElementById('btn-export-prio-excel').click()],
+];
+/** Det som en mallflik skriver till sitt utskriftsfönster (window.open) när `kor` körs. */
+export function utskriftsfonster(w, kor) {
+    let html = '';
+    const d = w.document, open = w.open;
+    w.open = () => (noteraUtvag(w), { document: { write: h => { html += h; }, close() {}, head: d.createElement('head'), createElement: t => d.createElement(t) }, focus() {}, print() {} });
+    try { kor(); } finally { w.open = open; }
+    return html;
 }
 export const utskriftAv = async (w, mall) => {
     // Urvalet ur rapportmodellen: 'komplett' betyder hela dokumentationen.
@@ -202,9 +267,9 @@ export const UNDANTAGNA_VYER = '#view-utforska, #view-likvardighet, #personer-at
 
 export function skarmtext(w) {
     const ut = [];
-    for (const el of w.document.body.querySelectorAll('*')) {
-        if (el.closest(UNDANTAGNA_VYER) || el.closest('#print-report') || el.children.length) continue;
-        ut.push(`${el.textContent} ${attributtext(el)}`);
+    for (const el of [w.document.body, ...w.document.body.querySelectorAll('*')]) {
+        if (el.closest(UNDANTAGNA_VYER) || el.closest('#print-report')) continue;
+        ut.push(`${egenText(el)} ${attributtext(el)}`);
     }
     return ut.map(normalisera).join('\n');   // var för sig: annars läses två celler "26 833" och "27 198" som ett tal
 }
@@ -286,9 +351,9 @@ export async function samlaUtdata(w) {
         for (const f of flikar) w.__ritaFlik(f);
         w.eval('_fcAtgard(); _fcKanslighet();');
         const rader = [];
-        for (const el of d.body.querySelectorAll('*')) {
-            if (el.closest(EXPORTLAGE_UNDANTAG) || el.closest('#outliers-container, #print-report') || el.children.length) continue;
-            rader.push(normalisera(`${el.textContent} ${attributtext(el)}`));
+        for (const el of [d.body, ...d.body.querySelectorAll('*')]) {
+            if (el.closest(EXPORTLAGE_UNDANTAG) || el.closest('#outliers-container, #print-report')) continue;
+            rader.push(normalisera(`${egenText(el)} ${attributtext(el)}`));
         }
         // Tabellerna i samma ritning, rad för rad, för differensprovet (tests/helpers/differens.js): löptexten ovan
         // har inga kolumner. Inga nya ritningar.
@@ -344,14 +409,8 @@ export async function samlaUtdata(w) {
     d.getElementById('ut-flik-egna').click();
     if (forra) oppnaFlik(w, forra);
 
-    for (const [namn, kor] of [
-        ['Excel alla flikar', () => w.eval('exportAlltTillExcel()')], ['protokollet', () => w.eval('exportJPAProtokoll()')],
-        ['EU-lönerapporten', () => w.eval('exportEuRapport()')], ['handlingsplanen', () => w.eval('exportHandlingsplan()')],
-        ['jämförelseexporten', () => w.eval('exportJamforelseExcel()')], ['Löneöversyn', () => w.eval('exportPrognos()')],
-        ['Löneöversikten', () => d.getElementById('btn-export-excel').click()],
-        ['prioriteringslistan', () => d.getElementById('btn-export-prio-excel').click()],
-    ]) {
-        const bocker = fangaBocker(w, kor);
+    for (const [namn, kor] of ARBETSBOCKER) {
+        const bocker = fangaBocker(w, () => kor(w));
         if (!Object.keys(bocker).length) throw new Error(`${namn}: ingen arbetsbok skrevs`);
         for (const [fil, text] of Object.entries(bocker)) lagg(`${namn} (${fil})`, text);
     }
@@ -360,9 +419,13 @@ export async function samlaUtdata(w) {
     const skriv = w.XLSX.write;
     w.XLSX.write = (wb, opt) => { zipBocker.push(wb); return skriv(wb, opt); };
     w.JSZip = class { file() {} generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };
-    w.HTMLAnchorElement.prototype.click = () => {};
+    // ZIP-filen ritar flikar och bilder i flera steg: vägarna nedan väntar tills den är nedladdad, annars ritar den om
+    // flikar medan rapportens bilder görs.
+    let zipKlar = false;
+    w.HTMLAnchorElement.prototype.click = function () { if (/\.zip$/.test(this.download)) zipKlar = true; };
     d.getElementById('btn-export-zip').click();
-    await new Promise(r => setTimeout(r, 50));
+    for (let i = 0; i < 3000 && !zipKlar; i++) await new Promise(r => setTimeout(r, 20));
+    if (!zipKlar) throw new Error('ZIP: filen laddades inte ner');
     w.XLSX.write = skriv;
     if (!zipBocker.length) throw new Error('ZIP: Excel-filen skrevs inte');
     for (const wb of zipBocker) lagg('ZIP Excel-filen', wb.SheetNames.map(b => `[${b}]\n` + w.XLSX.utils.sheet_to_json(wb.Sheets[b], { header: 1, raw: true }).map(r => r.join(' | ')).join('\n')).join('\n'));
@@ -400,9 +463,11 @@ export async function samlaUtdata(w) {
     if (tabeller < 5 || diagram < 5) throw new Error(`för få tabeller (${tabeller}) eller diagram (${diagram}) prövades`);
 
 
-    // Gruppdossiern: textkopian lämnar verktyget (exportläget); det som visas på skärmen maskeras inte (ADR-51).
+    // Gruppdossiern: textkopian lämnar verktyget (exportläget); det som visas på skärmen maskeras inte (ADR-51). En grupp
+    // under tröskeln har ingen dossier i exportläget och kopieras inte (Kopiera säger det): den är ingen väg ut.
     for (const g of w.__gruppdossierKandidater()) {
-        lagg(`gruppdossier ${g.key}`, w.medExportLage(() => w.gruppdossierSomText(w.byggGruppdossier(g.key))));
+        const text = w.medExportLage(() => { const dos = w.byggGruppdossier(g.key); return dos ? w.gruppdossierSomText(dos) : null; });
+        if (text !== null) lagg(`gruppdossier ${g.key}`, text);
     }
     // BAS-dossiern: textkopian byggs i exportläget (basdossierText), för varje intervall som når den inställda tröskeln.
     for (const { bas } of w.eval('medExportLage(() => basdossierKandidater())')) lagg(`basdossier ${bas}`, w.basdossierText(bas));
@@ -412,6 +477,9 @@ export async function samlaUtdata(w) {
     lagg('utskrift: med gruppdossierer', (await w.eval('byggUtskriftsrapport()'), d.getElementById('print-report').innerHTML.replace(/src="data:[^"]*"/g, '')));
     w.eval("sattRapportUrval('hela')");
     for (const mall of ['komplett', 'ledning', 'facklig']) lagg(`utskrift: ${mall}`, (await utskriftAv(w, mall)).innerHTML.replace(/src="data:[^"]*"/g, ''));
+    // Utskriften av en mallflik (handlingsplanen och checklistan, skrivUtMallflik): varje knapp med data-print-view, som
+    // användaren trycker på; det som skrivs till utskriftsfönstret.
+    for (const knapp of d.querySelectorAll('[data-print-view]')) lagg(`utskrift av mallen: ${knapp.getAttribute('data-print-view')}`, utskriftsfonster(w, () => knapp.click()));
     // Förra årets bokslut (årets, ett år bakåt): rapportunderlagets block om förra året med tabellen Löneutveckling per
     // BAS-intervall, rapportens avsnitt och BAS-hantelns diagramdata. Sist, eftersom inläsningen ändrar tillståndet.
     // Importprofilerna lämnar verktyget som JSON (Exportera JSON i Inställningar) och i konfigurationsfilen: bara
@@ -508,6 +576,9 @@ export const DIFFERENS_DEKLARATIONER = [
         inget: 'kostnaden att nå referensen per grupp som når tröskeln (en median), ingen totalrad' },
     { namn: 'handlingsplanen i Excel', vag: /^handlingsplanen/, blad: /^Handlingsplan$/,
         rubrik: /^Åtgärd \| Grupp \(AID-etikett och BAS-intervall\) \| Antal berörda \|.*Beräknad kostnad \(kr\/år, inkl\. PO\)/,
+        inget: 'kostnaden att nå referensen per grupp som når tröskeln (en median), ingen totalrad' },
+    { namn: 'handlingsplanen i utskriften av mallen', vag: /^utskrift av mallen: view-handlingsplan/,
+        rubrik: /^Åtgärd \| Grupp \(AID-etikett och BAS-intervall\) \| Antal berörda \|.*Beräknad kostnad \(kr\/år\)/,
         inget: 'kostnaden att nå referensen per grupp som når tröskeln (en median), ingen totalrad' },
     { namn: 'handlingsplanen i exportläget', vag: /^skärm i exportläget: handlingsplan/,
         rubrik: /^Åtgärd och grupp \| Grupp \(AID-etikett och BAS-intervall\) \| Antal berörda \|.*Beräknad kostnad \(kr\/år\)/,

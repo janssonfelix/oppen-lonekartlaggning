@@ -21,6 +21,8 @@ import { DIAGRAM_TYPSNITT } from './10-diagramtema.js';
 
 export const _RF = {
     hojd: 320, tecken: 0.58, maxEtikett: 30,
+    // En punkts etikett kortas till så många tecken (layouten räknar bredden på samma korta text som ritas).
+    punktEtikett: 28,
     // Staplar: största tjocklek (ensam eller staplad, respektive i en grupp bredvid varandra) och hörnens rundning.
     stapelMax: 56, stapelMaxGrupp: 34, stapelHorn: 3,
     legendRad: 20, legendText: 36, legendRader: 4, minYta: 40,
@@ -226,10 +228,9 @@ export function _rfBas(skala) {
 }
 // Pixelomfång för en värdeaxel av längd `langd`, med plats `rum` ({lo, hi}: vänster/överkant resp.
 // höger/nederkant) reserverad för etiketter på staplar som sträcker sig åt det hållet.
-function _rfVardeOmfang(langd, rum, lodrat, omvand) {
+function _rfVardeOmfang(langd, rum, lodrat) {
     const lo = Math.min(rum.lo, langd * 0.3), hi = Math.min(rum.hi, langd * 0.3);
-    const o = lodrat ? [langd - hi, lo] : [lo, langd - hi];
-    return omvand ? [o[1], o[0]] : o;
+    return lodrat ? [langd - hi, lo] : [lo, langd - hi];
 }
 // Marginal per värdeaxel och sida ({lo, hi}) som MÄRKENA behöver vid axelns ändar, så att de inte klipps mitt itu.
 // Känner `punkt`, `linje` och `lada` (och `stapel`, som i stället tar bort marginalen vid sin baslinje): ett nytt
@@ -237,48 +238,42 @@ function _rfVardeOmfang(langd, rum, lodrat, omvand) {
 // _rfStapelEtikettRum, när beslutet om etiketterna är taget (_rfEtikettBeslut) — den här funktionen läser
 // aldrig `etikett`, så marginalerna (och allt som mäts med dem) är desamma med och utan etiketter.
 export function _rfEtikettRum(synliga, doms, figur, dold) {
-    const rum = { x: { lo: 0, hi: 0 }, y: { lo: 0, hi: 0 }, y2: { lo: 0, hi: 0 } };
+    const rum = { x: { lo: 0, hi: 0 }, y: { lo: 0, hi: 0 } };
     // Staplar står på axellinjen: på den sida av en värdeaxel där domänen slutar i stapelns baslinje får
     // punkternas marginal inte lyfta basen (en punkt exakt på basen kan klippas till hälften — avsiktligt).
-    // y och y2 delar beslutet (T1): har någon av dem staplar med basen i domänänden på en sida, får ingen av dem marginal där.
-    const basSida = { x: new Set(), y: new Set(), y2: new Set() };
+    const basSida = { x: new Set(), y: new Set() };
     for (const { l } of synliga) {
         if (l.marke !== 'stapel') continue;
-        const nyckel = l.riktning === 'liggande' ? 'x' : (l.axel === 'y2' ? 'y2' : 'y');
+        const nyckel = l.riktning === 'liggande' ? 'x' : 'y';
         if (!figur[nyckel] || figur[nyckel].skala === 'band' || !doms[nyckel]) continue;
         const [d0, d1] = doms[nyckel];
         const lag = Math.min(d0, d1), hog = Math.max(d0, d1);
         const bas = Math.min(Math.max(0, lag), hog);
-        const lodrat = nyckel !== 'x', omv = !!figur[nyckel].omvand;
-        const lagSida = lodrat ? (omv ? 'lo' : 'hi') : (omv ? 'hi' : 'lo');       // sidan där minsta värdet ligger
+        const lagSida = nyckel !== 'x' ? 'hi' : 'lo';       // sidan där minsta värdet ligger
         const hogSida = lagSida === 'lo' ? 'hi' : 'lo';
         if (bas === lag) basSida[nyckel].add(lagSida); else if (bas === hog) basSida[nyckel].add(hogSida);
     }
-    for (const sida of [...basSida.y, ...basSida.y2]) { basSida.y.add(sida); basSida.y2.add(sida); }
     // Minst r px marginal på båda sidor av talaxeln `nyckel` — utom på en sida där staplar har sin bas.
     const marginal = (nyckel, r) => {
         if (!figur[nyckel] || figur[nyckel].skala === 'band') return;
         for (const k of ['lo', 'hi']) if (r > rum[nyckel][k] && !basSida[nyckel].has(k)) rum[nyckel][k] = r;
     };
     for (const { l } of synliga) {
-        const yNyckel = l.axel === 'y2' ? 'y2' : 'y';
         // Punkter och linjer vid axelns ände ska inte klippas mitt itu: lämna en marginal på talaxlar.
         if (l.marke === 'punkt' || l.marke === 'linje') {
             const r = l.data.reduce((m, d) => Math.max(m, d && !dold(d) && _rfTal(d.storlek) ? d.storlek : 0), l.storlek || 4) + 2;   // bara ritade punkter
             marginal('x', r);
-            marginal(yNyckel, r);
+            marginal('y', r);
         }
         // Lådor: individpunkter och avvikare är cirklar som sticker ut förbi sitt värde — radien + 2 px längs lådans
         // värdeaxel (lådor är alltid stående). Radien är en konstant: inget läses ur lagrets data.
         // Intervall, band och rutor behöver inget: ett intervall och en låda slutar exakt vid sitt värde, och
         // tjockleken löper tvärs kategoriaxeln, inne i bandet.
-        if (l.marke === 'lada') marginal(yNyckel, _RF.individ + 2);
+        if (l.marke === 'lada') marginal('y', _RF.individ + 2);
     }
     return rum;
 }
 
-// Värdeaxelns nyckel för ett stapellager: x om stapeln ligger, annars y2 (om figuren har en sådan axel) eller y.
-const _rfVardeNyckel = (l, figur) => (l.riktning === 'liggande' ? 'x' : (l.axel === 'y2' && figur.y2 ? 'y2' : 'y'));
 // Lagren som ritas i en panel (ett lager utan `panel` ritas i varje panel) och vilka av dem som är staplar bredvid varandra.
 export const _rfIPanel = (syn, panel) => syn.synliga.filter(({ l }) => panel == null || l.panel == null || l.panel === panel);
 export const _rfBredvid = iPanel => iPanel.filter(({ l }) => l.marke === 'stapel' && (l.lage || 'bredvid') === 'bredvid').map(({ li }) => li);
@@ -326,14 +321,14 @@ export function _rfEtikettBeslut(figurIn, syn, px, inreH, panelB) {
     for (const { l, li } of syn.synliga) {
         if (l.marke !== 'stapel') continue;
         const ligg = l.riktning === 'liggande';
-        const katNyckel = ligg ? 'y' : 'x', nyckel = _rfVardeNyckel(l, figurIn);
+        const katNyckel = ligg ? 'y' : 'x', nyckel = ligg ? 'x' : 'y';
         if (figurIn[katNyckel].skala !== 'band' || figurIn[nyckel].skala === 'band') continue;   // lagret ritas inte (se _rfStapel)
         const mina = paneler.filter(ip => ip.some(o => o.li === li));
         if (!mina.length) continue;
         const medEtikett = l.data.filter(d => d && !syn.dold(d) && d.etikett != null);
         if (!medEtikett.length) continue;
         if (l.lage === 'staplad') {
-            const sammaStapel = o => o.l.lage === 'staplad' && (o.l.riktning === 'liggande') === ligg && _rfVardeNyckel(o.l, figurIn) === nyckel;
+            const sammaStapel = o => o.l.lage === 'staplad' && (o.l.riktning === 'liggande') === ligg;
             if (mina.every(ip => ip.every(o => o.l.marke !== 'stapel' || sammaStapel(o)))) ritas.set(li, new Set(medEtikett));
             continue;
         }
@@ -355,17 +350,16 @@ export function _rfEtikettBeslut(figurIn, syn, px, inreH, panelB) {
 // högst `tak`) eller en textrad (stående), på den sida stapeln sträcker sig mot. Bara för etiketter som ritas
 // (_rfEtikettBeslut); staplade etiketter ligger i sina segment och tar inget rum.
 export function _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, tak) {
-    const rum = { x: { ...rumBas.x }, y: { ...rumBas.y }, y2: { ...rumBas.y2 } };
+    const rum = { x: { ...rumBas.x }, y: { ...rumBas.y } };
     for (const { l, li } of syn.synliga) {
         const ritade = etiketter.get(li);
         if (!ritade || l.lage === 'staplad') continue;
-        const ligg = l.riktning === 'liggande', nyckel = _rfVardeNyckel(l, figurIn);
+        const ligg = l.riktning === 'liggande', nyckel = ligg ? 'x' : 'y';
         const bas = _rfBas(_rfSkala(figurIn[nyckel], syn.doms[nyckel], [0, 1]));
-        const omv = nyckel !== 'y2' && !!figurIn[nyckel].omvand;   // y2 ritas aldrig omvänd (se _rfYAxlar)
         for (const d of ritade) {
             const v = ligg ? d.x : d.y;
             // Samma håll som _rfStapel ritar åt: en stapel utan utsträckning (v = bas) får etiketten till höger resp. ovanför.
-            const hi = v === bas ? ligg : (ligg ? (v > bas) !== omv : (v > bas) === omv);
+            const hi = v === bas ? ligg : (ligg ? v > bas : v <= bas);
             const behov = ligg ? _rfBredd(d.etikett, px - 1) + 6 : px + 6;
             const k = hi ? 'hi' : 'lo';
             if (behov > rum[nyckel][k]) rum[nyckel][k] = behov;
@@ -378,7 +372,7 @@ export function _rfStapelEtikettRum(rumBas, etiketter, figurIn, syn, px, tak) {
 
 // Punktetiketter bredvid punkten (lagrets `etikettLage: 'hoger'` eller `'vanster'`) som skulle gå utanför panelen får
 // rum på x: så mycket som texten sticker ut förbi panelens kant med omfånget utan rummet. Rummet krymper omfånget, så
-// punkten flyttas inåt och etiketten ryms. Samma tak som stapeletiketterna; 'auto' och 'undvik' byter själva sida.
+// punkten flyttas inåt och etiketten ryms. Samma tak som stapeletiketterna; 'undvik' väljer själv sitt läge.
 export function _rfPunktEtikettRum(rum, figurIn, syn, px, panelB, tak) {
     if (figurIn.x.skala === 'band') return rum;
     const x = _rfSkala(figurIn.x, syn.doms.x, _rfXOmfang(figurIn, panelB, rum.x)), fpx = _rfLitenPx(px);
@@ -387,7 +381,7 @@ export function _rfPunktEtikettRum(rum, figurIn, syn, px, panelB, tak) {
         if (l.marke !== 'punkt' || (l.etikettLage !== 'hoger' && l.etikettLage !== 'vanster')) continue;
         for (const d of l.data) {
             if (!d || syn.dold(d) || d.etikett == null || String(d.etikett) === '' || !_rfTal(d.x) || !_rfTal(x(d.x))) continue;
-            const ut = (_rfTal(d.storlek) ? d.storlek : (l.storlek || 4)) + 5 + _rfBredd(_rfKorta(String(d.etikett), 28), fpx);
+            const ut = (_rfTal(d.storlek) ? d.storlek : (l.storlek || 4)) + 5 + _rfBredd(_rfKorta(String(d.etikett), _RF.punktEtikett), fpx);
             if (l.etikettLage === 'hoger') hi = Math.max(hi, rum.x.hi + x(d.x) + ut - panelB);
             else lo = Math.max(lo, rum.x.lo + ut - x(d.x));
         }
@@ -414,7 +408,9 @@ function _rfMarkeringstext(axel, v, dec) {
 function _rfMarkeringssida(axel, v) { return axel.format === 'pctAbs' ? Math.sign(v) : 0; }
 // Kandidater för talmarkeringar: [{v, prio}]. Logaritmiska axlar föredrar tiopotenser, sedan 5 och 2.
 function _rfTalKandidater(axel, skala, langd, per) {
-    const v = skala.ticks(Math.max(2, Math.floor(langd / per)));
+    let v = skala.ticks(Math.max(2, Math.floor(langd / per)));
+    // Format som visar heltal (talformat) får bara heltalsmarkeringar; annars står "1" vid 0,5.
+    if (['kr', 'antal', 'ar'].includes(axel.format)) v = v.filter(Number.isInteger);
     if (axel.skala !== 'log') return v.map(x => ({ v: x, prio: 0 }));
     const ut = [];
     for (const x of v) {
@@ -532,8 +528,9 @@ export function _rfLodratLayout(figurIn, val, B, H, px, syn) {
     const notRader = val.not ? _rfRadbryt(val.not, (B - 16) / ((px - 1) * _RF.tecken), 2) : [];
     const maxT = (B - 16) / ((px - 1) * _RF.tecken);
     const rubrik = val.rubrik ? _rfKorta(String(val.rubrik), (B - 16) / ((px + 2) * _RF.tecken)) : '';
-    const fot = val.fot ? _rfKorta(String(val.fot), maxT * (px - 1) / _rfLitenPx(px)) : '';
-    const notH = (notRader.length ? notRader.length * px + 8 : 0) + (fot ? px + 2 : 0);
+    // Fotraden bryts på så många rader som behövs: den bär urvalet och utsnittet, som bilden inte får tappa.
+    const fot = val.fot ? _rfRadbryt(String(val.fot), maxT * (px - 1) / _rfLitenPx(px), Infinity, true) : [];
+    const notH = (notRader.length ? notRader.length * px + 8 : 0) + (fot.length ? fot.length * px + 2 : 0);
     const topp = 10 + (rubrik ? px + 14 : 0) + (syn.paneler.some(p => p != null) ? px + 10 : 0);
     const botten = rader => (rader ? axelNer + legBas + (rader - 1) * _RF.legendRad + 4 : axelNer) + 6 + notH;
     let maxRader = 0;
@@ -551,15 +548,13 @@ export function _rfLodratLayout(figurIn, val, B, H, px, syn) {
     return { xTitel, axelNer, legBas, notRader, topp, legend, inreH, xTvaRader, rubrik, fot };
 }
 
-// Steg 3: y-axlarnas skalor och markeringar. Utan `marg` ger steget också marginalernas mått (yB, y2B: bredden
+// Steg 3: y-axelns skala och markeringar. Utan `marg` ger steget också marginalens mått (yB: bredden
 // på den bredaste markeringstexten). Med `marg` (måtten från en tidigare körning utan etikettrum) behålls de
 // måtten, och en markering vars text är bredare än sin marginal hoppas över — marginalerna, och därmed
 // panelbredden, beror alltså inte på etikettrummet.
 export function _rfYAxlar(figurIn, syn, rum, B, px, inreH, marg) {
     const yBand = figurIn.y.skala === 'band';
-    const yOmfang = yBand ? (figurIn.y.omvand ? [inreH, 0] : [0, inreH]) : _rfVardeOmfang(inreH, rum.y, true, !!figurIn.y.omvand);
-    const y = _rfSkala(figurIn.y, syn.doms.y, yOmfang);
-    const y2 = figurIn.y2 ? _rfSkala(figurIn.y2, syn.doms.y2, _rfVardeOmfang(inreH, rum.y2, true, false)) : null;
+    const y = _rfSkala(figurIn.y, syn.doms.y, yBand ? [0, inreH] : _rfVardeOmfang(inreH, rum.y, true));
     // Kategorinamn på y-axeln: högst 30 tecken, eller axelns eget `etikettMax` (långa namn som ska gå att läsa) —
     // men aldrig mer än 42 % av bildens bredd.
     const yTak = _rfTal(figurIn.y.etikettMax) && figurIn.y.etikettMax >= 3 ? Math.floor(figurIn.y.etikettMax) : _RF.maxEtikett;
@@ -582,16 +577,11 @@ export function _rfYAxlar(figurIn, syn, rum, B, px, inreH, marg) {
     const yBEgen = yEt.reduce((s, k) => Math.max(s, _rfBredd(k.text, px)), 0);
     const yBAlla = yBand && Array.isArray(figurIn.y._alla) ? figurIn.y._alla.reduce((s, v) => Math.max(s, _rfBredd(_rfKorta(v, yEtikettMax), px)), 0) : 0;
     const yB = marg ? marg.yB : Math.max(yBEgen, yBAlla);
-    let y2Et = [], y2B = 0;
-    if (y2) {
-        y2Et = _rfLodratMarkningar(figurIn.y2, y2, inreH, px, marg ? marg.y2B : B * 0.25).valda;
-        y2B = marg ? marg.y2B : y2Et.reduce((s, k) => Math.max(s, _rfBredd(k.text, px)), 0);
-    }
-    return { yBand, y, y2, yEt, yRutnat, y2Et, y2B, yB };
+    return { yBand, y, yEt, yRutnat, yB };
 }
 
 // Pixelomfång för x: band, eller värdeaxel med plats reserverad enligt rumX ({lo, hi}).
-export const _rfXOmfang = (figurIn, L, rumX) => (figurIn.x.skala === 'band' ? (figurIn.x.omvand ? [L, 0] : [0, L]) : _rfVardeOmfang(L, rumX, false, !!figurIn.x.omvand));
+export const _rfXOmfang = (figurIn, L, rumX) => (figurIn.x.skala === 'band' ? [0, L] : _rfVardeOmfang(L, rumX, false));
 
 // Steg 4: vågräta mått: marginaler, panelbredd, mellanrum och gränser för etiketter. Halva bredden på yttersta
 // talmarkeringen reserveras i sidomarginalerna. Inget här beror på etikettrummet: markeringarnas värden och
@@ -607,17 +597,16 @@ export function _rfVagratLayout(figurIn, syn, yAx, B, px, fargskala) {
         xHalv = kand.reduce((s, k) => Math.max(s, _rfBredd(_rfMarkeringstext(figurIn.x, k.v, dec), px) / 2), 0);
     }
     const vanster = Math.max(vanster0, Math.ceil(xHalv) + 4);
-    const y2Block = yAx.y2 ? 8 + yAx.y2B + 8 + (figurIn.y2.titel ? px + 8 : 0) : 0;
     // Färgstapeln får den bredd dess titel och ändvärden behöver (ur figurens fargskala, aldrig ur data).
     const fargB = fargskala ? _rfFargstapelMatt(figurIn.fargskala, px, B).bredd : 0;
-    const hoger = Math.max(16, y2Block, Math.ceil(xHalv) + 4) + fargB;
+    const hoger = Math.max(16, Math.ceil(xHalv) + 4) + fargB;
     const inreB = Math.max(40, B - vanster - hoger);
     const glapp = syn.antalP > 1 ? Math.max(24, Math.ceil(2 * xHalv) + 8) : 0;
     const panelB = Math.max(20, (inreB - glapp * (syn.antalP - 1)) / syn.antalP);
     // Vågräta stapeletiketter får ta högst 40 % av panelbredden; längre etiketter kortas (hela texten i title).
     const etikettMax = Math.max(3, Math.floor((0.4 * panelB - 6) / ((px - 1) * _RF.tecken)));
     const tak = etikettMax * (px - 1) * _RF.tecken + 6;
-    return { vanster, hoger, y2Block, inreB, glapp, panelB, etikettMax, tak, fargB };
+    return { vanster, hoger, inreB, glapp, panelB, etikettMax, tak, fargB };
 }
 
 // x-axelns markeringar i en panel: [{p, text, hel}] och lägen för stödlinjer (bara talaxlar).

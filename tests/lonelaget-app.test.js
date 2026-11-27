@@ -131,7 +131,7 @@ describe('Lönepolitik är avsnitt två i Löneläget', () => {
         w.eval("navigeraTill('lonepolitik')");
         expect(d.getElementById('tab-benchmark').classList.contains('active')).toBe(true);
         expect(d.getElementById('page-title').textContent).toBe('Löneläget');
-        const a = d.createElement('button'); a.setAttribute('data-goto-tab', 'lonepolitik'); d.body.appendChild(a);
+        const a = d.createElement('button'); a.setAttribute('data-go-to-tab', 'lonepolitik'); d.body.appendChild(a);
         d.querySelector('.nav-item[data-tab="dashboard"]').click(); a.click();
         expect(d.getElementById('tab-benchmark').classList.contains('active')).toBe(true);
     });

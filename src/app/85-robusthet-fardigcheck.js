@@ -14,10 +14,11 @@
 //
 // Robusthetskörningarna ändrar inte state: kvinnotröskeln och referensen skickas som argument.
 // ====================================================================
-import { sifferprefixAvYrke } from '../lib/aid.js';
+import { aidAvRad } from '../lib/aid.js';
+import { statistikFor } from '../lib/jamforelse.js';
 import { svPct } from '../lib/talformat.js';
 import { ordForAntal, stor, termFras } from '../lib/termer.js';
-import { esc } from './01-html-och-tillganglighet.js';
+import { behallFokus, esc, meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { smaGrupperVid } from '../lib/ktroskel.js';
@@ -118,6 +119,8 @@ function robusthetPrioritering(topN = 10) {
  */
 /** @type {{fardig: any[]|null, robust: any, block: any}} */
 const _dkLage = { fardig: null, robust: null, block: null };
+/** Rensa all data: färdigcheckens punkter och robustheten gällde det rensade underlaget. */
+export function dokumenteraSlapp() { Object.assign(_dkLage, { fardig: null, robust: null, block: null }); }
 export function _dkRitaTopp(del) {
     Object.assign(_dkLage, del);
     const host = document.getElementById('dk-slutsatser');
@@ -148,9 +151,19 @@ function ritaRobusthet() {
 function korRobusthet() {
     const host = document.getElementById('robusthet-body');
     if (!host || !hamtaData().length) return;
-    host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>';
+    behallFokus(host, () => { host.innerHTML = '<p class="f-dampad">Beräknar — det kan ta en stund…</p>'; });
+    meddelaSkarmlasare('Robusthetsanalysen räknar.');
     // Låt webbläsaren rita om innan det blockerande arbetet startar.
-    setTimeout(() => { try { _ritaRobusthetResultat(host); } finally { visningNy(); } }, 30);   // resultatet är nytt (ADR-81)
+    setTimeout(() => {
+        try {
+            _ritaRobusthetResultat(host);
+            meddelaSkarmlasare('Robusthetsanalysen är klar.');
+        } catch (e) {
+            rapporteraFel('robusthetsanalysen', e);
+            host.innerHTML = '<p class="gd-missing">Robusthetsanalysen kunde inte köras.</p>';
+            meddelaSkarmlasare('Robusthetsanalysen kunde inte köras.');
+        } finally { visningNy(); }   // resultatet är nytt (ADR-81)
+    }, 30);
 }
 
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
@@ -267,8 +280,9 @@ function byggFardigcheck() {
 
     // 5. Yrkesgrupper utan motsvarighet i jämförelsestatistiken
     if ((state.statistik || []).length) {
-        const aids = new Set(d.map(r => { return sifferprefixAvYrke(r.yrke) ?? r.yrke; }));
-        const utan = [...aids].filter(a => !(state.statistik || []).some(s => s.aid === a));
+        // Grupperna AID × BAS, matchade som i resten av verktyget (statistikFor).
+        const grupper = new Map(d.map(r => [`${aidAvRad(r)}|${r.bas}`, [aidAvRad(r), r.bas]]));
+        const utan = [...grupper.values()].filter(([aid, bas]) => !statistikFor(state.statistik, aid, bas));
         if (utan.length) {
             out.push({
                 id: 'utan-benchmark', level: 'info', tab: 'benchmark',
@@ -311,7 +325,7 @@ function ritaFardigcheck() {
             <li class="fc-item fc-${esc(i.level)}">
                 <div class="fc-title">${i.level === 'warn' ? statusMarke('varning') : statusMarke('info', 'Att känna till')}${esc(i.title)}</div>
                 <div class="fc-detail">${esc(i.detail)}</div>
-                ${i.tab ? `<button type="button" class="btn-table-tool" data-goto-tab="${esc(i.tab)}">Gå dit</button>` : ''}
+                ${i.tab ? `<button type="button" class="btn-table-tool" data-go-to-tab="${esc(i.tab)}">Gå dit</button>` : ''}
             </li>`).join('')}</ul>`;
 }
 

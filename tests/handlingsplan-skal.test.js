@@ -9,6 +9,7 @@ const fonster = () => {
     const w = createAppWindow();
     w.__lasInDemodata();
     w.__state.handlingsplan = {};
+    w.eval('_hpDemoNycklar.clear()');   // skälen som skrivs sedan är testets, inte demots
     w.document.querySelector('.nav-item[data-tab="handlingsplan"]').click();
     return w;
 };
@@ -137,8 +138,8 @@ describe('Handlingsplan: knappen Sakliga skäl och dialogen', () => {
         expect(knapp(radMedSkillnad(w)).getAttribute('aria-label')).toMatch(/^Sakliga skäl \(1\) · .* förklarat, /);
     });
     it('Lägg till skäl och Ta bort flyttar inte fokus i efterhand: en kommentar som skrivs direkt hamnar i fältet och sparas', async () => {
-        // Fokusfällan läggs om när dialogens innehåll byggs om. Den satte tidigare fokus på stängknappen en kort stund
-        // senare, så att text som skrevs strax efter Lägg till skäl gick förlorad (röktestet i Firefox under last).
+        // Fokusfällan läggs om när dialogens innehåll byggs om. Den får inte sätta fokus på stängknappen en kort stund
+        // senare: då går text som skrivs strax efter Lägg till skäl förlorad (röktestet i Firefox under last).
         const w = fonster();
         const tr = radMedSkillnad(w);
         const nyckel = knapp(tr).dataset.hpSkal;

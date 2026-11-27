@@ -16,13 +16,6 @@ import { T } from './09-termer.js';
 import { state } from './12-tillstand.js';
 import { konsklassNu } from './45-aid-bas-tabeller.js';
 
-/**
- * Slår upp en AID-kod i SKR:s personalstatistik.
- * Klass efter verktygets definition (konsklassNu, ADR-60): 'kvinnodominerat', 'icke-kvinnodominerat' (mansdominerat) eller 'blandat'.
- *
- * @param {string} aid - AID-kod (sexsiffrig, eller minst tre siffror för prefixet)
- * @returns {null | {kvAndel:number, klass:string, kalla:string, prefix:string, niva:string}}
- */
 /** Vilken del av SKR:s statistik som är referens: organisationstypen i profilen (ADR-34). */
 export function _skrDel() {
     const t = state.profile && state.profile.orgTyp;
@@ -45,6 +38,13 @@ export function skrForklaring() {
         + 'Ett referensvärde bredvid organisationens egen könsfördelning, och reserv i Likvärdigt arbete när jämförelsestatistiken saknar könsfördelning. Valet kommun eller region görs under Inställningar.';
 }
 
+/**
+ * Slår upp en AID-kod i SKR:s personalstatistik.
+ * Klass efter verktygets definition (konsklassNu, ADR-60): 'kvinnodominerat', 'icke-kvinnodominerat' (mansdominerat) eller 'blandat'.
+ *
+ * @param {string} aid - AID-kod (sexsiffrig, eller minst tre siffror för prefixet)
+ * @returns {null | {kvAndel:number, klass:string, kalla:string, prefix:string, niva:string, del:string}}
+ */
 export function nationellAidKlass(aid) {
     if (!aid) return null;
     const s = String(aid).trim();

@@ -2,6 +2,7 @@
 // Copyright 2026 Felix Jansson
 import { tillTsv } from '../lib/csv.js';
 import { K_STANDARD } from '../lib/ktroskel.js';
+import { KVINNO_TROSKEL_STANDARD } from '../lib/likvardighet.js';
 import { normaliseraNamn } from '../lib/namn.js';
 import { liknarPersonuppgift } from '../lib/organisationspaket.js';
 import { regressionslinjensBand } from '../lib/osakerhet.js';
@@ -9,7 +10,7 @@ import { namnFranFil } from '../lib/referens.js';
 import { kvantil, linjarRegression, median } from '../lib/stat.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { rapporteraFel } from './03-hjalpfunktioner.js';
+import { DEMO_MARKE, rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _cellSpann, aktiveraSortering, kopplaHopfallbaraGrupper } from './05-tabeller-och-lankar.js';
 import { _kUndantagFor, _tsvMedStampel } from './06-k-troskel.js';
@@ -78,84 +79,93 @@ export function nyPrognos() {
  *   _actionChecklistDone?: Set<string>, _lastStructureFile?: File|null, _lifecycleCache?: any
  *   flerKolumner: {[tabell: string]: boolean},
  *   handlingsplan: {[nyckel: string]: {sakligt: string, ansvarig: string, tidsplan: string, status: string, egen?: boolean, atgard?: string, grupp?: string, skal?: {kategori: string, belopp: number, kommentar: string}[]}},
- * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.) och nollas av 26-rensning.js.
+ * }} Fälten med `?` sätts först vid inläsning (32-filinlasning.js, 29-organisationspaket.js m.fl.); Rensa all data
+ * (26-rensning.js) tar bort dem.
  */
-export const state = {
-    data: [],        // hela underlaget, aldrig filtrerat
-    // Referensen (ADR-28): ingen inbyggd — ställningstagandet läses in som fil eller ur ett
-    // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
-    policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
-    statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket' | 'demo'
-    paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
-    paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
-    isDemo: false,   // true när syntetisk demodata är inläst (aldrig verklig analys)
-    demoStort: false,   // true i det stora demot (5 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
-    prioConfig: { ...PRIO_CONFIG_DEFAULTS },
-    prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
-    costSettings: { ...COST_DEFAULTS },
-    kLage: 'skarm',                    // 'export' medan något som lämnar verktyget ritas eller räknas (ADR-51, 23-exportgrind.js)
-    utkastPerBas: true,        // Rapporttextens utkast med ett stycke per BAS-intervall (37-struktur.js); i minnet, inte i filen
-    rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med, fast? } (58-rapportmodell.js)
-    rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
-    perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
-    forklaringsmodell: null,   // vilka variabler regressionen räknar bort: null = standard (kön + BAS + ålder), ADR-56
-    gapUppdelning: null,       // Var uppstår löneskillnaden: { variabler } i ordning; null = standard (BAS, AID), ADR-65
-    bristAids: new Set(),         // E: AID-koder markerade som bristyrke
-    scenarios: [],                // I: sparade scenarion (max 5)
-    snapshot: null,         // för A/B-jämförelse
-    forraArsbokslut: null,  // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
-    profile: { ...STANDARDPROFIL },
-    filnamn: { data: null, policy: null, statistik: null },   // filrutornas status (ADR-36)
-    kTroskel: K_STANDARD,             // minsta gruppstorlek för redovisning (ADR-38); ändras bara av sattKTroskel()
-    // Organisationspaketets låsningar (ADR-47): golv för tröskeln, låst rensningstid (minuter) och om små grupper
-    // får tas med i Utforskas export. Sätts bara av lasInPaket(); Rensa all data återställer dem.
-    paketLas: { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true },
-    bootstrapCI: null,                // cache av 95 % KI för mediankvot
-    powerAnalysis: null,              // cache av MDE-beräkning
+export const state = nyttTillstand();
 
-    // Löneöversyn/prognos: budget-först-fördelning (pott → generellt + riktat). Simuleringen rör aldrig state.data.
-    forecast: nyPrognos(),
+/**
+ * Tillståndet vid start. Samma källa för starten och för Rensa all data (26-rensning.js).
+ * @returns {typeof state}
+ */
+export function nyttTillstand() {
+    return {
+        data: [],        // hela underlaget, aldrig filtrerat
+        // Referensen (ADR-28): ingen inbyggd — ställningstagandet läses in som fil eller ur ett
+        // organisationspaket. policyKalla: null | 'fil' | 'paket' | 'demo'.
+        policy: [], policyNamn: null, policyKortnamn: null, policyKalla: null,
+        statistik: [], statistikNamn: null, statistikKalla: null,   // statistikKalla: null | 'fil' | 'paket' | 'demo'
+        paket: null,     // inläst organisationspaket: { organisation, utgivare, skapat, avserAr, kalla: 'fil'|'inbakat', delar } (ADR-28); delar = paketets validerade delar
+        paketInbakat: null,   // paketet som ligger inbakat i den här filen (organisationsfil); läses vid start och efter Rensa all data
+        isDemo: false,   // true när syntetisk demodata är inläst (aldrig verklig analys)
+        demoStort: false,   // true i det stora demot (5 000 personer, 21-stort-demo.js); bara bannern och filraden läser det
+        prioConfig: { ...PRIO_CONFIG_DEFAULTS },
+        prioWeights: { ...PRIO_WEIGHTS_DEFAULTS },
+        costSettings: { ...COST_DEFAULTS },
+        kLage: 'skarm',                    // 'export' medan något som lämnar verktyget ritas eller räknas (ADR-51, 23-exportgrind.js)
+        utkastPerBas: true,        // Rapporttextens utkast med ett stycke per BAS-intervall (37-struktur.js); i minnet, inte i filen
+        rapportUrval: null,        // rapportens avsnitt: null = hela dokumentationen, annars { ordning, med, fast? } (58-rapportmodell.js)
+        rapportTabeller: [],       // egna tabeller i rapporten: recept ur Utforska (src/lib/tabellrecept.js, ADR-52)
+        perBasRecept: null,        // receptet för avsnittet per BAS-intervall: null = standard (src/lib/perbas.js, ADR-52)
+        forklaringsmodell: null,   // vilka variabler regressionen räknar bort: null = standard (kön + BAS + ålder), ADR-56
+        gapUppdelning: null,       // Var uppstår löneskillnaden: { variabler } i ordning; null = standard (BAS, AID), ADR-65
+        bristAids: new Set(),         // E: AID-koder markerade som bristyrke
+        scenarios: [],                // I: sparade scenarion (max 5)
+        snapshot: null,         // för A/B-jämförelse
+        forraArsbokslut: null,  // förra årets bokslut ur en inläst konfigurationsfil (ADR-54, src/lib/arsbokslut.js)
+        profile: { ...STANDARDPROFIL },
+        filnamn: { data: null, policy: null, statistik: null },   // filrutornas status (ADR-36)
+        kTroskel: K_STANDARD,             // minsta gruppstorlek för redovisning (ADR-38); ändras bara av sattKTroskel()
+        // Organisationspaketets låsningar (ADR-47): golv för tröskeln, låst rensningstid (minuter) och om små grupper
+        // får tas med i Utforskas export. Sätts bara av lasInPaket(); Rensa all data återställer dem.
+        paketLas: { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true },
+        bootstrapCI: null,                // cache av 95 % KI för mediankvot
+        powerAnalysis: null,              // cache av MDE-beräkning
 
-    // Inaktivitetstimer
-    inactivityTimeoutMin: INAKTIVITET_STANDARD_MIN,   // 0 = av, annars antal minuter; på som standard (GDPR art. 25.2)
-    // Likvärdighetsanalysen (3 kap. 9 § 2): kvinnodominerade yrken mot yrken som inte är det, med samma eller lägre
-    // BAS-rank (krav-proxy) och högre lön.
-    likvardighet: {
-        kvinnoTrosholdPct: 60,
-        kvDomDefinition: 'do',     // 'do' (*Mer än X %*) | 'scb' (*X % eller mer*): den enda definitionen i verktyget (ADR-60); nycklarna är historiska och står kvar för sparade konfigurationsfiler (ADR-72)
-        jamforelse: 'alla',        // 'alla' som inte är kvinnodominerade | 'mansdominerade' (filtret i Inställningar, ADR-60)
-        minGapPct: 0,              // 0 = alla par där jämförelseyrket ligger högre; 5 % är ett valbart filter (ADR-61)
-        topN: 20,
-        poangBandPct: 5,           // ekvivalensband för arbetsvärderingspoäng (±%)
-        result: null               // senaste beräkning för render-tabell + JPA
-    },
-    // valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i likvärdighetsanalysen.
-    // null = använd BAS-rank. byKey: Map<'AID|BAS' eller 'AID', poäng>.
-    arbetsvardering: null,
-    // Lönemånaden underlaget gäller (fritext, t.ex. "2026-10"): står på bladen per AID och BAS. Ingen uppgift i
-    // lönefilen säger det, så användaren anger den; tomt skrivs ut som "inte angiven".
-    lonemanad: '',
-    // manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
-    // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
-    columnMap: null,
-    // Importprofiler (src/lib/importprofiler.js): sparade kolumnmappningar som bara bär rubriknamn, med källan
-    // 'konfiguration' (konfigurationsfilen eller sparade i sessionen) eller 'organisationspaket'. De inbyggda ligger i
-    // lib och står inte här. importprofil: den profil som gällde för den senast inlästa lönefilen, eller null.
-    importprofiler: [],
-    importprofil: null,
-    // Förhandskontrollen av lönefilen (src/lib/forhandskontroll.js, 17-forhandskontroll.js): hur den senast inlästa
-    // filen tolkades, med de tio första raderna, eller null. Bara i minnet: ingår inte i konfigurationsfilen eller
-    // någon export. vantar: true medan filen väntar på Läs in (forhandskontrollStopp, en inställning, standard av).
-    forhandskontroll: null,
-    forhandskontrollStopp: false,
-    ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
-    _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
-    // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
-    flerKolumner: {},
-    // Handlingsplanens ifyllda fält per förifylld rad (56-handlingsplan.js): { [nyckel]: { sakligt, ansvarig, tidsplan, status, skal? } }; skal: de sakliga skälen (57-sakliga-skal.js).
-    // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
-    handlingsplan: {}
-};
+        // Löneöversyn/prognos: budget-först-fördelning (pott → generellt + riktat). Simuleringen rör aldrig state.data.
+        forecast: nyPrognos(),
+
+        // Inaktivitetstimer
+        inactivityTimeoutMin: INAKTIVITET_STANDARD_MIN,   // 0 = av, annars antal minuter; på som standard (GDPR art. 25.2)
+        // Likvärdighetsanalysen (3 kap. 9 § 2): kvinnodominerade yrken mot yrken som inte är det, med samma eller lägre
+        // BAS-rank (krav-proxy) och högre lön.
+        likvardighet: {
+            kvinnoTrosholdPct: KVINNO_TROSKEL_STANDARD,
+            kvDomDefinition: 'do',     // 'do' (*Mer än X %*) | 'scb' (*X % eller mer*): den enda definitionen i verktyget (ADR-60); nycklarna är historiska och står kvar för sparade konfigurationsfiler (ADR-72)
+            jamforelse: 'alla',        // 'alla' som inte är kvinnodominerade | 'mansdominerade' (filtret i Inställningar, ADR-60)
+            minGapPct: 0,              // 0 = alla par där jämförelseyrket ligger högre; 5 % är ett valbart filter (ADR-61)
+            topN: 20,
+            poangBandPct: 5,           // ekvivalensband för arbetsvärderingspoäng (±%)
+            result: null               // senaste beräkning för render-tabell + JPA
+        },
+        // valfri arbetsvärderingstabell (poäng per yrke) som krav-proxy i likvärdighetsanalysen.
+        // null = använd BAS-rank. byKey: Map<'AID|BAS' eller 'AID', poäng>.
+        arbetsvardering: null,
+        // Lönemånaden underlaget gäller (fritext, t.ex. "2026-10"): står på bladen per AID och BAS. Ingen uppgift i
+        // lönefilen säger det, så användaren anger den; tomt skrivs ut som "inte angiven".
+        lonemanad: '',
+        // manuell kolumnmappning (roll → exakt CSV-rubrik) när auto-matchning
+        // missar. null = enbart auto-matchning. Sätts via kolumnmappnings-guiden.
+        columnMap: null,
+        // Importprofiler (src/lib/importprofiler.js): sparade kolumnmappningar som bara bär rubriknamn, med källan
+        // 'konfiguration' (konfigurationsfilen eller sparade i sessionen) eller 'organisationspaket'. De inbyggda ligger i
+        // lib och står inte här. importprofil: den profil som gällde för den senast inlästa lönefilen, eller null.
+        importprofiler: [],
+        importprofil: null,
+        // Förhandskontrollen av lönefilen (src/lib/forhandskontroll.js, 17-forhandskontroll.js): hur den senast inlästa
+        // filen tolkades, med de tio första raderna, eller null. Bara i minnet: ingår inte i konfigurationsfilen eller
+        // någon export. vantar: true medan filen väntar på Läs in (forhandskontrollStopp, en inställning, standard av).
+        forhandskontroll: null,
+        forhandskontrollStopp: false,
+        ansvarKolumn: null,   // AID:s ansvarskod: { namn, giltiga } när kolumnen godkänts (ADR-33)
+        _dataHeaders: [],   // rubriker från senast inlästa strukturfil (för guiden)
+        // Breda tabeller: true när användaren valt Fler kolumner (05-tabeller-och-lankar.js). Bara i minnet, grundvyn som standard.
+        flerKolumner: {},
+        // Handlingsplanens ifyllda fält per förifylld rad (56-handlingsplan.js): { [nyckel]: { sakligt, ansvarig, tidsplan, status, skal? } }; skal: de sakliga skälen (57-sakliga-skal.js).
+        // Bara i minnet; följer med i konfigurationsfilen och exporterna, nollas av Rensa all data.
+        handlingsplan: {}
+    };
+}
 
 /**
  * Returnerar hela datasetet; det finns inget enhetsfilter (se avgränsningen i docs/utveckling/mal.md).
@@ -242,7 +252,7 @@ export function aterstallReferens() {
 }
 export function sattReferensNamn(namn) {
     const t = normaliseraNamn(namn);
-    if (t && liknarPersonuppgift(t)) return { ok: false, fel: 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.' };
+    if (t && liknarPersonuppgift(t)) return { ok: false, fel: 'Namnet liknar ett personnummer och sparades inte.' };
     const n = t || namnFranFil('');
     state.policyNamn = n;
     state.policyKortnamn = n;
@@ -368,29 +378,33 @@ function __kopieraTabellTillUrklippExport(tableId, btn) {
     if (!rows.length) { alert('Tabellen är tom, så det finns inget att kopiera.'); return; }
     _kopieraMatrisTillUrklipp(rows, btn, { undantag: _kUndantagFor(document.getElementById(tableId)) });
 }
-// Rad-matris → TSV i urklipp (_tillTsv, src/lib/csv.js). Delas av tabellverktygen och diagrammens exportmeny.
+// Rad-matris → TSV i urklipp (tillTsv, src/lib/csv.js). Delas av tabellverktygen och diagrammens exportmeny.
 export function _kopieraMatrisTillUrklipp(rows, btn, { undantag = '' } = {}) {
     const tsv = tillTsv(_tsvMedStampel(rows, undantag));
     kopieraTextTillUrklipp(tsv, () => {
-        meddelaSkarmlasare('Kopierat: ' + (rows.length - 1) + ' rader.');
+        meddelaSkarmlasare('Tabellen är kopierad.');
         // Knappens innehåll (ikonen och texten) läggs tillbaka som det var.
         if (btn) { const o = btn.innerHTML; btn.textContent = 'Kopierad'; setTimeout(() => { btn.innerHTML = o; }, 1500); }
     }, 'Webbläsaren tillät inte kopieringen. Använd knappen CSV i stället.');
 }
 /**
  * Text till urklipp, för tabellerna och dossiererna. Nekar webbläsaren Clipboard API, eller saknas det, kopieras texten
- * via ett dolt textfält; går inte det heller visas `nekad`. `klart` körs bara när texten har kopierats.
+ * via ett dolt textfält; går inte det heller visas `nekad`. `klart` körs bara när texten har kopierats. I demoläget
+ * börjar texten med DEMO_MARKE.
  * @param {string} text
  * @param {() => void} klart
  * @param {string} [nekad]
  */
 export function kopieraTextTillUrklipp(text, klart, nekad = 'Webbläsaren tillät inte kopieringen.') {
+    if (state.isDemo) text = DEMO_MARKE + '\n' + text;
     const reserv = () => {
-        try {
-            const ta = document.createElement('textarea');
-            ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
-            document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); klart();
-        } catch (_e) { alert(nekad); }
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        let kopierat = false;
+        // execCommand svarar false när webbläsaren nekar, och kastar i en del webbläsare; textfältet tas bort i båda fallen.
+        try { ta.select(); kopierat = document.execCommand('copy'); } catch (_e) { /* som nekad */ } finally { ta.remove(); }
+        if (kopierat) klart(); else alert(nekad);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(klart).catch(reserv);
     else reserv();

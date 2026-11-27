@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { FIL, NAMN, ok, browser, page, osynlig, oppnaFlik } from './rigg.mjs';
+import { FIL, ok, browser, page, osynlig, oppnaFlik } from './rigg.mjs';
 /* global state -- används i page.evaluate, där de finns i sidan */
 
 // Laddning och CSP, demolänken, en okänd lönefil, demodatan och policyuppladdningen.
@@ -119,8 +119,9 @@ export async function startsidan() {
             document.getElementById('drop-area-start').dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
         }, csv.join('\n'));
         await slapp.waitForFunction(() => state.data.length === 30, null, { timeout: 15000 });
-        ok(await slapp.evaluate(() => state.filnamn.data === 'slappt.csv' && document.getElementById('file-input-data').files[0]?.name === 'slappt.csv'),
-            'en fil som släpps på startytan hamnar i lönefilskortets filväljare och läses in');
+        // Filväljaren töms när filen är läst (samma fil ska gå att välja igen); namnet står i lönefilskortet.
+        ok(await slapp.evaluate(() => state.filnamn.data === 'slappt.csv' && document.querySelector('#upload-cell-data').textContent.includes('slappt.csv')),
+            'en fil som släpps på startytan läses in och står i lönefilskortet');
         await slapp.close();
     }
     {
@@ -194,7 +195,6 @@ export async function organisationsfilen() {
         const orgFil = join(katalog, 'oppen-lonekartlaggning-roktestkommunen.html');
         writeFileSync(orgFil, r.ok ? r.html : '');
         const o = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
-        await o.addInitScript(webkitSelect => { window.__cspBrott = []; document.addEventListener('securitypolicyviolation', e => { if (webkitSelect && e.violatedDirective === 'style-src-attr' && e.target && (e.target.tagName === 'SELECT' || e.target.nodeName === '#document')) return; const m = e.target && e.target.nodeType === 1 ? e.target : null; window.__cspBrott.push(`${e.violatedDirective}: ${e.blockedURI || e.sample || ''}${m ? ' på ' + m.tagName.toLowerCase() + (m.id ? '#' + m.id : '') + (typeof m.className === 'string' && m.className ? '.' + m.className.trim().split(/\s+/).join('.') : '') : ' på ' + (e.target ? e.target.nodeName : 'okänt mål')} (rad ${e.lineNumber}${e.sourceFile ? ', ' + e.sourceFile.split('/').pop().slice(0, 30) : ''})`); }); }, NAMN === 'webkit');
         const oFel = []; o.on('pageerror', e => oFel.push(String(e && e.message || e)));
         await o.goto('file://' + orgFil);
         const u = await o.evaluate(() => ({ titel: document.title, paket: state.paket && state.paket.kalla, org: state.paket && state.paket.organisation, ref: window.referensNamn(),

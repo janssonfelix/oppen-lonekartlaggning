@@ -44,12 +44,6 @@ export function andelGiltiga(varden) {
     return ifyllda.filter(v => tolkaAnsvarskod(v) !== null).length / ifyllda.length;
 }
 
-/** Kolumnrubrik som anger AID:s ansvarskod — aldrig bara "Ansvar". */
-export function arAnsvarskodRubrik(rubrik) {
-    const r = String(rubrik ?? '').toLowerCase().replace(/å/g, 'a').replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/[^a-z0-9]/g, '');
-    return /ansvarskod|aidansvar|ansvarsniva/.test(r);
-}
-
 const ORDNING = ['ledning', 'uppdrag', 'inget'];
 
 /**

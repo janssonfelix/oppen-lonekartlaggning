@@ -40,7 +40,7 @@ import { kTroskelLank } from './86-installningar.js';
 // EN beräkning för skärmens tabell, diagrammen och rapporten (Word, PDF) — de kan därför aldrig visa olika tal.
 // Bara BAS-intervall där BÅDA könen når tröskeln får en rad: varje tal i raden bygger på minst k personer.
 // Intervallet är medianKvotKI i src/lib/osakerhet.js: bootstrap med B = 1000, seedad ur datat så att intervallet blir
-// detsamma varje gång; dragningarnas medianer tas ur rangräkning (_lvBootstrapMedianer, O(n) per dragning).
+// detsamma varje gång; dragningarnas medianer tas ur rangräkning (bootstrapMedianer i src/lib/likvardighet.js, O(n) per dragning).
 export function _laBootstrapGapKI(kvLons, maLons, B) {
     return medianKvotKI(kvLons, maLons, { B });
 }
@@ -130,7 +130,7 @@ export function ritaLoneskillnadPerBas(vm) {
         // ritar som täthetskurvor, här som lådor). Ett kön under tröskeln i ett intervall ritas inte.
         const ladEl = document.getElementById('chart-skevhet-lador');
         if (ladEl) {
-            const { figur, utelamnade } = _konTathetFigur(hamtaData(), true, kTroskel(), 'lada');
+            const { figur, utelamnade } = _konTathetFigur(hamtaData(), true, kTroskel());
             if (figur.lager.length) ritaFigur(ladEl, figur, { tomtext: `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.niva))} ${T.niva.en} har minst ${kTroskel()} ${personOrd(kTroskel())} av ett kön.` }); else rensaFigur(ladEl);
             const not = document.getElementById('skevhet-lador-not');
             if (not) { not.hidden = !utelamnade.length; not.textContent = utelamnade.length ? `Visas inte, färre än ${kTroskel()} ${personOrd(kTroskel())}: ${utelamnade.join(', ')}.` : ''; }
@@ -216,7 +216,7 @@ export function ritaLoneskillnadPerBas(vm) {
             ['Översiktsdiagram', 'Punkt per BAS; färg och symbol = status (Balanserat, grön cirkel · Följ upp, bärnstensgul kvadrat · Värt att granska, lila romb · Går ej att bedöma, grå cirkel)']
         ],
         notes: [
-            `Kräver minst ${kTroskel()} ${personOrd(kTroskel())} av <em>varje kön</em> för att medianer ska visas (minsta gruppstorlek)`,
+            `Kräver minst ${Math.max(kTroskel(), 2)} ${personOrd(Math.max(kTroskel(), 2))} av <em>varje kön</em> för att medianer ska visas (minsta gruppstorlek)`,
             `Könsfördelningen redovisas för ${T.niva.fl} med minst ${LITET_UNDERLAG} personer totalt, i båda lägena och oavsett minsta gruppstorlek (ett avsteg från k-tröskeln i antal, ADR-57: raden bär antal och andelar men inga lönemått); mindre intervall namnges i en not under tabellen`
         ]
     });
@@ -250,7 +250,7 @@ function _laStabilitetRad(hel) {
 }
 function _ansvarsUnderraderFor(ansvar, fmt) {
     if (!ansvar) return [];
-    const pct = v => `${v.toFixed(1).replace('.', ',')} %`;
+    const pct = v => svPct(v, 1);
     const ut = ansvar.grupper.map(u => {
         const tr = document.createElement('tr');
         tr.className = 'la-underrad';
@@ -276,7 +276,7 @@ function _ansvarsUnderraderFor(ansvar, fmt) {
 // SKR:s kvinnoandel för yrkets AID-etikett (efter organisationstypen) — referens bredvid den egna fördelningen.
 function _skrReferensCell(ref) {
     return ref
-        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="Andel kvinnor nationellt: ${ref.niva === 'etikett' ? 'AID-etiketten' : 'AID-prefixet ' + esc(ref.prefix)} i ${skrDelText(ref.del)}, ${esc(skrKallaKort())}">${svPct(ref.pct, 0)}</td>`
+        ? `<td data-sort-value="${ref.pct.toFixed(1)}" title="Andel kvinnor nationellt: ${ref.niva === 'etikett' ? T.enhet.bf : 'AID-prefixet ' + esc(ref.prefix)} i ${skrDelText(ref.del)}, ${esc(skrKallaKort())}">${svPct(ref.pct, 0)}</td>`
         : `<td data-sort-value="" title="${stor(T.kod.bf)} finns inte i ${esc(skrKallaKort())}">–</td>`;
 }
 
@@ -395,7 +395,7 @@ export function ritaLikaArbete(vm, { reg: given } = {}) {
     sattMetodik('matrix', {
         title: 'Lika arbete — multivariat regression',
         ...baseM,
-        usedInAnalysis: rows.length,
+        usedInAnalysis: `${rows.length} ${ordForAntal(rows.length, T.enhet)} i ${T.niva.en}`,
         analysisExclusions: [
             ...(skippedTooFewKvOrMa > 0 ? [[`${stor(T.enhet.fl)} med &lt;2 av varje kön (ej jämförbara)`, skippedTooFewKvOrMa]] : []),
             ...(maskedYrken > 0 ? [[`${stor(T.enhet.fl)} utelämnade, minsta gruppstorlek (kön n&lt;${kTroskel()})`, maskedYrken]] : [])
@@ -435,7 +435,7 @@ function _skevhetFigur(bars) {
         x: { skala: 'linjar', titel: 'Kvinnors median i % av männens — 100 = lika lön',
              doman: [Math.floor(Math.min(90, ...bars.map(o => (o.ci ? o.ci.lo : o.gap))) - 2), Math.ceil(Math.max(110, ...bars.map(o => (o.ci ? o.ci.hi : o.gap))) + 2)] },
         hojd: Math.max(180, 110 + bars.length * 34),
-        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: 'Lika lön ±3 %' },
+        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: 'Lika lön ±3\u00a0%' },
                    { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
         lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg],
             data: bars.filter(o => status(o) === s).map(pkt), tips }))
@@ -517,7 +517,7 @@ function _laOversiktTabell(ov) {
 // BEDÖMNINGEN av en grupp görs med omkastning (permutation) inom gruppen: könen kastas om slumpvis mellan gruppens
 // löner 1 000 gånger, och gruppens kvot jämförs med de mittersta 95 % av de kvoter slumpen ger. Det är exakt för
 // gruppens egen lönefördelning och egna antal — också för små grupper, ojämn könsfördelning och löner i steg.
-// Slumptalen är seedade ur datat (_slumpFor), så resultatet är detsamma varje gång.
+// Slumptalen är seedade ur datat (slumpFor), så resultatet är detsamma varje gång.
 //
 // Det skuggade FÄLTET är en jämn kurva för orientering, ritad för en grupp med lika många kvinnor som män:
 // 1,96 × 1,2533 × σ × √(1/nKv + 1/nMa), där σ = 1,4826 × MAD av ln(lön) − ln(könets median i gruppen) över alla
@@ -539,8 +539,7 @@ export function _laTrattUnderlag(d, k = kTroskel()) {
     return minne.tratt;
 }
 // Gruppen är AID-kod + BAS-intervall ur varje persons egen rad (lika arbete: samma yrkesgrupp på samma nivå), inte
-// yrkesgruppen över alla intervall. Tidigare grupperades per yrke och gruppen fick BAS från sin första rad, så en
-// yrkesgrupp i flera intervall redovisades i ett godtyckligt av dem med alla sina personer.
+// yrkesgruppen över alla intervall, som annars skulle redovisas i ett godtyckligt intervall med alla sina personer.
 // Räkningen är trattUnderlag i src/lib/osakerhet.js; minnet ovan (_laTrattUnderlag) räknar den en gång per underlag
 // och tröskel.
 function _laTrattUnderlagRakna(d, k) {
@@ -662,7 +661,7 @@ export function ritaLikaArbeteTopp({ reg: given } = {}) {
     ut.innerHTML = [
         rader.length ? _laSlutsats(`${stor(T.enhet.fl)} att granska`, `${granska.length} av ${rader.length}`, granska.length ? 'säkerställd skillnad, minst 3 %' : 'ingen säkerställd skillnad på 3 %', granska.length > 0 ? 'granska' : false,
             'Värt att granska: skillnaden är statistiskt säkerställd (utanför slumpens gränser för gruppen) och minst 3 % (verktygets storleksgräns)')
-                     : _laSlutsats(`${stor(T.enhet.fl)} att granska`, '–', `${adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en} har minst ${kTroskel()} av varje kön`),
+                     : _laSlutsats(`${stor(T.enhet.fl)} att granska`, '–', `${adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet)} ${T.enhet.en} har minst ${Math.max(kTroskel(), 2)} av varje kön`),
         // Raden längst från lika lön: under 100 % är den lägst, över 100 % högst, så rubriken stämmer med värdet.
         storst ? _laSlutsats(`${storst.kvot < 100 ? 'Lägst' : 'Högst'} kvinnolön i % av mäns`, svPct(storst.kvot, 1), gruppMedBas(storst), false, `Kvinnors medianlön i procent av mäns för ${artikel(T.enhet, { bestamd: true })} ${T.enhet.en} där skillnaden är störst`) : '',
         regOk ? _laSlutsats(reg.fras ? `Efter ${reg.fras}` : 'Utan kontroller', svPct(reg.konKvot, 1), `kvinnors lön i % av mäns ${reg.fras ? 'när dessa räknats bort' : 'utan att något räknats bort'}`, _laRegGranska(reg) ? 'granska' : false,

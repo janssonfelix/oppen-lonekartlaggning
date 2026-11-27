@@ -233,7 +233,7 @@ describe('rapportunderlaget: Per BAS-intervall', () => {
         const toc = [...d.querySelectorAll('.ru-toc li')].find(li => li.textContent.startsWith('Per BAS-intervall'));
         expect(toc.querySelectorAll('a')).toHaveLength(5);
         expect(w.__ruTillText(c)).toContain('BAS-intervall C');
-        // Kopiera alla avsnitt tar bara avsnittsblocken, som förut.
+        // Kopiera alla avsnitt tar bara avsnittsblocken.
         expect(w.eval('[..._rapportBlockSenast.values()].filter(b => !b.id.includes(":")).map(b => b.id)')).not.toContain('bas:C');
     });
 
@@ -255,7 +255,7 @@ describe('förra året: tabellen per BAS-intervall i rapportunderlaget och BAS-h
 
     it('lib: blocket får tabellen Löneutveckling per BAS-intervall med panelens kolumner, bara när bokslutet har raderna', () => {
         const b = arsjamforelseBlock(j([rad]), { forraAr: 2025, nuAr: 2026 });
-        expect(b.tabell.rubriker).toEqual(['Mått', '2025', '2026', 'Skillnad']);   // nyckeltalen som förut
+        expect(b.tabell.rubriker).toEqual(['Mått', '2025', '2026', 'Skillnad']);   // nyckeltalen
         expect(b.tabeller).toHaveLength(1);
         const t = b.tabeller[0];
         expect(t.rubrik).toBe('Löneutveckling per BAS-intervall');
@@ -439,5 +439,52 @@ describe('Återskapa frågar innan ett redigerat utkast skrivs över', () => {
         aterskapa(w);
         expect(fragor).toHaveLength(0);
         expect(utkast(w).value).toContain('LÖNEKARTLÄGGNING — SAMMANFATTNING (utkast)');
+    });
+});
+
+describe('ett redigerat utkast när tröskeln höjs (k-troskeln.md §6)', () => {
+    const redigera = (w, text) => { utkast(w).value = text; utkast(w).dispatchEvent(new w.Event('input', { bubbles: true })); };
+    const redigeratVid10 = () => { const w = demo(); w.__ritaFlik('rapporttext'); redigera(w, utkast(w).value + '\nEgen rad'); return w; };
+    const svar = (w, ...lista) => { const fragor = []; w.confirm = t => { fragor.push(t); return lista.shift(); }; return fragor; };
+
+    it('höjd tröskel: en fråga; ja bygger om utkastet utan intervallet under den nya tröskeln', () => {
+        const w = redigeratVid10();
+        expect(utkast(w).value).toContain('BAS-intervall E');
+        const fragor = svar(w, true);
+        w.eval('sattKTroskel(25, { fraga: false })');
+        expect(fragor).toHaveLength(1);
+        expect(fragor[0]).toMatch(/minsta gruppstorlek 10.*25/s);
+        expect(utkast(w).value).not.toContain('BAS-intervall E');
+        expect(utkast(w).value).not.toContain('Egen rad');
+        expect(utkast(w).dataset.dirty).toBeUndefined();
+    });
+    it('höjd tröskel och nej: texten står kvar, och samma tröskel frågar inte igen', () => {
+        const w = redigeratVid10();
+        const fragor = svar(w, false);
+        w.eval('sattKTroskel(25, { fraga: false })');
+        expect(utkast(w).value).toContain('Egen rad');
+        expect(utkast(w).value).toContain('BAS-intervall E');
+        w.eval('sattKTroskel(20, { fraga: false }); sattKTroskel(25, { fraga: false })');
+        expect(fragor).toHaveLength(1);
+    });
+    it('sänkt tröskel och ett oredigerat utkast frågar inte', () => {
+        const w = redigeratVid10();
+        const fragor = svar(w);
+        w.eval('sattKTroskel(8)');
+        const v = demo(); v.__ritaFlik('rapporttext');
+        const fragorV = svar(v);
+        v.eval('sattKTroskel(25, { fraga: false })');
+        expect([...fragor, ...fragorV].filter(t => /utkast/i.test(t))).toEqual([]);
+    });
+    it('en konfigurationsfil med ett utkast sparat vid en lägre tröskel än den som gäller frågar på samma sätt', () => {
+        const cfg = JSON.parse(JSON.stringify(redigeratVid10().__byggKonfiguration()));
+        cfg.kTroskel = 5;
+        const w = demo();
+        const fragor = svar(w, false, false);   // sänkningen till 5 nekas; utkastet behålls
+        w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
+        expect(w.eval('kInstalld()')).toBe(10);
+        expect(fragor).toHaveLength(2);
+        expect(fragor[1]).toMatch(/minsta gruppstorlek 5.*10/s);
+        expect(utkast(w).value).toContain('Egen rad');
     });
 });

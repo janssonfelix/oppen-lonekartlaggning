@@ -39,14 +39,6 @@ describe('valideraFigur: kategoriaxelns skala', () => {
     });
 });
 
-describe('valideraFigur: monster', () => {
-    const f = m => ({ beskrivning: 'm', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [{ marke: 'stapel', monster: m, data: [{ x: 'a', y: 1 }] }] });
-    it('godtar linjer, prickar och inget; avvisar annat och andra märken', () => {
-        for (const m of ['linjer', 'prickar', undefined]) expect(() => valideraFigur(f(m), 't')).not.toThrow();
-        expect(() => valideraFigur(f('rutor'), 't')).toThrow(/monster/);
-        expect(() => valideraFigur({ beskrivning: 'm', x: { skala: 'linjar' }, y: { skala: 'linjar' }, lager: [{ marke: 'punkt', monster: 'linjer', data: [{ x: 1, y: 1 }] }] }, 't')).toThrow(/monster/);
-    });
-});
 
 describe('valideraFigur: färgskalans domän', () => {
     const ruta = fargskala => ({ beskrivning: 'b', x: { skala: 'band' }, y: { skala: 'band' }, ...(fargskala === undefined ? {} : { fargskala }), lager: [{ marke: 'ruta', data: [{ x: 'A', y: 'B', varde: 1 }] }] });
@@ -103,8 +95,6 @@ describe('valideraFigur', () => {
         ['panelen', { paneler: ['Kvinna'], lager: [{ marke: 'stapel', panel: 'Man', data: [] }] }],
         ['fargskala', { lager: [{ marke: 'ruta', data: [{ x: 'A', y: 'B', varde: 1 }] }] }],
         ['fargskala', { lager: [{ marke: 'punkt', data: [{ x: 1, y: 2, fargvarde: 50 }] }] }],
-        ['y2', { lager: [{ marke: 'linje', axel: 'y2', data: [{ x: 'A', y: 1 }] }] }],
-        ['y2 måste', { y2: { skala: 'log' } }],
         ['tips', { lager: [{ marke: 'stapel', data: [], tips: 'text' }] }],
         ['större än noll', { y: { skala: 'log' }, lager: [{ marke: 'punkt', data: [{ x: 'A', y: 0 }] }] }],
     ])('kastar: %s', (text, over) => {
@@ -259,14 +249,6 @@ describe('skalDoman', () => {
         expect(skalDoman(b, 'x')).toEqual([25, 65]);
         expect(skalDoman(b, 'y')).toEqual([100, 300]);
     });
-    it('y2 hämtar bara lager med axel y2', () => {
-        const f = bas({ y2: { skala: 'linjar' }, lager: [
-            { marke: 'stapel', data: [{ x: 'A', y: 500 }] },
-            { marke: 'linje', axel: 'y2', data: [{ x: 'A', y: 40 }, { x: 'B', y: 100 }] },
-        ] });
-        expect(skalDoman(f, 'y')).toEqual([0, 500]);
-        expect(skalDoman(f, 'y2')).toEqual([40, 100]);
-    });
     it('tomt, null och NaN: en användbar domän utan NaN', () => {
         const f = bas({ lager: [{ marke: 'punkt', data: [{ x: 'A', y: null }, { x: 'B', y: NaN }] }] });
         expect(skalDoman(f, 'y')).toEqual([0, 1]);
@@ -344,7 +326,6 @@ describe('valideraFigur: indata som inte är tal', () => {
     });
     it('fel.lag som sträng', () => kastar(bas({ lager: [{ marke: 'stapel', data: [{ x: 'A', y: 1, fel: { lag: '0', hog: 2 } }] }] }), 'fel.lag'));
     it('intervall lag/hog som sträng på liggande', () => kastar(bas({ x: { skala: 'linjar' }, y: { skala: 'band' }, lager: [{ marke: 'intervall', riktning: 'liggande', data: [{ y: 'A', lag: 'a', hog: 2 }] }] }), 'lag'));
-    it('y2-lager prövas mot y2-axeln', () => kastar(bas({ y2: { skala: 'linjar' }, lager: [{ marke: 'linje', axel: 'y2', data: [{ x: 'A', y: 'x' }] }] }), 'datapunkt 0'));
     it('varde, fargvarde och storlek måste vara tal', () => {
         const fs = { typ: 'sekventiell', doman: [0, 1] };
         kastar(bas({ fargskala: fs, lager: [{ marke: 'ruta', data: [{ x: 'A', y: 'B', varde: '1' }] }], y: { skala: 'band' } }), 'varde');
@@ -450,22 +431,6 @@ describe('figurTillTabell', () => {
             { marke: 'ruta', serie: 'R', data: [null, { x: 'A', y: 'B', varde: 2 }] }] })))
             .toEqual([['R', 'A'], ['B', 2], [], ['Serie', 'BAS', 'Kronor/månad'], ['S', 'A', 1]]);
     });
-    it('lager på höger axel bär axeln i serienamnet', () => {
-        const g = (y2, lager) => f({ y2, lager });
-        expect(figurTillTabell(g({ skala: 'linjar', titel: 'Kumulativ %' }, [
-            { marke: 'linje', serie: 'Kumulativ', axel: 'y2', data: [{ x: 'A', y: 0.5 }] },
-        ]))).toEqual([['Serie', 'BAS', 'Kronor/månad'], ['Kumulativ (höger axel: Kumulativ %)', 'A', 0.5]]);
-        expect(figurTillTabell(g({ skala: 'linjar' }, [
-            { marke: 'linje', serie: 'Kumulativ', axel: 'y2', data: [{ x: 'A', y: 0.5 }] },
-        ]))[1][0]).toBe('Kumulativ (höger axel)');
-        expect(figurTillTabell(g({ skala: 'linjar', titel: 'Andel' }, [
-            { marke: 'stapel', serie: 'Vänster', data: [{ x: 'A', y: 1 }] },
-            { marke: 'linje', axel: 'y2', data: [{ x: 'A', y: 0.5 }] },
-        ])).map(r => r[0])).toEqual(['Serie', 'Vänster', 'Serie 2 (höger axel: Andel)']);
-        expect(figurTillTabell(g({ skala: 'linjar', titel: 'Andel' }, [
-            { marke: 'linje', serie: 'K', panel: 'Man', axel: 'y2', data: [{ x: 'A', y: 0.5 }] },
-        ]))[1][0]).toBe('K (höger axel: Andel) · Man');
-    });
     // V4 (dataminimering): en låda exporteras som statistik per kategori — aldrig en rad per individ.
     it('låda: två individer i en kategori ger EN rad med median, q1 och q3 — inga individer', () => {
         expect(figurTillTabell(f({ lager: [{ marke: 'lada', serie: 'Lön', data: [{ x: 'A', y: 30000 }, { x: 'A', y: 32000 }] }] })))
@@ -570,7 +535,7 @@ describe('kvantilpunkter', () => {
         expect(() => valideraFigur(fig({ form: 'kvantiler', antal: 20 }), 't')).not.toThrow();
         expect(() => valideraFigur(fig({ form: 'kvantiler' }), 't')).not.toThrow();
         expect(() => valideraFigur(fig({ form: 'kvantiler', antal: 30 }), 't')).toThrow(/antal/);
-        expect(() => valideraFigur(fig({ form: 'fiol', antal: 20 }), 't')).toThrow(/antal/);
+        expect(() => valideraFigur(fig({ form: 'regnmoln', antal: 20 }), 't')).toThrow(/antal/);
         expect(() => valideraFigur(fig({ form: 'kvantil' }), 't')).toThrow(/form/);
     });
 });

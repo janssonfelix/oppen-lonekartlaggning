@@ -231,7 +231,7 @@ describe('årsbokslut: grupperna är AID-koden i BAS-intervallet (ADR-89)', () =
         expect(j.nyckeltal.find(t => t.nyckel === 'antalFlaggade').diff).toBeNull();
         expect(j.nyckeltal.find(t => t.nyckel === 'n').diff).toBe(0);
         expect(hantelRader(j).rader).toEqual([]);
-        // Två bokslut från före delningen jämförs som förut, per kod.
+        // Två bokslut från före delningen jämförs per kod.
         const j2 = jamforArsbokslut(forra, bokslut(2026, { grupper: [grupp('101 Handläggare', null, -2)] }));
         expect(j2.grupper.ejJamforbara).toBe(false);
         expect(j2.grupper.kvar).toHaveLength(1);

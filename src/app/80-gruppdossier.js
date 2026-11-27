@@ -14,12 +14,12 @@
 // ====================================================================
 import { htmlTillText } from '../lib/htmltext.js';
 import { periodOrd } from '../lib/kostnad.js';
-import { personOrd } from '../lib/namn.js';
+import { kvinnorOchMan, personOrd } from '../lib/namn.js';
 import { skrDelText } from '../lib/skrreferens.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, stor } from '../lib/termer.js';
 import { gruppdossierGrupper, vymodellGruppdossier } from '../lib/vymodell-gruppdossier.js';
-import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
+import { behallFokus, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _kSanktNot, _parUtelamnadeNot, kInstalld, kTroskel } from './06-k-troskel.js';
@@ -134,15 +134,8 @@ export function ritaGruppdossier(preselectKey) {
 
     const d = byggGruppdossier(/** @type {HTMLInputElement} */ (sel).value);
     if (!d) { body.innerHTML = '<p class="f-dampad">Gruppen kunde inte läsas.</p>'; return; }
-    body.innerHTML = _gdRitaInnehall(d);
-    // Fokusfällan cachar de fokuserbara elementen när modalen öppnas. Byter man
-    // yrkesgrupp byggs innehållet om och cachen pekar på borttagna noder — fällan
-    // måste därför läggas om medan modalen är öppen.
-    const modal = document.getElementById('dossier-modal');
-    if (modal && modal.style.display === 'flex') {
-        slappFokus(modal);
-        fangaFokus(modal);
-    }
+    // Kopiera ritar om innehållet när exportläget släpps: fokus står kvar på knappen (behallFokus).
+    behallFokus(body, () => { body.innerHTML = _gdRitaInnehall(d); });
 }
 
 /** Prioriteringens läge med samma namn som i fliken Prioritering («Börja här»), inte statusens kod. */
@@ -176,8 +169,8 @@ function _gdRitaInnehall(d) {
             <div class="gd-kpi"><span>${kr(d.median)}</span><small>median</small></div>
             <div class="gd-kpi"><span>${kr(d.p10)} – ${kr(d.p90)}</span><small>P10 – P90</small></div>
         </div>${basdossierKandidater().some(x => x.bas === d.bas) ? `<p class="gd-note">${basdossierKnapp(d.bas, { text: `Hela BAS ${d.bas}` })} allt om intervallet på en sida</p>` : ''}${d.ansvar ? `
-        <p class="gd-ansvar">Ansvar: Ledningsansvar ${d.ansvar.ledning.kv} kv / ${d.ansvar.ledning.ma} män ·
-            Särskilt uppdrag ${d.ansvar.uppdrag.kv} kv / ${d.ansvar.uppdrag.ma} män</p>` : ''}`;
+        <p class="gd-ansvar">Ansvar: Ledningsansvar ${kvinnorOchMan(d.ansvar.ledning.kv, d.ansvar.ledning.ma, ' / ')} ·
+            Särskilt uppdrag ${kvinnorOchMan(d.ansvar.uppdrag.kv, d.ansvar.uppdrag.ma, ' / ')}</p>` : ''}`;
 
     // 2. Ojusterat gap
     // Färgen följer uppmärksamhetstrappan (KI:t mot 100 %, ADR-59); direktivmarkeringen står bredvid det ojusterade talet.
@@ -238,7 +231,7 @@ function _gdRitaInnehall(d) {
     return `
         <div class="gd-head">
             <h3 class="fs-lg marg-0">${esc(gruppNamn(d))}</h3>
-            <span class="gd-sub">BAS ${esc(d.bas)} · ${d.n} personer</span>
+            <span class="gd-sub">BAS ${esc(d.bas)} · ${d.n} ${personOrd(d.n)}</span>
             <button type="button" class="btn-table-tool" id="btn-dossier-copy" title="Kopiera dossiern som text">${ikon('kopiera', 14)} Kopiera</button>
         </div>
         <p class="reg-caveat-inline"><strong>Dossiern dokumenterar inte sakliga skäl.</strong> Skälen dokumenterar du i Handlingsplan.</p>
@@ -265,9 +258,9 @@ export function gruppdossierSomText(d, { stampel = true } = {}) {
     const kr = v => v == null || !isFinite(v) ? '–' : Math.round(v).toLocaleString('sv-SE') + ' kr';
     const L = [];
     L.push(`Gruppdossier: ${gruppNamn(d)} – BAS ${d.bas}`);
-    L.push(`Antal: ${d.n} (${d.nKv} kvinnor, ${d.nMa} män) · median ${kr(d.median)} · P10–P90 ${kr(d.p10)}–${kr(d.p90)}`);
+    L.push(`Antal: ${d.n} (${kvinnorOchMan(d.nKv, d.nMa)}) · median ${kr(d.median)} · P10–P90 ${kr(d.p10)}–${kr(d.p90)}`);
     if (d.skr) L.push(`Nationell referens: ${svPct(d.skr.pct, 0)} kvinnor i ${skrDelText(d.skr.del)} (${skrKallaKort()})`);
-    if (d.ansvar) L.push(`Ansvar: ledningsansvar ${d.ansvar.ledning.kv} kvinnor / ${d.ansvar.ledning.ma} män · särskilt uppdrag ${d.ansvar.uppdrag.kv} kvinnor / ${d.ansvar.uppdrag.ma} män`);
+    if (d.ansvar) L.push(`Ansvar: ledningsansvar ${kvinnorOchMan(d.ansvar.ledning.kv, d.ansvar.ledning.ma, ' / ')} · särskilt uppdrag ${kvinnorOchMan(d.ansvar.uppdrag.kv, d.ansvar.uppdrag.ma, ' / ')}`);
     if (d.gap && d.gap.pct != null) L.push(`Ojusterad löneskillnad: ${svPct(d.gap.pct, 1)} av männens median`);
     if (d.gap && d.gap.arsbelopp) L.push(d.gap.arsbelopp);
     if (d.adjusted && d.adjusted.status === 'ok') L.push(`Skillnad när åldern räknats bort (BAS ${d.bas}): ${svPct(d.adjusted.gapPct, 1)}`);

@@ -24,7 +24,7 @@ import { diagramUrval } from './74-alla-diagram.js';
 function zipDiagram(...a) { return medExportLage(() => _zipDiagramExport.apply(null, /** @type {any} */ (a))); }
 function _zipDiagramExport() {
     exportSakraAlla();   // varje flik som har ritats ritas om om den inte är aktuell — före uppräkningen, som annars missar ersatta diagram
-    const alla = typeof _rfBehallare !== 'undefined' ? [..._rfBehallare] : [];
+    const alla = [..._rfBehallare];
     // Samma urval som Alla diagram (diagramUrval i 74-alla-diagram.js): kopiorna där (ut-diagram-*) följer aldrig med.
     return diagramUrval(alla, diagramRitat).sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -58,7 +58,7 @@ async function _exportZipExport() {
             try { ritaFlik('arbetet'); } catch (e) { rapporteraFel('ZIP: arbetet', e); }
         }
         for (const el of zipDiagram()) {
-            try { const b64 = (await diagramTillBild(el, { bredd: 1920, hojd: 1080 })).split(',')[1]; zip.file(`diagram/${el.id}.png`, b64, { base64: true }); } catch (_err) { /* ett diagram som inte går att rita följer inte med */ }
+            try { const b64 = (await diagramTillBild(el, { bredd: 1920, hojd: 1080 })).split(',')[1]; zip.file(`diagram/${el.id}.png`, b64, { base64: true }); } catch (e) { rapporteraFel(`ZIP: diagrammet ${el.id}`, e); }
         }
         const blob = await zip.generateAsync({ type: 'blob' });
         laddaNer(blob, 'lonekartlaggning_export.zip');

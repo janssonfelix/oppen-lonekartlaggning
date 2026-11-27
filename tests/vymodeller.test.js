@@ -52,6 +52,7 @@ import { forslagskandidater, individlyftGrupper, kontrollvarningar, kostnadPerPo
     varavKvDom, vymodellIndividlyft, vymodellKanslighet, vymodellPrognos, vymodellTroskelmal } from '../src/lib/vymodell-loneoversyn.js';
 import { bandkarta, konLagenSumma, lageISpannet, tabellblock, tackningsstatus, vymodellLonepolitik } from '../src/lib/vymodell-lonepolitik.js';
 import { prognosutfall } from '../src/lib/loneoversyn.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const rad = (yrke, bas, kon, lon, extra) => ({ yrke, aid: yrke.slice(0, 6), yrkeLabel: yrke.slice(7), bas, kon, lon, alder: 40, ...extra });
 const flera = (yrke, bas, kon, n, lon, extra = () => ({})) => Array.from({ length: n }, (_, i) => rad(yrke, bas, kon, lon + 100 * i, extra(i)));
@@ -79,7 +80,7 @@ describe('[B2.6] Lönestrukturs vymodell per BAS-intervall', () => {
         expect(a).toMatchObject({ nKv: 15, nMa: 15, medKv: 30700, medMa: 33700, skillnadKr: -3000, direktiv: true });
         expect(a.gap).toBeCloseTo(30700 / 33700 * 100, 9);
         expect(a.niva).toBe(oversiktNiva(a, 10));
-        expect(a.underlag).toMatchObject({ bas: 'A', masked: false });
+        expect(a.underlag).toMatchObject({ bas: 'A' });
         expect(a.underlag.kvLons).toHaveLength(15);
         expect(vm.oversikt.storst.bas).toBe('A');
         expect(vm.oversikt.exportAnteckning).toMatch(/^Störst skillnad: BAS A, kvinnors median 91,1\s%\sav männens$/);
@@ -101,9 +102,12 @@ describe('[B2.6] Lönestrukturs vymodell per BAS-intervall', () => {
         expect(skillnad.rader.map(r => [r.bas, r.samlad])).toEqual([['A', false], ['B', false], ['C', true]]);
         expect(skillnad.rader[2]).toEqual({ bas: 'C', nKv: 12, nMa: 4, samlad: true, medTot: 28600 });
         expect(skillnad.rader[0].kvotPct).toBe(91.1);
-        expect(skillnad.utelamnade).toEqual(['E']);   // D har färre än två män och prövas inte
+        expect(skillnad.utelamnade).toEqual(['D', 'E']);   // D har bara en man, men räknas och står i noten som de andra
         expect(skillnad.samlade).toEqual(['C']);
-        expect(skillnad.maskerade).toBe(2);
+        expect(skillnad.maskerade).toBe(3);
+        // 40 kvinnor och ingen man: intervallet räknas och sägs i noten, också på skärmen (k = 1).
+        const ettKon = vymodellLonestruktur(flera('100001 Handläggare', 'X', 'kvinna', 40, 30000), { bas: ['X'], k: 1, golv: 10, litetUnderlag: 5 }).skillnad;
+        expect([ettKon.samlade, ettKon.maskerade]).toEqual([['X'], 1]);
     });
 
     it('könsfördelningen: en rad från fem personer oavsett k, ojämn när ett kön är under 40 %', () => {
@@ -211,6 +215,18 @@ describe('[B2.7] Ålder & karriärs vymodell, lönedelen', () => {
         expect(alderInsiktText(100, 100, 96, 94)).toMatch(/blir större när åldern räknas bort/);
         expect(alderInsiktText(0, 0, 96, 98, { niva: { en: 'nivå' }, enhet: { en: 'enhet' } })).toMatch(/Vad nivå och enhet förklarar/);
     });
+    it('raden i klartext följer talens riktning: lutning över, under och lika med noll; kvinnor före och efter män', () => {
+        const MINUS = '\u2212';
+        expect(alderInsiktText(200, 220, 95, 95.5)).toMatch(/^Lönen stiger .*\(\+200\s?kr\)/);
+        expect(alderInsiktText(-120, -130, 95, 95.5)).toMatch(new RegExp(`^Lönen sjunker .*\\(${MINUS}120\\skr\\)`));
+        expect(alderInsiktText(0, 0, 95, 95.5)).toMatch(/^Lönen ändras .*\(0\skr\)/);
+        expect(alderInsiktText(-120, 300, 95, 95.5)).toMatch(new RegExp(`^Lönen ändras olika med åldern för kvinnor \\(${MINUS}120\\skr per år\\)`));
+        expect(alderInsiktText(-0.4, 300, 95, 95.5)).toContain('(0\u00a0kr per år)');                 // inget «−0 kr»
+        // Avståndet till lika lön: kvinnor före män (105 → 103) är också en mindre skillnad.
+        expect(alderInsiktText(100, 100, 105, 103)).toMatch(/förklarar en del av skillnaden\./);
+        expect(alderInsiktText(100, 100, 103, 105)).toMatch(/blir större när åldern räknas bort\./);
+        expect(alderInsiktText(100, 100, 96, 94)).not.toMatch(/äldre/);   // orsaken är inte känd för raden
+    });
 
     it('underlaget för «Räkna för» går genom samma regler med samma k: lådorna, klasserna och åldersgrupperna', () => {
         const rader = alderUnderlag().filter(r => r.bas === 'A');
@@ -233,6 +249,28 @@ describe('[B2.7] Ålder & karriärs vymodell, lönedelen', () => {
         expect(paneler.map(p => [p.bas, p.punkter.length, p.punkter.filter(x => x.liten).length, !!p.trend, p.nedsamplad])).toEqual([['A', 40, 0, true, false], ['B', 16, 4, true, false]]);
         expect(utanfor).toEqual([]);
         expect(multiplarPaneler(alderUnderlag(), vm.liten, 25).utanfor).toEqual(['BAS B']);
+    });
+});
+
+describe('Ålder & karriär: varje person med ålder hamnar i en grupp, och ett köns trendlinje stannar inom könets åldrar', () => {
+    // Decimalåldrar, åldrar under 20 och över 65: 30 kvinnor och 30 män.
+    const blandat = () => Array.from({ length: 60 }, (_, i) => ({ bas: 'A', kon: Math.floor(i / 10) % 2 ? 'man' : 'kvinna', lon: 30000 + 100 * i,
+        alder: [17, 19.5, 24.5, 29.5, 33, 39.5, 49.9, 59.5, 64.5, 70][i % 10] }));
+    it('summan av åldersgruppernas antal är antalet personer med ålder', () => {
+        const rader = blandat(), kv = rader.filter(r => r.kon === 'kvinna'), ma = rader.filter(r => r.kon === 'man');
+        const { visade } = alderGapRader(kv, ma, 1);
+        expect(visade.reduce((s, g) => s + g.nKv + g.nMa, 0)).toBe(60);
+    });
+    it('summan av åldersklassernas andelar är 100 % per kön', () => {
+        const s = vymodellAldersstruktur(blandat(), { bas: '__ALLA__', k: 1, alla: blandat() });
+        expect(s.pctKv.reduce((a, b) => a + b, 0) + s.pctMa.reduce((a, b) => a + b, 0)).toBeCloseTo(100, 6);
+    });
+    it('kvinnornas konfidensband går över kvinnornas åldrar, männens över männens', () => {
+        const rader = [...aRad('A', 'kvinna', 16, 30000, 25), ...aRad('A', 'man', 16, 32000, 39)];
+        const vm = vymodellAlderOchLon(rader, { bas: '__ALLA__', k: 10 });
+        expect([vm.ciKv[0].x, vm.ciKv[vm.ciKv.length - 1].x]).toEqual([25, 40]);
+        expect([vm.ciMa[0].x, vm.ciMa[vm.ciMa.length - 1].x]).toEqual([39, 54]);
+        expect([vm.spannKv, vm.spannMa]).toEqual([[25, 40], [39, 54]]);
     });
 });
 
@@ -317,6 +355,12 @@ describe('[B2.10] Översiktens läge mot lagkraven', () => {
         expect(ks({ k: 40 })).toMatchObject({ jamforbara: 0, gap: { av: 0, lage: 'na' }, skev: { lage: 'na' } });
         const skeva = [...underlag(), ...flera('100002 Utredare', 'B', 'kvinna', 60, 40000)];
         expect(kravstatus(skeva, { bas: BAS, k: 10, golv: 10 }).skev).toEqual({ antal: 1, av: 2, lage: 'warn' });
+    });
+    it('ojämn könsfördelning bedöms på talet som visas: 39,96 % kvinnor visas 40,0 % och är jämn i kortet och tabellen', () => {
+        const rader = [...flera('100001 Handläggare', 'X', 'kvinna', 999, 30000), ...flera('100001 Handläggare', 'X', 'man', 1501, 30000)];
+        const rad = vymodellLonestruktur(rader, { bas: ['X'], k: 10, golv: 10, litetUnderlag: 5 }).konsfordelning.rader[0];
+        expect([rad.pctKv, rad.underrepresenterat]).toEqual([40, null]);
+        expect(kravstatus(rader, { bas: ['X'], k: 10, golv: 10 }).skev.antal).toBe(0);
     });
     it('referensens P10: intervall med minst k personer och en rad med P10; utan ställningstagande inget kort', () => {
         // A: median 32 200 under P10 33 000; C: över 20 000; D har färre än k och räknas inte.
@@ -403,6 +447,13 @@ describe('[B5.11] Likvärdigt arbetes vymodell', () => {
         expect(rader.map(r => [r.y, r.p.allvarsindex])).toEqual([['b mot x', 3], ['a mot x', 1]]);
         expect(kandidatparRader(par, p => p.kvLabel, 2).map(r => r.y)).toEqual(['b']);
     });
+    it('kandidatparen: samma namn i olika BAS-intervall är olika par och får intervallen i namnet', () => {
+        const par = [{ kvLabel: 'a', maLabel: 'x', kvBas: 'C', maBas: 'C', allvarsindex: 3, kvMedian: 1, maMedian: 2 },
+            { kvLabel: 'a', maLabel: 'x', kvBas: 'D', maBas: 'E', allvarsindex: 2, kvMedian: 1, maMedian: 2 },
+            { kvLabel: 'b', maLabel: 'x', kvBas: 'C', maBas: 'C', allvarsindex: 1, kvMedian: 1, maMedian: 2 }];
+        expect(kandidatparRader(par, p => `${p.kvLabel} mot ${p.maLabel}`).map(r => r.y))
+            .toEqual(['a mot x (BAS C)', 'a mot x (BAS D mot E)', 'b mot x']);
+    });
 });
 
 describe('[B5.12] Diagrammet Krav mot lön', () => {
@@ -442,6 +493,11 @@ describe('[B6.10] Löneöversiktens vymodell', () => {
         expect(vm.smaYrken).toBe(1);   // D: tre personer
         expect(vm.block[1].referens).toBeNull();
         expect(vymodellLoneoversikt(underlag(), { bas: ['A'], k: 10 }).block[0].rader[0].underReferens).toBe(false);
+    });
+    it('yrkesgrupperna är AID-koden inom BAS (ADR-89): två texter för samma kod är en rad, med texten som står på flest', () => {
+        const rader = [...flera('100001 Handläggare', 'A', 'kvinna', 8, 30000), ...flera('100001 Handläggare, natt', 'A', 'man', 4, 31000)];
+        const yrken = vymodellLoneoversikt(rader, { bas: ['A'], k: 4 }).block[0].rader.slice(3);
+        expect(yrken.map(r => [r.kategori, r.n])).toEqual([['100001 Handläggare', 12]]);
     });
 });
 
@@ -568,6 +624,10 @@ describe('[B2.11] Rapportmodellens vymodell', () => {
         expect(r.kritisk).toBe(true);
         expect(r.basEffekter).toMatchObject({ effekter: [{ bas: 'B' }], utelamnade: ['C'], not: 'utan C' });
         expect(r.perBas.map(pb => [pb.bas, pb.sakerstalld])).toEqual([['A', true], ['B', false]]);
+        // Samma signal som fliken, Excel och protokollet: q-värdet efter korrigeringen för många tester. A har p = 0,04
+        // men q = 0,08 med två intervall prövade, och är inte säkerställd.
+        const tva = [{ bas: 'A', status: 'ok', gapPct: -4, pValue: 0.04 }, { bas: 'B', status: 'ok', gapPct: -4, pValue: 0.6 }];
+        expect(rm(10, { reg: { ...reg, perBas: tva } }).regression.perBas.map(pb => [pb.bas, pb.sakerstalld])).toEqual([['A', false], ['B', false]]);
         expect(rm(10, { reg: { ...reg, konPctHigh: 1 } }).regression.kritisk).toBe(false);
         expect(rm(10, { reg: { error: 'för få' } }).regression).toBeNull();
     });
@@ -766,12 +826,13 @@ describe('[B3.13] Livscykelns vymodell', () => {
     it('modellens lönenivåer per BAS-intervall ur BAS-koefficienten, med n ur hela underlaget', () => {
         const { res, vm } = lc(10);
         expect(vm.basRader).toEqual(livscykelBasRader(res, regUnderlag()));
-        const b = vm.basRader.find(x => x.bas === 'B'), sista = res.predKvinna.length - 1;
+        // Nivåerna vid spannets ändar, där båda könen har personer.
+        const b = vm.basRader.find(x => x.bas === 'B'), vid = (pred, a) => pred.find(p => p.age === a).lon;
         expect(b.n).toBe(32);
-        expect(b.kv25).toBeCloseTo(res.predKvinna[0].lon * res.basFaktor.B, 8);
-        expect(b.ma65).toBeCloseTo(res.predMan[sista].lon * res.basFaktor.B, 8);
-        expect(b.gap25Kr).toBeCloseTo(b.kv25 - b.ma25, 8);
-        expect([vm.kvot25, vm.kvot65]).toEqual([100 + res.gapAt25, 100 + res.gapAt65]);
+        expect(b.kvFran).toBeCloseTo(vid(res.predKvinna, res.alderFran) * res.basFaktor.B, 8);
+        expect(b.maTill).toBeCloseTo(vid(res.predMan, res.alderTill) * res.basFaktor.B, 8);
+        expect(b.gapFranKr).toBeCloseTo(b.kvFran - b.maFran, 8);
+        expect([vm.kvotFran, vm.kvotTill]).toEqual([100 + res.gapFran, 100 + res.gapTill]);
         expect(vm.livscykelGapPct).toBeCloseTo((Math.exp(res.kvCoef) - 1) * 100, 10);
     });
     it('intervall under k utelämnas ur tabellen, och kurvan för ett valt intervall under k visas inte', () => {
@@ -783,8 +844,10 @@ describe('[B3.13] Livscykelns vymodell', () => {
         expect(livscykelKurvaUtelamnad({ fixBas: 'X' }, [{ bas: 'A', n: 1 }], 10)).toBe(false);
     });
     it('mönstret över karriären: konstant utan säkerställt samspel, annars växande, krympande eller praktiskt konstant vid ±2', () => {
-        const m = (gapDelta, p = 0.05) => livscykelMonster({ gapDelta, kvAgePVal: p, kvAge2PVal: 0.5 });
-        expect([m(-5, 0.10), m(-2.01), m(2.01), m(-2), m(2)]).toEqual(['konstant', 'växande', 'krympande', 'praktiskt konstant', 'praktiskt konstant']);
+        const m = (gapTill, p = 0.05, gapFran = 0) => livscykelMonster({ gapFran, gapTill, kvAgePVal: p, kvAge2PVal: 0.5 });
+        expect([m(-5, 0.10), m(-2.01), m(-2), m(2.01), m(2)]).toEqual(['konstant', 'växande', 'praktiskt konstant', 'växande', 'praktiskt konstant']);
+        // Skillnaden mäts som avståndet till lika lön: kvinnorna före män åt båda håll, och kvinnorna efter.
+        expect([m(-10, 0.05, -5), m(-2, 0.05, -5), m(10, 0.05, 5), m(2, 0.05, 5)]).toEqual(['växande', 'krympande', 'växande', 'krympande']);
     });
     it('jämförelsen med huvudmodellen: tillskottet i justerat R² och om urvalen är desamma', () => {
         const { res, vm } = lc(10);
@@ -854,7 +917,7 @@ describe('[B7.13] Löneöversyns vymodell', () => {
         const info = riktadRadInfo(underlag(), RIKTAD_A, { k: 10 });
         expect(info.n).toBe(15);
         expect(info.kostnad).toBeCloseTo(0.03 * underlag().filter(r => r.bas === 'A' && r.kon === 'kvinna').reduce((s, r) => s + r.lon, 0), 6);
-        expect(kostnadPerPott(underlag(), [RIKTAD_A, { ...RIKTAD_A, pool: 'okänd' }], 0)).toEqual({ perPott: { equity: info.kostnad, övrigt: info.kostnad }, potter: ['equity', 'övrigt'] });
+        expect(kostnadPerPott(underlag(), [RIKTAD_A, { ...RIKTAD_A, pool: 'okänd' }])).toEqual({ perPott: { equity: info.kostnad, övrigt: info.kostnad }, potter: ['equity', 'övrigt'] });
     });
     it('riktningen avgörs på talen som de visas, och den stegvisa planen har gapet bara när båda könen når k', () => {
         expect(riktning(-4.26, -4.34, 0)).toBe(0);          // båda visas som −4,3 %
@@ -911,6 +974,8 @@ describe('[B6.11] Lönelägets vymodell mot ställningstagandet', () => {
         expect(lp(10, false).tom).toBe(true);
         expect(lp(10).tackning).toEqual({ pct: 100, status: 'ok' });
         expect([tackningsstatus(90), tackningsstatus(89), tackningsstatus(59)]).toEqual(['ok', 'varning', 'kritisk']);
+        // Bedöms på talet som visas, i hela procent: 89,6 visas «90 %» och är god, 89,4 visas «89 %»; 59,5 visas «60 %».
+        expect([89.6, 89.4, 59.5, 59.4].map(tackningsstatus)).toEqual(['ok', 'varning', 'varning', 'kritisk']);
     });
     it('slutsatserna räknar bara yrkesgrupper med full analys; tabellen följer maskeringstrappan', () => {
         const vm = lp(10);
@@ -920,6 +985,12 @@ describe('[B6.11] Lönelägets vymodell mot ställningstagandet', () => {
         expect(vm.tabell.map(t => [t.b.bas, t.rader.map(r => [r.typ, r.lage ?? null]), t.utelamnade.map(g => g.aid)])).toEqual([
             ['A', [['full', null]], []], ['B', [['full', 'over']], []], ['C', [['full', 'under']], []], ['D', [], ['100004']], ['E', [['antal', null]], []]]);
         expect(tabellblock(vm.modell)).toEqual(vm.tabell);
+    });
+    it('en grupp under fem utan rad i ställningstagandet maskeras som de andra: namnet i noten, ingen egen rad', () => {
+        const g = (aid, tier) => ({ aid, pol: null, tier });
+        const [t] = tabellblock({ byBas: [{ bas: 'Z', groups: [g('900001', 'masked'), g('900002', 'count')] }] });
+        expect(t.rader.map(r => [r.g.aid, r.typ])).toEqual([['900002', 'ingenPolicy']]);
+        expect(t.utelamnade.map(x => x.aid)).toEqual(['900001']);
     });
     it('bandkartan, könspositionen, tredjedelarna och efterlevnaden', () => {
         const vm = lp(10);
@@ -1006,6 +1077,16 @@ describe('[R2] Löneöversyns förslag följer den inställda tröskeln; egna ra
 });
 
 describe('[R4] Löneöversynens scenarier: det råa gapet sparas och visas bara när båda könen når tröskeln', () => {
+    it('scenariots omkörningar räknas med samma urval som utfallets: en invikt grupp räknas inte', () => {
+        // A (12 personer) går om C med sitt riktade påslag men viks in vid 10, eftersom B ensam har 3.
+        const d = [...flera('100001 Handläggare', 'A', 'kvinna', 12, 30000), ...flera('100002 Utredare', 'B', 'kvinna', 3, 50000),
+            ...flera('100003 Assistent', 'C', 'man', 15, 32000)];
+        const riktade = [{ bas: 'A', aid: '*', mode: 'pct', value: 10, dist: 'flat', targetLevel: 'median', pool: 'equity' },
+            { bas: 'B', aid: '*', mode: 'pct', value: 1, dist: 'flat', targetLevel: 'median', pool: 'equity' }];
+        const out = prognosutfall(d, { mode: 'kr', value: 0 }, { mode: 'pct', value: 5 }, riktade, KOSTNADSVAL);
+        for (const k of [1, 10]) expect(scenarioUr(d, out, { efter: null }, k).summary.leapfrog).toBe(utfallsvy(out, k, kvDomAv(KOSTNADSVAL)).omkorningar.length);
+        expect(utfallsvy(out, 1, kvDomAv(KOSTNADSVAL)).omkorningar.length).toBe(1);   // fallet har en omkörning
+    });
     it('ett scenario sparat vid en lägre tröskel visar inget rågap vid en högre, och Till kv-dom följer utfallets regel', () => {
         const d = underlag(), out = lo(1).out;
         const sc = scenarioUr(d, out, { efter: -2 }, 1);
@@ -1053,7 +1134,7 @@ describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
         }
         for (const r of vm.konsfordelning.rader) { expect(r.tot).toBeGreaterThanOrEqual(5); expect(harLonematt(r)).toBe(false); }
         expect(vm.oversikt.rader.map(o => o.bas)).toEqual(k === 10 ? ['A', 'B'] : ['B']);
-        expect(vm.skillnad.utelamnade).toEqual(k === 10 ? ['E'] : ['C', 'E']);
+        expect(vm.skillnad.utelamnade).toEqual(k === 10 ? ['D', 'E'] : ['C', 'D', 'E']);
         expect(vm.skillnad.samlade).toEqual(k === 10 ? ['C'] : ['A']);
     });
 
@@ -1121,12 +1202,12 @@ describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
 
     it('Löneöversikten: ingen rad med färre än k, de utelämnade bara med namn', () => {
         const vm = vymodellLoneoversikt(underlag(), { bas: BAS, k, policyFor });
-        for (const b of vm.block) for (const r of b.rader) expect(r.n, `${b.bas} ${r.kategori}`).toBeGreaterThanOrEqual(k);
-        for (const b of vm.block) for (const u of b.utelamnade) expect(typeof u).toBe('string');
+        for (const b of ickeTom(vm.block)) for (const r of b.rader) expect(r.n, `${b.bas} ${r.kategori}`).toBeGreaterThanOrEqual(k);
+        for (const b of ickeTom(vm.block)) for (const u of b.utelamnade) expect(typeof u).toBe('string');
     });
 
     it('Gruppdossiern: grupperna når k, skillnaden och räkneexemplet bara när båda könen gör det, paren under k utelämnade', () => {
-        for (const g of gruppdossierGrupper(underlag(), k)) {
+        for (const g of ickeTom(gruppdossierGrupper(underlag(), k))) {
             expect(g.rows.length).toBeGreaterThanOrEqual(k);
             const vm = vymodellGruppdossier(g, { k, par: PAR, kostnad: {} });
             if (vm.gap !== null) expect(Math.min(vm.nKv, vm.nMa)).toBeGreaterThanOrEqual(k);
@@ -1135,7 +1216,7 @@ describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
     });
 
     it('BAS-dossiern: könens medianer, yrkesgruppernas, åldersgruppernas och förra årets bara där k nås', () => {
-        for (const { bas } of basdossierIntervall(underlag(), BAS, k)) {
+        for (const { bas } of ickeTom(basdossierIntervall(underlag(), BAS, k))) {
             const vm = vymodellBasdossier(underlag(), bas, { k, basIntervall: BAS, golv: Math.max(k, 10), harAlder: true,
                 likvardighet: { pairs: PAR, lagreKrav: [] }, forraBokslut: { ar: 2025, k: 2, nyckeltal: { nKv: 0, nMa: 0 }, grupper: [],
                     basIntervall: [{ bas, n: 12, nKv: 6, nMa: 6, p10: 1, med: 2, p90: 3, medKv: 2, medMa: 2 }] } });
@@ -1200,13 +1281,13 @@ describe.each([10, 25])('[I9] vymodellerna vid k = %i', k => {
     });
     it('Löneöversyn: ingen rad, samlad kostnad, gap eller jämförelse före och efter under k', () => {
         const vm = lo(k, { years: 2 });
-        for (const t of vm.tabell.filter(x => !x.maskerad)) expect(t.g.n).toBeGreaterThanOrEqual(k);
+        for (const t of ickeTom(vm.tabell.filter(x => !x.maskerad))) expect(t.g.n).toBeGreaterThanOrEqual(k);
         if ((vm.utfall.samlad?.kostnad ?? null) !== null) expect(vm.utfall.samlad.n).toBeGreaterThanOrEqual(k);
-        for (const b of vm.band.visade) expect(b.n).toBeGreaterThanOrEqual(k);
+        for (const b of ickeTom(vm.band.visade)) expect(b.n).toBeGreaterThanOrEqual(k);
         const antal = kon => underlag().filter(r => r.kon === kon).length;
         if (vm.ra || vm.plan?.some(p => p.rawGap !== null)) expect(Math.min(antal('kvinna'), antal('man'))).toBeGreaterThanOrEqual(k);
         const d = underlag(), sim = d.map(r => ({ ...r, lon: r.lon * 1.01 }));
-        for (const niva of ['bas', 'grupp']) for (const r of lutningRader(d, sim, niva, { k })) expect(Math.min(r.nKv, r.nMa)).toBeGreaterThanOrEqual(k);
+        for (const niva of ['bas', 'grupp']) for (const r of ickeTom(lutningRader(d, sim, niva, { k }))) expect(Math.min(r.nKv, r.nMa)).toBeGreaterThanOrEqual(k);
         const ind = vymodellIndividlyft(d, { gapPct: 5, k });
         for (const g of ind.visade) expect(g.count).toBeGreaterThanOrEqual(k);
         if (ind.summaVisas) expect(ind.rem.count).toBeGreaterThanOrEqual(k);

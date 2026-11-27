@@ -56,7 +56,7 @@ describe('förhandskontrollen efter inläsningen', () => {
     it('en fil med årslön ger varningen utfälld, punkten i Att göra och raden i inläsningsrapporten; en omläst ren fil tar bort punkten', async () => {
         const w = createAppWindow();
         await lasIn(w, fil({ lon: i => 420000 + i * 120 }));
-        expect(w.__state.data).toHaveLength(30);   // filen läses in och räknas som i dag
+        expect(w.__state.data).toHaveLength(30);   // filen läses in och räknas
         expect(avsnitt(w).hidden).toBe(false);
         expect(avsnitt(w).open).toBe(true);
         expect(nyckel(w)).toBe('1 varning');

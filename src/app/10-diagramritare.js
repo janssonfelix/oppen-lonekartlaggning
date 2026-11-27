@@ -13,7 +13,7 @@
 //     inget undantag.
 //  3. Datapunkter märkta `liten` ritas bara med val.visaSma (Utforska, ADR-14).
 //
-// Urval: en punkt som filtret (val.filter, se _figArBortvald) döljer — dess värde i en av figurens urvalsdimensioner
+// Urval: en punkt som filtret (val.filter, se arBortvald) döljer — dess värde i en av figurens urvalsdimensioner
 // är bortvalt eller ligger utanför intervallet — behandlas som en liten punkt utan visaSma: den ritas inte, och inget
 // räknas ur den. Punkter utan fältet och referenserna ritas alltid.
 //
@@ -34,7 +34,7 @@ import { _doljDiagramtips, _sattPunkturvalsnot, _visaDiagramtips } from './02-ve
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSanktNot } from './06-k-troskel.js';
 import { _RF, _rfBredvid, _rfEtikettBeslut, _rfEtikettRum, _rfIPanel, _rfKorta, _rfLitenPx, _rfLodratLayout, _rfPunktEtikettRum, _rfSkala, _rfStapelEtikettRum, _rfTal, _rfText, _rfVagratLayout, _rfXEtiketter, _rfXOmfang, _rfYAxlar } from './10-diagramlayout.js';
-import { _RF_MARKEN, _rfEtikettKrockar, _rfFargskala, _rfFargstapel, _rfLadIndivider, _rfLadKategori, _rfMonster, _rfOfylld, _rfReferenser, _rfSymbol, _rfUndvikEtiketter } from './10-diagrammarken.js';
+import { _RF_MARKEN, _rfEtikettKrockar, _rfFargskala, _rfFargstapel, _rfLadIndivider, _rfLadKategori, _rfOfylld, _rfReferenser, _rfSymbol, _rfUndvikEtiketter } from './10-diagrammarken.js';
 import { DIAGRAM_TYPSNITT, PALETT } from './10-diagramtema.js';
 import { _laggTillDiagramexport } from './11-diagramexport.js';
 import { _mkTillampa, sattDiagramMarkering } from './11-markering.js';
@@ -61,9 +61,9 @@ function _rfSynligt(figurIn, val) {
     const domFigur = { ...figurIn, x: bandOrdning('x'), y: bandOrdning('y'), lager: synliga.map(({ l, vd }) => ({ ...l, data: vd })) };
     const panelLista = Array.isArray(figurIn.paneler) && figurIn.paneler.length ? figurIn.paneler : null;
     // En panel utan något synligt lager ritas inte (varken titel eller yta). Regeln är figurformatets
-    // (_figPanelerMedLager, samma som utanSmaGrupper använder); ritaren avgör bara VILKA lager som syns.
+    // (panelerMedLager, samma som utanSmaGrupper använder); ritaren avgör bara VILKA lager som syns.
     const paneler = panelLista ? panelerMedLager(panelLista, lagerAlla.map(({ l }) => l)) : [null];
-    const doms = { x: skalDoman(domFigur, 'x'), y: skalDoman(domFigur, 'y'), y2: figurIn.y2 ? skalDoman(domFigur, 'y2') : null };
+    const doms = { x: skalDoman(domFigur, 'x'), y: skalDoman(domFigur, 'y') };
     return { visa, dold, dolda, bortvalda, lagerAlla, synliga, paneler, antalP: Math.max(1, paneler.length), doms };
 }
 
@@ -78,7 +78,7 @@ function _rfBortvalda(val) {
 // En panel: stödlinjer, märken (i en nästlad <svg> som klipper), stapeletiketter, axellinje, x-markeringar, titel.
 // L = sammanställda mått (lodrät + vågrät + y-axlar), urval = Map för nedsamplade punktlager.
 function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
-    const { panelB, inreH, y, y2 } = L;
+    const { panelB, inreH, y } = L;
     const g = rot.append('g').attr('transform', `translate(${pi * (panelB + L.glapp)},0)`);
     const x = _rfSkala(figurIn.x, syn.doms.x, _rfXOmfang(figurIn, panelB, L.rumX));
     const utV = pi === 0 ? L.vanster - 2 : L.glapp / 2 - 1;
@@ -95,8 +95,7 @@ function _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval) {
     const gm = g.append('svg').attr('data-del', 'panel').attr('overflow', 'hidden').attr('x', 0).attr('y', 0).attr('width', panelB).attr('height', inreH);
     const gt = g.append('g');
     const c = {
-        x, y, y2, px, figur: figurIn, fargskala: L.fargskala, texter: gt, etikettMax: L.etikettMax, etiketter: L.etiketter, panelB, inreH,
-        yFor: l => (l.axel === 'y2' && y2 ? y2 : y),
+        x, y, px, figur: figurIn, fargskala: L.fargskala, texter: gt, etikettMax: L.etikettMax, etiketter: L.etiketter, panelB, inreH,
         farg: (l, li) => l.farg || PALETT.serie[li % PALETT.serie.length],
         dold: syn.dold,
         bredvid: _rfBredvid(iPanel),
@@ -146,16 +145,14 @@ function _rfRitaForklaring(svg, L, syn, px, H, notRader) {
         if (p.l.marke === 'linje') g.append('line').attr('x1', 0).attr('x2', 12).attr('y1', -4).attr('y2', -4).attr('stroke', f).attr('stroke-width', 2.5);
         else if (p.l.marke === 'punkt' && (!p.l.symbol || p.l.symbol === 'cirkel' || p.l.symbol === 'romb' || p.l.symbol === 'kvadrat')) (p.l.ofylld ? _rfOfylld(_rfSymbol(g, p.l.symbol, 6, -4, 5, f), f) : _rfSymbol(g, p.l.symbol, 6, -4, 5, f)).attr('data-prov', 'punkt');
         else if (p.l.marke === 'punkt' && p.l.symbol === 'streck') g.append('line').attr('data-prov', 'punkt').attr('x1', 6).attr('x2', 6).attr('y1', -10).attr('y2', 2).attr('stroke', f).attr('stroke-width', 2.5);
-        else {
-            g.append('rect').attr('x', 0).attr('y', -10).attr('width', 12).attr('height', 12).attr('rx', 2).attr('fill', f);
-            if (p.l.monster) _rfMonster(g, 0, -10, 12, 12, p.l.monster);
-        }
+        else g.append('rect').attr('x', 0).attr('y', -10).attr('width', 12).attr('height', 12).attr('rx', 2).attr('fill', f);
         _rfText(g, 18, 0, p.text, { px, title: p.serie });
     });
     if (L.legend.fler) _rfText(lg, 8 + L.legend.fler.x, legendY + L.legend.fler.rad * _RF.legendRad, L.legend.fler.text, { px, attr: { 'data-legend': 'fler' } });
     notRader.forEach((rad, k) => _rfText(svg, 8, H - 8 - (notRader.length - 1 - k) * px, rad, { px: px - 1, farg: FARG.kritisk }));
     // Fotraden (exporten: verktyg, datum, urval) står överst i botten, i dämpad färg; rubriken överst i bilden.
-    if (L.fot) _rfText(svg, 8, H - 8 - notRader.length * px - (notRader.length ? 4 : 0), L.fot, { px: _rfLitenPx(px), farg: FARG.svag, attr: { 'data-del': 'fot' } });
+    const fotBas = H - 8 - notRader.length * px - (notRader.length ? 4 : 0);
+    L.fot.forEach((rad, k) => _rfText(svg, 8, fotBas - (L.fot.length - 1 - k) * px, rad, { px: _rfLitenPx(px), farg: FARG.svag, attr: { 'data-del': 'fot' } }));
     if (L.rubrik) _rfText(svg, 8, px + 8, L.rubrik, { px: px + 2, fet: true, farg: FARG.text, attr: { 'data-del': 'rubrik' } });
 }
 
@@ -209,11 +206,6 @@ function _rfByggSvg(figurIn, bredd, val = {}) {
     if (figurIn.y.titel) {
         const t = String(figurIn.y.titel);
         _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: 'middle', title: t, attr: { transform: `translate(${-(L.vanster - px - 2)},${L.inreH / 2}) rotate(-90)` } });
-    }
-    for (const k of L.y2Et) _rfText(rot, L.inreB + 8, k.p + px * 0.35, k.text, { px, farg: DIAGRAM_TYPSNITT.dampad, attr: { 'data-axel': 'y2' } });
-    if (L.y2 && figurIn.y2.titel) {
-        const t = String(figurIn.y2.titel);
-        _rfText(rot, 0, 0, _rfKorta(t, L.inreH / (px * _RF.tecken)), { px, ankare: 'middle', title: t, attr: { transform: `translate(${L.inreB + L.y2Block - px + 2},${L.inreH / 2}) rotate(90)` } });
     }
     syn.paneler.forEach((panel, pi) => _rfRitaPanel(rot, figurIn, syn, L, px, panel, pi, urval));
     if (L.xTitel) _rfText(rot, L.inreB / 2, L.inreH + px + 6 + px + 8 + (L.xTvaRader ? px + 2 : 0), _rfKorta(L.xTitel, L.inreB / (px * _RF.tecken)), { px, ankare: 'middle', title: L.xTitel });
@@ -303,14 +295,14 @@ function _rfByggRadpaneler(figurIn, delar, bredd, val) {
 //                   _rfExportFigur läser det.
 //   el._rfUrvalDim  dimensionerna som har en filterrad ({ u, varden } eller { u, spann }; saknas: inga rader);
 //                   raderna, felen i intervallfälten och noten bär _rfUrvalRader, _rfUrvalFel och _rfUrvalNotEl, och
-//                   <details> som raderna står i _rfUrvalFilterEl
+//                   rutan Filter (en <div>) som raderna står i _rfUrvalFilterEl
 //   el._figurBredd  bredden diagrammet senast ritades för
 //   el._rfKoppling  lyssnarna och storleksbevakningen (sätts en gång, överlever omritningar)
 //   el._rfRitadFigur  figuren som bilden i DOM ritades ur (samma objekt som el._figur efter en ritning): övergångarna
 //                   läser den för att känna igen märken från förra bilden. Tas bort av rensaFigur, som el._figur.
 //   el._exportBeskrivning  exportmenyns rad "Urval: …" (11-diagramexport.js läser den)
 //   el._rfVisadFigur, el._rfRitadVisad, el._rfHarlett  bara när ett aktivt filter har räknat om härledda lager
-//                   (harleddAv): figuren bilden ritades ur och resultatet av _figHarleddaLager (noten läser det).
+//                   (harleddAv): figuren bilden ritades ur och resultatet av harleddaLager (noten läser det).
 //                   Uppslag på data-l/data-i går genom _rfVisad(el), som annars ger el._figur.
 // rensaFigur tar bort alltihop. Inget av figuren skrivs som attribut i DOM.
 //
@@ -380,8 +372,6 @@ function _rfDoljTips(el) {
     if (_rfTipsAgare === el) _rfNollstallTips();
 }
 
-/** Har ritaFigur ritat i behållaren (också om den sedan rensats eller hamnat i felläge)? */
-
 /**
  * Släpper behållare som har suttit i dokumentet men inte gör det längre (vyn har byggt om sin HTML utan
  * rensaFigur): registret håller dem annars kvar i minnet, med figur och lönevärden, tills sidan rensas.
@@ -409,7 +399,7 @@ export function _rfRensaAlla() {
 // Index ur ett attribut: bara heltal utan tecken, annars -1.
 function _rfIndex(s) { return typeof s === 'string' && /^\d+$/.test(s) ? Number(s) : -1; }
 // Figuren som bilden i behållaren är ritad ur: originalet, eller (med ett aktivt filter) originalet med de härledda
-// lagren omräknade (_figHarleddaLager). Samma lager och index; data-l/data-i slås upp här, aldrig i el._figur rakt av.
+// lagren omräknade (harleddaLager). Samma lager och index; data-l/data-i slås upp här, aldrig i el._figur rakt av.
 export function _rfVisad(el) { return (el && (el._rfVisadFigur || el._rfUnderlagFigur || el._figur)) || null; }
 // Figuren som gäller för behållarens underlag: vyns figur räknad för det valda underlaget (figur.underlag, se
 // _rfUnderlagRakna), annars originalet. Härledda lager och filtret läggs på den.
@@ -419,7 +409,7 @@ function _rfGrundfigur(el) { return (el && (el._rfUnderlagFigur || el._figur)) |
 // `panel` är lagrets plats i figurens paneler (undefined för ett lager utan panel), `index` lagrets plats i figuren.
 function _rfLagerBeskrivning(figur, lager, index) {
     const pi = lager.panel != null && Array.isArray(figur.paneler) ? figur.paneler.indexOf(lager.panel) : -1;
-    return Object.freeze({ serie: lager.serie, marke: lager.marke, panel: pi >= 0 ? pi : undefined, axel: lager.axel === 'y2' && figur.y2 ? 'y2' : 'y', index });
+    return Object.freeze({ serie: lager.serie, marke: lager.marke, panel: pi >= 0 ? pi : undefined, index });
 }
 
 // Det en låda lämnar till hanterarna: { d: { x, nyckel? }, sammanfattning }. Individerna är de som ritaren
@@ -793,7 +783,8 @@ function _rfVidTangent(el, e) {
 // Ritytan går att nå med Tab. Piltangenterna flyttar mellan de ritade märkena (i den ordning de ritats: serie för
 // serie), Home och End går till första och sista, Enter eller mellanslag gör det ett klick gör, och Escape lämnar
 // märket. Märket som har fokus får en ram, verktygstipset visas vid det och dess text läses upp. Bara ritade
-// märken finns i ordningen — en dold liten punkt går inte att nå.
+// märken i ett lager med tips finns i ordningen — en dold liten punkt går inte att nå, och ett lager utan tips (en
+// markering vars värde står i ett annat lager, som nivåstrecken i en trappa) läses inte upp som en tom datapunkt.
 // ====================================================================
 function _rfRityta(el) { return el.querySelector(':scope > svg [data-del="rityta"]'); }
 // Märkena som går att stanna på: ett per datapunkt (en låda är ett märke, hur många delar den än ritas med).
@@ -802,6 +793,7 @@ function _rfTangentMarken(el) {
     for (const m of el.querySelectorAll(':scope > svg [data-del="rityta"] [data-l][data-i]')) {
         const marke = m.getAttribute('data-marke');
         if (marke === 'linje') continue;   // linjens träffytor (linjepunkt) är märkena, inte kurvan
+        if (typeof _rfVisad(el).lager[_rfIndex(m.getAttribute('data-l'))]?.tips !== 'function') continue;
         const lada = marke !== 'individ' && _rfArLada(el, m);
         const id = lada ? `${m.getAttribute('data-l')}|lada|${_rfLadKategoriFor(el, m)}` : `${m.getAttribute('data-l')}|${m.getAttribute('data-i')}`;
         if (sedda.has(id) || !_rfTraff(el, m)) continue;
@@ -1180,9 +1172,9 @@ function _rfZoomGlom(el) { delete el._rfZoom; _rfZoomNot(el, false); }
 // "Inga grupper i urvalet" i diagrammet) eftersom det går att ändra i samma fält. Visa alla, sist i den sista raden,
 // nollställer alla dimensioner. Ett filter döljer bara märken (ritaren behandlar dem som små punkter utan visaSma);
 // inget tal räknas om, och rapportens bildväg (diagramTillBild) ritar alltid allt.
-// En rad visas när kategorin har minst två värden, eller intervallet två olika tal (_figUrvalSpann); annars gäller
+// En rad visas när kategorin har minst två värden, eller intervallet två olika tal (urvalSpann); annars gäller
 // inget filter i den dimensionen.
-// En kategori med `visning: 'lista'` eller fler än URVAL_LISTA_MAX värden (_figUrvalSomLista) visas i stället som en
+// En kategori med `visning: 'lista'` eller fler än URVAL_LISTA_MAX värden (urvalSomLista) visas i stället som en
 // hopfälld lista (<details>): summeringen "Yrkesgrupp: 12 av 40", ett sökfält som döljer poster som inte matchar, och
 // knapparna Markera alla och Avmarkera alla (de gäller posterna som syns; med en sökning heter de "… träffarna").
 // En kryssruta per värde (checked: värdet visas). I en lista får alla väljas bort — då står "Inga grupper i urvalet"
@@ -1194,10 +1186,10 @@ function _rfZoomGlom(el) { delete el._rfZoom; _rfZoomNot(el, false); }
 // figurens värden, ett bortvalt värde som saknas ignoreras (och gäller igen när det finns), och vore alla värden
 // bortvalda visas alla. Ett intervall minns { min, max } och gäller också när figurens tal ligger utanför (noten
 // säger då vad som gäller). Minnet sparas inte i konfigurationsfilen och glöms vid Rensa all data (_rfRensaAlla)
-// och när en ny lönefil läses in (_rfUrvalGlom).
+// och när ett nytt underlag läses in (glomForraUnderlaget i 32-filinlasning.js).
 /** @type {Map<string, Set<string>|{min: number|null, max: number|null}>} */
 const _rfUrvalMinne = new Map();
-/** Glömmer urvalet i alla diagram (ny lönefil, Rensa all data). Diagram som redan är ritade behåller sitt tills de ritas igen. */
+/** Glömmer urvalet i alla diagram (nytt underlag, Rensa all data). Diagram som redan är ritade behåller sitt tills de ritas igen. */
 export function _rfUrvalGlom() { _rfUrvalMinne.clear(); }
 function _rfUrvalNyckel(el, u) { return `${el.id}|${u.falt}`; }
 /** Ett tomt filter. */
@@ -1213,8 +1205,8 @@ function _rfUrvalKopia(f) {
 function _rfUrvalAktivt(f) {
     return !!f && ([...(f.kategori ? f.kategori.values() : [])].some(s => s.size > 0) || !!(f.intervall && f.intervall.size));
 }
-// Sant när filtret döljer varje punkt som annars skulle ritas.
-function _rfUrvalDoljerAllt(el) {
+// Sant när filtret döljer varje punkt som annars skulle ritas (skärmen och exportmenyns bild, som ritas med filtret).
+export function _rfUrvalDoljerAllt(el) {
     const f = el._figurFilter, figur = _rfVisad(el);
     if (!_rfUrvalAktivt(f)) return false;
     const visaSma = !!(el._figurVal && el._figurVal.visaSma);
@@ -1305,7 +1297,7 @@ function _rfUrvalRadBas(o) {
     return rad;
 }
 function _rfUrvalRadNyckel(o) { return o.underlag ? `underlag:${o.u.falt}` : o.u.falt; }
-// Knappens eller kryssrutans text för värdet: figurens urval (_figUrvalEtikett), eller underlagets dimensions mall.
+// Knappens eller kryssrutans text för värdet: figurens urval (urvalEtikett), eller underlagets dimensions mall.
 function _rfUrvalEtikett(el, o, v) {
     if (!o.underlag) return urvalEtikett(el._figur, o.u, v);
     return typeof o.u.etikett === 'string' ? o.u.etikett.split('{v}').join(String(v)) : String(v);
@@ -1649,8 +1641,8 @@ function _rfUrvalVisaAlla(el) {
     _rfUrvalUppdatera(el);
 }
 // Noten under diagrammet (samma stil och plats som zoomnoten) när ett filter är aktivt eller ett fält är fel.
-// `delar` är filtret som text (_figUrvalBeskrivning), samma text som exportens fotrad; `harlett` meningarna om de
-// härledda lagren (_figHarlettNot), sist.
+// `delar` är filtret som text (urvalBeskrivning), samma text som exportens fotrad; `harlett` meningarna om de
+// härledda lagren (harlettNot), sist.
 // `underlag` är meningarna om underlaget (_rfUnderlagNot): ett avvisat val först, sedan vad diagrammet är räknat för.
 function _rfUrvalNot(el, delar, fel = [], harlett = [], underlag = { fel: '', rakna: '', info: '' }) {
     let not = el._rfUrvalNotEl;
@@ -1685,7 +1677,7 @@ function _rfUrvalTaBort(el) {
 // rader, { beskrivning }) är vyns egen beräkning med dess k-regler, och dess figur ritas i stället för originalet
 // (el._rfUnderlagFigur; _rfGrundfigur). Ger rita en text i stället för en figur står texten i diagrammet.
 //
-// Skyddsregeln (_figUnderlagProva): både urvalet och resten — de övriga personerna i det underlag vyn ritar — ska ha
+// Skyddsregeln (underlagProva): både urvalet och resten — de övriga personerna i det underlag vyn ritar — ska ha
 // noll eller minst k personer av vartdera könet. Ett val som bryter mot den görs inte: valet markeras (aria-invalid)
 // och noten säger varför. Ett värde vars egen grupp inte klarar regeln står inte bland valen, och underlaget räknas
 // för en dimension i taget (ett val i en annan dimension tar bort det förra, och noten säger det): skillnaden mellan
@@ -1876,7 +1868,7 @@ function _rfBildmatt(bredd, hojd) {
 }
 
 /**
- * Figuren som fristående SVG-text med vit bakgrund. Med ett aktivt filter räknas härledda lager om (_figHarleddaLager).
+ * Figuren som fristående SVG-text med vit bakgrund. Med ett aktivt filter räknas härledda lager om (harleddaLager).
  * Ritas på nytt i ett element utanför sidan — möjligt eftersom
  * ritaren aldrig mäter text i DOM. Bilden ritas i en LOGISK storlek (bredd 800, höjd 800 × hojd / bredd) och
  * skalas med viewBox till begärd bredd × höjd, så att text och märken behåller sina proportioner (vid 1600 px

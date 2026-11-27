@@ -30,11 +30,10 @@ snart som möjligt, och den som rapporterat nämns i versionsnyheterna om den vi
   kan röjas i en export trots skyddet. Undantagen står i `docs/dataskydd/dataskydd.md` §3.
 - Att något skrivs till webbläsarens lagring. Spärren mot lagring har kända luckor
   (`docs/dataskydd/riskanalys.md` §6.2); de behöver inte rapporteras igen.
-- Att en fil med personnummer, namn eller e-post inte avvisas (kontrollen ser på
-  rubrikerna och 50 rader spridda över filen), eller att en kolumnrubrik som antyder en särskild
-  kategori av personuppgifter (fackmedlemskap, hälsa, etnicitet, religion, politisk åskådning,
-  sexualliv, genetik, biometri) inte avvisas (kontrollen ser bara på rubriken).
-  Namn inne i fältet för AID-etikett avvisas och maskeras inte; inläsningen varnar för dem, och varningen
+- Att en fil med andra personuppgifter än personnummer och en namnkolumn inte avvisas: kontrollen
+  är en signal om att uttaget inte är gallrat, ingen fullständig genomsökning. Den ser på rubrikerna
+  och, för personnummer, på 50 rader spridda över filen; övriga kolumner läses inte in (ADR-110).
+  Namn inne i fältet för AID-etikett avvisas inte och maskeras inte; inläsningen varnar för dem, och varningen
   hittar inte alla namn (`docs/dataskydd/dataskydd.md`, *Vad skydden gör och inte gör*). Att ett sådant namn
   inte ger varning är därför ingen sårbarhet, om det inte är ett av de mönster varningen ska hitta.
 

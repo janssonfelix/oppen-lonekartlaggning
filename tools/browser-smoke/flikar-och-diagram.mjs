@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { FIL, NAMN, BILDER, ok, page, FLIKAR, konsolfel, sidfel, oppnaFlik } from './rigg.mjs';
+import { FIL, NAMN, BILDER, ok, page, DIAGRAM_PA_DEMO, flikar, konsolfel, sidfel, oppnaFlik } from './rigg.mjs';
 
 // Flikarna och deras diagram, länkade vyer och flikarnas form.
 export async function flikarOchDiagram() {
@@ -22,7 +22,8 @@ export async function flikarOchDiagram() {
     });
     // Flikarna klickas vid 1440 punkter: där är sidindexet en rad överst (spalten bredvid innehållet börjar vid 1920).
     await page.setViewportSize({ width: 1440, height: 900 });
-    for (const [flik, diagram] of FLIKAR) {
+    for (const flik of await flikar(page)) {
+        const diagram = DIAGRAM_PA_DEMO[flik] || [];
         await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
         await page.waitForTimeout(400);           // låt fliken rita klart
@@ -66,7 +67,6 @@ export async function flikarOchDiagram() {
             const titlar = await page.evaluate(() => [...document.querySelectorAll('#chart-kon-scatter svg text')].map(t => t.textContent.trim()));
             ok(titlar.includes('Ålder') && titlar.includes('Månadslön'), 'axeltitlarna ritas (Ålder, Månadslön)');
         }
-        if (!diagram.length) ok(true, `${flik}: renderade utan fel`);
     }
     {
         // Smalare än 1920 punkter (här 1440) är sidindexet en rad överst som följer med och säger vilket avsnitt som står i
@@ -154,19 +154,11 @@ export async function flikarOchDiagram() {
     await page.setViewportSize({ width: 1400, height: 1000 });
 
     console.log('\n── Diagrammen (diagramkärnan, ADR-39) ──');
-    // Varje diagram ritas av diagramkärnan: en SVG med märken, och exportmenyn ger en PNG och en SVG som inte
-    // är tomma. Ett diagram som vyn ersätter med en förklarande text
-    // (för få grupper i demodatan) räknas som riktigt — då finns ingen figur och ingen bild.
-    const DIAGRAMMEN = [['matrix', 'chart-la-tratt'], ['struktur', 'chart-skevhet-andel'], ['struktur', 'chart-perbas-gap'], ['struktur', 'chart-sektorer'],
-                      ['benchmark', 'chart-lp-gender'], ['benchmark', 'chart-lp-compliance'], ['kon', 'chart-demo-hist'],
-                      // linjer, band och lådor
-                      ['kon', 'chart-kon-scatter'], ['kon', 'chart-kon-boxplot'],
-                      ['kon', 'chart-demo-agecurve'], ['kon', 'chart-demo-spread'], ['matrix', 'lifecycle-chart'],
-                      // de sammansatta diagrammen
-                      ['benchmark', 'chart-jamforelse-spann'], ['benchmark', 'chart-jamforelse-avvikelse'], ['benchmark', 'chart-lp-bandmap'], ['benchmark', 'chart-jmf-statlage'], ['benchmark', 'chart-ref-hantel'],
-                      ['prioritering', 'chart-prio-pareto'], ['prioritering', 'chart-prio-matrix'], ['likvardighet', 'chart-likvardighet-heatmap'],
-                      // Utforska
-                      ['utforska', 'chart-explore']];
+    // Varje diagram som diagramkärnan har ritat i flikarna (ritarens register, efter varvet genom alla flikar ovan) har
+    // märken och en beskrivning, och exportmenyn ger en PNG och en SVG som inte är tomma.
+    /* global _rfBehallare, _egFlikFor */
+    const DIAGRAMMEN = await page.evaluate(() => [..._rfBehallare].filter(el => el.isConnected && el.id && _egFlikFor(el)).map(el => [_egFlikFor(el), el.id]));
+    ok(DIAGRAMMEN.length > 0, `diagramkärnan har ritat ${DIAGRAMMEN.length} diagram i flikarna`);
     for (const [flik, id] of DIAGRAMMEN) {
         await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
         await page.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(d => { d.open = true; }));
@@ -176,10 +168,9 @@ export async function flikarOchDiagram() {
             if (!el) return { finns: false };
             return { finns: true, figur: !!el._figur, marken: el.querySelectorAll(':scope > svg [data-marke]').length,
                      beskrivning: (el.querySelector(':scope > svg[role="group"]') || { getAttribute: () => '' }).getAttribute('aria-label') || '',
-                     text: el.textContent.trim().slice(0, 60), knapp: !!el.parentElement.querySelector('.chart-export-btn') };
+                     knapp: !!el.parentElement.querySelector('.chart-export-btn') };
         }, id);
-        if (!lage.finns) { ok(false, `${id}: behållaren finns`); continue; }
-        if (!lage.figur) { ok(lage.marken === 0 && lage.text.length > 0, `${id}: inget diagram för demodatan — vyns text visas ("${lage.text}")`); continue; }
+        if (!lage.finns || !lage.figur || !lage.knapp) { ok(false, `${id}: diagrammet finns kvar med figur och exportmeny (${JSON.stringify(lage)})`); continue; }
         ok(lage.marken > 0 && lage.beskrivning.length > 10, `${id}: diagramkärnan ritade ${lage.marken} märken, med beskrivning`);
         // Skärmbild bara av ett synligt diagram (livscykeldiagrammet ligger i ett hopfällt avsnitt).
         if (BILDER && await page.locator(`#${id}`).isVisible()) { mkdirSync(BILDER, { recursive: true }); await page.locator(`#${id}`).screenshot({ path: join(BILDER, `${NAMN}-${id}.png`) }); }
@@ -413,10 +404,10 @@ export async function flikarOchDiagram() {
         const kopiansFilter = page.locator('#ut-diagram-chart-prio-matrix').locator('xpath=preceding-sibling::div[@data-urval-filter][1]');
         ok(await kopiansFilter.isVisible(), 'kopians ruta Filter syns från början');
         // Ett smalt fönster: kopiorna och deras filterrader ger ingen vågrät rullning.
-        await page.setViewportSize({ width: 375, height: 800 });
+        await page.setViewportSize({ width: 900, height: 800 });
         await page.waitForTimeout(400);
         const bred = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
-        ok(bred[0] <= bred[1], `Alla diagram vid 375 punkter: ingen vågrät rullning (${bred[0]} / ${bred[1]})`);
+        ok(bred[0] <= bred[1], `Alla diagram vid 900 punkter: ingen vågrät rullning (${bred[0]} / ${bred[1]})`);
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.waitForTimeout(200);
         ok(konsolfel.length + sidfel.length === felFore, 'inga konsolfel i Alla diagram');

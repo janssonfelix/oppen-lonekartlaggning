@@ -59,8 +59,14 @@ export function konfigurationMedNyaNamn(cfg) {
     return _byt(cfg, '');
 }
 
+// Vägarna som har ett namnbyte på sig själva eller längre ned. Under en annan väg byts inget, och bytet går inte
+// längre ned: ett djupt nästlat värde lämnas som det är i stället för att ta slut på anropsstacken.
+const _VAGAR_MED_BYTEN = Object.keys(KONFIGURATION_NAMNBYTEN);
+const _harByten = vag => _VAGAR_MED_BYTEN.some(n => n === vag || n.startsWith(`${vag}.`) || n.startsWith(`${vag}[]`));
+
 /** @param {any} v @param {string} vag @returns {any} */
 function _byt(v, vag) {
+    if (!_harByten(vag)) return v;
     if (Array.isArray(v)) return v.map(x => _byt(x, `${vag}[]`));
     if (!v || typeof v !== 'object') return v;
     const byten = KONFIGURATION_NAMNBYTEN[vag] || {};

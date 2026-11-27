@@ -9,12 +9,12 @@
  * falt.js, som står sent i speglingsordningen).
  */
 
-/** Sant när radens kön är 'kvinna' (ett kön som innehåller 'kvinna'). Saknas raden eller könet: falskt. */
+/** Sant när radens kön är 'kvinna'. Saknas raden eller könet: falskt. */
 export function arKvinna(r) {
-    return !!r && typeof r.kon === 'string' && r.kon.includes('kvinna');
+    return !!r && r.kon === 'kvinna';
 }
 
-/** Sant när radens kön är 'man' eller 'män'. Saknas raden eller könet: falskt. */
+/** Sant när radens kön är 'man'. Saknas raden eller könet: falskt. */
 export function arMan(r) {
-    return !!r && (r.kon === 'man' || r.kon === 'män');
+    return !!r && r.kon === 'man';
 }

@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — vymodellen för livscykelanalysen i Ålder & karriär (ADR-99): det som analysen visar utöver
- * modellen själv (livscykelRegression i livscykel.js). Modellens lönenivåer per BAS-intervall vid 25 och 65 år och de
+ * modellen själv (livscykelRegression i livscykel.js). Modellens lönenivåer per BAS-intervall vid spannets lägsta och högsta ålder och de
  * intervall som utelämnas under tröskeln, om kurvan för det valda intervallet visas, nyckeltalen som kvoter,
  * mönstret över karriären och jämförelsen med huvudmodellen. Modellens resultat, huvudregressionens resultat och
  * tröskeln är argument: vymodellen räknar ingen regression och minns ingen (ADR-17). Ritfunktionen i
@@ -11,21 +11,22 @@
 import { samspelSakerstallt } from './livscykel.js';
 
 /**
- * Modellens lönenivåer per BAS-intervall vid 25 och 65 år. Modellen är en regression över alla intervall: skillnaden i
+ * Modellens lönenivåer per BAS-intervall vid spannets lägsta och högsta ålder (alderFran, alderTill: åldrarna där båda
+ * könen har personer, livscykel.js), så att ingen nivå räknas utanför underlaget. Modellen är en regression över alla intervall: skillnaden i
  * procent är densamma i alla, och nivån kommer ur modellens egen BAS-koefficient (basFaktor), inte ur uppmätta
  * medianer. `n` är antalet personer med lön i intervallet i hela underlaget.
  * @param {any} res livscykelRegression
  * @param {any[]} rader hela underlaget
  */
 export function livscykelBasRader(res, rader) {
-    const sista = res.predKvinna.length - 1;
+    const vid = (pred, a) => pred.find(p => p.age === a).lon;
     return res.basList.map(b => {
         const skala = res.basFaktor?.[b] ?? 1.0;
-        const kv25 = res.predKvinna[0].lon * skala, kv65 = res.predKvinna[sista].lon * skala;
-        const ma25 = res.predMan[0].lon * skala, ma65 = res.predMan[sista].lon * skala;
-        return { bas: b, n: rader.filter(r => r.bas === b && r.lon > 0).length, kv25, kv65, ma25, ma65,
-            gap25Pct: res.gapAt25, gap65Pct: res.gapAt65,
-            gap25Kr: kv25 - ma25, gap65Kr: kv65 - ma65 };   // kvinnor mot män: negativt när kvinnor ligger lägre
+        const kvFran = vid(res.predKvinna, res.alderFran) * skala, kvTill = vid(res.predKvinna, res.alderTill) * skala;
+        const maFran = vid(res.predMan, res.alderFran) * skala, maTill = vid(res.predMan, res.alderTill) * skala;
+        return { bas: b, n: rader.filter(r => r.bas === b && r.lon > 0).length, kvFran, kvTill, maFran, maTill,
+            gapFranPct: res.gapFran, gapTillPct: res.gapTill,
+            gapFranKr: kvFran - maFran, gapTillKr: kvTill - maTill };   // kvinnor mot män: negativt när kvinnor ligger lägre
     });
 }
 
@@ -41,19 +42,21 @@ export function livscykelKurvaUtelamnad(res, basRader, k) {
 
 /**
  * Mönstret över karriären: 'konstant' när samspelet mellan kön och ålder inte är säkerställt, annars 'växande' när
- * kvinnors lön mot mäns sjunker mer än 2 procentenheter mellan 25 och 65 år, 'krympande' när den stiger mer än 2,
- * och 'praktiskt konstant' däremellan. Samma regel för analysen och punkten i Att göra.
- * @param {{gapDelta:number, kvAgePVal:number, kvAge2PVal:number}} res
+ * skillnaden mellan kvinnor och män (avståndet till lika lön, åt vilket håll det än går) är mer än 2 procentenheter större
+ * vid spannets högsta ålder än vid dess lägsta, 'krympande' när den är mer än 2 mindre, och 'praktiskt konstant'
+ * däremellan. Samma regel för analysen och punkten i Att göra.
+ * @param {{gapFran:number, gapTill:number, kvAgePVal:number, kvAge2PVal:number}} res
  */
 export function livscykelMonster(res) {
     if (!samspelSakerstallt(res.kvAgePVal, res.kvAge2PVal)) return 'konstant';
-    return res.gapDelta < -2 ? 'växande' : res.gapDelta > 2 ? 'krympande' : 'praktiskt konstant';
+    const andring = Math.abs(res.gapTill) - Math.abs(res.gapFran);
+    return andring > 2 ? 'växande' : andring < -2 ? 'krympande' : 'praktiskt konstant';
 }
 
 /**
  * Vymodellen för livscykelanalysen.
  * - `basRader`: livscykelBasRader; `visade` och `utelamnade` (namnen) delade vid k; `kurvaUtelamnad`.
- * - `kvot25`, `kvot65`: kvinnors lön i procent av mäns vid 25 och 65 år (100 plus skillnaden).
+ * - `kvotFran`, `kvotTill`: kvinnors lön i procent av mäns vid spannets lägsta och högsta ålder (100 plus skillnaden).
  * - `samspel`: samspelet är säkerställt; `monster`: livscykelMonster.
  * - `huvud`: huvudregressionens tal att jämföra med (justerat R², skillnad, p, n och antal per kön), null när den
  *   inte kunde skattas; `sammaUrval`: modellerna bygger på lika många kvinnor och män; `adjR2Delta` (procentenheter)
@@ -72,7 +75,7 @@ export function vymodellLivscykel(res, { rader, k, huvud }) {
         visade: basRader.filter(r => !(r.n < k)),
         utelamnade: basRader.filter(r => r.n < k).map(r => r.bas),
         kurvaUtelamnad: livscykelKurvaUtelamnad(res, basRader, k),
-        kvot25: 100 + res.gapAt25, kvot65: 100 + res.gapAt65,
+        kvotFran: 100 + res.gapFran, kvotTill: 100 + res.gapTill,
         samspel: samspelSakerstallt(res.kvAgePVal, res.kvAge2PVal),
         monster: livscykelMonster(res),
         huvud: h,

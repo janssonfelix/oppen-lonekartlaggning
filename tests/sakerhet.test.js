@@ -12,6 +12,7 @@ import { utanHtmlKommentarer, utanSkript } from './helpers/htmlrens.js';
 import { esc } from '../src/lib/htmltext.js';
 import { bedöm, jämförVersion, ÅTGÄRDADE } from '../tools/sarbarheter.mjs';
 import { hämta, läsPurl } from '../tools/sarbarheter-hamta.mjs';
+import { ickeTom } from './helpers/paastaende.js';
 
 const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
@@ -175,7 +176,7 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
     const TILLÅTNA = [/^actions\//, /^sigstore\/cosign-installer@/];
     for (const fil of arbetsfloden) {
         it(`${fil}: varje "uses:" är en action som repots inställning tillåter`, () => {
-            for (const [, u] of läs(`.github/workflows/${fil}`).matchAll(/uses:\s*(\S+)/g)) {
+            for (const [, u] of ickeTom(läs(`.github/workflows/${fil}`).matchAll(/uses:\s*(\S+)/g))) {
                 expect(TILLÅTNA.some(t => t.test(u)), u).toBe(true);
             }
         });
@@ -186,7 +187,7 @@ describe('säkerhet: CI-stegen är låsta på commit', () => {
         expect(rel).toMatch(/id-token: write/);
         expect(rel).toMatch(/fetch-depth: 0/);
         expect(rel).toMatch(/attestations: write/);
-        const steg = ['npm ci', 'npm run release:kontroll', 'npm run bundle', 'npm run sbom', 'npm run valideringsrapport',
+        const steg = ['npm ci', 'npm run release:kontroll', 'node tools/kontroll.mjs --artefakt', 'npm run sbom', 'npm run valideringsrapport',
             'git worktree add --detach "$RUNNER_TEMP/ombygge" "$GITHUB_REF_NAME"', 'cosign sign-blob', 'cosign verify-blob',
             'uses: actions/attest-build-provenance@', 'gh release create'];
         const jobb = rel.slice(rel.indexOf('\njobs:'));   // kommentaren överst nämner stegen i annan ordning

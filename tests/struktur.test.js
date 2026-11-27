@@ -7,6 +7,7 @@ import {
     histogramKlasser, omfang, strukturMatt, ogonblicksbildMatt,
     konsMedianer, konsMedianerUrLoner, medianGapPct, representationPerBas, kvartilfordelning, fordelningsgap, tillDirektivtecken
 } from '../src/lib/struktur.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const rows = () => [
     { bas: 'A', kon: 'kvinna', lon: 28000 },
@@ -105,11 +106,20 @@ describe('[B2.4] structure: kvartilfördelning (EU 2023/970)', () => {
     it('redovisar inga enskilda löner: varken lägsta, högsta eller kvartilens ytterlöner', () => {
         const q = kvartilfordelning(rows());
         const tal = q.flatMap(x => [x.undre, x.ovre]).filter(v => v !== null);
-        for (const v of tal) expect(rows().map(r => r.lon)).not.toContain(v);
-        for (const x of q) { expect(x).not.toHaveProperty('loLon'); expect(x).not.toHaveProperty('hiLon'); }
+        for (const v of ickeTom(tal)) expect(rows().map(r => r.lon)).not.toContain(v);
+        for (const x of ickeTom(q)) { expect(x).not.toHaveProperty('loLon'); expect(x).not.toHaveProperty('hiLon'); }
     });
     it('tom vid < 4 individer', () => {
         expect(kvartilfordelning(rows().slice(0, 3))).toEqual([]);
+    });
+    it('personer med samma lön delas proportionellt mellan kvartilerna de spänner över, oberoende av radordningen', () => {
+        // Åtta personer, två per kvartil. De fyra på 30 000 kr (tre kvinnor, en man) fyller platserna 3–6: två i Q2 och
+        // två i Q3, med 3/4 kvinnor i varje, alltså 1,5 kvinnor och 0,5 män per kvartil.
+        const lika = [{ kon: 'kvinna', lon: 30000 }, { kon: 'kvinna', lon: 30000 }, { kon: 'kvinna', lon: 30000 }, { kon: 'man', lon: 30000 }];
+        const ovriga = [{ kon: 'kvinna', lon: 20000 }, { kon: 'man', lon: 20000 }, { kon: 'man', lon: 40000 }, { kon: 'man', lon: 40000 }];
+        const forvantat = [[1, 1, 50], [1.5, 0.5, 75], [1.5, 0.5, 75], [0, 2, 0]];
+        for (const rader of [[...ovriga, ...lika], [...ovriga, ...lika.slice().reverse()]])
+            expect(kvartilfordelning(rader).map(x => [x.nKv, x.nMa, x.andelKv])).toEqual(forvantat);
     });
 });
 

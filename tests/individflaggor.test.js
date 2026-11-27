@@ -36,6 +36,13 @@ describe('[B5.6] flaggaIndivider', () => {
         const f = flaggaIndivider(r, { grans: 10 }).flaggade;
         expect(f.map(x => x.lon)).toEqual([27000]);
     });
+    it('den som ligger exakt på gränsen flaggas, för varje heltalsgräns 5–30', () => {
+        // Kollegornas median är 1 000 kr; lönen 1 000 − 10·gränsen ligger exakt gränsen procent under.
+        for (let grans = 5; grans <= 30; grans++) {
+            const r = [...flera(9, 'kvinna', 1000, 40), p('man', 1000 - 10 * grans, 40)];
+            expect(flaggaIndivider(r, { grans }).flaggade.map(x => x.lon), `gränsen ${grans}`).toEqual([1000 - 10 * grans]);
+        }
+    });
     it('grupper under minGrupp prövas inte och räknas i ejProvade', () => {
         const r = [...flera(9, 'kvinna', 30000, 40, '5301', 'B'), ...flera(10, 'man', 30000, 40, '4100', 'C')];
         const u = flaggaIndivider(r, {});

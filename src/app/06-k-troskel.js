@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_SKARM, K_STANDARD, konFarRedovisas, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, LITET_UNDERLAG, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
+import { csvMedStampel, individLitenForVid, K_MAX, K_MIN, K_SKARM, K_STANDARD, konFarRedovisasFor, konUtelamnatNot, kSanktNot, kUndantag, kSidfot, kStampelForVid, kStampelVid, kText, kTolka, LITET_UNDERLAG, parForRedovisning, parNarK, parUtelamnadeNot, raGapText, statGolvVid, tsvMedStampel } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
@@ -17,6 +17,7 @@ import { ritGenerationNy, tomFlikarUtom, visningNy } from './23-exportgrind.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
 import { ritaFlik } from './31-navigering.js';
 import { _fcRensaParMal } from './36-loneoversyn.js';
+import { utkastVidHogreTroskel } from './37-struktur.js';
 import { forklaringsmodell } from './50-regressionsmodeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
 import { utforskaSmaIExport } from './70-utforska.js';
@@ -78,7 +79,6 @@ export function kMaskerad(n) { return n < kTroskel(); }
 // Reglerna för vad som får redovisas vid k bor i src/lib/ktroskel.js med tröskeln som argument. Adaptrarna nedan
 // lägger till tröskeln som gäller: kTroskel() för det som redovisas, kInstalld() för stämpeln och texterna om regeln.
 // Det som inte läser någon tröskel (kTolka, konAntal, parNarK, kUndantagNot) importeras direkt ur lib.
-export function _konFarRedovisas(nKv, nMa) { return konFarRedovisas(nKv, nMa, kTroskel()); }
 /** Får könsuppdelade lönemått för hela radmängden redovisas? */
 export function _konFarRedovisasFor(rader) { return konFarRedovisasFor(rader, kTroskel()); }
 /** Meningen där ett könsuppdelat mått för hela urvalet utelämnats (samma ordalydelse som Rapportunderlaget). */
@@ -291,7 +291,7 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
         return { ok: false, nekad: true };
     }
     _kVisaFel('');   // ett gammalt felmeddelande hör till ett värde som inte längre gäller
-    const golvFore = statGolv();
+    const golvFore = statGolv(), hojd = n > state.kTroskel;
     state.kTroskel = n;
     state._lifecycleCache = null;
     // Skattningarna (bootstrap-KI och styrkan läser statGolv()) räknas om bara när golvet ändras — på 55 000 rader är
@@ -304,6 +304,7 @@ export function sattKTroskel(v, { fraga = true, rita = true, stegvis = false } =
     // Löneöversynens förslag ur par i likvärdigt arbete som inte längre når den inställda tröskeln tas bort, också på skärmen (egna
     // rader står kvar; ADR-69). En sänkt tröskel tar inte bort något men ändrar meningen om utelämnade par.
     _fcRensaParMal();
+    if (hojd) utkastVidHogreTroskel(n);   // ett redigerat rapportutkast byggt vid en lägre tröskel
     _synkaKTroskel();
     // Från gränssnittet ritas allt om stegvis, med förlopp (stegvis); program och tester får det direkt.
     /** @type {Promise<void>|null} */

@@ -87,18 +87,10 @@ function _falt(l, a) {
 }
 // Skärmaxeln ett lager lägger sina VÄRDEN längs (den andra bär kategorin eller x-värdet).
 function _vardeaxel(l) { return l.riktning === 'liggande' ? 'x' : 'y'; }
-// Vilken skärmaxel figurens axel a ('x' | 'y' | 'y2') motsvarar för lagret, eller null.
-function _skarmaxel(l, a) {
-    if (a === 'x') return 'x';
-    return (l.axel || 'y') === a ? 'y' : null;
-}
-
-/** Alla värden som lagren lägger på en axel ('x' | 'y' | 'y2'), i dataordning. */
-export function axelVarden(figur, axel) {
+/** Alla värden som lagren lägger på en axel ('x' | 'y'), i dataordning. */
+export function axelVarden(figur, a) {
     const ut = [];
     for (const l of figur.lager) {
-        const a = _skarmaxel(l, axel);
-        if (!a) continue;
         const falt = _falt(l, a);
         const medFel = (l.marke === 'stapel' || l.marke === 'punkt') && _vardeaxel(l) === a;
         for (const d of l.data) {
@@ -111,12 +103,10 @@ export function axelVarden(figur, axel) {
 
 // Staplade staplar staplar positiva värden uppåt och negativa nedåt, var för sig, per kategori och panel.
 // Ger { min, max } (största positiva summan, mest negativa summan; null om ingen) eller null.
-function _staplatSpann(figur, axel) {
+function _staplatSpann(figur, a) {
     const plus = new Map(), minus = new Map();
     for (const l of figur.lager) {
-        if (l.marke !== 'stapel' || l.lage !== 'staplad') continue;
-        const a = _skarmaxel(l, axel);
-        if (!a || _vardeaxel(l) !== a) continue;
+        if (l.marke !== 'stapel' || l.lage !== 'staplad' || _vardeaxel(l) !== a) continue;
         const kat = a === 'x' ? 'y' : 'x';
         const panel = l.panel == null ? '' : String(l.panel);
         for (const d of l.data) {
@@ -165,7 +155,7 @@ export function skalDoman(figur, axel) {
         if (spann.min != null && spann.min < min) min = spann.min;
     }
     if (a.skala !== 'log') {
-        const harStapel = figur.lager.some(l => l.marke === 'stapel' && _skarmaxel(l, axel) === _vardeaxel(l));
+        const harStapel = figur.lager.some(l => l.marke === 'stapel' && axel === _vardeaxel(l));
         if (harStapel) { if (min > 0) min = 0; if (max < 0) max = 0; }
     }
     if (min === max) { min -= 1; max += 1; }
@@ -692,7 +682,7 @@ function _fargdomanOk(fs) {
 function _provaData(l, i, figur, fel) {
     const talFalt = [];
     for (const a of ['x', 'y']) {
-        const ax = a === 'y' && l.axel === 'y2' ? figur.y2 : figur[a];
+        const ax = figur[a];
         if (!ax || ax.skala === 'band') continue;
         for (const f of _falt(l, a)) talFalt.push(f);
         if ((l.marke === 'stapel' || l.marke === 'punkt') && _vardeaxel(l) === a) talFalt.push('fel.lag', 'fel.hog');
@@ -735,15 +725,14 @@ export function valideraFigur(figur, id = 'diagram') {
     for (const a of ['x', 'y']) {
         if (!figur[a] || !SKALOR.includes(figur[a].skala)) fel(`axeln ${a} saknar giltig skala`);
     }
-    for (const a of ['x', 'y', 'y2']) {
+    for (const a of ['x', 'y']) {
         const ax = figur[a];
-        if (!ax || ax.skala === 'band' || ax.doman == null) continue;
+        if ( ax.skala === 'band' || ax.doman == null) continue;
         const d = ax.doman;
         const ok = Array.isArray(d) && d.length === 2 && d.every(n => typeof n === 'number' && isFinite(n)) && d[0] !== d[1]
             && (ax.skala !== 'log' || (d[0] > 0 && d[1] > 0));
         if (!ok) fel(`axeln ${a}: doman måste vara två olika ändliga tal${ax.skala === 'log' ? ' större än noll' : ''}`);
     }
-    if (figur.y2 && figur.y2.skala !== 'linjar') fel('y2 måste ha skalan linjar');
     if (!Array.isArray(figur.lager) || !figur.lager.length) fel('lager saknas');
     // paneler: 'auto' — radpaneler för många kategorier: bara för en liggande figur med
     // kategorier på y, och lagren får då ingen egen panel.
@@ -776,7 +765,6 @@ export function valideraFigur(figur, id = 'diagram') {
     figur.lager.forEach((l, i) => {
         if (!l || !MARKEN.includes(l.marke)) fel(`lager ${i}: okänt märke "${l && l.marke}"`);
         if (!Array.isArray(l.data)) fel(`lager ${i}: data saknas`);
-        if (l.axel === 'y2' && !figur.y2) fel(`lager ${i}: axeln y2 finns inte i figuren`);
         if (l.panel != null && !paneler.includes(l.panel)) fel(`lager ${i}: panelen "${l.panel}" finns inte`);
         if (l.tips != null && typeof l.tips !== 'function') fel(`lager ${i}: tips måste vara en funktion`);
         if (l.harleddAv != null) _provaHarlett(figur, l, i, fel);
@@ -788,9 +776,8 @@ export function valideraFigur(figur, id = 'diagram') {
         // Lådor ritas bara stående (kategorin på x, värdet på y): en liggande låda skulle annars godkännas men aldrig ritas.
         // Ofylld (en ring utan fyllning) finns bara för punktsymbolerna med en yta: cirkel, romb och kvadrat.
         if (l.ofylld != null && !(typeof l.ofylld === 'boolean' && l.marke === 'punkt' && (!l.symbol || ['cirkel', 'romb', 'kvadrat'].includes(l.symbol)))) fel(`lager ${i}: ofylld måste vara true eller false och gäller bara punkt med symbolen cirkel, romb eller kvadrat`);
-        if (l.monster != null && !(l.marke === 'stapel' && (l.monster === 'linjer' || l.monster === 'prickar'))) fel(`lager ${i}: monster måste vara "linjer" eller "prickar" och gäller bara stapel`);
         if (l.marke === 'lada' && l.riktning === 'liggande') fel(`lager ${i}: lada stöder bara stående riktning`);
-        if (l.marke === 'lada' && l.form != null && !['fiol', 'regnmoln', 'kvantiler'].includes(l.form)) fel(`lager ${i}: form måste vara "fiol", "regnmoln" eller "kvantiler"`);
+        if (l.marke === 'lada' && l.form != null && !['regnmoln', 'kvantiler'].includes(l.form)) fel(`lager ${i}: form måste vara "regnmoln" eller "kvantiler"`);
         if (l.antal != null && !(l.marke === 'lada' && l.form === 'kvantiler' && (l.antal === 20 || l.antal === 50))) fel(`lager ${i}: antal måste vara 20 eller 50 och gäller bara lada med form "kvantiler"`);
         // Staplar och lådor ritas per kategori och ruta i ett rutnät: kategorierna måste ligga på en bandskala.
         const kategori = l.riktning === 'liggande' ? 'y' : 'x';
@@ -808,9 +795,7 @@ export function valideraFigur(figur, id = 'diagram') {
 
 const _cell = v => (v == null || (typeof v === 'number' && !isFinite(v))) ? '' : v;
 function _serienamn(figur, l, i) {
-    let namn = l.serie ? String(l.serie) : `Serie ${i + 1}`;
-    // Ett lager på högra axeln skulle annars läsas under vänsteraxelns rubrik.
-    if (l.axel === 'y2') namn += figur.y2 && figur.y2.titel ? ` (höger axel: ${figur.y2.titel})` : ' (höger axel)';
+    const namn = l.serie ? String(l.serie) : `Serie ${i + 1}`;
     return l.panel != null ? `${namn} · ${l.panel}` : namn;
 }
 

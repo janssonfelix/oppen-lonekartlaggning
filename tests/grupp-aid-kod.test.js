@@ -3,8 +3,7 @@
 // En grupp är AID-koden i BAS-intervallet, i hela verktyget (ADR-89), aldrig texten i fältet för AID-etikett. Texten
 // maskeras inte (ADR-85), så en kod kan ha flera texter: två stavningar av samma etikett, eller en rad där ett namn
 // står i fältet. Underlaget här är påhittat: koden 207011 i BAS C med texten "Handläggare" på 8 rader, "Handläggare,
-// natt" på 7 och ett påhittat personnamn på 1, alltså 16 personer (8 kvinnor och 8 män). Per text, som grupperingen
-// var förut, är det två grupper under tröskeln 10 och en grupp på en person; per kod är det en grupp på 16. Sist prövas
+// natt" på 7 och ett påhittat personnamn på 1, alltså 16 personer (8 kvinnor och 8 män). Per text vore det två grupper under tröskeln 10 och en grupp på en person; per kod är det en grupp på 16. Sist prövas
 // att Lika arbete, prioriteringen, jämförelsen, tabellerna per BAS-intervall och trattdiagrammet ger samma uppsättning
 // grupper för samma underlag, så att de inte kan glida isär igen.
 import { describe, it, expect } from 'vitest';

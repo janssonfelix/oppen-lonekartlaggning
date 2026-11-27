@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { _sdStallningstagande, demodiagnostik, genereraDemodata, genereraStortDemoStatistik } from '../lib/demodata.js';
+import { arKvinna, arMan } from '../lib/kon.js';
+import { kvinnorOchMan } from '../lib/namn.js';
 import { svTal } from '../lib/talformat.js';
-import { esc } from './01-html-och-tillganglighet.js';
+import { esc, meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { kInstalld } from './06-k-troskel.js';
 import { tillampaProfiletiketter, synkaNamnFalt } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
-import { _rfUrvalGlom } from './10-diagramritare.js';
 import { hamtaBasIntervall, state } from './12-tillstand.js';
 import { bedomningUnderlag, fyllValjare, ritaKartlaggningensSteg, ritaUnderlagetsKvalitet, UK_ETIKETT, ritaKravstatus, ritaNyckeltal } from './13-oversikt.js';
 import { ritaExtremvarden } from './15-extremvarden-basrang.js';
@@ -21,8 +22,7 @@ import { uppdateraDataskyddsbesked } from './25-dataskyddsinfo.js';
 import { _rensaAllData, rensaAllData } from './26-rensning.js';
 import { _synkaOrgTyp, _tomStatistik } from './29-organisationspaket.js';
 import { lasUppFlikar } from './31-navigering.js';
-import { _harledArbetsvarderingUrData, markeraFilrutaInlast } from './32-filinlasning.js';
-import { _fcGlomKnappresultat } from './36-loneoversyn.js';
+import { glomForraUnderlaget, _harledArbetsvarderingUrData, markeraFilrutaInlast } from './32-filinlasning.js';
 import { ritaReferensKort, synkaJamforelseFlik } from './38-referensfiler.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 import { ritaAlderOchLon } from './40-alder-karriar.js';
@@ -31,7 +31,7 @@ import { _formateraPVarde, korOLSRegression } from './51-lika-arbete-regressions
 import { _hpDemoSkal } from './56-handlingsplan.js';
 
 // ---- Testdata + självdiagnostik ----
-// genereraTestdata och genereraDemodata står i src/lib/demodata.js; appen importerar dem.
+// genereraDemodata och de andra generatorerna står i src/lib/demodata.js.
 
 // Reglerna står i demodiagnostik (src/lib/demodata.js); här läses tillståndet och orden.
 function korDiagnostik() {
@@ -90,9 +90,8 @@ export function _lasInDemounderlag(skapa, { stort = false } = {}) {
     // Demot blandas aldrig med verkliga delar (ett organisationspaket, egen referens eller statistik).
     // Demots egen statistik (statistikKalla 'demo') är ingen verklig del: den ersätts eller tas bort nedan.
     if (state.paket || state.policyKalla === 'fil' || state.policyKalla === 'paket' || (state.statistik.length && state.statistikKalla !== 'demo')) _rensaAllData({ inbakat: false });
-    _rfUrvalGlom();   // urvalet i diagrammen hör till det förra underlaget, som vid en ny lönefil
+    glomForraUnderlaget();   // som vid en ny lönefil
     state.data = skapa();
-    _fcGlomKnappresultat();   // Löneöversyns knappresultat gällde det förra underlaget
     state.importprofil = null;   // demodatan läses inte ur en fil: ingen känd uppsättning
     _fkSlapp();   // inte heller någon förhandskontroll, och en fil som väntade på Läs in släpps
     state.data.forEach((r, i) => { r.radnr = i + 2; });   // som en fil med rubrik på rad 1
@@ -157,10 +156,12 @@ export function lasInDemodata() {
                     `).join('')}
                 </tbody>
             </table>
-            <p class="text-dampad-xs marg-t-8">Testdatan har 200 personer fördelade jämnt mellan kön. Modellen är konstruerad så att en oförklarad skillnad på ungefär −3 % ska finnas kvar efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger en större rå löneskillnad som delvis förklaras av strukturen.</p>
+            <p class="text-dampad-xs marg-t-8">Testdatan har ${state.data.length} personer, ${kvinnorOchMan(state.data.filter(arKvinna).length, state.data.filter(arMan).length)}. Modellen är konstruerad så att en oförklarad skillnad på ungefär −3 % ska finnas kvar efter kontroll för ålder och BAS. Kvinnor är i snitt yngre och tenderar att placeras i lägre BAS, vilket ger en större rå löneskillnad som delvis förklaras av strukturen.</p>
         </div>
     `;
     _ritaDemoruta();
+    // Som det stora demot (21-stort-demo.js): beskedet och diagnostikens utfall når skärmläsaren.
+    meddelaSkarmlasare(`Demodata inläst: ${svTal(state.data.length)} påhittade personer. Diagnostiken: ${failCount === 0 ? 'alla tester lyckades' : `${failCount} av ${tests.length} tester misslyckades`}.`);
 }
 
 // Demo-/utbildningsläge: visa/dölj en tydlig banner så syntetisk demodata

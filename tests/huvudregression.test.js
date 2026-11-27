@@ -235,7 +235,8 @@ describe('BAS-steg räknas i bokstäver i huvudregressionen, Blinder-Oaxaca och 
         return ut;
     };
     it('huvudregressionen: inget oförklarat gap och varje BAS-indikator ger 5 % per bokstavssteg mot referensen A', () => {
-        const r = huvudregression(rader(), opts());
+        // Med brus: utan det bestäms lönen helt av BAS och modellen har ingen spridning att skatta (§7).
+        const r = huvudregression(rader(0.01), opts());
         expect(r.error).toBeUndefined();
         expect(Math.abs(r.konPct)).toBeLessThan(0.05);
         expect(r.basRef).toBe('A');
@@ -243,7 +244,7 @@ describe('BAS-steg räknas i bokstäver i huvudregressionen, Blinder-Oaxaca och 
         for (const e of r.basEffekter) expect(e.pct).toBeCloseTo((Math.exp(0.05 * (PLATS[e.bas] - 1)) - 1) * 100, 1);
     });
     it('Blinder-Oaxaca: den oförklarade delen är noll', () => {
-        expect(Math.abs(blinderOaxaca(rader(), { golv: 10, modell: STD }).coefficientPct)).toBeLessThan(0.05);
+        expect(Math.abs(blinderOaxaca(rader(), { golv: 10, modell: STD }).unexplainedPct)).toBeLessThan(0.05);
     });
     it('kvantilregressionen: inget gap i någon kvantil', () => {
         const r = kvantilregressionAllaTau(rader(0.01), { modell: STD });

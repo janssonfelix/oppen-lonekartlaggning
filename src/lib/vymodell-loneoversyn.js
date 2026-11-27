@@ -103,22 +103,23 @@ export function kontrollvarningar(rader, forecast) {
  * En riktad rad för sig: vad den förbrukar av potten (räknad ensam, utan generellt påslag) och hur många den berör.
  * `upplysning` är 'ingen' när ingen träffas och 'underK' när färre än k berörs: en egen rad på en grupp under tröskeln
  * är tillåten (regel R2), och raden får en upplysning.
- * @param {any[]} rader @param {any} rad @param {{roundStep?: number, k: number}} val
+ * Kostnaden är påslagen före avrundningen (`riktadCost`), så avrundningssteget spelar ingen roll.
+ * @param {any[]} rader @param {any} rad @param {{k: number}} val
  */
-export function riktadRadInfo(rader, rad, { roundStep, k }) {
+export function riktadRadInfo(rader, rad, { k }) {
     let kostnad = 0;
-    try { kostnad = fordela(rader, { mode: 'pct', value: 0 }, [rad], roundStep).totals.riktadCost; } catch (_e) { kostnad = 0; }
+    try { kostnad = fordela(rader, { mode: 'pct', value: 0 }, [rad]).totals.riktadCost; } catch (_e) { kostnad = 0; }
     const n = riktadeRader(rader, rad).length;
     return { kostnad, n, upplysning: n === 0 ? 'ingen' : n < k ? 'underK' : null };
 }
 
 /** Kostnaden per pott (kr/mån): varje riktad rad räknad för sig och lagd på sin pottyp; `potter` är typerna med mer än 0,5 kr. */
-export function kostnadPerPott(rader, riktningar, roundStep) {
+export function kostnadPerPott(rader, riktningar) {
     /** @type {Record<string, number>} */
     const perPott = {};
     for (const t of riktningar) {
         let c = 0;
-        try { c = fordela(rader, { mode: 'pct', value: 0 }, [t], roundStep).totals.riktadCost; } catch (_e) { c = 0; }
+        try { c = fordela(rader, { mode: 'pct', value: 0 }, [t]).totals.riktadCost; } catch (_e) { c = 0; }
         const p = POTTYPER.includes(t.pool) ? t.pool : 'övrigt';
         perPott[p] = (perPott[p] || 0) + c;
     }
@@ -214,7 +215,7 @@ export function vymodellPrognos(rader, { forecast, kostnadsval, k, regval }) {
         out, sim, varningar: kontrollvarningar(rader, forecast),
         anvandPct, matare: out.overBudget ? 'over' : anvandPct > 95 ? 'nara' : 'ok',
         band: { alla: spann, visade: spann.filter(b => !(b.n < k)), utelamnade: spann.filter(b => b.n < k).map(b => b.bas) },
-        potter: kostnadPerPott(rader, forecast.targets, forecast.roundStep),
+        potter: kostnadPerPott(rader, forecast.targets),
         ...vy,
         tabell: [...vy.utfall.visade, ...vy.utfall.maskerade].map(g => {
             const maskerad = vy.utfall.maskerade.includes(g);
@@ -289,12 +290,13 @@ export function forslagskandidater(allaPar, k) {
 }
 
 /**
- * Förslaget ur potten: potten efter det generella påslaget fördelad på kandidaterna (foreslaRiktning), bara grupper med
- * minst `minN` personer.
- * @param {any[]} rader @param {{budget: any, generell: any, kandidater: any[], minN: number}} val
+ * Förslaget ur potten: potten efter det generella påslaget och användarens egna riktade rader (`egna`, som står kvar
+ * bredvid förslagen) fördelad på kandidaterna (foreslaRiktning), bara grupper med minst `minN` personer.
+ * @param {any[]} rader @param {{budget: any, generell: any, egna?: any[], kandidater: any[], minN: number}} val
  */
-export function forslagUrPotten(rader, { budget, generell, kandidater, minN }) {
-    const riktadPott = Math.max(0, beraknaPott(rader, budget) - fordela(rader, generell, []).totals.generellCost);
+export function forslagUrPotten(rader, { budget, generell, egna = [], kandidater, minN }) {
+    const t = fordela(rader, generell, egna).totals;
+    const riktadPott = Math.max(0, beraknaPott(rader, budget) - t.generellCost - t.riktadCost);
     return foreslaRiktning(kandidater, riktadPott, minN);
 }
 
@@ -371,7 +373,7 @@ export function scenarioUr(rader, out, ols, k) {
             använt: out.använt, totalKostnad: out.totalKostnad,
             rawGapFore: konOk ? out.rawGapFore : null, rawGapEfter: konOk ? out.rawGapEfter : null,
             oforklaratEfter: ols.efter, equityCost: out.equityCost,
-            leapfrog: hittaOmkorningar(out.alloc.perGroup.filter(g => !(g.n < k))).length
+            leapfrog: utfallsvy(out, k, () => false).omkorningar.length   // samma urval som utfallet (andelen läses inte här)
         }
     };
 }

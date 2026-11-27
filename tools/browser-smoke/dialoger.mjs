@@ -60,7 +60,7 @@ export async function kTroskel() {
 export async function sokOchBasdossier() {
     console.log('\n── Sök och hoppa ──');
     {
-        await page.evaluate(() => { document.querySelector('.nav-item[data-tab="matrix"]').click(); scrollTo(0, 0); if (typeof sattDiagramMarkering === 'function') sattDiagramMarkering(null); });
+        await page.evaluate(() => { document.querySelector('.nav-item[data-tab="matrix"]').click(); scrollTo(0, 0); sattDiagramMarkering(null); });
         await page.waitForTimeout(800);
         await page.evaluate(() => document.activeElement && document.activeElement.blur());
         await page.keyboard.press('/');

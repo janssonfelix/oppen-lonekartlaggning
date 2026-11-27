@@ -17,13 +17,20 @@ webbläsaren blockerar all utgående trafik. Det är en hård teknisk barriär m
 
 *Varför:* lönedata lämnar aldrig datorn. *Beslut:* ADR-9 (hash-baserad `script-src`), ADR-30 (stilar med
 kontrollsumma), ADR-1 (ingen arbetstråd). Hela policyn och vad den inte täcker: `docs/dataskydd/riskanalys.md` §6.1.
-*Vakt:* webbläsarröktestet, `tools/browser-smoke/sakerhet.mjs`: inga nätverksförfrågningar under hela körningen,
-inga CSP-överträdelser, och en arbetstråd, ett injicerat skript och en injicerad händelsehanterare stoppas.
+*Vakt:* webbläsarröktestet, `tools/browser-smoke/sakerhet.mjs` med vakterna i `rigg.mjs` på varje sida och fönster:
+inga nätverksförfrågningar under hela körningen (det CSP:n släpper igenom), inga CSP-överträdelser (det CSP:n
+stoppar), och en arbetstråd, ett injicerat skript och en injicerad händelsehanterare stoppas.
 Testsvitens vakt för byggets CSP står i matrisens rad S1. Linten (`eslint.config.js`) förbjuder
 `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `navigator.sendBeacon` och `new Worker`/`new SharedWorker` i
-`src/app/` och `src/lib/` (källan till `dist/app.js`, som inte lintas).
-*Vaktas inte:* linten ser bara direkta anrop med de namnen (inte till exempel `window['fetch']` eller ett alias), och
-tredjepartsbiblioteken i `vendor/` lintas inte; där är CSP:n och röktestet vakten. Röktestet körs i CI och med
+`src/app/` och `src/lib/` (källan till `dist/app.js`, som inte lintas), också `window.fetch`, `window.XMLHttpRequest`,
+`window.WebSocket`, `self.fetch` och `globalThis.fetch`.
+*Vaktas inte:* linten ser bara de namnen i de formerna, inte till exempel `window['fetch']`, ett alias,
+`globalThis.XMLHttpRequest` eller `new window.Worker`, och tredjepartsbiblioteken i `vendor/` lintas inte. För allt
+det är CSP:n vakten: `connect-src 'none'` stoppar anrop från skript, och `script-src` utan `blob:` stoppar en
+arbetstråd. CSP:n stoppar inte att sidan navigerar till en annan adress (en länk eller `location` satt av ett
+skript), och ingen lintregel gör det; där är kodgranskningen det enda skyddet, och röktestet ser en sådan
+förfrågan bara om den sker under körningen. Att röktestets vakt slår på en förfrågan är inte prövat. Röktestet
+körs i CI, där kontrollen som krävs för en sammanslagning (`quality`) väntar på det, och med
 `npm run test:browser`, inte i `npm test`.
 
 ## S2. Ingen lagring
@@ -36,12 +43,13 @@ en snubbeltråd mot misstag, inte det egentliga skyddet.
 *Varför:* lönedata lämnar aldrig datorn, inte heller till en lagring som finns kvar när fliken stängts.
 *Beslut:* ADR-1 (en arbetstråd skulle stå utanför spärren). Spärren i detalj: `docs/dataskydd/riskanalys.md` §6.2.
 *Vakt:* lagringsspärren i testsviten, matrisens rad S2; `tools/browser-smoke/sakerhet.mjs` (spärren också för cookies,
-och lagringen är tom efter en full körning).
+och lagringen är tom på varje sida röktestet öppnat, läst när sidan stängs och sist i körningen).
 Linten (`eslint.config.js`) förbjuder `indexedDB` och `caches`, också som `window.indexedDB` och `window.caches`, i
 `src/app/` och `src/lib/` (källan till `dist/app.js`, som inte lintas).
-*Vaktas inte:* IndexedDB och Cache API ligger utanför spärren. Linten ser bara direkta anrop med de namnen, och
-tredjepartsbiblioteken i `vendor/` lintas inte; där täcks det av kodgranskning, inte av ett test (riskanalysen
-§6.2).
+*Vaktas inte:* IndexedDB och Cache API ligger utanför spärren. Linten ser bara de namnen i de formerna, inte till
+exempel `globalThis.indexedDB`, `navigator.storage` eller ett alias, och tredjepartsbiblioteken i `vendor/` lintas
+inte. CSP:n begränsar ingen lagring i webbläsaren, och röktestet läser inte IndexedDB eller Cache API; där täcks det
+bara av kodgranskning, inte av ett test (riskanalysen §6.2).
 
 ## S3. En fil, utan server
 
@@ -52,10 +60,10 @@ inga externa resurser. Den går att öppna från `file://` och fungerar utan int
 *Beslut:* ADR-6 och ADR-98 (källan är ES-moduler; esbuild bygger dem till ett klassiskt skript utan `import` och
 `export`, som läggs in i filen).
 *Vakt:* webbläsarröktestet, `tools/browser-smoke.mjs`, öppnar den byggda filen från `file://` och kör alla flikar
-och exporter; `tools/build-app.mjs` fäller bygget om `dist/app.js` har `import` eller `export` kvar; artefaktgrinden
+och de exporter som riskanalysen §6.1 räknar upp; `tools/build-app.mjs` fäller bygget om `dist/app.js` har `import` eller `export` kvar; artefaktgrinden
 i `.github/workflows/ci.yml` kräver att en färsk build ger samma `dist/` som den incheckade, artefakten och
 `RELEASE.txt`.
-*Vaktas inte:* röktestet körs i CI och med `npm run test:browser`, inte i `npm test`.
+*Vaktas inte:* röktestet körs i CI (där `quality` väntar på det) och med `npm run test:browser`, inte i `npm test`.
 
 ## S4. Minsta gruppstorlek i allt som lämnar verktyget
 
@@ -65,11 +73,13 @@ har redan lönefilen. Undantagen är uppräknade och beslutade. Ett lönemått f
 dra ifrån inom samma fil (Löneöversyns blad *Fördelning*, tabellerna per BAS-intervall, uppdelningen av
 löneskillnaden, huvudområdenas andel och JPA-protokollets blad). Skyddet gäller en fil i taget: det som går att räkna
 fram genom att kombinera flera filer ur samma underlag skyddas inte, och ZIP-exporten räknas som sina delar (ADR-92). Antal och andelar, också per kön, omfattas inte av skyddet
-utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som lämnas ut (ADR-70).
+utöver de beslutade golven; den som gör kartläggningen ansvarar för vad som lämnas ut (ADR-70). Webbläsarens egen
+utskrift (Ctrl+P) av en flik räknas som skärmen, inte som något som lämnar verktyget: den skriver ut fliken utan
+tröskel, som en skärmbild, och det som ska delas tas ut med verktygets exporter (ADR-109).
 
 *Varför:* att förhindra återidentifiering i det som sprids.
 *Lydelse:* [`k-troskeln.md`](k-troskeln.md). *Beslut:* ADR-12, 14, 23, 38, 47, 48,
-51, 57, 69, 70, 83, 87, 88, 91, 92, 102.
+51, 57, 69, 70, 83, 87, 88, 91, 92, 102, 109.
 *Vakt:* testerna i matrisens rad S4 och serierna i dess avsnitt 11. Invarianten I4 ritar flikarna i exportläget och
 bygger exporterna vid tröskeln 10 och 25. Invarianten har också differensprovet (ADR-88, `differensprov` i
 `tests/helpers/differens.js`), på samma utdata: varje tabell i den (HTML-tabellerna i exportläget och i rapporterna, Excel-bladen, tabellernas CSV och diagramdatan) vars

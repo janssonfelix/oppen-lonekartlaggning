@@ -20,11 +20,10 @@ const IND = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, 
 //   fel                      → "staplar med etiketter och fel" (HEM har fel)
 //   storlek                  → "punkter på talaxlar med storlek", "punkter, alla symboler" (HEM har storlek 40)
 //   forskjutning             → "punkter på band med förskjutning"
-//   symbol (alla fyra)       → "punkter, alla symboler"
+//   symbol (alla tre)        → "punkter, alla symboler"
 //   ofylld                   → "punkter ofyllda och fyllda på band" (liten punkt mitt i det ofyllda lagret)
 //   punkter, tips (linje)    → "linje med punkter och tips"
 //   kurva monoton, streck    → "linje monoton på talaxel"
-//   axel 'y2'                → "höger axel med lager", "höger axel där hela lagret är litet"
 //   paneler (två, tre, tom)  → "två paneler", "tre paneler, en helt liten", "lager utan panel i två paneler"
 //   ordning                  → "x.ordning nämner en liten kategori", "kategoriordning A–E ..."
 //   logaritmisk axel         → "logaritmisk axel"
@@ -32,7 +31,6 @@ const IND = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, 
 //   dolda serier             → "dolda serier"
 //   not, bakgrund            → "not och bakgrund"
 //   zon på bandaxel          → "zon på bandaxel" (en zon vars gräns är en liten kategori ritas inte)
-//   monster                  → "staplar med mönster"
 //   punktens etikett, referenslinjens etikett → "punkter med etikett och referenslinje med etikett"
 //   etikett på liten stapel INNE i domänen → "staplar: liten punkt inne i domänen med lång etikett" (vaktar filtret i _rfEtikettBeslut)
 // Varje val som ändrar geometrin har en figur med en liten punkt som INTE ligger sist i sin lista:
@@ -49,7 +47,7 @@ const IND = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, 
 //   ruta med visaText        → "rutor med text" (en liten cell bär en text som inte ryms: vaktar alla-eller-inga-beslutet)
 //   ruta utan visaText       → "rutor utan text", "rutor i två paneler"
 //   punkt med fargvarde      → "punkter med färgvärde och storlek"
-//   referens (zon och linje) → "referenser: zoner och linjer", "referenser på kategoriaxel och höger axel"
+//   referens (zon och linje) → "referenser: zoner och linjer", "referenser på kategoriaxel"
 
 /** @returns {Array<[string, object, object]>} [namn, figur, val (utan visaSma)] */
 export function ritfigurer() {
@@ -64,13 +62,11 @@ export function ritfigurer() {
         ['punkter på band med förskjutning', bas({ lager: [{ marke: 'punkt', serie: 'P', tips: () => [['HEMLIG']], data: [{ x: 'A', y: 10 }, HEM('HEMLIG', { forskjutning: 0.3 }), { x: 'B', y: 12, forskjutning: 0.2 }] }] })],
         ['punkter på talaxlar med storlek', bas({ x: { skala: 'linjar' }, lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 1, y: 10, storlek: 4 }, { x: 2, y: 11, liten: true, storlek: 40 }, { x: 3, y: 12, storlek: 5 }] }] })],
         ['punkter ofyllda och fyllda på band', bas({ lager: [{ marke: 'punkt', serie: 'Fylld', farg: '#0f766e', data: [{ x: 'A', y: 10, forskjutning: 0.1 }, { x: 'B', y: 12 }] }, { marke: 'punkt', serie: 'Ofylld', ofylld: true, farg: '#0f766e', data: [{ x: 'A', y: 11 }, HEM('HEMLIG', { forskjutning: -0.2 }), { x: 'B', y: 9 }] }] })],
-        ['punkter, alla symboler', bas({ x: { skala: 'linjar' }, y: { skala: 'band' }, lager: ['cirkel', 'streck', 'triangelVanster', 'triangelHoger'].map((symbol, i) => ({ marke: 'punkt', symbol, serie: symbol, storlek: 5, data: [{ y: 'A', x: 5 + i }, { y: 'HEMLIG', x: 98765, liten: true, storlek: 40 }, { y: 'B', x: 3 + i }] })) })],
+        ['punkter, alla symboler', bas({ x: { skala: 'linjar' }, y: { skala: 'band' }, lager: ['cirkel', 'streck', 'triangelHoger'].map((symbol, i) => ({ marke: 'punkt', symbol, serie: symbol, storlek: 5, data: [{ y: 'A', x: 5 + i }, { y: 'HEMLIG', x: 98765, liten: true, storlek: 40 }, { y: 'B', x: 3 + i }] })) })],
         ['linje med punkter och tips', bas({ lager: [{ marke: 'linje', serie: 'L', punkter: true, tips: () => [['HEMLIG']], data: [{ x: 'A', y: 10 }, HEM('HEMLIG'), { x: 'B', y: 12 }] }] })],
         ['linje monoton på talaxel', bas({ x: { skala: 'linjar' }, lager: [{ marke: 'linje', serie: 'L', kurva: 'monoton', streck: 'streckad', data: [{ x: 1, y: 10 }, { x: 2, y: 98765, liten: true }, { x: 3, y: 12 }, { x: 4, y: 13 }] }] })],
         ['kategoriordning A–E: små punkter först i lager 1', bas({ lager: [{ marke: 'linje', serie: 'L1', data: [{ x: 'A', y: 1 }, { x: 'B', y: 99999, liten: true }, { x: 'C', y: 3 }, { x: 'D', y: 99999, liten: true }, { x: 'E', y: 5 }] }, { marke: 'linje', serie: 'L2', data: A5.map((x, i) => ({ x, y: 2 + i })) }] })],
         ['x.ordning nämner en liten kategori', bas({ x: { skala: 'band', ordning: ['HEMLIG', 'B', 'A'] }, lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 1 }, HEM('HEMLIG'), { x: 'B', y: 2 }] }] })],
-        ['höger axel med lager', bas({ y2: { skala: 'linjar', titel: 'Antal' }, lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 3 }, { x: 'B', y: 4 }] }, { marke: 'linje', axel: 'y2', serie: 'N', data: [{ x: 'A', y: 5 }, HEM('HEMLIG'), { x: 'B', y: 7 }] }] })],
-        ['höger axel där hela lagret är litet', bas({ y2: { skala: 'linjar', titel: 'Antal' }, lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 3 }] }, { marke: 'linje', axel: 'y2', serie: 'N', data: [HEM('A')] }] })],
         ['två paneler', bas({ paneler: ['Kvinna', 'Man'], lager: [{ marke: 'stapel', panel: 'Kvinna', serie: 'K', data: [{ x: 'A', y: 1 }, HEM('HEMLIG')] }, { marke: 'stapel', panel: 'Man', serie: 'M', data: [{ x: 'A', y: 2 }] }] })],
         ['tre paneler, en helt liten', bas({ paneler: ['HemligPanel', 'Kvinna', 'Man'], lager: [{ marke: 'punkt', panel: 'Kvinna', serie: 'K', data: [{ x: 'A', y: 1 }] }, { marke: 'punkt', panel: 'Man', serie: 'M', data: [{ x: 'A', y: 1 }] }, { marke: 'punkt', panel: 'HemligPanel', serie: 'H', data: [HEM('A')] }] })],
         ['lager utan panel i två paneler', bas({ paneler: ['P1', 'P2'], lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 1 }, HEM('HEMLIG')] }] })],
@@ -105,12 +101,12 @@ export function ritfigurer() {
         ['rutor i två paneler', bas({ y: { skala: 'band' }, paneler: ['Kvinna', 'Man'], fargskala: { typ: 'sekventiell', doman: [0, 100], titel: 'Median' }, lager: [
             { marke: 'ruta', panel: 'Kvinna', serie: 'Median', data: [{ x: 'A', y: 'r1', varde: 10 }, { x: 'HEMLIG', y: 'r1', varde: 98765, liten: true }, { x: 'B', y: 'r2', varde: 60 }] },
             { marke: 'ruta', panel: 'Man', serie: 'Median', data: [{ x: 'A', y: 'r1', varde: 91111, liten: true }, { x: 'A', y: 'r2', varde: 40 }, { x: 'B', y: 'r1', varde: 80 }] }] })],
-        ['punkter med färgvärde och storlek', bas({ x: { skala: 'linjar' }, fargskala: { typ: 'tvafarg', doman: [0, 100], titel: 'Andel kvinnor', format: 'pct' }, lager: [{ marke: 'punkt', serie: 'Yrken', data: [{ x: 1, y: 10, storlek: 6, fargvarde: 20 }, { x: 98765, y: 91111, storlek: 40, fargvarde: 99333, liten: true }, { x: 3, y: 12, storlek: 9, fargvarde: 80 }, { x: 2, y: 11, storlek: 30, fargvarde: 50, liten: true }, { x: 4, y: 14, storlek: 12, fargvarde: 55 }] }] })],
+        ['punkter med färgvärde och storlek', bas({ x: { skala: 'linjar' }, fargskala: { typ: 'sekventiell', doman: [0, 100], titel: 'Andel kvinnor', format: 'pct' }, lager: [{ marke: 'punkt', serie: 'Yrken', data: [{ x: 1, y: 10, storlek: 6, fargvarde: 20 }, { x: 98765, y: 91111, storlek: 40, fargvarde: 99333, liten: true }, { x: 3, y: 12, storlek: 9, fargvarde: 80 }, { x: 2, y: 11, storlek: 30, fargvarde: 50, liten: true }, { x: 4, y: 14, storlek: 12, fargvarde: 55 }] }] })],
         // Zonen utan x1 når domänens ände — som bara får bero på de punkter som ritas. Linjen x = 50 ligger utanför domänen utan de små.
         ['referenser: zoner och linjer', bas({ x: { skala: 'linjar' }, referens: [{ typ: 'zon', x0: 3, farg: '#fee2e2', etikett: 'Zon utan slut' }, { typ: 'zon', y0: 11, y1: 12, etikett: 'Vågrät zon' }, { typ: 'linje', x: 2, streck: 'streckad' }, { typ: 'linje', y: 11.5 }, { typ: 'linje', x: 50 }, { typ: 'linje', y: 98765 }],
             lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 1, y: 10 }, { x: 60, y: 98765, liten: true, storlek: 40 }, { x: 3, y: 12 }, { x: 4, y: 13 }] }] })],
-        ['referenser på kategoriaxel och höger axel', bas({ y2: { skala: 'linjar', titel: 'Antal' }, referens: [{ typ: 'linje', x: 'HEMLIG' }, { typ: 'linje', x: 'B', streck: 'prickad' }, { typ: 'linje', y: 6, axel: 'y2' }, { typ: 'zon', y0: 2, etikett: 'Över två' }],
-            lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 3 }, HEM('HEMLIG'), { x: 'B', y: 4 }] }, { marke: 'linje', axel: 'y2', serie: 'N', data: [{ x: 'A', y: 5 }, HEM('HEMLIG'), { x: 'B', y: 7 }] }] })],
+        ['referenser på kategoriaxel', bas({ referens: [{ typ: 'linje', x: 'HEMLIG' }, { typ: 'linje', x: 'B', streck: 'prickad' }, { typ: 'zon', y0: 2, etikett: 'Över två' }],
+            lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 3 }, HEM('HEMLIG'), { x: 'B', y: 4 }] }] })],
         // Fler än PUNKTMOLN_MAX_PUNKTER (8 000) individer: var annan ritas. De små ligger först och utspridda (aldrig sist),
         // så både urvalet och spridningen i sidled skulle röja dem om de räknades med.
         ['individer som nedsamplas', bas({ lager: [{ marke: 'lada', punkter: 'alla', serie: 'Lön', data: [{ x: 'A', y: 98765, liten: true, nyckel: 'NYCK-HEMLIG' }, ...Array.from({ length: 8300 }, (_, i) => ({ x: A5[i % 5], y: 20000 + ((i * 7919) % 30000), ...(i % 97 === 3 ? { liten: true } : {}) })), { x: 'A', y: 25000 }] }] })],
@@ -120,8 +116,6 @@ export function ritfigurer() {
         // Zon mellan kategorier på en bandaxel: en liten kategori utanför zonen, och en zon vars gräns ÄR den lilla.
         ['zon på bandaxel', bas({ lager: [{ marke: 'stapel', serie: 'A', data: [{ x: 'A', y: 30000 }, HEM('B'), { x: 'C', y: 32000 }, { x: 'D', y: 34000 }] }],
             referens: [{ typ: 'zon', x0: 'C', x1: 'D', etikett: 'Zon CD' }, { typ: 'zon', x0: 'B', x1: 'B', etikett: 'ZON-HEMLIG' }] })],
-        ['staplar med mönster', bas({ lager: [{ marke: 'stapel', serie: 'Kritisk', monster: 'linjer', lage: 'overlagrad', data: [{ x: 'A', y: 30000 }, HEM('B')] },
-            { marke: 'stapel', serie: 'Varning', monster: 'prickar', lage: 'overlagrad', data: [HEM('C'), { x: 'D', y: 34000 }] }] })],
         ['punkter med etikett och referenslinje med etikett', { beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' },
             referens: [{ y: 30000, etikett: 'Gräns' }, { x: 3, etikett: 'Lodrät' }],
             lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 1, y: 20000, etikett: 'Ett' }, { x: 2, y: 98765, liten: true, etikett: 'ETIK-HEMLIG', storlek: 40 }, { x: 4, y: 40000, etikett: 'Fyra' }] }] }],

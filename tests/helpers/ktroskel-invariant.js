@@ -17,7 +17,7 @@ import { differensprov, tabellerIUtdata } from './differens.js';
 //
 // Vad som prövas: varje flik i menyn, ritad i exportläget (det som "Som i exporten" visar), Översiktens delar (Att göra, processöversikten,
 // inläsningsrapporten), Word-utkastet, utskriften i de tre urvalen,
-// rapportunderlagets block (HTML och text), Excel (alla flikar, protokollet, EU-lönerapporten,
+// utskriften av varje mallflik (handlingsplanen och checklistan), rapportunderlagets block (HTML och text), Excel (alla flikar, protokollet, EU-lönerapporten,
 // handlingsplanen, jämförelseexporten, Löneöversyn, Löneöversikten, prioriteringslistan, ZIP-filens
 // rapport.xlsx), Att göra-CSV, varje tabell med CSV-knapp, diagramdata för varje diagram som diagramkärnan har ritat
 // (ur dess register, efter bakgrundsräkningen och nästa bildruta; ett test kräver att inget fattas) och kopiorna i Alla diagram,
@@ -75,6 +75,7 @@ export function invariantSvit(k, extra) {
             expect(utdata.find(([n]) => n === 'robusthetspanelen')[1]).toMatch(/Kvinnodominerat yrke|Inga kandidatpar/);
             expect(namn.filter(n => n.startsWith('gruppdossier')).length).toBeGreaterThan(5);
             expect(namn.filter(n => n.startsWith('basdossier')).length).toBeGreaterThan(3);
+            for (const vy of ['view-handlingsplan', 'view-bestammelser']) expect(namn, vy).toContain(`utskrift av mallen: ${vy}`);
             // Rapportutkastet och rapportens avsnitt per BAS-intervall, och rapportunderlagets block per intervall.
             for (const krav of ['rapportutkastet', 'rapportmodell: basintervall']) expect(namn, krav).toContain(krav);
             expect(utdata.find(([n]) => n === 'rapportutkastet')[1]).toContain('PER BAS-INTERVALL');

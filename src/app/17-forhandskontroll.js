@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { byggForhandskontroll, forhandskontrollGranser } from '../lib/forhandskontroll.js';
+import { OBLIGATORISKA_ROLLER } from '../lib/importprofiler.js';
 import { personOrd } from '../lib/namn.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
@@ -17,7 +18,7 @@ import { _laNyckel } from './41-lika-arbete.js';
 // ---- Förhandskontroll av lönefilen ----
 // Avsnittet överst i Filer och kvalitet: hur den senast inlästa lönefilen tolkades — de tio första raderna med filens
 // värde och verktygets tolkning, sammandraget, värdefördelningen med varningar och kolumnerna. Logiken bor i
-// src/lib/forhandskontroll.js (_fkBygg); inläsningen (32-filinlasning.js) samlar raderna och kallar _fkForFil.
+// src/lib/forhandskontroll.js (byggForhandskontroll); inläsningen (32-filinlasning.js) samlar raderna och kallar _fkForFil.
 // Det som visas finns bara i state.forhandskontroll, i minnet: inte i konfigurationsfilen eller någon export.
 // Varningarna står också i Att göra (18-atgardslista.js, _fkAttGora) och i inläsningsrapporten.
 //
@@ -185,7 +186,7 @@ export function ritaForhandskontroll() {
     _laNyckel('nyckel-fi-forhandskontroll', _fkNyckeltext(fk), fk.ejInlast ? true : fk.vantar ? 'granska' : n ? (fel ? true : 'granska') : false);
     if (_fkRitad !== fk) { av.open = !!fk.vantar || !!fk.ejInlast || n > 0; _fkRitad = fk; }
     const g = forhandskontrollGranser();
-    const roller = fk.tolkning.length ? Object.keys(fk.tolkning[0].celler) : ['bas', 'yrke', 'lon', 'kon'];
+    const roller = fk.tolkning.length ? Object.keys(fk.tolkning[0].celler) : OBLIGATORISKA_ROLLER;
     const p = fk.kolumner.profil;
     const vantar = fk.vantar ? `<div class="fk-vantar">
             <p><strong>Filen är inte inläst ännu.</strong> Inställningen <em>Stoppa och visa förhandskontrollen innan inläsning</em> är på. Granska tolkningen nedan och välj Läs in, eller Avbryt för att släppa filen${state.data.length ? ' och behålla det underlag som redan är inläst' : ''}. Kolumnmappningen visas när filen är inläst: välj Läs in och justera den därefter.</p>
@@ -203,8 +204,8 @@ export function ritaForhandskontroll() {
     const sammandrag = _fkLista([
         `Rader i filen: <strong>${esc(svTal(s.totalt, 0))}</strong>; används: <strong>${esc(svTal(s.anvands, 0))}</strong>`,
         ...(bortfall.length ? bortfall.map(t => `Faller bort: ${t}`) : ['Inga rader faller bort']),
-        ...(s.ogiltigAlder.antal ? [`Ålder som inte går att läsa som tal: ${esc(svTal(s.ogiltigAlder.antal, 0))} rader (t.ex. ${s.ogiltigAlder.exempel.map(e => `"${esc(e)}"`).join(', ')}); raderna används med okänd ålder`] : []),
-        ...(fk.fordelning.alder ? [`Ålder tolkad ur födelseår: ${esc(svTal(s.fodelsear, 0))} rader`] : []),
+        ...(s.ogiltigAlder.antal ? [`Ålder som inte går att läsa som tal: ${esc(svTal(s.ogiltigAlder.antal, 0))} ${s.ogiltigAlder.antal === 1 ? 'rad' : 'rader'} (t.ex. ${s.ogiltigAlder.exempel.map(e => `"${esc(e)}"`).join(', ')}); raderna används med okänd ålder`] : []),
+        ...(fk.fordelning.alder ? [`Ålder tolkad ur födelseår: ${esc(svTal(s.fodelsear, 0))} ${s.fodelsear === 1 ? 'rad' : 'rader'}`] : []),
     ]);
 
     const f = fk.fordelning;
@@ -221,7 +222,7 @@ export function ritaForhandskontroll() {
     const kolumner = _fkLista([
         `Används: ${kol.anvanda.map(a => `${esc(FK_ROLLNAMN[a.roll] || a.roll)}: <code>${esc(a.rubrik)}</code>`).join(', ')}`,
         `Används inte: ${kol.oanvanda.length ? kol.oanvanda.map(h => `<code>${esc(h)}</code>`).join(', ') : 'inga'}`,
-        'Personnummer, namn och e-post: en kolumn med sådana uppgifter stoppar inläsningen, och filen hade ingen.',
+        'Personnummer och namn: en kolumn med sådana uppgifter stoppar inläsningen, och filen hade ingen.',
     ]);
 
     host.innerHTML = `${vantar}${filrad}

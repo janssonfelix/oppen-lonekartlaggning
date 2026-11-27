@@ -22,7 +22,7 @@ ingenting om en viss organisation är inbyggt.
 
 ## Prova
 
-Öppna verktyget och klicka **Prova med demodata**: allt fungerar med påhittad data, utan installation. Det går också
+Öppna verktyget och klicka **litet demo** eller **stort demo** under *Prova med demodata*: allt fungerar med påhittad data, utan installation. Det går också
 direkt på [demosidan](https://janssonfelix.github.io/oppen-lonekartlaggning/), och
 [genomgången](https://janssonfelix.github.io/oppen-lonekartlaggning/genomgang.html) är ett bildspel för nya användare
 om de viktigaste funktionerna och hur diagrammen läses.

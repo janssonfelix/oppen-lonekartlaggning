@@ -6,7 +6,7 @@ import { stor } from '../lib/termer.js';
 import { arHelaDokumentationen } from '../lib/vymodell-rapport.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { doljLaddning, rapporteraFel, visaLaddning, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { DEMO_MARKE, doljLaddning, rapporteraFel, visaLaddning, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { metodikposter } from './05-tabeller-och-lankar.js';
 import { _kSanktStycke, kStampel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -104,13 +104,15 @@ async function _byggUtskriftsrapportExport() {
                 if (diagramRitat(elD)) { try { imgs[nyckel] = await diagramTillBild(elD, { bredd: 1400, hojd, utanRubrik: true }); } catch (e) { rapporteraFel(`utskrift: ${id}`, e); } }
             }
             // Genom exportgrinden; hopfällda rader följer med. Skärmens egna kolumner (Detalj, Beräkning), knappar och
-            // infoikoner gör inget på papper och tar bredd från sidan. Rubrikens ombrytningsskydd håller bara ihop ordet
+            // infoikoner gör inget på papper och tar bredd från sidan; rubrikernas och gruppradernas plats i Tab-ordningen
+            // och aria-expanded hör till skärmens sortering och hopfällning. Rubrikens ombrytningsskydd håller bara ihop ordet
             // med infoikonen på skärmen; på papper får rubriken avstavas.
             const cloneTable = id => {
                 const t = exportElement(id);
                 if (!t) return '';
                 const klon = _exportUtanSkarmkolumner(_exportVisaAllaRader(t.cloneNode(true)));
                 klon.querySelectorAll('button, .info-tip').forEach(b => b.remove());
+                klon.querySelectorAll('[tabindex], [aria-expanded]').forEach(el => { el.removeAttribute('tabindex'); el.removeAttribute('aria-expanded'); });
                 klon.querySelectorAll('thead .ingen-radbrytning').forEach(s => s.replaceWith(...s.childNodes));
                 return klon.outerHTML;
             };
@@ -215,6 +217,7 @@ function _skrivUtMallflik(viewId, heading) {
     w.document.write('<!DOCTYPE html><html lang="sv"><head><meta charset="utf-8">'
         + '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data: blob:;">'
         + '<title>' + esc(heading) + '</title></head><body><h1>Lönekartläggning — ' + esc(heading) + '</h1>'
+        + (state.isDemo ? '<p><strong>' + esc(DEMO_MARKE) + '</strong></p>' : '')
         // Handlingsplanen är förifylld med gruppmått (årskostnad per grupp och par) och bär meningen om sänkt tröskel;
         // checklistan har inga gruppmått.
         + (viewId === 'view-handlingsplan' ? _kSanktStycke() : '')
@@ -241,6 +244,7 @@ function _skrivUtMallflik(viewId, heading) {
 
 // Webbläsarens egen utskrift (Ctrl+P) skriver ut den aktiva fliken. Hopfällda avsnitt går inte att fälla ut i
 // stilmallen, så de öppnas före utskriften och fälls tillbaka efteråt. PDF-rapporten (body.print-mode) berörs inte.
+// Utskriften är skärmen, i skärmläget utan tröskel och stämpel: skärmen är användarens (ADR-51, ADR-109).
 function _utskriftFore() {
     if (document.body.classList.contains('print-mode')) return;
     document.querySelectorAll('.view-panel details:not([open])').forEach(d => {

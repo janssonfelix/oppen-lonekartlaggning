@@ -10,7 +10,7 @@
  */
 import { konAv } from './falt.js';
 import { arKvinna, arMan } from './kon.js';
-import { avrundaSymmetriskt } from './stat.js';
+import { avrundaSymmetriskt, Z_STYRKA } from './stat.js';
 import { personOrd } from './namn.js';
 import { STANDARDTERMER as T, ordForAntal } from './termer.js';
 import { forhandskontrollGranser } from './forhandskontroll.js';
@@ -81,7 +81,7 @@ export function medFlerKriterier(bedomning, fler) {
 /** Minsta upptäckbara skillnad i % (80 % styrka, α = 0,05) ur könskoefficientens SE (log-skala). */
 export function mdeFranSe(se) {
     if (typeof se !== 'number' || !isFinite(se) || se <= 0) return null;
-    return (Math.exp(2.802 * se) - 1) * 100;
+    return (Math.exp(Z_STYRKA * se) - 1) * 100;
 }
 
 /**
@@ -130,7 +130,7 @@ export function bedomUnderlag(rader, { k, audit, mde, modell, modellFras } = {})
     kriterier.push({
         id: 'rimlighet', namn: 'Rimlighet', status: _stat(orimPct, 1, 5, false), varde: orimPct,
         text: orimPct == null ? 'Inga rader att kontrollera.'
-            : `${orimliga} rader (${_pct(orimPct)}) har lön under ${LON_MIN.toLocaleString('sv-SE')} eller över ${LON_MAX.toLocaleString('sv-SE')} kr, ${harAlder ? `ålder utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
+            : `${orimliga} ${orimliga === 1 ? 'rad' : 'rader'} (${_pct(orimPct)}) har lön under ${LON_MIN.toLocaleString('sv-SE')} eller över ${LON_MAX.toLocaleString('sv-SE')} kr, ${harAlder ? `ålder som saknas eller ligger utanför ${ALDER_MIN}–${ALDER_MAX} ` : ''}eller BAS som inte är en bokstav.`,
     });
 
     const mStatus = modell === 'full' ? 'ok' : modell === 'minimal' ? 'varning' : 'kritisk';

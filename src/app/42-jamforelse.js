@@ -4,7 +4,7 @@ import { jamforSektor, sektorsnamn } from '../lib/aid.js';
 import { talformat } from '../lib/figur.js';
 import { avvikelseRangordning, jamforelseRader, matchningAntal, matchningEtikett, matchningSammanfattning } from '../lib/jamforelse.js';
 import { lageISpann } from '../lib/referenser.js';
-import { svTal } from '../lib/talformat.js';
+import { svKr, svPct, svTal, svTecken } from '../lib/talformat.js';
 import { adjektiv, genitiv, ordForAntal, stor } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
@@ -78,7 +78,7 @@ export function byggJamforelse() {
         tbody.innerHTML = `<tr><td colspan="13" class="pad-0"><div class="flik-empty-state">
             <div class="empty-icon">${ikon('tomLada', 32)}</div><h2>Jämförelsestatistik saknas</h2>
             <p>Läs in jämförelsestatistik under Filer och kvalitet, så jämförs organisationens löner mot den här.</p>
-            <button class="empty-action" data-goto-tab="filer">Gå till Filer och kvalitet</button></div></td></tr>`;
+            <button class="empty-action" data-go-to-tab="filer">Gå till Filer och kvalitet</button></div></td></tr>`;
         if (infoEl) infoEl.textContent = '';
         const matchEl = document.getElementById('benchmark-matchning-info'); if (matchEl) matchEl.textContent = '';
         rensaFigur('chart-jamforelse-spann'); rensaFigur('chart-jamforelse-avvikelse');
@@ -124,7 +124,7 @@ export function byggJamforelse() {
     const kr = v => (v == null ? '–' : fmt.format(Math.round(v)));
     const diffCell = dd => (dd == null
         ? '<td class="num muted" data-sort-value="">–</td>'
-        : `<td class="num ${dd.pct < 0 ? 'jmf-neg' : 'jmf-pos'}" data-sort-value="${dd.pct.toFixed(2)}" title="${dd.kr >= 0 ? '+' : '−'}${fmt.format(Math.abs(dd.kr))}">${dd.pct >= 0 ? '+' : '−'}${Math.abs(dd.pct).toFixed(1).replace('.', ',')} %</td>`);
+        : `<td class="num ${dd.pct < 0 ? 'jmf-neg' : 'jmf-pos'}" data-sort-value="${dd.pct.toFixed(2)}" title="${svTecken(dd.kr)}${svKr(dd.kr)}">${_jmfPct(dd.pct)}</td>`);
     const block = (r, p) => `<td class="num jmf-block" data-sort-value="${r.org[p] ?? ''}">${kr(r.org[p])}</td>`
         + `<td class="num muted" data-sort-value="${r[kalla][p] ?? ''}">${kr(r[kalla][p])}</td>${diffCell(r.diff[kalla][p])}`;
 
@@ -154,7 +154,7 @@ export function byggJamforelse() {
     sattMetodik('benchmark', {
         title: 'Jämförelsestatistik',
         ...byggGrundurval(),
-        usedInAnalysis: rader.length,
+        usedInAnalysis: grupper(rader.length),
         analysisExclusions: [
             ...(urval ? [[esc(urval), '']] : []),
             ...(utelamnadeIUrval.length ? [[`${stor(T.enhet.fl)} i ${T.niva.en} för små (minsta gruppstorlek, n&lt;${kTroskel()})`, utelamnadeIUrval.length]] : []),
@@ -163,7 +163,7 @@ export function byggJamforelse() {
         formler: [
             [`${stor(T.kod.en)} (matchningsnyckel)`, `Inledande sifferprefix av ${T.enhet.bf} (t.ex. "402010 Förskollärare" ger 402010)`],
             ['Percentiler', `<code>P10 = kvantil 0,1</code>, <code>median</code>, <code>P90 = kvantil 0,9</code> av organisationens löner med samma ${T.enhet.en} i samma ${T.niva.en}`],
-            ['Diff (%)', '<code>(organisationens värde / jämförelsens värde − 1) × 100</code>, per percentil'],
+            ['Skillnad (%)', '<code>(organisationens värde / jämförelsens värde − 1) × 100</code>, per percentil'],
             ['Matchning', `Jämförelsestatistiken: först AID + BAS, annars AID utan BAS; rader för andra ${T.niva.fl} används aldrig. Ställningstagandet: AID + BAS, annars AID, annars BAS. `
                 + `I urvalet: ${grupper(antal.aidBas)} på AID + BAS, ${antal.aid} på endast AID, ${antal.utan} utan statistik.`]
         ],
@@ -177,7 +177,7 @@ export function byggJamforelse() {
 // ---- Diagrammen ----
 const _JMF_MAX = 25;
 const _jmfEtikett = r => `${r.yrke} · BAS ${r.bas}`;
-const _jmfPct = v => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1).replace('.', ',')}\u00a0%`;
+const _jmfPct = v => `${svTecken(v, 1)}${svPct(v, 1)}`;
 // Fälten som diagrammens filter läser (URVAL.bas, .yrkesgrupp, .sektor, .matchning, .antal), samma värden som tabellens
 // kolumner och dess sektorsfilter. En grupp utan statistik får ingen matchning (tabellens "–") och påverkas inte av det filtret.
 const _jmfUrvalFalt = r => ({ bas: r.bas, yrke: r.yrke, ...(r.sektor != null ? { sektor: r.sektor } : {}), n: r.n, ...(r.statistikMatchning ? { matchning: matchningEtikett(r.statistikMatchning) } : {}) });

@@ -6,6 +6,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { las } from './helpers/granssnitt-rigg.js';
 import { borjaHar } from '../src/lib/attgora.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 let win;
 
@@ -130,7 +131,7 @@ describe('underlagets kvalitet (ADR-19)', () => {
     let w;
     beforeAll(() => { w = createAppWindow(); w.__lasInDemodata(); });
 
-    it('panelen visar datakvalitetens fem kriterier, AID-kontrollen och en helhetsstatus, ingen 0–100-siffra', () => {
+    it('panelen visar datakvalitetens kriterier, AID-kontrollens kriterier och en helhetsstatus, ingen 0–100-siffra', () => {
         const p = w.document.getElementById('underlagets-kvalitet');
         expect(p).toBeTruthy();
         expect(p.querySelector('#uk-fallbar')).not.toBeNull();   // sammanfattad, utfälld vid varning (ADR-36)
@@ -191,7 +192,8 @@ describe('samma bild på Översikt', () => {
         const kort = w.document.getElementById('comp-gap');
         const rod = /crit|warn/.test(kort.className);
         const lista = w.document.getElementById('action-checklist-container').textContent;
-        if (rod) expect(lista).not.toContain('inga öppna punkter');
+        expect(rod, 'underlaget ger en röd gap-ruta').toBe(true);
+        expect(lista).not.toContain('inga öppna punkter');
     });
     it('varje jämförbart BAS med statusen Värt att granska (säkerställd, minst 3 %) blir en punkt i åtgärdslistan, och inga andra', () => {
         const ids = w.eval('byggAtgardslista()').map(i => i.id);
@@ -232,9 +234,7 @@ describe('samma bild på Översikt', () => {
         w.eval('introRader()');                                                               // ett anrop till ger inga dubbla knappar
         expect(d.querySelectorAll('.flik-intro-mer').length).toBe(rader.length);
         // Sidhuvudet bär flikens namn; inledningens fetstil bär frågan, inte namnet en gång till.
-        const titlar = Object.values(w.eval('typeof FLIKTITLAR !== "undefined" ? FLIKTITLAR : {}'));
-        for (const st of d.querySelectorAll('.flik-intro > strong:first-child')) expect(st.textContent, st.textContent).not.toMatch(/^(Lika arbete|Likvärdigt arbete|Löneöversyn|Handlingsplan|Regler & praxis|Lönestruktur|Exportera|Löneläget|Tabeller och egna vyer|Löneöversikt) —|^(Lönestruktur|Exportera|Löneläget|Tabeller och egna vyer)$/);
-        expect(titlar).toBeDefined();
+        for (const st of ickeTom(d.querySelectorAll('.flik-intro > strong:first-child'))) expect(st.textContent, st.textContent).not.toMatch(/^(Lika arbete|Likvärdigt arbete|Löneöversyn|Handlingsplan|Regler & praxis|Lönestruktur|Exportera|Löneläget|Tabeller och egna vyer|Löneöversikt) —|^(Lönestruktur|Exportera|Löneläget|Tabeller och egna vyer)$/);
     });
     it('Löneöversyn och Översikt följer flikmallen: inledning, nyckeltal i toppen, sedan innehållet', () => {
         w.__lasInDemodata();
@@ -330,6 +330,48 @@ describe('Att göra', () => {
         cb.checked = true; cb.dispatchEvent(new w.Event('change'));
         expect(titlar()).not.toContain(vantat[0]);
         expect(titlar().length).toBe(Math.min(3, items.length - 1));
+    });
+    const steg = (w, n) => [...w.document.querySelectorAll('#process-tracker .ptrack-row')].find(r => r.textContent.includes(`${n}. `));
+    it('en avbockning ritar om processöversikten', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        const d = w.document, lv = [...d.querySelectorAll('.act-cb')].filter(cb => cb.dataset.id.startsWith('lv-'));
+        expect(lv.length).toBeGreaterThan(0);
+        for (const id of lv.map(cb => cb.dataset.id)) {
+            const cb = d.querySelector(`.act-cb[data-id="${id}"]`);
+            cb.checked = true; cb.dispatchEvent(new w.Event('change'));
+        }
+        expect(steg(w, 4).textContent).toContain(`${lv.length} av ${lv.length} kandidatpar hanterade i Att göra`);
+        expect(steg(w, 4).querySelector('.ptrack-status').dataset.status).toBe('klar');
+    });
+    it('Att göra och steg 4 räknar samma kandidatpar, och båda säger när listan är kortad', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        const max = w.eval('ATTGORA_PAR_MAX'), par = w.eval('likvardighetResultat()').pairs[0];
+        w.__state.likvardighet.result.pairs = Array.from({ length: max + 5 }, (_, i) => ({ ...par, kvAid: `${par.kvAid}${i}` }));
+        w.eval('ritaKartlaggningensSteg({ punkter: ritaAtgardslista() })');
+        const d = w.document, lv = [...d.querySelectorAll('.act-cb')].filter(cb => cb.dataset.id.startsWith('lv-'));
+        expect(lv.length).toBe(max);
+        const not = w.eval(`parKortadNot(${max + 5})`);
+        expect(d.getElementById('action-checklist-container').textContent).toContain(not);
+        expect(steg(w, 4).textContent).toContain(`0 av ${max} kandidatpar hanterade i Att göra. ${not}`);
+    });
+    it('steg 5 är klart när det inte finns några rader att fylla i, som steg 3 och 4 vid inget att hantera', () => {
+        const w = med(rader(30000, 30000));
+        w.eval('ritaKartlaggningensSteg({ punkter: ritaAtgardslista() })');
+        expect(steg(w, 5).textContent).toContain('Inga rader att fylla i');
+        expect(steg(w, 5).querySelector('.ptrack-status').dataset.status).toBe('klar');
+    });
+    it('CSV-filens kolumn Flik bär flikens namn som menyn visar det', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        let rader = null;
+        w._laddaNedCSV = r => { rader = r; };
+        w.eval('_exportAtgardslistaCSVExport(byggAtgardslista(), new Set())');
+        const flikar = new Set(rader.slice(1).filter(r => r.length === 7).map(r => r[6]));
+        const meny = new Set([...w.document.querySelectorAll('.nav-item[data-tab] .nav-etikett')].map(e => e.textContent.trim()));
+        expect([...flikar].filter(f => !meny.has(f))).toEqual([]);
+        expect(flikar.has('Lika arbete')).toBe(true);
     });
     it('allt avbockat: "Alla punkter är hanterade."; Rensa döljer kortet', () => {
         const w = createAppWindow();

@@ -179,16 +179,21 @@ export function vymodellKravMotLon(rader, { k, definition, grans, poangByKey }) 
 }
 
 /**
- * Raderna i diagrammet över kandidatparen: de `max` allvarligaste paren (allvarsindex), ett par per rad efter `nyckel`
- * (radens namn; det första vinner), och bara par med båda medianerna.
+ * Raderna i diagrammet över kandidatparen: de `max` allvarligaste paren (allvarsindex), ett par per namn och
+ * BAS-intervall (det första vinner), och bara par med båda medianerna. Har två rader samma namn står intervallen i
+ * namnet: "(BAS C)", eller "(BAS C mot D)" när jämförelseyrket ligger i ett annat intervall.
  * @param {any[]} pairs
- * @param {(p:any) => string} nyckel
+ * @param {(p:any) => string} namn
  * @param {number} [max]
  * @returns {{p:any, y:string}[]}
  */
-export function kandidatparRader(pairs, nyckel, max = 14) {
+export function kandidatparRader(pairs, namn, max = 14) {
     const top = pairs.slice().sort((a, b) => (b.allvarsindex || 0) - (a.allvarsindex || 0)).slice(0, max);
     const rader = [], sedda = new Set();
-    for (const p of top) { const y = nyckel(p); if (!sedda.has(y) && isFinite(p.kvMedian) && isFinite(p.maMedian)) { sedda.add(y); rader.push({ p, y }); } }
-    return rader;
+    for (const p of top) {
+        const y = namn(p), nyckel = `${y}\u0000${p.kvBas}\u0000${p.maBas}`;
+        if (!sedda.has(nyckel) && isFinite(p.kvMedian) && isFinite(p.maMedian)) { sedda.add(nyckel); rader.push({ p, y }); }
+    }
+    const antal = rader.reduce((m, r) => m.set(r.y, (m.get(r.y) || 0) + 1), new Map());
+    return rader.map(({ p, y }) => ({ p, y: antal.get(y) > 1 ? `${y} (BAS ${p.kvBas}${p.maBas !== p.kvBas ? ` mot ${p.maBas}` : ''})` : y }));
 }

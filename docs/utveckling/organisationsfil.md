@@ -83,7 +83,9 @@ rad i steg 1 i Filer och kvalitet; `granssnittet.md` §1):
   verktygets version som filen bygger på och den versionens kontrollsumma.
 
 **Demoläget** (`?demo=1`) går före: demodata och demoreferens som i dag, det inbakade paketet
-ignoreras med ett besked. Så kan en organisationsfil ändå visas i demoläge.
+ignoreras med ett besked. Så kan en organisationsfil ändå visas i demoläge. Startas demot med knappen i en
+organisationsfil läggs paketets innehåll undan (det blandas inte med demots påhittade delar), men låsningarna står
+kvar genom demot (ADR-47). En riktig lönefil som läses in i demoläget får tillbaka paketet, som vid start.
 
 ## 4. Teknik
 
@@ -126,7 +128,8 @@ avsluta elementet.
 - `12-tillstand.js`: `state.paket.kalla` får värdet `'inbakat'` utöver `'fil'`; `referensKalla()`
   och `statistikBeskrivning()` säger *(inbakat i den här filen)*.
 - `26-rensning.js`: efter rensningen läses det inbakade paketet in igen (utan bekräftelsefråga om
-  tröskeln: filens eget värde gäller som vid start).
+  tröskeln: filens eget värde gäller som vid start). Rensningen före demot läser inte in det igen men behåller
+  låsningarna; `_efterInlastData` i `32-filinlasning.js` läser in det när en riktig lönefil lämnar demot.
 - `65-om-verktyget.js`: avsnittet *Organisationsfil*.
 - Vyn *Visa paketet*: en modal (samma mönster som *Vad lagras?*) som ritar paketet ur `state.paket`
   och de inlästa delarna; råtexten ur `#inbakat-organisationspaket`.
@@ -144,8 +147,8 @@ avsluta elementet.
   oförändrade skript, avvisning av fel fil, versionsläsning, `<`-escapning); röktest
   (`tests/organisationspaket-app.test.js`): baka in i jsdom ur `dist/oppen-lonekartlaggning.html`, öppna
   resultatet i ett nytt appfönster via harnessen och hävda att paketet lästs in, att *Visa paketet*
-  och nedladdningen fungerar, att en annan fil ersätter det, att *Rensa all data* återställer det, och
-  att `?demo=1` går före; k-tröskeltest att ett inbakat paket med `kTroskel` under 10 ställer
+  och nedladdningen fungerar, att en annan fil ersätter det, att *Rensa all data* återställer det, att
+  `?demo=1` går före, och att låsningarna står kvar genom demoknappen och paketet kommer tillbaka med en riktig lönefil; k-tröskeltest att ett inbakat paket med `kTroskel` under 10 ställer
   bekräftelsefrågan som en inläst fil; webbläsarröktestet (`tools/browser-smoke.mjs`) bakar in
   demopaketet i bygget, öppnar den filen under CSP:n från `file://` och kräver noll CSP-överträdelser
   och inläst paket.

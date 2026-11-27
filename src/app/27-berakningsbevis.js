@@ -6,26 +6,25 @@
 // ingångsvärden, mellansteg. Försvarsmaterial för facklig samråd.
 //
 // Anropas med ett payload-objekt som beskriver fyndet:
-//   { type, title, rows: [{label, value, note?}], formula?, footer? }
-//
-// type-prefix används bara för intern logg/sökning, alla typer
-// renderas med samma layout.
+//   { title, intro?, rows: [{label, value, note?}], formula?, footer? }
+// Alla renderas med samma layout.
 import { kostnadsfaktor } from '../lib/kostnad.js';
-import { personOrd } from '../lib/namn.js';
-import { prioKonstanter } from '../lib/prioritering.js';
+import { kvinnorOchMan, personOrd } from '../lib/namn.js';
+import { prioKonstanter, prioViktsumma } from '../lib/prioritering.js';
 import { gruppMedBas } from '../lib/rapportunderlag.js';
 import { skrDelText, skrKvinnoandel, skrReferensInfo } from '../lib/skrreferens.js';
-import { direktivMarkering, perBasSignal } from '../lib/status.js';
+import { direktivMarkering } from '../lib/status.js';
 import { konsMedianer } from '../lib/struktur.js';
 import { svKr, svPct, svPoPct, svTal } from '../lib/talformat.js';
 import { adjektiv, artikel, genitiv, stor, termFras } from '../lib/termer.js';
+import { perBasNiva } from '../lib/vymodell-regressionskort.js';
 import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { kTroskel, statGolv } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { jmfNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_TIPS, GAP_STATUS_EJ, gapStatusKI, gapStatusNiva } from './10-diagramtema.js';
-import { referensNamn, state } from './12-tillstand.js';
+import { referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { _laBootstrapGapKI } from './41-lika-arbete.js';
 import { kvDomGransText } from './45-aid-bas-tabeller.js';
 import { harAlder } from './50-regressionsmodeller.js';
@@ -136,8 +135,8 @@ export function _bevisForLikvardighetspar(p) {
             ${ärIntern
                 ? `Källa: organisationens egna individdata (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maN != null ? ` (n=${p.maN})` : ''}: ${klassMening}`
                 : (p.maKlassKort === 'lokal'
-                    ? `Källa: jämförelsestatistiken (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} kvinnor av ${p.maNKv + p.maNMa} totalt)` : ''}: ${klassMening}`
-                    : `Källa: ${esc(skrReferensInfo().kalla)} (nationell reserv)<br>AID ${esc(p.maAid)}: ${p.maKvAndel.toFixed(1).replace('.', ',')} % kvinnor i ${skrDelText(_skrDel())}: ${klassMening}`)}`,
+                    ? `Källa: jämförelsestatistiken (faktisk könsfördelning per AID×BAS)<br>${svPct(p.maKvAndel, 1)} kvinnor${p.maNKv != null && p.maNMa != null ? ` (${p.maNKv} ${p.maNKv === 1 ? 'kvinna' : 'kvinnor'} av ${p.maNKv + p.maNMa} totalt)` : ''}: ${klassMening}`
+                    : `Källa: ${esc(skrReferensInfo().kalla)} (nationell reserv)<br>AID ${esc(p.maAid)}: ${svPct(p.maKvAndel, 1)} kvinnor i ${skrDelText(_skrDel())}: ${klassMening}`)}`,
         footer: `Verktyget identifierar statistiska kandidater. Den slutliga bedömningen — om kraven verkligen är likvärdiga och om det finns sakliga skäl — gör du själv, i dokumentationen.${p.maKlassKort === 'nationell' ? ' SKR:s kvinnoandel är nationell; jämförelsestatistikens faktiska könsfördelning per AID kan avvika och bör verifieras vid behov.' : ''}`
     };
 }
@@ -145,13 +144,12 @@ export function _bevisForLikvardighetspar(p) {
 /**
  * Bygger bevis-payload för en prio-rad.
  * @param {Object} it - item från raknaPrioritering
- * @param {string} _reference - 'stallningstagande' eller 'statistik' (f.n. ej använd i beviset)
  */
-export function _bevisForPrioPost(it, _reference) {
+export function _bevisForPrioPost(it) {
     const fmtKr = v => svKr(v);
     const fmtN = v => v.toLocaleString('sv-SE');
     const w = state.prioWeights;
-    const wTotal = Math.max(1, w.avvikelse + w.volym + w.jamstalldhet);
+    const wTotal = prioViktsumma(w);
     // Delpoängen och multiplikatorerna räknas i src/lib/prioritering.js och ligger på posten; taken ur samma modul.
     const K = prioKonstanter();
     const { sevScore, volScore, gapScore, riktningsvikt: directionWeight, bristMultiplier } = it;
@@ -162,7 +160,7 @@ export function _bevisForPrioPost(it, _reference) {
         title: `Beräkningen — ${it.yrke} · BAS ${it.bas}`,
         intro: `Detta är en av <strong>${it.n}</strong> personer i gruppen <em>${esc(it.yrke)}</em> (BAS ${esc(it.bas)}). Prioriteringen väger ihop avvikelsen mot ${esc(it.refSource)}, gruppens storlek och löneskillnaden mellan kvinnor och män i gruppen.`,
         rows: [
-            { label: 'Antal anställda i gruppen', value: fmtN(it.n), note: `${it.kvN} kvinnor · ${it.maN} män` },
+            { label: 'Antal anställda i gruppen', value: fmtN(it.n), note: kvinnorOchMan(it.kvN, it.maN, ' · ') },
             { label: 'Median månadslön',            value: fmtKr(it.median) },
             { label: `Referens (${it.refSource})`,  value: fmtKr(it.refMedian) },
             { label: 'Avvikelse',                   value: `${sgn(it.diffPct)}${svPct(it.diffPct, 2)}  (${sgn(it.diffKr)}${fmtKr(it.diffKr)})` },
@@ -172,7 +170,7 @@ export function _bevisForPrioPost(it, _reference) {
             { label: 'Avvikelse-poäng (sev)',       value: svTal(sevScore, 1), note: `min(${K.AVVIKELSE_TAK}, |${svPct(it.diffPct, 1)}|) / ${K.AVVIKELSE_TAK} × 100 · vikt ${w.avvikelse}/${wTotal}` },
             { label: 'Volym-poäng (vol)',           value: svTal(volScore, 1), note: `min(${K.VOLYM_TAK}, ${it.n}) / ${K.VOLYM_TAK} × 100 · vikt ${w.volym}/${wTotal}` },
             { label: 'Poäng för löneskillnaden',   value: svTal(gapScore, 1), note: `min(${K.GAP_TAK}, |${it.gapPct == null ? 0 : svTal(it.gapPct, 1)} %|) / ${K.GAP_TAK} × 100 · vikt ${w.jamstalldhet}/${wTotal}` },
-            { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? `Gruppen ligger UNDER referens — full vikt ${svTal(K.RIKTNING_UNDER, 1)}` : `Gruppen ligger ÖVER referens — halv vikt ${svTal(K.RIKTNING_OVER, 1)}` },
+            { label: 'Riktningsvikt',               value: svTal(directionWeight, 2), note: it.diffPct < 0 ? `Gruppen ligger UNDER referens — full vikt ${svTal(K.RIKTNING_UNDER, 1)}` : `Gruppen ligger ${it.diffPct > 0 ? 'ÖVER' : 'PÅ'} referens — halv vikt ${svTal(K.RIKTNING_OVER, 1)}` },
             { label: 'Bristyrke-multiplikator',     value: svTal(bristMultiplier, 2), note: it.isBrist ? `Markerat som bristyrke — bonus ${svTal(K.BRIST_MULTIPLIKATOR, 1)}x` : 'Ej bristyrke' },
             { label: '— Kostnad att nå referensen', value: it.annualGapTotal > 0 ? `<strong>${fmtKr(it.annualGapTotal)}</strong>` : '— (gruppen är ej under referens)', isHtml: true, note: `${months} mån × PO-påslag ${svPoPct(poPct)} × ${it.n} pers` }
         ],
@@ -203,7 +201,7 @@ export function _bevisForEUMatrisrad(r) {
             rows: [
                 { label: stor(T.enhet.en),         value: r.yrke },
                 ...(r.bas ? [{ label: stor(T.niva.en), value: String(r.bas) }] : []),
-                { label: 'Antal anställda totalt', value: r.tot.toLocaleString('sv-SE'), note: `${r.nKv} kvinnor · ${r.nMa} män` },
+                { label: 'Antal anställda totalt', value: r.tot.toLocaleString('sv-SE'), note: kvinnorOchMan(r.nKv, r.nMa, ' · ') },
                 { label: 'Könsdominans',             value: r.dominans },
                 nationellt,
                 { label: 'Gruppens median',          value: fmtKr(r.medTot) }
@@ -252,20 +250,21 @@ export function _bevisForPerBasRad(p, bhCtx) {
             title: `Beräkningen — BAS ${p.bas}`,
             intro: p.status === 'too_few'
                 ? `Per-BAS-regression kunde inte köras eftersom underlaget är för litet (minsta gruppstorlek).`
+                : p.status === 'ingen_spridning'
+                ? `Lönen i intervallet bestäms helt av kön och ålder (till exempel samma lön för alla), så det finns ingen osäkerhet att pröva.`
                 : `Per-BAS-regression misslyckades på grund av multikollinearitet (singulär designmatris — typiskt om alla i gruppen har samma BAS-rang och ålder är extremt korrelerad med kön).`,
             rows: [
                 { label: stor(T.niva.en), value: p.bas },
                 { label: 'Antal totalt',   value: (p.n || 0).toLocaleString('sv-SE') },
                 { label: 'Antal kvinnor',  value: (p.kvN || 0).toLocaleString('sv-SE'), note: (p.kvN || 0) < statGolv() ? `Färre än ${statGolv()} (golvet för skattningar)` : '' },
                 { label: 'Antal män',      value: (p.maN || 0).toLocaleString('sv-SE'), note: (p.maN || 0) < statGolv() ? `Färre än ${statGolv()} (golvet för skattningar)` : '' },
-                { label: 'Status',         value: p.status === 'too_few' ? 'För få observationer' : 'Singulär designmatris' }
+                { label: 'Status',         value: p.status === 'too_few' ? 'För få observationer' : p.status === 'ingen_spridning' ? 'Ingen lönespridning' : 'Singulär designmatris' }
             ]
         };
     }
     const isSig = p.pValue < 0.05;
-    const sigAfterBH = bhCtx && bhCtx.q != null ? (p.pValue < 0.05 && bhCtx.q < 0.05) : isSig;
     const bhNote = bhCtx && bhCtx.q != null
-        ? `BH-FDR-justerat q = ${bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)} (${bhCtx.allM > 1 ? `${bhCtx.allM} parallella tester` : 'ett enda test: q = p'})`
+        ? `BH-FDR-justerat q ${bhCtx.q < 0.001 ? '< 0,001' : `= ${svTal(bhCtx.q, 4)}`} (${bhCtx.allM > 1 ? `${bhCtx.allM} parallella tester` : 'ett enda test: q = p'})`
         : 'Inget q-värde: intervallet har inget prövat p-värde';
     return {
         title: `Beräkningen — BAS ${p.bas} (per-BAS-regression)`,
@@ -280,13 +279,13 @@ export function _bevisForPerBasRad(p, bhCtx) {
             { label: '95 % konfidensintervall', value: `[${fmtPct(p.ciLow)}, ${fmtPct(p.ciHigh)}]`, note: 'β ± t(0,975; n−k) × HC3-SE, transformerat tillbaka från log' },
             { label: 'p-värde',                value: p.pValue < 0.001 ? '< 0,001' : svTal(p.pValue, 4), note: isSig ? 'Statistiskt signifikant (p < 0,05)' : 'Ej signifikant' },
             { label: 'BH-FDR-korrektion',      value: bhCtx && bhCtx.q != null ? (bhCtx.q < 0.001 ? '< 0,001' : svTal(bhCtx.q, 4)) : '—', note: bhNote },
-            { label: 'Klassning',              value: { titta: 'Titta närmare', dokumentera: 'Dokumentera: signifikant, under verktygets storleksgräns på 3 %', osakert: 'Osäkert utslag: håller inte efter korrigering', inget: 'Inom statistisk osäkerhet' }[perBasSignal(p.gapPct, sigAfterBH, p.pValue < 0.05).niva], isHtml: true },
+            { label: 'Klassning',              value: { titta: 'Titta närmare', dokumentera: 'Dokumentera: signifikant, under verktygets storleksgräns på 3 %', osakert: 'Osäkert utslag: håller inte efter korrigering', inget: 'Inom statistisk osäkerhet' }[perBasNiva(p, bhCtx?.q)], isHtml: true },
             { label: 'R² (modellanpassning)',  value: svPct((p.R2 * 100), 1) }
         ],
         formula: `<strong>Statistisk metod:</strong><br>
             Modell: ln(lön) ~ kön${harAlder() ? ' + ålder (centrerad)' : ''}<br>
             Standardfel: HC3-robusta (Long & Ervin 2000)<br>
-            p-värde: 2-sidigt; t-fördelning med df = n − k vid små underlag (df &lt; 100), annars normal<br>
+            p-värde: 2-sidigt; t-fördelning med df = n − k<br>
             skillnad % = (exp(β_kön) − 1) × 100 = (exp(${svTal((Math.log(1 + p.gapPct / 100)), 4)}) − 1) × 100 = <strong>${svPct(p.gapPct, 2)}</strong>`,
         footer: `BH-FDR-korrektionen ${bhCtx && bhCtx.q != null && bhCtx.allM > 1 ? `justerar för att ${bhCtx.allM} parallella tester körs samtidigt — skyddar mot falska positiva. ` : ''}Klassningen "Titta närmare" kräver både p < 0,05 (efter BH) och att skillnaden är minst 3 % (verktygets storleksgräns). ${harAlder() ? 'Talet är justerat för ålder och bär därför ingen direktivmarkering. ' : ''}Prövningen av sakliga skäl gör du själv, i dokumentationen.`
     };
@@ -295,18 +294,17 @@ export function _bevisForPerBasRad(p, bhCtx) {
 /**
  * Bevis-payload för en rad i Löneöversikten (AID-etikett/kön/organisation). Talen är radens i vymodellen
  * (vymodellLoneoversikt, src/lib/vymodell-loneoversikt.js); beviset visar hur de hänger ihop.
- * @param {{kategori: string, bas: string, rad: any, polRow: any, masked?: boolean}} p
+ * @param {{kategori: string, bas: string, rad: any, polRow: any}} p
  */
 export function _bevisForRapportrad(p) {
     const fmtKr = v => svKr(v, '—');
     const r = p.rad || {};
     const n = r.n || 0;
-    const masked = !!p.masked;
-    const med = masked || !n ? null : r.med;
-    const p10 = masked || !n ? null : r.p10;
-    const p90 = masked || !n ? null : r.p90;
-    const spread = masked || !n ? null : r.spridning;
-    const statDiffPct = masked || !n ? null : r.statDiff;
+    const med = !n ? null : r.med;
+    const p10 = !n ? null : r.p10;
+    const p90 = !n ? null : r.p90;
+    const spread = !n ? null : r.spridning;
+    const statDiffPct = !n ? null : r.statDiff;
     const statRefMedian = r.statMedian;
 
     /** @type {Array<{label: string, value: string, isHtml?: boolean, note?: string}>} */
@@ -314,28 +312,22 @@ export function _bevisForRapportrad(p) {
     const rows = [
         { label: 'Kategori',                value: p.kategori },
         { label: stor(T.niva.en),           value: p.bas },
-        { label: 'Antal anställda',         value: n.toLocaleString('sv-SE'), note: masked ? `Maskerad — under k=${kTroskel()}` : '' }
+        { label: 'Antal anställda',         value: n.toLocaleString('sv-SE'), note: '' },
+        { label: 'P10 (10:e percentilen)', value: fmtKr(p10),                note: '10 % tjänar mindre än detta' },
+        { label: 'Median (P50)',          value: fmtKr(med) },
+        { label: 'P90 (90:e percentilen)', value: fmtKr(p90),                note: '90 % tjänar mindre än detta' },
+        { label: 'Lönespridning',         value: spread != null ? svTal(spread, 2) : '—', note: 'P90 / P10 — högre värde = bredare spridning' }
     ];
-    if (masked) {
-        rows.push({ label: 'Statistik',     value: 'Visas inte (gruppen är under minsta gruppstorlek)', note: 'Skyddar enskilda i små grupper' });
-    } else {
-        rows.push(
-            { label: 'P10 (10:e percentilen)', value: fmtKr(p10),                note: '10 % tjänar mindre än detta' },
-            { label: 'Median (P50)',          value: fmtKr(med) },
-            { label: 'P90 (90:e percentilen)', value: fmtKr(p90),                note: '90 % tjänar mindre än detta' },
-            { label: 'Lönespridning',         value: spread != null ? svTal(spread, 2) : '—', note: 'P90 / P10 — högre värde = bredare spridning' }
-        );
-    }
     if (p.polRow) {
         rows.push({ label: `— ${referensNamn()}`,  value: '' });
-        rows.push({ label: 'Policy-P10',  value: fmtKr(p.polRow.p10) });
-        rows.push({ label: 'Policy-median', value: fmtKr(p.polRow.med) });
-        rows.push({ label: 'Policy-P90',  value: fmtKr(p.polRow.p90) });
+        rows.push({ label: 'P10',  value: fmtKr(p.polRow.p10) });
+        rows.push({ label: 'Median', value: fmtKr(p.polRow.med) });
+        rows.push({ label: 'P90',  value: fmtKr(p.polRow.p90) });
         if (med != null && p.polRow.p10 && med < p.polRow.p10) {
-            rows.push({ label: 'Varning',  value: 'Median ligger UNDER policy-P10 (varningsfärg i tabellen)', isHtml: true });
+            rows.push({ label: 'Varning',  value: `Median ligger UNDER P10 i ${esc(referensKortnamn())} (varningsfärg i tabellen)`, isHtml: true });
         }
     }
-    if (statRefMedian && !masked) {
+    if (statRefMedian) {
         rows.push({ label: `— ${jmfNamn('Jämförelsestatistik')}`,          value: '' });
         rows.push({ label: `Median i ${jmfNamn('jämförelsestatistiken')}`,                value: fmtKr(statRefMedian) });
         rows.push({ label: `Skillnad mot ${jmfNamn('jämförelsestatistiken')}`,          value: (statDiffPct != null && statDiffPct >= 0 ? '+' : '') + svPct(statDiffPct, 2), note: '(organisationens median / referens) − 1' });
@@ -345,8 +337,7 @@ export function _bevisForRapportrad(p) {
         title: `Beräkningen — ${p.kategori} · BAS ${p.bas}`,
         intro: `Beräkningarna är direkt median/percentil från lönerna i denna grupp. Ingen modell, ingen kontroll — bara summerade tal. Ställningstagandet och jämförelsestatistiken visas som referenslinjer om de är inlästa.`,
         rows,
-        formula: masked ? '<em>Gruppen är k-maskerad — siffror visas ej.</em>' :
-            `<strong>Direktberäkningar:</strong><br>
+        formula: `<strong>Direktberäkningar:</strong><br>
             Median (P50) = mittenvärdet av sorterade löner = <strong>${fmtKr(med)}</strong><br>
             P10 = värdet vid 10:e percentilen = <strong>${fmtKr(p10)}</strong><br>
             P90 = värdet vid 90:e percentilen = <strong>${fmtKr(p90)}</strong><br>
@@ -357,25 +348,12 @@ export function _bevisForRapportrad(p) {
 
 /**
  * Bevis-payload för en rad i Skevhet-flikens lönegap-tabell (paygap-table).
- * @param {Object} p - { bas, rader, kvLons, maLons, masked }; rader är BAS-intervallets personer
+ * @param {Object} p - { bas, rader, kvLons, maLons }; rader är BAS-intervallets personer
  */
 export function _bevisForLonegapsrad(p) {
     const fmtKr = v => svKr(v, '—');
     const nKv = (p.kvLons || []).length;
     const nMa = (p.maLons || []).length;
-    if (p.masked) {
-        return {
-            title: `Beräkningen — BAS ${p.bas}`,
-            intro: `Löneskillnaden i ${artikel(T.niva, { bestamd: true })} här ${T.niva.bf} visas inte, eftersom något kön har färre än ${kTroskel()} ${personOrd(kTroskel())}.`,
-            rows: [
-                { label: stor(T.niva.en),     value: p.bas },
-                { label: 'Antal kvinnor',     value: nKv.toLocaleString('sv-SE'), note: nKv < kTroskel() ? `< k=${kTroskel()}` : '' },
-                { label: 'Antal män',         value: nMa.toLocaleString('sv-SE'), note: nMa < kTroskel() ? `< k=${kTroskel()}` : '' },
-                { label: 'Status',            value: 'Maskerad — minsta gruppstorlek för redovisning' }
-            ],
-            footer: `Det hindrar att någon räknar ut en enskild persons lön genom att lägga ihop kön, ${T.niva.en} och lön.`
-        };
-    }
     const { medKv, medMa, kvotPct } = konsMedianer(p.rader, { k: kTroskel() });
     const ratio = kvotPct != null ? medKv / medMa : null;
     const gapPct = kvotPct;

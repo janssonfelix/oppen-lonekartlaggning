@@ -1,7 +1,7 @@
 /**
  * Invariant: k-anonymiteten, inte stickprov på den.
  *
- * BAKGRUND: `kMaskerad` anropas på ett sextiotal ställen i src/app/, men bara
+ * Skälet: `kMaskerad` anropas på ett sextiotal ställen i src/app/, men bara
  * ett par av dem hade test. Under arbetet med lönepolitikfliken läckte
  * _lpRenderCompliance grupper under tröskeln — i nyskriven kod som ingen
  * befintlig vakt fångade. Fler stickprov löser inte det; varje ny vy behöver
@@ -32,7 +32,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { attributtext, utanLagen } from './helpers/attributtext.js';
+import { attributtext, egenText, utanLagen } from './helpers/attributtext.js';
 
 const SAKRA_BAS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
 const PER_SAKER_BAS = 150;                       // väl över tröskeln
@@ -112,7 +112,7 @@ function byggPolicy() {
 // formaterade belopp går att söka i.
 const normalisera = t => t.replace(/(\d)[\s  ](?=\d)/g, '$1');
 
-// Alla lövelement vars text ELLER attribut (data-sort-value bär råa tal)
+// Alla element vars egen text ELLER attribut (data-sort-value bär råa tal)
 // innehåller ett sentinelvärde.
 function rojandeElement(win) {
     const ut = [];
@@ -125,9 +125,8 @@ function rojandeElement(win) {
         // Likvärdighetsanalysens par och yrkestabeller är undantagna från k (stämpeln "undantag: Likvärdigt arbete");
         // sedan ADR-60 är datasetets små blandade grupper jämförelseyrken där. Resten av fliken prövas.
         if (el.closest('#avsnitt-lv-par, #avsnitt-lv-underlag')) continue;
-        if (el.children.length) continue;
         const attr = attributtext(el);
-        const text = normalisera(`${el.textContent} ${attr}`);
+        const text = normalisera(`${egenText(el)} ${attr}`);
         if (SENTINEL.some(s => text.includes(String(s)))) ut.push(el);
     }
     return ut;

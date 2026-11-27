@@ -223,6 +223,21 @@ describe('Word-utkastet som .docx', () => {
         expect(rader.some(r => r[0] === 'Kvinnors medianlön i procent av mäns')).toBe(false);
         expect(sam.utelamnat.length).toBe(1);
     });
+    it('samma etikett ger samma tal i hela rapporten, också när rader saknar ålder', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        // Var femte rad utan ålder: regressionens urval blir mindre än hela underlaget.
+        w.__state.data.forEach((r, i) => { if (i % 5 === 0) r.alder = 0; });
+        const m = w.eval('rapportModell()');
+        const rader = m.avsnitt.flatMap(a => a.delar.filter(p => p.typ === 'tabell').flatMap(t => t.rader));
+        const varden = etikett => rader.filter(r => r[0] === etikett).map(r => (typeof r[1] === 'object' ? r[1].text : r[1]));
+        const medianKvot = varden('Kvinnors medianlön i procent av mäns');
+        expect(medianKvot.length).toBeGreaterThan(0);
+        expect(new Set(medianKvot).size).toBe(1);
+        const iModellen = rader.filter(r => /^Kvinnors medianlön i procent av mäns, i modellens urval \(n = \d+\)$/.test(r[0]));
+        expect(iModellen.length).toBeGreaterThan(0);
+        for (const r of iModellen) expect(r[1]).not.toBe(medianKvot[0]);
+    });
     it('rmCell: varje kolumntyp i svenskt talformat, och streck för det som inte redovisas', () => {
         const w = createAppWindow();
         const c = (v, typ) => w.eval(`rmCell(${JSON.stringify(v)}, ${JSON.stringify(typ)})`).replace(/[  ]/g, ' ');
@@ -281,6 +296,21 @@ describe('Word-utkastet som .docx', () => {
         w.__cfg = utanUrval;
         w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
+    });
+    it('förhandsbeskedet för Word och PDF räknar bara de diagram som ritas, som filen', async () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.eval('sattKTroskel(60, { fraga: false })');                    // flera diagram har då inget att visa
+        // Diagrammen som filen får: varje diagramdel vars flik ritats i exportläget och vars diagram då är ritat.
+        const { delar, ritade } = w.eval(`medExportLage(() => {
+            const delar = rapportModell().avsnitt.flatMap(a => a.delar).filter(p => p.typ === 'diagram');
+            for (const f of new Set(delar.map(p => p.flik))) ritaFlik(f);
+            return { delar: delar.length, ritade: delar.filter(p => diagramRitat(document.getElementById(p.id))).length };
+        })`);
+        expect(ritade).toBeLessThan(delar);                                // annars prövar testet inget
+        expect(w.eval('rmBesked(rapportModell())').diagram).toBe(ritade);
+        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        expect(w.document.getElementById('besked-word').textContent).toContain(`${ritade} diagram`);
     });
     it('förhandsbeskedet säger vad filen innehåller och utelämnar, och räknas ur samma källa som filen', async () => {
         const w = createAppWindow();
@@ -403,6 +433,14 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         ruta.checked = true; ruta.dispatchEvent(new w.Event('change', { bubbles: true }));
         expect(bilaga(w)).toBeTruthy();
     });
+    it('bilagan hänvisar till avsnittet per BAS-intervall bara när det avsnittet är med', () => {
+        const w = createAppWindow(); w.__lasInDemodata();
+        const hanvisning = () => bilaga(w).delar[0].text.includes('står i avsnittet Lönekartläggning per');
+        MED_DOSSIERER(w);
+        expect(hanvisning()).toBe(true);
+        w.eval("sattRapportUrval({ ordning: rapportUrval().ordning, med: [...RM_URVAL.ledning.med, 'dossierer'] })");
+        expect(hanvisning()).toBe(false);
+    });
     it('vald: en dossier per yrkesgrupp där båda könen når k, med samma text som gruppdossierns kopia, byggd i exportläget', () => {
         const w = createAppWindow(); w.__lasInDemodata();
         MED_DOSSIERER(w);
@@ -445,7 +483,7 @@ describe('Bilaga: gruppdossierer i Word-utkastet och PDF-rapporten', () => {
         expect(text).toContain('sakliga skäl');
         expect(text).toMatch(/\d+ män\b/);
         expect(text).toMatch(/^Gruppdossier: /m);
-        for (const fel of [/sakliga skal\b/, /\d+ man\b/, /Sarskilt/, /Aldersrensat/, /undersoka/, /kr\/ar\b/, /GRUPPDOSSIER/, /bedomningen gors/]) expect(text).not.toMatch(fel);
+        for (const fel of [/sakliga skal\b/, /\b(?!1 )\d+ man\b/, /Sarskilt/, /Aldersrensat/, /undersoka/, /kr\/ar\b/, /GRUPPDOSSIER/, /bedomningen gors/]) expect(text).not.toMatch(fel);
         // Stämpeln en gång, före första dossiern — inte en gång per grupp.
         const stampel = w.eval('kStampel()');
         expect(stampel).toBeTruthy();

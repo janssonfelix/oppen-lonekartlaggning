@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { ickeTom } from './helpers/paastaende.js';
 
 const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
@@ -44,7 +45,7 @@ describe('gränssnittets färger har en källa', () => {
     });
     it('stilmallens variabler har samma värden som tabellen', () => {
         const { rot } = cssRot();
-        for (const [k, v] of Object.entries(FARG)) expect(rot, cssNamn(k)).toMatch(new RegExp(`${cssNamn(k)}:\\s*${v};`, 'i'));
+        for (const [k, v] of ickeTom(Object.entries(FARG))) expect(rot, cssNamn(k)).toMatch(new RegExp(`${cssNamn(k)}:\\s*${v};`, 'i'));
     });
     it('utanför :root står tabellens färger bara som variabler', () => {
         const rest = cssRot().rest.replace(/\/\*[\s\S]*?\*\//g, '');

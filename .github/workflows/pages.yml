@@ -1,8 +1,9 @@
 name: Demosidan
 
 # Publicerar demosidan (site/dist/, byggd av tools/site.mjs ur site/index.html och det incheckade bygget) på
-# GitHub Pages när en version taggas, eller för hand. Sidan är statisk, utan skript, och är till för påhittad
-# data: verklig lönedata läses bara in i en nedladdad och verifierad fil (SECURITY.md).
+# GitHub Pages när en version taggas, eller för hand. Sidan är statisk och utan skript (bildspelet genomgang.html har
+# ett eget skript för bläddringen), och är till för påhittad data: verklig lönedata läses bara in i en nedladdad och
+# verifierad fil (SECURITY.md).
 on:
   push:
     tags: ['v*']

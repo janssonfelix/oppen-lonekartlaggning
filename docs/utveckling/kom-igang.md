@@ -19,12 +19,8 @@ Installerar exakt de versioner som står i `package-lock.json`.
 npm test
 ```
 
-Vid körningen slutade den så här:
-
-```
- Test Files  55 passed (55)
-      Tests  1478 passed | 6 expected fail (1484)
-```
+Körningen är grön när alla testfiler har rapporterat och ingen har fallit. Några tester är märkta som väntade fel
+(`expected fail`); de räknas inte som fel.
 
 ### 3. Var ändringar görs
 
@@ -46,7 +42,7 @@ Vid körningen slutade den så här:
     });
 ```
 
-Kör den filen med `npx vitest run tests/kostnad.test.js`. Det ska bli `Tests  25 passed (25)`. Byt sedan förväntat värde till `16699`: körningen faller då. Ta tillbaka ändringen
+Kör den filen med `npx vitest run tests/kostnad.test.js`. Alla tester ska gå igenom. Byt sedan förväntat värde till `16699`: körningen faller då. Ta tillbaka ändringen
 med `git checkout -- tests/kostnad.test.js`.
 
 ### 5. Bygg
@@ -56,7 +52,7 @@ npm run build:app
 npm run bundle
 ```
 
-`build:app` genererar speglen ur `src/lib/` och slår ihop `src/app/` till `dist/app.js`. `bundle` bygger
+`build:app` bygger `dist/app.js` ur `src/app/` och `src/lib/`. `bundle` bygger
 `dist/oppen-lonekartlaggning.html` och `dist/RELEASE.txt`; utskriften slutar med `Klar: …`, versionen och SHA-256-summan.
 Varningen om `VERSION` stoppar inget. Ändrade filer i `dist/` checkas in med källan; det prövar `npm run kontroll`.
 
@@ -127,7 +123,7 @@ för hur `huvudregression` anropas i testerna.
 
 ### Var talen är prövade
 
-- **Handräknade referensfall**: `tests/fixtures/referensfall/` (femton JSON-filer). Fältet `harledning` visar uträkningen
+- **Handräknade referensfall**: `tests/fixtures/referensfall/` (en JSON-fil per fall). Fältet `harledning` visar uträkningen
   steg för steg; `tests/referensfall.test.js` kör dem.
 - **Etablerade implementationer**: `tests/fixtures/ref-*.py` med statsmodels och scipy. Resultaten är incheckade, och
   `tests/stat-referens.test.js` jämför verktygets tal mot dem. **Låsta tal**: `tests/berakningar-las.test.js`.

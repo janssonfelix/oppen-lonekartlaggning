@@ -65,6 +65,7 @@ import { anpassaOLS, tFordelningCdf, pVardeTvasidigt, bhJustera } from '../src/l
 import { basRangordning } from '../src/lib/likvardighet.js';
 import { kvantilregression, kvantilDesign, stegvisGap } from '../src/lib/regression.js';
 import { createAppWindow } from './helpers/app-harness.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const las = f => JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'));
@@ -113,7 +114,7 @@ describe('[B1.3] anpassaOLS mot statsmodels', () => {
     });
     it('vcovHC3 elementvis (relativt 1e-9) och HC3-standardfel (6 decimaler)', () => {
         for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) relNara(fit.vcovHC3[i][j], ref.ols.vcovHC3[i][j], 1e-9);
-        ref.ols.seHC3.forEach((se, i) => expect(Math.sqrt(fit.vcovHC3[i][i])).toBeCloseTo(se, 8));
+        ickeTom(ref.ols.seHC3).forEach((se, i) => expect(Math.sqrt(fit.vcovHC3[i][i])).toBeCloseTo(se, 8));
     });
     it('HC3 skiljer sig från klassisk vcov på den heteroskedastiska fixturen', () => {
         // Sanity: fixturen är byggd så att testet verkligen skiljer HC3 från klassisk.
@@ -132,13 +133,13 @@ describe('[B1.4] tFordelningCdf och pVardeTvasidigt mot scipy.stats.t', () => {
     const tol = { 5: 3e-3, 10: 1e-3, 26: 1e-4, 99: 1e-5 };
     for (const df of [5, 10, 26, 99]) {
         it(`CDF vid df=${df} inom ${tol[df]}`, () => {
-            for (const [t, p] of Object.entries(ref.tcdf[df])) {
+            for (const [t, p] of ickeTom(Object.entries(ref.tcdf[df]))) {
                 expect(Math.abs(tFordelningCdf(+t, df) - p)).toBeLessThan(tol[df]);
                 expect(Math.abs(tFordelningCdf(-t, df) - (1 - p))).toBeLessThan(tol[df]);
             }
         });
         it(`tvåsidigt p vid df=${df} inom ${2 * tol[df]}`, () => {
-            for (const [t, p] of Object.entries(ref.tcdf[df])) {
+            for (const [t, p] of ickeTom(Object.entries(ref.tcdf[df]))) {
                 // pVardeTvasidigt tar n och k; df = n − k.
                 expect(Math.abs(pVardeTvasidigt(+t, df + 4, 4) - 2 * (1 - p))).toBeLessThan(2 * tol[df]);
             }
@@ -299,9 +300,13 @@ describe('[B3.4] Blinder-Oaxaca (BAS som indikatorer, ADR-53)', () => {
             expect(ut.components[lab].u).toBeCloseTo(bo.perKomponent[lab].u, 10);
             expect(ut.components[lab].i).toBeCloseTo(bo.perKomponent[lab].i, 10);
         }
-        expect(ut.rawGapPct).toBeCloseTo(pct(bo.rawGapLog), 8);
-        expect(ut.explainedPct).toBeCloseTo(pct(bo.q), 8);
-        expect(ut.unexplainedPct).toBeCloseTo(pct(bo.u + bo.i), 8);
+        // Referensprogrammet räknar män mot kvinnor i log-rummet; procenttalen har verktygets tecken, kvinnor mot män.
+        const kvMotMan = c => (Math.exp(-c) - 1) * 100;
+        expect(ut.rawGapPct).toBeCloseTo(kvMotMan(bo.rawGapLog), 8);
+        expect(ut.explainedPct).toBeCloseTo(kvMotMan(bo.q), 8);
+        expect(ut.unexplainedPct).toBeCloseTo(kvMotMan(bo.u + bo.i), 8);
+        expect(ut.andelForklarad).toBeCloseTo(bo.q / bo.rawGapLog * 100, 8);
+        for (const lab of ['intercept', 'age', 'bas']) expect(ut.componentsPct[lab].q).toBeCloseTo(kvMotMan(bo.perKomponent[lab].q), 8);
     });
 });
 

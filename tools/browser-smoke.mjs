@@ -16,7 +16,8 @@
 // Med --bilder=<katalog> sparas diagramkärnans exporterade PNG och SVG där, för granskning med ögat.
 //
 // Kontrollerna ligger per område i tools/browser-smoke/ med en gemensam rigg (rigg.mjs: webbläsaren, sidan,
-// ok() och hjälparna). Den här filen kör dem i samma ordning som de alltid har körts och skriver sammanfattningen.
+// ok() och hjälparna). Den här filen kör dem i en fast ordning och skriver sammanfattningen; lagringen prövas sist,
+// efter alla exporter.
 import { browser, NAMN, antalFel } from './browser-smoke/rigg.mjs';
 import { laddningOchDemo, startsidan, organisationsfilen } from './browser-smoke/laddning.mjs';
 import { flikarOchDiagram, oversiktEfterInlasning } from './browser-smoke/flikar-och-diagram.mjs';
@@ -24,7 +25,7 @@ import { diagramkarnan } from './browser-smoke/diagramkarnan.mjs';
 import { wordUtkast, rapportunderlag, beskedPdfZip, checklistor } from './browser-smoke/exporter.mjs';
 import { utseende, smalaSkarmar } from './browser-smoke/layout.mjs';
 import { gruppdossier, kTroskel, sokOchBasdossier } from './browser-smoke/dialoger.mjs';
-import { ingenLagring, ingenTrafik, felUnderKorningen } from './browser-smoke/sakerhet.mjs';
+import { ingenLagring, ingenTrafik, rensaAllData, felUnderKorningen } from './browser-smoke/sakerhet.mjs';
 import { stortDemo } from './browser-smoke/demo.mjs';
 import { forhandskontroll } from './browser-smoke/forhandskontroll.mjs';
 import { sakligaSkal } from './browser-smoke/sakliga-skal.mjs';
@@ -38,7 +39,6 @@ await utseende();
 await gruppdossier();
 await rapportunderlag();
 await kTroskel();
-await ingenLagring();
 await oversiktEfterInlasning();
 await beskedPdfZip();
 await sokOchBasdossier();
@@ -51,7 +51,9 @@ await sakligaSkal();
 await uppdelningensVariabler();
 await ingenTrafik();
 await stortDemo();
+await rensaAllData();
 await felUnderKorningen();
+await ingenLagring();
 
 await browser.close();
 console.log(antalFel() ? `\n✗ ${antalFel()} kontroll(er) misslyckades (${NAMN})\n` : `\n✓ Alla kontroller gröna (${NAMN})\n`);

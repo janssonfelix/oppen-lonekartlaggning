@@ -103,6 +103,14 @@ let _tipsPortal = null;
 /** @type {HTMLElement|null} */
 let _tipsVard   = null;
 
+/** Rensa all data: portalerna bär tipsens text och tas bort; nästa tips skapar dem på nytt. */
+export function verktygstipsSlapp() {
+    _diagramtipsElement?.remove();
+    _diagramtipsElement = null;
+    _tipsPortal?.remove();
+    _tipsPortal = null;
+    _tipsVard = null;
+}
 function _hamtaTipsPortal() {
     if (_tipsPortal) return _tipsPortal;
     _tipsPortal = document.createElement('div');
@@ -153,9 +161,23 @@ function _visaTips(host) {
     const tip = _hamtaTipsPortal();
     tip.textContent = text;
     _placeraTips(host);
-    // Koppla aria-describedby till värd-elementet för skärmläsare
+    // Koppla aria-describedby till värd-elementet för skärmläsare; en informationsikon har redan texten som namn.
+    if (host.getAttribute('aria-label') === text) return;
     if (!host.id) host.id = 'tip-host-' + Math.random().toString(36).slice(2, 8);
     host.setAttribute('aria-describedby', tip.id);
+}
+
+// Informationsikonerna (.info-tip) nås med Tab och har förklaringen som namn (princip 6, WCAG 2.1.1 och 4.1.2); tipset
+// visas vid fokus som vid hovring. Förklaringen står i data-tooltip, i sidan och i det flikarna ritar, och termerna
+// fylls i efteråt (07-standardinstallningar.js): namnet sätts när en ikon tillkommer eller dess text ändras.
+function _namngeInfoTips(el) {
+    if (el.tabIndex !== 0) el.tabIndex = 0;
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', el.getAttribute('data-tooltip') || '');
+}
+function _namngeInfoTipsUnder(rot) {
+    if (rot.matches('.info-tip')) _namngeInfoTips(rot);
+    rot.querySelectorAll('.info-tip').forEach(_namngeInfoTips);
 }
 
 function _doljTips() {
@@ -215,6 +237,13 @@ function _aterstallTitel(host) {
 
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartVerktygstips() {
+    _namngeInfoTipsUnder(document.documentElement);
+    new MutationObserver(poster => {
+        for (const m of poster) {
+            if (m.type === 'attributes') { if (/** @type {Element} */ (m.target).matches('.info-tip')) _namngeInfoTips(m.target); }
+            else for (const n of m.addedNodes) if (n instanceof Element) _namngeInfoTipsUnder(n);
+        }
+    }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-tooltip'] });
     // Globalt: dölj (och töm) diagrammens verktygstips vid rullning, ändrad fönsterstorlek och Escape — när diagrammet
     // rör sig under pekaren står tipset annars kvar på fel plats, med ett lönevärde i.
     window.addEventListener('scroll', _doljDiagramtips, true);

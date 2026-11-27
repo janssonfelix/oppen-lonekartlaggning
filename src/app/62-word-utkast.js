@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// ---- Word-utkast: hela dokumentationen som redigerbar .doc ----
+// ---- Word-utkast: hela dokumentationen som redigerbar .docx ----
 import { docxDelar } from '../lib/docx.js';
 import { idagDatum, laddaNer, rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSidfot } from './06-k-troskel.js';
@@ -71,16 +71,16 @@ function _utkastTillBlock(html) {
 
 /**
  * Fyller bildblocken med diagrammens PNG (rmDiagramBild i 58-rapportmodell.js). Ett diagram som inte ritas tas bort
- * ur listan; `saknas` säger vilka.
+ * ur listan; förhandsbeskedet räknar bara de diagram som ritas (rmBesked).
  */
 async function _utkastFyllBilder(block) {
-    const ut = [], saknas = [], ritade = new Set();
+    const ut = [], ritade = new Set();
     for (const b of block) {
         if (b.typ !== 'bild') { ut.push(b); continue; }
         const bild = await rmDiagramBild({ id: b.id, flik: b.flik, rubrik: b.text }, ritade);
-        if (bild) ut.push({ typ: 'bild', base64: bild.base64, bredd: bild.bredd, hojd: bild.hojd, alt: bild.alt, text: b.text }); else saknas.push(b.text);
+        if (bild) ut.push({ typ: 'bild', base64: bild.base64, bredd: bild.bredd, hojd: bild.hojd, alt: bild.alt, text: b.text });
     }
-    return { block: ut, saknas };
+    return ut;
 }
 
 /** Bygger Word-utkastet som .docx: filen som Blob och dess namn. Används av knappen och av ZIP-exporten. */
@@ -88,7 +88,7 @@ export async function byggWordUtkast() {
     const year = new Date().getFullYear();
     const stamp = idagDatum();
     const demo = state.isDemo;
-    const { block } = await _utkastFyllBilder(_utkastTillBlock(_byggWordUtkastHtml()));
+    const block = await _utkastFyllBilder(_utkastTillBlock(_byggWordUtkastHtml()));
     const delar = docxDelar(block, {
         titel: `Lönekartläggning ${year} — dokumentation (utkast)`,
         sidfot: _kSidfot(`Lönekartläggning ${year} — ${demo ? 'DEMODATA, UTKAST' : 'UTKAST'}`),
@@ -102,8 +102,8 @@ export async function byggWordUtkast() {
     return { blob, namn: `Lonekartlaggning_${year}_dokumentation_UTKAST_${demo ? 'DEMODATA_' : ''}${stamp}.docx` };
 }
 
-/** Bygger och laddar ner Word-utkastet som .docx. */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+/** Bygger och laddar ner Word-utkastet som .docx. */
 function exportWordUtkast(...a) { return medExportLage(() => _exportWordUtkastExport.apply(null, /** @type {any} */ (a))); }
 async function _exportWordUtkastExport() {
     if (!hamtaData().length) { alert('Läs in lönefilen först.'); return false; }

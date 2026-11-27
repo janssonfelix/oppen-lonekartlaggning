@@ -21,7 +21,7 @@ import { direktivMarkering } from '../lib/status.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { basdossierIntervall, vymodellBasdossier } from '../lib/vymodell-basdossier.js';
-import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { navigeraTill } from './05-tabeller-och-lankar.js';
@@ -65,6 +65,8 @@ export function byggBasdossier(bas) {
 
 /** @type {string|null} */
 let _bdVald = null;
+/** Rensa all data: valet var ett BAS-intervall i det rensade underlaget. */
+export function basdossierSlapp() { _bdVald = null; }
 /** Öppnar dossiern för ett BAS-intervall (eller det första), med fokus tillbaka till öppnaren när den stängs. */
 export function oppnaBasdossier(bas, opener) {
     const modal = document.getElementById('basdossier-modal');
@@ -92,22 +94,13 @@ function ritaBasdossier(bas) {
         return;
     }
     const onskat = bas || sel.value || _bdVald || kand[0].bas;
-    sel.innerHTML = kand.map(x => `<option value="${esc(x.bas)}">BAS ${esc(x.bas)} (${svTal(x.n, 0)} personer)</option>`).join('');
+    sel.innerHTML = kand.map(x => `<option value="${esc(x.bas)}">BAS ${esc(x.bas)} (${svTal(x.n, 0)} ${personOrd(x.n)})</option>`).join('');
     sel.value = kand.some(x => x.bas === onskat) ? onskat : kand[0].bas;
     _bdVald = sel.value;
     // Ett begärt intervall som inte (längre) når tröskeln öppnas inte i tysthet som ett annat: det sägs.
     if (bas && bas !== sel.value) meddelaSkarmlasare(`BAS ${bas} visas inte i dossiern: intervallet finns inte i underlaget eller har färre än ${kTroskel()} ${personOrd(kTroskel())}. Visar BAS ${sel.value}.`);
     const d = byggBasdossier(sel.value);
     body.innerHTML = d ? _bdRitaInnehall(d) : `<p class="f-dampad">${stor(T.niva.bf)} kunde inte läsas.</p>`;
-    // Fokusfällan cachar de fokuserbara elementen; när innehållet byggs om medan dialogen är öppen läggs den om,
-    // med samma öppnare och utan att flytta fokus. Fokus står kvar där det var (väljaren), i stället för att hoppa
-    // till stängknappen.
-    const modal = document.getElementById('basdossier-modal');
-    if (modal && modal.style.display === 'flex') {
-        const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
-        if (trap) { modal.removeEventListener('keydown', trap.handler); _fokusfallor.delete(modal); }
-        fangaFokus(modal, opener, { flyttaFokus: false });
-    }
 }
 
 const _bdKr = v => svKr(v);
@@ -176,7 +169,7 @@ function _bdRitaInnehall(d) {
     return `
         <div class="gd-head">
             <h3 class="fs-lg marg-0">${stor(T.niva.en)} ${esc(d.bas)}</h3>
-            <span class="gd-sub">${svTal(d.n, 0)} personer · ${d.yrken.length} ${ordForAntal(d.yrken.length, T.enhet)}</span>
+            <span class="gd-sub">${svTal(d.n, 0)} ${personOrd(d.n)} · ${d.yrken.length} ${ordForAntal(d.yrken.length, T.enhet)}</span>
             <button type="button" class="btn-table-tool" id="btn-basdossier-copy" title="Kopiera dossiern som text, i rapportens form">${ikon('kopiera', 14)} Kopiera som text</button>
         </div>
         <div class="bd-stack">
@@ -216,7 +209,7 @@ function _bdForraText(f) {
 export function basdossierStycken(d, { forraBaraMedBokslut = false } = {}) {
     const kr = _bdKr;
     const ut = [];
-    const nyckeltal = [`${svTal(d.n, 0)} personer, ${d.nKv} kvinnor och ${d.nMa} män (${svPct(d.andelKv, 0)} kvinnor). Medianlön ${kr(d.median)}, P10–P90 ${kr(d.p10)}–${kr(d.p90)}.`
+    const nyckeltal = [`${svTal(d.n, 0)} ${personOrd(d.n)}, ${kvinnorOchMan(d.nKv, d.nMa, ' och ')} (${svPct(d.andelKv, 0)} kvinnor). Medianlön ${kr(d.median)}, P10–P90 ${kr(d.p10)}–${kr(d.p90)}.`
         + (d.konOk ? ` Kvinnors median ${kr(d.medKv)} och mäns ${kr(d.medMa)}: kvinnors median är ${svPct(d.kvotPct, 1)} av mäns.` : ` ${_konUtelamnatNot()}`)];
     if (d.referens) nyckeltal.push(`Mot ${d.referens.namn}: P10 ${kr(d.p10)} mot ${kr(d.referens.p10)} (${_bdPctTecken(d.referens.diffPct.p10)}), median ${kr(d.median)} mot ${kr(d.referens.med)} (${_bdPctTecken(d.referens.diffPct.med)}), P90 ${kr(d.p90)} mot ${kr(d.referens.p90)} (${_bdPctTecken(d.referens.diffPct.p90)}).`);
     ut.push({ rubrik: 'Nyckeltal', rader: nyckeltal });

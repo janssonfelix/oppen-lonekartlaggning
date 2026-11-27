@@ -86,10 +86,14 @@ export function skapaTermer(egna) {
     return /** @type {Termer} */ (Object.freeze(ut));
 }
 
-/** Genitiv: ordet + "s", utom när det slutar på s, x eller z ("AID-etikettens", "huvudområdets", "BAS-intervalls"). */
+/**
+ * Genitiv: ordet + "s", utom när det slutar på s, x eller z ("AID-etikettens", "huvudområdets", "BAS-intervalls").
+ * En förkortning med bara versaler får kolon: "ABC:s".
+ */
 export function genitiv(ord) {
     const t = String(ord ?? '');
     if (!t.trim()) return '';
+    if (/^[A-ZÅÄÖ]{2,}$/.test(t)) return t + ':s';
     return /[sxz]$/i.test(t) ? t : t + 's';
 }
 
@@ -101,7 +105,7 @@ export function stor(text) {
 
 /**
  * Artikeln efter genus och antal: en/ett, med `bestamd` den/det, i plural de (bestämd) eller ingen (obestämd).
- * @param {Begrepp} b
+ * @param {{ genus: Genus }} b  ett begrepp, eller bara genus för ett ord utanför termerna
  * @param {{ bestamd?: boolean, plural?: boolean }} [val]
  */
 export function artikel(b, { bestamd = false, plural = false } = {}) {
@@ -216,7 +220,7 @@ export function fyllTermer(mall, termer = STANDARDTERMER) {
     });
 }
 
-/** Alla ordformer i en uppsättning, längsta först (för vakten och sökningen). */
+/** Alla ordformer i en uppsättning, längsta först (termvakten i tests/termer.test.js). */
 export function termformer(termer = STANDARDTERMER) {
     const ord = new Set();
     for (const b of TERM_BEGREPP) for (const f of TERM_FORMER) ord.add(termer[b][f]);

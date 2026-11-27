@@ -24,7 +24,7 @@ import { laLikaGrupper } from './41-lika-arbete.js';
 import { referensOverblick } from './44-referensoverblick.js';
 import { aidbasDefinition, aidbasGrans, lvJamforelse } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _handlingsplanForifyllning, _handlingsplanUnderlag, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
+import { _handlingsplanForifyllning, _hpKostnadAvser, _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP, HP_UNDERLAG_PAR, HP_UNDERLAG_PRIO } from './56-handlingsplan.js';
 import { gapVariabler } from './68-var-uppstar-gapet.js';
 import { arsjamforelse } from './73-arsbokslut.js';
 import { basdossierKandidater, basdossierStycken, basdossierYrkesrader, BD_BEDOMNING, byggBasdossier } from './81-basdossier.js';
@@ -39,6 +39,8 @@ const RAPPORT_DIAGRAM = [
 
 let _rapportBlockSenast = new Map();
 let _rapportParLage = { harPar: false, exkluderade: 0 };
+/** Rensa all data: blocken bär gruppnamn, medianer och kvoter ur det rensade underlaget. */
+export function rapportunderlagSlapp() { _rapportBlockSenast = new Map(); _rapportParLage = { harPar: false, exkluderade: 0 }; }
 
 // Maxantalet par som likvärdighetsberäkningen tar fram (samma standard som 34).
 function _ruMaxPar() { return (state.likvardighet && state.likvardighet.topN) ?? 100; }
@@ -49,7 +51,7 @@ function _rapportDiagramLista(harPar, exkluderade) { return rapportunderlagDiagr
 // redan bort par med en grupp under k, så raderna används som de är — en enda regel för
 // skärmen, Excel, utskriften och underlaget.
 function _rapportHpRader(seedRows) {
-    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: _handlingsplanUnderlag(r[2]), kostnad: r[4], kostnadAvser: _hpKostnadAvser(r[2]) }));
+    return seedRows.map(r => ({ atgard: r[0], grupp: r[1], antal: r[8] == null ? null : r[8], underlag: r[2], kostnad: r[4], kostnadAvser: _hpKostnadAvser(r[2]) }));
 }
 
 /** Alla textblock: avsnitt, yrkesgrupper, kandidatpar, förra året, per BAS-intervall och egna tabeller (visas i grupper). */

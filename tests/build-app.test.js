@@ -11,6 +11,9 @@ describe('vakten mot krock med window', () => {
         expect(krockarMedWindow('var origin = 1; function close() {} class Node {} function chrome() {} var scheduler;'))
             .toEqual(['Node', 'chrome', 'close', 'origin', 'scheduler']);
     });
+    it('fäller de inbäddade bibliotekens namn, som en del annars skulle skugga', () => {
+        expect(krockarMedWindow('var d3; function Papa() {} var XLSX, JSZip;')).toEqual(['JSZip', 'Papa', 'XLSX', 'd3']);
+    });
     it('släpper appens egna namn och namn i en funktion', () => {
         expect(krockarMedWindow('var state = {}; function ritaLikaArbete() { var close = 1; return close; }')).toEqual([]);
     });

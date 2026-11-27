@@ -3,10 +3,10 @@
 import { talformat } from '../lib/figur.js';
 import { livscykelRegression, samspelSakerstallt } from '../lib/livscykel.js';
 import { personOrd } from '../lib/namn.js';
-import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { svKr, svPct, svTal, svTecken } from '../lib/talformat.js';
 import { livscykelKurvaUtelamnad, vymodellLivscykel } from '../lib/vymodell-livscykel.js';
 import { adjektiv, stor } from '../lib/termer.js';
-import { esc } from './01-html-och-tillganglighet.js';
+import { behallFokus, esc } from './01-html-och-tillganglighet.js';
 import { antalRubrik, antalText } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { byggGrundurval, sattMetodik } from './05-tabeller-och-lankar.js';
@@ -28,6 +28,8 @@ import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
  */
 /** @type {string|null} */
 export let _livscykelValdBas = null;
+/** Rensa all data: valet var ett BAS-intervall i det rensade underlaget. */
+export function livscykelSlapp() { _livscykelValdBas = null; }
 
 /**
  * Ritar livscykelanalysen: nyckeltalen, slutsatsen, kurvorna med 95 % KI-band, översiktstabellen per BAS och
@@ -40,8 +42,7 @@ export let _livscykelValdBas = null;
  * @param {any} [given] huvudregressionen från regressionskortet i samma varv (ADR-17)
  */
 export function ritaLivscykel(given) {
-    // Flikens container är #livscykel-content (#lifecycle-content som reserv)
-    const wrap = document.getElementById('livscykel-content') || document.getElementById('lifecycle-content');
+    const wrap = document.getElementById('livscykel-content');
     if (!wrap) return;
 
     const result = korLivscykelregression(_livscykelValdBas);
@@ -49,7 +50,7 @@ export function ritaLivscykel(given) {
         wrap.innerHTML = `<div class="insight-box warn pad-18">
             <strong>${ikon('statusVarning')} Livscykelanalysen kunde inte köras</strong>
             <p class="fs-md marg-8-0-0">${esc(result.error)}</p>
-            ${result.errorCode === 'no_age' ? '' : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 ${T.niva.fl}. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.${result.errorCode === 'low_n' || result.errorCode === 'imbalance' ? provaEnskiltText() : ''}</p>`}
+            ${['no_age', 'ingen_spridning', 'inget_gemensamt_spann'].includes(result.errorCode) ? '' : `<p class="text-dampad-sm marg-8-0-0">Analysen kräver minst 50 personer totalt, minst ${statGolv()} av varje kön och minst 2 ${T.niva.fl}. Säkerställ också att kön-, ålders- och lönefält är korrekt mappade.${result.errorCode === 'low_n' || result.errorCode === 'imbalance' ? provaEnskiltText() : ''}</p>`}
         </div>`;
         return;
     }
@@ -72,16 +73,18 @@ export function ritaLivscykel(given) {
                        : '';
     const sakerOrd = p => samspelSakerstallt(p) ? 'säkerställd' : '<span class="f-dampad">inte säkerställd</span>';
     const pText = p => p < 0.001 ? '< 0,001' : svTal(p, 3);
+    // I löptext: «p < 0,001» eller «p = 0,012», aldrig «p = < 0,001».
+    const pLika = p => p < 0.001 ? '< 0,001' : `= ${svTal(p, 3)}`;
 
     const basOptions = result.basList.map(b =>
         `<option value="${esc(b)}"${b === result.fixBas ? ' selected' : ''}>BAS ${esc(b)}</option>`
     ).join('');
 
     // Sammanfattningsrutor för gap-utveckling
-    const gapStart = result.gapAt25;
-    const gapEnd   = result.gapAt65;
+    const gapStart = result.gapFran;
+    const gapEnd   = result.gapTill;
     // Nyckeltalens färg följer uppmärksamhetstrappan (ADR-59, ADR-71): modellens 95 %-intervall för skillnaden vid åldern
-    // prövar den (result.niva25, result.niva65 ur src/lib/livscykel.js). Färgen bär inte betydelsen ensam: statusens
+    // prövar den (result.nivaFran, result.nivaTill ur src/lib/livscykel.js). Färgen bär inte betydelsen ensam: statusens
     // ikon står bredvid talet och ordet i verktygstipset och för skärmläsaren (WCAG 1.4.1).
     const nyckeltal = (niva, kvot) => {
         const st = gapStatusNiva(niva);
@@ -90,10 +93,10 @@ export function ritaLivscykel(given) {
                 <span class="sr-only">${esc(st.serie)}</span>`;
     };
     // Nyckeltalen är kvinnors lön i % av mäns, som i resten av verktyget. Modellen är log-linjär och ger skillnaden
-    // (exp(skillnaden på log-skalan) − 1) × 100, så kvoten är 100 + skillnaden; förändringen 25–65 år är densamma i
+    // (exp(skillnaden på log-skalan) − 1) × 100, så kvoten är 100 + skillnaden; förändringen mellan spannets ändar är densamma i
     // procentenheter vilket mått man än läser.
-    const { kvot25, kvot65 } = vm;
-    const kvotMening = `Modellen ger skillnaden i procent, kvinnor mot män: ${gapStart >= 0 ? '+' : ''}${svPct(gapStart, 1)} vid 25 år och ${gapEnd >= 0 ? '+' : ''}${svPct(gapEnd, 1)} vid 65 år. Det är samma sak som att kvinnors lön är ${svPct(kvot25, 1)} respektive ${svPct(kvot65, 1)} av mäns, talen ovan.`;
+    const { kvotFran, kvotTill } = vm;
+    const kvotMening = `Modellen ger skillnaden i procent, kvinnor mot män: ${gapStart >= 0 ? '+' : ''}${svPct(gapStart, 1)} vid ${result.alderFran} år och ${gapEnd >= 0 ? '+' : ''}${svPct(gapEnd, 1)} vid ${result.alderTill} år. Det är samma sak som att kvinnors lön är ${svPct(kvotFran, 1)} respektive ${svPct(kvotTill, 1)} av mäns, talen ovan.`;
 
     // ====== B4: Översiktstabell — modellens lönenivåer per BAS (vm.basRader) ======
     // Minsta gruppstorlek: ett BAS-intervall under tröskeln har en koefficient skattad på få personers löner, så
@@ -114,7 +117,9 @@ export function ritaLivscykel(given) {
     // Står som en mening i tolkningen; talen finns i tabellen längst ned.
     const { adjR2Delta, mervarde: modelMervarde } = vm;
     const modellMening = adjR2Delta != null
-        ? ` Jämfört med huvudmodellen i Lönestruktur förklarar livscykelmodellen ${adjR2Delta >= 0 ? '+' : '−'}${svTal(Math.abs(adjR2Delta), 1)} procentenheter mer av lönespridningen (${modelMervarde === 'stor' ? 'ett stort' : modelMervarde === 'måttlig' ? 'ett måttligt' : 'ett litet'} tillägg${modelMervarde === 'liten' ? '; den enklare modellen räcker' : ''}).`
+        ? (svTecken(adjR2Delta, 1)
+            ? ` Jämfört med huvudmodellen i Lönestruktur förklarar livscykelmodellen ${svTal(adjR2Delta, 1)} procentenheter mer av lönespridningen (${modelMervarde === 'stor' ? 'ett stort' : modelMervarde === 'måttlig' ? 'ett måttligt' : 'ett litet'} tillägg${modelMervarde === 'liten' ? '; den enklare modellen räcker' : ''}).`
+            : ` Jämfört med huvudmodellen i Lönestruktur förklarar livscykelmodellen inte mer av lönespridningen (${svTal(adjR2Delta, 1)} procentenheter); den enklare modellen räcker.`)
         : '';
 
     // ====== B7: Regelbaserad HR-coach ======
@@ -123,23 +128,23 @@ export function ritaLivscykel(given) {
     let coachRubrik, coachText;
     if (coachKategori === 'konstant') {
         coachRubrik = 'Samma skillnad över karriären';
-        coachText = `Skillnaden ändras <strong>inte säkert</strong> med åldern (p<sub>kön×ålder</sub> = ${result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 3)}, p<sub>kön×ålder²</sub> = ${result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 3)}). Skillnaden är ungefär densamma i alla åldrar. <strong>Att utforska:</strong> lägg kraften på de strukturella analyserna (${T.niva.fl}, likvärdigt arbete) snarare än på karriären.`;
+        coachText = `Skillnaden ändras <strong>inte säkert</strong> med åldern (p<sub>kön×ålder</sub> ${pLika(result.kvAgePVal)}, p<sub>kön×ålder²</sub> ${pLika(result.kvAge2PVal)}). Förändringen i rutan bredvid är därför inte säkerställd. <strong>Att utforska:</strong> lägg kraften på de strukturella analyserna (${T.niva.fl}, likvärdigt arbete) snarare än på karriären.`;
     } else if (coachKategori === 'växande') {
         coachRubrik = 'Skillnaden växer med åldern';
-        coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns sjunker med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för kvinnor — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska löneöversynernas utfall per kön i organisationens egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringar per ${T.niva.en}, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
+        coachText = `Skillnaden är större i de högre åldrarna än i de lägre: kvinnors lön mot mäns ${result.gapDelta < 0 ? 'sjunker' : 'stiger'} med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan ${result.alderFran} och ${result.alderTill} år. Kurvorna är ett tvärsnitt och visar inte orsaken, men hypoteser att pröva är (1) <strong>föräldraledighet</strong> vars effekt samlas över karriären, (2) <strong>långsammare karriärväg</strong> för ${result.gapTill < 0 ? 'kvinnor' : 'män'} — färre steg till högre BAS, (3) <strong>lönerevisioner som slår olika</strong> år efter år. <strong>Att utforska:</strong> granska löneöversynernas utfall per kön i organisationens egna system (verktyget analyserar en kartläggning i taget), kontrollera befordringar per ${T.niva.en}, undersök om föräldralediga får samma lönelyft som heltidsarbetande.`;
     } else if (coachKategori === 'krympande') {
         coachRubrik = 'Skillnaden krymper med åldern';
-        coachText = `Skillnaden är mindre i de högre åldrarna än i de lägre: kvinnors lön mot mäns stiger med ${svTal(result.gapDelta, 1)} procentenheter mellan 25 och 65 år. Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningen för nyanställda.`;
+        coachText = `Skillnaden är mindre i de högre åldrarna än i de lägre: kvinnors lön mot mäns ${result.gapDelta < 0 ? 'sjunker' : 'stiger'} med ${svTal(Math.abs(result.gapDelta), 1)} procentenheter mellan ${result.alderFran} och ${result.alderTill} år. Kurvorna är ett tvärsnitt och visar inte orsaken, men en hypotes att pröva är att <strong>skillnaden uppstår vid rekryteringen</strong>: kvinnor och män börjar med olika ingångslöner och ligger närmare varandra i de äldre grupperna. <strong>Att utforska:</strong> granska ingångslöner per kön och BAS, undersök rekryteringsprocessen, kontrollera lönesättningen för nyanställda.`;
     } else {
         coachRubrik = 'Skillnaden är i praktiken densamma';
-        coachText = `Löneskillnaden ändras med åldern (p under 0,10), men lite: ${result.gapDelta >= 0 ? '+' : ''}${svTal(result.gapDelta, 1)} procentenheter. I praktiken är skillnaden densamma över karriären. <strong>Att utforska:</strong> behandla den som en strukturell skillnad och arbeta med huvudregressionen och ${T.niva.bfl}, inte med insatser för karriären.`;
+        coachText = `Löneskillnaden ändras med åldern (p under 0,10), men lite: ${svTecken(result.gapDelta, 1)}${svTal(result.gapDelta, 1)} procentenheter. I praktiken är skillnaden densamma över karriären. <strong>Att utforska:</strong> behandla den som en strukturell skillnad och arbeta med huvudregressionen och ${T.niva.bfl}, inte med insatser för karriären.`;
     }
 
     coachText += modellMening;
     // Slutsatsens rand följer samma regel (ADR-71): rand i statusfärg bara när skillnaden växer eller krymper. Båda
     // konstanta lägena står utan rand, som förändringen bredvid står i neutral färg: "densamma" är inte "balanserat".
 
-    // Förändringen 25–65 år färgas på prövningen, inte på storleken (ADR-71): varningsfärg när samspelet mellan kön
+    // Förändringen mellan spannets ändar färgas på prövningen, inte på storleken (ADR-71): varningsfärg när samspelet mellan kön
     // och ålder är säkerställt (interaktionSig, samma gräns som tolkningen och rutan bredvid), annars neutral. Inte
     // grön: "inte säkerställd" är inte "balanserat". Ordet står i verktygstipset och för skärmläsaren (WCAG 1.4.1).
     const forandringOrd = interaktionSig ? 'säkerställd förändring' : 'inte säkerställd';
@@ -147,29 +152,30 @@ export function ritaLivscykel(given) {
                 <span class="sr-only">${forandringOrd}</span>`;
 
     // ====== UI ======
-    wrap.innerHTML = `
+    // Ett byte i BAS-väljaren ritar om rutan: fokus står kvar på väljaren (behallFokus).
+    behallFokus(wrap, () => { wrap.innerHTML = `
         <!-- B5: KPI:er + signifikanstest -->
         <div class="summary-stats">
             <div class="stat-box">
-                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 25 år</div>
-                ${nyckeltal(result.niva25, kvot25)}
+                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, ${result.alderFran} år</div>
+                ${nyckeltal(result.nivaFran, kvotFran)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
             <div class="stat-box">
-                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, 65 år</div>
-                ${nyckeltal(result.niva65, kvot65)}
+                <div class="stat-etikett fs-xs marg-0-0-4">Kvinnors lön i % av mäns, ${result.alderTill} år</div>
+                ${nyckeltal(result.nivaTill, kvotTill)}
                 <div class="stat-under">när nivå räknats bort, enligt modellen</div>
             </div>
-            <div class="stat-box" title="Förändringen i kvinnors lön i % av mäns mellan 25 och 65 år, enligt modellen">
-                <div class="stat-etikett fs-xs marg-0-0-4">Förändring 25–65 år, procentenheter</div>
+            <div class="stat-box" title="Förändringen i kvinnors lön i % av mäns mellan ${result.alderFran} och ${result.alderTill} år, enligt modellen">
+                <div class="stat-etikett fs-xs marg-0-0-4">Förändring ${result.alderFran}–${result.alderTill} år, procentenheter</div>
                 ${forandring}
                 <div class="stat-under">minus: kvinnorna halkar efter</div>
             </div>
             <div class="stat-box" title="Test av om skillnaden förändras med åldern (kön×ålder). Vid p ≥ 0,10 är förändringen inte säkerställd.">
                 <div class="stat-etikett fs-xs marg-0-0-4">Är förändringen säkerställd?</div>
                 <div class="livscykel-provning fs-sm lh-1_5">
-                    Linjär: p = ${pText(result.kvAgePVal)}, ${sakerOrd(result.kvAgePVal)}<br>
-                    Kvadratisk: p = ${pText(result.kvAge2PVal)}, ${sakerOrd(result.kvAge2PVal)}
+                    Linjär: p ${pLika(result.kvAgePVal)}, ${sakerOrd(result.kvAgePVal)}<br>
+                    Kvadratisk: p ${pLika(result.kvAge2PVal)}, ${sakerOrd(result.kvAge2PVal)}
                 </div>
             </div>
         </div>
@@ -195,7 +201,7 @@ export function ritaLivscykel(given) {
         <!-- B4: Översiktstabell — gap-utveckling per BAS -->
         <details class="mb-14" id="livscykel-bas-tabell">
             <summary class="bak-upphojd rund-6 pekare fw-600 pad-10-14">
-                Modellens lönenivåer per ${T.niva.en} vid 25 och 65 år
+                Modellens lönenivåer per ${T.niva.en} vid ${result.alderFran} och ${result.alderTill} år
             </summary>
             <div class="pad-10-0">
                 <table class="data-table st-088">
@@ -203,12 +209,12 @@ export function ritaLivscykel(given) {
                         <tr>
                             <th>BAS</th>
                             <th class="t-hoger" title="Antal personer i organisationens ${T.niva.en}">n</th>
-                            <th class="t-hoger">Kvinna 25 år</th>
-                            <th class="t-hoger">Man 25 år</th>
-                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid 25 år, för ${T.niva.bf}; negativt när kvinnor ligger lägre">Skillnad 25 år (kr)</th>
-                            <th class="t-hoger">Kvinna 65 år</th>
-                            <th class="t-hoger">Man 65 år</th>
-                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid 65 år; negativt när kvinnor ligger lägre">Skillnad 65 år (kr)</th>
+                            <th class="t-hoger">Kvinna ${result.alderFran} år</th>
+                            <th class="t-hoger">Man ${result.alderFran} år</th>
+                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid ${result.alderFran} år, för ${T.niva.bf}; negativt när kvinnor ligger lägre">Skillnad ${result.alderFran} år (kr)</th>
+                            <th class="t-hoger">Kvinna ${result.alderTill} år</th>
+                            <th class="t-hoger">Man ${result.alderTill} år</th>
+                            <th class="t-hoger" title="Kvinnors modellön minus mäns vid ${result.alderTill} år; negativt när kvinnor ligger lägre">Skillnad ${result.alderTill} år (kr)</th>
                             <th class="t-mitt">Beräkning</th>
                         </tr>
                     </thead>
@@ -217,19 +223,19 @@ export function ritaLivscykel(given) {
                             <tr${r.bas === result.fixBas ? ' class="bg-ok-yta"' : ''}>
                                 <td><strong>${esc(r.bas)}</strong>${r.bas === result.fixBas ? ' <small class="f-dampad">(visad)</small>' : ''}</td>
                                 <td class="t-hoger">${r.n}</td>
-                                <td class="t-hoger">${svKr(r.kv25)}</td>
-                                <td class="t-hoger">${svKr(r.ma25)}</td>
-                                <td class="t-hoger halvfet">${svKr(r.gap25Kr)}</td>
-                                <td class="t-hoger">${svKr(r.kv65)}</td>
-                                <td class="t-hoger">${svKr(r.ma65)}</td>
-                                <td class="t-hoger halvfet">${svKr(r.gap65Kr)}</td>
+                                <td class="t-hoger">${svKr(r.kvFran)}</td>
+                                <td class="t-hoger">${svKr(r.maFran)}</td>
+                                <td class="t-hoger halvfet">${svKr(r.gapFranKr)}</td>
+                                <td class="t-hoger">${svKr(r.kvTill)}</td>
+                                <td class="t-hoger">${svKr(r.maTill)}</td>
+                                <td class="t-hoger halvfet">${svKr(r.gapTillKr)}</td>
                                 <td class="t-mitt"><button class="btn-evidence" type="button" data-livscykel-bas="${esc(r.bas)}" title="Visa beräkningen för BAS ${esc(r.bas)}" aria-label="Visa beräkningen för BAS ${esc(r.bas)}">${ikon('sok')}</button></td>
                             </tr>`).join('')}
                     </tbody>
                 </table>
                 ${kMaskNot(basUtelamnade, `${T.niva.en}|${T.niva.fl}`)}
                 <p class="text-dampad-xs lh-1_5 marg-10-0-0">
-                    <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapAt25, 1)} vid 25 år, ${svPct(result.gapAt65, 1)} vid 65), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
+                    <em>Talen är modellens lönenivåer, inte uppmätta medianer: kurvan räknas för det visade intervallet (${esc(result.fixBas)}) och övriga intervall får sin nivå ur modellens egna BAS-koefficienter. Skillnaden i procent, kvinnor mot män (${svPct(result.gapFran, 1)} vid ${result.alderFran} år, ${svPct(result.gapTill, 1)} vid ${result.alderTill}), är densamma för alla intervall i modellen; kronorna skiljer eftersom lönenivåerna skiljer.</em>
                 </p>
             </div>
         </details>
@@ -269,7 +275,7 @@ export function ritaLivscykel(given) {
         <p class="livscykel-modell-not text-dampad-xs lh-1_5 marg-t-10">
             Modellen bygger på ${svTal(result.n, 0)} personer och tar hänsyn till kön, ålder, åldern i kvadrat (att lönen planar ut sent i karriären), samspelet mellan kön och ålder, och ${T.niva.en}. De skuggade banden runt kurvorna visar osäkerheten. Detaljerna står under <em>Så räknas det</em> längst ned i fliken, i <em>Beräkning &amp; urval</em>.
         </p>
-    `;
+    `; });
 
     // Modellformeln och de statistiska detaljerna står i flikens beräkningspanel (Så räknas det), inte i löptexten.
     const baseL = byggGrundurval();
@@ -345,18 +351,18 @@ function _bevisForLivscykelBas(row, result, utanKurva = false) {
             utanKurva
                 ? { label: 'Nivåfaktor mot visat intervall',    value: '—', note: `Visas inte: kurvan för BAS ${result.fixBas} visas inte, eftersom intervallet har färre än ${kTroskel()} ${personOrd(kTroskel())}.` }
                 : { label: 'Nivåfaktor mot visat intervall',    value: result.basFaktor?.[row.bas] != null ? svTal(result.basFaktor[row.bas], 3) : '—', note: 'exp(β_BAS − β_visat); 1,000 för det visade intervallet.' },
-            { label: '— Predikterad lön vid 25 år',         value: '' },
-            { label: 'Kvinna',                              value: fmtKr(row.kv25) },
-            { label: 'Man',                                  value: fmtKr(row.ma25) },
-            { label: 'Skillnad, kvinnor mot män (kr)',      value: fmtKr(row.gap25Kr), note: `I procent: ${fmtPct(row.gap25Pct)}` },
-            { label: '— Predikterad lön vid 65 år',         value: '' },
-            { label: 'Kvinna',                              value: fmtKr(row.kv65) },
-            { label: 'Man',                                  value: fmtKr(row.ma65) },
-            { label: 'Skillnad, kvinnor mot män (kr)',      value: fmtKr(row.gap65Kr), note: `I procent: ${fmtPct(row.gap65Pct)}` },
+            { label: `— Predikterad lön vid ${result.alderFran} år`,         value: '' },
+            { label: 'Kvinna',                              value: fmtKr(row.kvFran) },
+            { label: 'Man',                                  value: fmtKr(row.maFran) },
+            { label: 'Skillnad, kvinnor mot män (kr)',      value: fmtKr(row.gapFranKr), note: `I procent: ${fmtPct(row.gapFranPct)}` },
+            { label: `— Predikterad lön vid ${result.alderTill} år`,         value: '' },
+            { label: 'Kvinna',                              value: fmtKr(row.kvTill) },
+            { label: 'Man',                                  value: fmtKr(row.maTill) },
+            { label: 'Skillnad, kvinnor mot män (kr)',      value: fmtKr(row.gapTillKr), note: `I procent: ${fmtPct(row.gapTillPct)}` },
             { label: '— Modellstatistik',                   value: '' },
             { label: 'Kön×ålder (linjär) p-värde',          value: result.kvAgePVal < 0.001 ? '< 0,001' : svTal(result.kvAgePVal, 4) },
             { label: 'Kön×ålder² (kvadratisk) p-värde',     value: result.kvAge2PVal < 0.001 ? '< 0,001' : svTal(result.kvAge2PVal, 4) },
-            { label: 'Förändring 25–65 år',                     value: (result.gapDelta >= 0 ? '+' : '') + svTal(result.gapDelta, 2) + ' procentenheter', note: 'Kvinnors lön mot mäns; minus betyder att kvinnorna halkar efter.' }
+            { label: `Förändring ${result.alderFran}–${result.alderTill} år`,                     value: (result.gapDelta >= 0 ? '+' : '') + svTal(result.gapDelta, 2) + ' procentenheter', note: 'Kvinnors lön mot mäns; minus betyder att kvinnorna halkar efter.' }
         ],
         formula: `<strong>Beräkning av predikterad lön per BAS:</strong><br>
             För referens-BAS "${esc(result.fixBas)}" beräknas direkt från modellen:<br>
@@ -380,8 +386,8 @@ function _livscykelFigur(r) {
     const band = (serie, farg, pred) => ({ marke: 'band', serie, farg, opacitet: 0.18, legend: false, data: pred.map(p => ({ x: p.age, lag: p.lo, hog: p.hi })) });
     const kurva = (serie, kon, farg, pred, streck) => ({ marke: 'linje', serie, farg, tjocklek: 3, streck, data: pred.map(p => ({ x: p.age, y: p.lon })),
         tips: d => [[`${kon}, ${d.x} år`], ['Predikterad lön', talformat(d.y, 'kr')]] });
-    return { beskrivning: `Predikterade lönekurvor för kvinnor och män, ålder 25 till 65, vid BAS ${r.fixBas} (valt intervall). ` +
-            `Vid 25 år är skillnaden, kvinnor mot män, ${svTal(r.gapAt25, 1)} procent, vid 65 år ${svTal(r.gapAt65, 1)} procent. Skuggade band visar 95 % konfidensintervall.`,
+    return { beskrivning: `Predikterade lönekurvor för kvinnor och män, kvinnor ${r.predKvinna[0].age}–${r.predKvinna[r.predKvinna.length - 1].age} år och män ${r.predMan[0].age}–${r.predMan[r.predMan.length - 1].age} år (underlagets åldrar), vid BAS ${r.fixBas} (valt intervall). ` +
+            `Vid ${r.alderFran} år är skillnaden, kvinnor mot män, ${svTal(r.gapFran, 1)} procent, vid ${r.alderTill} år ${svTal(r.gapTill, 1)} procent. Skuggade band visar 95 % konfidensintervall.`,
         x: { skala: 'linjar', titel: `Ålder — predikterad lönekurva för BAS ${r.fixBas} (valt intervall)` },
         y: { skala: 'linjar', titel: 'Predikterad månadslön (kr)', format: 'kr' },
         lager: [band('Kvinna 95 % KI', PALETT.kon.kvinna, r.predKvinna), band('Man 95 % KI', PALETT.kon.man, r.predMan),

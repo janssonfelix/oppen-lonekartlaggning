@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { createAppWindow, delatFonster, utgangslage, MENYFLIKAR } from './helpers/app-harness.js';
 import { las, medDecimalpunkt } from './helpers/granssnitt-rigg.js';
+import { egenText } from './helpers/attributtext.js';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -151,13 +152,13 @@ describe('samma skillnad sägs på ett sätt', () => {
         w.__ritaFlik('matrix');
         w.__ritaFlik('loneoversyn');
         const d = w.document;
-        const tvaDec = el => /[+\u2212-]?\d+,\d\d\s%/.test(el.textContent);
+        const tvaDec = el => /[+\u2212-]?\d+,\d\d\s%/.test(egenText(el));
         const ytor = ['.reg-hero', '.reg-kronor-head', '#la-slutsatser', '#lo-slutsatser', '#forecast-outcome'];
         for (const sel of ytor) {
             const el = d.querySelector(sel);
             expect(el, sel).toBeTruthy();
-            const blad = [...el.querySelectorAll('*')].filter(e => !e.children.length && !e.closest('.info-tip') && !/PO\b/.test(e.textContent));
-            expect(blad.filter(tvaDec).map(e => e.textContent.trim().slice(0, 50)), sel).toEqual([]);
+            const alla = [el, ...el.querySelectorAll('*')].filter(e => !e.closest('.info-tip') && !/PO\b/.test(egenText(e)));
+            expect(alla.filter(tvaDec).map(e => egenText(e).trim().slice(0, 50)), sel).toEqual([]);
         }
         const kort = [...d.querySelectorAll('#la-slutsatser .slutsats')].find(k => k.textContent.includes('Efter ålder och BAS-intervall'));
         expect(kort.textContent).toContain('kvinnors lön i % av mäns när dessa räknats bort');
@@ -256,12 +257,12 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         const d = w.document, r = w.eval('korLivscykelregression(_livscykelValdBas)');
         const pct = v => v.toFixed(1).replace('.', ',') + '\u00a0%';
         const rutor = [...d.querySelectorAll('#livscykel-content .stat-box')].map(b => [b.querySelector('.stat-etikett').textContent, b.querySelector('.fs-xl')?.textContent.trim()]);
-        expect(rutor[0]).toEqual(['Kvinnors lön i % av mäns, 25 år', pct(100 + r.gapAt25)]);
-        expect(rutor[1]).toEqual(['Kvinnors lön i % av mäns, 65 år', pct(100 + r.gapAt65)]);
+        expect(rutor[0]).toEqual([`Kvinnors lön i % av mäns, ${r.alderFran} år`, pct(100 + r.gapFran)]);
+        expect(rutor[1]).toEqual([`Kvinnors lön i % av mäns, ${r.alderTill} år`, pct(100 + r.gapTill)]);
         // Färgen följer trappan (ADR-59), med statusens ikon bredvid talet och ordet i verktygstipset.
         const tal = [...d.querySelectorAll('#livscykel-content .stat-box .fs-xl')].slice(0, 2);
         tal.forEach((el, i) => {
-            const st = w.eval(`gapStatusNiva(${JSON.stringify(i ? r.niva65 : r.niva25)})`);
+            const st = w.eval(`gapStatusNiva(${JSON.stringify(i ? r.nivaTill : r.nivaFran)})`);
             expect(el.dataset.niva).toBe(st.niva);
             expect(el.getAttribute('title')).toBe(st.serie);
             expect(el.querySelector('svg.ikon-' + st.ikon)).not.toBeNull();
@@ -278,7 +279,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         expect(rader.slice(0, 4).map(r => r[1])).toEqual(['—', '—', '—', '—']);
         expect(w.document.getElementById('livscykel-content').textContent).not.toContain('undefined');
     });
-    it('förändringen 25–65 år färgas på prövningen av samspelet mellan kön och ålder, inte på storleken', () => {
+    it('förändringen mellan spannets ändar färgas på prövningen av samspelet mellan kön och ålder, inte på storleken', () => {
         const w = demo();
         w.__ritaFlik('kon');
         // Samma modell med andra p-värden för samspelet och en annan förändring: bara prövningen avgör färgen.
@@ -287,7 +288,7 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
             try { w.eval('ritaLivscykel()'); }
             finally { w.eval('korLivscykelregression = __lcOrig; delete globalThis.__lcOrig;'); }
             const box = [...w.document.querySelectorAll('#livscykel-content .stat-box')]
-                .find(b => b.querySelector('.stat-etikett').textContent.startsWith('Förändring 25–65 år'));
+                .find(b => b.querySelector('.stat-etikett').textContent.startsWith('Förändring '));
             return { tal: box.querySelector('.fs-xl'), sr: box.querySelector('.sr-only')?.textContent };
         };
         // Säkerställd (p < 0,10, samma gräns som tolkningen), också när förändringen är liten: varningsfärg.
@@ -312,8 +313,9 @@ describe('ett statusordförråd och ett mått i nyckeltalen', () => {
         expect(lop).not.toMatch(/(^|[\s(>])ns([\s).,<]|$)/);   // \b räcker inte: å, ä och ö räknas inte som bokstäver där
         expect(lop).not.toMatch(/log\(lön\)|HC3|C\(BAS\)|referensintervall/);
         const saker = [...d.querySelectorAll('#livscykel-content .stat-box')].find(b => /säkerställd\?/.test(b.textContent));
-        const ord = p => p < 0.10 ? 'säkerställd' : 'inte säkerställd';
-        expect(saker.querySelector('.livscykel-provning').textContent.replace(/\s+/g, ' ')).toContain(`Linjär: p = ${r.kvAgePVal < 0.001 ? '< 0,001' : r.kvAgePVal.toFixed(3).replace('.', ',')}, ${ord(r.kvAgePVal)}`);
+        // Demodatans p-värden för samspelet mellan kön och ålder, skrivna ut: provet räknar inte texten med kodens formel.
+        expect(r.kvAgePVal).toBeCloseTo(0.5994, 4);
+        expect(saker.querySelector('.livscykel-provning').textContent.replace(/\s+/g, ' ')).toContain('Linjär: p = 0,599, inte säkerställd Kvadratisk: p = 0,130, inte säkerställd');
         expect(d.querySelector('#livscykel-content .livscykel-stjarnor').textContent).toContain('*** p < 0,001');
         expect(d.querySelector('#livscykel-content .livscykel-modell-not').textContent)
             .toMatch(/bygger på [\d\s\u00a0]+ personer och tar hänsyn till kön, ålder, åldern i kvadrat.*samspelet mellan kön och ålder.*BAS-intervall.*Så räknas det.*Beräkning & urval/s);

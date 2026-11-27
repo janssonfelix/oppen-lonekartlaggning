@@ -19,7 +19,7 @@ regressionerna står i [`regressionsmodellen.md`](regressionsmodellen.md) §3.
 | Vymodellen för fliken (ADR-99): felresultatet och flikens diagnostik, antalet små grupper vid k, om jämförelsen kan genomföras, antalen och det största paret, parets säkerhet, varför den åldersjusterade skillnaden saknas, diagrammet *Krav mot lön* och raderna i diagrammet över kandidatparen | `src/lib/vymodell-likvardigt-arbete.js` |
 | Adaptern som läser appens tillstånd, och det som ritar fliken, diagrammen och flikens CSV- och Excel-export | `src/app/34-likvardigt-arbete.js` |
 | Inställningarna och deras standardvärden | `state.likvardighet` i `src/app/12-tillstand.js` |
-| Definitionen i appen (`kvDomNu`, `konsklassNu`, `aidbasDefinition`, `lvJamforelse`) | `src/app/45-aid-bas-tabeller.js` |
+| Definitionen i appen (`konsklassNu`, `aidbasDefinition`, `aidbasGrans`, `lvJamforelse`) | `src/app/45-aid-bas-tabeller.js` |
 | Reserven för kvinnoandel (`nationellAidKlass`) och regeln för paren utanför fliken (`_parForRedovisning`) | `src/app/06-kvinnoandel-referens.js` (`nationellAidKlass`), `src/app/06-k-troskel.js` (`_parForRedovisning`), `src/lib/skrreferens.js` |
 | Poängen ur lönefilen (`_harledArbetsvarderingUrData`) | `src/app/32-filinlasning.js` |
 | Vakterna | avsnitt 9 |
@@ -73,7 +73,7 @@ Valen heter efter lydelsen, inte efter en avsändare (ADR-72): namnen och texter
 
 **Valet** görs i Likvärdigt arbetes inställningar och gäller hela verktyget: kvinnotröskeln
 (`state.likvardighet.kvinnoTrosholdPct`) och definitionen (`state.likvardighet.kvDomDefinition`, standard `'do'`).
-I appen läses de genom `aidbasDefinition()` och `aidbasGrans()`, och `kvDomNu(pct)` och `konsklassNu(pct)` i
+I appen läses de genom `aidbasDefinition()` och `aidbasGrans()`, och `konsklassNu(pct)` i
 `45-aid-bas-tabeller.js` anropar definitionen med dem. Texterna säger gränsen med valets lydelse, *mer än 60 %
 kvinnor* eller *60 % kvinnor eller mer*: i appen `kvDomGransText()` och i rapportunderlaget `avsnittBlock`, båda med
 `kvDefinitionText`.
@@ -90,7 +90,7 @@ kvinnodominerad med *X % eller mer* vid gränsen 60. Ordlistan (*Jämn könsför
 - `dominans` i `src/lib/aidbas.js` (tabellerna per AID-kod och BAS-intervall, ADR-57, och Lika arbetes kolumn
   Dominans genom `src/lib/vymodell-lika-arbete.js`), med `arJamforelseKlass` för jämförelsemängden (avsnitt 4).
 - `prognosutfall` i `src/lib/loneoversyn.js`: Löneöversynens *Varav till kvinnodominerade grupper*.
-- I appen genom `kvDomNu`/`konsklassNu`: Löneöversynens massregel (`36-loneoversyn.js`), diagrammet Krav mot lön
+- I appen genom `aidbasDefinition`/`aidbasGrans` och `konsklassNu`: Löneöversynens massregel (`36-loneoversyn.js`), diagrammet Krav mot lön
   (`34-likvardigt-arbete.js`), Lönepolitikens diagram (`75-lonepolitik.js`) och uppslaget i den nationella statistiken
   (`nationellAidKlass`, avsnitt 4; likvärdighetsanalysen läser bara andelen därifrån).
 - Prioriteringen klassar inga grupper efter könsdominans (dess jämställdhetsmått bygger på gapet) och berörs inte.
@@ -153,7 +153,11 @@ etiketten och prefixet i båda delarna — och en kod med tre siffror som prefix
 **BAS-läget** (standard, när lönefilen saknar poäng): `byggPar` jämför **inom samma BAS-intervall**. För varje
 kvinnodominerad AID-etikett används i första hand organisationens **egna** jämförelseetiketter i intervallet (`jamforKalla`
 `'intern'`). Saknas sådana i intervallet används **jämförelsestatistiken** som reserv (`'extern'`), och diagnostiken
-räknar det i `basMedExternFallback`. Saknas båda bildas inga par för AID-etiketten.
+räknar det i `basMedExternFallback`. Statistikens rad för **samma AID-kod** som den kvinnodominerade AID-etiketten hoppas
+över: samma kod på båda sidor jämför löneläget (fliken Löneläget), inte likvärdigt arbete. Raden kan annars bli
+jämförelseetikett när andelen kvinnor klassas olika hos organisationen och i statistiken. Den räknas inte i
+`basMedExternFallback` eller `möjligaPar`; är den intervallets enda rad finns ingen reserv. Saknas båda bildas inga par
+för AID-etiketten.
 
 **Poängläget.** Har lönefilen kolumnen Poäng bygger `_harledArbetsvarderingUrData` en tabell `aid|bas` → poäng
 (det första värdet per grupp) i `state.arbetsvardering.byKey`, och `byggParPoang` ersätter `byggPar`. En

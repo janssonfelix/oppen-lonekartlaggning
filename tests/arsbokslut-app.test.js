@@ -254,7 +254,7 @@ describe('lönespridningen i bokslutet, i panelen och i rapportens tabell per BA
 describe('ett bokslut sparat med lägre tröskel än årets', () => {
     // Förra årets fil med k = 1 eller 5; i år gäller 10. Intervall och kön under 10 får inte lämna verktyget.
     const SMALL = [77771, 77777, 77779, 66661, 66663];
-    const lagK = k => {
+    const lagCfg = k => {
         const a = fonster(null);
         const cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
         cfg.arsbokslut.ar -= 1; cfg.arsbokslut.skapat = `${cfg.arsbokslut.ar}-11-01`; cfg.arsbokslut.k = k;
@@ -262,9 +262,9 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
         cfg.arsbokslut.basIntervall.push(k === 1 ? { bas: MELLAN[0], n: 1, nKv: 1, nMa: 0, p10: 77771, med: 77777, p90: 77779 }
             : { bas: MELLAN[0], n: 7, nKv: 4, nMa: 3, p10: 77771, med: 77777, p90: 77779 });
         cfg.arsbokslut.basIntervall.push({ bas: STORA[0], n: 150, nKv: k === 1 ? 1 : 6, nMa: 149, p10: 24000, med: 24400, p90: 24800, medKv: 66661, medMa: 66663 });
-        const w = fonster(null); w.__cfg = cfg; w.eval('tillampaKonfiguration(window.__cfg)');
-        return w;
+        return cfg;
     };
+    const lagK = k => { const w = fonster(null); w.__cfg = lagCfg(k); w.eval('tillampaKonfiguration(window.__cfg)'); return w; };
     for (const k of [1, 5]) {
         it(`k = ${k} i filen: inga små intervall eller kön i panelen, i rapportmodellen eller i BAS-dossierns text`, () => {
             const w = lagK(k);
@@ -285,6 +285,13 @@ describe('ett bokslut sparat med lägre tröskel än årets', () => {
             expect(modell).not.toMatch(/respektive års gräns/);
         });
     }
+    it('utan lönefil skriver konfigurationsfilen det inlästa bokslutet med årets tröskel', () => {
+        const w = createAppWindow(); w.__cfg = lagCfg(5); w.eval('tillampaKonfiguration(window.__cfg)');
+        expect(w.__state.data.length).toBe(0);
+        const ut = w.__byggKonfiguration().arsbokslut;
+        expect(ut.k).toBe(10);
+        for (const s of SMALL) expect(JSON.stringify(ut)).not.toContain(String(s));
+    });
 });
 
 describe('årets bokslut bär de sakliga skälen', () => {

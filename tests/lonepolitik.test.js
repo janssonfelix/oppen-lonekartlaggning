@@ -6,9 +6,10 @@
 import { describe, it, expect } from 'vitest';
 import {
     bandlage, gruppMotBand, antalMotBand,
-    konsskillnadIBand, kostnadTillGolv, tackningsgrad, organisationsBand,
+    konsskillnadIBand, tackningsgrad, organisationsBand,
     lonepolitikModell, maskeringsniva, lagesklass, konLagen
 } from '../src/lib/lonepolitik.js';
+import { lageISpann } from '../src/lib/referenser.js';
 
 const pol = { p10: 30000, med: 35000, p90: 40000 };
 
@@ -92,20 +93,6 @@ describe('[B6.3] konsskillnadIBand', () => {
     });
 });
 
-describe('kostnadTillGolv', () => {
-    it('summerar bara underskottet upp till P10', () => {
-        const rows = [{ lon: 28000 }, { lon: 29000 }, { lon: 35000 }];
-        const c = kostnadTillGolv(rows, pol);
-        expect(c.nAffected).toBe(2);
-        expect(c.totalMonth).toBe(3000);   // 2000 + 1000
-    });
-
-    it('noll när alla ligger på eller över golvet', () => {
-        const c = kostnadTillGolv([{ lon: 30000 }, { lon: 45000 }], pol);
-        expect(c.nAffected).toBe(0);
-        expect(c.totalMonth).toBe(0);
-    });
-});
 
 describe('tackningsgrad', () => {
     it('räknar täckning i både grupper och personer', () => {
@@ -131,12 +118,6 @@ describe('inverterat band (P10 >= P90) — malformerad policydata', () => {
     it('antalMotBand returnerar null i stället för att räkna på felvänt band', () => {
         expect(antalMotBand([{ lon: 35000 }, { lon: 45000 }], inv)).toBeNull();
         expect(antalMotBand([{ lon: 35000 }], { p10: 30000, p90: 30000 })).toBeNull();
-    });
-    it('kostnadTillGolv avvisar felvänt band men räknar när taket saknas', () => {
-        expect(kostnadTillGolv([{ lon: 35000 }], inv)).toBeNull();
-        const utanTak = kostnadTillGolv([{ lon: 28000 }], { p10: 30000, med: 0, p90: 0 });
-        expect(utanTak.nAffected).toBe(1);
-        expect(utanTak.totalMonth).toBe(2000);
     });
     it('bandlage avvisar också ett felvänt band', () => {
         expect(bandlage(35000, inv.p10, inv.p90)).toBeNull();
@@ -182,6 +163,10 @@ describe('[B6.2] lonepolitikModell', () => {
         expect(m.byBas[0].orgBand).toBeNull();
         expect(m.coverage).toMatchObject({ groupsTotal: 3, groupsCovered: 2, personsTotal: 9, personsCovered: 8 });
     });
+    it('en referens utan P10 och P90 räknas inte som täckning', () => {
+        const m = lonepolitikModell(rader, { ...opt, policyFor: (aid, bas) => (bas === 'B' ? { bas: 'B', p10: 0, med: 33000, p90: 0 } : null) });
+        expect(m.coverage).toMatchObject({ groupsCovered: 0, personsCovered: 0 });
+    });
     it('utan ställningstagande byggs ingen modell', () => {
         expect(lonepolitikModell(rader, { ...opt, harPolicy: false })).toEqual({ byBas: [], coverage: null, hasPolicy: false });
     });
@@ -193,5 +178,10 @@ describe('[B6.2] lonepolitikModell', () => {
         expect([-0.1, 0, 0.34, 0.67, 1.01].map(lagesklass)).toEqual([0, 1, 2, 3, 4]);
         const ut = konLagen([{ lon: 28000, kon: 'kvinna' }, { lon: 33000, kon: 'man' }, { lon: 0, kon: 'man' }], pol);
         expect(ut).toEqual({ kv: [1, 0, 0, 0, 0], ma: [0, 0, 1, 0, 0] });
+    });
+    it('tredjedelarna har samma gränser som läget i spannet i Löneläget: 33 och 67, som hör till den övre delen', () => {
+        const ord = ['nedanför', 'i nedre delen', 'mitt i', 'i övre delen', 'ovanför'];
+        for (const pos of [-0.1, 0, 0.2, 0.33, 0.333, 0.5, 0.66, 0.666, 0.67, 0.9, 1, 1.01])
+            expect(ord[lagesklass(pos)], String(pos)).toBe(lageISpann(100 + 100 * pos, { p10: 100, p90: 200 }).ord);
     });
 });

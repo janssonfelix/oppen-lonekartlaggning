@@ -2,9 +2,9 @@
 // Copyright 2026 Felix Jansson
 import { kronorTipsRad, talformat } from '../lib/figur.js';
 import { arKvinna, arMan } from '../lib/kon.js';
-import { personOrd } from '../lib/namn.js';
+import { kvinnorOchMan, personOrd } from '../lib/namn.js';
 import { omfang } from '../lib/struktur.js';
-import { svPct, svTal } from '../lib/talformat.js';
+import { svPct, svTal, svTecken } from '../lib/talformat.js';
 import { adjektiv, ordForAntal, stor } from '../lib/termer.js';
 import { alderBandRader, alderGapRader, ALDERSKLASSER, konHistogram, ladaPerKon, lonefordelningPerBas, multiplarPaneler, MULTIPLAR_MAX, MULTIPLAR_PUNKTER, vymodellAlderOchLon, vymodellAldersstruktur } from '../lib/vymodell-alder-karriar.js';
 import { FARG } from './01-farger.js';
@@ -33,6 +33,15 @@ function _akTomUtanAlder() {
     tomFlikarUtom(andra);
 }
 /**
+ * Urvalet har färre än två personer med ålder: det förra urvalets diagram, nyckeltal och avsnittsnycklar står inte kvar
+ * under det nya, där de också kunde läsas av en export.
+ */
+function _akTomtUrval(diagram, tal, nycklar) {
+    for (const id of diagram) rensaFigur(id);
+    for (const id of tal) { const el = document.getElementById(id); if (el) el.textContent = '-'; }
+    for (const id of nycklar) _laNyckel(id, '');
+}
+/**
  * Lönedelen av fliken (ADR-99): vymodellAlderOchLon i src/lib/vymodell-alder-karriar.js räknar, maskerar och väljer;
  * här ritas nyckeltalen, noterna och diagrammen ur den.
  */
@@ -43,17 +52,24 @@ export function ritaAlderOchLon(bas) {
     // (beslut av produktägaren 2026-10-16).
     const trendAlla = !!(/** @type {HTMLInputElement|null} */ (document.getElementById('kon-trend-alla'))?.checked);
     const vm = vymodellAlderOchLon(hamtaData(), { bas, k, statistik: state.statistik, termer: T, trendAlla });
-    if (!vm) return;
+    if (!vm) {
+        _akTomtUrval(['chart-kon-scatter', 'chart-kon-boxplot', 'chart-kon-aldergap', 'chart-kon-histogram'],
+            ['kon-kpi-n', 'kon-kpi-gap', 'kon-kpi-agegap', 'kon-kpi-slope'], ['nyckel-ak-fordelning']);
+        { const u = document.getElementById('ak-urval-text'); if (u) u.textContent = ''; }
+        const insikt = document.getElementById('p-value-insight');
+        if (insikt) insikt.textContent = `${bas === '__ALLA__' ? 'Hela urvalet' : `BAS ${bas}`}: färre än två personer med ålder, inget att visa.`;
+        return;
+    }
     const { isAll, df, dataKv, dataMa, kvOk, maOk, konOk, kvot, trendKv, trendMa } = vm;
     const unadjGap = kvot != null ? svPct(kvot, 1) : "–";
     const ageAdjGap = vm.vidSammaAlder != null ? svPct(vm.vidSammaAlder, 1) : "–";
     // Urvalsraden och avsnittens nyckeltal (ADR-41).
     const urvalText = document.getElementById('ak-urval-text');
-    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} personer · minsta gruppstorlek ${kInstalld()}`;
+    if (urvalText) urvalText.textContent = `${svTal(df.length, 0)} ${personOrd(df.length)} · minsta gruppstorlek ${kInstalld()}`;
     _laNyckel('nyckel-ak-fordelning', kvot != null ? `Kvinnors median ${unadjGap} av mäns` : '');
     _laNyckel('nyckel-ak-alla', `${hamtaBasIntervall().length} ${ordForAntal(hamtaBasIntervall().length, T.niva)}`);
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-n")).textContent = svTal(df.length, 0);
-    { const u = document.getElementById("kon-kpi-n-under"); if (u) u.textContent = `${svTal(dataKv.length, 0)} kvinnor · ${svTal(dataMa.length, 0)} män`; }
+    { const u = document.getElementById("kon-kpi-n-under"); if (u) u.textContent = kvinnorOchMan(svTal(dataKv.length, 0), svTal(dataMa.length, 0), ' · '); }
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-gap")).textContent = unadjGap;
     const ageGapEl = /** @type {HTMLElement} */ (document.getElementById("kon-kpi-agegap"));
     ageGapEl.textContent = ageAdjGap;
@@ -61,7 +77,7 @@ export function ritaAlderOchLon(bas) {
     // sätts i Lika arbete, där skillnaden prövas mot slumpen.
     { const u = document.getElementById("kon-kpi-agegap-under");
       if (u) { u.textContent = "kvinnors lön i % av mäns"; u.classList.remove("ar-granska"); } }
-    const lutning = reg => (reg ? `${reg.m >= 0 ? '+' : '−'}${svTal(Math.abs(reg.m), 0)}` : '–');
+    const lutning = reg => (reg ? `${svTecken(reg.m)}${svTal(reg.m, 0)}` : '–');
     /** @type {HTMLElement} */ (document.getElementById("kon-kpi-slope")).textContent = `${lutning(trendKv)} / ${lutning(trendMa)} kr`;
     const insightEl = document.getElementById("p-value-insight");
     if (insightEl) {
@@ -80,12 +96,12 @@ export function ritaAlderOchLon(bas) {
     const skal = `färre än ${k} ${personOrd(k)} av ${kvOk || maOk ? 'könet' : 'vartdera könet'} finns i urvalet`;
     ritaFigur('chart-kon-scatter', _konPunktmolnFigur({
         df, dataKv, dataMa, isAll, colorBy, minAlder: vm.minAlder, maxAlder: vm.maxAlder, statMedian: vm.statMedian, liten: vm.liten, trendAlla: vm.trendAlla,
-        trendKv, trendMa, ciKv: vm.ciKv, ciMa: vm.ciMa, pol: isAll ? null : policyFor(null, bas),
-        beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${dataKv.length} kvinnor och ${dataMa.length} män. ` +
+        trendKv, trendMa, spannKv: vm.spannKv, spannMa: vm.spannMa, ciKv: vm.ciKv, ciMa: vm.ciMa, pol: isAll ? null : policyFor(null, bas),
+        beskrivning: `Spridningsdiagram lön mot ålder för ${scope2}. ${kvinnorOchMan(dataKv.length, dataMa.length, ' och ')}. ` +
             (konOk && trendKv && trendMa ? `Kvinnors trend ${trendOrd(trendKv)}, mäns ${trendOrd(trendMa)}. `
                    : `${trendKv ? `Kvinnors trend ${trendOrd(trendKv)}. ` : ''}${trendMa ? `Mäns trend ${trendOrd(trendMa)}. ` : ''}${utan ? `Trendlinje visas inte för ${utan}: ${skal}. ` : ''}`) +
             `Ojusterad löneskillnad: ${unadjGap}. Vid samma ålder: ${ageAdjGap}.` +
-            (vm.trendAlla ? ` Trend för hela urvalet: ${vm.trendAlla.m >= 0 ? '+' : '−'}${svTal(Math.abs(vm.trendAlla.m), 0)} kr per år.` : '') }), { hojd: 420 });
+            (vm.trendAlla ? ` Trend för hela urvalet: ${svTecken(vm.trendAlla.m)}${svTal(vm.trendAlla.m, 0)} kr per år.` : '') }), { hojd: 420 });
     // En låda är könets kvartiler: den ritas bara för ett kön som når tröskeln. Lådorna kan räknas för en sektor eller
     // en åldersgrupp (figur.underlag), med samma regel och samma k som vyn (ladaPerKon): resten är de övriga i fliken
     // urval, det valda BAS-intervallet eller hela urvalet.
@@ -104,27 +120,22 @@ export function ritaAlderOchLon(bas) {
     _ritaTungtBlock('kon', ['chart-kon-aldergap', 'kon-aldergap-not'], () => ritaAlderGap(dataKv, dataMa, scope2));
 }
 
-// ---- Lönefördelningen per BAS-intervall (lådmärket: lådor, täthetskurvor eller kvantilpunkter) ----
-// En figur per BAS-intervall — eller per kön i varje intervall — över alla i urvalet. Ritas som lådor i Lönestruktur
-// (*Lönespridning per BAS-intervall och kön*); täthetskurvorna i Ålder & karriär är borttagna (översynen 2026-10-29),
-// formerna finns kvar för andra anropare. En figur är ett aggregat som lådan: en individ är `liten` när intervallet,
-// eller könet i intervallet, är under tröskeln, och ritas då inte.
+// ---- Lönespridningen per BAS-intervall och kön (lådor) ----
+// En låda per BAS-intervall, eller per kön i varje intervall, över alla i urvalet: Lönestruktur, *Lönespridning per
+// BAS-intervall och kön*. En låda är ett aggregat: en individ är `liten` när intervallet, eller könet i intervallet,
+// är under tröskeln, och ritas då inte.
 // Vilka som är små, vilka som saknas och ordningen är lonefordelningPerBas i src/lib/vymodell-alder-karriar.js.
-export function _konTathetFigur(rader, perKon, k = kTroskel(), form = 'fiol') {
+export function _konTathetFigur(rader, perKon, k = kTroskel()) {
     const { punkter, utelamnade, ordning } = lonefordelningPerBas(rader, perKon, k);
     const serier = perKon ? [['Kvinna', PALETT.kon.kvinna], ['Man', PALETT.kon.man]] : [['Alla', PALETT.serie[0]]];
     const lager = serier.map(([namn, farg]) => ({
-        marke: 'lada', ...(form === 'fiol' ? { form: 'fiol' } : form === 'kvantiler' ? { form: 'kvantiler', antal: 20 } : { avvikare: false }), serie: namn, farg,
+        marke: 'lada', avvikare: false, serie: namn, farg,
         data: punkter.filter(p => !perKon || p.kon === namn).map(({ rad: r, liten }) => ({ x: 'BAS ' + r.bas, y: r.lon, bas: r.bas, markering: markeringFor(r.bas), ...(liten ? { liten: true } : {}) })),
         tips: (d, s) => (s ? [[d.x], ..._kvantilTipsRader(s), [perKon ? `${namn}, median` : 'Median', talformat(s.median, 'kr')],
                                ['Kvartiler', `${talformat(s.q1, 'kr', { enhet: false })}–${talformat(s.q3, 'kr')}`], ['Antal', String(s.n)]] : [[d.x]])
     })).filter(l => l.data.length);
-    if (form === 'kvantiler') return { utelamnade, figur: { beskrivning: `Lönefördelningen per ${T.niva.en}${perKon ? ' och kön' : ''} som kvantilpunkter: varje prick är en tjugondel av gruppen (i små grupper en större andel, aldrig färre än två personer), lagd vid den lönen. Räkna prickarna under en lön för att se hur stor andel som tjänar mindre. Inga enskilda löner visas.`,
-        legend: perKon ? undefined : false, urval: URVAL.bas, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
-    if (form !== 'fiol') return { utelamnade, figur: { beskrivning: `Lönespridningen per ${T.niva.en} och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. ${stor(T.niva.fl)} där ett kön har färre än ${k} ${personOrd(k)} visas inte för det könet.`,
+    return { utelamnade, figur: { beskrivning: `Lönespridningen per ${T.niva.en} och kön som lådagram: lådan är mittersta hälften av lönerna (första till tredje kvartilen), strecket i lådan medianen. Enstaka löner utanför morrhåren visas inte. Överlappar kvinnors och mäns lådor i ett intervall ligger könen på samma nivå där. ${stor(T.niva.fl)} där ett kön har färre än ${k} ${personOrd(k)} visas inte för det könet.`,
         urval: URVAL.bas, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 380, lager } };
-    return { utelamnade, figur: { beskrivning: `Lönefördelningen per ${T.niva.en}${perKon ? ' och kön' : ''} som täthetskurvor: kurvan är bredast där flest löner ligger. Strecken är median och kvartiler. Kurvan slutar vid morrhårens ändar; enstaka löner långt utanför visas inte.`,
-        legend: perKon ? undefined : false, urval: URVAL.bas, x: { skala: 'band', ordning }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' }, hojd: 420, lager } };
 }
 
 const _konTkr = v => talformat(v / 1000, Number.isInteger(v / 1000) ? 'antal' : undefined);
@@ -162,7 +173,7 @@ function _konAlderGapFigur(rader, scope) {
         y: { skala: 'band', ordning: rader.map(o => o.namn) },
         x: { skala: 'linjar', titel: 'Kvinnors median i % av mäns — 100 = lika lön', doman: [Math.floor(Math.min(90, ...alla) - 2), Math.ceil(Math.max(105, ...alla) + 2)] },
         hojd: Math.max(180, 110 + rader.length * 34),
-        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: '±3 %' }, { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
+        referens: [{ typ: 'zon', x0: 97, x1: 103, farg: PALETT.semantic.ok, opacitet: 0.08, etikett: '±3\u00a0%' }, { x: 100, farg: PALETT.semantic.mork, tjocklek: 1.5 }],
         lager: _SKEVHET_STATUS.map(s => ({ marke: 'punkt', riktning: 'liggande', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg],
             data: rader.filter(o => status(o) === s).map(pkt), tips })).filter(l => l.data.length) };
 }
@@ -173,14 +184,14 @@ function ritaAlderGap(dataKv, dataMa, scope) {
     if (not) { not.hidden = !dolda.length; not.textContent = dolda.length ? `Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${dolda.join(', ')}.` : ''; }
     if (!visade.length) {
         rensaFigur(el);
-        el.innerHTML = `<p class="text-dampad-sm marg-8-0">Ingen åldersgrupp har minst ${k} kvinnor och ${k} män.</p>`;
+        el.innerHTML = `<p class="text-dampad-sm marg-8-0">Ingen åldersgrupp har minst ${kvinnorOchMan(k, k, ' och ')}.</p>`;
         return;
     }
     // Kan räknas för en sektor eller en yrkesgrupp (figur.underlag): samma beräkning och samma tröskel per åldersgrupp.
     // Resten är de övriga kvinnorna och männen i fliken urval.
     const rita = (rader, { beskrivning }) => {
         const r = alderGapRader(rader.filter(d => arKvinna(d)), rader.filter(d => arMan(d)), k);
-        return r.visade.length ? _konAlderGapFigur(r.visade, `${scope}, ${beskrivning}`) : `Ingen åldersgrupp har minst ${k} kvinnor och ${k} män i urvalet.`;
+        return r.visade.length ? _konAlderGapFigur(r.visade, `${scope}, ${beskrivning}`) : `Ingen åldersgrupp har minst ${kvinnorOchMan(k, k, ' och ')} i urvalet.`;
     };
     ritaFigur(el, { ..._konAlderGapFigur(visade, scope), underlag: { dimensioner: [UNDERLAG.sektor, UNDERLAG.yrkesgrupp], rader: [...dataKv, ...dataMa], k, rita } });
 }
@@ -262,7 +273,7 @@ const _vagratLinje = (serie, farg, y, a0, a1, val = {}) => ({ marke: 'linje', se
 // inte döljas av dem. Med ett aktivt filter räknas trendlinjerna, konfidensbanden och hela urvalets trend om ur de
 // synliga punkterna (harleddAv, samma funktioner som här) och ritas inte när källan har färre än k synliga punkter.
 /** @param {{[k: string]: any, liten?: (rad: any) => boolean}} val */
-function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
+function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxAlder, statMedian, trendKv, trendMa, spannKv, spannMa, trendAlla = null, ciKv, ciMa, pol, beskrivning, liten = () => false }) {
     const punkt = (d, medKon) => ({ x: d.alder, y: d.lon, yrke: d.yrke, alder: d.alder, lon: d.lon, ...(isAll || medKon ? { bas: d.bas } : {}),
                                     ...(medKon ? { kon: arKvinna(d) ? 'Kvinna' : 'Man' } : {}), ...(liten(d) ? { liten: true } : {}),
                                     markering: markeringFor(d.bas, d.yrke) });
@@ -294,14 +305,15 @@ function _konPunktmolnFigur({ df, dataKv, dataMa, isAll, colorBy, minAlder, maxA
         [...grupper].forEach(([namn, rader], i) => lager.push(
             punktlager(colorBy === 'bas' ? `BAS-${namn}` : namn, PALETT.serie[i % PALETT.serie.length], rader, true)));
     }
-    const trend = (serie, farg, reg, kon) => {
+    // Ett köns linje går över könets egna åldrar (vymodellAlderOchLon), inte över urvalets.
+    const trend = (serie, farg, reg, kon, [a0, a1]) => {
         if (!reg) return;
-        const l = _vagratLinje(serie, farg, 0, minAlder, maxAlder, { tjocklek: 3, streck: colorBy === 'kon' ? 'hel' : 'streckad',
-            data: [{ x: minAlder, y: reg.m * minAlder + reg.b }, { x: maxAlder, y: reg.m * maxAlder + reg.b }] });
+        const l = _vagratLinje(serie, farg, 0, a0, a1, { tjocklek: 3, streck: colorBy === 'kon' ? 'hel' : 'streckad',
+            data: [{ x: a0, y: reg.m * a0 + reg.b }, { x: a1, y: reg.m * a1 + reg.b }] });
         lager.push(l); harledda.push([l, kon]);
     };
-    trend('Kvinna (trend)', PALETT.kon.kvinna, trendKv, 'Kvinna');
-    trend('Man (trend)', PALETT.kon.man, trendMa, 'Man');
+    trend('Kvinna (trend)', PALETT.kon.kvinna, trendKv, 'Kvinna', spannKv);
+    trend('Man (trend)', PALETT.kon.man, trendMa, 'Man', spannMa);
     const allaNamn = reg => `Hela urvalet (trend, R² = ${svTal(reg.r2, 2)})`;
     if (trendAlla) lager.push({ ..._vagratLinje(allaNamn(trendAlla), PALETT.semantic.trend, 0, minAlder, maxAlder, { tjocklek: 2, streck: 'streckad',
         data: [{ x: minAlder, y: trendAlla.m * minAlder + trendAlla.b }, { x: maxAlder, y: trendAlla.m * maxAlder + trendAlla.b }] }),
@@ -341,7 +353,7 @@ function _konLadFigurFor({ lonKv, lonMa, nKv, nMa, utan }, scope, k) {
     if (!lonKv && !lonMa) return _konUtelamnatNot();
     const skal = `färre än ${k} ${personOrd(k)} av könet finns i urvalet`;
     return _konLadFigur({ lonKv, lonMa,
-        beskrivning: `Lådagram av lönefördelning per kön för ${scope}. ${nKv} kvinnor, ${nMa} män.`
+        beskrivning: `Lådagram av lönefördelning per kön för ${scope}. ${kvinnorOchMan(nKv, nMa)}.`
             + (utan ? ` Lådan visas inte för ${utan}: ${skal}.` : '') });
 }
 // Lådagrammet per kön: ett lager, en kategori per kön som når tröskeln (null = könet redovisas inte).
@@ -374,7 +386,13 @@ function _akValj(varde, kalla) {
 export function ritaAldersstruktur(bas) {
     if (!harAlder()) { _akTomUtanAlder(); return; }
     const vm = vymodellAldersstruktur(hamtaData(), { bas, k: kTroskel(), alla: state.data });
-    if (!vm) return;
+    if (!vm) {
+        _akTomtUrval(['chart-demo-hist', 'chart-demo-pyramid', 'chart-demo-agecurve', 'chart-demo-spread'],
+            ['demo-kpi-age', 'demo-kpi-senior', 'demo-kpi-junior', 'demo-kpi-iqr'], ['nyckel-ak-struktur', 'nyckel-ak-lon']);
+        const risk = document.getElementById('demo-risk-insight');
+        if (risk) risk.style.display = 'none';
+        return;
+    }
     const { isAll, n, pctKv, pctMa, andel60, andelU40, alderDiff, orgMedian } = vm;
     const scopeShort = isAll ? 'urvalet' : T.niva.bf;
     const ageEl = document.getElementById('demo-kpi-age');
@@ -385,7 +403,7 @@ export function ritaAldersstruktur(bas) {
     const ageSubEl = document.getElementById('demo-kpi-age-sub');
     if (ageSubEl) {
         ageSubEl.textContent = isAll
-            ? `${n} personer i organisationen`
+            ? `${n} ${personOrd(n)} i organisationen`
             : `${alderDiff>=0?'+':''}${svTal(alderDiff, 1)} år mot organisationen (${svTal(orgMedian, 0)} år)`;
     }
     const senEl = document.getElementById('demo-kpi-senior');
@@ -420,7 +438,7 @@ export function ritaAldersstruktur(bas) {
       _laNyckel('nyckel-ak-lon', f ? `${f.lager[2].data.length} femårsgrupper` : ''); }
 }
 // Noten när urvalet är under tröskeln: hela urvalets trendlinje utelämnas (punkterna per person följer sin egen regel).
-function _demoTrendNot(n) { return `Trendlinje för hela urvalet visas inte: urvalet har ${n} personer, färre än ${kTroskel()}.`; }
+function _demoTrendNot(n) { return `Trendlinje för hela urvalet visas inte: urvalet har ${n} ${personOrd(n)}, färre än ${kTroskel()}.`; }
 
 // Åldershistogrammets figur (diagramkärnan, ADR-39): andel per åldersgrupp, staplad per kön, mot Sveriges sysselsatta.
 // Raka etiketter, inte lutade. Ingen zon för 60+: nyckeltalet «Andel 60+» ovanför bär successionsläsningen.

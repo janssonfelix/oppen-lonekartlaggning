@@ -14,10 +14,10 @@
 // Samma dialogmönster som BAS-dossiern (81-basdossier.js).
 // ====================================================================
 import { personOrd } from '../lib/namn.js';
-import { skalKategorier, skalSammanstallning } from '../lib/sakligaskal.js';
+import { SKAL_GRANSER, skalKategorier, skalSammanstallning } from '../lib/sakligaskal.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { genitiv, stor, termFras } from '../lib/termer.js';
-import { _fokusfallor, meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
+import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { hamtaData } from './12-tillstand.js';
@@ -37,7 +37,7 @@ function _skalBelopp(t) {
     const s = String(t ?? '').replace(/\s/g, '');
     if (!/^\d+$/.test(s)) return null;
     const v = Number(s);
-    return v <= 200000 ? v : null;
+    return v <= SKAL_GRANSER.maxBelopp ? v : null;
 }
 /** Skälen i utkastet som går att lagra.
  * @returns {{kategori: string, belopp: number, kommentar: string}[]} */
@@ -106,7 +106,7 @@ function _skalRadHtml(r, i) {
         + `</select><div class="text-dampad-xs skal-forklaring">${esc(vald.forklaring)}</div></td>`
         + `<td><input type="text" inputmode="numeric" class="skal-falt skal-belopp" data-skal-i="${i}" value="${esc(r.belopp)}" autocomplete="off" aria-label="Belopp i kr/mån, skäl ${i + 1}"${ogiltig && r.belopp !== '' ? ' aria-invalid="true"' : ''}${ogiltig ? ' aria-describedby="skal-belopp-fel"' : ''}></td>`
         + `<td class="t-tal skal-andel">${esc(_skalAndelText(r))}</td>`
-        + `<td><input type="text" class="skal-falt skal-kommentar" data-skal-i="${i}" value="${esc(r.kommentar)}" maxlength="200" autocomplete="off" placeholder="Kort motivering, inga namn" aria-label="Kommentar, skäl ${i + 1}"></td>`
+        + `<td><input type="text" class="skal-falt skal-kommentar" data-skal-i="${i}" value="${esc(r.kommentar)}" maxlength="${SKAL_GRANSER.maxKommentar}" autocomplete="off" placeholder="Kort motivering, inga namn" aria-label="Kommentar, skäl ${i + 1}"></td>`
         + `<td><button type="button" class="btn-table-tool" data-skal-ta-bort="${i}" aria-label="Ta bort skäl ${i + 1}">Ta bort</button></td></tr>`;
 }
 function _skalAndelText(r) {
@@ -118,26 +118,17 @@ function _skalAndelText(r) {
 function _skalRita() {
     const body = document.getElementById('skal-body');
     if (!body || !_skal) return;
-    const s = _skal, fullt = s.rader.length >= 8;
+    const s = _skal, fullt = s.rader.length >= SKAL_GRANSER.maxAntal;
     body.innerHTML = `<h3 class="fs-lg marg-0">${esc(s.grupp)}</h3>${_skalSkillnadHtml()}`
         + (s.rader.length
             ? `<div class="table-container"><table class="data-table st-088 skal-tabell"><thead><tr><th scope="col">Kategori</th><th scope="col" class="t-hoger">Belopp (kr/mån)</th><th scope="col" class="t-hoger">Andel av skillnaden</th><th scope="col">Kommentar</th><th scope="col"><span class="sr-only">Ta bort</span></th></tr></thead><tbody>${s.rader.map(_skalRadHtml).join('')}</tbody></table></div>`
             : '<p class="text-dampad-sm">Inga skäl ännu. Lägg till ett skäl för varje kategori som förklarar en del av skillnaden.</p>')
         + `<div class="rad-bryt-mitt gap-8 marg-t-8"><button id="skal-lagg-till" class="btn btn-secondary btn-sm" type="button"${fullt ? ' disabled' : ''}>Lägg till skäl</button>`
-        + '<span class="text-dampad-sm">Högst 8 skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div>'
+        + `<span class="text-dampad-sm">Högst ${SKAL_GRANSER.maxAntal} skäl per grupp. Beloppet är den del av gruppens medianskillnad, i kronor per månad, som skälet förklarar.</span></div>`
         + '<p id="skal-belopp-fel" class="handlingsplan-varning" role="status" hidden>Beloppet ska vara ett heltal mellan 0 och 200 000 kr. Skälet sparas när beloppet är giltigt.</p>'
-        + '<p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer eller en e-postadress, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p>'
+        + '<p id="skal-varning" class="handlingsplan-varning" role="status" hidden>En kommentar liknar ett personnummer, och texten följer med i exporterna. Skriv på gruppnivå i stället.</p>'
         + '<div id="skal-status"></div>';
     _skalUppdatera();
-    // Fokusfällan cachar de fokuserbara elementen: läggs om när innehållet byggs om medan dialogen är öppen, utan att
-    // flytta fokus. Anroparen sätter fokus (det nya skälets kategori, Lägg till skäl); en fördröjd flytt till
-    // stängknappen tog annars text som användaren hunnit börja skriva i ett fält, och kommentaren sparades inte.
-    const modal = document.getElementById('skal-modal');
-    if (modal && modal.style.display === 'flex' && typeof _fokusfallor !== 'undefined') {
-        const trap = _fokusfallor.get(modal), opener = trap ? trap.opener : null;
-        if (trap) { modal.removeEventListener('keydown', trap.handler); _fokusfallor.delete(modal); }
-        fangaFokus(modal, opener, { flyttaFokus: false });
-    }
 }
 
 /** Lagrar utkastet på raden och ritar om det som räknas: summan, varningarna, förslaget och knappen i tabellen. */
@@ -208,7 +199,7 @@ export function uppstartSakligaSkal() {
         if (t.closest('[data-skal-close]')) { stangSkalDialog(); return; }
         if (!_skal) return;
         if (t.closest('#skal-lagg-till')) {
-            if (_skal.rader.length >= 8) return;
+            if (_skal.rader.length >= SKAL_GRANSER.maxAntal) return;
             const anvanda = new Set(_skal.rader.map(r => r.kategori));
             const forsta = skalKategorier().find(k => !anvanda.has(k.id)) || skalKategorier()[0];
             _skal.rader.push({ kategori: forsta.id, belopp: '', kommentar: '' });
@@ -253,7 +244,7 @@ export function uppstartSakligaSkal() {
             if (_skalBelopp(el.value) == null && el.value !== '') el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
             const andel = el.closest('tr')?.querySelector('.skal-andel');
             if (andel) andel.textContent = _skalAndelText(r);
-        } else if (el.classList.contains('skal-kommentar')) r.kommentar = el.value.slice(0, 200);
+        } else if (el.classList.contains('skal-kommentar')) r.kommentar = el.value.slice(0, SKAL_GRANSER.maxKommentar);
         _skalUppdatera();
     }));
     document.addEventListener('keydown', e => {

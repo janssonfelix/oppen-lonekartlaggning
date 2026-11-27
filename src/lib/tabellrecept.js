@@ -11,6 +11,7 @@
 import { pivottabell, DIMENSIONER, MATT } from './utforska.js';
 import { personOrd } from './namn.js';
 import { STANDARDTERMER as T, stor } from './termer.js';
+import { K_STANDARD } from './ktroskel.js';
 
 export const DIM_ETIKETT = Object.freeze({
     bas: stor(T.niva.en), aid: stor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
@@ -63,7 +64,7 @@ export function receptBeskrivning(r) {
     const s = r.spec;
     const delar = [`${MATT_ETIKETT[s.matt]} per ${DIM_ETIKETT[s.rad]}${s.kolumn ? ` och ${DIM_ETIKETT[s.kolumn]}` : ''}`];
     if (s.delaKon) delar.push('kvinnor och män var för sig');
-    if (s.urval.villkor.length) delar.push(`${s.urval.villkor.length} ${s.urval.villkor.length === 1 ? 'villkor' : 'villkor'} i urvalet`);
+    if (s.urval.villkor.length) delar.push(`${s.urval.villkor.length} villkor i urvalet`);
     if (s.gruppVillkor.length) delar.push('gruppvillkor');
     if (r.upprepa) delar.push(`en tabell per ${DIM_ETIKETT[r.upprepa]}`);
     return delar.join(', ');
@@ -80,7 +81,7 @@ const _nText = c => `${c.n} (${c.nKv}/${c.nMa})`;
  * @param {{k?: number}} [opt]
  * @returns {Array<{rubrik: string, kolumner: {rubrik: string, typ: string}[], rader: any[][], utelamnade: number, not: string}>}
  */
-export function receptTillTabeller(allaRader, recept, { k = 10 } = {}) {
+export function receptTillTabeller(allaRader, recept, { k = K_STANDARD } = {}) {
     const r = valideraRecept(recept);
     if (!r) return [];
     const bygg = (rader, rubrik) => _tabell(pivottabell(rader, r.spec, { k }), r.spec, k, rubrik);
@@ -128,5 +129,22 @@ function _tabell(model, spec, k, rubrik) {
     const noter = [];
     if (utelamnade) noter.push(`${utelamnade} ${utelamnade === 1 ? 'grupp' : 'grupper'} med färre än ${k} ${personOrd(k)} redovisas inte.`);
     if (model.dolda) noter.push(`${model.dolda} ${model.dolda === 1 ? 'grupp' : 'grupper'} döljs av gruppvillkoren.`);
+    if (model.utanVarde) noter.push(`${model.utanVarde} ${personOrd(model.utanVarde)} saknar värde för ${_dimText(spec)} och ingår inte.`);
     return { rubrik, kolumner, rader, utelamnade, not: noter.join(' ') };
+}
+
+const _dimText = spec => [spec.rad, spec.kolumn].filter(Boolean).map(d => DIM_ETIKETT[d]).join(' eller ');
+
+/**
+ * Varför receptet inte gav någon tabell (receptTillTabeller gav []), räknat på hela underlaget: urvalet är tomt,
+ * gruppvillkoren döljer grupperna, ingen har ett värde i tabellens dimensioner, eller ingen grupp når tröskeln.
+ * @param {any[]} allaRader
+ * @param {any} recept  ett giltigt recept (valideraRecept)
+ * @param {{k?: number}} [opt]
+ */
+export function receptUtanTabellSkal(allaRader, recept, { k = K_STANDARD } = {}) {
+    const m = pivottabell(allaRader, recept.spec, { k });
+    if (!m.urval.n) return 'ingen person i urvalet';
+    if (!m.celler.length) return m.dolda ? 'gruppvillkoren döljer alla grupper' : `ingen i urvalet har ett värde för ${_dimText(m.spec)}`;
+    return m.dolda ? 'ingen grupp både uppfyller gruppvillkoren och når minsta gruppstorlek' : 'ingen grupp når minsta gruppstorlek';
 }

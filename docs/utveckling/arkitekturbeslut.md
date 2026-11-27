@@ -29,7 +29,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-14 | Tabeller och egna vyer visar små grupper; exporten utelämnar dem | Sammanförd i `k-troskeln.md` | – |
 | ADR-15 | Formler i CSV- och urklippsexport neutraliseras | Gällande | – |
 | ADR-16 | Inga paragrafhänvisningar i gränssnittet, och sedan 2026-10-19 inte heller i hjälptexter eller exporter | Gällande | 2026-10-19 |
-| ADR-17 | `runOLSRegression` får aldrig cachas | Ändrad av ADR-81 | – |
+| ADR-17 | Huvudregressionen (`korOLSRegression`) får aldrig cachas | Ändrad av ADR-81 | – |
 | ADR-19 | Underlagets kvalitet: svagaste länken avgör | Gällande | – |
 | ADR-20 | Rapportunderlag via urklipp; bedömningen skrivs utanför verktyget | Gällande | – |
 | ADR-21 | Alla BAS-intervall ingår (upphävd begränsning) | Sammanförd i `mal.md` | – |
@@ -87,7 +87,7 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-78 | Översikten per huvudområde räknar med huvudregressionens kodning | Gällande | 2026-11-15 |
 | ADR-79 | Protokollet redovisar median och medelvärde, och har fält för löneökning efter ledighet, utvärdering och arbetsvärdering | Gällande | 2026-11-15 |
 | ADR-80 | Flikbytet ritar först och räknar sedan | Gällande | 2026-11-16 |
-| ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Gällande | 2026-11-16 |
+| ADR-81 | En färdigritad flik visas igen när ingenting har ändrats | Ändrad av ADR-113 | 2026-11-16 |
 | ADR-82 | Bara dator: verktyget anpassas inte för surfplatta eller telefon | Gällande | 2026-11-16 |
 | ADR-83 | Kompletterande undertryckning i tabellerna per BAS-intervall | Gällande | 2026-11-19 |
 | ADR-84 | PO-påslagets standardvärde är 40 %, ett antagande utan källhänvisning | Gällande | 2026-11-19 |
@@ -114,6 +114,12 @@ senare beslutet gäller där de skiljer sig); *Sammanförd i* eller *Flyttad til
 | ADR-105 | Konfidensintervall och p-värden använder t-fördelningen vid alla frihetsgrader | Gällande | 2026-11-24 |
 | ADR-106 | Ingen juristgranskning före lansering; ett ansvarsförbehåll med samma lydelse överallt | Gällande | 2026-11-08 |
 | ADR-107 | EU-rapportmåtten bär en reservation om lönebegreppet | Gällande | 2026-11-08 |
+| ADR-108 | Konfidensbandet kring regressionslinjen använder t-kvantilen | Gällande | 2026-11-27 |
+| ADR-109 | Webbläsarens egen utskrift av en flik är skärmen | Gällande | 2026-11-27 |
+| ADR-110 | Inläsningskontrollen stoppar bara personnummer och namnkolumner | Gällande | 2026-11-27 |
+| ADR-111 | Ett nytt paket frågar innan det släpper någon av det förra paketets låsningar | Gällande | 2026-11-27 |
+| ADR-112 | Ett redigerat rapportutkast byggt vid en lägre tröskel: användaren väljer | Gällande | 2026-11-27 |
+| ADR-113 | Det som aldrig sparas mellan flikarna är huvudregressionen | Gällande | 2026-11-27 |
 
 ## Besluten
 
@@ -150,7 +156,7 @@ får importera varandra; aliaset injiceras inuti den importerande modulens IIFE,
 
 **ADR-9 — Hash-baserad CSP `script-src`.** Den byggda filens `script-src` tillåter bara skript med kontrollsumma, inte
 `'unsafe-inline'`, så att webbläsaren avvisar både injicerade `<script>` och injicerade händelseattribut, ett lager
-djupare än `esc()`. Appen använder därför delegerade lyssnare (`data-goto-tab`, `data-dismiss-parent`). *Gäller i dag:*
+djupare än `esc()`. Appen använder därför delegerade lyssnare (`data-go-to-tab`, `data-dismiss-parent`). *Gäller i dag:*
 `skydd.md` S1, `docs/dataskydd/riskanalys.md` §6.1 och `bygge-och-test.md` §2.
 
 **ADR-10 — Sidopanelen är navigation, inte ARIA-tabs.** Sidomenyn är navigation, med `aria-current="page"` på den
@@ -180,7 +186,7 @@ Verktyget hänvisar övergripande, aldrig med paragraf- eller artikelnummer, och
 numreras sannolikt om när direktivet genomförs, och genomgången 2026-10-19 fann sju hänvisningsformer och flera
 felaktiga paragrafer i koden. *Gäller i dag:* `lagrum.md` och princip 1 i `principer.md`.
 
-**ADR-17 — `runOLSRegression` får aldrig cachas.** Regressionen räknas alltid om; ett resultat får bara skickas vidare
+**ADR-17 — Huvudregressionen (`korOLSRegression`) får aldrig cachas.** Regressionen räknas alltid om; ett resultat får bara skickas vidare
 som argument inom samma varv. Ett inaktuellt resultat i en juridisk analys är ett allvarligt fel, 250 ms per rendering
 är det inte. Förhandsbeskedets minne i `58-rapportmodell.js` är ingen sådan cache: det bär inga resultat, och ingen fil
 ritas ur det. *Avvisat:* cache eller memoisering. *Gäller i dag:* `regressionsmodellen.md` §1.
@@ -295,7 +301,7 @@ linjärt tal, som lämnade BAS-nivåskillnader kvar i det oförklarade gapet. *G
 §3 och §4.
 
 **ADR-45 — t-kvantiler för konfidensintervallen; exakt t-fördelning.** Intervallen räknas med t(0,975; n−k) i stället
-för 1,96, och `tDistCdf` är exakt i stället för Hills approximation, eftersom per-BAS-regressionerna ofta har df kring
+för 1,96, och `tFordelningCdf` är exakt i stället för Hills approximation, eftersom per-BAS-regressionerna ofta har df kring
 20–40. *Gäller i dag:* `regressionsmodellen.md` §7.
 
 **ADR-46 — Steget *+ AID-etikett inom BAS*: könsgapet med fasta effekter för AID-etikett inom BAS.** Den stegvisa
@@ -655,9 +661,10 @@ klassiskt skript (S3: fortfarande en fil som fungerar från `file://`). Appens t
 testerna (`w.eval`) och röktestet (`page.evaluate`) läser dem. Ett namn som två moduler deklarerar skulle esbuild döpa
 om, så bygget fäller om ett av appens namn inte står oförändrat i utfilen; därför heter lib-funktionerna som krockade
 med appens adaptrar `statGolvVid`, `likvardighetsparUr` och så vidare, och K_STANDARD, K_MIN och K_MAX finns bara i
-`src/lib/ktroskel.js`. ES-moduler körs i importgrafens ordning, inte i sifferordning: delarna deklarerar bara, och det
-som körs vid laddning står i en uppstartsfunktion per del som `index.js` anropar i sifferordning (bygget fäller en del
-med annan kod på toppnivån; `00-sakerhet-och-uppstart.js`, som importerar inget och körs först, är undantaget). esbuild
+`src/lib/ktroskel.js`. ES-moduler körs i importgrafens ordning, inte i sifferordning: delarna har bara deklarationer på
+toppnivån, och det som körs vid laddning står i en uppstartsfunktion per del som `index.js` anropar i sifferordning
+(bygget fäller en del med en sats på toppnivån som inte är en deklaration, men en initierare får köra kod;
+`00-sakerhet-och-uppstart.js`, som importerar inget och körs först, är undantaget). esbuild
 gör toppnivåns `const` och `let` till `var` i utfilen. *Avvisat:* att behålla hopslagningen och spegeln; en IIFE eller
 ES-modul som utfil, som döljer namnen för testerna eller kräver en server; att ersätta testernas globala namn med
 exporter i samma ändring. Ersätter ADR-8 och ändrar ADR-6 (delarna slås inte längre ihop byte för byte). *Gäller i dag:*
@@ -727,7 +734,7 @@ ADR-23 och regeln för `statGolv()`: på skärmen är golvet för skattningar (r
 Blinder-Oaxaca, bootstrap-KI, styrkan, livscykelmodellen, extremvärdena, statusen *Går ej att bedöma* och Personer att
 granska) alltid `K_STANDARD`, 10; i exportläget är det som förut den inställda tröskeln när den är högre
 (`statGolvVid(kTroskel())`). En höjd tröskel hindrar alltså inte analysen på skärmen. Skattningar som sparas har
-golvet i nyckeln, så att det som räknats på skärmen aldrig följer med ut (`bootstrapCIGallande`, `styrkaGallande`,
+golvet i nyckeln, så att det som räknats på skärmen aldrig följer med ut (`bootstrapKIGallande`, `styrkaGallande`,
 `laLikaGrupper`); regressionen cachas fortfarande inte (ADR-17). Där en grupp på skärmen är för liten för att prövas
 säger texten att lönerna syns under Tabeller och egna vyer och att bedömningen dokumenteras under Sakliga skäl.
 *Skäl:* golvet är ett kvalitetsgolv, inte ett skydd mot röjande. Rådet för den officiella statistiken,
@@ -803,3 +810,61 @@ finns en gång, `lonebegreppReservation()` i `src/lib/struktur.js`, utan artikel
 inte läsas som färdiga tal för rapporteringen när lönefilen bara har den fasta lönen. *Avvisat:* att läsa in rörliga
 delar, som lönefilen inte har och som verktyget inte ska kräva. *Vakt:* `tests/exports.golden.test.js`. *Gäller i
 dag:* `src/lib/struktur.js`.
+
+**ADR-108 — Konfidensbandet kring regressionslinjen använder t-kvantilen.** Beslutat av underhållaren 2026-11-27.
+Bandet kring regressionslinjen i Ålder & karriär (`regressionslinjensBand` i `src/lib/osakerhet.js`) är y ± t(0,975;
+n − 2) · SE, som regressionens intervall (ADR-105), i stället för normalkvantilen 1,96. *Skäl:* σ skattas ur underlaget
+med n − 2 frihetsgrader, och med 1,96 blev bandet för smalt i små grupper (vid n = 10 är kvantilen 2,306, alltså
+omkring 15 % för smalt). Bandet ritas från tre punkter, så frihetsgraderna är minst en. *Avvisat:* att ändra trattens
+fält i Lika arbete, som är en normalapproximation med egen korrektion för små grupper och står kvar med 1,96.
+*Vakt:* `tests/osakerhet.test.js` (halva bredden vid x̄ mot t-tabellens värde). *Gäller i dag:*
+`regressionsmodellen.md` §7.
+
+**ADR-109 — Webbläsarens egen utskrift av en flik är skärmen.** Beslutat av underhållaren 2026-11-27. Utskrift ur
+webbläsarens meny (Ctrl+P) skriver ut den öppna fliken i skärmläget: utan tröskel och utan stämpel, med alla grupper
+(ADR-51). Verktyget fäller bara ut hopfällda avsnitt (`_utskriftFore` i `src/app/60-utskrift.js`). Den räknas inte som
+något som lämnar verktyget i S4, på samma sätt som en skärmbild; verktygets egna utskrifter (PDF-rapporten,
+handlingsplanens mall och checklistan) ritas i exportläget. Dokumenten för användaren säger att utskriften visar
+skärmen som den är och att PDF-rapporten är det som delas. *Skäl:* skärmen är användarens, och den som skriver ut har
+redan lönefilen; en spärr skulle ändå inte stoppa en skärmbild. *Avvisat:* att rita fliken i exportläget vid
+utskrift eller spärra utskriften. *Gäller i dag:* `skydd.md` S4,
+`k-troskeln.md` §3 och `docs/dataskydd/riskanalys.md` §6.5–6.6.
+
+**ADR-110 — Inläsningskontrollen stoppar bara personnummer och namnkolumner.** Beslutat av underhållaren 2026-11-27.
+`hittaKansligaKolumner` i `src/lib/inlasning.js` stoppar lönefilen på två saker: en kolumn för personnummer (rubriken,
+eller minst tre av de samplade värdena i personnummerformat) och en namnkolumn (bara rubriken). Organisationspaketet
+och importprofilerna avvisar text som liknar ett personnummer; mönstret står en gång, `PNR` i
+`src/lib/importprofiler.js`. Det gäller också text som användaren skriver: namnen på organisationen,
+jämförelsestatistiken och ställningstagandet avvisas och handlingsplanens fält och regressionskortets skäl prövas bara
+mot personnummer (`liknarPersonuppgift` i `src/lib/organisationspaket.js`), inte mot e-post. *Skäl:* skyddet ligger i vad verktyget läser in: bara de godkända fälten behålls, och
+allt annat i filen ignoreras. Stoppet är en signal om att uttaget inte är gallrat enligt instruktionen, och ett
+personnummer eller en namnkolumn är det tydligaste tecknet på ett ogallrat uttag ur ett HR-system. *Avvisat:* en
+bredare genomsökning efter e-post, namn i värdena och rubriker för särskilda kategorier: fler falska stopp och mer att
+underhålla, utan att ändra vad som läses in. *Vakt:* `tests/inlasning.test.js` och `tests/inlasning-app.test.js`.
+*Gäller i dag:* `docs/dataskydd/riskanalys.md` §6.4.
+
+**ADR-111 — Ett nytt paket frågar innan det släpper någon av det förra paketets låsningar.** Beslutat av underhållaren
+2026-11-27. Utvidgar ADR-47: ett nytt organisationspaket som sänker eller tar bort golvet, förlänger eller släpper den
+låsta rensningstiden eller tillåter små grupper i exporten frågar i en enda fråga som räknar upp vilka låsningar som
+släpps (`lasInPaket` i `src/app/29-organisationspaket.js`). Nekas den står de låsningarna kvar, och resten av paketet
+läses in; en strängare låsning frågar inte. *Skäl:* bara golvet frågade, så ett paket utan låsningar tog tyst bort det
+systemägaren låst. *Avvisat:* en fråga per låsning. *Vakt:* `tests/ktroskel-regression.test.js`. *Gäller i dag:*
+`k-troskeln.md` §6 och `docs/anvandare/organisationspaket.md` §5.
+
+**ADR-112 — Ett redigerat rapportutkast byggt vid en lägre tröskel: användaren väljer.** Beslutat av underhållaren
+2026-11-27. Rapporttextens utkast skrivs inte över när användaren har redigerat det, och texten följer med Kopiera och
+konfigurationsfilen. När tröskeln höjs över den som utkastet byggdes med, eller en konfigurationsfil med ett sparat utkast
+läses in med en lägre tröskel än den som gäller, frågar verktyget en gång: bygga om utkastet eller behålla texten
+(`utkastVidHogreTroskel` i `src/app/37-struktur.js`). *Skäl:* utkastet kan bära tal för grupper under den nya tröskeln,
+men texten är användarens. *Avvisat:* att förkasta texten utan fråga, och att pröva användarens text mot tröskeln.
+*Vakt:* `tests/rapportutkast-bas.test.js`. *Gäller i dag:* `k-troskeln.md` §6.
+
+**ADR-113 — Det som aldrig sparas mellan flikarna är huvudregressionen.** Ändrar ADR-81, som avvisade att spara
+«regressionen eller andra resultat» mellan flikarna. Huvudregressionen (`korOLSRegression`) räknas om vid varje
+anrop och skickas bara vidare inom samma varv (ADR-17). Andra resultat får sparas när nyckeln bär det de beror på:
+skattningarna med golvet i nyckeln (ADR-103), kvantilregressionens bootstrap med data och modell i nyckeln
+(`_regKvantilMinne` i `src/app/51-lika-arbete-regressionskort.js`), och livscykelns senast ritade resultat, som bara
+läses av flikens egen knapp för beräkningen och töms när tröskeln ändras och i exportgrinden
+(`state._lifecycleCache`). *Skäl:* ADR-81 beskrev ett vidare förbud än det koden följer, och bootstrapen är för
+dyr att räkna om vid varje omritning. *Avvisat:* att ta bort minnena. *Gäller i dag:* `regressionsmodellen.md` §1
+och `k-troskeln.md` §3.

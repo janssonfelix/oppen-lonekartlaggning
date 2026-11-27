@@ -16,6 +16,7 @@
  */
 import { STANDARDTERMER as T } from './termer.js';
 import { median } from './stat.js';
+import { IMPORTPROFIL_ROLLER as ROLLER, OBLIGATORISKA_ROLLER as OBLIGATORISKA } from './importprofiler.js';
 
 
 /** Antal rader i tolkningen. */
@@ -39,9 +40,6 @@ export const FK_SMA_GRUPP = 10;
 export const FK_NAMN_RADNR = 5;
 /** Råvärden kortas till så många tecken (samma som inläsningsrapportens exempel). */
 const MAX_RA = 24;
-const ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
-// Ålder är valfri (ADR-64): kolumnen visas bara när den lästes.
-const OBLIGATORISKA = ['bas', 'yrke', 'lon', 'kon'];
 const ANSVAR_TEXT = { ledning: 'ledningsansvar', uppdrag: 'särskilt uppdrag', inget: 'inget särskilt ansvar' };
 
 /** Gränsvärdena, för gränssnittets texter. */
@@ -81,7 +79,7 @@ export function namnIYrkesfaltetRadnr(antal, radnr = []) {
  * Varningen om personnamn i fältet för AID-etikett: den enda källan till texten, som står i förhandskontrollens
  * varningar och i Att göra (inläsningsrapporten har en kort rad med antalet och radnumren). Texten bär antalet
  * rader och radnumren, aldrig fältets innehåll.
- * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeLiknarNamn i src/lib/inlasning.js).
+ * @param {number} antal - Rader där fältet ser ut att innehålla ett namn (yrkeNamnNyckel i src/lib/inlasning.js).
  * @param {Array<number|null>} [radnr] - Radnumren i filen för de första av dem.
  * @returns {string} Tom när antalet är 0.
  */

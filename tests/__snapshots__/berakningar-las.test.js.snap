@@ -283,32 +283,32 @@ exports[`beräkningar på demodatan (låsta tal) > power-analysen (raknaStyrkean
 exports[`beräkningar på demodatan (låsta tal) > regressionslinjens KI (linjarRegressionKI) på en påhittad serie ger samma tal > linjarRegressionKI 1`] = `
 [
   {
-    "hi": 2.261276634,
-    "lo": 1.805390033,
+    "hi": 2.317903314,
+    "lo": 1.748763352,
     "x": 1,
     "y": 2.033333333,
   },
   {
-    "hi": 5.686265745,
-    "lo": 5.372067588,
+    "hi": 5.725292991,
+    "lo": 5.333040342,
     "x": 2.75,
     "y": 5.529166667,
   },
   {
-    "hi": 9.149849687,
-    "lo": 8.900150313,
+    "hi": 9.180865398,
+    "lo": 8.869134602,
     "x": 4.5,
     "y": 9.025,
   },
   {
-    "hi": 12.67793241,
-    "lo": 12.36373426,
+    "hi": 12.71695966,
+    "lo": 12.32470701,
     "x": 6.25,
     "y": 12.52083333,
   },
   {
-    "hi": 16.24460997,
-    "lo": 15.78872337,
+    "hi": 16.30123665,
+    "lo": 15.73209669,
     "x": 8,
     "y": 16.01666667,
   },

@@ -1,5 +1,12 @@
 {
  "_kommentar": "Genererad av tests/fixtures/ref-stat-referens.py (statsmodels/scipy). Se docstring för metod.",
+ "versioner": {
+  "statsmodels": "0.15.0",
+  "scipy": "1.18.1",
+  "numpy": "2.x",
+  "python": "3.14",
+  "antecknat": "Körningen 2026-10-16 enligt skriptets docstring; numpy och Python antecknades utan patchversion, och versionerna vid omräkningarna av Oaxaca-delen 2026-10-29 och 2026-11-05 antecknades inte."
+ },
  "ols": {
   "beta": [
    10.482028248545987,

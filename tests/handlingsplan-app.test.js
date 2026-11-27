@@ -84,7 +84,7 @@ describe('Handlingsplan: fälten fylls i på skärmen', () => {
         expect(b.__state.handlingsplan['prio|9|Z']).toEqual({ sakligt: '', ansvarig: '', tidsplan: 'Hösten', status: '' });
         b.__ritaFlik('handlingsplan');   // en rad som inte finns i underlaget ritas inte och kraschar inget
         expect(rader(b).length).toBe(rader(a).length);
-        expect(() => b.eval("tillampaKonfiguration({ version: 2, handlingsplan: [{ nyckel: 5 }] })")).toThrow();
+        expect(() => b.eval("tillampaKonfiguration({ version: 2, handlingsplan: [{ nyckel: 5 }] })")).toThrow(/handlingsplan\[0\]\.nyckel/);
     });
     it('följer med i Excel-filen, Word-utkastets åtgärdstabell och utskriften', async () => {
         const w = fonster();
@@ -304,7 +304,7 @@ describe('Handlingsplan: Kostnaden avser', () => {
         expect(pr.tabell.textContent).not.toMatch(/undefined|null/);
         const t = atgardsTabell(w), j = t.kolumner.findIndex(c => c.rubrik === 'Kostnaden avser');
         expect(w.eval('rmCell')(t.rader[0][j], t.kolumner[j].typ)).toBe('');
-        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanForifyllning().rows)') }, { k: 10 });
+        const ru = w.eval('avsnittBlock')('handlingsplan', { rader: w.eval('_rapportHpRader(_handlingsplanForifyllning().rows)'), period: 'år' }, { k: 10 });
         expect(ru.tabell.rader[0][ru.tabell.rubriker.indexOf('Kostnaden avser')]).toBe('');
         expect(JSON.stringify(ru.tabell)).not.toMatch(/undefined|null/);
     });
@@ -365,5 +365,19 @@ describe('Handlingsplanens tabell', () => {
         w.__ritaFlik('handlingsplan');
         expect(w.document.querySelectorAll('#handlingsplan-tbody tr.handlingsplan-empty').length).toBeGreaterThanOrEqual(5);   // finns kvar för utskriften
         expect(w.document.querySelector('#view-handlingsplan .handlingsplan-not').textContent).toContain('följer med i Excel-filen, utskriften och Word-utkastet, men sparas inte');
+    });
+});
+
+describe('Handlingsplanens kandidatpar mot jämförelsestatistiken', () => {
+    it('ett par vars jämförelse är en rad ur statistiken prövas på kvinnogruppen: 30 kvinnor ger raden med belopp', () => {
+        const w = fonster();
+        // Jämförelsen är en rad ur statistiken: den har inga personer (maN saknas).
+        w.eval(`likvardighetResultat = () => ({ pairs: [{ kvAid: '590001', kvBas: 'B', kvLabel: 'Påhittat yrke', maAid: '690001', maBas: 'B',
+            maLabel: 'Statistikrad', kvN: 30, maN: null, gapKr: 12450, gapPct: 30 }] })`);
+        const s = w.eval('medExportLage(() => _handlingsplanForifyllning())');
+        const i = s.nycklar.indexOf('par|590001|B|690001|B');
+        expect(i).toBeGreaterThanOrEqual(0);
+        expect(s.minsta[i]).toBe(30);
+        expect(w.eval(`_hpUtanBelopp('par|590001|B|690001|B', ${s.minsta[i]})`)).toBe(false);
     });
 });

@@ -34,9 +34,7 @@ export function byggArsbokslutNu() {
         const k = kTroskel();
         const bild = byggOgonblicksbild();
         const lika = laLikaGrupper(d, k);   // flaggad = Värt att granska (ADR-59)
-        /** @type {any} */ let lv = null;
-        try { lv = likvardighetResultat(); } catch (_e) { lv = null; }
-        const { par, utelamnade } = _parForRedovisning(lv && lv.pairs);
+        const { par, utelamnade } = _parForRedovisning(likvardighetResultat().pairs);
         const klara = state._actionChecklistDone || new Set();
         const punkter = byggAtgardslista();
         return byggArsbokslut({
@@ -73,13 +71,13 @@ export function arsjamforelse() {
     const j = nu ? jamforArsbokslut(forra, nu) : null;
     return nu && j ? { forra, nu, j } : null;
 }
+// Filtren: BAS-intervall, yrkesgrupp och antal (kvinnor och män i tabellens kolumn). Gruppen är AID-koden i
+// BAS-intervallet (ADR-89), och bokslutet bär intervallet.
 /**
  * Hanteln: kvinnors medianlön i procent av mäns per yrkesgrupp, förra året (strecket) och i år (punkten), färgad
  * efter om kvoten närmat sig lika lön (ok-nyansen) eller fjärmat sig (varningsnyansen) — en riktning, inte en
  * bedömning. Diagramdatan bär båda årens värden.
  */
-// Filtren: BAS-intervall, yrkesgrupp och antal (kvinnor och män i tabellens kolumn). Gruppen är AID-koden i
-// BAS-intervallet (ADR-89), och bokslutet bär intervallet.
 function _abHantelFigur(j, forraAr, nuAr) {
     const { rader } = _abHantelRader(j);
     if (!rader.length) return null;
@@ -114,11 +112,12 @@ function _abBasHantelFigur(j, forraAr, nuAr) {
     return { ..._abEtiketterBortFranStrecket(fig), urval: URVAL.bas };
 }
 
-/**
- * Löneutvecklingen per BAS-intervall som text för skärm och rapport: ett mått förra året och i år, och förändringen
- * i kronor och procent. Tecknen som i nyckeltalen (+, − och ± för oförändrat).
- */
+/** Ett belopp i löneutvecklingen per BAS-intervall, i kronor. */
 export function _abKr(v) { return svKr(v); }
+/**
+ * Löneutvecklingen per BAS-intervall som text för skärm och rapport: förändringen mellan förra året och i år i kronor
+ * och procent. Tecknen som i nyckeltalen (+, − och ± för oförändrat).
+ */
 export function _abForandringText(f, { kr = true } = {}) {
     if (!f || f.diff == null) return '–';
     const t = v => (v > 0 ? '+' : v < 0 ? '−' : '±');

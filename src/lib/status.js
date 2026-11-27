@@ -20,7 +20,7 @@
  *
  * Inga DOM-/state-beroenden.
  */
-import { median, percentilintervall } from './stat.js';
+import { median, percentilintervall, Z_95, MEDIAN_SE_FAKTOR, MAD_TILL_SIGMA } from './stat.js';
 import { slumpFor } from './rng.js';
 import { konsMedianerUrLoner } from './struktur.js';
 
@@ -135,7 +135,7 @@ export function slumpensGranser(kv, ma) {
     if (kv.length + ma.length <= STOR_GRUPP) return omkastningsGranser(kv, ma);
     const medKv = median(kv), medMa = median(ma);
     const r = [...kv.map(v => Math.abs(Math.log(v) - Math.log(medKv))), ...ma.map(v => Math.abs(Math.log(v) - Math.log(medMa)))];
-    const h = 100 * 1.96 * 1.2533 * 1.4826 * median(r) * Math.sqrt(1 / kv.length + 1 / ma.length);
+    const h = 100 * Z_95 * MEDIAN_SE_FAKTOR * MAD_TILL_SIGMA * median(r) * Math.sqrt(1 / kv.length + 1 / ma.length);
     return { lag: 100 - h, hog: 100 + h };
 }
 

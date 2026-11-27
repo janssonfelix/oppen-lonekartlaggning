@@ -6,12 +6,13 @@
  * tydligt över de andras, så att dess effekt i modellen är ett tal som är lätt att känna igen. I exportläget vid
  * tröskeln 10 står det lilla intervallets effekt ingenstans i det som lämnar verktyget; intervallet namnges i en not.
  * När referensintervallet självt är under tröskeln står ingen effekt alls, eftersom varje effekt då beskriver det
- * lilla intervallets nivå baklänges. Modellen skattas som förut med alla intervall, och skärmen visar allt (ADR-51).
+ * lilla intervallets nivå baklänges. Modellen skattas med alla intervall, och skärmen visar allt (ADR-51).
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { utanTaggar } from '../src/lib/htmltext.js';
 import { normalisera, samlaUtdata, sammanhang } from './helpers/ktroskel-rigg.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 vi.setConfig({ testTimeout: 60000 });
 
@@ -66,7 +67,7 @@ describe('[S4] BAS-effekterna i regressionen: ett intervall under tröskeln har 
         const w = fonsterMed(LITET_D);
         w.__ritaFlik('struktur');
         const t = normalisera(w.document.getElementById('regression-card').textContent);
-        for (const e of effekter(w)) expect(t, e.bas).toContain(svPct1(e.pct));
+        for (const e of ickeTom(effekter(w))) expect(t, e.bas).toContain(svPct1(e.pct));
     });
 
     it('vid 10: samma utdatavägar som invarianten; D:s effekt och intervall står ingenstans, B:s och C:s står i rapporterna', async () => {
@@ -96,7 +97,7 @@ describe('[S4] BAS-effekterna i regressionen: ett intervall under tröskeln har 
         }
         const kort = utdata.find(([n]) => n === 'skärm i exportläget: alla flikar')[1];
         expect(kort).toMatch(/BAS-effekterna visas inte här: referensintervallet, BAS A, har färre än 10 personer/);
-        // Skärmen visar effekterna som förut.
+        // Skärmen visar effekterna.
         const w2 = fonsterMed(LITEN_REF);
         w2.__ritaFlik('struktur');
         const skarm = normalisera(w2.document.getElementById('regression-card').textContent);

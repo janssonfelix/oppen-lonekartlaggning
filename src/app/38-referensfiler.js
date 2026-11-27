@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { _normaliseraBas, _normaliseraPolicyAid, _utanHtmlTecken, tolkaTal } from '../lib/inlasning.js';
+import { _normaliseraBas, _normaliseraPolicyAid, dubbletterAidBas, tolkaStatistikfil, tolkaTal } from '../lib/inlasning.js';
 import { namnFranFil } from '../lib/referens.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { hamtaFalt, doljLaddning, visaLaddning } from './03-hjalpfunktioner.js';
@@ -14,17 +14,23 @@ import { ritaPaketinfo, uppdateraPaketKnapp } from './29-organisationspaket.js';
 import { markeraFilrutaInlast, lasTabellfil, ritaFilrutor, aterstallFilruta } from './32-filinlasning.js';
 import { ritaLoneoversikt } from './39-loneoversikt.js';
 
+// Beskedet om rader med samma AID och BAS i en referensfil: uppslaget (policyFor, statistikFor) tar den första.
+function _dubblettBesked(n) {
+    return n ? ` · ${n} ${n === 1 ? 'rad har' : 'rader har'} samma AID och BAS som en tidigare rad; den första används` : '';
+}
+
 // ---- File Upload: Policy CSV ----
 // Läser in ett eget ställningstagande (redan tolkade rader) och namnger det efter
-// filen (ADR-28). Returnerar antal giltiga rader; 0 = inget ändrat.
+// filen (ADR-28). Returnerar antal giltiga rader; 0 = inget ändrat. En rad med ett negativt värde läses inte, som i
+// organisationspaketet.
 function _lasInReferens(rader, filnamn) {
     const policy = rader.map(row => ({
-        aid: _normaliseraPolicyAid(row.aid ?? hamtaFalt(row, ["aid","yrkeskod","befattningskod"])),
+        aid: _normaliseraPolicyAid(row.aid ?? hamtaFalt(row, ["aidkod","aid","yrkeskod","befattningskod"])),
         bas: _normaliseraBas(row.bas ?? hamtaFalt(row, ["bas","basintervall"])),
         p10: typeof row.p10 === 'number' ? row.p10 : tolkaTal(hamtaFalt(row, ["10e","p10","10"])),
         med: typeof row.med === 'number' ? row.med : tolkaTal(hamtaFalt(row, ["median","med"])),
         p90: typeof row.p90 === 'number' ? row.p90 : tolkaTal(hamtaFalt(row, ["90e","p90","90"]))
-    })).filter(p => p.bas || p.aid);
+    })).filter(p => (p.bas || p.aid) && p.p10 >= 0 && p.med >= 0 && p.p90 >= 0);
     if (!policy.length) return 0;
     state.policy = policy;
     state.policyKalla = 'fil';
@@ -85,14 +91,13 @@ export function uppstartReferensfiler() {
         synkaJamforelseFlik();
         const ps = document.getElementById('policy-status');
         if (ps) { ps.textContent = ''; ps.className = 'status-msg'; }
-        const fil = document.getElementById('file-input-policy');
-        if (fil) /** @type {HTMLInputElement} */ (fil).value = '';   // samma fil ska kunna laddas upp igen
         aterstallFilruta('upload-cell-policy', 'upload-cell optional', 'Valfritt');
         ritaOmReferens();
     });
     policyFilval.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
+        /** @type {HTMLInputElement} */ (e.target).value = '';   // samma fil ska kunna väljas igen
         visaLaddning();
         // Gemensam läsväg: CSV (alla kodningar/avgränsare, preamble-tolerant) + XLSX.
         // `aid` är VALFRI: en policyrad får vara BAS-nivå, AID-specifik
@@ -109,14 +114,17 @@ export function uppstartReferensfiler() {
             const nInlasta = _lasInReferens(res.rows, file.name);
             if (!nInlasta) {
                 doljLaddning();
-                policyStatus.textContent = 'Inga giltiga rader — varje rad behöver en BAS-kolumn, en AID-kolumn eller båda.';
+                policyStatus.textContent = 'Inga giltiga rader — varje rad behöver en BAS-kolumn, en AID-kolumn eller båda, och inga negativa värden.';
                 policyStatus.className = "status-msg";
                 return;
             }
             const nAid = state.policy.filter(p => p.aid).length;
             const nBas = state.policy.filter(p => p.bas && !p.aid).length;
-            policyStatus.textContent = `${state.policy.length} rader inlästa`
+            const ejLasta = res.rows.length - nInlasta;
+            policyStatus.textContent = `${state.policy.length} ${state.policy.length === 1 ? 'rad inläst' : 'rader inlästa'}`
                 + (nAid ? ` (${nBas} per ${T.niva.en}, ${nAid} per ${T.kod.en})` : ` (per ${T.niva.en})`)
+                + (ejLasta ? ` · ${ejLasta} ${ejLasta === 1 ? 'rad' : 'rader'} utan BAS och AID eller med ett negativt värde lästes inte` : '')
+                + _dubblettBesked(dubbletterAidBas(state.policy))
                 + ` · ${res.encoding === 'XLSX' ? res.format : res.encoding}`;
             policyStatus.className = "status-msg success";
             synkaJamforelseFlik();
@@ -132,6 +140,7 @@ export function uppstartReferensfiler() {
     statFilval.addEventListener("change", e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;
+        /** @type {HTMLInputElement} */ (e.target).value = '';   // samma fil ska kunna väljas igen
         visaLaddning();
         // Gemensam läsväg (samma som struktur/policy/historik): CSV alla kodningar +
         // preamble-tolerans, XLSX, och tydligt .xls-besked. Rubrikraden hittas av lasTabellfil via synonymerna
@@ -144,83 +153,30 @@ export function uppstartReferensfiler() {
                 return;
             }
             try {
-                const hdr = res.headers.map(h => (h || "").toString().toLowerCase());
-                const idxAID = hdr.findIndex(t => t.includes("aid") || t.includes("yrkesgrupp"));
-                const idxBAS = hdr.findIndex(t => t.includes("bas"));
-                // Median: exkludera "diff"-kolumner (t.ex. "Diff LPS Median" vs "Totalt Median").
-                const idxMed = hdr.findIndex(t => t.includes("median") && !t.includes("diff"));
-                // Valfria percentiler — matchar både "Totalt 10:e p", "P10", "10e",
-                // "10 percentilen" m.fl. men exkluderar "Diff LPS 10:e p".
-                const idxP10 = hdr.findIndex(t =>
-                    !t.includes("diff") && /(\b10:?\s*e\s*p|\bp10\b|10\s*percent|\b10e\b)/.test(t)
-                );
-                const idxP90 = hdr.findIndex(t =>
-                    !t.includes("diff") && /(\b90:?\s*e\s*p|\bp90\b|90\s*percent|\b90e\b)/.test(t)
-                );
-                // Läs in jämförelsestatistikens faktiska könsfördelning
-                // (Kvinnor Antal, Män Antal, Andel kvinnor). Detta möjliggör att
-                // likvärdighetsanalysen kan använda LOKAL könsfördelning per AID×BAS
-                // i stället för SKR:s personalstatistik som reserv.
-                const idxNKv = hdr.findIndex(t =>
-                    /(kvinnor\s*antal|kv\s*antal|antal\s*kvinnor)/.test(t)
-                );
-                const idxNMa = hdr.findIndex(t =>
-                    /(m[aä]n\s*antal|ma\s*antal|antal\s*m[aä]n)/.test(t)
-                );
-                const idxAndelKv = hdr.findIndex(t =>
-                    /(andel\s*kvinnor|kvinno?andel|%\s*kvinnor)/.test(t)
-                );
-                if (idxAID === -1 || idxMed === -1) throw new Error("Filen saknar kolumnen AID eller Median. Kontrollera rubrikraden och läs in filen igen.");
-                // Rad-objekten är nycklade på originalrubrikerna — översätt index → nyckel.
-                const col = i => i !== -1 ? res.headers[i] : null;
-                const cAID = col(idxAID), cBAS = col(idxBAS), cMed = col(idxMed),
-                      cP10 = col(idxP10), cP90 = col(idxP90),
-                      cNKv = col(idxNKv), cNMa = col(idxNMa), cAndel = col(idxAndelKv);
-                state.statistik = [];
+                // Kolumnerna och raderna tolkas i src/lib/inlasning.js (tolkaStatistikfil). Statistikens AID och BAS
+                // saneras som lönefilens: HTML-metatecken bort vid inläsning (esc() vid rendering är det egentliga skyddet).
+                const t = tolkaStatistikfil(res.headers, res.rows);
+                if (t.fel !== undefined) throw new Error(t.fel);
+                // En fil utan giltiga rader ändrar ingenting: den inlästa statistiken står kvar.
+                if (!t.rader.length) throw new Error(`Inga giltiga rader: varje rad behöver en ${T.kod.en} och en median över noll${t.ogiltiga ? ` (${t.ogiltiga} ${t.ogiltiga === 1 ? 'rad' : 'rader'} i filen)` : ''}.`);
+                state.statistik = t.rader;
                 state.statistikNamn = namnFranFil(file.name);
                 state.statistikKalla = 'fil';
                 // Likvärdighetsparen jämförs mot statistiken — ett sparat resultat gäller inte längre.
                 if (state.likvardighet) state.likvardighet.result = null;
-                // Spara om P10/P90 var närvarande, så UI kan visa info-banner
-                state.statistikHasP10 = idxP10 !== -1;
-                state.statistikHasP90 = idxP90 !== -1;
-                state.statistikHasKon = (idxNKv !== -1 && idxNMa !== -1) || idxAndelKv !== -1;
-                res.rows.forEach(r => {
-                    // Samma sanering som lönefilen och ställningstagandet: HTML-metatecken bort
-                    // vid inläsning (esc() vid rendering är det egentliga skyddet).
-                    const aidRaw = cAID && r[cAID] != null ? _utanHtmlTecken(r[cAID]).trim() : "";
-                    const basRaw = cBAS && r[cBAS] != null ? _normaliseraBas(r[cBAS]) : "";
-                    const median = tolkaTal(r[/** @type {string} */ (cMed)]);
-                    const p10 = cP10 ? tolkaTal(r[cP10]) : 0;
-                    const p90 = cP90 ? tolkaTal(r[cP90]) : 0;
-                    // Könsfördelning (om finns)
-                    const nKv = cNKv ? tolkaTal(r[cNKv]) : null;
-                    const nMa = cNMa ? tolkaTal(r[cNMa]) : null;
-                    let andelKv = cAndel ? tolkaTal(r[cAndel]) : null;
-                    // Konvertera till %: om värdet är ≤ 1 antas det vara decimal (0.65), annars %
-                    if (andelKv != null && andelKv > 0 && andelKv <= 1) andelKv = andelKv * 100;
-                    // Beräkna andelKv från antal om kolumn saknas
-                    if (andelKv == null && nKv != null && nMa != null && (nKv + nMa) > 0) {
-                        andelKv = (nKv / (nKv + nMa)) * 100;
-                    }
-                    if (aidRaw && median > 0) {
-                        state.statistik.push({
-                            aid: _normaliseraPolicyAid(aidRaw), aidFull: aidRaw, bas: basRaw,
-                            median, p10, p90,
-                            nKv: nKv != null && nKv >= 0 ? nKv : null,
-                            nMa: nMa != null && nMa >= 0 ? nMa : null,
-                            andelKv: andelKv != null && andelKv >= 0 && andelKv <= 100 ? andelKv : null
-                        });
-                    }
-                });
+                state.statistikHasP10 = t.harP10;
+                state.statistikHasP90 = t.harP90;
+                state.statistikHasKon = t.harKon;
                 const extras = [];
                 if (state.statistikHasP10) extras.push('P10');
                 if (state.statistikHasP90) extras.push('P90');
                 if (state.statistikHasKon) extras.push('könsfördelning');
                 const src = res.encoding === 'XLSX' ? res.format : res.encoding;
                 statStatus.textContent = (extras.length
-                    ? `${state.statistik.length} poster inlästa (median + ${extras.join(' + ')})`
-                    : `${state.statistik.length} poster inlästa`) + ` · ${src}`;
+                    ? `${state.statistik.length} ${state.statistik.length === 1 ? 'post inläst' : 'poster inlästa'} (median + ${extras.join(' + ')})`
+                    : `${state.statistik.length} ${state.statistik.length === 1 ? 'post inläst' : 'poster inlästa'}`)
+                    + (t.ogiltiga ? ` · ${t.ogiltiga} ${t.ogiltiga === 1 ? 'rad' : 'rader'} utan ${T.kod.en} eller median över noll lästes inte` : '')
+                    + _dubblettBesked(t.dubbletter) + ` · ${src}`;
                 statStatus.className = "status-msg success";
                 markeraFilrutaInlast('upload-cell-stat', 'Inläst');
                 state.filnamn.statistik = file.name; ritaFilrutor();

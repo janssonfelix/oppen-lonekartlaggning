@@ -3,26 +3,39 @@
 import { kronorSkillnad, talformat } from '../lib/figur.js';
 import { INBYGGDA_PROFILER, matchaImportprofil } from '../lib/importprofiler.js';
 import { vardeForRoll } from '../lib/inlasning.js';
+import { kvinnorOchMan } from '../lib/namn.js';
 import { tillDirektivtecken } from '../lib/struktur.js';
 import { svPct, svTal } from '../lib/talformat.js';
-import { esc } from './01-html-och-tillganglighet.js';
+import { esc, meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
 import { state } from './12-tillstand.js';
-import { klickaFlik, flikMal } from './31-navigering.js';
 import { _kolumnval } from './32-filinlasning.js';
-import { sidindexGaTill } from './89-sidindex.js';
 
 /** Ansvarsförbehållet (ADR-106): samma lydelse i Om verktyget, Word/PDF, Excel och rapportunderlaget. tests/juridiksprak.test.js vaktar. */
 export const ANSVARSFORBEHALL = 'Verktyget är ett stöd för arbetsgivarens egen lönekartläggning. Användaren ansvarar för hur verktyget används, för tolkningen av resultaten och för den juridiska bedömningen. Verktyget är inte juridiskt granskat.';
 
-export function visaLaddning() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "flex"; }
+/** Visar laddningsrutan och läser upp dess text: rutan syns bara (WCAG 4.1.3). */
+export function visaLaddning() {
+    const el = document.getElementById("loading-overlay");
+    if (!el) return;
+    el.style.display = "flex";
+    meddelaSkarmlasare(el.textContent.trim());
+}
 export function doljLaddning() { const el = document.getElementById("loading-overlay"); if (el) el.style.display = "none"; }
+
+/** Demoläget märks i allt som lämnar verktyget (exporterna.md): filnamnet har DEMO och innehållet börjar med märket. */
+export const DEMO_MARKE = 'DEMODATA — inte verkliga löner.';
+/** Filnamnet i demoläget: DEMO_ först, om namnet inte redan säger DEMO (Word-utkastets DEMODATA_). @param {string} namn */
+export function demoFilnamn(namn) {
+    return state.isDemo && !namn.includes('DEMO') ? 'DEMO_' + namn : namn;
+}
 
 /**
  * Laddar ner en fil. Länken till filen släpps efter en sekund, så att filens innehåll inte ligger kvar i minnet efter
- * nedladdningen (också efter Rensa all data). Svarar med filnamnet.
+ * nedladdningen (också efter Rensa all data). I demoläget får namnet DEMO_ (demoFilnamn). Svarar med filnamnet.
  * @param {Blob} blob @param {string} filnamn
  */
 export function laddaNer(blob, filnamn) {
+    filnamn = demoFilnamn(filnamn);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = filnamn; a.style.display = 'none';
@@ -60,7 +73,7 @@ export function hamtaFalt(row, possibleNames, role) {
 
 // ---- Importprofiler: kända kolumnuppsättningar (src/lib/importprofiler.js) ----
 // Ordningen när en fil läses in: organisationspaketets profiler, konfigurationsfilens, de inbyggda, och sist
-// delsträngsmatchningen ovan för de roller ingen profil täcker. _ipMatcha sorterar efter källan.
+// delsträngsmatchningen ovan för de roller ingen profil täcker. matchaImportprofil (src/lib/importprofiler.js) sorterar efter källan.
 /** Alla profiler som prövas: sessionens (paketets och konfigurationsfilens) och de inbyggda. */
 export function _importprofilLista() {
     return [...(state.importprofiler || []), ...INBYGGDA_PROFILER];
@@ -104,7 +117,7 @@ export function idagDatum(datum = new Date()) {
 // En tabell med ett lönemått för en grupp visar gruppens antal (som egen kolumn); en modelltabell, där alla rader
 // bygger på samma urval, bär antalet i sin rubrikrad (caption): "n = 260; 150 kvinnor, 110 män".
 /** @param {number} nKv @param {number} nMa */
-export function antalText(nKv, nMa) { return `n = ${svTal(nKv + nMa, 0)}; ${svTal(nKv, 0)} kvinnor, ${svTal(nMa, 0)} män`; }
+export function antalText(nKv, nMa) { return `n = ${svTal(nKv + nMa, 0)}; ${kvinnorOchMan(svTal(nKv, 0), svTal(nMa, 0))}`; }
 /** Rubrikraden med antalet, som HTML; `fore` är en text före antalet (escapas). */
 export function antalRubrik(nKv, nMa, fore = '') {
     return `<caption class="text-dampad-sm ta-vanster">${fore ? `${esc(fore)} · ` : ''}${antalText(nKv, nMa)}</caption>`;
@@ -115,10 +128,10 @@ export function antalRubrik(nKv, nMa, fore = '') {
 // = kvinnor ligger lägre. Värdena räknas överallt som skillnad, (kvinnor / män − 1) · 100; andelAvMan gör om den
 // till visningsformen. Två undantag behåller skillnaden: regressionens gap (oförklarat, åldersjusterat — det är
 // statistikens vanliga form) och de mått EU-direktivet definierar som en skillnad (där står båda formerna).
-/** Skillnaden i procent (negativ = kvinnor lägre) som "kvinnors lön i procent av mäns", t.ex. −8,3 → "91,7 %". */
+// Direktivets tecken (art. 9): tecknet vänds i tillDirektivtecken (src/lib/struktur.js), som EU-lönerapporten använder.
 /** Lönegapet med direktivets tecken: skillnaden i procent av mäns lön, positiv när kvinnor ligger lägre. `gapPct` är (kvinnor − män) / män. */
-// Direktivets tecken (art. 9): tecknet vänds i _stTillDirektivtecken (src/lib/struktur.js), som EU-lönerapporten använder.
 export function direktivGap(gapPct, dec = 1) { const v = tillDirektivtecken(gapPct); return v == null ? '–' : svPct(v, dec); }
+/** Skillnaden i procent (negativ = kvinnor lägre) som "kvinnors lön i procent av mäns", t.ex. −8,3 → "91,7 %". */
 export function andelAvMan(gapPct, dec = 1) { return typeof gapPct === 'number' && isFinite(gapPct) ? svPct(100 + gapPct, dec) : '–'; }
 
 // ---- Interna fel (ADR-31) ----
@@ -182,25 +195,13 @@ export function uppstartHjalpfunktioner() {
     });
     // Delegerade klick-hanterare i stället för inline `onclick=` i markup. Krävs av den
     // hash-baserade CSP:n (ADR-9): `script-src` saknar `'unsafe-inline'`, vilket
-    // blockerar inline event-handler-attribut. Två mönster täcks:
-    //   data-goto-tab="<tab>"   → klickar motsvarande nav-flik (tomt-läges-knappar); med data-goto-avsnitt="<id>"
-    //                             går sidan sedan till avsnittet eller kortet med det id:t (som sidindexet)
-    //   data-dismiss-parent     → tar bort knappens föräldernod (notis-/toast-OK)
+    // blockerar inline event-handler-attribut. data-dismiss-parent tar bort knappens föräldernod (notis-/toast-OK);
+    // data-go-to-tab har sin lyssnare i 31-navigering.js.
     document.addEventListener('click', e => {
-        const goto = /** @type {HTMLElement} */ (e.target).closest('[data-goto-tab]');
-        if (goto) {
-            const nav = document.querySelector('.nav-item[data-tab="' + flikMal(goto.getAttribute('data-goto-tab')) + '"]');
-            const avsnitt = goto.getAttribute('data-goto-avsnitt');
-            const tillAvsnitt = () => { if (nav && avsnitt) sidindexGaTill(avsnitt); };
-            // Användarens klick visar fliken först och räknar den sedan (ADR-80); avsnittet visas när fliken är ritad.
-            if (nav && !(/** @type {HTMLInputElement} */ (nav).disabled)) klickaFlik(nav, { uppskjut: e.isTrusted, efter: tillAvsnitt });
-            else { if (nav) /** @type {HTMLElement} */ (nav).click(); tillAvsnitt(); }
-            return;
-        }
         const dismiss = /** @type {HTMLElement} */ (e.target).closest('[data-dismiss-parent]');
         if (dismiss && dismiss.parentNode) /** @type {HTMLElement} */ (dismiss.parentNode).remove();
     });
     // Det som är dolt från start bär klassen .dold i markeringen (stilmallen döljer det utan att vänta på skriptet). Skriptet
-    // sätter dessutom display:none via CSSOM, så att el.style.display visar läget som förr (öppen 'flex', stängd 'none').
+    // sätter dessutom display:none via CSSOM, så att el.style.display visar läget (öppen 'flex', stängd 'none').
     document.querySelectorAll('.dold').forEach(el => { /** @type {HTMLElement} */ (el).style.display = 'none'; });
 }

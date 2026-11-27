@@ -28,7 +28,7 @@ export function ritaExtremvarden() {
     container.style.display = 'block';
     const threshold = parseFloat(/** @type {HTMLInputElement} */ (document.getElementById('outliers-threshold'))?.value) || 3;
     const outs = hittaExtremvarden(threshold);
-    if (countEl) countEl.textContent = outs.length === 0 ? `(inga minst ${threshold} standardavvikelser från medel)` : `(${outs.length} rader flaggade)`;
+    if (countEl) countEl.textContent = outs.length === 0 ? `(inga minst ${threshold} standardavvikelser från medel)` : `(${outs.length} ${outs.length === 1 ? 'rad flaggad' : 'rader flaggade'})`;
     if (!outs.length) {
         wrap.innerHTML = `<p class="farg-dampad pad-20 ta-mitt">Inga extremvärden med gränsen ${threshold} standardavvikelser. Datan är homogen inom BAS-grupperna.</p>`;
         return;
@@ -53,7 +53,7 @@ export function ritaExtremvarden() {
                     <td>${esc(o.bas)}</td>
                     <td>${esc(o.yrke)}</td>
                     <td>${esc(o.kon)}</td>
-                    <td class="t-hoger">${o.alder}</td>
+                    <td class="t-hoger">${o.alder > 0 ? o.alder : '–'}</td>
                     <td class="tabelltal fw-600 ta-hoger">${fmt.format(o.lon)}</td>
                     <td class="farg-dampad tabelltal ta-hoger">${fmt.format(Math.round(o.groupMedian))}</td>
                     <td class="t-tal ${color}">${sgnD}${svPct(o.diffPct, 1)}</td>

@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { FLIKAR, normalisera, synliga, fonster, ritaAlla, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 import { createAppWindow } from './helpers/app-harness.js';
+import { egenText } from './helpers/attributtext.js';
 import { styrkeanalys } from '../src/lib/osakerhet.js';
 
 describe('k-tröskeln styr varje flik', () => {
@@ -148,3 +149,58 @@ describe('golvet för skattningar följer tröskeln bara i exportläget (ADR-103
         expect(json(w.eval('medExportLage(() => styrkaGallande())'))).toEqual(json(styrkeanalys(w.__state.data, 25)));
     });
 });
+
+describe('en ändrad tröskel tömmer flikarna som inte syns (tomFlikarUtom)', () => {
+    // Fönster A ritar varje flik på skärmen och går tillbaka till Översikt; fönster B ritar ingen. Efter samma ändring
+    // av tröskeln får ingen flik som inte syns i A bära ett tal som B saknar: det vore ett tal från en ritning som
+    // gjordes före ändringen. Flikarna och deras paneler tas ur menyn och PANELGRUPPER. Talen är belopp i kronor med minst
+    // fyra siffror (löner och kostnader); sidans fasta tal (bildstorlekar, årtal, gränser i procent) räknas inte.
+    const tal = p => new Set([p, ...p.querySelectorAll('*')].flatMap(el => egenText(el)
+        .replace(/(\d)[\s\u00a0\u2009\u202f](?=\d{3}(?!\d))/g, '$1').match(/\d{4,}(?=\s*kr)/g) || []));
+    const panelTal = w => Object.fromEntries([...w.document.querySelectorAll('.view-panel')]
+        .filter(p => w.eval('_egFlikFor')(p) !== 'dashboard').map(p => [p.id, tal(p)]));
+    it('efter en ritning av alla flikar bär ingen dold flik ett tal som ett fönster utan ritningen saknar', () => {
+        const a = createAppWindow(), b = createAppWindow();
+        for (const w of [a, b]) w.__lasInDemodata();
+        const flikar = [...a.document.querySelectorAll('.nav-item[data-tab]')].map(e => e.dataset.tab);
+        expect(flikar.length).toBeGreaterThan(10);
+        for (const flik of flikar) /** @type {any} */ (a.document.querySelector(`.nav-item[data-tab="${flik}"]`)).click();
+        /** @type {any} */ (a.document.querySelector('.nav-item[data-tab="dashboard"]')).click();
+        const fore = panelTal(a);
+        expect(Object.values(fore).some(s => s.size > 0), 'testet måste se tal i de ritade flikarna').toBe(true);
+        for (const w of [a, b]) w.eval('sattKTroskel(25, { fraga: false })');
+        const iB = panelTal(b);
+        const kvar = Object.entries(panelTal(a)).map(([id, s]) => [id, [...s].filter(t => !iB[id].has(t))]).filter(([, t]) => t.length);
+        expect(kvar).toEqual([]);
+    });
+});
+
+describe('en ritning som avbryts lämnar inte den förra kvar', () => {
+    // Vid tröskeln 1000 når ingen grupp tröskeln i exportläget: varje ritning där har inget att visa. Fönster A ritar
+    // varje flik på skärmen och sedan i exportläget; fönster B ritar den bara i exportläget. Ett belopp som A har och B
+    // saknar kommer ur skärmens ritning, som en avbruten ritning lämnade kvar. Flikarna tas ur menyn, panelerna ur
+    // PANELGRUPPER (_egFlikFor).
+    const kronor = p => new Set([p, ...p.querySelectorAll('*')].flatMap(el => egenText(el)
+        .replace(/(\d)[\s\u00a0\u2009\u202f](?=\d{3}(?!\d))/g, '$1').match(/\d{4,}(?=\s*kr)/g) || []));
+    const flikensTal = (w, flik) => [...w.document.querySelectorAll('.view-panel')].filter(p => w.eval('_egFlikFor')(p) === flik)
+        .flatMap(p => [...kronor(p)]);
+    it('exportläget bär inget belopp ur skärmens ritning av samma flik', () => {
+        const a = createAppWindow(), b = createAppWindow();
+        for (const w of [a, b]) { w.__lasInDemodata(); w.eval('sattKTroskel(1000, { fraga: false })'); }
+        const flikar = [...a.document.querySelectorAll('.nav-item[data-tab]')].map(e => e.dataset.tab).filter(f => f !== 'dashboard');
+        expect(flikar.length).toBeGreaterThan(10);
+        const kvar = {};
+        let paSkarmen = 0;
+        for (const flik of flikar) {
+            a.__state.kLage = 'skarm';
+            a.__ritaFlik(flik);
+            paSkarmen += flikensTal(a, flik).length;
+            for (const w of [a, b]) { iExport(w); w.__ritaFlik(flik); }
+            const iB = new Set(flikensTal(b, flik)), fran = flikensTal(a, flik).filter(t => !iB.has(t));
+            if (fran.length) kvar[flik] = fran;
+        }
+        expect(paSkarmen, 'testet måste se belopp i skärmens ritning').toBeGreaterThan(0);
+        expect(kvar).toEqual({});
+    });
+});
+

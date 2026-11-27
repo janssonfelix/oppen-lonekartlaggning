@@ -5,7 +5,7 @@ import { jamforelseRader, matchningEtikett } from '../lib/jamforelse.js';
 import { personOrd } from '../lib/namn.js';
 import { stor } from '../lib/termer.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
-import { idagDatum } from './03-hjalpfunktioner.js';
+import { demoFilnamn, idagDatum } from './03-hjalpfunktioner.js';
 import { kTroskel } from './06-k-troskel.js';
 import { orgNamn } from './07-standardinstallningar.js';
 import { APP_VERSION } from './08-version.js';
@@ -144,7 +144,7 @@ function _exportJamforelseExcelExport() {
 
     const filename = `lonekartlaggning_jamforelse_${idagDatum()}.xlsx`;
     _laggTillMetodblad(wb);
-    XLSX.writeFile(wb, filename);
+    XLSX.writeFile(wb, demoFilnamn(filename));
     _visaExportvarning();
     meddelaSkarmlasare(`Excel-fil exporterad: ${nGroups} grupp${nGroups === 1 ? '' : 'er'}, ${nPersoner} person${nPersoner === 1 ? '' : 'er'}.`);
 }

@@ -95,7 +95,7 @@ describe('BAS-dossiern: dialogen och ingångarna', () => {
         tangent(w, doc.body, 'Escape');
         expect(oppen(w)).toBe(false);
         expect(doc.activeElement).toBe(falt);
-        // Ett klick på BAS-träffen markerar som förut.
+        // Ett klick på BAS-träffen markerar den.
         skriv(w, 'bas c');
         lista.querySelector('[role="option"]').click();
         expect(w.eval('diagramMarkering()')).toEqual(['bas:C']);
@@ -174,7 +174,7 @@ describe('BAS-dossiern: förra året och textversionen', () => {
         w.eval("oppnaBasdossier('C')");
         w.document.getElementById('btn-basdossier-copy').click();
         await new Promise(r => setTimeout(r, 0));
-        expect(texter).toEqual([text]);
+        expect(texter).toEqual([`${w.eval('DEMO_MARKE')}\n${text}`]);   // demoläget: märket först (kopieraTextTillUrklipp)
     });
 
     it('textbyggaren är delad: dossierns text, utkastets stycke och rapportens avsnitt byggs ur samma stycken', () => {
@@ -273,7 +273,7 @@ describe('Escape med en öppen dossier', () => {
         tangent(w, doc.body, 'Escape');
         expect(oppen(w)).toBe(false);
         expect(w.eval('diagramMarkering()')).toEqual(['bas:C']);
-        // Utan öppen dialog tar Escape bort markeringen, som förut.
+        // Utan öppen dialog tar Escape bort markeringen.
         tangent(w, doc.body, 'Escape');
         expect(w.eval('diagramMarkering()')).toBeNull();
     });

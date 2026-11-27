@@ -30,7 +30,7 @@ describe('Sidindex', () => {
         expect(new Set(poster(w)).size).toBe(poster(w).length);
     });
     it('rubriker utan id får ett på sitt avsnitt eller kort, och länken pekar dit', () => {
-        // Regler & praxis: checklistans kort har ingen id (Lönestrukturs kort är numera avsnitt med id).
+        // Regler & praxis: checklistans kort har ingen id (Lönestrukturs kort är avsnitt med id).
         const w = createAppWindow(); w.__lasInDemodata();
         oppna(w, 'bestammelser');
         const a = [...w.document.querySelectorAll('#sidindex a')].find(x => x.textContent.trim() === KORT);

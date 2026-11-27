@@ -20,7 +20,7 @@
 // innan det bygger, signerar och publicerar. Kontrollen är en ren funktion (kontrollera) som testas på
 // fixturer i tests/release.test.js; samla() läser filerna och git.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -112,6 +112,19 @@ export function samla(root = ROOT) {
         ejIncheckat: git(['status', '--porcelain']),
         senasteKodandring: git(['log', '-1', '--format=%cs', '--', ...KODVAGAR]).trim(),
     };
+}
+
+/**
+ * Filerna som bygget läser (KODVAGAR och VERSION) och som är nyare än den byggda filen `fil`: röktestet och
+ * prestandasvepet prövar annars ett gammalt bygge. Dokumenten (.md) bäddas inte in och räknas inte.
+ * @param {string} fil
+ * @returns {string[]}
+ */
+export function nyareAnBygget(fil, root = ROOT) {
+    const tid = statSync(fil).mtimeMs;
+    return [...KODVAGAR, 'VERSION']
+        .flatMap(v => (statSync(join(root, v)).isDirectory() ? readdirSync(join(root, v), { recursive: true }).map(f => join(v, f)) : [v]))
+        .filter(f => !f.endsWith('.md') && statSync(join(root, f)).isFile() && statSync(join(root, f)).mtimeMs > tid);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

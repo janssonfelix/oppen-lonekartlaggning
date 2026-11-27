@@ -42,6 +42,7 @@ import { slumpFor } from './rng.js';
 import { direktivMarkering } from './status.js';
 import { arKvinna } from './kon.js';
 import { namnrader } from './aid.js';
+import { K_STANDARD } from './ktroskel.js';
 
 export const KVINNO_TROSKEL_STANDARD = 60;   // > → kvinnodominerat ('do', *Mer än 60 %*)
 
@@ -433,7 +434,9 @@ export function byggPar(orgKvDom, internPerBas, externPerBas, val = {}) {
     const candidates = [];
     for (const f of orgKvDom) {
         const internaRows = internPerBas.get(f.bas) || [];
-        const externaRows = externPerBas.get(f.bas) || [];
+        // Statistikens rad för samma AID-kod hoppas över: samma kod på båda sidor jämför löneläget, inte likvärdigt arbete.
+        // Den räknas inte heller som reserv eller möjligt par.
+        const externaRows = (externPerBas.get(f.bas) || []).filter(g => String(g.aid) !== String(f.aid));
         let jämförRader, källa;
         if (internaRows.length) {
             jämförRader = internaRows; källa = 'intern';
@@ -609,7 +612,8 @@ export function byggParLagreKrav(orgKvDom, orgIckeKv, val = {}) {
 /**
  * BAS-rang (BAS-ordningen är fast, se likvardighetsmodellen.md §6): bokstavens plats i alfabetet, A=1, B=2 … Varje bokstav är ett lika brett
  * poängintervall i BAS-systemet, så ett BAS-steg är alltid ett intervall — B → D är två steg
- * även när C saknas i underlaget. Samma rang används av regressionerna och Lägre krav.
+ * även när C saknas i underlaget. Samma rang används av likvärdighetsparen, Lägre krav och tabellerna per AID och BAS;
+ * regressionerna räknar BAS som indikatorer (regression.js).
  * Något som inte är en bokstav läggs alfabetiskt efter bokstäverna.
  * @param {string[]} allaBas - BAS-värdena i underlaget (behövs bara för det som inte är bokstäver)
  * @returns {(bas:string) => number}
@@ -620,7 +624,7 @@ export function basRangordning(allaBas) {
 }
 
 /**
- * Orkestrator — speglar app.js `likvardighetspar()` (utan state).
+ * Orkestrator utan tillstånd: appens `likvardighetspar()` (34-likvardigt-arbete.js) anropar den med tillståndets data och val.
  *
  * @param {Object} [input]
  * @param {Array} [input.data] - organisationens individdata
@@ -650,7 +654,7 @@ export function likvardighetsparUr({ data = [], statistik = [], nationellKlass =
     const golv = opts.aldersGolv ?? ALDERS_GOLV_STANDARD;   // minsta jämförelseyrke för åldersjusteringen
 
     // k-tröskeln används bara för att RÄKNA små kvinnodominerade grupper i diagnostiken (de ingår ändå).
-    const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? 10, definition);
+    const s1 = aggregeraOrgKvDom(data, kvinnoThr, opts.k ?? K_STANDARD, definition);
     const s2 = klassificeraStatistik(statistik, nationellKlass, { definition, grans: kvinnoThr });
     // Filtret 'mansdominerade' begränsar jämförelsemängden innan paren byggs, så att reserven
     // till jämförelsestatistiken per BAS fungerar också när bara blandade egna yrken finns.
@@ -708,7 +712,7 @@ export function likvardighetsparUr({ data = [], statistik = [], nationellKlass =
  * @param {{k?: number, poangByKey?: Map<string, number>|null, definition?: string, grans?: number}} [opts] definition och
  *   grans: appens val av definitionen av kvinnodominerat (konsklass)
  */
-export function kravGrupper(rader, { k = 10, poangByKey = null, definition = 'do', grans = KVINNO_TROSKEL_STANDARD } = {}) {
+export function kravGrupper(rader, { k = K_STANDARD, poangByKey = null, definition = 'do', grans = KVINNO_TROSKEL_STANDARD } = {}) {
     const map = new Map();
     // Namnet ur texten på flest av gruppens rader (namnrader), som i resten av verktyget (ADR-89).
     const iGrupp = r => !!(r && String(r.aid || '').trim() && r.lon > 0 && r.bas);

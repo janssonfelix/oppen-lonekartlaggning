@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { bakaIn, lasUt } from '../src/lib/organisationsfil.js';
+import { papa, vanta, csvFil, braRader } from './helpers/granssnitt-rigg.js';
 
 describe('organisationspaket: läs in och skapa', () => {
     const paket = (over = {}) => ({
@@ -93,6 +94,32 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w2.__state.policy).toEqual(w.__state.policy);
         expect(w2.__state.statistik).toEqual(w.__state.statistik);
         expect(w2.__state.paket.avserAr).toBe(2027);
+    });
+    it('paketets PO-påslag sätts när paketet läses in; användarens eget värde står kvar när etiketterna ritas om', () => {
+        const w = createAppWindow();
+        las(w, paket({ installningar: { poPct: 55 } }));
+        expect(w.__state.costSettings.poPct).toBe(55);
+        const f = w.document.getElementById('prio-po-pct');
+        f.value = '40'; f.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(w.__state.costSettings.poPct).toBe(40);
+        w.eval('sattOrgNamn("Nytt namn"); tillampaProfiletiketter()');
+        expect(w.__state.costSettings.poPct).toBe(40);
+    });
+    it('ett paket med förinställd, olåst rensningstid behåller den när det sparas om ur formuläret', () => {
+        const w = createAppWindow();
+        las(w, paket({ installningar: { inaktivitetMin: 30 } }));
+        expect(w.document.getElementById('paket-inaktivitet').value).toBe('30');
+        expect(w.eval('skapaPaket()').installningar).toMatchObject({ inaktivitetMin: 30 });
+        expect(w.eval('skapaPaket()').installningar.inaktivitetLast).toBeUndefined();
+    });
+    it('formulärets beräkningsperiod erbjuder bara de perioder paketet godtar', () => {
+        const w = createAppWindow();
+        const val = [...w.document.getElementById('paket-manader').options].map(o => Number(o.value));
+        expect(val).toEqual([...w.document.getElementById('prio-cost-months').options].map(o => Number(o.value)));
+        for (const m of val) {
+            w.eval(`document.getElementById('paket-manader').value = '${m}'`);
+            expect(w.eval('skapaPaket()').installningar.manader).toBe(m);
+        }
     });
     it('ställningstagandets namn följer formuläret, inte filnamnet, och går att byta efter inläst paket', () => {
         const w = createAppWindow();
@@ -195,6 +222,25 @@ describe('organisationspaket: läs in och skapa', () => {
         expect(w.__state.paket).toBeNull();
         expect(w.document.getElementById('paket-status').textContent).toMatch(/används inte i demoläget/);
     });
+    it('demoknappen i en organisationsfil: låsningarna gäller i demot, och en riktig lönefil får tillbaka paketet', async () => {
+        const w = createAppWindow({ html: organisationsfil(paket({ installningar: { kTroskel: 12, kTroskelLagst: 12, inaktivitetMin: 20, inaktivitetLast: true, smaGrupperIExport: false } })) });
+        const las = { kTroskelLagst: 12, inaktivitetMin: 20, smaGrupperIExport: false };
+        expect(w.__state.paketLas).toEqual(las);
+        w.confirm = () => true;
+        w.__lasInDemodata();
+        expect(w.__state.isDemo).toBe(true);
+        expect(w.__state.paket).toBeNull();                  // paketets innehåll blandas inte med demot
+        expect(w.__state.paketLas).toEqual(las);
+        expect(w.eval('sattKTroskel(3)').ok).toBe(false);
+        papa(w);
+        w.lasInStrukturfil(csvFil(w, braRader()));
+        await vanta(() => !w.__state.isDemo);
+        expect(w.__state.isDemo).toBe(false);
+        expect(w.__state.data).toHaveLength(30);
+        expect(w.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
+        expect(w.__state.paketLas).toEqual(las);
+        expect(w.eval('kInstalld()')).toBe(12);
+    });
     it('ett trasigt inbakat paket stoppar inte starten och ger ett fel i filrutan', () => {
         const html = INDEX.replace('</body>', '<template id="inbakat-organisationspaket" data-skapad="2026-10-19">{inte json</template></body>');
         const w = createAppWindow({ html });
@@ -236,7 +282,7 @@ describe('organisationspaket: läs in och skapa', () => {
         const w2 = createAppWindow({ html: ut });
         expect(w2.__state.paket).toMatchObject({ organisation: 'Exempelregionen', kalla: 'inbakat' });
     });
-    // ---- Fliken För systemförvaltaren: formuläret och organisationsfilen, flyttade från Filer och kvalitet ----
+    // ---- Fliken För systemförvaltaren: formuläret och organisationsfilen ----
     it('fliken för systemförvaltaren står sist i menyn, är aldrig låst och bär formuläret', () => {
         const w = createAppWindow(), d = w.document;
         const knapp = d.getElementById('tab-forvaltare');
@@ -435,7 +481,7 @@ describe('organisationspaket: escapning, byten mellan paket och demot', () => {
         w.eval('fyllValjare(); lasUppFlikar();');
         las(w, paket({ referens: { ...paket().referens, namn: XSS, kortnamn: XSS } }));
         const it0 = w.eval("raknaPrioritering('stallningstagande')")[0];
-        const bevis = w.eval('_bevisForPrioPost')(it0, 'stallningstagande');
+        const bevis = w.eval('_bevisForPrioPost')(it0);
         expect(bevis.intro).not.toContain('<img');
         w.print = () => {};
         await w.eval('byggUtskriftsrapport()');
@@ -515,14 +561,14 @@ describe('namn på organisationen och jämförelsestatistiken', () => {
         expect(w.eval("orgNamn()")).toBe('Organisationen');
         expect(w.__state.profile.benchmarkLabel).toBe('jämförelsestatistiken');
     });
-    it('personnummer eller e-post avvisas i alla tre namnen', () => {
+    it('personnummer avvisas i alla tre namnen', () => {
         const w = createAppWindow();
         w.eval("sattOrgNamn('Kommunen')");
         const r = w.eval("sattOrgNamn('Anna 19800101-1234')");
         expect(r.ok).toBe(false);
-        expect(r.fel).toMatch(/personnummer/);
+        expect(r.fel).toBe('Namnet liknar ett personnummer och sparades inte.');
         expect(w.eval("orgNamn()")).toBe('Kommunen');
-        expect(w.eval("sattJmfNamn('a@b.se')").ok).toBe(false);
+        expect(w.eval("sattJmfNamn('19800101-1234')").ok).toBe(false);
         w.__state.policy = [{ bas: 'C', p10: 1, med: 2, p90: 3 }];
         w.__state.policyNamn = 'Min referens';
         expect(w.eval("sattReferensNamn('19800101-1234')").ok).toBe(false);

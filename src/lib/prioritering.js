@@ -80,8 +80,8 @@ export function arsbeloppMening(g, kostnadsval, kr) {
     if (diff < 100) return null;
     const { months, poPct: po } = kostnadsfaktor(kostnadsval);
     const belopp = Math.round(kostnadPerAr(diff, g.nKv, kostnadsval) / 1000) * 1000;
-    const period = months === 12 ? 'per år (12 månader, ' : `för ${months} månader (`;   // beloppet gäller perioden
-    return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv} kvinnor motsvarar `
+    const period = months === 12 ? 'per år (12 månader, ' : `för ${months} ${months === 1 ? 'månad' : 'månader'} (`;   // beloppet gäller perioden
+    return `Räkneexempel: kvinnornas medianlön ligger ${kr(diff)} per månad under männens. För gruppens ${g.nKv === 1 ? 'enda kvinna' : `${g.nKv} kvinnor`} motsvarar `
         + `det omkring ${kr(belopp)} ${period}PO-påslag ${svPoPct(po)}). Det är ett räkneexempel, `
         + 'inte en kostnadsbedömning: om skillnaden har sakliga skäl bedömer HR.';
 }
@@ -92,17 +92,18 @@ export function arsbeloppMening(g, kostnadsval, kr) {
  *
  * Koderna: `underlag` (ett kön under minsta gruppstorlek), `styrka` (skillnaden under detektionströskeln), `alder`
  * (könens medelålder skiljer minst 3 år), `kvintil` (kvinnor överrepresenterade i lägsta lönekvintilen; kräver
- * kTroskel för båda könen, ADR-12), `brist`, `snabbVinst`, `over` (mer än 5 % över referensen) och `nara`
- * (inom ±naraGrans % av referensen, minst 10 personer).
+ * kTroskel för båda könen, ADR-12), `brist`, `snabbVinst`, `over` (mer än analyseraGrans % över referensen, samma
+ * gräns som statusen Över referens) och `nara` (inom ±naraGrans % av referensen, minst akutMinN personer).
  *
  * @param {{_rows?: Array<{kon:string, lon:number, alder?:number}>, kvN:number, maN:number, n:number, diffPct:number,
  *          isBrist?:boolean, isQuickWin?:boolean}} post
- * @param {{kInstalld:number, kTroskel:number, mdePct?:number|null, naraGrans:number}} opt
+ * @param {{kInstalld:number, kTroskel:number, mdePct?:number|null, naraGrans:number, analyseraGrans:number, akutMinN:number}} opt
  *        kInstalld: den inställda minsta gruppstorleken; kTroskel: den gällande tröskeln; mdePct: detektionströskeln
- *        i procent (saknas den prövas inte regeln); naraGrans: uppföljningsgränsen i procent (tecknet spelar ingen roll)
+ *        i procent (saknas den prövas inte regeln); naraGrans: uppföljningsgränsen i procent (tecknet spelar ingen roll);
+ *        analyseraGrans och akutMinN: inställningarna analyseraThreshold och akutMinN (PRIO_CONFIG_DEFAULTS)
  * @returns {Array<{kod:string, type:'warn'|'info'|'ok'|'flag'} & Object>}
  */
-export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGrans }) {
+export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGrans, analyseraGrans, akutMinN }) {
     const out = [];
     const rows = post._rows || [];
     if (!rows.length) return out;
@@ -130,13 +131,16 @@ export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGran
 
     if (post.isBrist) out.push({ kod: 'brist', type: 'info' });
     if (post.isQuickWin) out.push({ kod: 'snabbVinst', type: 'ok', n: post.n });
-    if (post.diffPct > 5) out.push({ kod: 'over', type: 'info', diffPct: post.diffPct });
+    if (post.diffPct > analyseraGrans) out.push({ kod: 'over', type: 'info', diffPct: post.diffPct });
 
     // Ett läge mot referensen, ingen bedömning
     const nara = Math.abs(naraGrans);
-    if (Math.abs(post.diffPct) < nara && post.n >= 10) out.push({ kod: 'nara', type: 'ok', nara });
+    if (Math.abs(post.diffPct) < nara && post.n >= akutMinN) out.push({ kod: 'nara', type: 'ok', nara });
     return out;
 }
+
+/** Summan som vikterna delas med (minst 1): vikten för en del är dess värde delat med summan. */
+export function prioViktsumma(w) { return Math.max(1, w.avvikelse + w.volym + w.jamstalldhet); }
 
 /**
  * Prioriteringsindexet för en grupp: riktningsvikt × (avvikelse·vikt + volym·vikt + jämställdhet·vikt),
@@ -151,7 +155,7 @@ export function motiveringsgrunder(post, { kInstalld, kTroskel, mdePct, naraGran
  */
 export function prioIndex(delar) {
     const { sevScore, volScore, gapScore, riktningsvikt, bristMultiplier, vikter: w } = delar;
-    const wTotal = Math.max(1, w.avvikelse + w.volym + w.jamstalldhet);
+    const wTotal = prioViktsumma(w);
     return bristMultiplier * riktningsvikt * (
         sevScore * (w.avvikelse    / wTotal) +
         volScore * (w.volym        / wTotal) +
@@ -171,7 +175,7 @@ export function prioIndex(delar) {
  * @param {{avvikelse:number, volym:number, jamstalldhet:number}} opt.prioWeights
  * @param {{months?:number, poPct?:number}} [opt.costSettings]
  * @param {Set<string>} [opt.bristAids] - AID-koder som markerats som bristyrke
- * @returns {Array<Object>} en post per AID-kod och BAS-intervall: `yrke` är gruppens namn (texten på flest av dess rader),
+ * @returns {Array<Object>} en post per AID-kod och BAS-intervall, störst index först (lika index: BAS, sedan AID-kod): `yrke` är gruppens namn (texten på flest av dess rader),
  *          `aid` AID-koden och `bas` BAS-intervallet
  */
 export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeights, costSettings, bristAids }) {
@@ -204,7 +208,7 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
         const ref = referensFor(g.aid, g.bas);
         const refMedian = ref ? ref.median : null;
         const refSource = ref ? ref.kalla : null;
-        if (!refMedian) return; // ingen referens för denna grupp – hoppa över
+        if (refMedian == null || !(refMedian > 0)) return; // ingen referens (eller ingen median över noll) för denna grupp – hoppa över
 
         const diffKr  = med - refMedian;
         // För löner i hela kronor (en median kan bli en halv krona) är kronskillnaden gånger 100 exakt, så divisionen
@@ -259,7 +263,9 @@ export function prioritera(rader, { referensFor, kTroskel, prioConfig, prioWeigh
         });
     });
 
-    items.sort((a, b) => b.priorityIndex - a.priorityIndex);
+    // Lika index sorteras på BAS och sedan AID-kod, så att ordningen inte beror på filens radordning (ADR-86).
+    const jfr = (x, y) => String(x).localeCompare(String(y), 'sv', { numeric: true });
+    items.sort((a, b) => b.priorityIndex - a.priorityIndex || jfr(a.bas, b.bas) || jfr(a.aid, b.aid));
     return items;
 }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// Inläsningen av lönefilen i appen: kolumner, radnummer, ansvarskoden, PII-kontrollen, BAS-intervallen, filrutorna och
+// Inläsningen av lönefilen i appen: kolumner, radnummer, ansvarskoden, inläsningskontrollen, BAS-intervallen, filrutorna och
 // en lönefil vars kolumner inte känns igen.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -190,9 +190,30 @@ describe('ansvarskodskolumnen vid inläsning', () => {
         await new Promise(r => setTimeout(r, 400));
         expect(JSON.stringify(w.__state.ansvarKolumn)).toBe(fore);
     });
+    it('kolumnerna tas ur filens rubriker: en kort första rad döljer inte en känslig kolumn sist', async () => {
+        const w = createAppWindow();
+        await vendorPapa(w);
+        const rader = csv(';Personnummer', i => `;19800101-${String(1000 + i)}`).split('\n');
+        rader[1] = rader[1].split(';').slice(0, 5).join(';');   // första dataraden slutar före Ansvarskod och Personnummer
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        await new Promise(r => setTimeout(r, 400));
+        expect(w.__state.data).toEqual([]);
+        expect(w.document.getElementById('data-status').textContent).toMatch(/Personnummer/);
+    });
+    it('tomma rader med bara avgränsare hoppas över och räknas inte som rader utan BAS', async () => {
+        const w = createAppWindow();
+        await vendorPapa(w);
+        const rader = csv().split('\n');
+        rader.splice(3, 0, ';;;;;');
+        rader.push(';;;;;', ';;;;;');
+        w.lasInStrukturfil(new w.File([rader.join('\n')], 'p.csv', { type: 'text/csv' }));
+        for (let i = 0; i < 100 && !w.__state.data.length; i++) await new Promise(r => setTimeout(r, 20));
+        expect(w.__state.data.length).toBe(30);
+        expect(w.__state.dataAudit).toMatchObject({ totalRaw: 30, excludedNoBas: 0 });
+    });
 });
 
-describe('PII-kontrollen vid inläsning samplar hela filen', () => {
+describe('Inläsningskontrollen samplar hela filen', () => {
     const vendorPapa = async w => {
         const { readFileSync } = await import('node:fs');
         const { join, dirname } = await import('node:path');
@@ -247,10 +268,10 @@ describe('ansvarsraden och ansvarskolumnen vid fel', () => {
     it('ansvarsraden visar skillnaden med tecken och säger till när den byter riktning', () => {
         const w = createAppWindow();
         const t = (a, b) => utanTaggar(w.eval(`_ansvarRadText(${a}, ${b})`));
-        expect(t(-6.82, -5.1)).toMatch(/förklarar ytterligare 1,72 procentenheter.*−5,10 %.*före −6,82 %/);
-        expect(t(-1, 0.8)).toMatch(/byter skillnaden riktning, från −1,00 % till \+0,80 %/);
+        expect(t(-6.82, -5.1)).toMatch(/förklarar ytterligare 1,7 procentenheter.*−5,1\s%.*före −6,8\s%/);
+        expect(t(-1, 0.8)).toMatch(/byter skillnaden riktning, från −1,0\s% till \+0,8\s%/);
         expect(t(-1, 0.8)).not.toMatch(/förklarar ytterligare/);
-        expect(t(-5, -6)).toMatch(/förklarar inget.*större, −6,00 % \(före −5,00 %\)/);
+        expect(t(-5, -6)).toMatch(/förklarar inget.*större, −6,0\s% \(före −5,0\s%\)/);
     });
     it('ett CSV-fel mitt i läsningen återställer ansvarskolumnen för den data som redan finns', async () => {
         const w = createAppWindow();
@@ -470,7 +491,7 @@ describe('filrutorna efter inläsningen', () => {
         expect(paket.compareDocumentPosition(d.getElementById('upload-row')) & 4).toBeTruthy();
         // Knappen syns; förklaringen står bakom Vad är ett organisationspaket?, och sist i steget pekar en rad till
         // fliken För systemförvaltaren, där formuläret står.
-        expect(paket.querySelector('label.btn #file-input-paket')).not.toBeNull();
+        expect(paket.querySelector('button.btn[data-byt-fil="file-input-paket"]')).not.toBeNull();
         const vad = d.getElementById('paket-vad');
         expect(vad.open).toBe(false);
         expect(vad.querySelector('summary').textContent.trim()).toBe('Vad är ett organisationspaket?');
@@ -697,5 +718,99 @@ describe('ett oväntat fel under inläsningen', () => {
         expect(ruta.style.display).toBe('none');
         expect(w.__state.data.length).toBe(0);
         expect(w.document.getElementById('data-status').textContent).toContain('ett internt fel avbröt inläsningen');
+    });
+});
+
+// Det som hör till underlaget glöms när ett nytt läses in: scenarierna i Löneöversyn, markeringen i diagrammen och
+// demots klarmarkeringar i Att göra. Användarens egna riktade rader står kvar (ADR-69); en rad på ett BAS-intervall
+// som inte finns i den nya filen visas med sitt eget BAS och en not, inte med det första i listan.
+describe('ett nytt underlag glömmer det förra', () => {
+    const forbered = w => {
+        w.__lasInDemodata();
+        w.alert = () => {};
+        w.__ritaFlik('loneoversyn');
+        const pott = w.document.getElementById('forecast-budget-value');
+        pott.value = '2.5'; pott.dispatchEvent(new w.Event('input', { bubbles: true }));
+        w.eval('_fcSparaScenario("A")');
+        expect(w.__state.forecast.scenarios.A).not.toBeNull();
+        w.__state.forecast.targets = [{ bas: 'K', aid: '*', kon: 'alla', lonCap: null, mode: 'kr', value: 1000, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
+        w.eval("sattDiagramMarkering('bas:C')");
+        expect(w.eval('diagramMarkering()')).toEqual(['bas:C']);
+        w.__state._actionChecklistDone = new Set(['gap-bas-C']);
+    };
+    it('en riktig lönefil efter demot', async () => {
+        const w = createAppWindow();
+        papa(w);
+        forbered(w);
+        w.lasInStrukturfil(csvFil(w, braRader()));
+        await vanta(() => !w.__state.isDemo);
+        expect(w.__state.isDemo).toBe(false);
+        expect(w.__state.forecast.scenarios).toEqual({ A: null, B: null });
+        expect(w.eval('diagramMarkering()')).toBeNull();
+        expect([...w.__state._actionChecklistDone]).toEqual([]);
+        w.__ritaFlik('loneoversyn');
+        expect(w.__state.forecast.targets.map(t => t.bas)).toEqual(['K']);
+        const bas = w.document.querySelector('#forecast-targets [data-f="bas"]');
+        expect(bas.value).toBe('K');
+        expect(bas.selectedOptions[0].textContent).toMatch(/finns inte i lönefilen/);
+    });
+    it('demot läst en gång till', () => {
+        const w = createAppWindow();
+        forbered(w);
+        w.confirm = () => true;
+        w.__lasInDemodata();
+        expect(w.__state.forecast.scenarios).toEqual({ A: null, B: null });
+        expect(w.eval('diagramMarkering()')).toBeNull();
+    });
+});
+
+describe('inläsningen när något går fel, och kontrollerna efter den', () => {
+    const lasInBra = async (rader = braRader()) => {
+        const w = createAppWindow();
+        papa(w);
+        w.lasInStrukturfil(csvFil(w, rader));
+        await vanta(() => w.__state.data.length);
+        return w;
+    };
+    it('samma fil kan väljas igen efter en avvisning: filväljaren töms vid varje val', async () => {
+        const w = createAppWindow();
+        papa(w);
+        const falt = /** @type {any} */ (w.document.getElementById('file-input-data'));
+        let val = '';
+        Object.defineProperty(falt, 'value', { get: () => val, set: v => { val = v; }, configurable: true });
+        Object.defineProperty(falt, 'files', { value: [csvFil(w, ['BAS;Månadslön;Ålder;Kön;AID;Personnummer', 'C;30000;40;Kvinna;207011;19800101-1234'])], configurable: true });
+        val = 'C:\\fakepath\\fil.csv';
+        falt.dispatchEvent(new w.Event('change'));
+        expect(val).toBe('');
+    });
+    it('Avbryt i förhandskontrollen efter en ändrad kolumnmappning: den inlästa filens mappning gäller och visas', async () => {
+        const w = await lasInBra();
+        const fore = JSON.stringify(w.__state.columnMap);
+        const sel = () => /** @type {any} */ (w.document.querySelector('#column-map-panel [data-colmap-role="alder"]'));
+        expect(sel().value).toBe('Ålder');
+        w.__state.forhandskontrollStopp = true;
+        sel().value = '';
+        w.document.getElementById('colmap-apply').click();
+        await vanta(() => w.document.getElementById('fk-avbryt'));
+        w.document.getElementById('fk-avbryt').click();
+        expect(JSON.stringify(w.__state.columnMap)).toBe(fore);
+        expect(sel().value).toBe('Ålder');
+    });
+    it('inläsningsrapporten med en varningsrad är gul och räknar raden', async () => {
+        const w = await lasInBra([...braRader(), 'C;30500;40;;207011']);
+        w.eval('ritaValideringsrapport()');
+        const rapport = w.document.getElementById('data-validation-report');
+        const varningar = rapport.querySelectorAll('.dvr-row.warn').length;
+        expect(rapport.textContent).toContain('Saknar/okänt kön');
+        expect(rapport.classList.contains('has-warnings')).toBe(true);
+        expect(rapport.querySelector('h4').textContent).toContain(`${varningar} att granska`);
+    });
+    it('konsistenskontrollen räknar ställningstagandets BAS-intervall, inte dess rader per AID-kod', async () => {
+        const w = await lasInBra();
+        w.__state.policy = [{ bas: 'C', p10: 25000, med: 30000, p90: 35000 },
+            { bas: 'C', aid: '207011', p10: 25000, med: 30000, p90: 35000 }, { bas: '', aid: '5301', p10: 25000, med: 30000, p90: 35000 }];
+        w.eval('ritaKonsistenskontroll()');
+        const text = w.document.getElementById('consistency-banner-container').textContent;
+        expect(text).not.toMatch(/saknas|finns i policy men inte i lönefilen/);
     });
 });

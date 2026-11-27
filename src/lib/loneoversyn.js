@@ -346,7 +346,7 @@ export function prognosutfall(rader, budget, generell, riktningar, kostnadsval) 
         pottAngiven,
         använt: totalRaise,
         kvar: pottAngiven ? pott - totalRaise : null,
-        overBudget: pottAngiven && totalRaise > pott + 1e-6,
+        overBudget: pottAngiven && totalRaise > pott + 0.5,   // som beloppen visas: i hela kronor
         totalKostnad: periodkostnad(totalRaise, kostnadsval),
         lonsummaFore,
         lonsummaEfter: lonsummaFore + totalRaise,

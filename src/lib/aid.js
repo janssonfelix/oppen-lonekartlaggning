@@ -5,7 +5,7 @@
  *
  * AID (SKR:s arbetsidentifikation) har en sexsiffrig etikett; de två första siffrorna anger ett
  * av 13 huvudområden ("sektorer"), de fyra första en mellannivå utan namn. Restkoder ("annan")
- * har 090 som de tre sista siffrorna. Etikettnamn och möjliga ansvarskoder kommer ur SKR:s
+ * har oftast 090 som de tre sista siffrorna (arRestkod). Etikettnamn och möjliga ansvarskoder kommer ur SKR:s
  * etikettlista (aid-etiketter.js, genererad).
  */
 import { aidEtikettlista } from './aid-etiketter.js';
@@ -48,9 +48,20 @@ export function normaliseraAid(aid) {
     return m ? m[1] : null;
 }
 
-/** Sifferprefixet ur ett yrkesfält (de inledande siffrorna), eller null när fältet saknar ett. */
+/** Tecknen mellan AID-koden och etiketten i ett yrkesfält ("207011 — Sjuksköterska"), som teckenklassens innehåll. */
+export const AID_SEPARATORER = '—–\\-:.,\\s';
+
+// Koden är de inledande siffrorna när de följs av slutet, blanksteg eller en separator; "3D-designer" har ingen kod. Ett
+// kolon följt av a eller e som ensam bokstav är ett ordningstal ("1:e Lärare", "2:a linjen"), ingen kod.
+const _SIFFERPREFIX = new RegExp(`^(\\d+)(?=$|[${AID_SEPARATORER.replace(':', '')}]|:(?![ae](?!\\p{L})))`, 'u');
+
+/**
+ * AID-koden ur ett yrkesfält: de inledande siffrorna när de följs av slutet, blanksteg eller en separator
+ * (AID_SEPARATORER), eller null. Den enda regeln för koden i yrkesfältet: inläsningen (inlasning.js) och grupperingen
+ * (aidAvYrke) använder den.
+ */
 export function sifferprefixAvYrke(yrke) {
-    const m = String(yrke ?? '').match(/^(\d+)/);
+    const m = String(yrke ?? '').match(_SIFFERPREFIX);
     return m ? m[1] : null;
 }
 
@@ -132,10 +143,15 @@ export function etikett(aid) {
     return k ? (_etiketter().get(k) || null) : null;
 }
 
-/** Restkod ("annan"/"annat"): de tre sista siffrorna är 090. */
+/**
+ * Restkod: en etikett i listan som heter "…, annan" eller "…, annat". En kod som inte står i listan är restkod när de tre
+ * sista siffrorna är 090; i listan räcker inte det (206090 är "Sjuksköterska, allmän").
+ */
 export function arRestkod(aid) {
     const k = normaliseraAid(aid);
-    return !!k && k.endsWith('090');
+    if (!k) return false;
+    const e = _etiketter().get(k);
+    return e ? /, ann(an|at)$/.test(e.namn) : k.endsWith('090');
 }
 
 /** Etikett under huvudområdet Ledningsarbete (10xxxx). */

@@ -23,6 +23,7 @@ import { skrKvinnoandelSektor } from './skrreferens.js';
 import { STANDARDTERMER as T, stor } from './termer.js';
 import { personOrd } from './namn.js';
 import { sammanslagning } from './undertryckning.js';
+import { K_STANDARD } from './ktroskel.js';
 
 
 const MIN_REGRESSION = 30;
@@ -89,6 +90,21 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
 }
 
 /**
+ * Meningen om hur mycket av skillnaden i medellön som beror på fördelningen över huvudområden, när andelen är minst
+ * 1 %. Går beloppet åt andra hållet än hela skillnaden, eller är det större än hela, anges ingen andel (som i
+ * uppdelningen av skillnaden, Var uppstår löneskillnaden).
+ * @param {{gapKr:number, sektorKr:number, andel:number}} a sektorernasAndel
+ * @param {(v:number) => string} kr @param {(v:number) => string} pct
+ */
+export function sektorAndelMening(a, kr, pct) {
+    const inledning = `Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(a.gapKr)} per månad), beror`;
+    const fl = T.huvudomrade.fl;
+    if (a.andel < 0) return `${inledning} ingen del på att kvinnor och män arbetar i olika ${fl}: fördelningen över ${fl} (${kr(a.sektorKr)}) går åt andra hållet än hela skillnaden.`;
+    if (a.andel > 1) return `${inledning} ${kr(a.sektorKr)} på att kvinnor och män arbetar i olika ${fl}, mer än hela skillnaden, eftersom resten går åt andra hållet.`;
+    return `${inledning} ${kr(a.sektorKr)} (${pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${fl}.`;
+}
+
+/**
  * Sektorernas andel av gapet i medellön (kvinnor − män, negativt när kvinnor ligger lägre, som i gapuppdelning.js):
  * Σ_s Δs_s · (W̄_s − W̄) med Δs = andelen av kvinnorna − andelen av männen. sektorKr är del A i gapUppdelning med
  * huvudområde som enda variabel; andel = sektorKr / gapKr har inget tecken att byta.
@@ -101,7 +117,7 @@ export function sektorsTabell(rader, { k, punkter = {}, skrDel = 'alla' }) {
  * `sammanslagna` är de sammanräknade områdenas namn i tabellens ordning och `sma` de av dem där ett kön har för få.
  * Räknas alla samman till ett är sektorKr och andel null: beloppet vore noll och säger ingenting om fördelningen.
  */
-export function sektorernasAndel(rader, { k = 10 } = {}) {
+export function sektorernasAndel(rader, { k = K_STANDARD } = {}) {
     const kv = (rader || []).filter(r => r.lon > 0 && konAv(r) === 'Kvinna');
     const ma = (rader || []).filter(r => r.lon > 0 && konAv(r) === 'Man');
     if (!kv.length || !ma.length || kv.length < k || ma.length < k) return null;

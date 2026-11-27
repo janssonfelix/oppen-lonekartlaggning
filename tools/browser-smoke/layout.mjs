@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Utseendet: radbrytning, klippning, kontrast och smala skärmar.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-import { FIL, ok, browser, page, oppnaFlik } from './rigg.mjs';
+import { FIL, ok, browser, page, oppnaFlik, flikar } from './rigg.mjs';
 
 // Tal på en rad, noter som inte klipps, sidhuvud, kontrast, tabellernas höjd och utskrift av fliken.
 export async function utseende() {
@@ -244,7 +244,7 @@ export async function utseende() {
         for (const bredd of [1440, 1100, 1024]) {
             await page.setViewportSize({ width: bredd, height: 900 });
             const hojder = {};
-            for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info', 'forvaltare']) {
+            for (const flik of await flikar(page)) {
                 await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
                 hojder[flik] = await page.evaluate(() => Math.round(document.querySelector('.top-header').getBoundingClientRect().height));
             }
@@ -265,7 +265,7 @@ export async function utseende() {
             await page.setViewportSize({ width: bredd, height: 900 });
             const over = [], utanfor = [];
             let antal = 0, sidomeny = 0;
-            for (const flik of ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info', 'forvaltare']) {
+            for (const flik of await flikar(page)) {
                 await oppnaFlik(page, `.nav-item[data-tab="${flik}"]`);
                 const m = await page.evaluate(() => {
                     const h1 = document.getElementById('page-title'), rng = document.createRange(); rng.selectNodeContents(h1);
@@ -380,7 +380,7 @@ export async function utseende() {
         await ctx.close();
     }
 
-    console.log('\n── Kontrast, modalens läge och nyckeltalsraden på surfplatta ──');
+    console.log('\n── Kontrast och modalens läge ──');
     {
         await page.setViewportSize({ width: 1440, height: 900 });
         await oppnaFlik(page, '.nav-item[data-tab="dashboard"]');
@@ -414,12 +414,6 @@ export async function utseende() {
         const m = await page.evaluate(() => { const r = document.querySelector('#data-residency-modal .glossary-panel').getBoundingClientRect(); return { mitt: Math.round(r.left + r.width / 2), topp: Math.round(r.top), bredd: innerWidth }; });
         ok(Math.abs(m.mitt - m.bredd / 2) <= 2 && m.topp > 20, `«Vad lagras?» är centrerad (mitt ${m.mitt} av ${m.bredd}, topp ${m.topp})`);
         await page.click('#data-residency-close');
-        // 768 punkter: fyra nyckeltal bryts 2 + 2.
-        await page.setViewportSize({ width: 768, height: 1024 });
-        await oppnaFlik(page, '.nav-item[data-tab="matrix"]');
-        await page.waitForTimeout(300);
-        const rader = await page.evaluate(() => { const t = [...document.querySelectorAll('#la-slutsatser .slutsats')].map(k => Math.round(k.getBoundingClientRect().top)); return [...new Set(t)].map(y => t.filter(v => v === y).length); });
-        ok(rader.join('+') === '2+2', `768 punkter: Lika arbetes fyra nyckeltal står ${rader.join(' + ')}`);
         await page.setViewportSize({ width: 1400, height: 1000 });
     }
 
@@ -520,16 +514,17 @@ export async function smalaSkarmar() {
         ok(stil.meny !== 'auto' && stil.sok !== 'auto' && /gradient/.test(stil.mitt), `exportmenyn, sökträffarna och mittlinjen i gapstaplarna får sina regler (top ${stil.meny} / ${stil.sok})`);
     }
 
-    console.log('\n── Smala skärmar: 1440×800, 768 och 390 punkter ──');
+    console.log('\n── Smalt fönster: 1440×800 och 900 punkter ──');
     {
-        const FLIKAR = ['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn', 'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'info', 'forvaltare'];
+        // Verktyget är gjort för datorskärm (ADR-82): ett smalt fönster på datorn ska fungera, med menyn ihopfälld och
+        // utan att sidan går utanför fönstret.
         const oppna = async (bredd, hojd) => { const s = await browser.newPage({ viewport: { width: bredd, height: hojd } });
             await s.goto('file://' + FIL + '?demo=1');
             await s.waitForFunction(() => document.getElementById('demo-mode-banner')?.style.display === 'flex', null, { timeout: 30000 });
             await s.waitForTimeout(1500); return s; };
         // Ingen flik får bli bredare än fönstret, med alla avsnitt utfällda: det som inte ryms rullar inom sitt eget kort.
         const forBred = async s => { const ut = [];
-            for (const f of FLIKAR) {
+            for (const f of await flikar(s)) {
                 await s.evaluate(t => document.querySelector(`.nav-item[data-tab="${t}"]`).click(), f);
                 await s.waitForTimeout(500);
                 await s.evaluate(() => document.querySelectorAll('details.avsnitt').forEach(a => { a.open = true; }));
@@ -546,16 +541,16 @@ export async function smalaSkarmar() {
         ok(bred.length === 0, `1440 punkter: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
         await s.close();
 
-        s = await oppna(768, 1024);
+        s = await oppna(900, 1000);
         const rad = await s.evaluate(() => { const m = document.querySelector('.sidebar'), e = document.querySelector('.nav-item.active .nav-etikett');
             return { bredd: Math.round(m.getBoundingClientRect().width), etikett: getComputedStyle(e).opacity, synlighet: getComputedStyle(e).visibility, knapp: getComputedStyle(document.getElementById('btn-meny')).display,
                 namn: [...document.querySelectorAll('.nav-item:not([hidden])')].every(k => k.textContent.trim().length > 2) }; });
-        ok(rad.bredd === 60 && rad.etikett === '0' && rad.synlighet === 'visible' && rad.knapp === 'none' && rad.namn, '768 punkter: menyn är en rad med ikoner, och varje knapp har kvar sitt namn');
+        ok(rad.bredd === 60 && rad.etikett === '0' && rad.synlighet === 'visible' && rad.knapp === 'none' && rad.namn, '900 punkter: menyn är fälld till en smal list med ikoner, och varje knapp har kvar sitt namn');
         await s.hover('.nav-item[data-tab="prioritering"]');
         await s.waitForTimeout(200);
-        ok(await s.evaluate(() => { const e = document.querySelector('.nav-item[data-tab="prioritering"] .nav-etikett'), r = e.getBoundingClientRect(); return getComputedStyle(e).opacity === '1' && r.left >= 60 && r.width > 40; }), '768 punkter: etiketten visas bredvid ikonen vid pekaren');
+        ok(await s.evaluate(() => { const e = document.querySelector('.nav-item[data-tab="prioritering"] .nav-etikett'), r = e.getBoundingClientRect(); return getComputedStyle(e).opacity === '1' && r.left >= 60 && r.width > 40; }), '900 punkter: etiketten visas bredvid ikonen vid pekaren');
         bred = await forBred(s);
-        ok(bred.length === 0, `768 punkter: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
+        ok(bred.length === 0, `900 punkter: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
         await s.evaluate(() => document.querySelector('.nav-item[data-tab="struktur"]').click());
         await s.waitForTimeout(600);
         await s.evaluate(() => { document.getElementById('avsnitt-st-sektorer').open = true; });
@@ -563,69 +558,19 @@ export async function smalaSkarmar() {
         const tabell = await s.evaluate(() => { const t = document.getElementById('sektor-table'), yta = t.parentElement; yta.scrollLeft = 200;
             const c = t.querySelector('tbody td'), r = c.getBoundingClientRect(), y = yta.getBoundingClientRect();
             return { rullar: yta.scrollWidth > yta.clientWidth + 1, flyttad: yta.scrollLeft > 0, fast: Math.abs(r.left - y.left) < 2 }; });
-        ok(tabell.rullar && tabell.flyttad && tabell.fast, '768 punkter: en bred tabell rullar inom sitt kort och första kolumnen står kvar');
-        await s.evaluate(() => document.querySelector('.nav-item[data-tab="matrix"]').click());
-        await s.waitForTimeout(800);
+        ok(tabell.rullar && tabell.flyttad && tabell.fast, '900 punkter: en bred tabell rullar inom sitt kort och första kolumnen står kvar');
         await s.close();
 
-        s = await oppna(390, 800);
-        const tel = await s.evaluate(() => { const m = document.querySelector('.sidebar'); return { synlig: getComputedStyle(m).visibility, knapp: getComputedStyle(document.getElementById('btn-meny')).display, expanderad: document.getElementById('btn-meny').getAttribute('aria-expanded') }; });
-        ok(tel.synlig === 'hidden' && tel.knapp !== 'none' && tel.expanderad === 'false', '390 punkter: menyn är undanfälld och knappen Meny visas');
-        await s.click('#btn-meny');
-        await s.waitForTimeout(400);
-        const oppen = await s.evaluate(() => { const m = document.querySelector('.sidebar'), r = m.getBoundingClientRect();
-            return { synlig: getComputedStyle(m).visibility === 'visible' && r.left >= 0 && r.width > 200, expanderad: document.getElementById('btn-meny').getAttribute('aria-expanded'), fokus: document.activeElement.classList.contains('nav-item'), skugga: !document.getElementById('meny-skugga').hidden }; });
-        ok(oppen.synlig && oppen.expanderad === 'true' && oppen.fokus && oppen.skugga, '390 punkter: Meny öppnar menyn över innehållet och flyttar fokus dit');
-        await s.keyboard.press('Escape');
-        await s.waitForTimeout(400);
-        ok(await s.evaluate(() => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.activeElement.id === 'btn-meny'), '390 punkter: Escape stänger menyn och fokus går tillbaka till knappen');
-        await s.click('#btn-meny');
-        await s.waitForTimeout(300);
-        await oppnaFlik(s, '.nav-item[data-tab="struktur"]');
-        // Vänta på läget i stället för en fast tid: menyns övergång och flikbytet (ADR-80) tar längre tid på en långsam
-        // CI-maskin än lokalt.
-        const bytt = () => getComputedStyle(document.querySelector('.sidebar')).visibility === 'hidden' && document.getElementById('view-regression').style.display === 'block';
-        await s.waitForFunction(bytt, null, { timeout: 5000 }).catch(() => {});
-        ok(await s.evaluate(bytt), '390 punkter: ett val i menyn byter flik och stänger menyn');
-        // Diagrammen ritar för den bredd de får: huvuddiagrammet ska fylla kortet och ha läsbar text.
-        const dia = await s.evaluate(() => { const svg = document.querySelector('#view-regression svg[role="group"], #view-regression svg[role="img"]');
-            if (!svg) return null; const r = svg.getBoundingClientRect(); const txt = [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect().height).filter(h => h > 0);
-            return { bredd: Math.round(r.width), ryms: r.right <= innerWidth + 1, minst: txt.length ? Math.min(...txt) : 0 }; });
-        ok(dia && dia.bredd >= 280 && dia.ryms && dia.minst >= 9, `390 punkter: huvuddiagrammet ryms och texten går att läsa (${dia ? `${dia.bredd} punkter brett, minsta text ${dia.minst.toFixed(1)}` : 'inget diagram'})`);
-        bred = await forBred(s);
-        ok(bred.length === 0, `390 punkter: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
-        await s.close();
-
-        // Sidhuvudet: under 641 punkter är Förklaring, Som i exporten, Inställningar och Ordlista ikonknappar på samma rad
-        // som sökfältet, och knappen behåller sitt namn (texten är visuellt dold, inte borttagen).
+        // Sidhuvudet vid 1 024 punkter: Förklaring, Som i exporten, Inställningar och Ordlista går att klicka och har sina namn.
         const KNAPPAR = ['btn-open-symbols', 'btn-forhandsvisa', 'btn-open-installningar', 'btn-open-glossary'];
-        for (const [bredd, maxHojd] of [[375, 140], [640, 140], [641, 210], [1024, 110]]) {
-            s = await oppna(bredd, 812);
-            const h = await s.evaluate(ids => ({ hojd: Math.round(document.querySelector('.top-header').getBoundingClientRect().height),
-                sok: (() => { const r = document.getElementById('sok-grupp').getBoundingClientRect(); return r.width > 100 && r.right <= innerWidth; })(),
-                namn: ids.map(id => { const b = document.getElementById(id); return (b.getAttribute('aria-label') || b.textContent).trim(); }),
-                rader: new Set(ids.map(id => Math.round(document.getElementById(id).getBoundingClientRect().top))).size }), KNAPPAR);
-            let klickbara = 0;
-            for (const id of KNAPPAR) { try { await s.click('#' + id, { trial: true, timeout: 2000 }); klickbara++; } catch { /* räknas inte */ } }
-            const smal = bredd <= 640;
-            ok(h.hojd <= maxHojd && h.sok && klickbara === 4 && h.namn.every(n => n.length > 3) && (!smal || h.rader === 1),
-                `${bredd} punkter: sidhuvudet är ${h.hojd} punkter högt (högst ${maxHojd}), sökfältet ryms och alla fyra knappar går att klicka${smal ? ' på en rad' : ''}`);
-            await s.close();
-        }
-        // Byter fönstret från brett till smalt medan sidan är öppen börjar den smala vyn med menyn stängd, utan att
-        // spalten glider ut över innehållet; öppnar man menyn själv står den kvar.
-        s = await oppna(1440, 812);
-        await s.setViewportSize({ width: 375, height: 812 });
-        // Spalten läggs om vid brytpunkten utan glidning, men layouten kan ligga en bildruta efter: vänta in den
-        // (högst två sekunder) innan läget läses, i stället för att läsa mitt i ombrytningen.
-        await s.waitForFunction(() => document.querySelector('.sidebar').getBoundingClientRect().right <= 0, null, { timeout: 2000 }).catch(() => {});
-        const efterByte = await s.evaluate(() => { const m = document.querySelector('.sidebar'), r = m.getBoundingClientRect();
-            return { oppen: document.body.classList.contains('meny-oppen'), utanfor: r.right <= 0, expanderad: document.getElementById('btn-meny').getAttribute('aria-expanded') }; });
-        ok(!efterByte.oppen && efterByte.utanfor && efterByte.expanderad === 'false', '1440 → 375 punkter: menyn är stängd och ligger utanför bild direkt efter bytet');
-        await s.click('#btn-meny');
-        await s.setViewportSize({ width: 390, height: 700 });
-        await s.waitForTimeout(300);
-        ok(await s.evaluate(() => document.body.classList.contains('meny-oppen')), '375 → 390 punkter: en meny som användaren öppnat står kvar när bredden ändras inom den smala vyn');
+        s = await oppna(1024, 812);
+        const h = await s.evaluate(ids => ({ hojd: Math.round(document.querySelector('.top-header').getBoundingClientRect().height),
+            sok: (() => { const r = document.getElementById('sok-grupp').getBoundingClientRect(); return r.width > 100 && r.right <= innerWidth; })(),
+            namn: ids.map(id => { const b = document.getElementById(id); return (b.getAttribute('aria-label') || b.textContent).trim(); }) }), KNAPPAR);
+        let klickbara = 0;
+        for (const id of KNAPPAR) { try { await s.click('#' + id, { trial: true, timeout: 2000 }); klickbara++; } catch { /* räknas inte */ } }
+        ok(h.hojd <= 110 && h.sok && klickbara === 4 && h.namn.every(n => n.length > 3),
+            `1024 punkter: sidhuvudet är ${h.hojd} punkter högt (högst 110), sökfältet ryms och alla fyra knappar går att klicka`);
         await s.close();
     }
 }

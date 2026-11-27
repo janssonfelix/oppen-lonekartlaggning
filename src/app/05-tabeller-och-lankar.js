@@ -12,6 +12,8 @@ const metodikregister = {};
 // Metodbilagans ordning i Excel och utskrift: fast, oberoende av i vilken ordning flikarna råkade ritas
 // (strukturomläggningen 2026-11-06 flyttade regressionen till Lönestruktur utan att bilagan ska byta ordning).
 const METODIKORDNING = ['rapport', 'skevhet', 'livscykel', 'matrix', 'prioritering', 'benchmark'];
+/** Rensa all data: registret bär antal och urval ur det rensade underlaget. */
+export function metodikSlapp() { for (const id of Object.keys(metodikregister)) delete metodikregister[id]; }
 export function metodikposter() {
     const ids = [...METODIKORDNING.filter(id => id in metodikregister), ...Object.keys(metodikregister).filter(id => !METODIKORDNING.includes(id))];
     return ids.map(id => /** @type {[string, any]} */ ([id, metodikregister[id]]));
@@ -38,8 +40,10 @@ function ritaMetodikHtml(a) {
     const fmt = n => n.toLocaleString('sv-SE');
     const exclRows = [
         ...(a.parseExcl || []).map(([r,c]) => `<tr><td>− ${esc(r)}</td><td class="t-tal">${fmt(c)}</td></tr>`),
-        ...(a.analysisExclusions || []).map(([r,c]) => `<tr><td>− ${esc(r)}</td><td class="t-tal">${fmt(c)}</td></tr>`)
+        // analysisExclusions är HTML (escapad hos den som bygger raden; htmlTillText gör text av den för Excel och utskriften).
+        ...(a.analysisExclusions || []).map(([r,c]) => `<tr><td>− ${r}</td><td class="t-tal">${fmt(c)}</td></tr>`)
     ].join('');
+    // Antalet personer, eller en text med enheten när analysen räknar grupper («8 AID-etiketter i BAS-intervall»).
     const used = a.usedInAnalysis !== undefined ? a.usedInAnalysis : a.afterFilter;
     const formlerHtml = (a.formler || []).map(([n, d]) => `<li><strong>${esc(n)}:</strong> ${d}</li>`).join('');
     const notesHtml   = (a.notes || []).map(n => `<li>${n}</li>`).join('');
@@ -59,8 +63,8 @@ function ritaMetodikHtml(a) {
             <div class="audit-section-header">Datakälla</div>
             <ul>
                 <li>Lönefil: ${fmt(a.totalRaw)} rader inlästa, ${fmt(a.afterParse)} efter validering</li>
-                <li>Referens: ${esc(referensNamn())}${esc(referensKalla())} — ${state.policy.length} rader</li>
-                <li>Jämförelsestatistik: ${state.statistik.length ? state.statistik.length + ' poster inlästa' : '<em>Inte inläst</em>'}</li>
+                <li>Referens: ${esc(referensNamn())}${esc(referensKalla())} — ${state.policy.length} ${state.policy.length === 1 ? 'rad' : 'rader'}</li>
+                <li>Jämförelsestatistik: ${state.statistik.length ? state.statistik.length + (state.statistik.length === 1 ? ' post inläst' : ' poster inlästa') : '<em>Inte inläst</em>'}</li>
             </ul>
         </div>
     `;
@@ -78,8 +82,9 @@ function _tolkaSvensktTal(str) {
 function _jamforCeller(a, b, idx, dir) {
     const ca = a.children[idx], cb = b.children[idx];
     if (!ca || !cb) return 0;
-    const va = ca.getAttribute('data-sort-value') ?? ca.textContent;
-    const vb = cb.getAttribute('data-sort-value') ?? cb.textContent;
+    // En cell som blir tom i exporten sorteras som tom: radordningen får inte röja dess värde.
+    const varde = c => (c.hasAttribute('data-export-tom') ? '' : c.getAttribute('data-sort-value') ?? c.textContent);
+    const va = varde(ca), vb = varde(cb);
     const na = _tolkaSvensktTal(va), nb = _tolkaSvensktTal(vb);
     const bothNum = !isNaN(na) && !isNaN(nb);
     let cmp;
@@ -96,12 +101,16 @@ export function aktiveraSortering(tableId) {
     thead.querySelectorAll('th').forEach((th, idx) => {
         if (th.hasAttribute('data-no-sort')) return;
         th.classList.add('sortable');
+        // Rubriken nås med Tab och sorterar med Enter och mellanslag, och aria-sort säger riktningen (princip 6).
+        th.tabIndex = 0;
+        th.addEventListener('keydown', e => { if (e.target === th && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); th.click(); } });
         th.addEventListener('click', () => {
             const tbody = table.querySelector('tbody');
             if (!tbody) return;
             const dir = th.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
-            thead.querySelectorAll('th[data-sort-dir]').forEach(t => t.removeAttribute('data-sort-dir'));
+            thead.querySelectorAll('th[data-sort-dir]').forEach(t => { t.removeAttribute('data-sort-dir'); t.removeAttribute('aria-sort'); });
             th.setAttribute('data-sort-dir', dir);
+            th.setAttribute('aria-sort', dir === 'asc' ? 'ascending' : 'descending');
             const rows = Array.from(tbody.querySelectorAll('tr'));
             const hasGroups = rows.some(r => r.classList.contains('group-header'));
             if (hasGroups) {
@@ -214,10 +223,23 @@ export function _flerKolumnerAlla(rot) {
 }
 
 // ---- Collapsible BAS-grupper ----
+// Gruppraden nås med Tab, fälls med Enter och mellanslag, och aria-expanded följer klassen collapsed (princip 6).
+// Raderna ritas och fälls av tabellens egen kod (39, 42), så attributen sätts när raderna eller klassen ändras.
 export function kopplaHopfallbaraGrupper(tableId) {
-    const tbody = document.querySelector(`#${tableId} tbody`);
+    const tbody = /** @type {HTMLElement|null} */ (document.querySelector(`#${tableId} tbody`));
     if (!tbody || tbody._collapseInit) return;
     tbody._collapseInit = true;
+    const markera = () => tbody.querySelectorAll('tr.group-header').forEach(rad => {
+        if (/** @type {HTMLElement} */ (rad).tabIndex !== 0) /** @type {HTMLElement} */ (rad).tabIndex = 0;
+        const utfalld = String(!rad.classList.contains('collapsed'));
+        if (rad.getAttribute('aria-expanded') !== utfalld) rad.setAttribute('aria-expanded', utfalld);
+    });
+    markera();
+    new MutationObserver(markera).observe(tbody, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    tbody.addEventListener('keydown', e => {
+        const rad = /** @type {HTMLElement} */ (e.target);
+        if (rad.matches('tr.group-header') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); rad.click(); }
+    });
     tbody.addEventListener('click', e => {
         const row = /** @type {HTMLElement} */ (e.target).closest('tr.group-header');
         if (!row) return;
@@ -244,8 +266,7 @@ export function vaxlaAllaGrupper(tableId, collapse) {
  * Byter till fliken. `uppskjut`: fliken visas först och räknas sedan (ADR-80, 31-navigering.js), och det som ska göras
  * i fliken (sökningen, markeringen, `efter`) görs när den är ritad. Svarar om fliken byttes.
  * @param {string} tabName
- * @param {{uppskjut?: boolean, efter?: (() => void)|null, search?: string, searchInputId?: string,
- *   highlightMatch?: {tableId: string, contains: string[]}}} [opts]
+ * @param {{uppskjut?: boolean, efter?: (() => void)|null, search?: string, searchInputId?: string}} [opts]
  */
 export function navigeraTill(tabName, opts = {}) {
     tabName = flikMal(tabName);
@@ -265,23 +286,6 @@ function _navigeratTill(opts) {
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }, 100);
-    }
-    if (opts.highlightMatch) {
-        setTimeout(() => {
-            const tbody = document.querySelector(`#${opts.highlightMatch.tableId} tbody`);
-            if (!tbody) return;
-            tbody.querySelectorAll('tr.row-highlighted').forEach(r => r.classList.remove('row-highlighted'));
-            const rows = tbody.querySelectorAll('tr');
-            for (const r of rows) {
-                const text = r.textContent.toLowerCase();
-                if (opts.highlightMatch.contains.every(s => text.includes(s.toLowerCase()))) {
-                    r.classList.add('row-highlighted');
-                    r.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => r.classList.remove('row-highlighted'), 4000);
-                    break;
-                }
-            }
-        }, 200);
     }
 }
 
@@ -328,20 +332,8 @@ export function uppstartTabellerOchLankar() {
         e.stopPropagation();
         const target = /** @type {HTMLElement} */ (link).dataset.target;
         const yrke = /** @type {HTMLElement} */ (link).dataset.yrke || '';
-        const bas  = /** @type {HTMLElement} */ (link).dataset.bas  || '';
         if (target === 'rapport') {
             navigeraTill('rapport', { search: yrke, searchInputId: 'search-rapport' });
-        } else if (target === 'matrix') {
-            navigeraTill('matrix', { highlightMatch: { tableId: 'matrix-table', contains: [yrke] } });
-        } else if (target === 'demografi') {
-            navigeraTill('demografi');
-            setTimeout(() => {
-                const sel = document.getElementById('bas-select-demo');
-                if (sel) {
-                    /** @type {HTMLInputElement} */ (sel).value = bas;
-                    sel.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            }, 150);
         }
     });
 }

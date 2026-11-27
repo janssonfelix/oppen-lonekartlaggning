@@ -54,7 +54,7 @@ describe('Lägre krav, högre lön', () => {
         expect(m[0]).toEqual(['Kvinnodominerad AID-etikett', 'BAS', 'Median', 'Jämförelseetikett', 'BAS', 'Median', 'BAS-steg', 'Skillnad (kr)', 'Skillnad (%)', '95 % KI']);
         expect(m[1].slice(0, 2)).toEqual(['Yrke 100', 'E']);
         expect(m[1][4]).toBe('C');
-        // Sorteringen på jämförelsens median läser cellens data-sort-value, som förut.
+        // Sorteringen på jämförelsens median läser cellens data-sort-value.
         const kol = [...w.document.querySelectorAll(`#${id} thead th`)].map(th => th.textContent.trim()).lastIndexOf('Median');
         w.document.querySelectorAll(`#${id} thead th`)[kol].click();
         const medianer = [...w.document.querySelectorAll(`#${id} tbody tr`)].map(tr => +tr.children[kol].getAttribute('data-sort-value'));
@@ -268,6 +268,19 @@ describe('Likvärdigt arbete räknas en gång per underlag', () => {
             expect(w.__lvBerakningar).toBe(2);
         });
     }
+    it('en ändrad kvinnotröskel ritar om tabellerna per BAS-intervall och den hierarkiska jämförelsen, som en ny ritning', () => {
+        const w = demo();
+        flik(w, 'likvardighet');
+        const tabeller = () => ['aidbas-likvardigt', 'aidbas-hierarki', 'nyckel-lv-aidbas'].map(id => w.document.getElementById(id).textContent);
+        const fore = tabeller();
+        const falt = w.document.getElementById('lv-kvinno-thr');
+        falt.value = '70';
+        falt.dispatchEvent(new w.Event('change'));
+        const efter = tabeller();
+        flik(w, 'likvardighet');
+        expect(efter).toEqual(tabeller());
+        expect(efter).not.toEqual(fore);
+    });
     it('Visa alla räknar om paren med alla par', () => {
         const w = demo();
         w.__state.likvardighet.topN = 2;
@@ -426,8 +439,8 @@ describe('Likvärdigt arbete: det sparade resultatet och poängläget', () => {
         const fil = new w.File(['AID;BAS;Median\n5301;C;30000\n'], 'statistik.csv', { type: 'text/csv' });
         Object.defineProperty(input, 'files', { configurable: true, value: [fil] });
         input.dispatchEvent(new w.Event('change'));
-        for (let i = 0; i < 50 && !/inlästa|Fel/.test(w.document.getElementById('stat-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.document.getElementById('stat-status').textContent).toMatch(/inlästa/);
+        for (let i = 0; i < 50 && !/inläst|Fel/.test(w.document.getElementById('stat-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
+        expect(w.document.getElementById('stat-status').textContent).toMatch(/1 post inläst/);
         expect(w.__state.likvardighet.result).not.toBe(sentinel);
     });
     it('Likvärdigt arbete i poängläget: fliken säger att kraven mäts med poäng och Lägre krav förklarar varför den är tom', () => {

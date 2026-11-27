@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { minifyCss } from '../tools/lib/minify-css.mjs';
 import { minifyHtml } from '../tools/lib/minify-html.mjs';
+import { ickeTom } from './helpers/paastaende.js';
 
 describe('förminskningen bevarar betydelsen', () => {
     it('calc: blanksteg runt + och - står kvar (utan dem är uttrycket ogiltigt)', () => {
@@ -74,7 +75,7 @@ describe('förminskningen på verktygets stilmall', () => {
     it('varje efterkommande-väljare med pseudoklass i källan finns kvar med sitt blanksteg', () => {
         const kalla = css.replace(/\/\*[\s\S]*?\*\//g, '');
         const fall = [...kalla.matchAll(/([#.\w\])-]+) (:(?:is|not|where|has|first-child|last-child|nth-child)\b[^,{]*)/g)].filter(m => !/^\d/.test(m[1]));
-        for (const m of fall) expect(ut, m[0]).toContain(`${m[1]} ${m[2].trim().split(/\s/)[0].slice(0, 6)}`);
+        for (const m of ickeTom(fall)) expect(ut, m[0]).toContain(`${m[1]} ${m[2].trim().split(/\s/)[0].slice(0, 6)}`);
     });
 });
 

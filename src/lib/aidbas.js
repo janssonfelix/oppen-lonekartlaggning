@@ -26,6 +26,7 @@ import { median, kvantil } from './stat.js';
 import { basRangordning, konsklass, KVINNO_TROSKEL_STANDARD } from './likvardighet.js';
 import { arKvinna, arMan } from './kon.js';
 import { namnrader } from './aid.js';
+import { K_STANDARD } from './ktroskel.js';
 
 /**
  * Definitionerna av kvinnodominerat arbete: nyckel → namn (valet i inställningarna) och text (tabellerna och
@@ -153,7 +154,7 @@ export function likaArbeteTabell(lika) {
  *   `nationell` ger andelen kvinnor nationellt för en AID-kod (procent), eller null när den saknas.
  *   `jamforelse` avgör vilka grupper som räknas som övriga i sammanfattningen (ADR-60).
  */
-export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', grans = KVINNO_TROSKEL_STANDARD, jamforelse = 'alla', nationell = null } = {}) {
+export function likvardigtTabell(rader, { k = K_STANDARD, golv = 5, definition = 'do', grans = KVINNO_TROSKEL_STANDARD, jamforelse = 'alla', nationell = null } = {}) {
     const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader), golv);
     const ut = grupper.map(g => {
         const andelKv = g.nKv / g.n * 100;
@@ -188,7 +189,7 @@ export function likvardigtTabell(rader, { k = 10, golv = 5, definition = 'do', g
  * A är ett jämförelseyrke enligt `jamforelse` (ADR-60): standard alla som inte är kvinnodominerade.
  * @param {{k?:number, definition?:'do'|'scb', grans?:number, jamforelse?:'alla'|'mansdominerade'}} val
  */
-export function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KVINNO_TROSKEL_STANDARD, jamforelse = 'alla' } = {}) {
+export function hierarkiskaPar(rader, { k = K_STANDARD, definition = 'do', grans = KVINNO_TROSKEL_STANDARD, jamforelse = 'alla' } = {}) {
     const grupper = grupperaAidBas(rader).filter(g => g.n >= k)
         .map(g => ({ aid: g.aid, bas: g.bas, yrke: g.yrke, n: g.n, median: median(g.loner), klass: dominans(g.nKv / g.n * 100, definition, grans) }));
     const rang = basRangordning(grupper.map(g => g.bas));
@@ -208,7 +209,7 @@ export function hierarkiskaPar(rader, { k = 10, definition = 'do', grans = KVINN
  * @param {Array} rader
  * @param {{k?:number, golv?:number}} val
  */
-export function individnivaTabell(rader, { k = 10, golv = 5 } = {}) {
+export function individnivaTabell(rader, { k = K_STANDARD, golv = 5 } = {}) {
     const { rader: grupper, sma } = _delaPaGolv(grupperaAidBas(rader).filter(g => g.nKv < k || g.nMa < k), golv);
     return { rader: grupper.map(litenRad), sma };
 }

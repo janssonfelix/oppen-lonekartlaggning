@@ -285,7 +285,7 @@ export function jamforArsbokslut(forra, nu) {
     // bas. En sådan rad är inte samma grupp som årets rad för koden i ett intervall, och en median går inte att räkna om
     // från en nivå till en annan: grupperna jämförs då inte rad för rad (ejJamforbara), och resten av jämförelsen gäller.
     const ejJamforbara = forra.grupper.some(g => !g.bas) && nu.grupper.some(g => g.bas);
-    // Antalet flaggade grupper räknades förut per kod över alla intervall: skillnaden mot ett sådant bokslut visas inte.
+    // I ett sådant bokslut är antalet flaggade grupper räknat per kod över alla intervall: skillnaden mot det visas inte.
     const nyckeltal = ARSBOKSLUT_NYCKELTAL.map(([nyckel, etikett, typ]) => {
         const a = forra.nyckeltal[nyckel], b = nu.nyckeltal[nyckel];
         const jamforbar = !(ejJamforbara && nyckel === 'antalFlaggade');

@@ -88,7 +88,7 @@ describe('hjälparen', () => {
         expect(liten).toEqual({ n: 4, medel: 95000 });
         expect(per('C').reduce((s, r) => s + r.lon, 0) / 4).toBe(95000);
         expect(underlagMedEnLitenGrupp(opt).rader).toEqual(rader);
-        expect(() => underlagMedEnLitenGrupp({ ...opt, nLiten: 10 })).toThrow();
+        expect(() => underlagMedEnLitenGrupp({ ...opt, nLiten: 10 })).toThrow(/under tröskeln/);
     });
 });
 
@@ -365,7 +365,7 @@ describe('per BAS-intervall: Löneskillnader i åldersgrupper', () => {
 // ---- b. Egna vyers pivot (src/lib/utforska.js) ----
 describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () => {
     // pivottabell räknar summor per rad och per kolumn (radHinkar, kolHinkar), men bara för att sortera etiketterna;
-    // resultatet bär inga totaler, bara cellerna, och urvalets antal. Tabellen i src/app/70-utforska.js skriver en
+    // resultatet bär inga totaler, bara cellerna, urvalets antal och antalet personer utan värde i dimensionerna (inget lönemått). Tabellen i src/app/70-utforska.js skriver en
     // kolumn per kolumnvärde utan totalrad eller totalkolumn; en cell under tröskeln blir tom i exporten och rader och
     // kolumner med bara sådana celler utelämnas (data-export-tom, data-export-utelamna), om inte användaren kryssar i
     // rutan för grupper under k. Utan en total i samma export finns ingen differens att räkna. (Sorteringen efter
@@ -375,7 +375,7 @@ describe('Egna vyer: pivoten med måttet Medellön och en kolumndimension', () =
             const { rader } = underlag(fall, { stora: [{ bas: 'A' }, { bas: 'B' }, { bas: 'C' }], liten: { bas: 'C', kon: 'man' } });
             for (const r of rader) if (r.bas === 'C' && r.lon < 90000) r.kon = 'kvinna';   // C: bara kvinnor utom den lilla gruppen
             const p = pivottabell(rader, { rad: 'bas', kolumn: 'kon', matt: 'medel' }, { k: K });
-            expect(Object.keys(p).sort()).toEqual(['celler', 'dolda', 'kolumnEtiketter', 'radEtiketter', 'spec', 'urval']);
+            expect(Object.keys(p).sort()).toEqual(['celler', 'dolda', 'kolumnEtiketter', 'radEtiketter', 'spec', 'urval', 'utanVarde']);
             expect(Object.keys(p.urval).sort()).toEqual(['n', 'nKv', 'nMa']);
             const liten = p.celler.find(c => c.liten);
             expect(liten).toMatchObject({ rad: 'C', kol: 'Man', n: fall.nLiten });

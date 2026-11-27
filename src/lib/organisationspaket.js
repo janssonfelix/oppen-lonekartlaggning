@@ -12,7 +12,7 @@
 
 import { valideraRecept } from './tabellrecept.js';
 import { valideraPerBasRecept, perBasReceptArStandard } from './perbas.js';
-import { valideraImportprofiler } from './importprofiler.js';
+import { valideraImportprofiler, PNR } from './importprofiler.js';
 import { STANDARDTERMER as T } from './termer.js';
 import { installningsGrans, filStorlekFel } from './installningsgranser.js';
 import { K_MAX, K_MIN } from './ktroskel.js';
@@ -22,21 +22,19 @@ export const PAKET_FORMAT = 'lonekartlaggning-organisationspaket';
 export const PAKET_VERSION = 1;
 
 const MAX_TEXT = 200;
-const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
-const EPOST = /\S+@\S+\.\S+/;
 
-/** Liknar texten ett personnummer eller en e-postadress? (Samma mönster som paketkontrollen.) */
+/** Liknar en text som användaren skriver ett personnummer (ADR-110)? */
 export function liknarPersonuppgift(text) {
-    const t = String(text ?? '');
-    return PNR.test(t) || EPOST.test(t);
+    return PNR.test(String(text ?? ''));
 }
 
-// Textfält saneras vid inläsning: HTML-metatecken (< > " ' &) tas bort, texten trimmas och kortas
-// till 200 tecken. Fälten är benämningar och koder som aldrig legitimt innehåller tecknen; esc() vid
-// rendering är det egentliga skyddet, detta är ett extra lager på samma sätt som för lönefilen.
+// Textfält saneras vid inläsning: tecknen som kan bryta ut ur ett element eller attribut (< > " ') tas bort, blankstegen
+// slås ihop, och texten trimmas och kortas till 200 tecken. esc() vid rendering är det egentliga skyddet, detta är ett
+// extra lager på samma sätt som för lönefilen. & står kvar: det bryter inte ut ur något, och organisationens namn kan
+// ha det ("Exempelbolaget & Co").
 const _text = v => {
     if (typeof v !== 'string') return undefined;
-    const t = v.replace(/[<>"'&]/g, '').trim();
+    const t = v.replace(/[<>"']/g, '').replace(/\s+/g, ' ').trim();
     return t ? t.substring(0, MAX_TEXT) : undefined;
 };
 const _tal = (v, min, max) => (typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : undefined);
@@ -170,11 +168,15 @@ function _importprofiler(lista, varningar) {
 
 // ---- Tolka ----
 
-// Alla textvärden i paketet, för kontrollen av personuppgifter.
-function _allaTexter(v, ut = []) {
-    if (typeof v === 'string') ut.push(v);
-    else if (Array.isArray(v)) v.forEach(x => _allaTexter(x, ut));
-    else if (v && typeof v === 'object') Object.keys(v).forEach(k => _allaTexter(v[k], ut));
+// Alla textvärden i paketet, för kontrollen av personuppgifter. Med en stack i stället för rekursion, så att ett
+// djupt nästlat paket inte tar slut på anropsstacken.
+function _allaTexter(v) {
+    const ut = [], kvar = [v];
+    while (kvar.length) {
+        const x = kvar.pop();
+        if (typeof x === 'string') ut.push(x);
+        else if (x && typeof x === 'object') for (const y of Object.values(x)) kvar.push(y);
+    }
     return ut;
 }
 
@@ -250,8 +252,8 @@ export function tolkaPaket(text) {
     if (!organisation) return { ok: false, fel: 'Paketet saknar organisationens namn (organisation.namn).' };
     const skapat = _text(o.skapat);
     if (!skapat || !/^\d{4}-\d{2}-\d{2}$/.test(skapat)) return { ok: false, fel: 'Paketet saknar datum (fältet skapat, ÅÅÅÅ-MM-DD). Be systemförvaltaren om en ny fil.' };
-    if (_allaTexter(o).some(t => PNR.test(t) || EPOST.test(t))) {
-        return { ok: false, fel: 'Paketet innehåller något som liknar personnummer eller e-post och läses inte in.' };
+    if (_allaTexter(o).some(t => PNR.test(t))) {
+        return { ok: false, fel: 'Paketet innehåller något som liknar ett personnummer och läses inte in.' };
     }
 
     const varningar = [];

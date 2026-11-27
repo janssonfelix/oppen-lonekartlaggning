@@ -6,14 +6,17 @@
  *   log(lön) ~ kön + ålder + ålder² + kön×ålder + kön×ålder² + C(BAS)
  *
  * Designmatrisen, OLS-skattningen med HC3-robusta standardfel, testen på kön-
- * relaterade koefficienter, prediktionerna 25–65 år med 95 % KI, gapet per ålder
- * och AIC. Modellen tar raderna och golvet som parametrar och läser inget globalt
+ * relaterade koefficienter, prediktionerna med 95 % KI, gapet per ålder och AIC.
+ * Prediktionerna räknas bara för de hela åldrar mellan 25 och 65 år där underlaget har personer (per kön för
+ * kurvorna, de åldrar båda könen spänner över för gapet): kvadraten i ålder gör att en kurva utanför underlaget kan
+ * ge vilka tal som helst. Modellen tar raderna och golvet som parametrar och läser inget globalt
  * tillstånd. Det analysen visar räknas i vymodellen (src/lib/vymodell-livscykel.js); orden och ritningen ligger i appen.
  *
  * Appen importerar modellen (ADR-98); korLivscykelregression() i
  * src/app/52-livscykel.js är den tunna adaptern som läser hamtaData() och statGolv().
  */
 
+import { kvinnorOchMan } from './namn.js';
 import { anpassaOLS, pVardeTvasidigt, tKvantil } from './stat.js';
 import { statusNiva } from './status.js';
 import { STANDARDTERMER as T } from './termer.js';
@@ -36,7 +39,7 @@ export const SAMSPEL_GRANS = 0.10;
 
 /**
  * Är samspelet mellan kön och ålder säkerställt? Ja när något av p-värdena (kön×ålder, kön×ålder²) är under
- * SAMSPEL_GRANS. Den enda gränsen för nyckeltalet *Förändring 25–65 år*, rutan *Är förändringen säkerställd?*,
+ * SAMSPEL_GRANS. Den enda gränsen för nyckeltalet *Förändring* (mellan spannets ändar), rutan *Är förändringen säkerställd?*,
  * Att utforska och tolkningstexten. Ett p-värde som inte är ett tal säkerställer inget.
  * @param {...number} pVarden
  * @returns {boolean}
@@ -61,7 +64,13 @@ export function livscykelRegression(rader, { fixBas, golv }) {
 
     const kvN = raw.filter(d => arKvinna(d)).length;
     const maN = raw.filter(d => arMan(d)).length;
-    if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvN} kvinnor, ${maN} män). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
+    // De hela åldrarna 25–65 som ligger inom ett köns lägsta och högsta ålder: där finns underlag för kurvan.
+    const aldrar = (rad) => {
+        const fran = Math.max(25, Math.ceil(rad.reduce((m, d) => Math.min(m, d.alder), Infinity)));
+        const till = Math.min(65, Math.floor(rad.reduce((m, d) => Math.max(m, d.alder), -Infinity)));
+        return Array.from({ length: Math.max(0, till - fran + 1) }, (_, i) => fran + i);
+    };
+    if (kvN < golv || maN < golv) return { error: `Otillräcklig könsbalans (${kvinnorOchMan(kvN, maN)}). Minst ${golv} av varje krävs för interaktions-modell.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
     if (basList.length < 2) return { error: `Minst 2 ${T.niva.fl} krävs för kategorisk kodning.`, errorCode: 'single_bas' };
@@ -102,6 +111,7 @@ export function livscykelRegression(rader, { fixBas, golv }) {
 
     const fit = anpassaOLS(X, y);
     if (!fit) return { error: 'Modellen kunde inte estimeras — möjlig multikollinearitet bland BAS-dummies.', errorCode: 'singular' };
+    if (fit.utanSpridning) return { error: `Lönen bestäms helt av kön, ålder och ${T.niva.en} i underlaget (till exempel samma lön för alla), så det finns ingen osäkerhet att skatta.`, errorCode: 'ingen_spridning' };
 
     // Adj-R² och AIC för modelljämförelse
     const n = fit.n;
@@ -131,12 +141,14 @@ export function livscykelRegression(rader, { fixBas, golv }) {
     const kvAge2T    = kvAge2SE > 0 ? fit.beta[idxKvAge2] / kvAge2SE : 0;
     const kvAge2PVal = pVardeTvasidigt(kvAge2T, fit.n, fit.k);
 
-    // Prediktioner för ålder 25..65 vid fixerad BAS, för båda könen
+    // Prediktioner vid fixerad BAS, för varje kön över det egna könets åldrar
     // SE för prediktion: x' · vcovHC3 · x  → 95 % KI = exp(logLon ± Z · SE)
-    const ages = [];
-    for (let a = 25; a <= 65; a++) ages.push(a);
+    const aldrarKv = aldrar(raw.filter(d => arKvinna(d))), aldrarMa = aldrar(raw.filter(d => arMan(d)));
+    // Gapet jämför kvinnor och män vid samma ålder: bara åldrar där båda könen finns.
+    const ages = aldrarKv.filter(a => aldrarMa.includes(a));
+    if (!ages.length) return { error: 'Kvinnor och män i underlaget har ingen ålder gemensam mellan 25 och 65 år, så lönen vid samma ålder kan inte jämföras.', errorCode: 'inget_gemensamt_spann' };
 
-    const predict = (isKv) => ages.map(a => {
+    const predict = (isKv) => (isKv ? aldrarKv : aldrarMa).map(a => {
         const ac = a - ageMean;
         const ac2 = ac * ac;
         const xRow = [1, isKv, ac, ac2, isKv * ac, isKv * ac2];
@@ -194,14 +206,14 @@ export function livscykelRegression(rader, { fixBas, golv }) {
         return { age: a, gapPct, gapLoPct, gapHiPct };
     });
 
-    // Tolkning: nyckeltal för gapet vid 25 och 65 år och förändringen däremellan (kvinnor mot män:
-    // en negativ förändring betyder att kvinnorna halkar efter med åldern)
-    const gapAt25 = gapPerAge[0].gapPct;
-    const gapAt65 = gapPerAge[gapPerAge.length - 1].gapPct;
-    const gapDelta = gapAt65 - gapAt25;
+    // Tolkning: nyckeltal för gapet vid spannets lägsta och högsta ålder (alderFran, alderTill) och förändringen
+    // däremellan (kvinnor mot män: en negativ förändring betyder att kvinnorna halkar efter med åldern)
+    const gapFran = gapPerAge[0].gapPct;
+    const gapTill = gapPerAge[gapPerAge.length - 1].gapPct;
+    const gapDelta = gapTill - gapFran;
     // Nyckeltalens status följer trappan, inte storleken ensam.
-    const niva25 = livscykelNiva(gapPerAge[0]);
-    const niva65 = livscykelNiva(gapPerAge[gapPerAge.length - 1]);
+    const nivaFran = livscykelNiva(gapPerAge[0]);
+    const nivaTill = livscykelNiva(gapPerAge[gapPerAge.length - 1]);
 
     return {
         ok: true,
@@ -212,6 +224,7 @@ export function livscykelRegression(rader, { fixBas, golv }) {
         kvCoef, kvSE, kvPValue,
         kvAgeCoef: fit.beta[idxKvAge], kvAgePVal,
         kvAge2Coef: fit.beta[idxKvAge2], kvAge2PVal,
-        gapAt25, gapAt65, gapDelta, niva25, niva65
+        alderFran: ages[0], alderTill: ages[ages.length - 1],
+        gapFran, gapTill, gapDelta, nivaFran, nivaTill
     };
 }

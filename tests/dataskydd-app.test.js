@@ -3,9 +3,8 @@
 // Dataskyddet i appen: säkerheten, Rensa all data, k-anonymiteten i det som ritas, formler i exporterade celler och
 // vad verktyget lagrar.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, fonsteravtryck } from './helpers/app-harness.js';
 import { fonster } from './helpers/ktroskel-rigg.js';
-import { attributtext } from './helpers/attributtext.js';
 import { las } from './helpers/granssnitt-rigg.js';
 
 let win;
@@ -112,6 +111,26 @@ describe('säkerhet och dataskydd', () => {
         expect(w.document.body.textContent).toMatch(/Sessionen rensades/);
     });
 
+    it('varningen är en dialog för tangentbordet: fokus på Förläng sessionen, fällan håller, Escape förlänger och fokus går tillbaka', async () => {
+        const w = createAppWindow(), d = w.document;
+        w.__state.data = [{ bas: 'A', kon: 'kvinna', lon: 30000 }];
+        const fore = d.getElementById('btn-open-glossary');
+        fore.focus();
+        w.eval('_visaInaktivitetsvarning()');
+        await new Promise(r => setTimeout(r, 60));
+        const varning = d.querySelector('.inactivity-warn-overlay');
+        expect(d.getElementById(varning.getAttribute('aria-labelledby')).textContent).toMatch(/Sessionen håller på att gå ut/);
+        expect(d.activeElement.id).toBe('inactivity-extend');
+        const tab = new w.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+        d.activeElement.dispatchEvent(tab);
+        expect(tab.defaultPrevented).toBe(true);
+        expect(varning.contains(d.activeElement)).toBe(true);
+        d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        expect(d.querySelector('.inactivity-warn-overlay')).toBeNull();
+        expect(w.__state.data).toHaveLength(1);
+        expect(d.activeElement).toBe(fore);
+    });
+
     it('tiden räknas på klockan: en dator som sovit förbi hela tiden rensas vid första provet, och musen förlänger inte', () => {
         const w = createAppWindow();
         w.__state.data = [{ bas: 'A', kon: 'kvinna', lon: 30000 }];
@@ -167,50 +186,72 @@ describe('säkerhet och dataskydd', () => {
     });
 });
 
-// Invariant för "Rensa all data" (Art. 17-affordansen, riskanalys.md §6.3):
-// efter rensning får ingen lönedata finnas kvar någonstans i dokumentet — inte
-// heller i dolda flikar eller attribut. Alla löner ligger i 87 600–87 699, så
-// varje gruppmått (median, percentil, kvartilgräns) hamnar i samma intervall och
-// syns som "876xx" när mellanslag mellan siffror tas bort.
-describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => {
+// Invariant för "Rensa all data" (Art. 17-affordansen, riskanalys.md §6.3): efter rensningen är fönstret som ett
+// färskt fönster. Det jämförs post för post (fonsteravtryck i app-harness.js): dokumentet med dolda flikar och
+// attribut, formulärfälten, state och modulernas toppnivåminnen. Provet har ingen lista över behållare eller minnen:
+// det som skiljer mot det färska fönstret är det som rensningen missar, också i en ny vy eller ett nytt minne.
+// Det enda som får skilja är toppnivåminnen som inte bär något ur underlaget:
+const FAR_SKILJA = new Set([
+    // Räknare och tider: de säger bara att något har hänt (ADR-81 räknar varje ändring, också rensningen).
+    'toppnivå _visningsversion', 'toppnivå _ritGeneration', 'toppnivå _ritadVid', 'toppnivå _flikRunda', 'toppnivå _visadSom',
+    'toppnivå _flikVal', 'toppnivå _valRaknare', 'toppnivå _rmHandelser', 'toppnivå _diagramexportNr', 'toppnivå _sistaAktivitet',
+    // Uppslag ur verktygets egna tabeller och talformat, byggda första gången de behövs: AID-katalogen, talformaten per
+    // antal decimaler och tabellernas valbara kolumner.
+    'toppnivå _index', 'toppnivå _svNf', 'toppnivå _rfNf', 'toppnivå _flerKolumnerTabeller',
+    // Startläget som rensningen ställer tillbaka (26-rensning.js): sidan före all data. Det skiljer bara i vilka av
+    // dess textnoder som ligger i dokumentet, när en text skrivits om med samma innehåll.
+    'toppnivå _startnoder', 'toppnivå _startegenskaper',
+]);
+describe('Rensa all data: fönstret är som ett färskt fönster (invariant)', () => {
+    /** Det som skiljer ett fönster från det färska, utom det som får skilja. */
+    const skiljerMot = farskt => { const fore = fonsteravtryck(farskt);
+        return w => { const nu = fonsteravtryck(w); return [...new Set([...Object.keys(nu), ...Object.keys(fore)])].filter(k => nu[k] !== fore[k] && !FAR_SKILJA.has(k)); }; };
     for (const [namn, rensa] of [['knappen Rensa all data', w => w.__rensaAllData()],
-                                 ['automatisk rensning vid inaktivitet', w => w.__rensaVidInaktivitet()]]) {
-    it(`${namn}: inget lönevärde kvar i någon flik`, async () => {
+                                 ['automatisk rensning vid inaktivitet', w => {
+                                     w.__rensaVidInaktivitet();
+                                     // Rutan som säger att sessionen rensades står kvar en stund; den bär inget ur underlaget.
+                                     const ruta = [...w.document.body.children].find(e => e.textContent.includes('Sessionen rensades'));
+                                     expect(ruta.textContent).not.toMatch(/\d/);
+                                     ruta.remove();
+                                 }]]) {
+    it(`${namn}: ingenting kvar av underlaget eller av det användaren gjort med det`, async () => {
+        const farskt = createAppWindow();
         const w = createAppWindow();
-        const rader = [];
-        for (let i = 0; i < 60; i++) {
-            rader.push({ bas: ['A', 'B', 'C'][i % 3], kon: i % 2 ? 'man' : 'kvinna', lon: 87600 + i, alder: 25 + (i % 40),
-                yrke: `${100 + (i % 2)} Yrke`, aid: String(100 + (i % 2)), yrkeLabel: 'Yrke', enhet: '1000' });
-        }
-        // En tydlig extremlön (187 6xx innehåller "876xx"), så att extremvärdesdetektorn
-        // har något att visa.
-        rader.push({ bas: 'A', kon: 'man', lon: 187650, alder: 50, yrke: '100 Yrke', aid: '100', yrkeLabel: 'Yrke', enhet: '1000' });
-        w.__state.data = rader;
-        w.eval('fyllValjare(); lasUppFlikar();');
-        for (const flik of menyflikar(w)) w.__ritaFlik(flik);
+        const d = w.document, klicka = sel => /** @type {any} */ (d.querySelector(sel)).click();
+        w.__lasInDemodata();
+        for (const flik of menyflikar(w)) klicka(`.nav-item[data-tab="${flik}"]`);
         w.eval('ritaExtremvarden()');
-        // Dialogerna med en grupps tal: öppna när rensningen kommer, också när den kommer efter en tid utan aktivitet.
-        w.eval("oppnaGruppdossier(); oppnaBasdossier('A')");
-        // Utskriftsrapporten byggs i dokumentet (window.print stubbas) — även den ska rensas.
         w.print = () => {};
         await w.eval('byggUtskriftsrapport()');
-        await new Promise(r => setTimeout(r, 0));
-        const kvar = () => {
-            const ut = [];
-            for (const el of w.document.body.querySelectorAll('*')) {
-                if (el.children.length) continue;
-                const t = `${el.textContent} ${attributtext(el)}`.replace(/(\d)[\s  ](?=\d)/g, '$1');
-                if (/876\d\d/.test(t)) ut.push((el.closest('[id]') || el).id || el.tagName);
-            }
-            return [...new Set(ut)];
-        };
+        // Det användaren gör med underlaget: ett sökord, ett urval, en markerad grupp, en riktad rad och ett sparat
+        // scenario i Löneöversyn, en avbockad punkt i Att göra.
+        const { aid, bas } = w.__state.data[0];
+        const sok = /** @type {any} */ (d.getElementById('search-rapport'));
+        sok.value = bas;
+        sok.dispatchEvent(new w.Event('input', { bubbles: true }));
+        w.__utforskaSattFilter({ bas: [bas] });
+        w.eval(`sattDiagramMarkering(${JSON.stringify(`grupp:${aid}|${bas}`)})`);
+        klicka('#forecast-add-target');
+        klicka('#forecast-save-a');
+        klicka('#action-checklist-container input[type="checkbox"]');
+        klicka('.nav-item[data-tab="rapporttext"]');
+        // En utpekad verktygsfil i Organisationspaket.
+        const verktyg = d.getElementById('file-input-verktygsfil');
+        Object.defineProperty(verktyg, 'files', { value: [new w.File(['<html>'], 'verktyg.html')], configurable: true });
+        verktyg.dispatchEvent(new w.Event('change'));
+        // Dialogerna med en grupps tal: öppna när rensningen kommer, också när den kommer efter en tid utan aktivitet.
+        w.eval(`oppnaGruppdossier(); oppnaBasdossier(${JSON.stringify(bas)})`);
+        klicka('.btn-evidence[data-rapport-row]');
+        klicka('[data-hp-skal]');
+        w.eval('oppnaVadLagras()');
+        klicka('#btn-open-symbols');
         // Diagram ritade med diagramkärnan (ritaFigur, ADR-39) bär sin figur som egenskap på behållaren och visar
         // lönevärden i SVG-text och i verktygstipsets portal. Rensningen måste nå dem alla: ett vars id inte börjar
         // med "chart-", ett utan id, ett i tomt läge (figuren finns kvar fast inget ritas) och ett som har lämnat
         // dokumentet medan dess tips visas.
         const figur = (over = {}) => ({ beskrivning: 'Medianlön per BAS', x: { skala: 'band', titel: 'BAS' }, y: { skala: 'linjar', titel: 'Kronor/månad', format: 'kr' },
             lager: [{ marke: 'stapel', serie: 'Alla', tips: d => [['Lön', `${d.y} kr`]], data: [{ x: 'A', y: 87611, etikett: '87 611 kr' }, { x: 'B', y: 87622, etikett: '87 622 kr', ...over }] }] });
-        const ny = id => { const el = w.document.createElement('div'); if (id) el.id = id; w.document.getElementById('view-dashboard').appendChild(el); return el; };
+        const ny = id => { const el = d.createElement('div'); if (id) el.id = id; d.getElementById('view-dashboard').appendChild(el); return el; };
         const karnan = {
             'id utan chart-': ny('figur-utan-chart-id'), 'utan id': ny(''), 'vanligt id': ny('chart-karnan-test'),
             'tomt läge': ny('figur-tomt-lage'), 'bortkopplad med tips': ny('figur-bortkopplad'),
@@ -223,29 +264,79 @@ describe('Rensa all data: ingen lönedata kvar i dokumentet (invariant)', () => 
         expect(karnan['tomt läge'].querySelector('[data-rf="tom"]')).not.toBeNull();
         expect(karnan['utan id'].textContent.replace(/\s/g, '')).toContain('87611kr');
         karnan['bortkopplad med tips'].querySelector('[data-marke="stapel"]').dispatchEvent(new w.MouseEvent('pointermove', { bubbles: true, clientX: 5, clientY: 5 }));
-        const portal = w.document.querySelector('.chart-tip-portal');
+        const portal = d.querySelector('.chart-tip-portal');
         expect(portal.textContent).toContain('87611 kr');
         karnan['bortkopplad med tips'].remove();
         expect(w.__rfTipsAgare()).toBe(karnan['bortkopplad med tips']);
-        expect(kvar().length, 'testet måste först se lönedata i dokumentet').toBeGreaterThan(0);
-        expect(kvar()).toContain('figur-utan-chart-id');
+
+        // Rensningen säger till skärmläsaren att allt är raderat: det färska fönstret får samma meddelande.
+        farskt.eval("meddelaSkarmlasare('All data har raderats ur minnet.')");
+        const vantaUt = () => new Promise(r => setTimeout(r, 100));   // meddelandet och det som räknas i bakgrunden hinner bli klart
+        await vantaUt();
+        const skiljerFran = skiljerMot(farskt), skiljer = () => skiljerFran(w);
+        for (const vad of ['state data', 'state forecast', 'fält search-rapport', 'dokument #dossier-modal', 'dokument #data-residency-modal', 'dokument #symbols-modal']) {
+            expect(skiljer(), `testet måste först se ${vad} ändrat`).toContain(vad);
+        }
         rensa(w);
-        expect(kvar()).toEqual([]);
-        for (const id of ['dossier-modal', 'basdossier-modal']) expect(w.document.getElementById(id).style.display, id).toBe('none');
-        expect(w.__utforskaMinne().rows).toBe(0);
-        // Inget av diagramkärnans minne finns kvar: ingen figur på någon behållare (inte heller den bortkopplade),
-        // inga lyssnare eller storleksbevakning, tomt register, tom portal, ingen ägare.
+        await vantaUt();
+        // Inget av diagramkärnans minne finns kvar på de tillagda behållarna: ingen figur (inte heller på den
+        // bortkopplade), inga lyssnare eller storleksbevakning, ingen text. Sedan tas de bort, som inte finns i ett
+        // färskt fönster.
         for (const [vad, el] of Object.entries(karnan)) {
             expect(Object.keys(el).filter(k => k.startsWith('_') && k !== '_chartExportAttached'), vad).toEqual([]);
             expect(el.textContent, vad).toBe('');
-            expect(el.querySelector('svg'), vad).toBeNull();
+            el.remove();
         }
-        expect(w.__rfBehallare()).toEqual([]);
-        expect(portal.textContent).toBe('');
-        expect(portal.classList.contains('visible')).toBe(false);
-        expect(w.__rfTipsAgare()).toBeNull();
+        expect(skiljer()).toEqual([]);
     });
     }
+    it('efter ett organisationspaket: grundinställningarna, låsningarna och jämförelseurvalet går med paketet', async () => {
+        const farskt = createAppWindow();
+        const w = createAppWindow();
+        const paket = { format: 'lonekartlaggning-organisationspaket', version: 1, organisation: { namn: 'Exempelorganisationen' }, skapat: '2026-10-08',
+            installningar: { poPct: 45, manader: 13, kTroskel: 12, kTroskelLagst: 12, jamforelse: 'mansdominerade', inaktivitetMin: 30, inaktivitetLast: true, smaGrupperIExport: false },
+            referens: { rader: [{ bas: 'A', p10: 20000, med: 25000, p90: 30000 }] } };
+        expect(w.eval(`lasInPaket(${JSON.stringify(JSON.stringify(paket))}, 'x.lonepaket.json')`).ok).toBe(true);
+        expect([w.__state.likvardighet.jamforelse, w.__state.costSettings.poPct, w.eval('kInstalld()')]).toEqual(['mansdominerade', 45, 12]);
+        farskt.eval("meddelaSkarmlasare('All data har raderats ur minnet.')");
+        w.__rensaAllData();
+        await new Promise(r => setTimeout(r, 500));   // också startskärmen i det färska fönstret hinner tas bort
+        expect(skiljerMot(farskt)(w)).toEqual([]);
+    });
+    it('det som får skilja finns i appen', () => {
+        const avtryck = fonsteravtryck(win);
+        expect([...FAR_SKILJA].filter(k => !(k in avtryck))).toEqual([]);
+    });
+});
+
+describe('Rensa all data: något att rensa', () => {
+    // Samma regel för knappen och för rensningen vid inaktivitet: det som rensningen ställer tillbaka.
+    it('en konfigurationsfil utan lönefil går att rensa, och rensningen vid inaktivitet gäller den', () => {
+        const a = createAppWindow();
+        a.__lasInDemodata();
+        a.__state._actionChecklistDone = new Set(['gap-bas-C']);
+        const konfiguration = a.__byggKonfiguration();
+        const w = createAppWindow();
+        w.__tillampaKonfiguration(konfiguration);
+        expect(w.__state.data.length).toBe(0);
+        w.dispatchEvent(new w.MouseEvent('mousemove'));
+        expect(w.eval('_inaktivitetstimer')).toBeTruthy();
+        let fragor = 0;
+        w.confirm = () => { fragor++; return true; };
+        w.document.getElementById('btn-clear-all-data').click();
+        expect(fragor).toBe(1);
+        expect([...w.__state._actionChecklistDone || []]).toEqual([]);
+        expect(w.__state.handlingsplan).toEqual({});
+    });
+    it('utan något inläst säger knappen att inget finns att rensa, och ingen tid räknas', () => {
+        const w = createAppWindow();
+        w.dispatchEvent(new w.MouseEvent('mousemove'));
+        expect(w.eval('_inaktivitetstimer')).toBeNull();
+        let fragor = 0;
+        w.confirm = () => { fragor++; return true; };
+        w.document.getElementById('btn-clear-all-data').click();
+        expect(fragor).toBe(0);
+    });
 });
 
 describe('Rensa all data tömmer Dokumentera', () => {

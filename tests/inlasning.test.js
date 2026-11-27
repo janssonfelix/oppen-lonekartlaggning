@@ -10,9 +10,10 @@
 import { describe, it, expect } from 'vitest';
 import {
     tolkaTal, tolkaTalStrikt, _normaliseraKon, _normaliseraBas, _normaliseraPolicyAid, _stadaYrkesfalt,
-    _pnrSampelSteg, hittaKansligaKolumner, tolkaLonerad, yrkeLiknarNamn, YRKE_NAMNMONSTER,
+    _pnrSampelSteg, hittaKansligaKolumner, tolkaLonerad, YRKE_NAMNMONSTER,
     yrkeNamnNyckel, sallsyntaNamnrader, YRKE_NAMN_HOGST_RADER,
-    _gissaAvgransare, _avkodaCsv, _hittaCsvRubrik, _gissaTabellformat, bladetsSlut,
+    _gissaAvgransare, _avkodaCsv, _hittaCsvRubrik, hittaRubrikrad, rubrikradTraffar, rubrikgrupper, RUBRIKRAD_SOKDJUP,
+    _gissaTabellformat, bladetsSlut, tolkaStatistikfil, dubbletterAidBas,
     _rubrikForRoll, vardeForRoll, gissaKolumnmappning, lonefilensRubriker, hittaAnsvarKolumn, _bedomAnsvarKolumn, minimeraRad
 } from '../src/lib/inlasning.js';
 import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
@@ -66,7 +67,7 @@ describe('[B9.1] inlasning: tal (tolkaTal, tolkaTalStrikt)', () => {
         ['45 ÅR', 45, 'ok'],
         ['45årig', 0, 'invalid'],
         ['45 årsarbetare', 0, 'invalid'],
-        ['3.25E+04', 0, 'invalid'],      // exponentform i text läses inte (förr: 3,2504)
+        ['3.25E+04', 0, 'invalid'],      // exponentform i text läses inte (inte som 3,2504)
         ['1.2.3', 0, 'invalid'],         // flera decimalpunkter som inte är tusentalsgrupper
         ['1,2,3', 0, 'invalid'],         // samma sak för kommatecken
         ['12,34.56', 0, 'invalid'],      // både punkt och komma, men delen före decimaltecknet är inga tregrupper
@@ -102,6 +103,11 @@ describe('[B9.2] [B9.3] inlasning: kön, BAS och AID', () => {
         ['W', 'kvinna'], ['w', 'kvinna'], ['Woman', 'kvinna'], [' woman ', 'kvinna'],
         ['M', 'man'], ['M.', 'man'], ['Ma', 'man'], ['MA', 'man'], ['Man', 'man'], [' man ', 'man'],
         ['Män', 'man'], ['MÄN', 'man'], ['Male', 'man'], [' Male ', 'man'],
+        // Ett tillägg inom parentes: könet när båda delarna anger samma, annars okänt.
+        ['Kvinna (F)', 'kvinna'], ['Man (M)', 'man'], ['F (kvinna)', 'kvinna'], ['M (Male) ', 'man'],
+        ['Kvinna (M)', 'kvinnam'], ['Man (kvinna)', 'mankvinna'],
+        // Objektets egna namn är inga kön.
+        ['Constructor', 'constructor'], ['toString', 'tostring'],
         // Siffervärden mappas inte (systemspecifik kodning, gissa inte); övrigt returneras normaliserat
         // (gemener, utan skiljetecken).
         ['1', ''], ['2', ''], ['x', 'x'], ['X', 'x'], ['', ''], [null, ''], [undefined, ''],
@@ -122,6 +128,9 @@ describe('[B9.2] [B9.3] inlasning: kön, BAS och AID', () => {
     });
     it('AID i ställningstagandet: sifferprefixet, annars den rensade strängen', () => {
         expect(_normaliseraPolicyAid('207 Förskollärare')).toBe('207');
+        expect(_normaliseraPolicyAid('207011:Förskollärare')).toBe('207011');
+        expect(_normaliseraPolicyAid('1:e Lärare')).toBe('1:e Lärare');
+        expect(_normaliseraPolicyAid('3D-designer')).toBe('3D-designer');
         expect(_normaliseraPolicyAid(' <Ledning> ')).toBe('Ledning');
         expect(_normaliseraPolicyAid('')).toBe('');
     });
@@ -135,6 +144,12 @@ describe('[B9.5] inlasning: yrke (_stadaYrkesfalt)', () => {
         ['101010 – Ledning', '101010 Ledning'],
         ['101010, Ledning', '101010 Ledning'],
         ['101010', '101010'],
+        ['207011—Sjuksköterska', '207011 Sjuksköterska'],
+        ['207011:Sjuksköterska', '207011 Sjuksköterska'],
+        // En titel som börjar med en siffra har ingen kod: siffrorna följs inte av blanksteg, separator eller slutet,
+        // eller är ett ordningstal.
+        ['1:e Lärare', '1:e Lärare'],
+        ['3D-designer', '3D-designer'],
         ['Ledning', 'Ledning'],
         ['101010 Lärare grundskola', '101010 Lärare grundskola'],
         // Ingenting maskeras (ADR-85): namn behålls som de står, och inläsningen varnar i stället.
@@ -178,7 +193,7 @@ describe('[B9.5] inlasning: yrke (_stadaYrkesfalt)', () => {
     });
 });
 
-describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
+describe('inlasning: namn i yrkesfältet (yrkeNamnNyckel)', () => {
     it.each([
         '101010 Sjuksköterska Anna Andersson',
         '101010 Anna Andersson',
@@ -188,8 +203,13 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
         '101010 — Sjuksköterska — Örjan Östberg 75%',
         '101010 <Anna> <Andersson>',
         'Anna Andersson',
+        // Bokstäver utöver å, ä och ö.
+        '101010 Anna Müller',
+        '101010 Zoë Lindqvist',
+        '101010 Müller, Anna',
+        '101010 ÉLODIE, NGUYỄN',
     ])('%o ser ut att innehålla ett namn', raw => {
-        expect(yrkeLiknarNamn(raw)).toBe(true);
+        expect(yrkeNamnNyckel(raw)).not.toBe('');
     });
 
     it.each([
@@ -208,19 +228,19 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
         '101010 sjuksköterska Andersson',
         '101010 ANDERSSON, Anna',
     ])('%o ser inte ut att innehålla ett namn', raw => {
-        expect(yrkeLiknarNamn(raw)).toBe(false);
+        expect(yrkeNamnNyckel(raw)).toBe('');
     });
 
     it('ingen etikett i den inbyggda etikettlistan träffas', () => {
         const etiketter = aidEtikettlista().etiketter;
         expect(etiketter.length).toBeGreaterThan(200);
-        expect(etiketter.filter(([kod, namn]) => yrkeLiknarNamn(`${kod} ${namn}`)).map(([kod, namn]) => `${kod} ${namn}`)).toEqual([]);
-        expect(etiketter.filter(([, namn]) => yrkeLiknarNamn(namn)).map(([, namn]) => namn)).toEqual([]);
+        expect(etiketter.filter(([kod, namn]) => yrkeNamnNyckel(`${kod} ${namn}`)).map(([kod, namn]) => `${kod} ${namn}`)).toEqual([]);
+        expect(etiketter.filter(([, namn]) => yrkeNamnNyckel(namn)).map(([, namn]) => namn)).toEqual([]);
     });
 
     it('mönstren bär inget tillstånd, och etiketten skiljs ut som i _stadaYrkesfalt', () => {
         expect(YRKE_NAMNMONSTER).toHaveLength(2);
-        for (const re of YRKE_NAMNMONSTER) expect(re.flags).toBe('');   // utan /g: test() bär inget tillstånd mellan anropen
+        for (const re of YRKE_NAMNMONSTER) expect(re.flags).toBe('u');   // utan /g: test() bär inget tillstånd mellan anropen
         // Båda tar etiketten ur samma hjälpfunktion.
         for (const f of [_stadaYrkesfalt, yrkeNamnNyckel]) expect(f.toString()).toContain('_yrkeEtikett(s)');
     });
@@ -235,10 +255,10 @@ describe('inlasning: namn i yrkesfältet (yrkeLiknarNamn)', () => {
 
     it('prövas på råvärdet: ett namn efter kortningsgränsen på 40 tecken räknas också', () => {
         expect(_stadaYrkesfalt('101010 Sjuksköterska Anna Andersson')).toBe('101010 Sjuksköterska Anna Andersson');
-        expect(yrkeLiknarNamn('101010 Sjuksköterska Anna Andersson')).toBe(true);
+        expect(yrkeNamnNyckel('101010 Sjuksköterska Anna Andersson')).not.toBe('');
         const lang = '101010 handläggare med särskilt ansvar för samordning Anna Andersson';
         expect(_stadaYrkesfalt(lang)).not.toMatch(/Anna|Andersson/);
-        expect(yrkeLiknarNamn(lang)).toBe(true);
+        expect(yrkeNamnNyckel(lang)).not.toBe('');
     });
 });
 
@@ -312,6 +332,10 @@ describe('[B9.4] inlasning: en lönerad (tolkaLonerad)', () => {
         });
     });
 
+    it('en titel som börjar med en siffra ger ingen AID-kod', () => {
+        expect(tolkaLonerad(falt('45', { yrke: '1:e Lärare' }), 2026)).toMatchObject({ aid: '', yrke: '1:e Lärare', yrkeLabel: '1:e Lärare' });
+        expect(tolkaLonerad(falt('45', { yrke: '207011—Sjuksköterska' }), 2026)).toMatchObject({ aid: '207011', yrkeLabel: 'Sjuksköterska' });
+    });
     it('skräp efter siffrorna: lönen och åldern blir ogiltiga och poängen saknas', () => {
         const rec = tolkaLonerad(falt('45årig', { lon: '32500abc', poang: '342x' }), 2026);
         expect(rec).toMatchObject({ lon: 0, _lonStatus: 'invalid', alder: 0, _alderStatus: 'invalid', poang: null });
@@ -345,16 +369,31 @@ describe('inlasning: känsliga kolumner', () => {
     });
     it('rubriker och värden som avslöjar personuppgifter', () => {
         const rader = Array.from({ length: 10 }, (_, i) => ({
-            'Anst.nr': String(1000 + i), 'Förnamn': 'x', 'Id': `19800101-123${i}`, 'Kontakt': `p${i}@exempel.se`,
-            'Person': ['Anna Andersson', 'Bo Berg', 'Cecilia Ek'][i % 3], 'Befattning': 'Lärare grundskola'
+            'Anst.nr': String(1000 + i), 'Förnamn': 'x', 'Id': `19800101-123${i}`, 'Befattning': 'Lärare grundskola'
         }));
-        expect(hittaKansligaKolumner(rader).map(f => f.col)).toEqual(['Förnamn', 'Id', 'Kontakt', 'Person']);
+        expect(hittaKansligaKolumner(rader).map(f => f.col)).toEqual(['Förnamn', 'Id']);
         expect(hittaKansligaKolumner([])).toEqual([]);
+    });
+    it('kolumnerna är filens rubriker: en kolumn som första raden saknar prövas också', () => {
+        // En kort första rad i CSV ger ett radobjekt utan den sista kolumnen.
+        const rubriker = ['BAS', 'AID', 'Lon', 'Kon', 'Id'];
+        const rader = [{ BAS: 'C', AID: '1', Lon: '1', Kon: 'K' },
+            ...Array.from({ length: 9 }, (_, i) => ({ BAS: 'C', AID: '1', Lon: '1', Kon: 'K', Id: `19800101-123${i}` }))];
+        expect(hittaKansligaKolumner(rader, rubriker).map(f => f.col)).toEqual(['Id']);
+        expect(hittaKansligaKolumner(rader.slice(0, 1), [...rubriker, 'Personnummer']).map(f => f.col)).toEqual(['Personnummer']);
+    });
+    it('personnummer kräver giltig månad och dag: löpnummer med tio siffror avvisar inte filen', () => {
+        const kolumn = f => Array.from({ length: 10 }, (_, i) => ({ BAS: 'C', Id: f(i) }));
+        expect(hittaKansligaKolumner(kolumn(i => String(1000000120 + i)))).toEqual([]);      // månad 00
+        expect(hittaKansligaKolumner(kolumn(i => `801301-12${30 + i}`))).toEqual([]);         // månad 13
+        expect(hittaKansligaKolumner(kolumn(i => `800132-12${30 + i}`))).toEqual([]);         // dag 32
+        expect(hittaKansligaKolumner(kolumn(i => `19801231-12${30 + i}`)).map(f => f.col)).toEqual(['Id']);
+        expect(hittaKansligaKolumner(kolumn(i => `8012${10 + i}${1230 + i}`)).map(f => f.col)).toEqual(['Id']);
     });
 });
 
-describe('hittaKansligaKolumner (PII-rubriker)', () => {
-    // Rader vars värden inte själva utlöser värdekontrollen (ett ord, inte "Förnamn Efternamn").
+describe('hittaKansligaKolumner (rubrikerna)', () => {
+    // Rader vars värden inte själva utlöser värdekontrollen (inga personnummer).
     const rader = kol => Array.from({ length: 10 }, (_, i) => ({ BAS: 'C', [kol]: `V${i}` }));
     it('rubriken Förnamn avvisas, med och utan ö', () => {
         for (const kol of ['Förnamn', 'Fornamn', 'FÖRNAMN', 'Förnamn ']) {
@@ -363,27 +402,12 @@ describe('hittaKansligaKolumner (PII-rubriker)', () => {
             expect(fel[0].reason).toMatch(/personnamn/);
         }
     });
-    it('Efternamn, Namn och e-post känns igen även med svenska tecken i rubriken', () => {
-        expect(hittaKansligaKolumner(rader('Efternamn')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder personnamn']);
-        expect(hittaKansligaKolumner(rader('Namn')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder personnamn']);
-        expect(hittaKansligaKolumner(rader('E-postadress')).map(f => f.reason)).toEqual(['Kolumnrubriken antyder e-postadress']);
+    it('"pnr" och "ssn" som del av ett ord avvisar inte', () => {
+        for (const kol of ['Adressnr', 'Passnr']) expect(hittaKansligaKolumner(rader(kol)), kol).toEqual([]);
     });
-    it('vanliga rubriker avvisas inte', () => {
-        for (const kol of ['BAS', 'Månadslön', 'Ålder', 'Kön', 'AID', 'Ansvarskod', 'Enhet', 'Benämning', 'Anställningsnummer',
-                           'Sjukhus', 'Lönepolitik', 'Religionskunskap (ämne)', 'Fackområde']) {
-            expect(hittaKansligaKolumner(rader(kol)), kol).toEqual([]);
-        }
-    });
-    // Särskilda kategorier (dataskyddsförordningen art. 9): underlaget ska inte innehålla dem, och riskanalysen
-    // säger att det inte gör det. Rubrikkontrollen gör påståendet sant i stället för antaget (lagrum.md, C23b).
-    it('rubriker som antyder särskilda kategorier av personuppgifter avvisas', () => {
-        for (const kol of ['Fackmedlemskap', 'Facklig tillhörighet', 'Fackförbund', 'Medlemskap', 'Hälsa', 'Hälsotillstånd',
-                           'Sjukfrånvaro', 'Sjukskrivning', 'Sjukdom', 'Diagnos', 'Etnicitet', 'Etniskt ursprung', 'Religion',
-                           'Trosuppfattning', 'Politisk tillhörighet', 'Sexuell läggning', 'Funktionsnedsättning',
-                           'Genetisk', 'Biometri', 'HALSA', 'sexuell laggning']) {
-            const fel = hittaKansligaKolumner(rader(kol));
-            expect(fel.map(f => f.col), kol).toEqual([kol]);
-            expect(fel[0].reason, kol).toMatch(/särskild kategori/);
+    it('rubriker för personnummer och namn avvisas', () => {
+        for (const kol of ['Personnummer', 'Pnr', 'SSN', 'Social security number', 'Namn', 'Efternamn']) {
+            expect(hittaKansligaKolumner(rader(kol)).map(f => f.col), kol).toEqual([kol]);
         }
     });
 });
@@ -396,24 +420,6 @@ describe('hittaKansligaKolumner (värdena)', () => {
         const fel = hittaKansligaKolumner(fil('Id', i => (i >= 200 ? `19800101-${1000 + i}` : `A${i}`)));
         expect(fel.map(f => f.col)).toEqual(['Id']);
         expect(fel[0].reason).toMatch(/personnummer/);
-    });
-    it('samplingen täcker hela filen: e-post bara i slutet hittas', () => {
-        const fel = hittaKansligaKolumner(fil('Kontakt', i => (i >= 250 ? `p${i}@exempel.se` : '')));
-        expect(fel.map(f => f.reason)).toEqual([expect.stringMatching(/e-post/)]);
-    });
-    const namn = ['Anna Andersson', 'Bo Berg', 'Cecilia Carlsson', 'David Dahl', 'Eva Ek', 'Fredrik Falk'];
-    const tio = (kol, f) => Array.from({ length: 12 }, (_, i) => ({ BAS: 'C', [kol]: f(namn[i % namn.length]) }));
-    it('namn med versaler, gemener och efternamn först med komma känns igen', () => {
-        const omvand = n => n.split(' ').reverse().join(', ');
-        for (const [etikett, f] of [['Versaler', n => n.toUpperCase()], ['Gemener', n => n.toLowerCase()],
-            ['Komma', omvand], ['Komma versaler', n => omvand(n).toUpperCase()], ['Komma utan mellanslag', n => omvand(n).replace(' ', '')]]) {
-            const fel = hittaKansligaKolumner(tio('Person', f));
-            expect(fel.map(x => x.reason), etikett).toEqual([expect.stringMatching(/personnamn/)]);
-        }
-    });
-    it('befattningar med stor bokstav bara först räknas inte som namn', () => {
-        const titlar = ['Lärare grundskola', 'Undersköterska hemtjänst', 'Lärare fritidshem', 'Administratör ekonomi', 'Kock storkök'];
-        expect(hittaKansligaKolumner(Array.from({ length: 50 }, (_, i) => ({ BAS: 'C', Befattning: titlar[i % 5] })))).toEqual([]);
     });
 });
 
@@ -501,6 +507,83 @@ describe('_hittaCsvRubrik (rubrikrad + preamble-tolerans)', () => {
     });
 });
 
+describe('rubrikraden: en regel för CSV och Excel (hittaRubrikrad)', () => {
+    const rubrikrad = 'BAS;AID;Månadslön;Ålder;Kön';
+    const csv = (...rader) => _hittaCsvRubrik([...rader, 'C;207011;30000;40;K'].join('\n'), rubrikgrupper());
+    const excel = (...rader) => hittaRubrikrad([...rader, 'C;207011;30000;40;K'].map(r => [r.split(';')]), rubrikgrupper());
+    it('en titelrad som nämner kolumnerna i en cell är ingen rubrikrad: varje cell räknas för högst en roll', () => {
+        const titel = 'Månadslön per kön, ålder, BAS och befattning;;;;';
+        expect(csv(titel, rubrikrad).line).toBe(1);
+        expect(excel(titel, rubrikrad).line).toBe(1);
+    });
+    it('cellerna prövas med ordregeln: "Databas" och "Basbelopp" är ingen BAS-rubrik', () => {
+        expect(rubrikradTraffar(['Databas', 'Basbelopp', 'Lönetillägg'], rubrikgrupper())).toBe(0);
+        expect(rubrikradTraffar(['BAS', 'BAS-intervall', 'Grundlön'], rubrikgrupper())).toBe(2);
+    });
+    it('vid lika många rubrikceller gäller den senare raden', () => {
+        expect(csv('BAS;Kön;;', 'BAS;Kön;Okänd;Okänd2').line).toBe(1);
+        expect(excel('BAS;Kön;;', 'BAS;Kön;Okänd;Okänd2').line).toBe(1);
+    });
+    it(`båda söker de ${RUBRIKRAD_SOKDJUP} första raderna`, () => {
+        const fore = Array.from({ length: RUBRIKRAD_SOKDJUP - 1 }, (_, i) => `Försättsrad ${i}`);
+        expect(csv(...fore, rubrikrad).line).toBe(RUBRIKRAD_SOKDJUP - 1);
+        expect(excel(...fore, rubrikrad).line).toBe(RUBRIKRAD_SOKDJUP - 1);
+        expect(csv(...fore, 'Försättsrad', rubrikrad).line).toBe(0);
+        expect(excel(...fore, 'Försättsrad', rubrikrad).line).toBe(0);
+    });
+});
+
+describe('jämförelsestatistikens fil (tolkaStatistikfil)', () => {
+    const fil = (rubriker, ...rader) => tolkaStatistikfil(rubriker, rader.map(r => Object.fromEntries(rubriker.map((h, i) => [h, r[i] ?? '']))));
+    it('kolumnerna väljs med ordregeln: BAS före Basbelopp, Median totalt före könens medianer', () => {
+        const t = fil(['AID', 'Basbelopp', 'BAS', 'Median kvinnor', 'Median män', 'Median totalt', 'Diff LPS Median'],
+            ['207011', '57300', 'D', '30000', '32000', '31000', '-500']);
+        expect(t.rader).toEqual([expect.objectContaining({ aid: '207011', bas: 'D', median: 31000 })]);
+    });
+    it('könens kolumner känns igen också med komma och parentes', () => {
+        for (const [kv, ma] of [['Kvinnor, antal', 'Män, antal'], ['Antal kvinnor', 'Antal män'], ['Kvinnor (antal)', 'Män (antal)']]) {
+            const t = fil(['AID', 'BAS', 'Median', kv, ma], ['207011', 'D', '33000', '40', '10']);
+            expect(t.rader[0], kv).toMatchObject({ nKv: 40, nMa: 10, andelKv: 80 });
+            expect(t.harKon, kv).toBe(true);
+        }
+    });
+    it('en tom eller dold andel saknas: antalen i raden används, annars ingen andel', () => {
+        const t = fil(['AID', 'BAS', 'Median', 'Andel kvinnor', 'Kvinnor Antal', 'Män Antal'],
+            ['207011', 'D', '33000', '', '40', '10'], ['403010', 'C', '30000', '**', '', ''], ['503010', 'E', '34000', 'saknas', '', '']);
+        expect(t.rader.map(r => r.andelKv)).toEqual([80, null, null]);
+        expect(t.rader.map(r => [r.nKv, r.nMa])).toEqual([[40, 10], [null, null], [null, null]]);
+    });
+    it('andelen är decimal bara när hela kolumnen är det', () => {
+        const procent = fil(['AID', 'BAS', 'Median', 'Andel kvinnor'], ['503012', 'E', '38000', '1'], ['503010', 'E', '34000', '0,5'], ['207011', 'D', '33000', '85']);
+        expect(procent.rader.map(r => r.andelKv)).toEqual([1, 0.5, 85]);
+        const decimal = fil(['AID', 'BAS', 'Median', 'Andel kvinnor'], ['503012', 'E', '38000', '0,01'], ['207011', 'D', '33000', '0,85'], ['207012', 'D', '33000', '1']);
+        expect(decimal.rader.map(r => r.andelKv)).toEqual([1, 85, 100]);
+    });
+    it('P10, P90 och könsfördelningen finns när någon rad har dem, inte när bara kolumnen finns', () => {
+        const t = fil(['AID', 'BAS', 'Median', 'P10', 'P90', 'Andel kvinnor'], ['207011', 'D', '33000', '', '', '']);
+        expect([t.harP10, t.harP90, t.harKon]).toEqual([false, false, false]);
+        expect(t.rader[0]).toMatchObject({ p10: 0, p90: 0, andelKv: null });
+        const m = fil(['AID', 'BAS', 'Median', 'Totalt 10:e p', 'Totalt 90:e p'], ['207011', 'D', '33000', '28000', '39000']);
+        expect([m.harP10, m.harP90]).toEqual([true, true]);
+        expect(m.rader[0]).toMatchObject({ p10: 28000, p90: 39000 });
+    });
+    it('rader utan AID eller med en median som inte är ett tal över noll räknas', () => {
+        const t = fil(['AID', 'BAS', 'Median'], ['207011', 'D', '33000'], ['207012', 'D', '0'], ['207013', 'D', '-100'], ['207014', 'D', 'x'], ['', 'D', '33000']);
+        expect(t.rader.map(r => r.aid)).toEqual(['207011']);
+        expect(t.ogiltiga).toBe(4);
+    });
+    it('dubbletter av AID och BAS räknas; den första raden står först', () => {
+        const t = fil(['AID', 'BAS', 'Median'], ['207011', 'D', '30000'], ['207011', 'D', '35000'], ['207011', 'C', '29000']);
+        expect(t.dubbletter).toBe(1);
+        expect(dubbletterAidBas(t.rader)).toBe(1);
+    });
+    it('utan kolumn för AID eller median: fel', () => {
+        expect(fil(['Yrke', 'BAS', 'Median'], ['x', 'D', '1']).fel).toMatch(/AID eller Median/);
+        expect(fil(['AID', 'BAS', 'Medianlön'], ['1', 'D', '1']).fel).toBeUndefined();
+        expect(fil(['AID', 'BAS', 'Lön'], ['1', 'D', '1']).fel).toMatch(/AID eller Median/);
+    });
+});
+
 // ---- Kolumnvalet: vilken rubrik som bär vilket fält ----
 // `val` är det appens adaptrar skickar ur tillståndet: kolumnmappningen och importprofilen.
 describe('hamtaFalt (kolumnmatchning + manuell mappning)', () => {
@@ -540,23 +623,43 @@ describe('gissaKolumnmappning', () => {
 const minimera = (row, ansvarKolumn = null) => minimeraRad(row, lonefilensRubriker(Object.keys(row)), ansvarKolumn, 2026);
 
 describe('inläsning: kolumnvalet', () => {
-    // "Lön" rensas till "ln", och "Lönetillägg" till "lnetillgg", som också innehåller "ln".
-    const rubriker = ['Lönetillägg', 'Kön', 'BAS', 'Lön'];
-    it('en rubrik som är exakt lika sökordet går före en som bara innehåller det', () => {
+    // "Lön" rensas till "ln", och "Grundlön" till "grundln", som också slutar med "ln".
+    const rubriker = ['Grundlön', 'Kön', 'BAS', 'Lön'];
+    it('en rubrik som är exakt lika sökordet går före en som bara slutar med det', () => {
         expect(gissaKolumnmappning(rubriker).lon).toBe('Lön');
-        const row = { 'Lönetillägg': '500', 'Kön': 'Kvinna', 'BAS': 'A', 'Lön': '30000' };
+        const row = { 'Grundlön': '28000', 'Kön': 'Kvinna', 'BAS': 'A', 'Lön': '30000' };
         expect(vardeForRoll(row, ['mnadsln', 'lon', 'ln'], 'lon')).toBe('30000');
         expect(minimera(row).lon).toBe(30000);
     });
-    it('delsträngen gäller när ingen rubrik är exakt lika, och sökordens ordning står sig', () => {
-        expect(gissaKolumnmappning(['Lönetillägg', 'Kön']).lon).toBe('Lönetillägg');
+    it('ett kort sökord träffar bara ett helt ord, och sökordens ordning står sig', () => {
+        expect(gissaKolumnmappning(['Lönetillägg', 'Kön']).lon).toBeNull();
+        expect(gissaKolumnmappning(['Löneart']).lon).toBeNull();
+        expect(gissaKolumnmappning(['Konto']).kon).toBeNull();
+        expect(gissaKolumnmappning(['Databas']).bas).toBeNull();
+        expect(gissaKolumnmappning(['Paid']).yrke).toBeNull();
         expect(gissaKolumnmappning(['Lön', 'Månadslön']).lon).toBe('Månadslön');
     });
-    it('en exakt rubrik för ett senare sökord går före en delsträng för ett tidigare, och annars den kortaste', () => {
-        expect(gissaKolumnmappning(['Kontor', 'Kön']).kon).toBe('Kön');
+    it('lönens korta sökord får stå sist i ett ord: svenska sammansättningar med lön slutar på lön', () => {
+        for (const h of ['Grundlön', 'Heltidslön', 'Manadslon']) expect(gissaKolumnmappning([h]).lon, h).toBe(h);
+    });
+    it('sökordet i ett ord av rubriken går före samma bokstäver inne i ett annat ord', () => {
+        const m = gissaKolumnmappning(['Anställningsnr', 'AID-etikett', 'BAS', 'Kön (juridiskt)', 'Kontor', 'Ålder', 'Överenskommen lön per månad']);
+        expect(m.lon).toBe('Överenskommen lön per månad');
+        expect(m.kon).toBe('Kön (juridiskt)');
+        expect(gissaKolumnmappning(['Avdelning', 'Yrke', 'BAS', 'Kön', 'Ålder', 'Heltidslön inkl. tillägg']).lon).toBe('Heltidslön inkl. tillägg');
+        expect(gissaKolumnmappning(['Tekniker', 'Yrke', 'BAS', 'Kön juridiskt', 'Ålder', 'Lön']).kon).toBe('Kön juridiskt');
+    });
+    it('mallens rubriker ger alla sex roller, ett ord som börjar med ett långt sökord räcker, och AIDkod i ett ord är yrke', () => {
+        expect(gissaKolumnmappning(['BAS-intervall', 'AID', 'Manadslon', 'Alder', 'Kon', 'Poang'])).toEqual(
+            { bas: 'BAS-intervall', yrke: 'AID', lon: 'Manadslon', alder: 'Alder', kon: 'Kon', poang: 'Poang', ansvar: null });
+        expect(gissaKolumnmappning(['Yrkesnamn']).yrke).toBe('Yrkesnamn');
+        expect(gissaKolumnmappning(['AIDkod']).yrke).toBe('AIDkod');
+    });
+    it('en exakt rubrik för ett senare sökord går före en sämre träff för ett tidigare, annars bästa nivå och den kortaste', () => {
+        expect(gissaKolumnmappning(['Lönebas', 'Basintervall']).bas).toBe('Basintervall');
         expect(gissaKolumnmappning(['Basenhet', 'BAS-intervall']).bas).toBe('BAS-intervall');
         expect(gissaKolumnmappning(['Anställningsålder', 'Ålder (år)']).alder).toBe('Ålder (år)');
-        expect(gissaKolumnmappning(['Lönetillägg', 'Grundlön']).lon).toBe('Grundlön');
+        expect(gissaKolumnmappning(['Heltidslön', 'Grundlön']).lon).toBe('Grundlön');
     });
     it('yrkets sökord är en prioritetsordning: AID-etikett går före en rubrik som bara heter AID', () => {
         expect(gissaKolumnmappning(['AID', 'AID-etikett']).yrke).toBe('AID-etikett');

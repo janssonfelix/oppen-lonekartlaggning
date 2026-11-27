@@ -17,7 +17,7 @@ describe('aidkontroll', () => {
     it('restkoder: varning över 10 %', () => {
         expect(hitta(aidKriterier([...ggr(8, () => r('207011')), ...ggr(2, () => r('207090'))], { k: 10 }), 'aid-restkoder').status).toBe('varning');
         expect(hitta(aidKriterier([...ggr(9, () => r('207011')), r('207090')], { k: 10 }), 'aid-restkoder').status).toBe('ok');
-        expect(hitta(aidKriterier([r('207011')], { k: 10 }), 'aid-restkoder').text).toBe('Ingen har en restkod (…090).');
+        expect(hitta(aidKriterier([r('207011')], { k: 10 }), 'aid-restkoder').text).toBe('Ingen har en restkod («…, annan» eller «…, annat»).');
     });
     it('stor spridning: P90/P10 > 1,6 i en grupp med minst k personer', () => {
         const bred = ggr(10, i => r('207011', i < 5 ? 25000 : 45000));
@@ -26,6 +26,17 @@ describe('aidkontroll', () => {
         expect(c.text).toMatch(/207011/);
         expect(hitta(aidKriterier(ggr(10, i => r('207011', 30000 + i * 100)), { k: 10 }), 'aid-spridning').status).toBe('ok');
         expect(hitta(aidKriterier(ggr(5, i => r('207011', i < 2 ? 20000 : 50000)), { k: 10 }), 'aid-spridning').status).toBe('ok');   // under k
+    });
+    it('spridningen räknas inom AID-koden och BAS-intervallet, inte över intervallen', () => {
+        // Lika löner inom varje intervall, olika mellan dem: koden rymmer olika värderade arbeten men varnar inte.
+        const tva = [...ggr(10, () => r('207011', 25000, { bas: 'C' })), ...ggr(10, () => r('207011', 45000, { bas: 'F' }))];
+        expect(hitta(aidKriterier(tva, { k: 10 }), 'aid-spridning').status).toBe('ok');
+        // Bred inom ett intervall med minst k personer: varnar, och koden nämns en gång.
+        const bred = [...ggr(10, i => r('207011', i < 5 ? 25000 : 45000, { bas: 'C' })), ...ggr(10, i => r('207011', i < 5 ? 25000 : 45000, { bas: 'F' }))];
+        const c = hitta(aidKriterier(bred, { k: 10 }), 'aid-spridning');
+        expect(c.status).toBe('varning');
+        expect(c.varde).toBe(1);
+        expect(c.text.match(/207011/g)).toHaveLength(1);
     });
     it('ansvarskoderna kontrolleras bara när fältet finns', () => {
         const rader = [r('103511', 50000, { ansvarskoder: [] }), r('207011', 30000, { ansvarskoder: ['A'] }),

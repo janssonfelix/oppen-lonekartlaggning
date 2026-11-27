@@ -17,10 +17,23 @@ import { konsMedianer } from './struktur.js';
 /** Gränsen för jämn könsfördelning: båda könen minst så många procent av intervallet. */
 export const JAMN_KONSFORDELNING = 40;
 
+/** Andelen i procent med en decimal, talet som visas i tabellen. */
+const andelVisad = (n, tot) => parseFloat((n / tot * 100).toFixed(1));
+
+/**
+ * Det underrepresenterade könet i ett intervall, eller null när fördelningen är jämn: bedöms på andelarna så som de
+ * visas, med en decimal, så att kortet i Översikt och tabellen i Lönestruktur klassar samma tal lika.
+ * @param {number} nKv @param {number} nMa @returns {'Kvinna'|'Man'|null}
+ */
+export function underrepresenteratKon(nKv, nMa) {
+    const tot = nKv + nMa;
+    return andelVisad(nKv, tot) < JAMN_KONSFORDELNING ? 'Kvinna' : andelVisad(nMa, tot) < JAMN_KONSFORDELNING ? 'Man' : null;
+}
+
 const kvinnorsLoner = rader => rader.filter(r => arKvinna(r)).map(r => r.lon);
 const mansLoner = rader => rader.filter(r => arMan(r)).map(r => r.lon);
 /** Uträkningens ingångsdata för en rad (beviset bakom raden). */
-const underlag = (bas, rader) => ({ bas, rader, kvLons: kvinnorsLoner(rader), maLons: mansLoner(rader), masked: false });
+const underlag = (bas, rader) => ({ bas, rader, kvLons: kvinnorsLoner(rader), maLons: mansLoner(rader) });
 
 /**
  * Översiktens rader: kvinnors och mäns medianlön per BAS-intervall med kvoten och dess 95-procentiga bootstrap-KI,
@@ -69,12 +82,13 @@ export function vymodellLonestruktur(rader, { bas, k, golv, litetUnderlag, overs
     }
 
     // Tabellen per BAS-intervall, samma tvådelade regel som i Lika arbete: hela intervallet under k → ingen rad;
-    // bara ett kön under k → intervallets samlade median, som bygger på minst k personer.
+    // bara ett kön under k → intervallets samlade median, som bygger på minst k personer. Varje intervall med personer
+    // räknas, också ett med bara ett kön, och det som inte får en könsjämförelse står i noten.
     /** @type {{rader: any[], utelamnade: string[], samlade: string[], maskerade: number}} */
     const skillnad = { rader: [], utelamnade: [], samlade: [], maskerade: 0 };
     for (const b of bas) {
         const df = perBas[b], nKv = df.filter(r => arKvinna(r)).length, nMa = df.filter(r => arMan(r)).length;
-        if (nKv < 2 || nMa < 2) continue;
+        if (!df.length) continue;
         if (nKv < k || nMa < k) skillnad.maskerade++;
         const m = konsMedianer(df, { k });
         if (!m.konOk && df.length < k) { skillnad.utelamnade.push(b); continue; }
@@ -89,8 +103,8 @@ export function vymodellLonestruktur(rader, { bas, k, golv, litetUnderlag, overs
     for (const b of bas) {
         const df = perBas[b], nKv = df.filter(r => arKvinna(r)).length, nMa = df.filter(r => arMan(r)).length, tot = nKv + nMa;
         if (tot < litetUnderlag) { if (tot > 0) konsfordelning.utelamnade.push(b); continue; }
-        const pctKv = parseFloat((nKv / tot * 100).toFixed(1)), pctMa = parseFloat((nMa / tot * 100).toFixed(1));
-        const underrepresenterat = pctKv < JAMN_KONSFORDELNING ? 'Kvinna' : pctMa < JAMN_KONSFORDELNING ? 'Man' : null;
+        const pctKv = andelVisad(nKv, tot), pctMa = andelVisad(nMa, tot);
+        const underrepresenterat = underrepresenteratKon(nKv, nMa);
         konsfordelning.rader.push({ bas: b, tot, nKv, nMa, pctKv, pctMa, underrepresenterat });
     }
 

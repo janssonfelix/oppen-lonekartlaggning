@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { FARG } from './01-farger.js';
-import { esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
+import { esc, slappFokus, fangaFokus, stangDialog } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { INAKTIVITET_STANDARD_MIN } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
 import { referensKalla, referensNamn, state } from './12-tillstand.js';
 import { _fkVantar } from './17-forhandskontroll.js';
-import { _rensaAllData, rensaAllData } from './26-rensning.js';
+import { _rensaAllData, finnsNagotAttRensa, rensaAllData } from './26-rensning.js';
 import { stangInstallningar } from './86-installningar.js';
 
 // ---- Vad lagras i minnet just nu? (inbyggt dataskydd, art. 25) ----
@@ -72,7 +72,7 @@ export function oppnaVadLagras() {
             <!-- Inaktivitetstimer-inställning -->
             <h3 class="fs-md marg-t-18">Automatisk sessionsrensning vid inaktivitet</h3>
             <p class="text-dampad-sm marg-0-0-8">
-                Skyddar om du lämnar datorn olåst. När tiden har gått får du en varning och kan förlänga. Svarar du inte inom 60 sekunder rensas allt, som med knappen Rensa all data.
+                Skyddar om du lämnar datorn olåst. När tiden har gått får du en varning och kan förlänga. Svarar du inte inom ${VARNING_S} sekunder rensas allt, som med knappen Rensa all data.
             </p>
             <div class="rad-bryt-mitt gap-10">
                 <label for="inactivity-timeout-select" class="fs-sm fw-600">Rensa efter:</label>
@@ -101,6 +101,8 @@ export function oppnaVadLagras() {
 // sover, och en dator som öppnas efter timmar visade annars underlaget tills resten av tiden gått. Intervallet prövar
 // klockan; det står också still under sömnen men prövar igen så snart datorn vaknar.
 const _INAKTIVITET_PROV_MS = 15 * 1000;
+/** Varningens nedräkning i sekunder: svarar ingen inom den tiden rensas allt. */
+const VARNING_S = 60;
 /** @type {ReturnType<typeof setInterval>|null} */
 let _inaktivitetstimer  = null;
 /** Klockan vid senaste aktiviteten. */
@@ -112,6 +114,7 @@ let _inaktivitetsvarningElement     = null;
 
 function _doljInaktivitetsvarning() {
     if (_inaktivitetsvarningElement) {
+        slappFokus(_inaktivitetsvarningElement);
         _inaktivitetsvarningElement.remove();
         _inaktivitetsvarningElement = null;
     }
@@ -127,11 +130,13 @@ function _visaInaktivitetsvarning() {
     warn.className = 'inactivity-warn-overlay';
     warn.setAttribute('role', 'alertdialog');
     warn.setAttribute('aria-modal', 'true');
+    warn.setAttribute('aria-labelledby', 'inactivity-warn-rubrik');
+    warn.setAttribute('aria-describedby', 'inactivity-warn-text');
     warn.innerHTML = `
         <div class="inactivity-warn-panel">
-            <h2 class="fs-lg marg-0-0-10">Sessionen håller på att gå ut</h2>
-            <p class="fs-md lh-1_55">
-                Verktyget har varit inaktivt i ${state.inactivityTimeoutMin} minuter. För att skydda känsliga uppgifter rensas minnet om <strong id="inactivity-countdown">60</strong> sekunder. Det går inte att ångra.
+            <h2 id="inactivity-warn-rubrik" class="fs-lg marg-0-0-10">Sessionen håller på att gå ut</h2>
+            <p id="inactivity-warn-text" class="fs-md lh-1_55">
+                Verktyget har varit inaktivt i ${state.inactivityTimeoutMin} minuter. För att skydda känsliga uppgifter rensas minnet om <strong id="inactivity-countdown">${VARNING_S}</strong> sekunder. Det går inte att ångra.
             </p>
             <p class="text-dampad-sm marg-0-0-14">
                 Är du fortfarande vid din arbetsstation?
@@ -144,9 +149,9 @@ function _visaInaktivitetsvarning() {
     document.body.appendChild(warn);
     _inaktivitetsvarningElement = warn;
 
-    // 60 s nedräkning mot en sluttid: en flik som inte syns får sina intervall strypta (upp till ett tick per minut),
+    // Nedräkning mot en sluttid: en flik som inte syns får sina intervall strypta (upp till ett tick per minut),
     // så tick räknas inte, utan tiden som gått.
-    const slut = Date.now() + 60 * 1000;
+    const slut = Date.now() + VARNING_S * 1000;
     const countdownEl = warn.querySelector('#inactivity-countdown');
     _inaktivitetsvarningTimer = setInterval(() => {
         const secondsLeft = Math.max(0, Math.ceil((slut - Date.now()) / 1000));
@@ -159,15 +164,18 @@ function _visaInaktivitetsvarning() {
     warn.querySelector('#inactivity-clear-now')?.addEventListener('click', () => {
         _rensaVidInaktivitet();
     });
-    warn.querySelector('#inactivity-extend')?.addEventListener('click', () => {
-        _doljInaktivitetsvarning();
-        _aterstallInaktivitetstimer();
-    });
+    const forlang = () => { _doljInaktivitetsvarning(); _aterstallInaktivitetstimer(); };
+    warn.querySelector('#inactivity-extend')?.addEventListener('click', forlang);
+    // Som verktygets andra dialoger: fokus till varningen (på Förläng sessionen, så att Retur inte rensar), en fälla, och
+    // Escape fortsätter. Fokus går tillbaka dit det var när varningen stängs.
+    warn.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); forlang(); } });
+    fangaFokus(warn, null, { flyttaFokus: false });
+    /** @type {HTMLElement|null} */ (warn.querySelector('#inactivity-extend'))?.focus();
 }
 
 function _rensaVidInaktivitet() {
     _doljInaktivitetsvarning();
-    const hadData = _harNagotAttRensa();
+    const hadData = finnsNagotAttRensa();
     // Samma rensning som knappen, utan bekräftelsefrågan (ingen finns vid datorn).
     _rensaAllData();
     if (hadData) {
@@ -180,7 +188,6 @@ function _rensaVidInaktivitet() {
     }
 }
 
-const _harNagotAttRensa = () => state.data.length > 0 || !!_fkVantar || !!state.forhandskontroll;   // en väntande fil och en förhandskontroll på skärmen rensas också
 
 /**
  * Prövar klockan mot senaste aktiviteten. Har hela tiden gått rensas allt direkt (datorn har sovit förbi varningen);
@@ -188,10 +195,10 @@ const _harNagotAttRensa = () => state.data.length > 0 || !!_fkVantar || !!state.
  */
 function _provaInaktivitet() {
     if (!_inaktivitetstimer || _inaktivitetsvarningElement || state.inactivityTimeoutMin <= 0) return false;
-    if (!_harNagotAttRensa()) { clearInterval(_inaktivitetstimer); _inaktivitetstimer = null; return false; }
+    if (!finnsNagotAttRensa()) { clearInterval(_inaktivitetstimer); _inaktivitetstimer = null; return false; }
     const gatt = Date.now() - _sistaAktivitet, tid = state.inactivityTimeoutMin * 60 * 1000;
     if (gatt >= tid) { _rensaVidInaktivitet(); return true; }
-    if (gatt >= tid - 60 * 1000) { _visaInaktivitetsvarning(); return true; }
+    if (gatt >= tid - VARNING_S * 1000) { _visaInaktivitetsvarning(); return true; }
     return false;
 }
 
@@ -201,7 +208,7 @@ export function _aterstallInaktivitetstimer() {
         _inaktivitetstimer = null;
     }
     if (state.inactivityTimeoutMin <= 0) return;
-    if (!_harNagotAttRensa()) return;
+    if (!finnsNagotAttRensa()) return;
     _sistaAktivitet = Date.now();
     _inaktivitetstimer = setInterval(_provaInaktivitet, _INAKTIVITET_PROV_MS);
 }
@@ -239,14 +246,12 @@ export function uppstartVadLagrasInaktivitet() {
             if (_inaktivitetstimer) _sistaAktivitet = Date.now(); else _aterstallInaktivitetstimer();
         }, { passive: true });
     });
-    document.getElementById('data-residency-close')?.addEventListener('click', () => {
-        const m = document.getElementById('data-residency-modal');
-        if (m) { slappFokus(m); m.style.display = 'none'; }
-    });
+    const stang = () => stangDialog(document.getElementById('data-residency-modal'));
+    document.getElementById('data-residency-close')?.addEventListener('click', stang);
     document.getElementById('data-residency-modal')?.addEventListener('click', e => {
-        if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) {
-            const m = document.getElementById('data-residency-modal');
-            if (m) { slappFokus(m); m.style.display = 'none'; }
-        }
+        if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) stang();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && document.getElementById('data-residency-modal')?.style.display === 'flex') stang();
     });
 }

@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Egna tabeller i rapporten (src/lib/tabellrecept.js): recept, validering och tabeller med minsta gruppstorlek.
 import { describe, it, expect } from 'vitest';
-import { nyttRecept, valideraRecept, receptBeskrivning, receptTillTabeller } from '../src/lib/tabellrecept.js';
+import { nyttRecept, valideraRecept, receptBeskrivning, receptTillTabeller, receptUtanTabellSkal } from '../src/lib/tabellrecept.js';
 
 const rad = (bas, aid, kon, lon, alder = 40) => ({ bas, aid, yrke: `${aid} Yrke${aid}`, yrkeLabel: `Yrke${aid}`, kon, lon, alder });
 const grupp = (bas, aid, kon, n, lon0) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon, lon0 + i * 100, 25 + (i % 30)));
@@ -69,5 +69,25 @@ describe('tabellrecept: tabeller med minsta gruppstorlek', () => {
         const [t] = receptTillTabeller(underlag(), nyttRecept({ rad: 'aid', matt: 'median' }, { namn: 'Allt' }), { k: 1 });
         expect(t.rader).toHaveLength(3);
         expect(t.not).toBe('');
+    });
+});
+
+describe('tabellrecept: skälet när en tabell faller bort, och personer utan värde', () => {
+    const skal = spec => receptUtanTabellSkal(underlag(), nyttRecept(spec, { namn: 'T' }), { k: 10 });
+    it('skälet följer det som tömde tabellen: urvalet, gruppvillkoren, dimensionen eller tröskeln', () => {
+        expect(skal({ rad: 'aid', matt: 'median', urval: { lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 999999 }] } }))
+            .toBe('ingen person i urvalet');
+        expect(skal({ rad: 'bas', matt: 'median', gruppVillkor: [{ matt: 'median', op: 'minst', varde: 999999 }] }))
+            .toBe('gruppvillkoren döljer alla grupper');
+        expect(skal({ rad: 'aid', matt: 'median', urval: { lage: 'alla', villkor: [{ falt: 'lon', op: 'minst', varde: 77000 }] } }))
+            .toBe('ingen grupp når minsta gruppstorlek');
+        const utanAlder = underlag().map(r => ({ ...r, alder: null }));
+        expect(receptUtanTabellSkal(utanAlder, nyttRecept({ rad: 'alder', matt: 'median' }, { namn: 'T' }), { k: 10 }))
+            .toBe('ingen i urvalet har ett värde för Åldersgrupp');
+    });
+    it('personer utan värde i tabellens dimension står i noten', () => {
+        const rader = underlag().map((r, i) => (i % 2 ? { ...r, alder: null } : r));
+        const [t] = receptTillTabeller(rader, nyttRecept({ rad: 'alder', matt: 'n' }, { namn: 'Ålder' }), { k: 1 });
+        expect(t.not).toBe(`${rader.filter(r => r.alder === null).length} personer saknar värde för Åldersgrupp och ingår inte.`);
     });
 });

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 // Ingången för bygget (tools/build-app.mjs). Delarna importeras i sifferordning; ES-moduler körs ändå i
-// importgrafens ordning, så delarna deklarerar bara (00 undantagen: den importerar inget och körs först). Det som
-// ska köras vid laddning står i delens uppstartsfunktion, och här anropas de i sifferordning.
+// importgrafens ordning, så delarna har bara deklarationer på toppnivån (00 undantagen: den importerar inget och
+// körs först). Det som ska köras vid laddning står i delens uppstartsfunktion, och här anropas de i sifferordning.
 import './00-sakerhet-och-uppstart.js';
 import './01-farger.js';
 import { uppstartHtmlOchTillganglighet } from './01-html-och-tillganglighet.js';
@@ -34,6 +34,7 @@ import { uppstartKonfiguration } from './19-konfiguration.js';
 import { uppstartDemodataDiagnostik } from './20-demodata-diagnostik.js';
 import { uppstartStortDemo } from './21-stort-demo.js';
 import { uppstartExporthjalpare } from './22-exporthjalpare.js';
+import './22-lonedatabehallare.js';
 import { uppstartExportgrind } from './23-exportgrind.js';
 import { uppstartExcelexport } from './24-excelexport.js';
 import { uppstartDataskyddsinfo } from './25-dataskyddsinfo.js';

@@ -20,7 +20,7 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
 | BAS-intervall | Ja | `BAS`, `BAS-intervall` |
 | AID-etikett | Ja | `AID-etikett`, `AID`, `Yrke`, `Yrkesgrupp`, `Befattning` |
 | Månadslön | Ja | `Månadslön`, `Lön` — heltidsomräknad fast månadslön (se avsnitt 1b) |
-| Ålder *(eller födelseår)* | *Rekommenderad* | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt. Utan ålder körs analysen utan åldersjustering och fliken Ålder & karriär visas inte |
+| Ålder *(eller födelseår)* | *Rekommenderad* | `Ålder`, `Alder` — innehåller cellerna födelseår räknas de om automatiskt. Utan ålder körs analysen utan åldersjustering och fliken Ålder & karriär är låst |
 | Kön | Ja | `Kön`, `Kon` (K/M, Kvinna/Man m.fl. tolkas automatiskt) |
 | Poäng *(arbetsvärdering)* | Nej | `Poäng`, `Arbetsvärdering` — valfritt mått på arbetets krav i likvärdigt arbete |
 | Ansvarskod *(AID)* | Nej | `Ansvarskod`, `AID-ansvar`, `Ansvarsnivå` — A, B, C, L, F, M, 1001 eller 1002, med valfri lokal sista position (t.ex. `C1`); flera koder per person skiljs med mellanslag |
@@ -37,7 +37,7 @@ Exportera en personallista (en rad per anställd) med dessa kolumner:
   roll). Känns en kolumn inte igen finns en **kolumnmappnings-guide** i verktyget där du
   pekar ut rätt kolumn manuellt. Mappningen kan sparas som en **importprofil**, så att
   samma uttag känns igen nästa gång (avsnitt 2b).
-- **Ålder vs födelseår:** namnge kolumnen så den innehåller "ålder"/"alder". Om cellerna
+- **Ålder vs födelseår:** namnge kolumnen så att ordet "ålder"/"alder" står i rubriken (`Ålder`, `Ålder (år)`). Om cellerna
   innehåller **födelseår** (ett tal 1900–[innevarande år − 15], t.ex. `1985`) räknar
   verktyget automatiskt om dem till ålder och noterar det i inläsningsrapporten
   ("ålder tolkad från födelseår").
@@ -52,8 +52,10 @@ Alla ska ha samma lönebegrepp, annars jämför verktyget olika saker:
 - **Inga rörliga delar.** Tillägg, OB, jour, bonus och förmåner analyseras inte av
   verktyget och ska inte läggas in i lönen. De prövas i genomgången av bestämmelser och
   praxis (fliken Regler & praxis).
-- Verktyget varnar vid inläsningen om många löner ligger under en rimlig heltidsnivå —
-  det tyder oftast på att deltidslöner inte har räknats om.
+- Verktyget räknar inte om deltidslöner och kan inte se om de är omräknade. Förhandskontrollen varnar
+  när medianlönen ligger under 5 000 kr (ser ut som timlön) eller över 150 000 kr (ser ut som årslön), och
+  måttet Rimlighet i Underlagets kvalitet räknar rader med lön under 15 000 eller över 250 000 kr. Löner
+  som inte är omräknade men ligger över 15 000 kr ger ingen varning.
 
 **EU-rapportmåtten.** Måtten är räknade på fast heltidsmånadslön. Direktivets lönebegrepp är vidare (total
 ersättning, inklusive rörliga delar och förmåner); komplettera ur lönesystemet om ni rapporterar.
@@ -87,7 +89,7 @@ Detta **stöds inte** och ger tydligt besked:
 
 ## 2b. Importprofiler: spara mappningen en gång
 
-Har lönesystemets uttag egna kolumnnamn (`Lönenivå`, `Befattningskod`, `Grundlön heltid` …)
+Har lönesystemets uttag kolumnnamn som verktyget inte känner igen (till exempel `Lönenivå` eller `Födelseår`)
 behöver du peka ut kolumnerna i kolumnmappningen första gången. Spara sedan mappningen, så
 slipper du göra om den nästa år:
 
@@ -104,7 +106,7 @@ slipper du göra om den nästa år:
 En importprofil innehåller **bara rubrikernas namn**: vilken rubrik som är BAS-intervall,
 AID-etikett, lön och så vidare. Den anger också vilka rubriker som måste finnas för att profilen ska gälla. Inga värden
 ur filen följer med. Verktyget avvisar en profil med en rubrik längre än 80 tecken eller med
-något som liknar ett personnummer eller en e-postadress.
+något som liknar ett personnummer.
 
 En sparad profil finns **bara i sessionen** tills du sparar konfigurationen: *Rensa all data* och
 rensningen vid inaktivitet tar bort den. En konfigurationsfil utan profiler tar inte bort de
@@ -127,15 +129,12 @@ profiler du redan har sparat i sessionen.
 
 ## 3. Ta ALDRIG med (uppgiftsminimering enligt dataskyddsförordningen)
 
-Ta **inte** med personnummer, namn eller e-post i uttaget. Verktyget läser bara in de
-fält som står ovan. Det **avvisar hela filen** om det upptäcker en identifierande kolumn,
-antingen på rubriken (t.ex. `Personnummer`, `PNR`, `Namn`, `Efternamn`, `E-post`) eller på
-innehållet. Innehållet prövas i 50 rader spridda jämnt över filen: minst tre celler i personnummer-
-eller e-postformat, eller minst fem som ser ut som för- och efternamn (också med versaler eller
-efternamnet först, som *ANDERSSON, ANNA*).
-Detsamma gäller kolumner vars rubrik antyder en särskild kategori av personuppgifter
-(`Fackmedlemskap`, `Hälsa`, `Sjukfrånvaro`, `Diagnos`, `Etnicitet` och liknande); där prövas bara rubriken.
-Ta bort sådana kolumner redan i uttaget ur lönesystemet.
+Ta **inte** med personnummer, namn eller e-post i uttaget. Verktyget behåller bara de fält som
+står ovan och ignorerar resten; du ansvarar för vilka kolumner som följer med i uttaget. Två saker
+visar att uttaget inte är gallrat, och då **avvisas hela filen** så att du kan rätta uttaget: en
+kolumn för personnummer (rubriken, t.ex. `Personnummer` eller `PNR`, eller minst tre personnummer
+i 50 rader spridda jämnt över filen) och en kolumn för namn (rubriken, t.ex. `Namn` eller
+`Efternamn`). Ta bort sådana kolumner redan i uttaget ur lönesystemet.
 
 **Fältet för AID-etikett ska bara innehålla koden och etiketten.** Vissa uttag lägger personens namn i samma fält
 ("101010 Sjuksköterska Anna Andersson"). Verktyget tar inte bort eller maskerar text i fältet: de första 40 tecknen
@@ -167,7 +166,7 @@ den mätmånad du väljer) och gör så här:
 | **BAS-intervall** | Ofta ett lokalt fält på befattningen eller anställningen (arbetsvärderingens resultat). Finns det inte i lönesystemet: koppla på det i Excel från arbetsvärderingens lista per befattning, med AID-koden eller befattningskoden som nyckel. |
 | **AID-etikett** | AID-koden (sex tecken) med etikettnamnet, t.ex. `402010 Förskollärare`. Kolumnen heter ofta *Yrke* eller *Befattning*. Använd samma kod som i statistikuttaget. |
 | **Månadslön** | **Heltidslön** (fast månadslön omräknad till heltid), inte utbetald lön. Finns bara faktisk lön och sysselsättningsgrad: räkna lön / sysselsättningsgrad i Excel (avsnitt 1b). |
-| **Ålder** | Ta ut **födelseår** — inte personnummer. Verktyget räknar om födelseår till ålder. Går det bara att få personnumret: räkna fram födelseåret i Excel och **ta bort personnummerkolumnen innan filen sparas**. |
+| **Ålder** | Ta ut **födelseår** — inte personnummer — i en kolumn med rubriken `Ålder`, eller peka ut kolumnen i kolumnmappningen. Verktyget räknar om födelseår till ålder. Går det bara att få personnumret: räkna fram födelseåret i Excel och **ta bort personnummerkolumnen innan filen sparas**. |
 | **Kön** | Könsfältet (K/M eller Kvinna/Man). Juridiskt kön ur folkbokföringen är det vanliga. |
 | **Ansvarskod** *(valfri)* | AID:s ansvarskod, samma som i statistikuttaget. Inte kolumnen *Ansvar* (kostnadsställe). |
 
@@ -222,8 +221,8 @@ Har du sparat en importprofil känns uttaget igen automatiskt (avsnitt 2b).
 | Symptom | Vad det betyder | Så åtgärdar du |
 |---|---|---|
 | å/ä/ö blir konstiga tecken | Ovanlig teckenkodning | Alla vanliga kodningar hanteras automatiskt — kontrollera inläsningsrapporten; kvarstår felet, spara om filen som UTF-8 CSV |
-| "0 rader inlästa" / tomt resultat | Rubrikraden eller kolumnnamnen känns inte igen | Öppna **kolumnmappnings-guiden** och peka ut rätt kolumn, eller döp om rubrikerna enligt avsnitt 1. Spara mappningen som importprofil (avsnitt 2b) så känns filen igen nästa gång |
-| Filen avvisas direkt | En kolumn med personnummer, namn eller e-post upptäcktes | Ta bort den identifierande kolumnen ur uttaget och läs in igen (avsnitt 3) |
+| *Inga rader lästes in* / tomt resultat | Rubrikraden eller kolumnnamnen känns inte igen | Öppna **kolumnmappnings-guiden** och peka ut rätt kolumn, eller döp om rubrikerna enligt avsnitt 1. Spara mappningen som importprofil (avsnitt 2b) så känns filen igen nästa gång |
+| Filen avvisas direkt | En kolumn med personnummer eller namn upptäcktes | Ta bort den identifierande kolumnen ur uttaget och läs in igen (avsnitt 3) |
 | Varningen *Fältet för AID-etikett ser ut att innehålla personnamn* | Uttaget har lagt namn i samma fält som etiketten, på de rader som anges | Rensa fältet i uttaget så att det bara bär kod och etikett, och läs in filen igen (avsnitt 3) |
 | Åldern ser fel ut | Kolumnen innehöll födelseår | Verktyget räknar om födelseår till ålder automatiskt — förhandskontrollen visar tolkningen rad för rad och antalet rader |
 | Många rader uteslutna | Saknad BAS, lön = 0, eller tomt/okänt värde i könskolumnen | Läs inläsningsrapporten under Underlagets kvalitet i Filer och kvalitet — den visar hur många rader som föll bort och varför; rätta i källfilen och läs om |
@@ -235,7 +234,7 @@ lästes som du förväntade dig.
 ## 6. CSV-mallen
 
 I verktyget, i fliken Filer och kvalitet i lönefilens ruta, finns knappen
-**"📥 Ladda ner CSV-mall"**. Den laddar ner `lonefil_mall.csv` med rätt
+**Ladda ner CSV-mall**. Den laddar ner `lonefil_mall.csv` med rätt
 kolumnrubriker (`BAS-intervall;AID;Manadslon;Alder;Kon;Poang`) och tre
 exempelrader. Öppna den i Excel, ersätt exempelraderna med din data och spara — så vet du
 att kolumnformatet stämmer.

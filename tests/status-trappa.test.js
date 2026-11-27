@@ -158,7 +158,7 @@ describe('likaArbeteGrupper: yrkesgruppernas status', () => {
     it('rapportens avsnitt listar Värt att granska och har direktivkolumnen', () => {
         const b = avsnittBlock('lika', { grupper, utelamnade: [] }, { k: 1 });
         const text = JSON.stringify(b);
-        expect(text).toMatch(/värda att granska/);
+        expect(text).toMatch(/värda? att granska/);
         expect(text).not.toMatch(/över 5 %/);
         expect(b.tabell.rubriker).toContain(DIREKTIV_KOLUMN);
         expect(b.tabell.rader.map(r => r[0])).toEqual(['Säker']);
@@ -206,7 +206,7 @@ describe('ingen färg på storleken ensam i appen', () => {
 
     // Percentiltabellen i Lönestruktur färgade cellen Kvinnors lön i % av mäns rosa och halvfet när skillnaden var
     // större än 5 %, och livscykelns tabell per BAS-intervall färgade Skillnad 25 och 65 år (kr) under -1000 kr, båda
-    // på storleken ensam (ADR-71). En skillnad (gap, gapPct, gap25Kr, skillnad, diff …) som jämförs med en gräns skild
+    // på storleken ensam (ADR-71). En skillnad (gap, gapPct, gapFranKr, skillnad, diff …) som jämförs med en gräns skild
     // från 0 och direkt väljer en färg- eller viktklass är samma fel. Tecknet (< 0, kvinnor lägre) får välja färg på
     // en stapel.
     const STORLEK = /\b\w*(?:gap|skillnad|diff)\w*\s*[<>]=?\s*-?(?!0(?:\.0+)?\b)\d+(?:\.\d+)?\s*\?\s*['"`]\s*(?:fg|farg|ar|bricka|bg|f|halvfet)[\w-]*/i;
@@ -225,7 +225,7 @@ describe('ingen färg på storleken ensam i appen', () => {
         expect(STORLEK.test("${x.gapPct < 0 ? 'bg-rosa' : 'bg-ok'}")).toBe(false);
     });
     it('mönstret fäller livscykeltabellens gamla markering i kronor', () => {
-        expect(STORLEK.test("<td class=\"t-hoger halvfet${r.gap25Kr < -1000 ? ' fg-varning' : ''}\">")).toBe(true);
+        expect(STORLEK.test("<td class=\"t-hoger halvfet${r.gapFranKr < -1000 ? ' fg-varning' : ''}\">")).toBe(true);
         expect(STORLEK.test("${skillnadPct >= 5 ? 'farg-granska' : ''}")).toBe(true);
     });
 });

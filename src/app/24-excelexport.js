@@ -5,32 +5,30 @@ import { likaArbeteTabell } from '../lib/aidbas.js';
 import { htmlTillText } from '../lib/htmltext.js';
 import { jpaNivaCeller, jpaUrval } from '../lib/jpaprotokoll.js';
 import { arKvinna, arMan } from '../lib/kon.js';
-import { personOrd } from '../lib/namn.js';
+import { kvinnorOchMan, personOrd } from '../lib/namn.js';
 import { gruppMedBas, skalSammanstallningNot } from '../lib/rapportunderlag.js';
 import { direktivMarkering } from '../lib/status.js';
-import { receptBeskrivning, receptTillTabeller } from '../lib/tabellrecept.js';
+import { receptBeskrivning, receptTillTabeller, receptUtanTabellSkal } from '../lib/tabellrecept.js';
 import { adjektiv, artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { alderGapRader } from '../lib/vymodell-alder-karriar.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
-import { idagDatum } from './03-hjalpfunktioner.js';
+import { demoFilnamn, idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
 import { metodikposter } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, kInstalld, kTroskel, statGolv } from './06-k-troskel.js';
-import { APP_VERSION } from './08-version.js';
 import { T } from './09-termer.js';
 import { _STS_DIR_ETIKETT, _STS_DIR_KOLUMN, _STS_DIR_TIPS } from './10-diagramtema.js';
 import { hamtaData, state } from './12-tillstand.js';
 import { bedomningUnderlag, UK_ETIKETT } from './13-oversikt.js';
-import { _laggTillMetodblad, _tillampaTalformat, _excelBladnamn, _visaExportvarning, EU_LONEBEGREPP_RESERVATION, SV_TALFORMAT, tabellTillBlad } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _tillampaTalformat, _excelBladnamn, _visaExportvarning, EU_LONEBEGREPP_RESERVATION, SV_TALFORMAT, tabellTillBlad, verktygMedVersion } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
-import { likvardighetResultat } from './34-likvardigt-arbete.js';
-import { ritaSektorer } from './37-struktur.js';
-import { ritaLoneoversikt } from './39-loneoversikt.js';
-import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper, laVymodell, lsBasVymodell, ritaLikaArbete, ritaLoneskillnadPerBas } from './41-lika-arbete.js';
-import { byggJamforelse, jamforelseUrvalText } from './42-jamforelse.js';
+import { ritaFlik } from './31-navigering.js';
+import { likvardighetResultat, lvKallNamn } from './34-likvardigt-arbete.js';
+import { _laOversiktRader, _laOversiktStatus, _laTrattUnderlag, laLikaGrupper } from './41-lika-arbete.js';
+import { jamforelseUrvalText } from './42-jamforelse.js';
 import { _rrExcelBlad } from './44-referensoverblick.js';
 import { _aidbasExcelBlad, _aidbasLikaBlad, _aidbasMetodRader, AIDBAS_BLADNAMN, konsklassOrd } from './45-aid-bas-tabeller.js';
 import { _raknaPerBasGap, harAlder } from './50-regressionsmodeller.js';
-import { ritaPrioritering } from './55-prioritering.js';
+import { _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
 import { _hpSkalUnderlag, HP_SKAL_UTAN_BELOPP } from './56-handlingsplan.js';
 import { RM_MATT, rmPerBasUnderlag, rmPerBasUndertryckNoter } from './58-rapportmodell.js';
 import { _lpExcelBlad } from './75-lonepolitik.js';
@@ -45,11 +43,23 @@ const EXCEL_BLAD_HUVUDOMRADEN = _excelBladnamn(stor(T.huvudomrade.fl), 'Områden
 
 function _excelAlltBladExport() {
     // Bladet Underlagets kvalitet finns när bedomningUnderlag() ger något, alltså när det finns rader; listan räknar
-    // inte regressionen för att veta det.
+    // inte regressionen för att veta det, och ritar inga flikar. Bladen med ett villkor prövas med samma underlag som
+    // arbetsboken bygger dem ur: Per BAS och Egna tabeller med sina rader, Prioritering med listan som tabellen visar.
     if (!state.data.length) return [];
-    const harRef = state.policy.length > 0 || state.statistik.length > 0;
-    return ['Löneöversikt', 'Per BAS', ...((state.rapportTabeller || []).length ? ['Egna tabeller'] : []), 'EU-lönekartläggning', ...(harRef ? ['Prioritering'] : []), 'Löneskillnad', 'Könsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, EXCEL_BLAD_HUVUDOMRADEN,
+    const ref = _valdPrioReferens();
+    const harRef = ref === 'stallningstagande' ? state.policy.length > 0 : state.statistik.length > 0;
+    return [...(state.isDemo ? ['DEMODATA'] : []), 'Löneöversikt', ...(_excelPerBasRader() ? ['Per BAS'] : []), ...(_excelEgnaRader() ? ['Egna tabeller'] : []), 'EU-lönekartläggning',
+        ...(harRef && raknaPrioritering(ref).length ? ['Prioritering'] : []), 'Löneskillnad', 'Könsskevhet', ..._excelDiagramBlad().map(b => b[0]), ...AIDBAS_BLADNAMN, EXCEL_BLAD_HUVUDOMRADEN,
         ...(state.statistik.length ? ['Jämförelsestatistik'] : []), ...(_excelSkalRader() ? ['Sakliga skäl'] : []), ...(hamtaData().length ? ['Underlagets kvalitet'] : []), 'Metodik', 'Metod & parametrar'];
+}
+
+/**
+ * Tabellen per huvudområde byggs in i Lönestruktur när fliken ritas, och grinden kan bara säkra en tabell som finns:
+ * finns den inte än ritas fliken först. Svarar med tabellens id.
+ */
+function _excelSektorTabell() {
+    if (!document.getElementById('sektor-table')) { try { ritaFlik('struktur'); } catch (e) { rapporteraFel('Excel (alla flikar): Lönestruktur', e); } }
+    return 'sektor-table';
 }
 
 /**
@@ -81,7 +91,7 @@ function _excelEgnaRader() {
     const rows = [['Egna tabeller', `byggda i Tabeller och egna vyer; minsta gruppstorlek ${kTroskel()}: grupper med färre personer redovisas inte`], []];
     for (const r of recept) {
         const tabeller = receptTillTabeller(hamtaData(), r, { k: kTroskel() });
-        if (!tabeller.length) { rows.push([r.namn, 'ingen grupp når minsta gruppstorlek'], []); continue; }
+        if (!tabeller.length) { rows.push([r.namn, receptUtanTabellSkal(hamtaData(), r, { k: kTroskel() })], []); continue; }
         for (const t of tabeller) {
             rows.push([t.rubrik, receptBeskrivning(r)]);
             rows.push(t.kolumner.map(c => c.rubrik + (c.typ === 'kr' ? ' (kr/mån)' : c.typ === 'pct1' ? ' (%)' : '')));
@@ -104,7 +114,7 @@ function _excelPerBasRader() {
     const rows = [[`Lönestruktur per ${per}`, `minsta gruppstorlek ${pb.k}: grupper med färre personer redovisas inte`], []];
     const undertryckNoter = rmPerBasUndertryckNoter(pb, pb.k);
     for (const i of pb.intervall) {
-        rows.push([`${kort} ${i.bas}`, `${i.n} anställda, ${i.nKv} kvinnor och ${i.nMa} män, ${i.antalYrken} ${ordForAntal(i.antalYrken, T.enhet)}`]);
+        rows.push([`${kort} ${i.bas}`, `${i.n} ${i.n === 1 ? 'anställd' : 'anställda'}, ${kvinnorOchMan(i.nKv, i.nMa, ' och ')}, ${i.antalYrken} ${ordForAntal(i.antalYrken, T.enhet)}`]);
         rows.push(['Grupp', 'Antal', ...matt.map(m => RM_MATT[m])]);
         i.rader.forEach(r => rows.push([r.namn, r.n == null ? '' : r.n, ...matt.map(m => tal(r[m]))]));
         if (i.utelamnade.length) rows.push([`Redovisas inte (färre än ${pb.k} ${personOrd(pb.k)}): ${i.utelamnade.join(', ')}`]);
@@ -161,7 +171,7 @@ function _excelDiagramBlad() {
         ...(alder.dolda.length ? [[`Visas inte, ett kön har färre än ${k} ${personOrd(k)}: ${alder.dolda.join(', ')}.`]] : []), [],
         ['Åldersgrupp', 'Antal kvinnor', 'Antal män', 'Median kvinnor (kr)', 'Median män (kr)', 'Kvinnors median i % av mäns', 'Konfidensintervall 95 %, nedre', 'Konfidensintervall 95 %, övre'],
         ...alder.visade.map(a => [a.namn, a.nKv, a.nMa, Math.round(a.medKv), Math.round(a.medMa), r1(a.gap), a.ci ? r1(a.ci.lo) : '', a.ci ? r1(a.ci.hi) : ''])]]);
-    // Lönepolitik: bara när ett ställningstagande är inläst och matchar underlaget (75-lonepolitik.js).
+    // Lönepolitik: bara när ett ställningstagande är inläst (75-lonepolitik.js).
     const lp = _lpExcelBlad();
     if (lp) ut.push(['Lönepolitik', lp]);
     const referenser = _rrExcelBlad();
@@ -180,7 +190,7 @@ function exportAlltTillExcel(...a) { return medExportLage(() => _exportAlltTillE
 function _exportAlltTillExcelExport() {
     if (!state.data.length) { alert('Läs in lönefilen först.'); return; }
     const wb = _excelAlltBok();
-    XLSX.writeFile(wb, `lonekartlaggning_komplett_${idagDatum()}.xlsx`);
+    XLSX.writeFile(wb, demoFilnamn(`lonekartlaggning_komplett_${idagDatum()}.xlsx`));
     _visaExportvarning();
 }
 
@@ -189,24 +199,11 @@ function _exportAlltTillExcelExport() {
 export function _excelAlltBok(...a) { return medExportLage(() => __excelAlltBokExport.apply(null, /** @type {any} */ (a))); }
 function __excelAlltBokExport() {
 
-    // Tabellerna läses ur flikarna: en flik som aldrig har öppnats har tomma tabeller och ritas först (annars föll
-    // bladet bort ur arbetsboken utan att någon märkte det).
-    const ensure = (sel, fn) => { if (!document.querySelector(sel)) { try { fn(); } catch (_e) { /* tolerant */ } } };
-    ensure('#rapport-table tbody tr', ritaLoneoversikt);
-    ensure('#skevhet-table tbody tr', () => ritaLoneskillnadPerBas(lsBasVymodell()));
-    ensure('#matrix-table tbody tr', () => ritaLikaArbete(laVymodell()));
-    if (state.policy.length || state.statistik.length) ensure('#prio-table tbody tr', ritaPrioritering);
-    if (state.statistik.length) ensure('#benchmark-table tbody tr', byggJamforelse);
-
+    // Tabellerna läses ur flikarna genom exportgrinden, som ritar en flik som inte är ritad i det som gäller nu (också en
+    // som aldrig öppnats) innan något läses ur den.
     const wb = XLSX.utils.book_new();
-    const tableToSheet = (id, fallback) => {
-        const sheet = tabellTillBlad(id);
-        if (sheet) return sheet;
-        return fallback ? XLSX.utils.aoa_to_sheet(fallback) : null;
-    };
-
     // Bladet Löneöversikt
-    const rapportSheet = tableToSheet('rapport-table');
+    const rapportSheet = tabellTillBlad('rapport-table');
     if (rapportSheet) XLSX.utils.book_append_sheet(wb, rapportSheet, 'Löneöversikt');
 
     // Bladet Per BAS: tabellerna i den form en skriven lönekartläggning brukar ha (samma underlag som Word-utkastets
@@ -218,19 +215,19 @@ function __excelAlltBokExport() {
     if (egnaRader) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(egnaRader), 'Egna tabeller');
 
     // Bladet EU-lönekartläggning
-    const matrixSheet = tableToSheet('matrix-table');
+    const matrixSheet = tabellTillBlad('matrix-table');
     // Reservationen om lönebegreppet (ADR-107) under tabellen: rubrikraden och kolumnerna står kvar där de stod.
     if (matrixSheet) XLSX.utils.sheet_add_aoa(matrixSheet, [[], [EU_LONEBEGREPP_RESERVATION]], { origin: -1 });
     if (matrixSheet) XLSX.utils.book_append_sheet(wb, matrixSheet, 'EU-lönekartläggning');
 
     // Bladet Prioritering
-    const prioSheet = tableToSheet('prio-table');
+    const prioSheet = tabellTillBlad('prio-table');
     if (prioSheet) XLSX.utils.book_append_sheet(wb, prioSheet, 'Prioritering');
 
     // Bladen Löneskillnad och Könsskevhet
-    const paygapSheet = tableToSheet('paygap-table');
+    const paygapSheet = tabellTillBlad('paygap-table');
     if (paygapSheet) XLSX.utils.book_append_sheet(wb, paygapSheet, 'Löneskillnad');
-    const skevhetSheet = tableToSheet('skevhet-table');
+    const skevhetSheet = tabellTillBlad('skevhet-table');
     if (skevhetSheet) XLSX.utils.book_append_sheet(wb, skevhetSheet, 'Könsskevhet');
     const diagramBlad = _excelDiagramBlad();
     for (const [namn, rader] of diagramBlad) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rader), namn);
@@ -238,13 +235,12 @@ function __excelAlltBokExport() {
     for (const [namn, ws] of _aidbasExcelBlad()) XLSX.utils.book_append_sheet(wb, ws, namn);
 
     // Bladet per AID-huvudområde (ADR-33) — samma k-regler som vyn.
-    ensure('#sektor-table tbody tr', () => ritaSektorer(hamtaData()));
-    const sektorSheet = tableToSheet('sektor-table');
+    const sektorSheet = tabellTillBlad(_excelSektorTabell());
     if (sektorSheet) XLSX.utils.book_append_sheet(wb, sektorSheet, EXCEL_BLAD_HUVUDOMRADEN);
 
     // Bladet Jämförelsestatistik
     // Bara med inläst jämförelsestatistik: samma villkor som förhandsbeskedet (excelAlltBlad), oberoende av vilka flikar som visats.
-    const bmSheet = state.statistik.length ? tableToSheet('benchmark-table') : null;
+    const bmSheet = state.statistik.length ? tabellTillBlad('benchmark-table') : null;
     if (bmSheet) {
         // Tabellen följer flikens filter; säg det i bladet (ADR-35).
         if (jamforelseUrvalText()) XLSX.utils.sheet_add_aoa(bmSheet, [[], [jamforelseUrvalText()]], { origin: -1 });
@@ -387,7 +383,7 @@ function _exportJPAProtokollExport() {
         ['Diskrimineringslagen 3 kap. (lönekartläggning)', ''],
         ['', ''],
         ['Genererad', localDate + ' ' + now.toLocaleTimeString('sv-SE')],
-        ['Verktyg', `Öppen lönekartläggning (v${APP_VERSION})`],
+        ['Verktyg', verktygMedVersion()],
         ['Aktiv profil', state.profile.name],
         ['Jämförelseinstitution', profileLabel],
         ['', ''],
@@ -534,8 +530,6 @@ function _exportJPAProtokollExport() {
         // Jämförelsen inom organisationen går först; jämförelsestatistiken tas per BAS när en jämförelse saknas där.
         // Varje par har ett bootstrapintervall för skillnaden.
         const lvSig = ci => !ci ? 'Inget konfidensintervall' : (ci.lo > 0 ? 'Säkerställd (intervallet över 0)' : 'Kan vara slump (intervallet omfattar 0)');
-        const lvKälla = p => p.jamforKalla === 'intern' ? 'Intern (organisation)'
-            : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
         const lvHeader = [
             'Nr',
             'Org. AID', `Org. ${T.namn.en}`, 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
@@ -552,7 +546,7 @@ function _exportJPAProtokollExport() {
         lvRedovisning.par.forEach((p, i) => lvRows.push([
             i + 1,
             p.kvAid, p.kvLabel, p.kvBas, p.kvN, +p.kvKvinnoPct.toFixed(1), Math.round(p.kvMedian),
-            p.maAid, p.maLabel, +p.maKvAndel.toFixed(1), konsklassOrd(p.maKlass), p.maN != null ? p.maN : '—', lvKälla(p), Math.round(p.maMedian),
+            p.maAid, p.maLabel, +p.maKvAndel.toFixed(1), konsklassOrd(p.maKlass), p.maN != null ? p.maN : '—', lvKallNamn(p), Math.round(p.maMedian),
             Math.round(p.gapKr), +p.gapPct.toFixed(2),
             p.gapCI ? Math.round(p.gapCI.lo) : '—',
             p.gapCI ? Math.round(p.gapCI.hi) : '—',
@@ -677,7 +671,7 @@ function _exportJPAProtokollExport() {
     // === Spara filen ===
     const filename = `lonekartlaggning_protokoll_gemensam_lonebedomning_${isoDate}.xlsx`;
     _laggTillMetodblad(wb);
-    XLSX.writeFile(wb, filename);
+    XLSX.writeFile(wb, demoFilnamn(filename));
     _visaExportvarning();
     meddelaSkarmlasare(`Protokoll för gemensam lönebedömning exporterat: ${jpaYrken.length} ${ordForAntal(jpaYrken.length, T.enhet)} och ${jpaBas.length} ${ordForAntal(jpaBas.length, T.niva)} med en säkerställd skillnad på minst 3 %.`);
 }

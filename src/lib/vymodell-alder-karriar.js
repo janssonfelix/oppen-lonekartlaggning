@@ -17,30 +17,33 @@ import { konskvotPerGrupp, regressionslinjensBand } from './osakerhet.js';
 import { kvantil, linjarRegression, median } from './stat.js';
 import { histogramKlasser, konsMedianer, omfang } from './struktur.js';
 import { STANDARDTERMER } from './termer.js';
-import { svKr, svPct } from './talformat.js';
+import { svKr, svPct, svTecken } from './talformat.js';
 
-const kr = v => `${v >= 0 ? '+' : '−'}${svKr(Math.abs(v))}`;
+const kr = v => `${svTecken(v)}${svKr(v)}`;
 
 /**
  * Raden under nyckeltalen i klartext: stiger lönen lika mycket per levnadsår för kvinnor och män (lutningarna skiljer
  * högst 25 % från medelvärdet), och hur mycket av skillnaden förklarar åldersfördelningen (under en procentenhet:
  * lite)? lutKv och lutMa är trendlinjernas lutning i kronor per år; ra och vidSammaAlder är kvinnors lön i procent
- * av mäns, utan justering respektive avläst vid medelåldern.
+ * av mäns, utan justering respektive avläst vid medelåldern. Texten följer talens riktning: en lutning som inte är
+ * över noll stiger inte, och skillnaden mäts som avståndet till lika lön (100 %), åt vilket håll den än går.
  */
 export function alderInsiktText(lutKv, lutMa, ra, vidSammaAlder, termer = STANDARDTERMER) {
     const medel = (Math.abs(lutKv) + Math.abs(lutMa)) / 2;
     const likaLutning = medel === 0 || Math.abs(lutKv - lutMa) / medel <= 0.25;
     const lutning = likaLutning
-        ? `Lönen stiger ungefär lika mycket per levnadsår för kvinnor (${kr(lutKv)}) och män (${kr(lutMa)}).`
+        ? `Lönen ${lutKv > 0 && lutMa > 0 ? 'stiger' : lutKv < 0 && lutMa < 0 ? 'sjunker' : 'ändras'} ungefär lika mycket per levnadsår för kvinnor (${kr(lutKv)}) och män (${kr(lutMa)}).`
+        : !(lutKv > 0 && lutMa > 0)
+            ? `Lönen ändras olika med åldern för kvinnor (${kr(lutKv)} per år) och män (${kr(lutMa)}).`
         : lutKv < lutMa
             ? `Lönen stiger långsammare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).`
             : `Lönen stiger snabbare med åldern för kvinnor (${kr(lutKv)} per år) än för män (${kr(lutMa)}).`;
-    const skillnad = vidSammaAlder - ra;
-    const justering = Math.abs(skillnad) < 1
+    const fore = Math.abs(ra - 100), efter = Math.abs(vidSammaAlder - 100);
+    const justering = Math.abs(vidSammaAlder - ra) < 1
         ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, nästan som utan justering (${svPct(ra, 1)}): åldersfördelningen förklarar lite av skillnaden.`
-        : skillnad > 0
-            ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${vidSammaAlder < 95 ? ', men inte hela' : ''}.`
-            : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort, eftersom kvinnorna i urvalet i genomsnitt är äldre.`;
+        : efter < fore
+            ? `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: åldersfördelningen förklarar en del av skillnaden${efter >= 5 ? ', men inte hela' : ''}.`
+            : `Vid samma ålder är kvinnors lön ${svPct(vidSammaAlder, 1)} av mäns, mot ${svPct(ra, 1)} utan justering: skillnaden blir större när åldern räknas bort.`;
     return `${lutning} ${justering} Vad ${termer.niva.en} och ${termer.enhet.en} förklarar står i Lönestruktur.`;
 }
 
@@ -69,8 +72,12 @@ export function konHistogram(rader, k) {
     return { nKv: kv.length, nMa: ma.length, klasser, orsak: klasser ? null : kv.length < k || ma.length < k ? 'kon' : 'klasser' };
 }
 
-/** Åldersgrupperna för lönegapet per åldersgrupp: [från, till, namn]. */
-export const ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], [40, 49, '40–49 år'], [50, 59, '50–59 år'], [60, 200, '60 år och äldre']];
+/** Åldersgrupperna för lönegapet per åldersgrupp: [från, namn]. En grupp går till nästa grupps från, så att varje
+ * ålder över 0 (också 29,5 och under 20) hamnar i exakt en grupp. */
+export const ALDERSGRUPPER = [[0, 'Under 30 år'], [30, '30–39 år'], [40, '40–49 år'], [50, '50–59 år'], [60, '60 år och äldre']];
+
+/** Indexet för den grupp i en stigande lista med undre gränser som åldern hör till: den sista gränsen ≤ åldern. */
+const gruppFor = (fran, alder) => fran.filter(f => alder >= f).length - 1;
 
 /**
  * Lönegapet per åldersgrupp: kvinnors medianlön i procent av mäns med bootstrapintervall, bara där båda könen når k
@@ -80,8 +87,9 @@ export const ALDERSGRUPPER = [[0, 29, 'Under 30 år'], [30, 39, '30–39 år'], 
  * @param {number} k
  */
 export function alderGapRader(dataKv, dataMa, k) {
-    const { visade, dolda } = konskvotPerGrupp(ALDERSGRUPPER.map(([fran, till, namn]) => {
-        const i = r => r.alder > 0 && r.alder >= fran && r.alder <= till && r.lon > 0;
+    const fran = ALDERSGRUPPER.map(([f]) => f);
+    const { visade, dolda } = konskvotPerGrupp(ALDERSGRUPPER.map(([, namn], g) => {
+        const i = r => r.alder > 0 && gruppFor(fran, r.alder) === g && r.lon > 0;
         return [namn, dataKv.filter(i).map(r => r.lon), dataMa.filter(i).map(r => r.lon)];
     }), { k, ki: true });
     return { visade: visade.map(({ nyckel: namn, ...v }) => ({ namn, ...v })), dolda };
@@ -163,16 +171,18 @@ export function vymodellAlderOchLon(rader, { bas, k, statistik = [], trendAlla =
     const expKv = medAlder ? regKv.m * medelAlder + regKv.b : NaN, expMa = medAlder ? regMa.m * medelAlder + regMa.b : NaN;
     const vidSammaAlder = konOk && medAlder && expMa > 0 ? (expKv / expMa) * 100 : null;
     const liten = individLitenForVid(rader, k);
+    // Ett köns trendlinje och band ritas över könets egna åldrar, inte över urvalets: ingen linje utanför underlaget.
+    const spannKv = omfang(dataKv.map(d => d.alder)), spannMa = omfang(dataMa.map(d => d.alder));
     return {
-        isAll, df, dataKv, dataMa, minAlder, maxAlder, kvOk, maOk, konOk, kvot, vidSammaAlder,
+        isAll, df, dataKv, dataMa, minAlder, maxAlder, spannKv, spannMa, kvOk, maOk, konOk, kvot, vidSammaAlder,
         // Trendlinjerna bara för ett kön som når k.
         trendKv: kvOk ? regKv : null, trendMa: maOk ? regMa : null,
         insikt: kvot != null && vidSammaAlder != null ? alderInsiktText(/** @type {any} */ (regKv).m, /** @type {any} */ (regMa).m, kvot, vidSammaAlder, termer) : null,
         enAlder: konOk && !medAlder,
         trendAllaOk: df.length >= k,
         trendAlla: trendAlla && df.length >= k ? linjarRegression(par(df)) : null,
-        ciKv: kvOk ? regressionslinjensBand(par(dataKv), minAlder, maxAlder, 25) : null,
-        ciMa: maOk ? regressionslinjensBand(par(dataMa), minAlder, maxAlder, 25) : null,
+        ciKv: kvOk ? regressionslinjensBand(par(dataKv), ...spannKv, 25) : null,
+        ciMa: maOk ? regressionslinjensBand(par(dataMa), ...spannMa, 25) : null,
         // En uppslagning per AID×BAS-grupp i urvalet (aldrig ett annat BAS), och medianen av de matchade medianerna.
         statMedian: statistik.length ? statistikensMedianFor(statistik, df.map(d => ({ aid: aidAvYrke(d.yrke), bas: d.bas }))) : null,
         utan: [kvOk ? null : 'kvinnor', maOk ? null : 'män'].filter(Boolean).join(' och '),
@@ -183,14 +193,15 @@ export function vymodellAlderOchLon(rader, { bas, k, statistik = [], trendAlla =
 }
 
 // ---- Åldersstrukturen ----
-export const ALDERSKLASSER = ['20–24', '25–29', '30–34', '35–39', '40–44', '45–49', '50–54', '55–59', '60–64', '65+'];
-const KLASS_MIN = [20, 25, 30, 35, 40, 45, 50, 55, 60, 65];
-const KLASS_MAX = [24, 29, 34, 39, 44, 49, 54, 59, 64, 120];
+// Åldersklasserna i histogrammet: de undre gränserna, och namnen ur dem. En klass går till nästa klass undre gräns,
+// och den första tar alla under 25, så att varje ålder över 0 hamnar i exakt en klass.
+const KLASS_FRAN = [0, 25, 30, 35, 40, 45, 50, 55, 60, 65];
+export const ALDERSKLASSER = KLASS_FRAN.map((f, i) => (i === 0 ? `Under ${KLASS_FRAN[1]}` : i === KLASS_FRAN.length - 1 ? `${f}+` : `${f}–${KLASS_FRAN[i + 1] - 1}`));
 // Sveriges sysselsatta befolkning per femårsgrupp (procent av total). Källa: SCB Arbetskraftsundersökningen (AKU),
-// genomsnitt 2023. Värdena är avrundade och ska tolkas som ungefärlig referens, inte exakta tal.
+// genomsnitt 2023, där den första klassen är 20–24 år. Värdena är avrundade och ska tolkas som ungefärlig referens, inte exakta tal.
 export const SYSSELSATTA_PCT = [9, 12, 13, 13, 12, 12, 11, 10, 6, 2];
 
-const perKlass = rader => KLASS_MIN.map((lo, i) => rader.filter(d => d.alder >= lo && d.alder <= KLASS_MAX[i]).length);
+const perKlass = rader => KLASS_FRAN.map((_, i) => rader.filter(d => d.alder > 0 && gruppFor(KLASS_FRAN, d.alder) === i).length);
 
 /**
  * Åldersfördelningen som kurva: andel av gruppen per ålder, utjämnad med ett centrerat glidande medel (win = halva

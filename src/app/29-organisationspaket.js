@@ -11,8 +11,8 @@ import { bakaIn, filnamnForslag, flyttaOrganisationsfil, MALL_ID, normaliseraFil
 import { byggPaket, INAKTIVITET_MAX, INAKTIVITET_MIN, paketArGammalt, tolkaPaket } from '../lib/organisationspaket.js';
 import { perBasReceptArStandard } from '../lib/perbas.js';
 import { stor } from '../lib/termer.js';
-import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
-import { idagDatum, laddaNer } from './03-hjalpfunktioner.js';
+import { meddelaSkarmlasare, esc, fangaFokus, stangDialog } from './01-html-och-tillganglighet.js';
+import { idagDatum, laddaNer, rapporteraFel } from './03-hjalpfunktioner.js';
 import { _ritaOmAllaFlikar, kInstalld, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { tillampaProfiletiketter, COST_DEFAULTS, STANDARDPROFIL, INAKTIVITET_STANDARD_MIN, synkaNamnFalt } from './07-standardinstallningar.js';
@@ -33,6 +33,8 @@ import { lvJamforelse } from './45-aid-bas-tabeller.js';
 import { _lasKostnadsinstallningar } from './55-prioritering.js';
 import { utforskaSynkaSmaLas } from './70-utforska.js';
 
+/** "1 rad", "3 rader". */
+const radText = n => `${n} ${n === 1 ? 'rad' : 'rader'}`;
 /** Låsningarna utan något satt (ADR-47). */
 function _paketLasStandard() { return { kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true }; }
 
@@ -83,8 +85,8 @@ export function ritaPaketinfo() {
     const p = state.paket;
     if (!p) { el.hidden = true; el.innerHTML = ''; return; }
     const innehall = [
-        state.policyKalla === 'paket' ? `ställningstagande ${state.policy.length} rader` : null,
-        state.statistikKalla === 'paket' ? `jämförelsestatistik ${state.statistik.length} rader` : null,
+        state.policyKalla === 'paket' ? `ställningstagande ${radText(state.policy.length)}` : null,
+        state.statistikKalla === 'paket' ? `jämförelsestatistik ${radText(state.statistik.length)}` : null,
         (n => (n ? `${n} ${n === 1 ? 'importprofil' : 'importprofiler'}` : null))((state.importprofiler || []).filter(x => x.kalla === 'organisationspaket').length),
     ].filter(Boolean).join(', ') || 'bara benämningar och inställningar';
     const rad = (dt, dd) => (dd == null || dd === '' ? '' : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`);
@@ -106,7 +108,16 @@ export function ritaPaketinfo() {
  * @returns {{ok:boolean, meddelande:string}}
  */
 // Ett paket kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81), hur det än gick.
-function lasInPaket(...a) { try { return _lasInPaket.apply(null, /** @type {any} */ (a)); } finally { visningNy(); } }
+// Ett oväntat fel rapporteras och sägs i statusraden; paketet räknas då som inte inläst.
+function lasInPaket(...a) {
+    try { return _lasInPaket.apply(null, /** @type {any} */ (a)); }
+    catch (err) {
+        rapporteraFel('inläsningen av organisationspaketet', err);
+        const meddelande = 'Paketet lästes inte in: ett internt fel avbröt inläsningen.';
+        _paketStatus(meddelande, false);
+        return { ok: false, meddelande };
+    } finally { visningNy(); }
+}
 /**
  * @param {string} text
  * @param {string} [_filnamn]
@@ -124,17 +135,28 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
 
     const { profil, installningar, referens, statistik, rapport, importprofiler } = r.delar;
     const varningar = [...r.varningar];
-    // Golvet för tröskeln (ADR-47): ett nytt paket får sänka eller ta bort det förra paketets golv bara om
-    // användaren bekräftar — samma fråga som vid en sänkt tröskel. Nekas den står det gamla golvet kvar.
-    const gammaltGolv = state.paketLas.kTroskelLagst;
-    let nyttGolv = installningar.kTroskelLagst ?? null;
-    if (gammaltGolv != null && (nyttGolv == null || nyttGolv < gammaltGolv)
-        && !confirm(`Sänka lägsta tillåtna minsta gruppstorlek från ${gammaltGolv} till ${nyttGolv ?? 'ingen gräns'}?\n\n`
-            + `Det inlästa organisationspaketet hindrar att minsta gruppstorlek sätts under ${gammaltGolv}. Det nya paketet `
-            + (nyttGolv == null ? 'anger ingen gräns' : `anger ${nyttGolv}`) + `. I så små grupper kan enskildas löner räknas fram.`)) {
-        nyttGolv = gammaltGolv;
-        varningar.push(`Det förra paketets lägsta tillåtna minsta gruppstorlek ${gammaltGolv} behålls.`);
+    // Låsningarna (ADR-47, ADR-111): ett nytt paket får släppa eller lätta det förra paketets låsningar bara om användaren
+    // bekräftar, i en fråga som säger vilka. Nekas den står de gamla låsningarna kvar och resten av paketet läses in.
+    const gammal = state.paketLas;
+    const las = { kTroskelLagst: installningar.kTroskelLagst ?? null,
+                  inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
+                  smaGrupperIExport: installningar.smaGrupperIExport !== false };
+    const slapps = {
+        kTroskelLagst: gammal.kTroskelLagst != null && (las.kTroskelLagst == null || las.kTroskelLagst < gammal.kTroskelLagst)
+            ? `lägsta tillåtna minsta gruppstorlek sänks från ${gammal.kTroskelLagst} till ${las.kTroskelLagst ?? 'ingen gräns'}` : null,
+        inaktivitetMin: gammal.inaktivitetMin != null && (las.inaktivitetMin == null || las.inaktivitetMin > gammal.inaktivitetMin)
+            ? `rensning vid inaktivitet efter ${gammal.inaktivitetMin} minuter ` + (las.inaktivitetMin == null ? 'är inte längre låst' : `blir ${las.inaktivitetMin} minuter`) : null,
+        smaGrupperIExport: gammal.smaGrupperIExport === false && las.smaGrupperIExport
+            ? 'små grupper får tas med i exporten från Tabeller och egna vyer' : null,
+    };
+    const slappta = Object.values(slapps).filter(Boolean);
+    if (slappta.length && !confirm(`Släppa det förra organisationspaketets låsningar?\n\n${slappta.map(t => `– ${t}`).join('\n')}\n\n`
+            + 'Det förra paketet låste detta för att skydda enskildas löner och lönefilen i minnet. I för små grupper kan enskildas löner räknas fram.')) {
+        const behalls = { ..._paketLasStandard() };
+        for (const nyckel of Object.keys(slapps)) if (slapps[nyckel]) behalls[nyckel] = las[nyckel] = gammal[nyckel];
+        varningar.push(`Det förra paketets låsningar behålls: ${_paketLasText(behalls)}.`);
     }
+    const nyttGolv = las.kTroskelLagst;
     // Ett nytt paket ersätter det förra helt: det förras delar och grundinställningar får inte
     // stå kvar och tillskrivas det nya. Delar ur egna filer står kvar.
     if (state.paket) {
@@ -155,9 +177,8 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
     // Jämförelseetiketterna i likvärdigt arbete (ADR-60): alla som inte är kvinnodominerade, eller bara de mansdominerade.
     if (installningar.jamforelse != null && state.likvardighet) { state.likvardighet.jamforelse = installningar.jamforelse; state.likvardighet.result = null; }
     // Låsningarna (ADR-47) sätts före tröskeln, så att sattKTroskel() prövar paketets eget värde mot golvet.
-    state.paketLas = { kTroskelLagst: nyttGolv, inaktivitetMin: installningar.inaktivitetLast ? installningar.inaktivitetMin : null,
-                       smaGrupperIExport: installningar.smaGrupperIExport !== false };
-    if (installningar.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
+    state.paketLas = las;
+    if (installningar.inaktivitetMin != null || las.inaktivitetMin != null) sattInaktivitetstid(installningar.inaktivitetMin);
     utforskaSynkaSmaLas();
     // ADR-38: frågar vid sänkning under standard; nekad bekräftelse behåller värdet.
     // Omritningen görs en gång, sist (se nedan), eftersom paketet ändrar mer än tröskeln.
@@ -193,7 +214,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         state.policyKalla = 'paket';
         markeraFilrutaInlast('upload-cell-policy', 'Från organisationspaketet');
         const ps = document.getElementById('policy-status');
-        if (ps) { ps.textContent = `${state.policy.length} rader ur organisationspaketet`; ps.className = 'status-msg success'; }
+        if (ps) { ps.textContent = `${radText(state.policy.length)} ur organisationspaketet`; ps.className = 'status-msg success'; }
     }
     if (statistik) {
         state.statistik = statistik.rader.map(x => ({ ...x }));
@@ -204,7 +225,7 @@ function _lasInPaket(text, _filnamn, { inbakat = false } = {}) {
         state.statistikHasKon = state.statistik.some(x => x.andelKv != null);
         markeraFilrutaInlast('upload-cell-stat', 'Från organisationspaketet');
         const ss = document.getElementById('stat-status');
-        if (ss) { ss.textContent = `${state.statistik.length} poster ur organisationspaketet`; ss.className = 'status-msg success'; }
+        if (ss) { ss.textContent = `${state.statistik.length} ${state.statistik.length === 1 ? 'post' : 'poster'} ur organisationspaketet`; ss.className = 'status-msg success'; }
     }
     synkaJamforelseFlik();
 
@@ -253,7 +274,8 @@ export function _fyllPaketFormular() {
     // Låsningarna (ADR-47): formuläret visar det som gäller nu; utan paket är inget låst.
     const las = state.paketLas;
     satt('paket-k-lagst', las.kTroskelLagst);
-    satt('paket-inaktivitet', las.inaktivitetMin);
+    // Utan låsning visas paketets förinställda tid, så att den följer med när paketet sparas om.
+    satt('paket-inaktivitet', las.inaktivitetMin ?? p?.delar?.installningar?.inaktivitetMin);
     const kryss = (id, v) => { const el = _paketFalt(id); if (el) /** @type {HTMLInputElement} */ (el).checked = v; };
     kryss('paket-inaktivitet-last', las.inaktivitetMin != null);
     kryss('paket-sma-export', las.smaGrupperIExport !== false);
@@ -327,8 +349,8 @@ export function uppdateraPaketKnapp() {
         const rp = _paketRapportUrFormular();
         const rpDel = rp ? ` Rapporten: ${rp.tabeller.length} ${rp.tabeller.length === 1 ? 'egen tabell' : 'egna tabeller'}${rp.perBasRecept ? ` och ett eget recept per ${T.niva.en}` : ''}.` : '';
         sam.textContent = harData
-            ? `Paketet får med: ${[harReferens() ? `ställningstagandet "${referensNamn()}" (${state.policy.length} rader)` : null,
-                state.statistik.length ? `jämförelsestatistiken (${state.statistik.length} rader)` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}${rpDel}`
+            ? `Paketet får med: ${[harReferens() ? `ställningstagandet "${referensNamn()}" (${radText(state.policy.length)})` : null,
+                state.statistik.length ? `jämförelsestatistiken (${radText(state.statistik.length)})` : null].filter(Boolean).join(' och ')}.${kDel}${lasDel}${rpDel}`
             : 'Läs först in ett ställningstagande eller jämförelsestatistik med knapparna ovan.';
     }
 }
@@ -461,6 +483,8 @@ function _laddaNerHtml(html, filnamn) {
 let _flyttGammal = null;
 /** @type {File|null} */
 let _flyttNy = null;
+/** Rensa all data: filerna som pekats ut släpps, som filväljarna töms. */
+export function organisationsfilSlapp() { _verktygsfil = null; _flyttGammal = null; _flyttNy = null; }
 function uppdateraFlyttKnapp() {
     const knapp = /** @type {HTMLInputElement|null} */ (_paketFalt('btn-flytt-ladda-ner'));
     if (knapp) knapp.disabled = !_flyttGammal || !_flyttNy;
@@ -509,7 +533,7 @@ function visaInbakatPaket() {
     let obj = null;
     try { obj = JSON.parse(inb.text); } catch (_e) { obj = null; }
     const rad = (dt, dd) => (dd == null || dd === '' ? '' : `<dt>${esc(dt)}</dt><dd>${esc(String(dd))}</dd>`);
-    const tabell = (rubrik, rader, kolumner) => !rader?.length ? '' : `<h3>${esc(rubrik)} (${rader.length} rader)</h3><div class="rulla max-hojd-420"><table class="data-table st-088"><thead><tr>${kolumner.map(k => `<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${rader.map(r => `<tr>${kolumner.map(k => `<td>${esc(r[k] == null ? '' : String(r[k]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const tabell = (rubrik, rader, kolumner) => !rader?.length ? '' : `<h3>${esc(rubrik)} (${radText(rader.length)})</h3><div class="rulla max-hojd-420"><table class="data-table st-088"><thead><tr>${kolumner.map(k => `<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${rader.map(r => `<tr>${kolumner.map(k => `<td>${esc(r[k] == null ? '' : String(r[k]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     const inst = obj?.installningar || {};
     content.innerHTML = `<dl>${rad('Organisation', obj?.organisation?.namn)}${rad('Utgivare', obj?.utgivare)}${rad('Skapat', obj?.skapat)}${rad('Avser år', obj?.avserAr)}`
         + `${rad('Inbakat', inb.skapad)}${rad('Verktygets version', inb.verktygsversion)}${rad('Verktygsfilens kontrollsumma (SHA-256)', inb.verktygssha)}`
@@ -531,7 +555,7 @@ function laddaNerInbakatPaket() {
     const blob = new Blob([text], { type: 'application/json' });
     meddelaSkarmlasare(`Paketet sparat: ${laddaNer(blob, _paketFilnamn(inb.organisation))}`);
 }
-const _stangPaketDialog = () => { const m = document.getElementById('paket-modal'); if (m) { slappFokus(m); m.style.display = 'none'; } };
+const _stangPaketDialog = () => stangDialog(document.getElementById('paket-modal'));
 
 // Organisationstypen (kommun, region eller båda) styr vilken del av SKR:s personalstatistik som
 // är referens för kvinnoandel (ADR-34). Värdet bor i profilen och följer med paket och konfiguration.
@@ -585,6 +609,7 @@ export function uppstartOrganisationspaket() {
     });
     document.getElementById('paket-modal-close')?.addEventListener('click', _stangPaketDialog);
     document.getElementById('paket-modal')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).classList.contains('glossary-backdrop')) _stangPaketDialog(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('paket-modal')?.style.display === 'flex') _stangPaketDialog(); });
     document.getElementById('file-input-paket')?.addEventListener('change', e => {
         const file = /** @type {HTMLInputElement} */ (e.target).files && /** @type {HTMLInputElement} */ (e.target).files?.[0];
         if (!file) return;

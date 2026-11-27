@@ -95,7 +95,8 @@ Tre delpoäng på skalan 0–100, var och en med ett tak:
     index = brist × riktning × (avvikelse × w_avvikelse + volym × w_volym + jämställdhet × w_jämställdhet) / vikt_summa
 
 Vikterna normaliseras alltså till summan 1. Indexet ligger mellan 0 och 100 före bristmultiplikatorn, och listan
-sorteras på indexet, störst först.
+sorteras på indexet, störst först; lika index sorteras på BAS-intervall och sedan AID-kod, så att ordningen inte beror
+på filens radordning.
 
 ## 5. Snabb vinst och kostnaden att nå referensen
 

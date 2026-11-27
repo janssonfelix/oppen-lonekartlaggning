@@ -12,8 +12,7 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
 
 ## A. Miljö & integritet
 - [ ] Filen öppnas **lokalt utan internet**; inga konsolfel vid uppstart (öppna
-      utvecklarverktygens konsol och kontrollera). *Förväntat och ofarligt:* Chrome och
-      Edge loggar att direktivet `frame-ancestors` ignoreras i en meta-tagg.
+      utvecklarverktygens konsol och kontrollera).
 - [ ] **Signaturen är verifierad** med `cosign verify-blob` mot versionens `.sigstore.json`-paket
       (kommandot i `SECURITY.md`); svaret är `Verified OK`.
 - [ ] Filens **SHA-256 matchar `RELEASE.txt`** (kontrollerar att den kopia du använder är den verifierade).
@@ -38,13 +37,14 @@ checklistan täcker det som bara en körning med **din data** på **din hårdvar
 - [ ] **å/ä/ö** visas korrekt (testa gärna både en UTF-8- och en Windows-1252-fil).
 - [ ] **Underlagets kvalitet** och inläsningsrapporten (Filer och kvalitet) visar rimliga uteslutningar med
       begripliga skäl.
-- [ ] **Lönerna är heltidsomräknade:** ingen varning om löner under heltidsnivå, eller
-      en förklaring till den.
-- [ ] En fil som (medvetet) innehåller **personnummer/namn/e-post avvisas** med tydligt
+- [ ] **Lönerna är heltidsomräknade:** kontrollerat i uttaget. Verktyget varnar bara för löner under
+      15 000 kr (Rimlighet) och för en medianlön som ser ut som timlön eller årslön, inte för deltidslöner
+      som inte är omräknade.
+- [ ] En fil som (medvetet) innehåller en kolumn för **personnummer eller namn avvisas** med tydligt
       meddelande.
 - [ ] En fil med ett namn i fältet för AID-etikett på en enstaka rad ("101010 Sjuksköterska Anna Andersson") ger
       **varningen om personnamn** i förhandskontrollen, med radnumret. Namnet maskeras inte (ADR-85).
-- [ ] Både **CSV och XLSX** fungerar för struktur- och statistikfilerna.
+- [ ] Både **CSV och XLSX** fungerar för filerna med ställningstagandet och jämförelsestatistiken.
 
 ## C. Analys
 
@@ -86,8 +86,8 @@ och bandkartan. Verktyget är prövat med demodata och ett påhittat underlag me
       *Facklig dialog*) skrivs ut korrekt med **svensk talformatering**.
 - [ ] **Protokollet för gemensam lönebedömning** och **Excel (alla flikar)** laddas ner och
       öppnas felfritt.
-- [ ] Vid test i demoläge: alla exporter märks **DEMODATA** (i innehållet eller med
-      `DEMO_` i filnamnet).
+- [ ] Vid test i demoläge: alla exporter märks **DEMODATA** i innehållet och med
+      `DEMO_` i filnamnet.
 - [ ] **Exportmenyn** på ett diagram ger PNG, SVG och diagramdata som går att öppna.
 - [ ] **Tabeller och egna vyer:** med rutan "Ta med grupper under 10 i exporten" *urkryssad* saknas
       grupper under 10 i tabellens CSV och i diagramdatan.

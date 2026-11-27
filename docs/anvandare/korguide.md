@@ -64,7 +64,7 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
 | BAS-intervall | Ja | Kravnivå/svårighetsgrupp |
 | AID-etikett | Ja | AID-kod och etikettnamn. Kolumnen heter i lönefilen ofta *Yrke* eller *Befattning* |
 | Månadslön | Ja | **Heltidsomräknad** fast månadslön — se *Lönedefinition* nedan |
-| Ålder *(eller födelseår)* | Nej, rekommenderad | Födelseår tolkas automatiskt till ålder. Utan ålder körs analysen utan åldersjustering och Ålder & karriär visas inte |
+| Ålder *(eller födelseår)* | Nej, rekommenderad | Födelseår i ålderskolumnen tolkas automatiskt till ålder. Utan ålder körs analysen utan åldersjustering och fliken Ålder & karriär är låst |
 | Kön | Ja | K/M, Kvinna/Man m.fl. tolkas automatiskt |
 | Poäng *(arbetsvärdering)* | Nej | Valfri kolumn för likvärdigt arbete över BAS-gränser |
 | Ansvarskod *(AID)* | Nej | Valfri kolumn: A, B, C, L (ledningsansvar), F, M, 1001, 1002 (särskilt uppdrag). Kolumnen *Ansvar* (ofta ett kostnadsställe) läses aldrig |
@@ -73,16 +73,17 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
   omräknad till heltid. En deltidsanställds faktiska lön jämförd med en heltidsanställds
   ger en falsk löneskillnad. Rörliga delar (tillägg, OB, bonus, förmåner) analyseras inte
   av verktyget och ska inte läggas in i lönen; de prövas i genomgången av bestämmelser
-  och praxis. Verktyget varnar om många löner ligger under en rimlig heltidsnivå.
+  och praxis. Verktyget kan inte se om en lön är omräknad till heltid; det varnar bara för löner under
+  15 000 kr och för en medianlön som ser ut som timlön eller årslön.
 - **Teckenkodning** (UTF-8 / Windows-1252 / UTF-16) och avgränsare hanteras
   automatiskt — å/ä/ö blir rätt.
 - **All personal ingår.** Alla BAS-intervall analyseras, även chefsnivåerna (K och
   uppåt). Små intervall skyddas av minsta gruppstorlek vid export.
-- **Ta INTE med personnummer, namn eller e-post.** Verktyget avvisar filer som
-  innehåller sådana kolumner (uppgiftsminimering enligt dataskyddsförordningen).
+- **Ta INTE med personnummer, namn eller e-post.** Verktyget behåller bara de fält det behöver, och
+  avvisar en fil med en kolumn för personnummer eller namn, så att du kan rätta uttaget.
   Fältet för AID-etikett ska bara bära kod och etikett: verktyget maskerar inte namn som står där, utan varnar
   (se [`dataskydd.md`](../dataskydd/dataskydd.md#vad-skydden-gör-och-inte-gör)).
-- **Systemspecifika uttagssteg** (Personec P, Heroma, Visma m.fl.) samt fullständiga
+- **Uttagsstegen i de vanligaste lönesystemen** samt fullständiga
   format- och felsökningsdetaljer: se `datauttag.md`.
 
 ## 3. Läs in och kvalitetssäkra underlaget
@@ -104,18 +105,20 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    kräver att du bekräftar och visas som en varning överst på alla flikar. Värdet står i
    metodbilagan och i exporterad data. Under 10 står dessutom meningen *Tröskeln är sänkt från
    standardvärdet 10.* på det som kan spridas för sig, till exempel diagrambilder, kopierade tabeller
-   och rapporter. Alla flikar räknas om när värdet ändras.
+   och rapporter. Alla flikar räknas om när värdet ändras. Skriver du ut en flik ur webbläsarens meny (Ctrl+P)
+   blir utskriften skärmen som den är, med alla grupper och utan gränsen. Använd PDF-rapporten för det som ska delas.
    Knappen **Som i exporten** i sidhuvudet visar flikarna som i det som lämnar verktyget, alltså utan lönemått
    för grupper under minsta gruppstorlek. En banner och en streckad ram runt innehållet visas tills du klickar
    *Visa skärmen igen*. Värdet sparas inte mellan gånger men följer med i konfigurationsfilen. En
    konfigurationsfil utan värdet ändrar det inte. *Återställ till 10* sätter tillbaka
    standardvärdet.
-   Tröskeln styr också några tal på skärmen: medianlön per kön, den råa löneskillnaden och regressionens
-   ojusterade steg ("Endast kön", med den förklarade andelen). De visas bara när både kvinnor och män är minst så många som tröskeln. Annars står ett
-   streck eller en förklaring. Den justerade löneskillnaden (regressionen i Lönestruktur och talet i Lika
-   arbetes nyckeltal) visas från regressionens eget fasta golv, 5 av varje kön. I Ålder & karriär
-   gäller samma regel för löneskillnaderna, lutningen, trendlinjerna och lådorna per kön. Punkterna per
-   person i spridningsdiagrammen visas alltid.
+   **Det som visas på skärmen är inte maskerat.** Medianlön per kön, den råa löneskillnaden, och i Ålder & karriär
+   löneskillnaderna, lutningen, trendlinjerna, lådorna per kön och punkterna per person, visas på skärmen också när
+   ett kön har färre personer än tröskeln. Dela därför aldrig en skärmbild eller en utskrift ur webbläsarens meny;
+   det som ska spridas tar du ut genom exporterna, som håller tröskeln. Två tal följer en gräns också på skärmen:
+   regressionens ojusterade steg ("Endast kön", med den förklarade andelen) visas bara när både kvinnor och män är
+   minst så många som tröskeln, och den justerade löneskillnaden (regressionen i Lönestruktur och talet i Lika
+   arbetes nyckeltal) visas från regressionens eget fasta golv, 5 av varje kön.
 2. Känns en kolumn inte igen automatiskt? Använd **kolumnmappnings-guiden** och peka
    ut rätt kolumn. När filen är inläst visar rutan filnamnet; där kan du **namnge
    organisationen** (namnet syns i diagram, tabeller och exporter) och byta fil. Ge också
@@ -130,8 +133,9 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    inläsning** i Inställningar. Då väntar filen på *Läs in*, och *Avbryt* lämnar det tidigare underlaget orört.
    Kolumnmappningen visas när filen är inläst. Avsnittet namnger filen det beskriver, också en fil där ingen rad
    gick att använda. Raderna visas bara på skärmen.
-3. Läs avsnittet **Underlagets kvalitet** i samma flik. Fem kriterier — jämförbarhet, statistisk
-   styrka, fullständighet, rimlighet och modell — får OK, Varning eller Kritisk, och
+3. Läs avsnittet **Underlagets kvalitet** i samma flik. Kriterierna jämförbarhet, statistisk
+   styrka, fullständighet, rimlighet och modell, och med AID-koder i lönefilen också AID-kodningens
+   kriterier, får OK, Varning eller Kritisk, och
    underlaget får samma status som det svagaste. Under kriterierna står detaljerna:
    hur många rader som uteslöts och varför. Sist i panelen listas **extremvärden**
    (enskilda löner som avviker kraftigt inom sitt BAS-intervall) — ofta registerfel. Ser
@@ -144,7 +148,8 @@ Exportera en lönefil (CSV eller XLSX) med dessa kolumner:
    avsnittet mot statistiken. I avsnittet mot statistiken står organisationens P10, median och P90 bredvid
    statistikens för varje AID-etikett. Två diagram visar var du ligger i marknadens spann och vilka AID-etiketter som avviker
    mest. Arbetsvärderingspoäng laddas **inte** upp separat. Lägg till kolumnen **Poäng** i lönefilen (se avsnitt 2).
-5. Gå igenom kortet **Att göra** på Översikt. Överst står status mot de fyra lagkraven,
+5. Gå igenom kortet **Att göra** på Översikt. Överst står läget för fyra mått: säkerställd löneskillnad, ojämn könsfördelning och läget mot
+   ställningstagandet och jämförelsestatistiken,
    därunder **Börja här** med de tre viktigaste punkterna och sist alla punkter per
    kategori. Bocka av en punkt när du hanterat den; listan kan exporteras som CSV och
    bockarna följer med i konfigurationsfilen. Raden överst på Översikt säger vad som är inläst, och knappen
@@ -163,11 +168,11 @@ verktyget kan se*). De övriga fyra är manuella steg.
 | **3 · Åtgärder** | Prioritering, Löneöversyn, Handlingsplan |
 | **4 · Rapport** | Rapporttext, Exportera, Tabeller och egna vyer |
 | **Arbetet** | Spara och jämför år |
-| **Hjälp** | Om verktyget |
+| **Hjälp** | Om verktyget, För systemförvaltaren |
 
 Löneläget och Ålder & karriär är fördjupning, inget lagkrav; det står i flikens verktygstips och inledning. Utan
-lönefil går Översikt, Filer och kvalitet, Regler & praxis, Handlingsplan, Exportera, Spara och jämför år och Om
-verktyget att öppna. De andra flikarna är låsta; ett klick på en låst flik öppnar Filer och kvalitet med
+lönefil går Översikt, Filer och kvalitet, Regler & praxis, Handlingsplan, Exportera, Spara och jämför år, Om
+verktyget och För systemförvaltaren att öppna. De andra flikarna är låsta; ett klick på en låst flik öppnar Filer och kvalitet med
 lönefilskortet framme.
 
 **Alla flikar är uppbyggda på samma sätt.** Överst står en rad som säger vad fliken svarar på (*Visa mer* fäller ut

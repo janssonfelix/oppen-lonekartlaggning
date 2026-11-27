@@ -48,6 +48,39 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         w.eval('_fcAtgardTillRader()');
         expect(w.__state.forecast.targets).toEqual([]);
     });
+    it('individnivån på skärmen: «Skapa riktade rader» följer den inställda tröskeln (ADR-69), inte skärmens', () => {
+        const w = createAppWindow();
+        const rad = (bas, aid, kon, lon, i) => ({ bas, kon, lon, alder: 30 + i % 20, yrke: `${aid} Yrke`, aid, yrkeLabel: 'Yrke', enhet: '' });
+        const r = [];
+        for (let i = 0; i < 12; i++) r.push(rad('A', '6000', 'man', 40000 + i, i));
+        for (let i = 0; i < 12; i++) r.push(rad('A', '6000', 'kvinna', i < 3 ? 31117 : 40000 + i, i));   // tre kvinnor långt under männens median
+        r.push(rad('B', '7000', 'man', 50000, 0), rad('B', '7000', 'kvinna', 41000, 1));                  // en man och en kvinna
+        w.__state.data = r;
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('loneoversyn');
+        w.eval('_fcAtgard()');
+        expect(w.document.querySelectorAll('#forecast-rem-result tbody tr').length).toBe(2);   // skärmen visar båda (ADR-51)
+        w.alert = () => {};
+        w.eval('_fcAtgardTillRader()');
+        expect(w.__state.forecast.targets).toEqual([]);
+    });
+    it('marknadspositioneringen på skärmen föreslår ingen rad för en grupp under den inställda tröskeln (ADR-69)', () => {
+        const w = createAppWindow();
+        const rad = (aid, kon, i) => ({ bas: 'A', kon, lon: 30000 + i, alder: 30 + i % 20, yrke: `${aid} Yrke`, aid, yrkeLabel: 'Yrke', enhet: '' });
+        const r = [];
+        for (let i = 0; i < 12; i++) r.push(rad('6000', i % 2 ? 'man' : 'kvinna', i));
+        for (let i = 0; i < 6; i++) r.push(rad('7000', i % 2 ? 'man' : 'kvinna', i));   // sex personer, under 10
+        w.__state.data = r;
+        w.__state.statistik = [{ aid: '6000', bas: 'A', median: 40000 }, { aid: '7000', bas: 'A', median: 40000 }];
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__ritaFlik('loneoversyn');
+        w.__state.forecast.targets = [];
+        w.alert = () => {};
+        w.document.getElementById('forecast-min-n').value = '0';         // fältet Minsta antal personer släpper allt
+        w.document.getElementById('forecast-market-factor').value = '100';
+        w.eval('_fcMarknad()');
+        expect(w.__state.forecast.targets.map(t => t.aid)).toEqual(['6000']);
+    });
     it('utfallstabellen (i exportläget) och Excel: kostnaden maskeras där medianerna maskeras, och antalet grupper anges', async () => {
         const w = iExport(fonsterKon(null));
         Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });
@@ -75,8 +108,8 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
         expect(blad.find(r => r.includes('| 6000 |'))).toMatch(/\| \d+$/);
         expect(bok).toMatch(/\d+ grupper med färre än 10 personer ingår i summorna/);
     });
-    // Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Förr stod förslaget kvar
-    // på skärmen när tröskeln höjdes (ADR-51) och följde med i Excel-exporten och konfigurationsfilen.
+    // ADR-69: förslagen följer den inställda tröskeln också på skärmen, så ett förslag ur ett par under den följer inte
+    // med i Excel-exporten eller konfigurationsfilen.
     it('höjd tröskel tar bort förslaget ur ett par under den, också på skärmen (ADR-69); egna rader står kvar', () => {
         const w = createAppWindow();
         const rader = [];
@@ -104,8 +137,8 @@ describe('[I1] Löneöversyn visar ingen kostnad för grupper under tröskeln', 
 
 
 // Resultaten som räknas på knapptryck i Löneöversyn (kostnaden på individnivå, känslighetskurvan, målet för skillnaden)
-// ritades förr bara när knappen trycktes: skärmens omaskade tal stod kvar i förhandsvisningen "Som i exporten" och
-// efter en ändrad tröskel. Ett resultat som visas räknas nu om när fliken ritas om; en tom ruta förblir tom (ADR-51).
+// räknas om när fliken ritas om, så att förhandsvisningen "Som i exporten" och en ändrad tröskel aldrig visar skärmens
+// omaskade tal; en tom ruta förblir tom (ADR-51).
 describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () => {
     const text = (w, id) => normalisera(w.document.getElementById(id).textContent);
     const kostnader = w => KON_KOSTNAD.filter(v => text(w, 'forecast-rem-result').includes(String(v)));
@@ -131,7 +164,7 @@ describe('[I1b] Löneöversyns knappresultat följer läget och tröskeln', () =
         expect(text(w, 'forecast-rem-result')).toMatch(/Inga kvinnor ligger mer än gränsen/);
         expect(text(w, 'forecast-sensitivity')).not.toMatch(/^gammalt$|^$/);
         w.eval('sattForhandsvisning(false)');
-        expect(text(w, 'forecast-rem-result')).toMatch(/minst 1 män/);
+        expect(text(w, 'forecast-rem-result')).toMatch(/minst 1 man\b/);
         expect(kostnader(w).length).toBeGreaterThan(0);
         expect(text(w, 'forecast-sensitivity')).not.toBe('');
     });

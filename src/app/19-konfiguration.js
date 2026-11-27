@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { valideraArsbokslut } from '../lib/arsbokslut.js';
+import { bokslutMedGrans, valideraArsbokslut } from '../lib/arsbokslut.js';
 import { gapVariablerArStandard, normaliseraGapVariabler } from '../lib/gapuppdelning.js';
 import { valideraImportprofiler } from '../lib/importprofiler.js';
 import { arInomGrans, filStorlekFel, installningsGrans } from '../lib/installningsgranser.js';
 import { KONFIGURATION_VERSION, konfigurationMedNyaNamn, konfigurationVersionFel } from '../lib/konfiguration.js';
-import { K_MAX, K_MIN, kTolka } from '../lib/ktroskel.js';
+import { K_MAX, K_MIN, konFarRedovisas, kTolka } from '../lib/ktroskel.js';
 import { perBasReceptArStandard, valideraPerBasRecept } from '../lib/perbas.js';
 import { forklaringsmodellArStandard, normaliseraForklaringsmodell } from '../lib/regression.js';
 import { ogonblicksbildMatt } from '../lib/struktur.js';
@@ -14,7 +14,7 @@ import { svPct, svTal } from '../lib/talformat.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { idagDatum, laddaNer } from './03-hjalpfunktioner.js';
-import { _konFarRedovisas, _kVisaFel, _ritaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
+import { _kVisaFel, _ritaOmAllaFlikar, kInstalld, kTroskel, sattKTroskel } from './06-k-troskel.js';
 import { _skrDel } from './06-kvinnoandel-referens.js';
 import { COST_DEFAULTS, jmfNamn, orgNamn, PRIO_CONFIG_DEFAULTS, PRIO_WEIGHTS_DEFAULTS, sattJmfNamn, sattOrgNamn } from './07-standardinstallningar.js';
 import { T } from './09-termer.js';
@@ -29,10 +29,11 @@ import { sattOrgTyp } from './29-organisationspaket.js';
 import { tomStatistikcacher } from './30-statistikcacher.js';
 import { uppdateraAktivFlik } from './31-navigering.js';
 import { _fcRensaParMal, foreEfterFigur, ritaLoneoversyn } from './36-loneoversyn.js';
+import { utkastVidHogreTroskel } from './37-struktur.js';
 import { jamforelseSattVal, jamforelseVal } from './42-jamforelse.js';
 import { sattLonemanad } from './45-aid-bas-tabeller.js';
 import { korOLSRegression } from './51-lika-arbete-regressionskort.js';
-import { _lasKostnadsinstallningar } from './55-prioritering.js';
+import { synkaPrioFalt } from './55-prioritering.js';
 import { _hpDemoNycklar, _hpForKonfiguration, _hpValideraKonfiguration, ritaHandlingsplan } from './56-handlingsplan.js';
 import { sattRapportUrval } from './58-rapportmodell.js';
 import { _bes8Omraden, bes8Uppdatera } from './61-regler-och-praxis.js';
@@ -57,6 +58,7 @@ function byggKonfiguration() {
     return {
         version: KONFIGURATION_VERSION,
         sparad: new Date().toISOString(),
+        demo: state.isDemo === true,   // sparad i demoläget: inställningarna gäller den påhittade organisationen
         prioTrosklar: {
             atgardTroskel: state.prioConfig.atgardThreshold, akutMinstN: state.prioConfig.akutMinN,
             bevakaTroskel: state.prioConfig.bevakaThreshold, analyseraTroskel: state.prioConfig.analyseraThreshold
@@ -84,8 +86,8 @@ function byggKonfiguration() {
         loneoversyn: state.forecast ? {
             budget:   { enhet: state.forecast.budget.mode, varde: state.forecast.budget.value },
             generell: { enhet: state.forecast.generell.mode, varde: state.forecast.generell.value },
-            mal: (state.forecast.targets || []).map(t => ({ bas: t.bas, aid: t.aid, enhet: t.mode, varde: t.value, fordelning: t.dist,
-                malniva: t.targetLevel, pott: t.pool, ...(t.kalla ? { kalla: t.kalla } : {}) })),
+            mal: (state.forecast.targets || []).map(t => ({ bas: t.bas, aid: t.aid, kon: t.kon || 'alla', lonegrans: t.lonCap ?? null,
+                enhet: t.mode, varde: t.value, fordelning: t.dist, malniva: t.targetLevel, pott: t.pool, ...(t.kalla ? { kalla: t.kalla } : {}) })),
             minstaGruppN: state.forecast.minGroupN,
             avrundning: state.forecast.roundStep,
             ar: state.forecast.years
@@ -112,8 +114,8 @@ function byggKonfiguration() {
         // Handlingsplanens ifyllda fält per rad (sakligt skäl, ansvarig, tidsplan, status): användarförfattad text, som bes8.
         handlingsplan: _hpForKonfiguration(),
         attGoraKlara: Array.from(state._actionChecklistDone || []),
-        // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa när inget underlag finns.
-        arsbokslut: byggArsbokslutNu() || state.forraArsbokslut || null,
+        // Årsbokslutet (ADR-54): årets k-skyddade sammandrag, eller det inlästa, läst med årets tröskel, när inget underlag finns.
+        arsbokslut: byggArsbokslutNu() || bokslutMedGrans(state.forraArsbokslut, kInstalld()) || null,
         orgNamn: orgNamn(''),
         jmfNamn: jmfNamn(''),
         strukturNarrativ: (() => {
@@ -123,6 +125,7 @@ function byggKonfiguration() {
     };
 }
 
+// En konfigurationsfil kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81).
 /**
  * Återställer state och DOM-inputs från ett tidigare sparat config-snapshot.
  *
@@ -142,7 +145,6 @@ function byggKonfiguration() {
  *   organisationspaketets golv, ADR-47).
  * @throws {Error} Med beskrivande meddelande vid valideringsfel. State opåverkat.
  */
-// En konfigurationsfil kan ändra nästan allt som visas: ingen ritad flik visas igen som den är efteråt (ADR-81).
 function tillampaKonfiguration(cfg) { try { return _tillampaKonfiguration(cfg); } finally { visningNy(); } }
 /**
  * @param {Object} cfg
@@ -280,7 +282,9 @@ function _tillampaKonfiguration(cfg) {
             if (!Array.isArray(lo.mal)) throw new Error('loneoversyn.mal måste vara en array.');
             fc.targets = lo.mal.filter(t => t && typeof t === 'object').map(t => ({
                 bas: String(t.bas || ''), aid: String(t.aid || ''),
-                mode: t.enhet === 'kr' ? 'kr' : 'pct',
+                kon: ['kvinna', 'man'].includes(t.kon) ? t.kon : 'alla',
+                lonCap: typeof t.lonegrans === 'number' ? t.lonegrans : null,
+                mode: ['kr', 'till'].includes(t.enhet) ? t.enhet : 'pct',
                 value: (t.varde == null || typeof t.varde !== 'number') ? null : t.varde,
                 dist: ['flat', 'lowest', 'target'].includes(t.fordelning) ? t.fordelning : 'lowest',
                 targetLevel: t.malniva === 'p25' ? 'p25' : 'median',
@@ -440,21 +444,11 @@ function _tillampaKonfiguration(cfg) {
     if (tmp.jmfNamn) sattJmfNamn(tmp.jmfNamn);
     if (tmp.strukturNarrative != null) {
         const nb = document.getElementById('struktur-narrative');
-        if (nb) { /** @type {HTMLInputElement} */ (nb).value = tmp.strukturNarrative; nb.dataset.dirty = '1'; }
+        if (nb) { /** @type {HTMLInputElement} */ (nb).value = tmp.strukturNarrative; nb.dataset.dirty = '1'; nb.dataset.k = String(tmp.kTroskel ?? kInstalld()); }
+        utkastVidHogreTroskel(kInstalld());   // filens tröskel kan vara lägre än den som gäller (golvet, en nekad sänkning)
     }
 
-    // Synka DOM-inputs
-    const setIf = (id, val) => { const el = document.getElementById(id); if (el && val != null) /** @type {HTMLInputElement} */ (el).value = val; };
-    setIf('prio-cfg-atgard',    state.prioConfig.atgardThreshold);
-    setIf('prio-cfg-akutN',     state.prioConfig.akutMinN);
-    setIf('prio-cfg-bevaka',    state.prioConfig.bevakaThreshold);
-    setIf('prio-cfg-analysera', state.prioConfig.analyseraThreshold);
-    setIf('prio-w-avvikelse',   state.prioWeights.avvikelse);
-    setIf('prio-w-volym',       state.prioWeights.volym);
-    setIf('prio-w-jamstalldhet', state.prioWeights.jamstalldhet);
-    setIf('prio-cost-months',   state.costSettings.months);
-    setIf('prio-po-pct',        state.costSettings.poPct);
-    _lasKostnadsinstallningar();
+    synkaPrioFalt();
     if (tmp.ui) {
         ['prio-label-mode','kon-color-by'].forEach(id => {
             const el = document.getElementById(id);
@@ -522,8 +516,10 @@ export function ritaOgonblicksbildJamforelse() {
     if (!snap) { wrap.style.display = 'none'; _ogonblicksbildLutning(null, null); return; }
     const cur = byggOgonblicksbild();
     if (!cur) { wrap.style.display = 'none'; _ogonblicksbildLutning(null, null); return; }
-    // En bild sparad vid en lägre tröskel kan bära könsuppdelade mått som inte längre får visas.
-    const snapKon = _konFarRedovisas(snap.nKv, snap.nMa);
+    // En bild sparad vid en lägre tröskel kan bära könsuppdelade mått som inte längre får visas. Båda sidorna prövas mot
+    // den inställda tröskeln, också på skärmen (byggOgonblicksbild räknar i exportläget): jämförelsen ritas av Översikt,
+    // och exportens omritning av fliken Spara och jämför år ritar den inte.
+    const snapKon = konFarRedovisas(snap.nKv, snap.nMa, kInstalld());
     const sk = v => (snapKon ? v : null);
     wrap.style.display = 'block';
     const fmt = n => n == null ? '–' : (typeof n === 'number' ? n.toLocaleString('sv-SE', { maximumFractionDigits: 2 }) : n);
@@ -583,7 +579,7 @@ export function uppstartKonfiguration() {
     document.getElementById('btn-config-save')?.addEventListener('click', () => {
         const cfg = byggKonfiguration();
         const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-        laddaNer(blob, `lonekartlaggning_config_${idagDatum()}.json`);
+        laddaNer(blob, `lonekartlaggning_config_${idagDatum()}.json`);   // demoläget: laddaNer sätter DEMO_
         const status = document.getElementById('config-status');
         if (status) { status.textContent = 'Sparad'; status.style.color = FARG.ok; setTimeout(() => status.textContent = '', 3000); }
         // Konfigfilen är en arbetsfil: den bär dina egna bedömningar och anteckningar,
@@ -626,7 +622,9 @@ export function uppstartKonfiguration() {
     document.getElementById('btn-snapshot-save')?.addEventListener('click', () => {
         const snap = byggOgonblicksbild();
         if (!snap) { alert('Läs in lönefilen först.'); return; }
-        const name = (prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label) || snap.label).slice(0, 80);
+        const svar = prompt('Namn på scenariot (lämna tomt för standardnamn):', snap.label);
+        if (svar === null) return;   // Avbryt sparar ingenting
+        const name = (svar || snap.label).slice(0, 80);
         snap.label = name;
         state.snapshot = snap;
         // Sparas också bland scenarierna (högst fem).

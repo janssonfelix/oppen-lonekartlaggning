@@ -76,7 +76,8 @@ describe('förhandsbeskedet vid ett ändrat kryss räknar inte om avsnitten', ()
         const minne = w.eval('JSON.stringify(_rmMinne.avsnitt.fasta)');
         const delar = w.eval('_rmMinne.avsnitt.fasta.flatMap(a => a.delar)');
         expect(delar.length).toBeGreaterThan(0);
-        expect(delar.every(p => Object.keys(p).join() === 'typ')).toBe(true);
+        // Delens typ, och för ett diagram om det ritas (förhandsbeskedet räknar bara de diagram filen får).
+        expect(delar.every(p => Object.keys(p).join() === (p.typ === 'diagram' ? 'typ,ritas' : 'typ'))).toBe(true);
         expect(minne).not.toMatch(/konPct|kolumner|rader/);
         // Utan besked byggs modellen alltid på nytt, också när urvalet sägs vara det enda som ändrats.
         expect(raknade(() => w.eval('rapportModellBada({ ateranvand: true })'))).toBeGreaterThan(0);

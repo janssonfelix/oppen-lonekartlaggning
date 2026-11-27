@@ -2,7 +2,7 @@
 // Copyright 2026 Felix Jansson
 // Konfigurationsfilen i appen: HR:s manuella arbete sparas och läses tillbaka, också ansvarskoden.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createAppWindow } from './helpers/app-harness.js';
+import { createAppWindow, tillstandsavtryck } from './helpers/app-harness.js';
 import { konfigurationMedNyaNamn, KONFIGURATION_NAMNBYTEN } from '../src/lib/konfiguration.js';
 
 let win;
@@ -16,18 +16,9 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
     const NOTE = 'Fast testanteckning på gruppnivå.';
     const STATUS = 'Åtgärd krävs';
 
-    // Nollställ de fält testerna rör, så ordningsberoende undviks.
-    const resetFields = () => {
-        for (let i = 1; i <= 6; i++) {
-            const s = win.document.getElementById('bes8-status-' + i);
-            const t = win.document.getElementById('bes8-note-' + i);
-            if (s) s.value = '';
-            if (t) t.value = '';
-        }
-        win.__state._actionChecklistDone = new Set();
-        const org = win.document.getElementById('kl-org-name');
-        if (org) org.value = '';
-    };
+    // Rensa all data mellan testerna, så att inget beror på ordningen: fälten, avbockningarna och organisationens namn
+    // är som vid start efteråt.
+    const resetFields = () => win.eval('_rensaAllData()');
 
     it('snapshoten är version 3 och bär bes8/attGoraKlara/orgNamn', () => {
         resetFields();
@@ -55,7 +46,7 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
         const snap = win.__byggKonfiguration();
         expect(snap.attGoraKlara).toContain('prio-row-x');
 
-        resetFields();   // simulera "rensa all data" + omladdning
+        resetFields();
         expect(win.document.getElementById('bes8-note-2').value).toBe('');
 
         win.__tillampaKonfiguration(snap);
@@ -91,9 +82,12 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
     });
 
     it('ogiltigt bes8-fält (n utanför 1–6) kastar och muterar inte state', () => {
+        const utanTid = () => JSON.stringify({ ...win.__byggKonfiguration(), sparad: null });
+        const fore = utanTid();
         const snap = win.__byggKonfiguration();
         snap.bes8 = [{ n: 9, status: '', anteckning: '' }];
         expect(() => win.__tillampaKonfiguration(snap)).toThrow(/bes8/);
+        expect(utanTid()).toBe(fore);
         resetFields();
     });
 
@@ -102,6 +96,50 @@ describe('konfig-snapshot: HR:s manuella arbete round-trips', () => {
         if (nb) { nb.value = 'auto text'; delete nb.dataset.dirty; }
         const snap = win.__byggKonfiguration();
         expect(snap.strukturNarrativ).toBeNull();
+    });
+});
+
+describe('varje inställning tur och retur genom konfigurationsfilen', () => {
+    // Varje inställning får ett värde som inte är standard. Filen sparas, fönstret rensas och filen läses in: tillståndet
+    // ska vara detsamma som före rensningen, och varje värde ska ha slagit igenom. Fälten som inte är inställningar,
+    // och recepten som har egna tur och retur-prov, står i UTANFOR; ett nytt fält i filen måste stå i någon av listorna.
+    const ANDRAD = {
+        prioTrosklar: { atgardTroskel: -6, akutMinstN: 12, bevakaTroskel: -3, analyseraTroskel: 6 },
+        prioVikter: { avvikelse: 40, volym: 40, jamstalldhet: 20 },
+        kostnad: { manader: 6, poPct: 45 },
+        kTroskel: 12,
+        bristAids: ['5301'],
+        likvardighet: { kvinnoTroskelPct: 65, kvDomDefinition: 'do', jamforelse: 'mansdominerade', minstaGapPct: 2, antalPar: 15 },
+        lonemanad: '2026-09',
+        forhandskontrollStopp: true,
+        loneoversyn: { budget: { enhet: 'kr', varde: 100000 }, generell: { enhet: 'pct', varde: 1.5 }, mal: [], minstaGruppN: 12, avrundning: 100, ar: 2 },
+        visning: { prioReferens: 'statistik', prioEtiketter: 'alla', konFargning: 'kon', organisationstyp: 'region', jamforelse: { bas: '', sektor: '' } },
+        orgNamn: 'Exempelorganisationen',
+        jmfNamn: 'Exempelreferensen',
+    };
+    const UTANFOR = {
+        version: 'formatet', sparad: 'tidpunkten', demo: 'läget', organisationspaket: 'paketet följer paketfilen', arsbokslut: 'årets sammandrag, inte en inställning',
+        bes8: 'tur och retur ovan', attGoraKlara: 'tur och retur ovan', handlingsplan: 'tests/handlingsplan-app.test.js', strukturNarrativ: 'utkastets text, inte en inställning',
+        rapportUrval: 'tests/rapport-app.test.js', rapportTabeller: 'tests/egna-tabeller-app.test.js', perBasRecept: 'tests/egna-tabeller-app.test.js',
+        forklaringsmodell: 'tests/regression-app.test.js', gapUppdelning: 'tests/lika-arbete-app.test.js',
+    };
+    it('varje fält i filen är en prövad inställning eller står i UTANFOR', () => {
+        const falt = Object.keys(createAppWindow().__byggKonfiguration()).filter(k => k !== 'importprofiler');
+        expect(falt.filter(k => !(k in ANDRAD) && !(k in UTANFOR))).toEqual([]);
+        expect(Object.keys({ ...ANDRAD, ...UTANFOR }).filter(k => !falt.includes(k))).toEqual([]);
+    });
+    it('spara, rensa och läs in: samma tillstånd, och varje ändrat värde gäller', () => {
+        const w = createAppWindow();
+        const standard = w.__byggKonfiguration();
+        for (const [k, v] of Object.entries(ANDRAD)) expect(JSON.stringify(standard[k]), `${k} är redan standard`).not.toBe(JSON.stringify(v));
+        w.__tillampaKonfiguration({ ...standard, ...ANDRAD });
+        const fil = JSON.parse(JSON.stringify(w.__byggKonfiguration()));
+        for (const [k, v] of Object.entries(ANDRAD)) expect(fil[k], k).toEqual(v);
+        const fore = tillstandsavtryck(w);
+        w.eval('_rensaAllData()');
+        expect(tillstandsavtryck(w)).not.toEqual(fore);
+        w.__tillampaKonfiguration(fil);
+        expect(tillstandsavtryck(w)).toEqual(fore);
     });
 });
 
@@ -173,5 +211,39 @@ describe('äldre konfigurationsfiler (version 2, de gamla fältnamnen, ADR-96)',
         expect(() => w.__tillampaKonfiguration({ version: 3, ...giltigt, rapportTabeller: 'x' })).toThrow(/rapportTabeller/);
         expect(() => w.__tillampaKonfiguration({ version: 3, ...giltigt, perBasRecept: 5 })).toThrow(/perBasRecept/);
         expect(JSON.stringify([w.__state.prioWeights, w.__state.prioConfig, w.__state.costSettings])).toBe(fore);
+    });
+});
+
+// Konfigurationsfilen sparad i demoläget bär demomärket i filnamnet och i filen, och demots exempelskäl i
+// handlingsplanen skrivs aldrig till den: de är inte användarens.
+describe('konfigurationsfilen i demoläget', () => {
+    it('märks DEMO och bär inte demots skäl', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        expect(JSON.stringify(w.__state.handlingsplan)).toMatch(/Exempel i demot/);
+        const snap = w.__byggKonfiguration();
+        expect(snap.demo).toBe(true);
+        expect(JSON.stringify(snap.handlingsplan)).not.toMatch(/Exempel i demot/);
+        let filnamn = '';
+        w.HTMLAnchorElement.prototype.click = function () { filnamn = this.download; };
+        w.document.getElementById('btn-config-save').click();
+        expect(filnamn).toMatch(/^DEMO_lonekartlaggning_config_/);
+        expect(createAppWindow().__byggKonfiguration().demo).toBe(false);
+    });
+});
+
+describe('ögonblicksbildens namndialog', () => {
+    it('Avbryt sparar ingen bild; ett tomt fält ger standardnamnet', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        const knapp = w.document.getElementById('btn-snapshot-save');
+        w.prompt = () => null;
+        knapp.click();
+        expect(w.__state.snapshot).toBeNull();
+        expect(w.__state.scenarios || []).toHaveLength(0);
+        w.prompt = (_t, standard) => { w.__standard = standard; return ''; };
+        knapp.click();
+        expect(w.__state.snapshot.label).toBe(w.__standard);
+        expect(w.__state.scenarios).toHaveLength(1);
     });
 });

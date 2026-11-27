@@ -23,7 +23,8 @@ Exporterna står i [`exporterna.md`](exporterna.md).
 | Jämförelsestatistiken | `src/lib/jamforelse.js` (`jamforelseRader`, `statistikFor`, `avvikelseRangordning`), `src/app/42-jamforelse.js` (`byggJamforelse`), `src/app/64-jamforelse-export.js` |
 | Personer att granska | `src/lib/individflaggor.js` (`flaggaIndivider`, `avvikelsePerKonOchBas`), `src/app/43-personer-att-granska.js` (`ritaPersonerAttGranska`) |
 | Interna fel | `src/app/03-hjalpfunktioner.js` (`rapporteraFel`, `visaInterntFel`) |
-| Vakterna | `tests/a11y.test.js`, `tests/start-och-meny-app.test.js`, `tests/individflaggor.test.js` |
+| Fokus, dialogerna och tabellernas tangentbord | `src/app/01-html-och-tillganglighet.js` (`fangaFokus`, `stangDialog`, `behallFokus`, `meddelaSkarmlasare`), `src/app/05-tabeller-och-lankar.js`, `src/app/02-verktygstips.js` |
+| Vakterna | `tests/a11y.test.js`, `tests/a11y-tangentbord.test.js`, `tests/start-och-meny-app.test.js`, `tests/individflaggor.test.js` |
 
 ## 1. Menyn och tangentbordet
 
@@ -41,12 +42,29 @@ verktyget*, ingen analysflik: den ritar inga diagram och har ingen grupp i *Alla
 
 **Tangentbordet.** Alla knappar i menyn står i den naturliga Tab-ordningen. Pilarna, Home och End flyttar därtill fokus
 mellan de knappar som varken är låsta eller dolda och byter flik; från en låst knapp går pilen till närmaste upplåsta
-åt det hållet. Ett byte med pilarna är användarens flikbyte (`k-troskeln.md` §3).
+åt det hållet. Ett byte med pilarna är användarens flikbyte (`k-troskeln.md` §3). Ett flikbyte från innehållet (en länk
+i en panel) flyttar fokus till den nya flikens panel; ett val i menyn lämnar fokus i menyn.
+
+**Fokus vid omritning.** En yta som ritas om medan fokus står i den ritas inom `behallFokus`: fokus går till samma
+kontroll i den nya ytan, annars till närmaste kontroll före, annars till ytan själv, aldrig till sidans början.
+
+**Dialogerna** öppnas med `fangaFokus`, som räknar dialogens kontroller när Tab trycks, och stängs med `stangDialog`,
+som lämnar tillbaka fokus till det som öppnade dialogen. Varje dialog stängs med Escape. Varningen vid inaktivitet är
+en dialog med fokus på *Fortsätt arbeta*.
+
+**Tabellerna.** En sorterbar kolumnrubrik och en hopfällbar grupprad nås med Tab och används med Enter eller
+blanksteg; `aria-sort` och `aria-expanded` sätts i de gemensamma funktionerna i `05-tabeller-och-lankar.js`.
+Förklaringarna (ⓘ, `.info-tip`) nås med Tab, har förklaringen som namn och visar tipset vid fokus.
+
+**Besked till skärmläsaren.** Resultatet av en åtgärd annonseras med `meddelaSkarmlasare`; en ruta som skrivs om på
+plats har `aria-live` i `index.html`. Samma besked går aldrig båda vägarna.
 
 **En låst flik** är `aria-disabled="true"`, inte `disabled`: knappen går att nå och klicka på, och klicket leder till
 lönefilskortet i Filer och kvalitet (eller till kravet på ålder för en flik som kräver ålder) i stället för att ingenting
 händer. Egenskapen `disabled` på knappen läser och sätter `aria-disabled`, så att resten av koden låser och låser upp
-som vanligt.
+som vanligt. Flikarna som kräver lönefilen är knapparna med `data-lonefil` i `index.html`, låsta från start; inläsningen
+låser upp dem (Löneläget först när ett ställningstagande eller jämförelsestatistik finns) och Rensa all data låser dem
+igen (`lonefilsflikar` i `31-navigering.js`).
 
 **De äkta flikraderna** är två: avsnitten i Om verktyget (`.info-tab-nav`) och underflikarna *Egna vyer* och *Alla
 diagram* i Tabeller och egna vyer (`.ut-underflikar`). De är `role="tablist"` med bara `role="tab"`-barn, och bara den
@@ -56,23 +74,27 @@ aktiva fliken står i Tab-ordningen; pilarna, Home och End byter flik (`_kopplaF
 i sidhuvudet (`aria-expanded`). Den stängs av ett val i menyn, av Escape och av ett klick utanför; fokus går till menyn
 när den öppnas och tillbaka till knappen när den stängs. När fönstret passerar brytpunkten stängs menyn utan glidning.
 
-**Vakten** är `tests/a11y.test.js`: axe-core (ett utvecklingsberoende som aldrig ingår i bygget) körs i jsdom mot varje
-ritad flik med demodata (diagrammen ritade av diagramkärnan) och kräver noll överträdelser av nivåerna *serious*,
+**Vakterna** är `tests/a11y.test.js` och `tests/a11y-tangentbord.test.js`. I den första körs axe-core (ett
+utvecklingsberoende som aldrig ingår i bygget) i jsdom mot varje ritad flik med demodata (diagrammen ritade av
+diagramkärnan) och varje dialog öppen, och kräver noll överträdelser av nivåerna *serious*,
 *critical* och *moderate*. Färgkontrasten kräver en layoutmotor och prövas inte där; palettens kontrast mot ytorna
 räknas i `tests/farger.test.js`.
 
 ## 2. Processöversikten och *Börja här*
 
 **Ett steg är klart när arbetet är gjort**, inte när analysen har körts. Processöversikten på Översikt
-(`ritaKartlaggningensSteg`) har åtta steg; stegen 3 och 4 läser Att göras punkter och vilka som är avbockade:
+(`ritaKartlaggningensSteg`) har nio steg; stegen 3 och 4 läser Att göras punkter och vilka som är avbockade, och
+ritas om när en punkt bockas av:
 
 - **3. Lika arbete** är klart när huvudregressionen gått att köra och alla punkter i kategorierna *Lika arbete* och
   *Lika arbete, fördjupning* är avbockade (`stegLikaArbete`); annars delvis.
 - **4. Likvärdigt arbete** är klart när analysen inte hittar några kandidatpar, eller när det finns punkter och alla i
   kategorin *Likvärdigt arbete* är avbockade (`stegLikvardigt`). Finns bara par där en grupp är under tröskeln, som bara
-  redovisas i fliken, är tillståndet *inget att hantera* i Att göra, och steget pekar till fliken.
+  redovisas i fliken, är tillståndet *inget att hantera* i Att göra, och steget pekar till fliken. Att göra tar med
+  högst 20 par (`ATTGORA_PAR_MAX`), de med störst skillnad; steget räknar samma par, och både listan och steget säger
+  när listan är kortad (`parKortadNot`).
 - **2. Regler & praxis** räknar de bedömda granskningsområdena, och **5. Handlingsplan** handlingsplanens rader och
-  deras status. Steg 1 är klart när lönefilen är inläst; stegen 6–8 (samverkan, rapporttexten, dokumentationen) är
+  deras status; utan rader att fylla i är steg 5 klart, som stegen 3 och 4 när det inte finns något att hantera. Steg 1 är klart när lönefilen är inläst; stegen 6–8 (samverkan, rapporttexten, dokumentationen) är
   manuella och markeras inte.
 
 Ett steg vars härledning kastar visar sin reservrad och rapporteras (avsnitt 6).

@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 import { createAppWindow } from './helpers/app-harness.js';
 import { ritfigurer } from './helpers/ritfigurer.js';
 import { utanSmaGrupper, ladstatistik, talformat, figurTillTabell, valideraFigur, axelVarden } from '../src/lib/figur.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const sha = fil => createHash('sha256').update(readFileSync(fil)).digest('hex');
 
@@ -21,7 +22,11 @@ describe('D3 i bygget', () => {
     });
     it('vendor/d3.min.js är byte för byte npm-paketets fil (kontrollsumman prövas i sakerhet.test.js)', () => {
         expect(sha('vendor/d3.min.js')).toBe(sha('node_modules/d3/dist/d3.min.js'));
-        expect(JSON.parse(readFileSync('package.json', 'utf8')).devDependencies.d3).toBe('7.9.2');
+    });
+    it('package.json låser D3 till exakt den version som package-lock.json installerar', () => {
+        const angiven = JSON.parse(readFileSync('package.json', 'utf8')).devDependencies.d3;
+        expect(angiven).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(angiven).toBe(JSON.parse(readFileSync('package-lock.json', 'utf8')).packages['node_modules/d3'].version);
     });
     it('index.html laddar D3 före app.js, och bundlern inlinar den', () => {
         const html = readFileSync('src/index.html', 'utf8');
@@ -207,11 +212,10 @@ describe('ritaren: punkt och linje', () => {
     it('symbolerna streck och triangel ritas som path, inte cirkel', () => {
         const svg = rita(staplar({ x: { skala: 'linjar' }, y: { skala: 'band' }, lager: [
             { marke: 'punkt', symbol: 'streck', data: [{ y: 'A', x: 5 }] },
-            { marke: 'punkt', symbol: 'triangelVanster', data: [{ y: 'A', x: 2 }] },
             { marke: 'punkt', symbol: 'triangelHoger', data: [{ y: 'A', x: 8 }] },
         ] }));
         expect(alla(svg, 'circle[data-marke="punkt"]')).toHaveLength(0);
-        expect(alla(svg, '[data-marke="punkt"]')).toHaveLength(3);
+        expect(alla(svg, '[data-marke="punkt"]')).toHaveLength(2);
     });
     it('linje: en path per lager; null bryter linjen; streckad och monoton', () => {
         const svg = rita(xy([
@@ -228,14 +232,11 @@ describe('ritaren: punkt och linje', () => {
         const svg = rita(xy([{ marke: 'linje', serie: 'P50', tips: d => [[String(d.x)]], data: [{ x: 20, y: 1 }, { x: 30, y: null }, { x: 40, y: 3 }] }]));
         expect(alla(svg, '[data-marke="linjepunkt"]').map(e => e.getAttribute('data-i'))).toEqual(['0', '2']);
     });
-    it('logaritmisk axel och omvänd axel', () => {
+    it('logaritmisk axel', () => {
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'log' },
             lager: [{ marke: 'punkt', data: [{ x: 1, y: 10 }, { x: 2, y: 100 }, { x: 3, y: 1000 }] }] });
         const c = alla(svg, '[data-marke="punkt"]');
         expect(tal(c[0], 'cy') - tal(c[1], 'cy')).toBeCloseTo(tal(c[1], 'cy') - tal(c[2], 'cy'), 3);   // lika steg per tiopotens
-        const omv = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar', omvand: true }, lager: [{ marke: 'punkt', data: [{ x: 1, y: 1 }, { x: 2, y: 9 }] }] });
-        const o = alla(omv, '[data-marke="punkt"]');
-        expect(tal(o[1], 'cy')).toBeGreaterThan(tal(o[0], 'cy'));
     });
 });
 
@@ -313,7 +314,7 @@ function kontrolleraYta(svg, namn) {
         if (r.x0 < -0.01 || r.y0 < -0.01 || r.x1 > B + 0.01 || r.y1 > H + 0.01) fel.push(`${namn}: "${texten(t)}" utanför (${r.x0.toFixed(1)}..${r.x1.toFixed(1)} × ${r.y0.toFixed(1)}..${r.y1.toFixed(1)} i ${B}×${H})`);
     }
     // Markeringar och stapeletiketter: inga två texter på samma axel eller etiketter överlappar varandra eller markeringarna.
-    const grupper = [...['x', 'y', 'y2'].map(ax => alla(svg, `text[data-axel="${ax}"]`)), alla(svg, 'text[data-axel], text[data-marke="etikett"]')];
+    const grupper = [...['x', 'y'].map(ax => alla(svg, `text[data-axel="${ax}"]`)), alla(svg, 'text[data-axel], text[data-marke="etikett"]')];
     for (const ts of grupper) {
         for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++) {
             if (tom(textRuta(ts[i]), textRuta(ts[j]))) fel.push(`${namn}: "${texten(ts[i])}" och "${texten(ts[j])}" överlappar`);
@@ -353,7 +354,6 @@ const ytfigurer = () => {
         ['60 liggande staplar med etiketter 420', { beskrivning: 'b', x: { skala: 'linjar', titel: 'Värde' }, y: { skala: 'band' }, lager: [{ marke: 'stapel', riktning: 'liggande', serie: 'S', data: kat(60).map((y, i) => ({ y, x: i + 1, etikett: `${i + 1} st` })) }] }, 420, {}],
         ['staplad med etiketter i segmenten', staplar({ y: { skala: 'linjar', titel: 'Antal' }, lager: [{ marke: 'stapel', lage: 'staplad', serie: 'Låg', data: [{ x: 'A', y: 10, etikett: '10' }, { x: 'B', y: 1, etikett: '1 st' }] }, { marke: 'stapel', lage: 'staplad', serie: 'Hög', data: [{ x: 'A', y: 20, etikett: '20' }, { x: 'B', y: 25, etikett: '25' }] }] }), 500, {}],
         ['staplad liggande med etiketter', { beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'band' }, lager: [{ marke: 'stapel', riktning: 'liggande', lage: 'staplad', serie: 'A', data: [{ y: 'P', x: 30, etikett: 'trettio' }, { y: 'Q', x: 2, etikett: 'två' }] }, { marke: 'stapel', riktning: 'liggande', lage: 'staplad', serie: 'B', data: [{ y: 'P', x: 40, etikett: 'fyrtio' }, { y: 'Q', x: 50, etikett: 'femtio' }] }] }, 500, {}],
-        ['högre axel', staplar({ y2: { skala: 'linjar', titel: 'Antal', format: 'antal' }, lager: [...staplar().lager, { marke: 'linje', axel: 'y2', serie: 'N', data: [{ x: 'A', y: 5 }, { x: 'B', y: 1500000 }] }] }), 600, {}],
     ];
 };
 
@@ -383,7 +383,7 @@ describe('text innanför bilden och utan överlapp', () => {
     });
     it('tal på axlarna kortas aldrig med …; ryms inte ett tal hoppas det över', () => {
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar', format: 'kr' }, y: { skala: 'linjar', format: 'kr' }, lager: [{ marke: 'punkt', data: [{ x: 0, y: 0 }, { x: 2.5e9, y: 2.5e9 }] }] }, 200);
-        for (const t of alla(svg, '[data-axel]')) expect(texten(t)).not.toContain('…');
+        for (const t of ickeTom(alla(svg, '[data-axel]'))) expect(texten(t)).not.toContain('…');
     });
     it('logaritmisk axel 10..1000 på 240 px: etiketterna ligger minst en textrad isär', () => {
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'log' }, lager: [{ marke: 'punkt', data: [{ x: 1, y: 10 }, { x: 2, y: 1000 }] }] }, 600, { hojd: 320 });
@@ -466,7 +466,7 @@ describe('paneler, förklaring och märken för små grupper', () => {
     it('streck och triangel behåller seriens färg när de är små och får streckad kant', () => {
         const f = staplar({ x: { skala: 'linjar' }, y: { skala: 'band' }, lager: [
             { marke: 'punkt', symbol: 'streck', farg: '#123456', data: [{ y: 'A', x: 5, liten: true }] },
-            { marke: 'punkt', symbol: 'triangelVanster', farg: '#654321', data: [{ y: 'A', x: 2, liten: true }] },
+            { marke: 'punkt', symbol: 'triangelHoger', farg: '#654321', data: [{ y: 'A', x: 2, liten: true }] },
         ] });
         const [streck, tri] = alla(rita(f, 600, { visaSma: true }), '[data-marke="punkt"]');
         expect(streck.getAttribute('stroke')).toBe('#123456');
@@ -578,7 +578,7 @@ describe('punkter vid axelns ände', () => {
         const f = { beskrivning: 'b', x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'log' }, lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 0, y: 10 }, { x: 100, y: 1000 }, { x: 50, y: 100 }] }] };
         const svg = rita(f, 480);
         const r = svg.querySelector('svg[data-del="panel"]');
-        for (const c of alla(svg, 'circle[data-marke="punkt"]')) {
+        for (const c of ickeTom(alla(svg, 'circle[data-marke="punkt"]'))) {
             expect(tal(c, 'cx') - tal(c, 'r')).toBeGreaterThanOrEqual(-1e-6);
             expect(tal(c, 'cx') + tal(c, 'r')).toBeLessThanOrEqual(tal(r, 'width') + 1e-6);
             expect(tal(c, 'cy') - tal(c, 'r')).toBeGreaterThanOrEqual(-1e-6);
@@ -693,14 +693,6 @@ describe('nedsampling, staplade summor per axel och stödlinjer per panel', () =
         expect(alla(svg, '[data-marke="punkt"]')).toHaveLength(max - 100);
         expect(svg.getAttribute('data-nedsamplat')).toBeNull();
     });
-    it('staplade summor delas per värdeaxel: ett staplat lager på y2 och ett på y delar inte summa', () => {
-        const f = staplar({ y2: { skala: 'linjar' }, lager: [
-            { marke: 'stapel', lage: 'staplad', serie: 'A', data: [{ x: 'K', y: 10 }] },
-            { marke: 'stapel', lage: 'staplad', axel: 'y2', serie: 'B', data: [{ x: 'K', y: 3 }] },
-        ] });
-        const [a, b] = alla(rita(f), '[data-marke="stapel"]');
-        expect(tal(a, 'y') + tal(a, 'height')).toBeCloseTo(tal(b, 'y') + tal(b, 'height'), 5);   // båda börjar vid nollan
-    });
     it('y-stödlinjerna ritas per panel, inte genom mellanrummet', () => {
         const f = staplar({ paneler: ['K', 'M'], lager: [{ marke: 'stapel', panel: 'K', serie: 'K', data: [{ x: 'A', y: 1 }] }, { marke: 'stapel', panel: 'M', serie: 'M', data: [{ x: 'A', y: 2 }] }] });
         const svg = rita(f, 600);
@@ -722,7 +714,7 @@ describe('ritning utan visaSma är identisk med ritning av en figur där de små
     const normal = s => s.replace(/ data-[li]="\d+"/g, '');
     // Täckning: listan ska faktiskt pröva något.
     it('varje figur har en liten punkt som ritas när små grupper visas', () => {
-        for (const [namn, figur, val] of ritfigurer()) {
+        for (const [namn, figur, val] of ickeTom(ritfigurer())) {
             for (const b of [600, 320]) expect(ser(rita(figur, b, { ...val, visaSma: true })), `${namn} (${b})`).not.toBe(ser(rita(figur, b, val)));
         }
     });
@@ -754,17 +746,6 @@ describe('baslinje, stående etiketter, kategoriordning', () => {
         const noll = alla(svg, '[data-axel="y"]').find(t => texten(t) === '0');
         expect(tal(noll, 'y') - 12 * 0.35).toBeCloseTo(axel, 0);
     });
-    it('nollorna på y och y2 ligger på samma höjd när båda axlarna har staplar och börjar i noll', () => {
-        const f = staplar({ y2: { skala: 'linjar', format: 'antal' }, lager: [
-            { marke: 'stapel', serie: 'Lön', data: [{ x: 'A', y: 30000 }] },
-            { marke: 'punkt', serie: 'P', data: [{ x: 'A', y: 31000 }] },
-            { marke: 'stapel', axel: 'y2', serie: 'N', data: [{ x: 'B', y: 40 }] },
-            { marke: 'linje', axel: 'y2', serie: 'L', data: [{ x: 'A', y: 10 }, { x: 'B', y: 20 }] },
-        ] });
-        const svg = rita(f);
-        const noll = ax => tal(alla(svg, `[data-axel="${ax}"]`).find(t => texten(t) === '0'), 'y');
-        expect(noll('y')).toBeCloseTo(noll('y2'), 5);
-    });
     it('stående etiketter ritas alla eller inga — 16 staplar på 600 px ger inga, 3 staplar ger alla', () => {
         const rader = n => staplar({ y: { skala: 'linjar', format: 'kr' }, lager: [{ marke: 'stapel', serie: 'S', data: Array.from({ length: n }, (_, i) => ({ x: `K${i}`, y: 30000 + i * 1000, etikett: `${30000 + i * 1000} kr` })) }] });
         expect(alla(rita(rader(16), 600), '[data-marke="etikett"]')).toHaveLength(0);
@@ -783,18 +764,14 @@ describe('baslinje, stående etiketter, kategoriordning', () => {
 });
 
 describe('axlarnas nollor, kategoriordningen och etiketterna', () => {
-    it('staplar på y + linje på y2: båda nollorna ligger på axellinjen — och omvänt', () => {
-        for (const [barAxel, linjeAxel] of [[undefined, 'y2'], ['y2', undefined]]) {
-            const f = staplar({ y2: { skala: 'linjar', format: 'antal', doman: [0, 100] }, y: { skala: 'linjar', format: 'kr', doman: [0, 40000] }, lager: [
-                { marke: 'stapel', serie: 'S', ...(barAxel ? { axel: barAxel } : {}), data: [{ x: 'A', y: barAxel ? 40 : 30000 }, { x: 'B', y: barAxel ? 50 : 20000 }] },
-                { marke: 'linje', serie: 'L', ...(linjeAxel ? { axel: linjeAxel } : {}), data: [{ x: 'A', y: linjeAxel ? 30 : 15000 }, { x: 'B', y: linjeAxel ? 60 : 10000 }] },
-            ] });
-            const svg = rita(f);
-            const axel = tal(svg.querySelector('line[stroke="#94a3b8"]'), 'y1');
-            for (const ax of ['y', 'y2']) {
-                const noll = alla(svg, `[data-axel="${ax}"]`).find(t => texten(t) === '0');
-                expect(tal(noll, 'y') - 12 * 0.35, `${ax} med staplar på ${barAxel || 'y'}`).toBeCloseTo(axel, 0);
-            }
+    it('en axel i heltalsformat får markeringar bara vid heltal, så att texten står vid sitt värde', () => {
+        // Med 400 px höjd ger domänen 0–3 steg 0,5; avrundade texter "1, 2, 3" hamnade då vid 0,5, 1,5 och 2,5.
+        for (const format of ['antal', 'ar', 'kr']) for (const hojd of [200, 400, 800]) {
+            const f = staplar({ y: { skala: 'linjar', format }, lager: [{ marke: 'stapel', serie: 'N', data: [{ x: 'A', y: 1 }, { x: 'B', y: 3 }] }] });
+            const mark = alla(rita(f, 600, { hojd }), '[data-axel="y"]').map(t => ({ v: Number(texten(t)), y: tal(t, 'y') }));
+            expect(mark.length, `${format} ${hojd}`).toBeGreaterThan(1);
+            const steg = (mark[0].y - mark[1].y) / (mark[1].v - mark[0].v);
+            for (const m of mark) expect(mark[0].y - m.y, `${format} ${hojd}: ${m.v}`).toBeCloseTo((m.v - mark[0].v) * steg, 3);
         }
     });
     it('utanSmaGrupper bär inga borttagna namn eller värden, och är idempotent', () => {
@@ -973,13 +950,6 @@ describe('staplade etiketter ritas bara när inget annat stapellager kan täcka 
             expect(ser(svg)).toBe(ser(rita(staplar({ y: { skala: 'linjar' }, lager: utan }), 500)));
         }
     });
-    it('staplade lager på y och y2 täcker varandra: inga etiketter; i skilda paneler ritas de', () => {
-        const y2 = { skala: 'linjar' };
-        const blandat = rita(staplar({ y: { skala: 'linjar' }, y2, lager: [lagerS('a', [10, 12]), lagerS('b', [20, 25], { axel: 'y2' })] }), 500);
-        expect(alla(blandat, '[data-marke="etikett"]')).toHaveLength(0);
-        const skilda = rita(staplar({ y: { skala: 'linjar' }, y2, paneler: ['P', 'Q'], lager: [lagerS('a', [10, 12], { panel: 'P' }), lagerS('b', [20, 25], { panel: 'Q', axel: 'y2' })] }), 700);
-        expect(alla(skilda, '[data-marke="etikett"]')).toHaveLength(4);
-    });
     it('ett dolt stapellager täcker inget: de staplade etiketterna ritas', () => {
         const lager = [lagerS('a', [10, 12]), lagerS('b', [20, 25]), { marke: 'stapel', lage: 'overlagrad', serie: 'tak', data: [{ x: 'A', y: 28 }] }];
         const svg = rita(staplar({ y: { skala: 'linjar' }, lager }), 500, { dolda: new Set(['tak']) });
@@ -1103,7 +1073,7 @@ describe('ritaren: ruta och färgskala', () => {
         expect(w.eval('_rfFargskala(null)')).toBeNull();
     });
     it('punkter med fargvarde använder skalan', () => {
-        const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, fargskala: { typ: 'tvafarg', doman: [0, 100], titel: 'Andel kvinnor' },
+        const svg = rita({ beskrivning: 'b', x: { skala: 'linjar' }, y: { skala: 'linjar' }, fargskala: { typ: 'sekventiell', doman: [0, 100], titel: 'Andel kvinnor' },
             lager: [{ marke: 'punkt', data: [{ x: 1, y: 1, fargvarde: 0 }, { x: 2, y: 2, fargvarde: 100 }] }] });
         const [a, b] = alla(svg, '[data-marke="punkt"]');
         expect(a.getAttribute('fill')).not.toBe(b.getAttribute('fill'));
@@ -1116,7 +1086,7 @@ describe('ritaren: ruta och färgskala', () => {
     });
 });
 
-describe('ritaren: referenser, paneler och y2', () => {
+describe('ritaren: referenser och paneler', () => {
     it('referenslinje och zon med etikett; zonen ligger under märkena, linjen över', () => {
         const svg = rita({ beskrivning: 'b', x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar' },
             referens: [{ typ: 'linje', x: 40, streck: 'streckad' }, { typ: 'linje', y: 5 }, { typ: 'zon', x0: 60, x1: 100, farg: '#fee2e2', etikett: 'Nära pension' }],
@@ -1153,18 +1123,6 @@ describe('ritaren: referenser, paneler och y2', () => {
         expect(text).toContain('Man');
         expect(alla(svg, '[data-axel="y"]')).toHaveLength(1);
         expect(alla(svg, '[data-axel="x"]')).toHaveLength(2);
-    });
-    it('y2: lagret följer sin egen skala och axeln ritas till höger', () => {
-        const svg = rita(staplar({ y2: { skala: 'linjar', titel: 'Kumulativ %', format: 'pct', doman: [0, 100] }, lager: [
-            { marke: 'stapel', serie: 'Kostnad', data: [{ x: 'A', y: 1000 }, { x: 'B', y: 500 }] },
-            { marke: 'linje', serie: 'Kumulativ', axel: 'y2', data: [{ x: 'A', y: 50 }, { x: 'B', y: 100 }] },
-        ] }));
-        expect(alla(svg, '[data-axel="y2"]').length).toBeGreaterThan(1);
-        expect(alla(svg, 'text').map(t => t.textContent)).toContain('Kumulativ %');
-        const d = alla(svg, 'path[data-marke="linje"]')[0].getAttribute('d');
-        const ys = [...d.matchAll(/[ML]([\d.]+),([\d.]+)/g)].map(m => Number(m[2]));
-        expect(ys[1]).toBeLessThan(ys[0]);                        // 100 % ligger högre än 50 %
-        expect(ys[1]).toBeLessThan(20);                           // nära ritytans topp (0–100 på y2, inte 0–1000)
     });
 });
 
@@ -1303,7 +1261,7 @@ describe('små grupper i band, intervall, låda och ruta', () => {
 
 describe('färgskala och färgstapel', () => {
     const bubblor = (titel, extra = {}) => ({ beskrivning: 'b', x: { skala: 'linjar', titel: 'Ålder' }, y: { skala: 'linjar', titel: 'Lön', format: 'kr' },
-        fargskala: { typ: 'tvafarg', doman: [0, 100], titel, format: 'pct', ...extra },
+        fargskala: { typ: 'sekventiell', doman: [0, 100], titel, format: 'pct', ...extra },
         lager: [{ marke: 'punkt', serie: 'Yrken', data: [{ x: 30, y: 30000, storlek: 8, fargvarde: 10 }, { x: 50, y: 42000, storlek: 14, fargvarde: 90 }] }] });
     const stapelTexter = svg => alla(alla(svg, '[data-marke="fargstapel"]')[0].parentNode, 'text');
     it('färgstapeln: fält utan index, ändvärden som text, och titeln "Andel kvinnor" ryms okortad i bilden', () => {
@@ -1374,18 +1332,6 @@ describe('text på punkter och etikett på referenslinjer', () => {
 });
 
 describe('mönster på staplar och stapel på avkortad axel', () => {
-    it('monster: linjer och prickar ritas som geometri i en nästlad svg, utan pattern och id', () => {
-        const lager = m => ({ marke: 'stapel', serie: m, farg: '#dc2626', lage: 'overlagrad', monster: m, data: [{ x: m, y: 5 }] });
-        const svg = rita({ beskrivning: 'M', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [lager('linjer'), lager('prickar')] }, 640);
-        const panel = alla(svg, 'svg[data-del="panel"] svg[data-marke="monster"]');
-        expect(panel).toHaveLength(2);
-        expect(panel[0].querySelectorAll('line').length).toBeGreaterThan(0);
-        // Vågräta: de sneda ränderna betyder liten grupp och får inte förväxlas med en status.
-        for (const l of panel[0].querySelectorAll('line')) expect(l.getAttribute('y1')).toBe(l.getAttribute('y2'));
-        expect(panel[1].querySelectorAll('circle').length).toBeGreaterThan(0);
-        expect(svg.outerHTML).not.toMatch(/<pattern|<defs|url\(| id=/);
-        expect(alla(svg, '[data-del="forklaring"] svg[data-marke="monster"]')).toHaveLength(2);
-    });
     it('punkt med osäkerhet: intervallet ritas som ett streck genom punkten längs värdeaxeln, under punkten', () => {
         const f = { beskrivning: 'P', x: { skala: 'linjar', doman: [88, 112] }, y: { skala: 'band' },
             lager: [{ marke: 'punkt', riktning: 'liggande', symbol: 'romb', storlek: 6, serie: 'Avviker', farg: '#b91c1c',
@@ -1443,11 +1389,6 @@ describe('mönster på staplar och stapel på avkortad axel', () => {
         expect(() => valideraFigur(f({ ofylld: true, symbol: 'streck' }), 't')).toThrow(/ofylld/);
         expect(() => valideraFigur(f({ ofylld: 'ja' }), 't')).toThrow(/ofylld/);
         expect(() => valideraFigur(f({ marke: 'stapel', ofylld: true }), 't')).toThrow(/ofylld/);
-    });
-    it('monster följer med i den exporterade bilden', () => {
-        const txt = svgText({ beskrivning: 'M', x: { skala: 'band' }, y: { skala: 'linjar' },
-            lager: [{ marke: 'stapel', serie: 'S', farg: '#dc2626', monster: 'linjer', data: [{ x: 'a', y: 5 }] }] });
-        expect(txt).toContain('data-marke="monster"');
     });
     it('stapel på en axel som inte börjar i noll ritas från panelens kant', () => {
         const svg = rita({ beskrivning: 'D', x: { skala: 'band' }, y: { skala: 'linjar', doman: [77, 113] },
@@ -1507,6 +1448,17 @@ describe('referenser', () => {
         }
         expect(kontrolleraYta(svg, 'zoner')).toEqual([]);
     });
+    it('vyernas zonetiketter med procent bryts aldrig mellan talet och %', () => {
+        const etiketter = ['src/app/40-alder-karriar.js', 'src/app/41-lika-arbete.js'].flatMap(fil =>
+            [...readFileSync(fil, 'utf8').matchAll(/typ: 'zon',[^\n]*?etikett: '([^']*%)'/g)].map(m => m[1].replaceAll('\\u00a0', '\u00a0')));
+        expect(etiketter.length).toBeGreaterThan(1);
+        for (const etikett of etiketter) for (const [lo, hi] of [[80, 120], [60, 140]]) {
+            const svg = rita(xy([{ typ: 'zon', x0: 97, x1: 103, etikett }], { x: { skala: 'linjar', doman: [lo, hi] } }), 640);
+            const rader = zontexter(svg).flatMap(e => { const ts = alla(e, 'tspan'); return ts.length ? ts.map(texten) : [texten(e)]; });
+            expect(rader.length, `${etikett} ${lo}–${hi}`).toBeGreaterThan(0);
+            for (const r of rader) expect(r, `${etikett} ${lo}–${hi}: ${JSON.stringify(rader)}`).not.toMatch(/^%|\d$/);
+        }
+    });
     it('en etikett som inte ryms i sin zons bredd kortas med … och title; ryms färre än tre tecken ritas den inte', () => {
         const svg = rita(xy([{ typ: 'zon', x0: 40, x1: 52, etikett: 'En väldigt lång etikett' }, { typ: 'zon', x0: 90, x1: 91, etikett: 'Smal zon' }, { typ: 'zon', x0: 0, x1: 4, etikett: 'OK' }]), 600);
         const t = zontexter(svg);
@@ -1545,9 +1497,8 @@ describe('referenser', () => {
         expect(alla(rita(staplar({ referens: [{ typ: 'zon', x0: 'A', x1: 'B' }] })), '[data-marke="zon"]')).toHaveLength(1);
         expect(alla(rita(staplar({ referens: [{ typ: 'zon', x0: 'A', x1: 'FINNS-INTE' }] })), '[data-marke="zon"]')).toHaveLength(0);
     });
-    it('linje på höger axel följer y2; linje på en kategori ligger mitt i bandet; okänd kategori ritas inte', () => {
-        const svg = rita(staplar({ y2: { skala: 'linjar', doman: [0, 100] }, referens: [{ typ: 'linje', y: 50, axel: 'y2' }, { typ: 'linje', x: 'B', streck: 'prickad' }, { typ: 'linje', x: 'Finns inte' }],
-            lager: [...staplar().lager, { marke: 'linje', axel: 'y2', serie: 'N', data: [{ x: 'A', y: 0 }, { x: 'B', y: 100 }] }] }));
+    it('linje på talaxeln följer skalan; linje på en kategori ligger mitt i bandet; okänd kategori ritas inte', () => {
+        const svg = rita(staplar({ y: { skala: 'linjar', doman: [0, 100] }, referens: [{ typ: 'linje', y: 50 }, { typ: 'linje', x: 'B', streck: 'prickad' }, { typ: 'linje', x: 'Finns inte' }] }));
         const [vag, lod] = alla(svg, '[data-marke="referenslinje"]');
         expect(alla(svg, '[data-marke="referenslinje"]')).toHaveLength(2);
         const h = tal(svg.querySelector('svg[data-del="panel"]'), 'height');
@@ -1597,11 +1548,8 @@ describe('text innanför bilden för de nya märkena', () => {
         ['värmekarta 8 × 6 med text', heat()],
         ['värmekarta i två paneler', heat(['Kvinna', 'Man'])],
         ['bubblor med färgstapeln Andel kvinnor', { beskrivning: 'b', x: { skala: 'linjar', titel: 'Medianlön', format: 'kr' }, y: { skala: 'linjar', titel: 'Lönegap', format: 'pct' },
-            fargskala: { typ: 'tvafarg', doman: [0, 100], titel: 'Andel kvinnor', format: 'pct' },
+            fargskala: { typ: 'sekventiell', doman: [0, 100], titel: 'Andel kvinnor', format: 'pct' },
             lager: [{ marke: 'punkt', serie: 'Yrken', opacitet: 0.8, data: Array.from({ length: 12 }, (_, i) => ({ x: 26000 + i * 2100, y: -6 + ((i * 5) % 13), storlek: 5 + (i * 3) % 14, fargvarde: (i * 37) % 101 })) }] }],
-        ['färgstapel ihop med höger axel', { beskrivning: 'b', x: { skala: 'band' }, y: { skala: 'linjar', format: 'kr' }, y2: { skala: 'linjar', titel: 'Antal anställda', format: 'antal' },
-            fargskala: { typ: 'sekventiell', doman: [0, 250000], titel: 'Kostnad', format: 'kr' },
-            lager: [{ marke: 'punkt', serie: 'P', data: [{ x: 'A', y: 30000, fargvarde: 1000 }, { x: 'B', y: 41000, fargvarde: 240000 }] }, { marke: 'linje', axel: 'y2', serie: 'N', data: [{ x: 'A', y: 5 }, { x: 'B', y: 1500 }] }] }],
         ['zoner och referenslinjer', { beskrivning: 'b', x: { skala: 'linjar', titel: 'Ålder', doman: [18, 70] }, y: { skala: 'linjar', titel: 'Lön', format: 'kr' },
             referens: [{ typ: 'zon', x0: 60, x1: 70, farg: '#fee2e2', etikett: 'Nära pension' }, { typ: 'zon', x0: 18, x1: 25, etikett: 'Nya i yrket' }, { typ: 'linje', x: 40, streck: 'streckad' }, { typ: 'linje', y: 35000, streck: 'prickad' }],
             lager: [{ marke: 'punkt', serie: 'Anställda', data: Array.from({ length: 40 }, (_, i) => ({ x: 19 + (i * 37) % 50, y: 26000 + ((i * 7919) % 20000) })) }] }],
@@ -1716,7 +1664,7 @@ describe('individpunkter nedsamplas', () => {
     });
 });
 
-describe('spridningen, bandet, rutornas text, höger axel och omvänd axel', () => {
+describe('spridningen, bandet och rutornas text', () => {
     const ind = (x, loner, sma = []) => loner.map((y, i) => (sma.includes(i) ? { x, y, liten: true } : { x, y }));
     it('spridningen i sidled flyttar sig inte när små grupper visas: de små får ordningsnummer efter de övriga', () => {
         const f = staplar({ lager: [{ marke: 'lada', punkter: 'alla', serie: 'L', data: [...ind('A', [10, 11, 12, 13, 14, 15], [0, 3]), ...ind('B', [20, 21, 22], [1])] }] });
@@ -1749,29 +1697,6 @@ describe('spridningen, bandet, rutornas text, höger axel och omvänd axel', () 
         expect(mork.getAttribute('stroke')).toBe(ljus.getAttribute('fill'));
         for (const t of [ljus, mork]) expect(t.getAttribute('paint-order')).toBe('stroke');
         expect(stor.hasAttribute('stroke')).toBe(false);
-    });
-    it('de nya märkena följer höger axel med axel: "y2"', () => {
-        const fig = lager => staplar({ y: { skala: 'linjar', doman: [0, 1000] }, y2: { skala: 'linjar', doman: [0, 100] }, lager: [{ marke: 'stapel', serie: 'S', data: [{ x: 'A', y: 1000 }, { x: 'B', y: 500 }] }, lager] });
-        const h = svg => tal(svg.querySelector('svg[data-del="panel"]'), 'height');
-        const i = rita(fig({ marke: 'intervall', axel: 'y2', data: [{ x: 'A', lag: 0, hog: 100 }] }));
-        expect(tal(alla(i, '[data-marke="intervall"]')[0], 'y1')).toBeLessThan(h(i) * 0.1);
-        const l = rita(fig({ marke: 'lada', axel: 'y2', data: [80, 90, 100].map(y => ({ x: 'A', y })) }));
-        expect(tal(alla(l, 'rect[data-marke="lada"]')[0], 'y')).toBeLessThan(h(l) * 0.25);
-        const a = rita(fig({ marke: 'lada', axel: 'y2', punkter: 'alla', data: [90, 100].map(y => ({ x: 'A', y })) }));
-        expect(Math.max(...alla(a, '[data-marke="individ"]').map(e => tal(e, 'cy')))).toBeLessThan(h(a) * 0.25);
-        const b = rita(fig({ marke: 'band', axel: 'y2', data: [{ x: 'A', lag: 90, hog: 100 }, { x: 'B', lag: 90, hog: 100 }] }));
-        const ys = [...alla(b, 'path[data-marke="band"]')[0].getAttribute('d').matchAll(/[ML][-\d.]+,([-\d.]+)/g)].map(m => Number(m[1]));
-        expect(Math.max(...ys)).toBeLessThan(h(b) * 0.25);
-    });
-    it('låda på en omvänd y-axel: lådan har positiv höjd, medianen ligger i den, och högre löner ligger längre ned', () => {
-        const svg = rita(staplar({ y: { skala: 'linjar', omvand: true }, lager: [{ marke: 'lada', serie: 'L', data: [...ind('A', [10, 12, 13, 14, 15, 16, 30]), ...ind('B', [40, 42, 44, 46])] }] }));
-        const [a, b] = alla(svg, 'rect[data-marke="lada"]');
-        const [ma] = alla(svg, '[data-marke="median"]');
-        expect(tal(a, 'height')).toBeGreaterThan(1);
-        expect(tal(ma, 'y1')).toBeGreaterThan(tal(a, 'y'));
-        expect(tal(ma, 'y1')).toBeLessThan(tal(a, 'y') + tal(a, 'height'));
-        expect(tal(b, 'y')).toBeGreaterThan(tal(a, 'y') + tal(a, 'height'));
-        expect(tal(alla(svg, '[data-marke="avvikare"]')[0], 'cy')).toBeGreaterThan(tal(a, 'y') + tal(a, 'height'));
     });
     it('ett lådlager som dolts via förklaringen lämnar sin plats: de övriga står som om det inte fanns', () => {
         const lager = [{ marke: 'lada', serie: 'K', farg: '#e74c8b', data: ind('A', [10, 12, 14]) }, { marke: 'lada', serie: 'M', farg: '#0077bc', data: ind('A', [11, 13, 15]) }];
@@ -2231,7 +2156,7 @@ describe('ritaFigur: små grupper når aldrig en hanterare', () => {
         expect(Object.keys(klick[0][0])).toEqual(['x']);
         expect(data.includes(klick[0][0])).toBe(false);
         expect(klick[0][1]).not.toBe(f.lager[0]);                     // aldrig lagret självt
-        expect(klick[0][1]).toEqual({ serie: 'Lön', marke: 'lada', panel: undefined, axel: 'y', index: 0 });
+        expect(klick[0][1]).toEqual({ serie: 'Lön', marke: 'lada', panel: undefined, index: 0 });
         b.dispatchEvent(handelse('pointermove'));
         expect(tips[1][0]).toEqual({ x: 'B' });
         expect(tips[1][1]).toEqual({ q1: 55, median: 60, q3: 65, lag: 50, hog: 70, n: 3 });
@@ -2261,12 +2186,11 @@ describe('ritaFigur: små grupper når aldrig en hanterare', () => {
         expect(tips[0][1]).toEqual({ q1: 55, median: 100, q3: 550, lag: 10, hog: 1000, n: 3 });
         // Urvalet bakom måtten, prövat direkt — samma funktion som ritaren använder. Utan skala (sidan) avgör
         // axelns slag om ett värde har ett läge; med skala (ritaren) avgör skalan.
-        w.__f = { x: { skala: 'band' }, y: { skala: 'log' }, y2: { skala: 'linjar' } };
+        w.__f = { x: { skala: 'band' }, y: { skala: 'log' } };
         w.__l = { marke: 'lada', data: [{ x: 'A', y: 0 }, { x: 'A', y: -5 }, { x: 'A', y: 10 }, { x: 'A', y: 77777, liten: true }, null, { x: 'B', y: 3 }, { x: 'A', y: '12' }] };
         const urval = (kod) => w.eval(kod).map(o => [o.i, o.d.y]);
         expect(urval('_rfLadIndivider(window.__f, window.__l, d => !!d.liten)')).toEqual([[2, 10], [5, 3]]);
         expect(urval('_rfLadIndivider(window.__f, window.__l, () => false)')).toEqual([[2, 10], [3, 77777], [5, 3]]);
-        expect(urval('_rfLadIndivider(window.__f, { ...window.__l, axel: "y2" }, d => !!d.liten)')).toEqual([[0, 0], [1, -5], [2, 10], [5, 3]]);
         expect(urval('_rfLadIndivider(window.__f, window.__l, d => !!d.liten, v => (v > 5 ? v : NaN))')).toEqual([[2, 10]]);
         expect(w.eval('_rfLadKategori({ x: 7 })')).toBe('7');
     });
@@ -2422,18 +2346,18 @@ describe('vad hanterarna får, och verktygstipset', () => {
     it('vidKlick får en fryst beskrivning av lagret — aldrig lagret, och ingen väg till dess data', () => {
         const el = behallare();
         const sett = [];
-        const f = staplar({ y2: { skala: 'linjar' }, paneler: ['P1', 'P2'], lager: [
+        const f = staplar({ paneler: ['P1', 'P2'], lager: [
             { marke: 'stapel', serie: 'S', panel: 'P2', data: [{ x: 'A', y: 10, nyckel: 'A|1' }, { x: 'HEMLIG-KAT', y: 77777, liten: true }] },
-            { marke: 'punkt', axel: 'y2', data: [{ x: 'A', y: 3 }, { x: 'A', y: 77777, liten: true }] }] });
+            { marke: 'punkt', data: [{ x: 'A', y: 3 }, { x: 'A', y: 77777, liten: true }] }] });
         ritaI(el, f, { vidKlick: (d, l) => sett.push([d, l]) });
         el.querySelector('[data-marke="stapel"]').dispatchEvent(handelse('click'));
         el.querySelector('[data-marke="punkt"]').dispatchEvent(handelse('click'));
         expect(sett.map(x => x[0])).toEqual([f.lager[0].data[0], f.lager[1].data[0]]);
         const [a, b] = sett.map(x => x[1]);
-        expect(a).toEqual({ serie: 'S', marke: 'stapel', panel: 1, axel: 'y', index: 0 });
-        expect(b).toEqual({ serie: undefined, marke: 'punkt', panel: undefined, axel: 'y2', index: 1 });
+        expect(a).toEqual({ serie: 'S', marke: 'stapel', panel: 1, index: 0 });
+        expect(b).toEqual({ serie: undefined, marke: 'punkt', panel: undefined, index: 1 });
         for (const l of [a, b]) {
-            expect(Object.keys(l).sort()).toEqual(['axel', 'index', 'marke', 'panel', 'serie']);
+            expect(Object.keys(l).sort()).toEqual(['index', 'marke', 'panel', 'serie']);
             expect(Object.isFrozen(l)).toBe(true);
             expect(f.lager.includes(l)).toBe(false);
             expect(l.data).toBeUndefined();
@@ -3160,7 +3084,7 @@ describe('[S4] export: det som lämnar verktyget är identiskt med exporten av e
         return ut;
     };
     it('listan prövar något: varje figur ger en annan bild och annan diagramdata när små grupper följer med', () => {
-        for (const [namn, figur, val] of ritfigurer()) {
+        for (const [namn, figur, val] of ickeTom(ritfigurer())) {
             const v = { dolda: val && val.dolda };
             expect(svgText(figur, { ...v, visaSma: true }), namn).not.toBe(svgText(figur, v));
             expect(JSON.stringify(figurTillTabell(figur)), namn).not.toBe(JSON.stringify(figurTillTabell(utanSmaGrupper(figur))));
@@ -3185,7 +3109,7 @@ describe('[S4] export: det som lämnar verktyget är identiskt med exporten av e
     it('sänkt tröskel och nedsampling ändrar inte det: noten räknas ur det som ritas', () => {
         w.eval('sattKTroskel(4, { fraga: false })');
         try {
-            for (const [namn, figur, val] of ritfigurer().filter(([n]) => /nedsampla|staplar bredvid|lådor/.test(n))) {
+            for (const [namn, figur, val] of ickeTom(ritfigurer().filter(([n]) => /nedsampla|staplar bredvid|lådor/.test(n)))) {
                 const v = { dolda: val && val.dolda };
                 expect(svgText(figur, v), namn).toBe(svgText(utanSmaPunkter(figur), v));
                 expect(rader(figur), namn).toEqual(rader(utanSmaPunkter(figur)));
@@ -3394,7 +3318,7 @@ describe('inga råa decimaltal i någon ritad figur', () => {
     const RATT = /^-?\d+\.\d+$/;
     const raa = rot => [...rot.querySelectorAll('svg text, svg tspan, svg title')].map(t => t.textContent.trim()).filter(t => RATT.test(t));
     it('varje figur i ritfigurer(), med och utan små grupper', () => {
-        for (const [namn, figur, val] of ritfigurer()) {
+        for (const [namn, figur, val] of ickeTom(ritfigurer())) {
             for (const visaSma of [false, true]) expect(raa(rita(figur, 600, { ...val, visaSma })), namn).toEqual([]);
         }
     });
@@ -3705,7 +3629,7 @@ describe('etiketter som inte täcker varandra', () => {
         for (const c of alla(svg, 'circle[data-marke="punkt"]')) expect(motCirkel(q, { x: tal(c, 'cx'), y: tal(c, 'cy'), r: tal(c, 'r') })).toBe(false);
         expect(q.x0).toBeGreaterThanOrEqual(tal(zon, 'x')); expect(q.x1).toBeLessThanOrEqual(tal(zon, 'x') + tal(zon, 'width'));
         expect(q.y0).toBeLessThan(40);                                    // i zonens överkant, inte längst ned
-        // Utan punkten står rubriken mitt i zonen överst, som förut.
+        // Utan punkten står rubriken mitt i zonen överst.
         const utan = rita({ ...f, lager: [{ marke: 'punkt', serie: 'S', data: [{ x: 10, y: 50 }] }] }, 700);
         const q2 = ruta(alla(utan, 'text[data-marke="zonetikett"]')[0]), zon2 = utan.querySelector('[data-marke="zon"]');
         expect((q2.x0 + q2.x1) / 2).toBeCloseTo(tal(zon2, 'x') + tal(zon2, 'width') / 2, 0);
@@ -3770,5 +3694,16 @@ describe('diagramtextens minsta storlek', () => {
         const bild = svgDok(svgText(punkter(), { rubrik: 'Rubrik', fot: 'Lönekartläggning 2026-11-16' })).documentElement;
         expect(bild.querySelector('[data-del="fot"]')).not.toBeNull();
         expect(Math.min(...storlekar(bild))).toBeGreaterThanOrEqual(11);
+    });
+    it('en lång fotrad bryts på flera rader i stället för att kortas: hela texten står kvar, under ytan och inom bilden', () => {
+        const fot = 'Lönekartläggning 2026-11-16 · Urval i diagrammet: ' + Array.from({ length: 30 }, (_, i) => `BAS K${i}`).join(', ') + ' · Utsnitt av diagrammet';
+        const bild = svgDok(svgText(punkter(), { rubrik: 'Rubrik', fot }, 600, 400)).documentElement;
+        const rader = [...bild.querySelectorAll('[data-del="fot"]')];
+        expect(rader.length).toBeGreaterThan(1);
+        expect(rader.map(texten).join(' ')).toBe(fot);
+        const y = rader.map(r => tal(r, 'y'));
+        expect(y).toEqual([...y].sort((a, b) => a - b));
+        expect(new Set(y).size).toBe(y.length);
+        expect(Math.max(...y)).toBeLessThanOrEqual(Number(bild.getAttribute('viewBox').split(' ')[3]));
     });
 });

@@ -32,11 +32,11 @@
 // ====================================================================
 import { EXPORT_SKAL, exportSkal, figurTillTabell, harleddaLager, harlettNot, urvalBeskrivning, utanSmaGrupper } from '../lib/figur.js';
 import { esc } from './01-html-och-tillganglighet.js';
-import { idagDatum } from './03-hjalpfunktioner.js';
+import { DEMO_MARKE, demoFilnamn, idagDatum } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _kUndantagFor, kIndividRad, kStampelFor } from './06-k-troskel.js';
 import { APP_VERSION } from './08-version.js';
-import { _rfExportFigur, figurTillBild } from './10-diagramritare.js';
+import { _rfExportFigur, _rfUrvalDoljerAllt, figurTillBild } from './10-diagramritare.js';
 import { _kopieraMatrisTillUrklipp, state } from './12-tillstand.js';
 import { _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
 import { exportSakra, medExportLage } from './23-exportgrind.js';
@@ -66,9 +66,6 @@ const DIAGRAMEXPORT_STORLEKAR = {
 };
 let _diagramexportNr = 0;
 
-function _diagramexportElement(graphDiv) {
-    return typeof graphDiv === 'string' ? document.getElementById(graphDiv) : graphDiv;
-}
 function _diagramexportFilnamnsdel(s) {
     return String(s || '').normalize('NFC').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 }
@@ -91,7 +88,7 @@ function diagramexportFilnamn(gd, ext, datum = new Date()) {
     const Flik = flik.charAt(0).toUpperCase() + flik.slice(1);
     const dag = idagDatum(datum);
     const titel = _diagramexportFilnamnsdel(diagramexportRubrik(gd)) || 'Diagram';
-    return `${state.isDemo ? 'DEMO_' : ''}${_diagramexportFilnamnsdel(Flik)}_${titel}_${dag}.${ext}`;
+    return demoFilnamn(`${_diagramexportFilnamnsdel(Flik)}_${titel}_${dag}.${ext}`);
 }
 
 // Svensk Excel läser "89.73" som text eller datum ("12.5" blir 12 maj). Decimaltal
@@ -178,7 +175,8 @@ function _diagramexportRubrikFot(gd, datum = new Date(), dolt = [], harlett = []
     const underlagText = underlag ? ` · Räknat för: ${underlag}` : '';
     const doltText = dolt && dolt.length ? ` · Urval i diagrammet: ${dolt.join('; ')}` : '';
     const harlettText = (harlett || []).map(t => ` · ${String(t).replace(/\.$/, '')}`).join('');
-    return { rubrik: diagramexportRubrik(gd), fot: `${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
+    const demo = state.isDemo ? DEMO_MARKE.replace(/\.$/, '') + ' · ' : '';   // demoläget: märket först i fotraden
+    return { rubrik: diagramexportRubrik(gd), fot: `${demo}${v ? v + ' · ' : ''}Lönekartläggning ${dag}${urval}${underlagText}${doltText}${harlettText}${gd._rfZoom ? ' · Utsnitt av diagrammet' : ''}` };
 }
 
 /** Bär elementet ett ritat diagram med något att visa? */
@@ -214,7 +212,8 @@ async function __diagramexportBildExport(gd, val, underlag) {
     // utan små grupper. Meningen om sänkt tröskel lägger figurTillSvg dit.
     const ut = underlag === undefined ? _diagramexportUnderlag(gd) : underlag;
     gd = _diagramexportAktuell(gd);
-    if (!ut || (ut.underlag && ut.underlag.tom)) throw new Error('Det finns inget att exportera i diagrammet.');
+    // Ett urval som döljer allt ger en bild utan märken, som på skärmen ("Inga grupper i urvalet").
+    if (!ut || (ut.underlag && ut.underlag.tom) || _rfUrvalDoljerAllt(gd)) throw new Error('Det finns inget att exportera i diagrammet.');
     // Exportmenyn ritar diagrammet som det visas: också med användarens urval och underlag, som fotraden då namnger.
     const url = await figurTillBild(ut.bild || ut.figur, format, width, height, { visaSma: ut.visaSma, dolda: ut.dolda, filter: ut.filter,
         ..._diagramexportRubrikFot(gd, new Date(), _diagramexportDolt(ut), _diagramexportHarlett(ut), ut.underlag ? ut.underlag.text : '') });
@@ -249,8 +248,7 @@ function _exporteraDiagramExport(gd, val) {
 }
 
 /** Lägger exportknappen i diagrammets övre högra hörn. Idempotent. */
-export function _laggTillDiagramexport(graphDiv) {
-    const gd = _diagramexportElement(graphDiv);
+export function _laggTillDiagramexport(gd) {
     if (!gd || gd._chartExportAttached || !gd.parentElement) return;
     if (!exportTillaten(gd)) return;
     gd._chartExportAttached = true;

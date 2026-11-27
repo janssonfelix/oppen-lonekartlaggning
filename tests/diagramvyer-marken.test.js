@@ -152,14 +152,6 @@ describe('punktetiketter: sida och krockar', () => {
         expect(h.ankare).toBe('start'); expect(h.x).toBeGreaterThan(ch);
         w.eval('rensaFigur(window.__el)');
     });
-    it("etikettLage 'auto' är till höger, och till vänster när texten annars går utanför panelens högerkant", () => {
-        const el = rita({ beskrivning: 'E', legend: false, x: { skala: 'linjar', doman: [0, 100] }, y: { skala: 'linjar', doman: [0, 10] },
-            lager: [{ marke: 'punkt', serie: 'A', etikettLage: 'auto', data: [{ x: 10, y: 2, etikett: 'ryms till höger' }, { x: 99, y: 8, etikett: 'en lång etikett vid kanten' }] }] });
-        const [a, b] = et(el), panelB = Number(el.querySelector('svg[data-del="panel"]').getAttribute('width'));
-        expect(a.ankare).toBe('start');
-        expect(b.ankare).toBe('end'); expect(b.x).toBeLessThan(panelB);
-        w.eval('rensaFigur(window.__el)');
-    });
     it('etiketter som skulle skriva över varandra flyttas isär; de som inte krockar rörs inte', () => {
         const f = n => ({ beskrivning: 'E', legend: false, x: { skala: 'band', ordning: ['Före', 'Efter'] }, y: { skala: 'linjar', doman: [0, 100] },
             lager: [{ marke: 'punkt', serie: 'V', etikettLage: 'vanster', data: [{ x: 'Före', y: 50, etikett: 'Grupp ett' }, { x: 'Före', y: 50.5, etikett: 'Grupp två' }, { x: 'Före', y: 51, etikett: 'Grupp tre' }].slice(0, n) },
@@ -281,6 +273,17 @@ describe('före och efter: lutningsdiagrammen', () => {
         w2.eval('ritaOgonblicksbildJamforelse()');
         expect(ruta.hidden).toBe(true);
         expect(el._figur).toBeUndefined();
+    });
+    it('ögonblicksbilden på skärmen prövar den inställda tröskeln: en bild sparad vid en lägre tröskel når ingen export med skärmens tal', () => {
+        const w2 = skapa(), d = w2.document, ruta = d.getElementById('snapshot-lutning-ruta'), el = d.getElementById('chart-snapshot-lutning');
+        w2.__state.snapshot = w2.eval('byggOgonblicksbild()');
+        w2.__state.kLage = 'skarm';
+        w2.__state.snapshot.nKv = w2.eval('kInstalld()') - 1;   // sparad när tröskeln var lägre
+        w2.__state.snapshot.medianKv -= 1000;
+        w2.eval('ritaOgonblicksbildJamforelse()');
+        expect(ruta.hidden).toBe(true);
+        expect(el._figur).toBeUndefined();
+        expect(d.getElementById('snapshot-comparison').textContent).not.toContain(String(Math.round(w2.__state.snapshot.medianKv).toLocaleString('sv-SE')));
     });
 });
 
@@ -714,12 +717,7 @@ describe('Likvärdigt arbete: krav mot lön', () => {
     });
 });
 
-describe('täthetskurvor: lådmärkets form fiol', () => {
-    const fig = data => ({ beskrivning: 'F', x: { skala: 'band', ordning: ['A', 'B'] }, y: { skala: 'linjar', doman: [0, 100] },
-        lager: [{ marke: 'lada', form: 'fiol', serie: 'Alla', farg: '#2563eb', data, tips: (d, s) => [[d.x], ['Antal', String(s ? s.n : 0)]] }] });
-    const rita = (f, val = '{ bredd: 500 }') => { const el = behallare('chart-fiol'); w.__el = el; w.__f = f; w.eval(`ritaFigur(window.__el, window.__f, ${val})`); return el; };
-    const panel = el => el.querySelector('svg[data-del="panel"]').outerHTML;
-    const A = () => [20, 22, 24, 25, 26, 27, 28, 30, 31, 33, 35, 36].map(y => ({ x: 'A', y }));
+describe('täthetskurvan (regnmolnets moln)', () => {
     it('kurvan: högsta punkten är 1, den går mellan gränserna, och två grupper av värden ger två toppar', () => {
         w.__v = [10, 11, 12, 13, 14, 50, 51, 52, 53, 54];
         const k = w.eval('_rfTathetKurva(window.__v, 10, 54)');
@@ -729,37 +727,6 @@ describe('täthetskurvor: lådmärkets form fiol', () => {
         expect(mitt).toBeLessThan(0.8);                                                // dalen mellan topparna
         expect(w.eval('_rfTathetKurva([5], 5, 5)').map(p => p.t)).toEqual([1, 1]);
     });
-    it('en fiol per kategori, med median och kvartiler men utan morrhår och avvikarpunkter', () => {
-        const el = rita(fig([...A(), ...A().map(d => ({ x: 'B', y: d.y + 40 }))]));
-        expect(el.querySelectorAll('path[data-marke="lada"][data-form="fiol"]')).toHaveLength(2);
-        expect(el.querySelectorAll('line[data-marke="median"]')).toHaveLength(2);
-        expect(el.querySelectorAll('line[data-marke="kvartil"]')).toHaveLength(4);
-        expect(el.querySelectorAll('[data-marke="morrhar"], [data-marke="avvikare"], rect[data-marke="lada"]')).toHaveLength(0);
-        // Träffen ger lådans sammanfattning — ett aggregat, aldrig en individ.
-        w.__m = el.querySelector('path[data-marke="lada"]');
-        const t = w.eval('_rfTraff(window.__el, window.__m)');
-        expect(t.sammanfattning).toMatchObject({ n: 12 });
-        expect(figurTillTabell(fig(A())).slice(1)).toHaveLength(1);                     // en rad per kategori
-        w.eval('rensaFigur(window.__el)');
-    });
-    it('en avvikare långt bort ändrar inte kurvan: den slutar vid morrhårens ändar', () => {
-        const med = v => panel(rita(fig([...A(), { x: 'A', y: v }])));
-        const a = med(95), b = med(80);
-        expect(a).toBe(b);                                                             // två olika avvikare, samma bild
-        expect(a).not.toMatch(/data-marke="avvikare"/);
-        w.eval('rensaFigur(window.__el)');
-    });
-    it('små individer: samma bild som utan dem; en kategori med bara små ritas inte; med visaSma streckad kant', () => {
-        const sma = [{ x: 'A', y: 77, liten: true }, { x: 'B', y: 71, liten: true }, { x: 'B', y: 72, liten: true }];
-        const utan = panel(rita(fig(A())));
-        const el = rita(fig([...A(), ...sma]));
-        expect(panel(el)).toBe(utan);
-        expect(el.querySelectorAll('path[data-form="fiol"]')).toHaveLength(1);
-        expect(el.outerHTML).not.toMatch(/>B</);                                       // kategorin finns inte ens på axeln
-        const visad = rita(fig([...A(), ...sma]), '{ bredd: 500, visaSma: true }');
-        expect([...visad.querySelectorAll('path[data-form="fiol"]')].map(p => p.getAttribute('stroke-dasharray'))).toEqual(['3 2', '3 2']);
-        w.eval('rensaFigur(window.__el)');
-    });
 });
 
 describe('Lönefördelningen per BAS-intervall (figuren och Lika arbetes lådor)', () => {
@@ -768,10 +735,10 @@ describe('Lönefördelningen per BAS-intervall (figuren och Lika arbetes lådor)
     const data = () => [...Array.from({ length: 12 }, (_, i) => rad('A', 'kvinna', 30000 + i * 100)), ...Array.from({ length: 12 }, (_, i) => rad('A', 'man', 32000 + i * 100)),
                         ...Array.from({ length: 3 }, (_, i) => rad('B', 'kvinna', MARKOR + i)), ...Array.from({ length: 14 }, (_, i) => rad('B', 'man', 40000 + i * 100)),
                         ...Array.from({ length: 4 }, (_, i) => rad('S', 'man', MARKOR + 100 + i))];
-    it('alla: en kurva per BAS som når tröskeln; per kön: en per kön som når den — övriga är små och namnges', () => {
+    it('alla: en låda per BAS som når tröskeln; per kön: en per kön som når den — övriga är små och namnges', () => {
         w.__d = data();
         const alla = w.eval('_konTathetFigur(window.__d, false, 10)');
-        expect(alla.figur.lager.map(l => [l.marke, l.form, l.serie])).toEqual([['lada', 'fiol', 'Alla']]);
+        expect(alla.figur.lager.map(l => [l.marke, l.serie])).toEqual([['lada', 'Alla']]);
         const sma = f => [...new Set(f.lager.flatMap(l => l.data.filter(d => d.liten).map(d => `${d.x}|${l.serie}`)))].sort();
         expect(sma(alla.figur)).toEqual(['BAS S|Alla']);
         expect(alla.utelamnade).toEqual(['BAS S']);
@@ -995,22 +962,14 @@ describe('Struktur: organisationen som trädkarta', () => {
 });
 
 // ---- Litet underlag och gapet i tabell ----
-describe('litet underlag: staplar som gäller få personer ritas med mönster', () => {
-    it('kärnan: mönster på en enskild stapel (datapunktens monster), inte på lagrets övriga', () => {
-        const f = { beskrivning: 'M', x: { skala: 'band' }, y: { skala: 'linjar' }, lager: [{ marke: 'stapel', serie: 'S', farg: '#2563eb', data: [{ x: 'A', y: 10 }, { x: 'B', y: 4, monster: 'prickar' }, { x: 'C', y: 7, monster: 'okänt' }] }] };
-        const el = behallare('chart-monster'); w.__el = el; w.__f = f;
-        w.eval('ritaFigur(window.__el, window.__f, { bredd: 500 })');
-        expect(el.querySelectorAll('rect[data-marke="stapel"]')).toHaveLength(3);
-        expect(el.querySelectorAll('svg[data-marke="monster"]')).toHaveLength(1);
-        w.eval('rensaFigur(window.__el)');
-    });
+describe('litet underlag: staplar som gäller få personer märks', () => {
     it('histogrammet: en stapel med färre än fem av könet är märkt, tipset och noten säger det', () => {
         expect(w.eval('LITET_UNDERLAG')).toBe(5);
         w.__kl = [{ fran: 30000, till: 32000, nKv: 12, nMa: 2 }, { fran: 32000, till: 34000, nKv: 8, nMa: 8 }, { fran: 34000, till: 36000, nKv: 0, nMa: 10 }];
         const f = w.eval('_konHistogramFigur(window.__kl, 20, 20, "x")');
         expect(f.lager[0].data.map(d => !!d.fa)).toEqual([false, false, false]);               // 12, 8 och 0 kvinnor: noll är inget litet underlag
         expect(f.lager[1].data.map(d => !!d.fa)).toEqual([true, false, false]);                // 2 män
-        expect(f.lager.every(l => l.lage === 'overlagrad' && l.opacitet === 0.55 && l.data.every(d => !d.monster))).toBe(true);   // två halvgenomskinliga lager, inget mönster
+        expect(f.lager.every(l => l.lage === 'overlagrad' && l.opacitet === 0.55)).toBe(true);   // två halvgenomskinliga lager
         expect(f.lager[1].tips(f.lager[1].data[0]).some(r => r[0] === 'Litet underlag')).toBe(true);
         expect(f.lager[1].tips(f.lager[1].data[1]).some(r => r[0] === 'Litet underlag')).toBe(false);
         const w2 = createAppWindow();

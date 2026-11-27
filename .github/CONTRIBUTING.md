@@ -24,11 +24,11 @@ datorn** — det styr hur vi tar emot bidrag.
    - `npm run kontroll` är grönt: bygget, linten, typkontrollen, hela testsviten, artefakten och röktestet i
      webbläsaren, i CI:s ordning. Under arbetet räcker `npm run kontroll -- --snabb` (`npm test` i stället för hela
      sviten, inget röktest). En testkörning är grön först när alla testfiler har rapporterat.
-   - Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) ligger i k-riggen
-     (`tests/helpers/ktroskel-rigg.js`) och i riskanalysens tabell över utdata, och en tabell med total och delar
-     (medel, summa eller kostnad) deklareras i riggen för differensprovet.
-   - Det som syns är sett i webbläsaren, och ett diagram också med ett underlag med många AID-etiketter —
-     demodatan har bara åtta.
+   - Varje ny utdata som lämnar verktyget (text, tabell, bild, fil) står i matrisen i
+     `docs/utveckling/k-troskeln.md` §9 och ligger i k-riggen (`tests/helpers/ktroskel-rigg.js`), och en tabell med
+     total och delar (medel, summa eller kostnad) deklareras i riggen för differensprovet. Riggens exportvägar listas för hand; demosvepet hittar vägarna ut ur källan, men inte riggen
+     (k-troskeln §9).
+   - Det som syns är sett i webbläsaren, och ett diagram också med många AID-etiketter: det stora demot har 100.
    - Ny eller ändrad funktionalitet finns med i bildspelet för nya användare (`site/genomgang.html`): skriv i
      beskrivningen vilka bilder som berörs. Bildspelet byggs om ur demot av underhållaren (steg 5 i *Släppa en
      version*, `docs/utveckling/bygge-och-test.md`).
@@ -71,5 +71,5 @@ och heter efter uttaget, inte efter organisationen.
 ## Licens
 
 Öppen lönekartläggning är licensierat under **MIT-licensen** (se `LICENSE`). Genom att lämna ett
-bidrag godkänner du att det licensieras under samma villkor. Varje källfil bär licensraden
-(`SPDX-License-Identifier: MIT`).
+bidrag godkänner du att det licensieras under samma villkor. Varje källfil i `src/` och
+`tools/` bär licensraden (`SPDX-License-Identifier: MIT`) i början av filen.
