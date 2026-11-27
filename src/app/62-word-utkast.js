@@ -5,6 +5,7 @@ import { docxDelar } from '../lib/docx.js';
 import { idagDatum, laddaNer, rapporteraFel } from './03-hjalpfunktioner.js';
 import { _kSidfot } from './06-k-troskel.js';
 import { hamtaData, state } from './12-tillstand.js';
+import { _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { rapportModell, rmDiagramBild, rmTillHtml } from './58-rapportmodell.js';
 
@@ -71,7 +72,7 @@ function _utkastTillBlock(html) {
 
 /**
  * Fyller bildblocken med diagrammens PNG (rmDiagramBild i 58-rapportmodell.js). Ett diagram som inte ritas tas bort
- * ur listan; förhandsbeskedet räknar bara de diagram som ritas (rmBesked).
+ * ur listan; förhandsbeskedet anger därför högst så många diagram som urvalet har (rmBesked).
  */
 async function _utkastFyllBilder(block) {
     const ut = [], ritade = new Set();
@@ -110,6 +111,7 @@ async function _exportWordUtkastExport() {
     try {
         const { blob, namn } = await byggWordUtkast();
         laddaNer(blob, namn);
+        _visaExportvarning();
         return true;
     } catch (err) {
         rapporteraFel('Word-utkast', err);

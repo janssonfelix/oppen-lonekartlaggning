@@ -297,10 +297,15 @@ describe('Word-utkastet som .docx', () => {
         w.eval('tillampaKonfiguration(window.__cfg)');
         expect(w.eval('rapportUrval()').namn).toBe('Hela dokumentationen');
     });
-    it('förhandsbeskedet för Word och PDF räknar bara de diagram som ritas, som filen', async () => {
+    it('förhandsbeskedet för Word och PDF säger högst så många diagram som urvalet har, och ritar ingen flik', async () => {
         const w = createAppWindow();
         w.__lasInDemodata();
         w.eval('sattKTroskel(60, { fraga: false })');                    // flera diagram har då inget att visa
+        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
+        // Beskedet ritar ingen flik.
+        w.eval('window.__antal = 0; const __orig = ritaFlik; ritaFlik = function (f) { window.__antal++; return __orig(f); };');
+        w.eval('ritaExportBesked()');
+        expect(w.__antal).toBe(0);
         // Diagrammen som filen får: varje diagramdel vars flik ritats i exportläget och vars diagram då är ritat.
         const { delar, ritade } = w.eval(`medExportLage(() => {
             const delar = rapportModell().avsnitt.flatMap(a => a.delar).filter(p => p.typ === 'diagram');
@@ -308,9 +313,11 @@ describe('Word-utkastet som .docx', () => {
             return { delar: delar.length, ritade: delar.filter(p => diagramRitat(document.getElementById(p.id))).length };
         })`);
         expect(ritade).toBeLessThan(delar);                                // annars prövar testet inget
-        expect(w.eval('rmBesked(rapportModell())').diagram).toBe(ritade);
-        w.document.querySelector('.nav-item[data-tab="dokumentera"]').click();
-        expect(w.document.getElementById('besked-word').textContent).toContain(`${ritade} diagram`);
+        for (const id of ['besked-word', 'besked-pdf']) expect(w.document.getElementById(id).textContent).toContain(`högst ${delar} diagram`);
+        // Ett urval utan diagram säger 0 diagram, utan «högst».
+        w.eval("sattRapportUrval({ ordning: [...RM_AVSNITT], med: ['metod'] })");
+        w.eval('ritaExportBesked()');
+        expect(w.document.getElementById('besked-word').textContent).toMatch(/ · 0 diagram · /);
     });
     it('förhandsbeskedet säger vad filen innehåller och utelämnar, och räknas ur samma källa som filen', async () => {
         const w = createAppWindow();
@@ -320,7 +327,7 @@ describe('Word-utkastet som .docx', () => {
         d.querySelector('.nav-item[data-tab="dokumentera"]').click();
         const word = () => d.getElementById('besked-word').textContent;
         const m = w.eval('rmBesked(rapportModell())');
-        expect(word()).toContain(`Hela dokumentationen · 13 avsnitt · ${m.tabeller} tabeller · ${m.diagram} diagram · ${m.fyllIn} fält att fylla i`);
+        expect(word()).toContain(`Hela dokumentationen · 13 avsnitt · ${m.tabeller} tabeller · högst ${m.diagram} diagram · ${m.fyllIn} fält att fylla i`);
         expect(d.getElementById('nyckel-ex-urval').textContent).toBe('Hela dokumentationen');
         // Excel: bladen i beskedet är bladen i filen.
         // Excel: beskedet listar bladen (att listan är filens blad prövas mot en riktig arbetsbok i exports.golden.test.js).

@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { STORA, MELLAN, SMA, FLIKAR, synliga, fonster, ritaAlla, fonsterKon, fonsterLitet, laddaXlsx, fangaBocker, utskriftAv, TOPP, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { STORA, MELLAN, SMA, FLIKAR, synliga, fonster, ritaAlla, fonsterKon, fonsterLitet, laddaXlsx, fangaBocker, ARBETSBOCKER, utskriftAv, TOPP, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
 
 describe('[I4] listan över flikar är menyns flikar', () => {
     it('FLIKAR täcker varje flik i menyn (utom Utforska, som är undantagen på skärmen)', () => {
@@ -89,6 +89,30 @@ describe('[I2] exporter som hör till ett undantag säger det, och notisen utlov
         const t = w.document.getElementById('export-sensitivity-toast').textContent;
         expect(t).toMatch(/Filen innehåller lönedata/);
         expect(t).not.toMatch(/aggregera|gruppstorlek|anonym/i);
+    });
+    // Arbetsböckerna ur k-riggens förteckning (ARBETSBOCKER), och de två filerna som sparas med laddaNer och bär lönedata.
+    it('notisen visas efter varje fil med lönedata: arbetsböckerna, ZIP-filen och Word-utkastet', async () => {
+        const w = fonsterKon(null);
+        await laddaXlsx(w);
+        const d = w.document;
+        Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });   // en prognos, så att Löneöversyn har en fil
+        w.__ritaFlik('loneoversyn');
+        w.URL.createObjectURL = () => 'blob:x';
+        w.HTMLAnchorElement.prototype.click = () => {};
+        w.eval("byggWordUtkast = () => Promise.resolve({ namn: 'x.docx', blob: new Blob(['x']) })");
+        w.JSZip = class { file() {} generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };
+        w.figurTillBild = () => Promise.resolve('data:image/png;base64,AAAA');
+        const notis = () => d.getElementById('export-sensitivity-toast')?.textContent ?? '';
+        const utanNotis = [];
+        const filer = [...ARBETSBOCKER, ['ZIP-filen', x => x.eval('exportZip()')], ['Word-utkastet', x => x.eval('exportWordUtkast()')]];
+        for (const [namn, kor] of filer) {
+            d.getElementById('export-sensitivity-toast')?.remove();
+            let klar;
+            fangaBocker(w, () => { klar = kor(w); });
+            await klar;
+            if (!/Filen innehåller lönedata/.test(notis())) utanNotis.push(namn);
+        }
+        expect(utanNotis).toEqual([]);
     });
 });
 

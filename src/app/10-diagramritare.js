@@ -1124,7 +1124,8 @@ function _rfNotKnapp(text, fn) {
 // ---- Zoom: diagrammet ritas om med det penslade områdets omfång som axlarnas domäner ----
 // Domänerna kommer ur punkterna i området (som alla är ritade), med lite luft. Lagren är desamma, så träffar, tips
 // och markering fungerar som vanligt; det som hamnar utanför klipps av panelen. En ny figur från vyn tar bort
-// utsnittet. Exporten ritar bilden som den visas och säger i fotraden att den är ett utsnitt.
+// utsnittet. En export ritar om fliken i exportläget och visar då hela diagrammet; bara med Förhandsvisa på (ingen
+// omritning) ritas bilden som den visas, och fotraden säger att den är ett utsnitt.
 function _rfZoomad(el, figur) {
     const z = el && el._rfZoom, f = figur || _rfGrundfigur(el);
     return z && f ? { ...f, x: { ...f.x, doman: z.x }, y: { ...f.y, doman: z.y } } : f;

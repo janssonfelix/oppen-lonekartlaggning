@@ -37,16 +37,18 @@ flik är ingen export: den visar skärmen, utan tröskel och stämpel (ADR-109).
 - **Word-utkastet och PDF-rapporten** ritas ur samma rapportmodell (`rapportModell`) med det urval av avsnitt som
   gäller, så att de inte kan säga olika saker. Word-utkastet görs av modellens HTML (`rmTillHtml`) som blocklista
   (avsnitt 3); PDF-rapporten skrivs ut ur sidan. Med hela dokumentationen vald får utskriften bilagor med flikarnas
-  tabeller och diagram; de kortare urvalen är bara avsnitten.
+  tabeller och diagram; de kortare urvalen är bara avsnitten. Förhandsbeskedet (`rmBesked`) ritar inga flikar och
+  säger «högst N diagram», där N är diagramdelarna i urvalet: filen utelämnar ett diagram utan något att visa över
+  tröskeln (`rmDiagramBild`).
 - **ZIP-filen** (`lonekartlaggning_export.zip`) innehåller Excel-filen med alla flikar
   (`lonekartlaggning_komplett.xlsx`), Word-utkastet och en bild 1920 × 1080 av varje diagram som är ritat och får
   exporteras (`diagram/<id>.png`). Varje upplåst flik ritas först, utom Exportera, Rapporttext, Spara och jämför år,
   Om verktyget och För systemförvaltaren; Spara och jämför år ritas när ett årsbokslut är inläst. Ett fel i en del
   stoppar inte de andra: det rapporteras (`granssnittet.md` §6), och filen får det som gick att bygga.
 - **Exportnotisen** (`_visaExportvarning`) säger att filen innehåller lönedata och ska hanteras som personuppgifter.
-  Den visas efter CSV-filerna, Excel-filen med alla flikar, protokollet, löneöversikten, prioriteringslistan,
-  likvärdigt arbetes och jämförelsestatistikens Excel-filer, diagrambilderna och konfigurationsfilen. Den visas inte
-  efter ZIP-filen, Word-utkastet, Löneöversyns prognos, handlingsplanens Excel-fil och EU-rapporten.
+  Den visas efter varje fil som bär lönedata: CSV-filerna, varje Excel-fil, ZIP-filen, Word-utkastet och
+  diagrambilderna. Konfigurationsfilen har en egen text i samma notis. Importprofilen, CSV-mallen och
+  organisationspaketet bär inget ur lönefilen och har ingen notis; PDF-rapporten går genom webbläsarens utskrift.
 - **Demodata** märks i allt som lämnar verktyget, på ett ställe per slags väg (`DEMO_MARKE` och `demoFilnamn` i
   `03-hjalpfunktioner.js`): varje fil får `DEMO_` först i filnamnet när namnet inte redan säger DEMO (`laddaNer`,
   arbetsböckernas `XLSX.writeFile` och diagrambildens länk); varje Excel-fil får ett första blad DEMODATA

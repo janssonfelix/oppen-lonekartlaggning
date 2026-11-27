@@ -21,7 +21,7 @@ import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { hamtaData, state } from './12-tillstand.js';
-import { _laggTillMetodblad } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _visaExportvarning } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
@@ -456,6 +456,7 @@ function _exportHandlingsplanExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), 'Vägledning');
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, demoFilnamn(`handlingsplan_underlag_${idagDatum()}.xlsx`));
+    _visaExportvarning();
     meddelaSkarmlasare('Handlingsplansunderlag exporterat.');
 }
 

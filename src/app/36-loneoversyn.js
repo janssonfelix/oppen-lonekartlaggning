@@ -27,7 +27,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaBasIntervall, hamtaData, nyPrognos, state } from './12-tillstand.js';
-import { _laggTillMetodblad, verktygMedVersion } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _visaExportvarning, verktygMedVersion } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laNyckel, _laSlutsats } from './41-lika-arbete.js';
@@ -862,6 +862,7 @@ function _exportPrognosExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), 'Fördelning');
     _laggTillMetodblad(wb);
     XLSX.writeFile(wb, demoFilnamn(`loneoversyn_prognos_${idagDatum()}.xlsx`));
+    _visaExportvarning();
     meddelaSkarmlasare('Löneöversynens prognosunderlag exporterat.');
 }
 

@@ -2,7 +2,9 @@
 // Copyright 2026 Felix Jansson
 // Webbläsar-röktestet, del: Utseendet: radbrytning, klippning, kontrast och smala skärmar.
 // Körs av tools/browser-smoke.mjs i samma ordning som kontrollerna alltid har körts.
-import { FIL, ok, browser, page, oppnaFlik, flikar } from './rigg.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { FIL, ROOT, ok, browser, page, oppnaFlik, flikar } from './rigg.mjs';
 
 // Tal på en rad, noter som inte klipps, sidhuvud, kontrast, tabellernas höjd och utskrift av fliken.
 export async function utseende() {
@@ -514,7 +516,7 @@ export async function smalaSkarmar() {
         ok(stil.meny !== 'auto' && stil.sok !== 'auto' && /gradient/.test(stil.mitt), `exportmenyn, sökträffarna och mittlinjen i gapstaplarna får sina regler (top ${stil.meny} / ${stil.sok})`);
     }
 
-    console.log('\n── Smalt fönster: 1440×800 och 900 punkter ──');
+    console.log('\n── Smalt fönster: 1440×800, 900 punkter och menyn bakom knappen ──');
     {
         // Verktyget är gjort för datorskärm (ADR-82): ett smalt fönster på datorn ska fungera, med menyn ihopfälld och
         // utan att sidan går utanför fönstret.
@@ -559,6 +561,27 @@ export async function smalaSkarmar() {
             const c = t.querySelector('tbody td'), r = c.getBoundingClientRect(), y = yta.getBoundingClientRect();
             return { rullar: yta.scrollWidth > yta.clientWidth + 1, flyttad: yta.scrollLeft > 0, fast: Math.abs(r.left - y.left) < 2 }; });
         ok(tabell.rullar && tabell.flyttad && tabell.fast, '900 punkter: en bred tabell rullar inom sitt kort och första kolumnen står kvar');
+        await s.close();
+
+        // Under brytpunkten i stilmallen (den @media-regel som visar knappen Meny) ligger menyn bakom knappen.
+        const brytpunkt = Number(/@media \(max-width: (\d+)px\) \{\s*\.btn\.meny-knapp \{ display: inline-flex/.exec(readFileSync(join(ROOT, 'src', 'style.css'), 'utf8'))[1]);
+        s = await oppna(brytpunkt, 900);
+        const menyLage = () => s.evaluate(() => { const m = document.querySelector('.sidebar'), r = m.getBoundingClientRect();
+            return { synlig: getComputedStyle(m).visibility === 'visible' && r.right > 0 && r.left >= 0, utfalld: document.getElementById('btn-meny').getAttribute('aria-expanded') }; });
+        const knapp = await s.evaluate(() => { const r = document.getElementById('btn-meny').getBoundingClientRect(); return r.width > 0 && r.right <= innerWidth; });
+        const fore = await menyLage();
+        ok(knapp && !fore.synlig && fore.utfalld === 'false', `${brytpunkt} punkter: knappen Meny syns och menyn är dold`);
+        await s.click('#btn-meny');
+        await s.waitForTimeout(400);
+        const oppen = await menyLage();
+        ok(oppen.synlig && oppen.utfalld === 'true', `${brytpunkt} punkter: ett tryck på Meny visar menyn`);
+        await oppnaFlik(s, '.nav-item[data-tab="struktur"]');
+        await s.waitForTimeout(400);
+        const vald = await s.evaluate(() => ({ flik: document.querySelector('.nav-item.active')?.getAttribute('data-tab'), panel: document.getElementById('view-struktur').getBoundingClientRect().height > 0 }));
+        const efter = await menyLage();
+        ok(vald.flik === 'struktur' && vald.panel && !efter.synlig, `${brytpunkt} punkter: ett val i menyn öppnar fliken och fäller ihop menyn`);
+        bred = await forBred(s);
+        ok(bred.length === 0, `${brytpunkt} punkter: ingen flik är bredare än fönstret${bred.length ? ' — ' + bred.join(', ') : ''}`);
         await s.close();
 
         // Sidhuvudet vid 1 024 punkter: Förklaring, Som i exporten, Inställningar och Ordlista går att klicka och har sina namn.

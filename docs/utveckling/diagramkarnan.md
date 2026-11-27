@@ -419,9 +419,10 @@ områdets omfång (ur de ritade punkterna i området, med lite luft) som domän 
 diagrammet säger att det är ett utsnitt, med knappen "Visa hela diagrammet". Figuren ändras inte: utsnittet är en
 kopia med andra domäner och samma lager (`_rfZoomad`), så tips, klick och markering fungerar som vanligt. Det som
 hamnar utanför klipps av panelen. En ny figur från vyn (`ritaFigur`) och `rensaFigur` tar bort utsnittet; en
-storleksändring behåller det. Utsnittet följer inte med i exporten: bilden ritas ur figuren (`figurTillBild`), inte
-ur utsnittet, och exporten ritar om fliken i exportläget, vilket ger en ny figur utan utsnitt. Bilden och diagramdatan
-visar alltså hela diagrammet. Inget behövs av vyn.
+storleksändring behåller det. En export från skärmen går genom exportläget (`medExportLage`, ADR-51): fliken ritas
+om, `ritaFigur` glömmer utsnittet, och bilden och diagramdatan visar hela diagrammet utan utsnittstexten. Bara när
+Förhandsvisa är på (skärmen är redan i exportläget och ritas inte om) följer utsnittet med i bilden, och fotraden
+slutar med "Utsnitt av diagrammet". Inget behövs av vyn.
 
 **Närmaste punkt.** När pekaren är över ritytan men inte på ett märke får den närmaste ritade punkten (märkena
 `punkt`, `individ` och linjernas träffpunkter) verktygstipset inom 24 bildpunkter och klicket inom 12, och en
