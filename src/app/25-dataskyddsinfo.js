@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-import { slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
+import { fangaFokus, stangDialog } from './01-html-och-tillganglighet.js';
 import { state } from './12-tillstand.js';
 
 // ---- GDPR-banner: visar lokal-bearbetning-status ----
@@ -27,19 +27,10 @@ export function uppstartDataskyddsinfo() {
         const m = document.getElementById('gdpr-info-modal');
         if (m) { m.style.display = 'flex'; fangaFokus(m); }
     });
-    document.getElementById('gdpr-info-close')?.addEventListener('click', () => {
-        const m = document.getElementById('gdpr-info-modal');
-        if (m) { slappFokus(m); m.style.display = 'none'; }
-    });
-    document.querySelector('#gdpr-info-modal .yrke-backdrop')?.addEventListener('click', () => {
-        const m = document.getElementById('gdpr-info-modal');
-        if (m) { slappFokus(m); m.style.display = 'none'; }
-    });
-    // Esc-tangent för GDPR-modal
+    const stang = () => stangDialog(document.getElementById('gdpr-info-modal'));
+    document.getElementById('gdpr-info-close')?.addEventListener('click', stang);
+    document.querySelector('#gdpr-info-modal .yrke-backdrop')?.addEventListener('click', stang);
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && document.getElementById('gdpr-info-modal')?.style.display === 'flex') {
-            const m = /** @type {HTMLElement} */ (document.getElementById('gdpr-info-modal'));
-            slappFokus(m); m.style.display = 'none';
-        }
+        if (e.key === 'Escape' && document.getElementById('gdpr-info-modal')?.style.display === 'flex') stang();
     });
 }

@@ -57,15 +57,7 @@ jobs:
         run: npm run release:kontroll
 
       - name: Artefakten motsvarar källan (byte-identisk)
-        run: |
-          fore=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
-          npm run bundle
-          efter=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
-          if [ "$fore" != "$efter" ] || ! git diff --quiet -- dist; then
-            echo "::error::Den incheckade artefakten motsvarar inte källan ($fore → $efter)."
-            exit 1
-          fi
-          echo "Artefakten är byte-identisk med en färsk build ($fore)."
+        run: node tools/kontroll.mjs --artefakt
 
       # Programvaruförteckningen (CycloneDX) över de fyra inbyggda biblioteken och artefaktens kontrollsumma,
       # byggd ur vendor/ och det verifierade bygget (tools/sbom.mjs).

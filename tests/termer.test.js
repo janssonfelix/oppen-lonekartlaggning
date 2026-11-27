@@ -18,6 +18,7 @@ import { STANDARDTERMER, TERM_BEGREPP, TERM_FORMER, TERM_MAX, skapaTermer, genit
 import { namnGenitiv } from '../src/lib/namn.js';
 import { textLiteraler, etikettVarden, appKalla, htmlText, LASTA_ATTRIBUT } from './helpers/anvandartext.js';
 import { createAppWindow } from './helpers/app-harness.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const ROOT = join(import.meta.dirname, '..');
 const läs = f => readFileSync(join(ROOT, f), 'utf8');
@@ -63,6 +64,8 @@ describe('termerna: hjälparna', () => {
         expect(genitiv('BAS-intervall')).toBe('BAS-intervalls');
         expect(genitiv('huvudområdes')).toBe('huvudområdes');
         expect(genitiv('Box')).toBe('Box');
+        expect(genitiv('ABC')).toBe('ABC:s');
+        expect(genitiv('AID')).toBe('AID:s');
         expect(genitiv('  ')).toBe('');
         expect(namnGenitiv('  Exempelkommunen ')).toBe('Exempelkommunens');
     });
@@ -104,7 +107,7 @@ describe('termerna: hjälparna', () => {
     it('kort form: AID för AID-etikett, annars obestämd form; genitiv går, adjektiv inte', () => {
         expect(termFras(S.enhet, 'kort')).toBe('AID');
         expect(termFras(S.jamforelse, 'kort')).toBe('jämförelseetikett');
-        expect(termFras(S.enhet, 'kort', { genitiv: true })).toBe('AIDs');
+        expect(termFras(S.enhet, 'kort', { genitiv: true })).toBe('AID:s');
         expect(fyllTermer('{enhet.kort}')).toBe('AID');
         expect(fyllTermer('{Enhet.kort} median högre (kr)')).toBe('AID median högre (kr)');
         expect(fyllTermer('{Niva.kort}')).toBe('BAS-intervall');
@@ -120,7 +123,7 @@ describe('termerna: hjälparna', () => {
         expect(fyllTermer('Kvinnor och män med samma {enhet.en}')).toBe('Kvinnor och män med samma AID-etikett');
         expect(fyllTermer('{Enhet.bfl} i samma {niva.en}')).toBe('AID-etiketterna i samma BAS-intervall');
         expect(fyllTermer('{huvudomrade}')).toBe('huvudområde');
-        expect(fyllTermer('{Huvudomrade.bf} och {system.s} etikettlista')).toBe('Huvudområdet och AIDs etikettlista');
+        expect(fyllTermer('{Huvudomrade.bf} och {system.s} etikettlista')).toBe('Huvudområdet och AID:s etikettlista');
         expect(fyllTermer('{enhet.art} {enhet.en:kvinnodominerad}')).toBe('en kvinnodominerad AID-etikett');
         expect(fyllTermer('{Enhet.bf:kvinnodominerad} har lägre lön')).toBe('Den kvinnodominerade AID-etiketten har lägre lön');
         expect(fyllTermer('räknas som {enhet.adj:kvinnodominerad}')).toBe('räknas som kvinnodominerad');
@@ -224,7 +227,7 @@ describe('termerna i appen', () => {
     });
     it('ordlistans mallar blir hela texter också med en annan uppsättning', () => {
         const w = createAppWindow();
-        for (const g of w.eval('ORDLISTA')) {
+        for (const g of ickeTom(w.eval('ORDLISTA'))) {
             for (const t of [STANDARDTERMER, YRKE]) {
                 for (const falt of [g.term, g.short, g.long]) expect(fyllTermer(falt, t), g.term).not.toMatch(/\{(?!k\}|golv\})[^}]*\}/);
             }

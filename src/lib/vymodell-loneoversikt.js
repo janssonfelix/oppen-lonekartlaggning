@@ -2,11 +2,12 @@
 // Copyright 2026 Felix Jansson
 /**
  * Öppen lönekartläggning — vymodellen för Löneöversikten, tabellen överst i Tabeller och egna vyer (ADR-99): per
- * BAS-intervall referensens rad, organisationen, kvinnorna, männen och varje yrkesgrupp med minst fem personer, med
+ * BAS-intervall referensens rad, organisationen, kvinnorna, männen och varje yrkesgrupp (AID-koden inom intervallet,
+ * ADR-89) med minst fem personer, med
  * P10, median, P90, antal, spridning och jämförelsestatistikens median. Allt som räknas och maskeras står här, med
  * tröskeln som argument; ritfunktionen i src/app/39-loneoversikt.js (ritaLoneoversikt) ritar bara det den får.
  */
-import { aidAvYrke } from './aid.js';
+import { aidAvRad, aidAvYrke, namnrader } from './aid.js';
 import { statistikFor } from './jamforelse.js';
 import { arKvinna, arMan } from './kon.js';
 import { kvantil, median } from './stat.js';
@@ -46,10 +47,11 @@ export function vymodellLoneoversikt(rader, { bas, k, policyFor, statistik = [] 
         rad('Organisationen', df);
         rad('Kvinna', df.filter(r => arKvinna(r)));
         rad('Man', df.filter(r => arMan(r)));
-        const perYrke = {};
-        df.forEach(r => { (perYrke[r.yrke] ||= []).push(r); });
-        Object.keys(perYrke).sort().forEach(y => {
-            if (perYrke[y].length >= LONEOVERSIKT_MINSTA_YRKE) rad(y, perYrke[y]);
+        // En yrkesgrupp är AID-koden inom BAS-intervallet (ADR-89), med texten som står på flest av gruppens rader.
+        const namn = namnrader(df, aidAvRad), perKod = new Map();
+        df.forEach(r => { const kod = aidAvRad(r); if (!perKod.has(kod)) perKod.set(kod, []); perKod.get(kod).push(r); });
+        [...perKod].map(([kod, g]) => [String(namn.get(kod).yrke ?? kod), g]).sort((x, y) => (x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : 0)).forEach(([y, g]) => {
+            if (g.length >= LONEOVERSIKT_MINSTA_YRKE) rad(y, g);
             else smaYrken++;
         });
         return { bas: b, referens, rader: radlista, utelamnade: basUtelamnade };

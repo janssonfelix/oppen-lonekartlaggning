@@ -5,9 +5,8 @@ import { klickaFlik, PANELGRUPPER } from './31-navigering.js';
 // ---- A11y: Sidopanels-NAVIGATION ----
 // Sidopanelen är PRIMÄR navigation, inte ett ARIA-tabs-widget: <nav> ger
 // navigation-landmärket och knapparna är vanliga knappar där den aktiva markeras
-// med `aria-current="page"`. (En role="tablist"/"tab"-modell skulle krocka
-// med den hopfällbara sekundärgruppens disclosure-knapp — aria-required-children,
-// ADR-10 — eftersom en tablist bara får innehålla role="tab"-barn.) Alla nav-knappar
+// med `aria-current="page"`. (En tablist får bara innehålla role="tab"-barn, och menyn har fasrubriker mellan
+// knapparna; ADR-10.) Alla nav-knappar
 // ligger i naturlig Tab-ordning; pil-/Home/End-tangenter behålls som tillägg.
 export function kopplaFlikarnasTillganglighet() {
     const tabs = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('.nav-item')]);
@@ -50,11 +49,6 @@ export function kopplaFlikarnasTillganglighet() {
     document.querySelectorAll('.nav-item').forEach(btn => {
         btn.addEventListener('click', syncCurrent);
     });
-    // aria-live på status-meddelanden
-    ['data-status','policy-status','stat-status'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) { el.setAttribute('role','status'); el.setAttribute('aria-live','polite'); }
-    });
 }
 
 /**
@@ -62,9 +56,8 @@ export function kopplaFlikarnasTillganglighet() {
  *
  * Sidopanelen är navigation (ADR-10) och använder INTE den här — den har egen
  * pilhantering och alla knappar i Tab-ordningen. Det här gäller de två äkta
- * tablistarna: info-sektionerna och benchmark-percentilerna. Båda hade korrekt
- * `role`/`aria-selected` men lät Tab stanna på varje knapp, vilket avviker från
- * mönstret och ger tio extra Tab-stopp innan man är förbi dem.
+ * tablistarna: sektionerna i Om verktyget och underflikarna i Utforska. Bara den aktiva knappen ligger i
+ * Tab-ordningen, som mönstret säger.
  *
  * Aktivering sker genom att klicka den nya knappen — de befintliga klick-
  * hanterarna sätter redan `active` och `aria-selected`, så mönstret läggs
@@ -75,7 +68,7 @@ export function kopplaFlikarnasTillganglighet() {
 export function _kopplaFlikradensTangenter(buttons) {
     if (!Array.isArray(buttons) || buttons.length < 2) return;
     // Endast den aktiva knappen ligger i Tab-ordningen. `fallback` används när
-    // ingen knapp hunnit bli aktiv (t.ex. benchmark innan data är inläst).
+    // ingen knapp hunnit bli aktiv.
     const sync = fallback => {
         let aktiv = buttons.findIndex(b => b.classList.contains('active'));
         if (aktiv < 0) aktiv = (fallback == null ? 0 : fallback);

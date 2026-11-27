@@ -4,8 +4,7 @@
 // 70-utforska.js — Utforska: egna vyer
 //
 // Användaren väljer rader, ev. kolumner, mått, diagramtyp och urval (72-utforska-urval.js) och får
-// diagram + tabell direkt. All beräkning sker i src/lib/utforska.js (speglad som
-// _utPivottabell m.fl.); figurerna byggs i 71-utforska-figur.js.
+// diagram + tabell direkt. All beräkning sker i src/lib/utforska.js; figurerna byggs i 71-utforska-figur.js.
 //
 // SMÅ GRUPPER (ADR-14, ADR-51): på skärmen visas alla grupper som andra (kTroskel() är 1 där); i exportläget
 // märks grupper under tröskeln med klassen explore-liten, som exporten läser. Den som använder verktyget har
@@ -15,12 +14,12 @@
 import { aidAvYrke } from '../lib/aid.js';
 import { gruppnycklar, konAv } from '../lib/falt.js';
 import { personOrd } from '../lib/namn.js';
-import { nyttRecept } from '../lib/tabellrecept.js';
+import { DIM_ETIKETT, MATT_ETIKETT, nyttRecept, receptUtanTabellSkal } from '../lib/tabellrecept.js';
 import { svKr } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { beskrivUrval, iUrvalet, villkorAktivt } from '../lib/urval.js';
-import { pivottabell } from '../lib/utforska.js';
-import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
+import { pivottabell, UTAN_KONSUPPDELNING } from '../lib/utforska.js';
+import { behallFokus, meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
 import { aktiveraSortering } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -31,16 +30,6 @@ import { utforskaFigur } from './71-utforska-figur.js';
 import { utforskaNollstallUrval, utforskaRensaUrval, utforskaUrval, utforskaUrvalSlappMinne, ritaUtforskaUrval } from './72-utforska-urval.js';
 import { gruppdossierKandidater, oppnaGruppdossier } from './80-gruppdossier.js';
 
-const UTFORSKA_DIM_ETIKETT = {
-    bas: stor(T.niva.en), aid: stor(T.enhet.en), alder: 'Åldersgrupp', kon: 'Kön',
-    aidbas: `${stor(T.enhet.en)} i ${T.niva.en}`, lonespann: 'Lönespann', alla: 'Hela urvalet',
-    sektor: stor(T.huvudomrade.en), aidniva: 'AID-mellannivå'
-};
-export const UTFORSKA_MATT_ETIKETT = {
-    median: 'Median månadslön', medel: 'Medellön', n: 'Antal (n)',
-    p10: 'P10', p25: 'P25', p75: 'P75', p90: 'P90',
-    spridning: 'Spridning (P90/P10)', andelKv: 'Andel kvinnor (%)', gap: 'Kvinnors median i % av mäns'
-};
 // dim = hur många dimensioner diagramtypen kräver.
 const UTFORSKA_TYPER = {
     staplar:    { label: 'Staplar', dim: 1 },
@@ -61,11 +50,9 @@ const UTFORSKA_TYPER = {
 const UTFORSKA_STAPLADE_MAX = 12;
 // Diagramtyper som alltid visar median/lönerna själva — måttvalet gäller inte.
 const UTFORSKA_LASTA_MATT = new Set(['bubbla', 'lada', 'punkter', 'svarm', 'regnmoln', 'kvantilpunkter']);
-// Mått som redan jämför könen och därför inte går att dela upp per kön.
-const UTFORSKA_KON_MATT = new Set(['andelKv', 'gap']);
 
-/** @type {{model: any, typ: string, rows: any[]}|null} */
-let _utforskaTillstand = null;            // { model, typ, rows } — senaste rendering
+/** @type {{model: any, typ: string, rows: any[], spec: any}|null} */
+let _utforskaTillstand = null;            // { model, typ, rows, spec } — senaste rendering och specifikationen den ritades med
 
 export function _utforskaFormatera(v, matt) {
     if (v == null || !isFinite(v)) return '–';
@@ -84,7 +71,7 @@ function utforskaTypSkal(typ, spec, urval) {
     if (def.dim === 2 && !spec.kolumn) return 'Kräver att Kolumner är vald.';
     if (def.dim === 1 && spec.kolumn) return 'Fungerar bara med en dimension. Välj Kolumner: Ingen.';
     if (typ === 'hantel') {
-        if (UTFORSKA_KON_MATT.has(spec.matt)) return 'Hanteldiagrammet jämför kvinnor och män och kräver ett lönemått.';
+        if (UTAN_KONSUPPDELNING.has(spec.matt)) return 'Hanteldiagrammet jämför kvinnor och män och kräver ett lönemått.';
         if (spec.rad === 'kon') return 'Raderna är redan kön. Välj en annan dimension.';
         if (urval && (!urval.nKv || !urval.nMa)) return 'Urvalet innehåller bara ett kön.';
     }
@@ -95,7 +82,7 @@ function utforskaTypSkal(typ, spec, urval) {
 // axeln behöver inte börja på noll som för staplar — där några tusen kronors skillnad knappt går att se.
 function utforskaAutoTyp(spec, urval) {
     if (spec.kolumn) return 'heatmap';
-    if (spec.delaKon && !UTFORSKA_KON_MATT.has(spec.matt) && spec.matt !== 'n' && spec.matt !== 'spridning'
+    if (spec.delaKon && !UTAN_KONSUPPDELNING.has(spec.matt) && spec.matt !== 'n' && spec.matt !== 'spridning'
         && !utforskaTypSkal('hantel', spec, urval)) return 'hantel';
     return 'staplar';
 }
@@ -110,7 +97,7 @@ function utforskaVisaSkal(spec, typ, urval) {
     if (typ === 'bubbla') return { tvingad: 'helhet', skal: 'Bubbeldiagrammet visar andel kvinnor och är alltid en helhet.' };
     if (typ === 'staplade') return { tvingad: 'helhet', skal: 'Staplade staplar visar sammansättningen som en helhet. Välj Kön som kolumn för att dela upp på kön.' };
     if (spec.rad === 'kon' || spec.kolumn === 'kon') return { tvingad: 'helhet', skal: 'Kön är redan en av dimensionerna.' };
-    if (UTFORSKA_KON_MATT.has(spec.matt) && !UTFORSKA_LASTA_MATT.has(typ)) {
+    if (UTAN_KONSUPPDELNING.has(spec.matt) && !UTFORSKA_LASTA_MATT.has(typ)) {
         return { tvingad: 'helhet', skal: 'Måttet jämför redan könen.' };
     }
     if (urval && (!urval.nKv || !urval.nMa)) return { tvingad: 'helhet', skal: 'Urvalet innehåller bara ett kön.' };
@@ -215,7 +202,7 @@ function _utforskaSynkaKontroller(spec, typ, valdTyp, urval) {
 
 function _utforskaRubrik(spec, typ) {
     // Gemen begynnelsebokstav mitt i meningen, men förkortningar (BAS, AID) behåller versalerna.
-    const dim = d => { const s = UTFORSKA_DIM_ETIKETT[d]; return /^[A-ZÅÄÖ]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); };
+    const dim = d => { const s = DIM_ETIKETT[d]; return /^[A-ZÅÄÖ]{2}/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1); };
     // "per BAS-intervall och åldersgrupp", "per åldersgrupp för hela urvalet", "för hela urvalet"
     let fras;
     if (spec.rad === 'alla') fras = spec.kolumn ? `per ${dim(spec.kolumn)} för hela urvalet` : 'för hela urvalet';
@@ -224,7 +211,7 @@ function _utforskaRubrik(spec, typ) {
     if (typ === 'lada' || typ === 'kvantilpunkter') return `Lönefördelning ${fras}`;
     if (typ === 'staplade') return `${/** @type {HTMLInputElement} */ (document.getElementById('explore-stapel-visa'))?.value === 'andel' ? 'Andel' : 'Antal'} ${fras}`;
     if (typ === 'punkter' || typ === 'svarm' || typ === 'regnmoln') return `Löner ${fras}`;
-    return `${UTFORSKA_MATT_ETIKETT[spec.matt]} ${fras}`;
+    return `${MATT_ETIKETT[spec.matt]} ${fras}`;
 }
 
 /**
@@ -274,7 +261,7 @@ export function ritaUtforska() {
 
     _utforskaSynkaKontroller(spec, lasTyp, valdTyp, model.urval);
     ritaUtforskaUrval(rows);
-    _utforskaTillstand = { model, typ, rows };
+    _utforskaTillstand = { model, typ, rows, spec: modelSpec };
 
     const titleEl = document.getElementById('explore-chart-title');
     if (titleEl) titleEl.textContent = _utforskaRubrik(model.spec, typ);
@@ -282,6 +269,11 @@ export function ritaUtforska() {
     _ritaUtforskaDiagram(model, typ, rows);
     _ritaUtforskaTabell(model, typ, inkl);
     _ritaUtforskaNot(model);
+}
+
+/** Varför det inte finns någon grupp att visa (samma orsaker som rapporten skriver). */
+function _utforskaTomText(model) {
+    return `${stor(receptUtanTabellSkal(hamtaData(), { spec: model.spec }, { k: kTroskel() }))}.`;
 }
 
 function _ritaUtforskaDiagram(model, typ, rows) {
@@ -295,7 +287,7 @@ function _ritaUtforskaDiagram(model, typ, rows) {
         rensaFigur(el);                             // figuren (med lönerna) släpps; meddelandet läses i stället
         el.innerHTML = !model.urval.n
             ? '<p class="explore-tom">Inga personer matchar urvalet. <button type="button" class="btn-table-tool" data-explore-clear>Rensa urvalet</button></p>'
-            : '<p class="explore-tom">Inga grupper att visa för valt urval.</p>';
+            : `<p class="explore-tom">${model.celler.length ? 'Inga grupper att visa för valt urval.' : esc(_utforskaTomText(model))}</p>`;
         return;
     }
     if (typ === 'staplade' && model.kolumnEtiketter.length > UTFORSKA_STAPLADE_MAX) {
@@ -322,12 +314,15 @@ function _ritaUtforskaTabell(model, typ, inkl) {
     if (!table) return;
     const { spec } = model;
     const k = kTroskel();
+    // En cell som blir tom i exporten (data-export-tom) bär inte sitt värde i något attribut: sorteringen ordnar då inte
+    // raderna efter det, och radordningen i exporten röjer det inte.
+    const sortVarde = (v, attr) => (v == null || attr.includes('data-export-tom') ? '' : v);
     const num = (v, m, attr = '') =>
-        `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? '' : v}"${attr}>${_utforskaFormatera(v, m)}</td>`;
+        `<td class="tabelltal ta-hoger" data-sort-value="${sortVarde(v, attr)}"${attr}>${_utforskaFormatera(v, m)}</td>`;
     const nTd = c => `<td class="t-hoger" data-sort-value="${c.n}">${c.n.toLocaleString('sv-SE')} (${c.nKv}/${c.nMa})</td>`;
     const trAttr = c => (c.liten ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : '')
         + (c.liten && !inkl ? ' data-export-utelamna' : '');
-    const dimLbl = esc(UTFORSKA_DIM_ETIKETT[spec.rad]);
+    const dimLbl = esc(DIM_ETIKETT[spec.rad]);
     let head, body;
 
     if (spec.kolumn) {
@@ -346,7 +341,7 @@ function _ritaUtforskaTabell(model, typ, inkl) {
         const radUte = new Set(inkl ? [] : model.radEtiketter.filter(r => !kolumner.some(d => synlig(cellAv(r, d), d))));
         const kolUte = new Set(inkl ? [] : kolumner.filter(d => !model.radEtiketter.some(r => synlig(cellAv(r, d), d))));
         const ute = d => (kolUte.has(d) ? ' data-export-utelamna' : '');
-        head = `<tr><th>${dimLbl} \\ ${esc(UTFORSKA_DIM_ETIKETT[spec.kolumn])}</th>`
+        head = `<tr><th>${dimLbl} \\ ${esc(DIM_ETIKETT[spec.kolumn])}</th>`
             + kolumner.map(d => `<th class="t-hoger"${ute(d)}>${esc(d.rubrik)}</th>`).join('') + '</tr>';
         body = model.radEtiketter.map(r => `<tr${radUte.has(r) ? ' data-export-utelamna' : ''}><td>${esc(r)}</td>` + kolumner.map(d => {
             const c = cellAv(r, d);
@@ -356,7 +351,7 @@ function _ritaUtforskaTabell(model, typ, inkl) {
             const attr = (sm ? ` class="explore-liten" title="Färre än ${k} ${personOrd(k)}"` : '')
                 + (!inkl && ((sm && !bara_kon_liten) || (spec.matt === 'gap' && c.konLiten)) ? ' data-export-tom' : '') + ute(d);
             const cell = _utforskaFormatera(v, spec.matt) + (sm ? ` (n = ${d.n(c)})` : '');
-            return `<td class="tabelltal ta-hoger" data-sort-value="${v == null ? '' : v}"${attr}>${esc(cell)}</td>`;
+            return `<td class="tabelltal ta-hoger" data-sort-value="${sortVarde(v, attr)}"${attr}>${esc(cell)}</td>`;
         }).join('') + '</tr>').join('');
     } else if (spec.delaKon) {
         // Antal är inte ett lönemått: det följer med i exporten precis som n (K/M).
@@ -375,14 +370,14 @@ function _ritaUtforskaTabell(model, typ, inkl) {
     } else {
         // gap för en grupp där ena könet är under tröskeln redovisas inte i export (ADR-12).
         const gapTom = c => (spec.matt === 'gap' && c.konLiten && !inkl) ? ' data-export-tom' : '';
-        head = `<tr><th>${dimLbl}</th><th class="t-hoger">${esc(UTFORSKA_MATT_ETIKETT[spec.matt])}</th>`
+        head = `<tr><th>${dimLbl}</th><th class="t-hoger">${esc(MATT_ETIKETT[spec.matt])}</th>`
             + '<th class="t-hoger">n (K/M)</th></tr>';
         body = model.celler.map(c => `<tr${trAttr(c)}><td>${esc(c.rad)}</td>${num(c.value, spec.matt, gapTom(c))}${nTd(c)}</tr>`).join('');
     }
     const tom = !model.celler.length;
     if (tom) {
         const bredd = (head.match(/<th/g) || []).length || 1;
-        body = `<tr data-export-utelamna><td colspan="${bredd}" class="explore-tom">Inga grupper att visa för valt urval.</td></tr>`;
+        body = `<tr data-export-utelamna><td colspan="${bredd}" class="explore-tom">${esc(_utforskaTomText(model))}</td></tr>`;
     }
     table.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
     // Tabellens export börjar med urvalet, som diagrammets gör (tabellTillMatris).
@@ -407,7 +402,7 @@ function _ritaUtforskaNot(model, extra) {
           + 'De följer inte med i exporten om du inte kryssar i rutan ovanför diagrammet.'
         : '';
     const konsma = model.spec.delaKon && model.spec.matt !== 'n'
-        ? model.celler.filter(c => !c.liten).reduce((s, c) => s + (c.nKv < k ? 1 : 0) + (c.nMa < k ? 1 : 0), 0) : 0;
+        ? model.celler.filter(c => !c.liten).reduce((s, c) => s + (c.nKv > 0 && c.nKv < k ? 1 : 0) + (c.nMa > 0 && c.nMa < k ? 1 : 0), 0) : 0;
     const kon = konsma
         ? `${konsma} ${konsma === 1 ? 'könsvärde bygger' : 'könsvärden bygger'} på färre än ${k} ${personOrd(k)}; `
           + 'de följer inte med i exporten om du inte kryssar i rutan.'
@@ -499,9 +494,9 @@ function utforskaTillRapport() {
     const perBas = !!/** @type {HTMLInputElement} */ (document.getElementById('explore-rapport-perbas'))?.checked;
     const status = document.getElementById('explore-rapport-status');
     const satt = (text, ok) => { if (status) { status.textContent = text; status.className = `status-msg${ok ? ' success' : ''}`; } };
-    if (!hamtaData().length) { satt('Läs in en lönefil först.', false); return null; }
-    const spec = _utforskaSpec();
-    const recept = nyttRecept(spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
+    if (!hamtaData().length || !_utforskaTillstand) { satt('Läs in en lönefil först.', false); return null; }
+    // Receptet är det vyn visar: specifikationen efter diagramtypens och dimensionernas låsningar, inte väljarnas värden.
+    const recept = nyttRecept(_utforskaTillstand.spec, { namn: namnEl ? namnEl.value : '', upprepa: perBas ? 'bas' : null });
     if (!recept) { satt('Vyn går inte att spara som tabell.', false); return null; }
     if (perBas && !recept.upprepa) { satt(`En tabell per ${T.niva.en} går inte när raderna eller kolumnerna redan är ${T.niva.fl}.`, false); return null; }
     state.rapportTabeller = [...(state.rapportTabeller || []), recept];
@@ -519,10 +514,11 @@ export function uppstartUtforska() {
              'explore-typ', 'explore-inkludera-sma', 'explore-sla-ihop', 'explore-stapel-visa'].includes(/** @type {HTMLElement} */ (t).id)) ritaUtforska();
     });
     _utforskaVy?.addEventListener('click', e => {
-        if (/** @type {HTMLElement} */ (e.target).closest('[data-explore-clear]')) {
+        // Rensa allt och Rensa urvalet försvinner med urvalet: fokus går till kontrollen före (behallFokus).
+        if (/** @type {HTMLElement} */ (e.target).closest('[data-explore-clear]')) behallFokus(_utforskaVy, () => {
             utforskaNollstallUrval();
             ritaUtforska();
-        }
+        });
     });
     document.getElementById('btn-explore-till-rapport')?.addEventListener('click', utforskaTillRapport);
     document.getElementById('explore-rapport-namn')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); utforskaTillRapport(); } });

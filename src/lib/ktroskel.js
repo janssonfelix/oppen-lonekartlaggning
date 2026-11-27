@@ -135,9 +135,17 @@ export function basEffekterForRedovisning(reg, k, maskNot) {
         not: utelamnade.length ? maskNot(utelamnade) : '' };
 }
 
+/**
+ * Den minsta gruppen bakom paret: den mindre av yrkesgrupperna. Ett jämförelseyrke ur statistiken (maN saknas) har inga
+ * personer och prövas inte; då är det kvinnogruppen.
+ */
+export function parMinstaGrupp(p) {
+    return p.maN == null ? p.kvN : Math.min(p.kvN, p.maN);
+}
+
 /** Når båda yrkesgrupperna i paret gränsen k? Ett jämförelseyrke ur statistiken (maN saknas) prövas inte. */
 export function parNarK(p, k) {
-    return p.kvN >= k && (p.maN == null || p.maN >= k);
+    return parMinstaGrupp(p) >= k;
 }
 
 /** Mening om par som utelämnats ur underlaget (samma ordalydelse som Rapportunderlaget). */
@@ -159,10 +167,14 @@ export function parForRedovisning(allaPar, k) {
     return { par, utelamnade, not: parUtelamnadeNot(utelamnade, k) };
 }
 
+/** Meningen som säger att tröskeln är sänkt, med inledande blanksteg; tom vid standard eller högre. */
+export function kSanktMening(kInstalld) {
+    return kInstalld < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '';
+}
+
 /** Raden som anger den inställda tröskeln (stämpeln), på de utdata som bär den. */
 export function kStampelVid(kInstalld) {
-    return `Minsta gruppstorlek för redovisning: ${kInstalld}.`
-        + (kInstalld < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '');
+    return `Minsta gruppstorlek för redovisning: ${kInstalld}.` + kSanktMening(kInstalld);
 }
 
 /**
@@ -230,10 +242,9 @@ export function kText(s, kInstalld, golv = statGolvVid(kInstalld)) {
  */
 export function individLitenForVid(rader, k) {
     const grupp = r => `${aidAvYrke(r.yrke)}|${r.bas}`;
-    const konAv = r => (arKvinna(r) ? 'kv' : (arMan(r) ? 'ma' : 'ovr'));
+    const konAv = r => (arKvinna(r) ? 'kv' : 'ma');   // inläsningen släpper inte in en rad utan kön, lön eller BAS
     const n = new Map();
     for (const r of rader) {
-        if (!(r.lon > 0) || !r.bas) continue;
         const g = grupp(r);
         n.set(g, (n.get(g) || 0) + 1);
         n.set(`${g}|${konAv(r)}`, (n.get(`${g}|${konAv(r)}`) || 0) + 1);

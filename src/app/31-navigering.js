@@ -36,7 +36,7 @@ import { ritaArsjamforelse } from './73-arsbokslut.js';
 import { utAllaDiagramVidRitning, utVisaUnderflikFor } from './74-alla-diagram.js';
 import { ritaLonepolitik } from './75-lonepolitik.js';
 import { ritaKvalitetssakring } from './85-robusthet-fardigcheck.js';
-import { sidindexBygg } from './89-sidindex.js';
+import { sidindexBygg, sidindexGaTill } from './89-sidindex.js';
 
 /** Visar Filer och kvalitet, rullar fram filkortet `kortId`, ger dess filväljare fokus, markerar kortet en stund och läser upp `text`. */
 export function _visaFilkortet(kortId, inputId, text) {
@@ -190,7 +190,7 @@ export function _ritaTungtBlock(flik, hostIds, fn) {
         ?/** @type {HTMLElement[]} */ (hostIds.map(id => document.getElementById(id)).filter(Boolean)) : [];
     if (!hosts.length) { fn(); return; }
     for (const h of hosts) {
-        if (typeof _rfBehallare !== 'undefined' && _rfBehallare.has(h)) rensaFigur(h);
+        if (_rfBehallare.has(h)) rensaFigur(h);
         h.innerHTML = `<span class="block-raknas">${BLOCK_RAKNAS_TEXT}</span>`;   // en span: några behållare är stycken
         h.setAttribute('aria-busy', 'true');
     }
@@ -317,11 +317,17 @@ export const PANELGRUPPER = {
 // Flikalias: namnen leds om till fliken som visar innehållet, så att inga länkar dör.
 const FLIKALIAS = { rapport: 'utforska', demografi: 'kon', kvalitet: 'dokumentera', lonepolitik: 'benchmark', skevhet: 'struktur', regression: 'struktur', spara: 'arbetet' };
 export function flikMal(namn) { return FLIKALIAS[namn] || namn; }
+/** Flikens namn som menyn visar det. */
+export function menynamn(flik) { return (document.querySelector(`.nav-item[data-tab="${flik}"]`)?.textContent || flik).trim(); }
+/** Flikarna som kräver lönefilen: knapparna med `data-lonefil` i index.html, som också är låsta från start. Låses vid
+ *  Rensa all data (26-rensning.js) och låses upp av `lasUppFlikar`. */
+export function lonefilsflikar() { return document.querySelectorAll('.nav-item[data-lonefil]'); }
 export function lasUppFlikar() {
-    ['tab-kon','tab-matrix','tab-prioritering','tab-loneoversyn','tab-struktur','tab-likvardighet','tab-utforska','tab-rapporttext'].forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        /** @type {HTMLInputElement} */ (el).disabled = false;
+    // Löneläget (tab-benchmark) kräver dessutom ställningstagandet eller jämförelsestatistiken: synkaJamforelseFlik
+    // nedan låser upp eller döljer den.
+    lonefilsflikar().forEach(el => {
+        if (el.id === 'tab-benchmark') return;
+        /** @type {HTMLInputElement} */ (/** @type {unknown} */ (el)).disabled = false;
         // Låst läge visar "ladda upp först" i title. När fliken låses upp byts den
         // mot flikens egen förklaring (data-tip).
         const tip = el.getAttribute('data-tip');
@@ -539,12 +545,16 @@ export function uppstartNavigering() {
                 return;
             }
             const target = btn.getAttribute("data-tab");
+            // Ett flikbyte från innehållet («Nästa steg», en länk till en annan flik) döljer elementet som har fokus:
+            // fokus går då till den nya fliken, annars börjar nästa Tab överst på sidan. Menyns knappar behåller fokus.
+            const franPanel = /** @type {HTMLElement|null} */ (document.activeElement?.closest('.view-panel') || null);
             document.querySelectorAll(".view-panel").forEach(v => /** @type {HTMLElement} */ (v).style.display = "none");
             // Visa alla paneler i flikens grupp (sammanslagna flikar), annars panelen själv.
             (PANELGRUPPER[target] || [target]).forEach(p => {
                 const el = document.getElementById(`view-${p}`);
                 if (el) el.style.display = "block";
             });
+            if (franPanel && franPanel.style.display === 'none') document.getElementById(`view-${(PANELGRUPPER[target] || [target])[0]}`)?.focus({ preventScroll: true });
             document.querySelectorAll(".nav-item").forEach(t => t.classList.remove("active"));
             btn.classList.add("active");
             const titles = {
@@ -589,7 +599,8 @@ export function uppstartNavigering() {
         klickaFlik(nav, { uppskjut: e.isTrusted });
         if (!last) window.scrollTo({ top: 0, behavior: 'smooth' });
     });
-    // Delegerad click-handler för "gå till flik X"-länkar i HTML-strängar
+    // Delegerad lyssnare för länkar och knappar som går till en flik (data-go-to-tab). data-go-to-anchor öppnar och rullar
+    // fram ankaret; data-go-to-avsnitt går till avsnittet eller kortet som sidindexet gör, och flyttar fokus dit.
     document.addEventListener('click', e => {
         const a = /** @type {HTMLElement} */ (e.target).closest('[data-go-to-tab]');
         if (!a) return;
@@ -597,6 +608,8 @@ export function uppstartNavigering() {
         const target = /** @type {HTMLElement} */ (a).dataset.goToTab;
         // Avsnittet länken leder till visas när fliken är ritad (ADR-80: användarens klick ritar fliken efter att den målats).
         const tillAnkare = () => {
+            const avsnitt = /** @type {HTMLElement} */ (a).dataset.goToAvsnitt;
+            if (avsnitt) { sidindexGaTill(avsnitt); return; }
             const ankare = /** @type {HTMLElement} */ (a).dataset.goToAnchor && document.getElementById(/** @type {HTMLElement} */ (a).dataset.goToAnchor || '');
             if (!ankare) return;
             oppnaHopfallda(ankare);
@@ -607,7 +620,7 @@ export function uppstartNavigering() {
     document.getElementById('btn-meny')?.addEventListener('click', () => sattMeny(!menyOppen()));
     document.getElementById('meny-skugga')?.addEventListener('click', () => sattMeny(false));
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && menyOppen()) sattMeny(false); });
-    document.getElementById('sidomeny')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('.nav-item')) sattMeny(false, { fokus: false }); });
+    document.getElementById('sidomeny')?.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('.nav-item')) sattMeny(false); });
     if (typeof window.matchMedia === 'function') {
         const smal = window.matchMedia('(max-width: 640px)');
         if (smal.addEventListener) smal.addEventListener('change', _menyVidBrytpunkt);

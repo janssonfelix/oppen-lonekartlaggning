@@ -316,7 +316,7 @@ export async function diagramkarnan() {
     /* global URVAL, _rfUrvalGlom */
     {
         // 40 yrkesgrupper med långa namn och en trend per kön som räknas om för urvalet.
-        await page.setViewportSize({ width: 375, height: 800 });
+        await page.setViewportSize({ width: 900, height: 800 });
         await page.waitForTimeout(300);
         await page.evaluate(() => {
             _rfUrvalGlom();
@@ -345,9 +345,9 @@ export async function diagramkarnan() {
         });
         ok(matt.oppen && matt.summering === 'AID-etikett: alla 40', `listan öppnas med summeringen (${matt.summering})`);
         ok(matt.sida[0] <= matt.sida[1] && matt.rad[0] <= matt.rad[1] && matt.lista[0] <= matt.lista[1],
-            `listan med 40 långa namn vid 375 punkter: ingen vågrät rullning (sidan ${matt.sida.join(' / ')}, raden ${matt.rad.join(' / ')}, listan ${matt.lista[0]} / ${matt.lista[1]})`);
+            `listan med 40 långa namn vid 900 punkter: ingen vågrät rullning (sidan ${matt.sida.join(' / ')}, raden ${matt.rad.join(' / ')}, listan ${matt.lista[0]} / ${matt.lista[1]})`);
         ok(matt.lista[2], 'listan rullar lodrätt');
-        if (BILDER) await page.locator('#rok-lista-kort').screenshot({ path: `${BILDER}/urvalslista-375-${NAMN}.png` });
+        if (BILDER) await page.locator('#rok-lista-kort').screenshot({ path: `${BILDER}/urvalslista-900-${NAMN}.png` });
         // Sökningen, kryssrutorna och de härledda trendlinjerna prövas i jsdom (tests/diagramurval.test.js).
         await page.evaluate(() => { rensaFigur('chart-rok-lista'); document.getElementById('rok-lista-kort').remove(); delete window.__rokLista; _rfUrvalGlom(); });
         await page.setViewportSize({ width: 1440, height: 900 });

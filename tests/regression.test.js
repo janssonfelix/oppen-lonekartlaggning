@@ -12,8 +12,11 @@ import { dirname, join } from 'node:path';
 import { anpassaOLS as fitOLSRef } from '../src/lib/stat.js';
 import { stegvisGap, kvantilregression, FORKLARINGSMODELL_STANDARD, TILLFOR_GRANS_PP,
     normaliseraForklaringsmodell, forklaringsmodellArStandard, modellFras, modellBeskrivning, modellVariabler,
-    variabelTillfor, gapPerBas, blinderOaxaca, kvantilDesign, kvantilregressionAllaTau, harAlderIRader } from '../src/lib/regression.js';
+    variabelTillfor, gapPerBas, blinderOaxaca, kvantilDesign, kvantilregressionAllaTau, harAlderIRader, huvudregression,
+    justeradSkillnad } from '../src/lib/regression.js';
+import { perBasRegression } from '../src/lib/vymodell-regressionskort.js';
 import { aldersjusteradSkillnad } from '../src/lib/likvardighet.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const las = f => JSON.parse(readFileSync(join(here, 'fixtures', f), 'utf8'));
@@ -241,7 +244,7 @@ describe('[B3.5] kvantilregressionAllaTau på indikatormodellen (ADR-63)', () =>
     it('samma skattning som kvantilregression på kvantilDesign (appen och bootstrappen delar matrisen)', () => {
         const d = kvantilDesign(fx.rows.map(r => ({ ...r })), FORKLARINGSMODELL_STANDARD);
         const q = kvantilregressionAllaTau(fx.rows.map(r => ({ ...r })));
-        for (const r of q.results) expect(r.konPct).toBe(pct(kvantilregression(d.X, d.y, r.tau).beta[1]));
+        for (const r of ickeTom(q.results)) expect(r.konPct).toBe(pct(kvantilregression(d.X, d.y, r.tau).beta[1]));
     });
     it('konvergerat: hela β mot toleransen i lib, könskoefficienten för kortet', () => {
         const d = kvantilDesign(fx.rows.map(r => ({ ...r })), FORKLARINGSMODELL_STANDARD);
@@ -349,5 +352,65 @@ describe('modellerna filtrerar själva bort rader de inte kan räkna', () => {
         const utan = stegvisGap(rader(), fx.ageMean, basList, { golv: 10 });
         const med = stegvisGap([...rader(), { ...fx.rows[2], alder: 0 }], fx.ageMean, basList, { golv: 10 });
         expect(gap(med)).toEqual(gap(utan));
+    });
+});
+
+describe('ett utfall utan spridning har ingen regression att redovisa', () => {
+    // 25 kvinnor och 25 män per intervall med olika åldrar; lon(kvinna, i) ger lönen.
+    const rader = (lon, basar = ['A']) => basar.flatMap(bas => Array.from({ length: 50 }, (_, i) => {
+        const kvinna = i < 25;
+        return { kon: kvinna ? 'kvinna' : 'man', bas, alder: 25 + (i % 25), lon: lon(kvinna, i, bas), aid: `${bas}1`, yrke: 'Yrke' };
+    }));
+    const utanTal = r => { expect(r.pValue ?? null).toBeNull(); expect(r.ciLow ?? null).toBeNull(); expect(r.ciHigh ?? null).toBeNull(); expect(r.R2 ?? null).toBeNull(); };
+    it('gapPerBas: alla i intervallet har samma lön, gapet är 0 och inget p-värde', () => {
+        const [b] = gapPerBas(rader(() => 24000), ['A'], { golv: 10 });
+        expect(b.status).toBe('ingen_spridning');
+        expect(b.gapPct).toBe(0);
+        utanTal(b);
+    });
+    it('gapPerBas: kvinnor på en lön och män på en annan, gapet är lönekvoten och inget p-värde', () => {
+        const [b] = gapPerBas(rader(kv => (kv ? 22000 : 24000)), ['A'], { golv: 10 });
+        expect(b.status).toBe('ingen_spridning');
+        expect(b.gapPct).toBeCloseTo((22000 / 24000 - 1) * 100, 9);
+        utanTal(b);
+    });
+    it('perBasRegression räknar inte ett intervall utan spridning som ett test', () => {
+        const brus = (kv, i) => 24000 + 37 * ((i * 7) % 13) - (kv ? 300 : 0);
+        const perBas = gapPerBas(rader((kv, i, bas) => (bas === 'A' ? 24000 : brus(kv, i)), ['A', 'B']), ['A', 'B'], { golv: 10 });
+        expect(perBas.map(b => b.status)).toEqual(['ingen_spridning', 'ok']);
+        expect(perBasRegression(perBas).antalTester).toBe(1);
+    });
+    it('stegen och huvudregressionen: samma lön i hela underlaget ger ingen skattning', () => {
+        const alla = rader(() => 24000, ['A', 'B']);
+        for (const s of stegvisGap(alla, 37, ['A', 'B'], { golv: 10 })) {
+            expect(s.status).toBe('ingen_spridning');
+            expect(s.gapPct).toBe(0);
+        }
+        const h = huvudregression(alla, { kInstalld: 10, golv: 10 });
+        expect(h.errorCode).toBe('ingen_spridning');
+        expect(justeradSkillnad(alla)).toMatchObject({ pct: 0, low: null, high: null });
+    });
+});
+
+describe('Blinder-Oaxaca i verktygets tecken: kvinnor mot män', () => {
+    // Kvinnorna finns mest i det högre BAS-intervallet men får 5 % mindre inom intervallet: den förklarade delen drar åt
+    // kvinnornas fördel och den oförklarade åt männens.
+    const rader = () => {
+        const ut = [], lagg = (bas, kon, n, lon) => { for (let i = 0; i < n; i++) ut.push({ bas, kon, alder: 30 + (i % 20), lon: lon * (1 + ((i % 5) - 2) * 0.004) }); };
+        lagg('A', 'kvinna', 10, 30000 * 0.95); lagg('A', 'man', 40, 30000);
+        lagg('B', 'kvinna', 40, 40000 * 0.95); lagg('B', 'man', 10, 40000);
+        return ut;
+    };
+    const medelLog = r => r.reduce((s, d) => s + Math.log(d.lon), 0) / r.length;
+    it('den råa skillnaden är kvinnors genomsnittliga log-lön mot mäns, och andelarna behåller tecknet', () => {
+        const r = rader(), bo = blinderOaxaca(r, { golv: 10 });
+        const ra = (Math.exp(medelLog(r.filter(d => d.kon === 'kvinna')) - medelLog(r.filter(d => d.kon === 'man'))) - 1) * 100;
+        expect(bo.rawGapPct).toBeCloseTo(ra, 9);
+        expect(bo.rawGapPct).toBeGreaterThan(0);
+        expect(bo.unexplainedPct).toBeLessThan(0);
+        expect(bo.explainedPct).toBeGreaterThan(bo.rawGapPct);
+        expect(bo.andelForklarad + bo.andelOforklarad).toBeCloseTo(100, 9);
+        expect(bo.andelOforklarad).toBeLessThan(0);
+        expect(bo).not.toHaveProperty('endowmentPct');
     });
 });

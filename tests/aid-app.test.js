@@ -31,8 +31,8 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
         const nLed = kand.rows.filter(r => r.ansvarsgrupp === 'ledning');
         expect(d.ansvar).toMatchObject({ ledning: { kv: nLed.filter(r => r.kon === 'kvinna').length, ma: nLed.filter(r => r.kon === 'man').length } });
         const html = w.eval(`_gdRitaInnehall(__byggGruppdossier(${JSON.stringify(kand.key)}))`);
-        expect(html).toMatch(/Ledningsansvar \d+ kv \/ \d+ män/);
-        expect(w.__gruppdossierSomText(d)).toMatch(/Ansvar: ledningsansvar \d+ kvinnor \/ \d+ män · särskilt uppdrag \d+ kvinnor \/ \d+ män/);
+        expect(html).toMatch(/Ledningsansvar \d+ kvinn(?:a|or) \/ \d+ m(?:an|än)/);
+        expect(w.__gruppdossierSomText(d)).toMatch(/Ansvar: ledningsansvar \d+ kvinn(?:a|or) \/ \d+ m(?:an|än) · särskilt uppdrag \d+ kvinn(?:a|or) \/ \d+ m(?:an|än)/);
     });
     it('dossiern utan ansvarskolumn har ingen ansvarsrad', () => {
         const w = createAppWindow();
@@ -53,6 +53,19 @@ describe('ansvarskod i dossiern, Personer att granska och demot', () => {
         w.__state.ansvarKolumn = null;
         w.eval('ritaPersonerAttGranska(true)');
         expect(rubriker()).not.toContain('Ansvar');
+    });
+    it('Personer att granska utan ålder i filen visar ingen ålder och säger att förväntad lön är medianen', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.__state.data.forEach(r => { r.alder = 0; });
+        w.__state.data[0].lon = Math.round(w.__state.data[0].lon * 0.5);
+        w.eval('harAlderSlapp(); ritaPersonerAttGranska(true)');
+        const rader = [...w.document.querySelectorAll('#pag-tabell tbody tr')];
+        expect(rader.length).toBeGreaterThan(0);
+        expect(rader.every(tr => tr.children[2].textContent === '–')).toBe(true);
+        const not = w.document.querySelector('.pag-metod').textContent;
+        expect(not).not.toMatch(/ur åldern|åldrarna/);
+        expect(not).toMatch(/median/);
     });
 });
 

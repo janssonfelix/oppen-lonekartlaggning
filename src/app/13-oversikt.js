@@ -8,6 +8,7 @@ import { personOrd } from '../lib/namn.js';
 import { gruppMde, organisationensKvotKI, osakerhetKonstanter, styrkeanalys } from '../lib/osakerhet.js';
 import { forklaringsmodellArStandard } from '../lib/regression.js';
 import { svPct, svTal } from '../lib/talformat.js';
+import { adjektiv, ordForAntal } from '../lib/termer.js';
 import { kravstatus, oversiktNyckeltal } from '../lib/vymodell-oversikt.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
@@ -48,14 +49,15 @@ export function ritaKravstatus() {
     const vm = /** @type {NonNullable<ReturnType<typeof kravstatus>>} */ (kravstatus(d, { bas: hamtaBasIntervall(), k: kInstalld(), golv: statGolv(),
         oversikt: _laOversiktRader(d), policyFor: harReferens() ? policyFor : null, statistik: state.statistik }));
 
+    const jamforbara = n => `${adjektiv('jämförbar', T.niva, { plural: n !== 1 })} ${ordForAntal(n, T.niva)}`;
     // 1–2. Säkerställd skillnad och könsskevhet — bara i jämförbara BAS (båda könen ≥ k).
     const maskText = vm.maskerade ? ` · ${vm.maskerade} intervall redovisas inte i exporten (ett kön under ${kInstalld()})` : '';
     if (vm.jamforbara === 0) {
         sattKravkort('comp-gap', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
         sattKravkort('comp-skev', 0, 0, `Inga jämförbara ${T.niva.fl}${maskText}`, 'na');
     } else {
-        sattKravkort('comp-gap', vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} jämförbara ${T.niva.fl}${maskText}`, vm.gap.lage);
-        sattKravkort('comp-skev', vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} jämförbara ${T.niva.fl}${maskText}`, vm.skev.lage);
+        sattKravkort('comp-gap', vm.gap.antal, vm.gap.av, `${vm.gap.antal} av ${vm.gap.av} ${jamforbara(vm.gap.av)}${maskText}`, vm.gap.lage);
+        sattKravkort('comp-skev', vm.skev.antal, vm.skev.av, `${vm.skev.antal} av ${vm.skev.av} ${jamforbara(vm.skev.av)}${maskText}`, vm.skev.lage);
     }
 
     // 3. Policy P10-underläge — referensen namnges; utan referens ett tomläge (ADR-28)
@@ -67,7 +69,7 @@ export function ritaKravstatus() {
     if (!ref) sattKravkort('comp-pol', 0, 0, 'Kräver lönepolitiskt ställningstagande', 'na');
     // Inga rader per BAS-intervall (t.ex. en ren AID-policy): grönt "0 av 0" vore falskt lugnande, så kortet blir 'na'.
     else if (ref.av === 0) sattKravkort('comp-pol', 0, 0, `${referensNamn()} saknar rader per ${T.niva.en}`, 'na');
-    else sattKravkort('comp-pol', ref.antal, ref.av, `${ref.antal} av ${ref.av} ${T.niva.fl}`, ref.lage);
+    else sattKravkort('comp-pol', ref.antal, ref.av, `${ref.antal} av ${ref.av} ${ordForAntal(ref.av, T.niva)}`, ref.lage);
 
     // 4. Jämförelsestatistiken
     // Bara grupper med minst k, som Löneläget; de utelämnade nämns med antal.
@@ -76,7 +78,7 @@ export function ritaKravstatus() {
         const k = kInstalld();
         const utel = bm.utelamnade ? ` · ${bm.utelamnade} ${bm.utelamnade === 1 ? T.enhet.en : T.enhet.fl} visas inte här (färre än ${k} ${personOrd(k)})` : '';
         if (bm.av === 0) sattKravkort('comp-bm', 0, 0, `Ingen matchning hittad${utel}`, 'na');
-        else sattKravkort('comp-bm', bm.antal, bm.av, `${bm.antal} av ${bm.av} ${T.enhet.fl} i ${T.niva.en}${utel}`, bm.lage);
+        else sattKravkort('comp-bm', bm.antal, bm.av, `${bm.antal} av ${bm.av} ${ordForAntal(bm.av, T.enhet)} i ${T.niva.en}${utel}`, bm.lage);
     }
     // Länken till fliken Löneläget bara när fliken finns (jämförelsestatistik inläst).
     const bmLank = document.querySelector('#comp-bm .comp-lank');
@@ -223,11 +225,9 @@ export function raknaStyrkeanalys() { return _skattning('powerAnalysis', statGol
  * greetar det med steg 1 "börja här".
  *
  * Robusthet: varje steg-härledning körs i egen try/catch så ett fel i ett steg
- * inte fäller hela kortet. Länkarna använder `data-goto-tab` (delegerad lyssnare i
- * 03-hjalpfunktioner.js) — inga inline-onclick (hash-CSP, ADR-9).
- */
-/** @param {{punkter?: any[]}} [val] punkter: Att göras lista när anroparen just byggt den (annars byggs den här) */
-/**
+ * inte fäller hela kortet. Länkarna använder `data-go-to-tab` (delegerad lyssnare i
+ * 31-navigering.js) — inga inline-onclick (hash-CSP, ADR-9).
+ *
  * @param {{punkter?: any[], reg?: any}} [val] punkter: Att göras lista; reg: regressionen när anroparen just kört den i
  *   samma varv (ADR-17). Båda är värden som skickas vidare, ingen cache.
  */
@@ -301,7 +301,8 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
         const tomma = t - ifyllda;
         return {
             n: 5, tab: 'handlingsplan', title: '5. Handlingsplan',
-            status: t === 0 ? 'ej' : genomforda >= t ? 'klar' : ifyllda > 0 ? 'delvis' : 'ej',
+            // Inget att fylla i är klart, som steg 3 och 4 när det inte finns något att hantera.
+            status: t === 0 ? 'klar' : genomforda >= t ? 'klar' : ifyllda > 0 ? 'delvis' : 'ej',
             detail: t === 0
                 ? 'Inga rader att fylla i: ingen grupp under referensen och inga kandidatpar. Egna rader läggs till på fliken.'
                 : ifyllda === 0
@@ -336,7 +337,7 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
             <div class="ptrack-body">
                 <div class="fs-md fw-600">${esc(r.title)}</div>
                 <div class="ptrack-detail">${esc(r.detail)}</div>
-                <button type="button" class="ptrack-goto" data-goto-tab="${esc(r.tab)}"${r.avsnitt ? ` data-goto-avsnitt="${esc(r.avsnitt)}"` : ''}>Gå till steget</button>
+                <button type="button" class="ptrack-goto" data-go-to-tab="${esc(r.tab)}"${r.avsnitt ? ` data-go-to-avsnitt="${esc(r.avsnitt)}"` : ''}>Gå till steget</button>
             </div>
         </div>`).join('');
 
@@ -360,11 +361,6 @@ export function ritaKartlaggningensSteg({ punkter: givna, reg: givenReg } = {}) 
     ovRitaLage();
 }
 
-/**
- * Översikt efter inläsning. Före inläsning är sidan startytan Kom igång, med stegen under Fördjupning.
- * Efter inläsning visar sidan läget: filraden, nyckeltalen, Att göra och processen. Filerna, kvaliteten och
- * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
- */
 /** Filer och kvalitet: underlagets kvalitet, extremvärdena och inläsningsrapporten. Ritas vid inläsning och vid flikbyte. */
 export function ritaFilerDelar() {
     /** @type {[string, () => void][]} */
@@ -401,7 +397,7 @@ function _ovRitaFilrad(har, antal) {
     if (!har) { rad.textContent = ''; return; }
     rad.innerHTML = `<span><strong>Lönefil:</strong> ${svTal(antal, 0)} personer</span>`
         + `<span><strong>Referens:</strong> ${esc(harReferens() ? referensNamn() : 'ingen inläst')}</span>`
-        + `<span><strong>Jämförelsestatistik:</strong> ${state.statistik.length ? `${svTal(state.statistik.length, 0)} rader` : 'ingen inläst'}</span>`
+        + `<span><strong>Jämförelsestatistik:</strong> ${state.statistik.length ? `${svTal(state.statistik.length, 0)} ${state.statistik.length === 1 ? 'rad' : 'rader'}` : 'ingen inläst'}</span>`
         + kTroskelLank()
         + `<a href="#" class="btn btn-secondary btn-sm" data-go-to-tab="filer">Filer och kvalitet</a>`;
 }
@@ -446,7 +442,12 @@ export function ritaNyckeltal() {
     }
 }
 
-/** Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51). */
+/**
+ * Översikt efter inläsning. Före inläsning är sidan startytan Kom igång, med stegen under Fördjupning.
+ * Efter inläsning visar sidan läget: filraden, nyckeltalen, Att göra och processen. Filerna, kvaliteten och
+ * kvartilerna står i Filer och kvalitet respektive Lönestruktur. Klassen `har-data` på panelen styr vad som visas.
+ * Översikts delar, i ordning: det som inläsningen ritar och som exportgrinden måste kunna rita om (ADR-51).
+ */
 export function ritaOversiktDelar() {
     /** @type {any[]|undefined} */ let punkter;   // processöversikten läser Att göras punkter: byggs en gång
     /** @type {any} */ let reg;   // och samma regression: körs en gång och skickas vidare (ADR-17)

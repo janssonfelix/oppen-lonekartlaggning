@@ -4,6 +4,7 @@ import { svPct, svTal } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { vymodellLoneoversikt } from '../lib/vymodell-loneoversikt.js';
 import { esc } from './01-html-och-tillganglighet.js';
+import { demoFilnamn } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { byggGrundurval, sattMetodik, vaxlaAllaGrupper } from './05-tabeller-och-lankar.js';
 import { kTroskel } from './06-k-troskel.js';
@@ -53,7 +54,7 @@ export function ritaLoneoversikt() {
             const svDiff = statDiffRaw != null ? ` data-sort-value="${statDiffRaw}"` : '';
             tr.innerHTML = `<td>${esc(kategori)}${evidenceBtn}</td><td class="${warn}" data-sort-value="${p10}">${fmt.format(p10)}</td><td class="${warn}" data-sort-value="${med}">${fmt.format(med)}</td><td data-sort-value="${p90}">${fmt.format(p90)}</td><td data-sort-value="${lons.length}">${lons.length}</td><td${spridning != null ? ` data-sort-value="${spridning.toFixed(2)}"` : ''}>${spridning != null ? svTal(spridning, 2) : "-"}</td><td class="bak-info-yta"${svMed}>${statMed}</td><td class="bg-info-yta halvfet ${statColor}"${svDiff}>${statDiff}</td>`;
             // Cache rad-data så bevis-handler kan plocka upp den
-            tr._rapportRow = { kategori, bas: b, rad: r, polRow: pol, masked: false };
+            tr._rapportRow = { kategori, bas: b, rad: r, polRow: pol };
             tbody.appendChild(tr);
         }
         if (utelamnade.length) {
@@ -76,7 +77,7 @@ export function ritaLoneoversikt() {
 
     // Jämförelsestatistikens två kolumner visas bara när en statistik är inläst (de står kvar i tabellen för exporten).
     document.getElementById('rapport-table')?.classList.toggle('utan-jamforelse', !state.statistik.length);
-    if (!/** @type {HTMLInputElement} */ (document.getElementById('search-rapport'))?.value) _rapportTillampaHopfallning();
+    _rapportTillampaSokning();   // tabellen stämmer med sökfältet också efter en omritning
 
     // Audit
     const base = byggGrundurval();
@@ -85,7 +86,7 @@ export function ritaLoneoversikt() {
         ...base,
         usedInAnalysis: base.afterFilter,
         analysisExclusions: [
-            ...(vm.smaYrken > 0 ? [[`${stor(T.enhet.fl)} med <5 personer (slås ihop med "Organisationen"-raden)`, vm.smaYrken]] : [])
+            ...(vm.smaYrken > 0 ? [[`${stor(T.enhet.fl)} med färre än fem personer (slås ihop med "Organisationen"-raden)`, vm.smaYrken]] : [])
         ],
         formler: [
             ['Median', 'P50, mittersta värdet av sorterad lönelista'],
@@ -116,6 +117,25 @@ function _rapportTillampaHopfallning() {
 }
 export function rapportGlomHopfallning() { _rapportHopfallda = null; }
 
+// Sökningen döljer rader med hidden och hopfällningen med style.display (kopplaHopfallbaraGrupper), så att en grupp som
+// fälls ut inte visar rader som sökningen har dolt. En sökning fäller ut alla grupper och visar bara rubrikerna med träff;
+// ett tomt sökfält visar allt och återställer hopfällningen.
+function _rapportTillampaSokning() {
+    const q = (/** @type {HTMLInputElement} */ (document.getElementById('search-rapport'))?.value || '').toLowerCase();
+    const rows = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('#rapport-table tbody tr')]);
+    if (!q) { rows.forEach(tr => { tr.hidden = false; }); _rapportTillampaHopfallning(); return; }
+    /** @type {HTMLElement|null} */ let rubrik = null;
+    let traff = false;
+    const stangGrupp = () => { if (rubrik) rubrik.hidden = !traff; };
+    for (const tr of rows) {
+        if (tr.classList.contains('group-header')) { stangGrupp(); rubrik = tr; traff = false; tr.classList.remove('collapsed'); continue; }
+        tr.style.display = '';
+        tr.hidden = !(tr.textContent || '').toLowerCase().includes(q);
+        traff ||= !tr.hidden;
+    }
+    stangGrupp();
+}
+
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartLoneoversikt() {
     // Löneöversikten: fäll in/ut alla
@@ -123,25 +143,16 @@ export function uppstartLoneoversikt() {
     document.getElementById('rapport-expand-all')?.addEventListener('click', () => vaxlaAllaGrupper('rapport-table', false));
     document.querySelector('#rapport-table tbody')?.addEventListener('click', e => {
         if (!/** @type {HTMLElement} */ (e.target).closest('tr.group-header')) return;
+        // Under en sökning är alla grupper utfällda; läget före sökningen är det som återställs när fältet töms.
+        if (/** @type {HTMLInputElement} */ (document.getElementById('search-rapport'))?.value) return;
         // Raden fälls av tabellens gemensamma lyssnare; här noteras bara läget när den har gjort sitt.
         setTimeout(() => { _rapportHopfallda = new Set([...document.querySelectorAll('#rapport-table tbody tr.group-header.collapsed')].map(tr => /** @type {HTMLElement} */ (tr).dataset.bas || '')); }, 0);
     });
-    // Search rapport
-    document.getElementById("search-rapport")?.addEventListener("input", e => {
-        const q = /** @type {HTMLInputElement} */ (e.target).value.toLowerCase();
-        if (!q) { _rapportTillampaHopfallning(); return; }   // tomt sökfält: tillbaka till det hopfällda läget
-        document.querySelectorAll('#rapport-table tbody tr.group-header.collapsed').forEach(tr => tr.classList.remove('collapsed'));   // en sökning visar träffar i alla BAS
-        const rows = [...document.querySelectorAll("#rapport-table tbody tr")];
-        rows.forEach(tr => { if (!tr.classList.contains("group-header")) /** @type {HTMLElement} */ (tr).style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none"; });
-        rows.forEach((tr, i) => {
-            if (!tr.classList.contains("group-header")) return;
-            const hasVisible = rows.slice(i+1).some(r => !r.classList.contains("group-header") && /** @type {HTMLElement} */ (r).style.display !== "none");
-            /** @type {HTMLElement} */ (tr).style.display = !q || hasVisible ? "" : "none";
-        });
-    });
+    // Sökfältet
+    document.getElementById("search-rapport")?.addEventListener("input", _rapportTillampaSokning);
     // Export Excel (bara Löneöversikten)
     document.getElementById("btn-export-excel")?.addEventListener("click", () => medExportLage(() => {
         const wb = tabellTillBok('rapport-table', 'Rapport');
-        if (wb) { _laggTillMetodblad(wb); XLSX.writeFile(wb, "lonekartlaggning_rapport.xlsx"); _visaExportvarning(); }
+        if (wb) { _laggTillMetodblad(wb); XLSX.writeFile(wb, demoFilnamn("lonekartlaggning_rapport.xlsx")); _visaExportvarning(); }
     }));
 }

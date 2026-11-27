@@ -22,7 +22,7 @@
 
 import { anpassaOLS, invertera, matrisprodukt, median, pVardeTvasidigt, tKvantil } from './stat.js';
 import { STANDARDTERMER as T, fyllTermer, ordForAntal, stor } from './termer.js';
-import { personOrd } from './namn.js';
+import { kvinnorOchMan, personOrd } from './namn.js';
 import { arKvinna, arMan } from './kon.js';
 import { konsMedianer } from './struktur.js';
 
@@ -31,6 +31,10 @@ import { konsMedianer } from './struktur.js';
 // på dem, så de står kvar oförändrade. Det som visas för ett steg kommer ur termerna (stegEtikett, ADR-74).
 export const STEG_BAS = '+ BAS-intervall';
 export const STEG_YRKE = '+ Yrkesgrupp';
+/** Noten för ett steg eller intervall som inte skattades, per status: 'too_few' (för få observationer), 'singular'
+ * (designmatrisen går inte att invertera) och 'ingen_spridning' (residualen saknar spridning, anpassaOLS: gapet finns
+ * men inget standardfel, p-värde eller intervall). */
+export const STATUS_NOT = Object.freeze({ too_few: 'för få obs', singular: 'multikollinearitet', ingen_spridning: 'ingen lönespridning' });
 /** Stegets namn som det visas: STEG_YRKE blir "+ AID-etikett inom BAS", STEG_BAS "+ BAS-intervall"; övriga som de är. */
 export function stegEtikett(namn) {
     if (namn === STEG_YRKE) return `+ ${T.enhet.en} inom BAS`;
@@ -52,6 +56,11 @@ export function stegNamn(variabel) {
 export const FORKLARINGSMODELL_STANDARD = Object.freeze({ bas: true, alder: true, yrkesgrupp: false, skal: '' });
 /** Under så många procentenheter i förklaringsgrad (R²) räknas en variabel som "tillför lite" (beslut 2026-11-05). */
 export const TILLFOR_GRANS_PP = 0.5;
+/** Under så många rader är urvalet litet för en modell med flera variabler: uppdelningen och kvantilregressionen skattas
+ * inte, och diagnostiken varnar för instabila estimat. */
+export const MODELL_MIN_N = 50;
+/** En skattning kräver minst så många rader utöver antalet koefficienter (frihetsgrader kvar för residualerna). */
+export const OVER_KOEFFICIENTER = 5;
 /** Gränsen som funktion, för appen. */
 export function tillforGransPp() { return TILLFOR_GRANS_PP; }
 const SKAL_MAX = 300;
@@ -147,7 +156,7 @@ export function kollinearitetsdiagnos(rader, basLista) {
     });
     if (singleSexBas > 0) issues.push(`<strong>${singleSexBas}</strong> ${ordForAntal(singleSexBas, T.niva)} har bara ett kön – könseffekten kan inte estimeras inom ${singleSexBas === 1 ? 'det' : 'dessa'}.`);
     if (basLista.length < 2) issues.push(`Endast <strong>${basLista.length}</strong> ${ordForAntal(basLista.length, T.niva)} i urvalet – ingen variation att estimera BAS-effekten med.`);
-    if (rader.length < 50)  issues.push(`Litet urval (n=${rader.length}) – kan ge instabila estimat.`);
+    if (rader.length < MODELL_MIN_N)  issues.push(`Litet urval (n=${rader.length}) – kan ge instabila estimat.`);
     return issues;
 }
 
@@ -176,6 +185,7 @@ export function gapPerBas(rader, basLista, { golv }) {
         const y = sub.map(d => Math.log(d.lon));
         const fit = anpassaOLS(X, y);
         if (!fit) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'singular' }); return; }
+        if (fit.utanSpridning) { out.push({ bas: b, n: sub.length, kvN: kv.length, maN: ma.length, status: 'ingen_spridning', gapPct: (Math.exp(fit.beta[1]) - 1) * 100 }); return; }
         const beta = fit.beta[1];
         const se   = Math.sqrt(fit.vcovHC3[1][1]); // HC3 robust SE
         const p    = pVardeTvasidigt(beta/se, fit.n, fit.k);
@@ -233,7 +243,8 @@ export function stegvisGap(rader0, alderMedel, basLista, { golv, modell = FORKLA
  * följer inte användarens val i Lika arbete. Raderna filtreras som i stegen.
  * @param {any[]} rader0
  * @param {{medAlder?: boolean}} [opts] medAlder = lönefilen har ålder (ADR-64); anroparen ger den för hela filen
- * @returns {null | {pct:number, low:number, high:number, n:number, k:number, medBas:boolean, medAlder:boolean, antalBas:number}}
+ * low och high är null när residualen saknar spridning (anpassaOLS utanSpridning): skillnaden är exakt och har inget intervall.
+ * @returns {null | {pct:number, low:number|null, high:number|null, n:number, k:number, medBas:boolean, medAlder:boolean, antalBas:number}}
  */
 export function justeradSkillnad(rader0, { medAlder = harAlderIRader(rader0) } = {}) {
     const giltiga = (rader0 || []).filter(d => _modellRad(d, medAlder));
@@ -245,12 +256,14 @@ export function justeradSkillnad(rader0, { medAlder = harAlderIRader(rader0) } =
     const alder = medAlder ? ['alder'] : [];
     for (const medBas of [true, false]) {
         const X = bygg(medBas ? [...alder, 'bas'] : alder);
-        if (giltiga.length < X[0].length + 5) continue;
+        if (giltiga.length < X[0].length + OVER_KOEFFICIENTER) continue;
         const fit = anpassaOLS(X, y);
         if (!fit) continue;
         const b = fit.beta[1], se = Math.sqrt(fit.vcovHC3[1][1]);
         const tq = tKvantil(0.975, fit.n - fit.k);
-        return { pct: (Math.exp(b) - 1) * 100, low: (Math.exp(b - tq * se) - 1) * 100, high: (Math.exp(b + tq * se) - 1) * 100,
+        // Utan spridning i residualen finns inget intervall (regressionsmodellen.md §7).
+        const ki = d => (fit.utanSpridning ? null : (Math.exp(b + d * tq * se) - 1) * 100);
+        return { pct: (Math.exp(b) - 1) * 100, low: ki(-1), high: ki(1),
             n: fit.n, k: fit.k, medBas, medAlder, antalBas: basList.length };
     }
     return null;
@@ -308,9 +321,10 @@ function _sekvensRigg(rows0, ageMean, basList, { medAlder = harAlderIRader(rows0
     const steg = vars => [{ name: 'Endast kön', X: bygg([]) }, ...vars.map((v, j) => ({ name: namn[v], X: bygg(vars.slice(0, j + 1)) }))];
     /** @param {{name:string, X:number[][]}} s @returns {{name:string, status:string, gapPct?:number, R2?:number, k?:number, nGrupper?:number, nGrupperBada?:number, nPersoner?:number, nEnkonade?:number}} */
     const skatta = s => {
-        if (!N || N < s.X[0].length + 5) return { name: s.name, status: 'too_few' };
+        if (!N || N < s.X[0].length + OVER_KOEFFICIENTER) return { name: s.name, status: 'too_few' };
         const fit = anpassaOLS(s.X, y);
         if (!fit) return { name: s.name, status: 'singular' };
+        if (fit.utanSpridning) return { name: s.name, status: 'ingen_spridning', gapPct: (Math.exp(fit.beta[1]) - 1) * 100, k: fit.k };
         return { name: s.name, status: 'ok', gapPct: (Math.exp(fit.beta[1]) - 1) * 100, R2: fit.R2, k: fit.k };
     };
     return { rader: rows, y, isKv, ageC, bygg, skatta, steg };
@@ -346,6 +360,7 @@ export function yrkesgruppGap(rader, y, arKv, alderC, { medAlder = true, extra =
     if (!inom.ok) return { name, status: 'too_few', ...inom.meta };
     const fit = anpassaOLS(inom.X, inom.yW);
     if (!fit) return { name, status: 'singular', ...inom.meta };
+    if (fit.utanSpridning) return { name, status: 'ingen_spridning', gapPct: (Math.exp(fit.beta[0]) - 1) * 100, k: inom.k, ...inom.meta };
     return {
         name, status: 'ok',
         gapPct: (Math.exp(fit.beta[0]) - 1) * 100,
@@ -415,7 +430,7 @@ export const KVANTIL_MAX_VARV = 60;
  */
 export function kvantilregression(X, y, tau, maxVarv = KVANTIL_MAX_VARV, tolerans = 1e-5, start = null) {
     const n = X.length, k = X[0].length;
-    if (n < k + 5) return null;
+    if (n < k + OVER_KOEFFICIENTER) return null;
     // Starta från OLS för snabb konvergens, eller från ett givet startvärde (bootstrappen startar i punktskattningen)
     let beta;
     if (Array.isArray(start) && start.length === k && start.every(Number.isFinite)) beta = start.slice();
@@ -493,13 +508,18 @@ export function kvantilregression(X, y, tau, maxVarv = KVANTIL_MAX_VARV, toleran
  * (det andra könets koefficient är 0), så dess bidrag hamnar i samspelet. Komponenterna redovisas per
  * variabel som intercept, ålder och BAS, där BAS är summan över indikatorerna.
  *
+ * Tecknet: metoden räknar män mot kvinnor i log-rummet (`components`, `_raw`). Talen i procent har verktygets tecken,
+ * kvinnor mot män (negativt när kvinnor ligger lägre): en log-komponent c blir (exp(−c) − 1) · 100, både för helheten
+ * (`rawGapPct`, `explainedPct`, `unexplainedPct`) och per variabel (`componentsPct`). `andelForklarad` och
+ * `andelOforklarad` är delarnas andel av den råa skillnaden i log-rummet, i procent och med tecken: de summerar till
+ * 100, och när delarna verkar åt olika håll är den ena negativ.
+ *
  * @param {any[]} rader - råradernas poster; filtreras här på lön, ålder och kön.
  * @param {{golv:number, modell?:any}} opts golv = statGolv(); modell = förklaringsmodellen.
  * @returns {null | {
  *   modell:{bas:boolean, alder:boolean, yrkesgrupp:boolean, skal:string},
- *   rawGapPct:number, explainedPct:number, unexplainedPct:number,
- *   endowmentPct:number, coefficientPct:number, interactionPct:number,
- *   components:{[k:string]:{q:number,u:number,i:number}},
+ *   rawGapPct:number, explainedPct:number, unexplainedPct:number, andelForklarad:number, andelOforklarad:number,
+ *   components:{[k:string]:{q:number,u:number,i:number}}, componentsPct:{[k:string]:{q:number,u:number,i:number}},
  *   basRef:string|null, basIndikatorer:string[], gruppRef:string|null, gruppIndikatorer:string[],
  *   n:number, nKv:number, nMa:number,
  *   _raw:{rawGapLog:number, q:number, u:number, i:number}
@@ -510,7 +530,7 @@ export function blinderOaxaca(rader, { golv, modell = FORKLARINGSMODELL_STANDARD
     const m = normaliseraForklaringsmodell(modell, { harYrke: rader.some(d => d.aid || d.yrke), harAlder }).modell;
     if (!m.bas && !m.alder) return null;   // endast kön: inget att dela upp
     const raw = rader.filter(d => _modellRad(d, harAlder));
-    if (raw.length < 50) return null;
+    if (raw.length < MODELL_MIN_N) return null;
     const kv = raw.filter(d => arKvinna(d));
     const ma = raw.filter(d => arMan(d));
     if (kv.length < golv || ma.length < golv) return null;
@@ -580,18 +600,18 @@ export function blinderOaxaca(rader, { golv, modell = FORKLARINGSMODELL_STANDARD
     }
     // Kontroll: qSum + uSum + iSum ≈ rawGapLog (avvikelse ~1e-10 förväntas pga floating point)
 
-    // Konvertera log-komponenter till %-skillnad: (exp(c) − 1) × 100
-    const pct = c => (Math.exp(c) - 1) * 100;
+    // Kvinnor mot män i procent: log-komponenten (män mot kvinnor) byter tecken och räknas om, (exp(−c) − 1) × 100.
+    const pct = c => (Math.exp(-c) - 1) * 100;
 
     return {
         modell: m,
         rawGapPct: pct(rawGapLog),
-        endowmentPct: pct(qSum),
-        coefficientPct: pct(uSum),
-        interactionPct: pct(iSum),
         explainedPct: pct(qSum),
         unexplainedPct: pct(uSum + iSum),
+        andelForklarad: qSum / rawGapLog * 100,
+        andelOforklarad: (uSum + iSum) / rawGapLog * 100,
         components,
+        componentsPct: Object.fromEntries(Object.entries(components).map(([k, c]) => [k, { q: pct(c.q), u: pct(c.u), i: pct(c.i) }])),
         // BAS-fälten när BAS-indikatorer används, gruppfälten när yrkesgrupp inom BAS används (null annars).
         basRef: m.bas && !m.yrkesgrupp ? gruppRef : null, basIndikatorer: m.bas && !m.yrkesgrupp ? indikatorer : [],
         gruppRef: m.yrkesgrupp ? gruppRef : null, gruppIndikatorer: m.yrkesgrupp ? indikatorer : [],
@@ -630,6 +650,14 @@ export function kvantilDesign(allaRader, modell = FORKLARINGSMODELL_STANDARD, { 
 }
 
 /**
+ * Har kvantilregressionens könskoefficient (index 1) konvergerat? Kortet visar bara den, och den står ofta still medan
+ * intercept och BAS-indikatorer kryper vid varvtaket; därför räknas den som konvergerad när dess egen sista ändring är
+ * under toleransen. Samma regel för punktskattningen och bootstrappens dragningar.
+ * @param {{konvergerat:boolean, andring:number[]}} fit kvantilregression
+ */
+export const konKonvergerat = fit => fit.konvergerat || fit.andring[1] < 1e-5;
+
+/**
  * Kör kvantilregression vid τ ∈ {.10, .50, .90} på kvantilDesign (samma variabler som huvudregressionen, utan
  * yrkesgrupp; ADR-63) och returnerar löneskillnaden i procent vid varje kvantil och skillnaden P90 − P10 i
  * procentenheter (negativ: skillnaden till kvinnornas nackdel är större i toppen än i botten).
@@ -637,18 +665,16 @@ export function kvantilDesign(allaRader, modell = FORKLARINGSMODELL_STANDARD, { 
  * @param {any[]} allaRader - råradernas poster; filtreras i kvantilDesign.
  * @param {{modell?:any, ageMean?:number, basList?:string[]}} [opts] modell = förklaringsmodellen.
  * @returns {null | {results:Array<{tau:number, konPct?:number, konvergerat?:boolean, error?:true}>, diffP90P10:number|null,
- *   kolumner:string[], n:number, nKv:number, nMa:number}} null om N < 50.
+ *   kolumner:string[], n:number, nKv:number, nMa:number}} null om N < MODELL_MIN_N.
  */
 export function kvantilregressionAllaTau(allaRader, { modell = FORKLARINGSMODELL_STANDARD, ageMean, basList } = {}) {
     const d = kvantilDesign(allaRader, modell, { ageMean, basList });
-    if (d.rader.length < 50) return null; // för litet urval för stabil kvantilregression
+    if (d.rader.length < MODELL_MIN_N) return null; // för litet urval för stabil kvantilregression
     const results = [];
     for (const tau of [0.1, 0.5, 0.9]) {
         const fit = kvantilregression(d.X, d.y, tau);
         if (!fit) { results.push({ tau, error: true }); continue; }
-        // Kortet visar bara könskoefficienten, och den står ofta still medan intercept och BAS-indikatorer kryper vid
-        // varvtaket; därför räknas den som konvergerad när dess egen sista ändring är under toleransen.
-        results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100, konvergerat: fit.konvergerat || fit.andring[1] < 1e-5 });
+        results.push({ tau, konPct: (Math.exp(fit.beta[1]) - 1) * 100, konvergerat: konKonvergerat(fit) });
     }
     const p10 = results[0], p90 = results[2];
     const diffP90P10 = p10.error || p90.error ? null : p90.konPct - p10.konPct;
@@ -696,7 +722,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
     const kvN = raw.filter(d => arKvinna(d)).length;
     const maN = raw.filter(d => arMan(d)).length;
     if (kvN < HUVUDREGRESSION_MIN_PER_KON || maN < HUVUDREGRESSION_MIN_PER_KON)
-        return { error: `Otillräcklig könsbalans i urvalet: ${kvN} kvinnor, ${maN} män. Minst ${HUVUDREGRESSION_MIN_PER_KON} av varje kön krävs.`, errorCode: 'imbalance' };
+        return { error: `Otillräcklig könsbalans i urvalet: ${kvinnorOchMan(kvN, maN)}. Minst ${HUVUDREGRESSION_MIN_PER_KON} av varje kön krävs.`, errorCode: 'imbalance' };
 
     const basList = [...new Set(raw.map(d => d.bas))].sort();
     // Indikatorvariabler: en kolumn per BAS-intervall utom det första, som är referens.
@@ -751,7 +777,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
             chosen = { ...fit, modelName: step.name, modelDesc: step.desc };
             break;
         }
-        if (raw.length < step.X[0].length + 5) {
+        if (raw.length < step.X[0].length + OVER_KOEFFICIENTER) {
             triedSteps.push({ name: step.name, desc: step.desc, status: 'too_few', k: step.X[0].length });
             continue;
         }
@@ -772,6 +798,9 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
             triedSteps,
             diagnostics: kollinearitetsdiagnos(raw, basList)
         };
+    // Utan spridning i residualen finns ingen osäkerhet att redovisa: standardfel och p-värde vore flyttalsbrus.
+    if (chosen.utanSpridning)
+        return { error: 'Ingen lönespridning att skatta: lönen bestäms helt av modellens variabler (till exempel samma lön för alla), så det finns ingen osäkerhet att redovisa.', errorCode: 'ingen_spridning', triedSteps };
     // Den modell som faktiskt skattades (reservsteget kan ha tagit bort variabler).
     const skattad = chosen.modelName === 'full' ? modell : chosen.modelName === 'utanYrke' ? utanYrke : { ...utanYrke, bas: false };
 
@@ -909,7 +938,7 @@ export function huvudregression(rader, { modell: modellIn = null, medAlder = har
  * tom konstant), så att resten av huvudregression läser kön på index 1 och ålder på index 2.
  * hHoga räknas på samma fulla hävstång: en ensam person i en grupp har h = 1.
  * @param {any[]} raw @param {number[]} y @param {number[]} isKv @param {number[]} ageC @param {boolean} medAlder
- * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number}}
+ * @returns {null | {beta:number[], vcovHC3:number[][], vcovClassic:number[][], R2:number, adjR2:number, n:number, k:number, rss:number, hHoga:number, utanSpridning:boolean}}
  */
 function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const kol = raw.map((_, i) => (medAlder ? [isKv[i], ageC[i]] : [isKv[i]]));
@@ -923,5 +952,5 @@ function _regInomYrkesgrupp(raw, y, isKv, ageC, medAlder) {
     const vidga = (V, s) => { const ut = [[0, ...V[0].map(() => 0)]]; for (const rad of V) ut.push([0, ...rad.map(v => v * s)]); return ut; };
     const R2 = inom.R2Total(fit.rss);
     return { beta: [0, ...fit.beta], vcovHC3: vidga(fit.vcovHC3, 1), vcovClassic: vidga(fit.vcovClassic, skala), R2,
-        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga };
+        adjR2: 1 - (1 - R2) * (n - 1) / (n - k), n, k, rss: fit.rss, hHoga: fit.hHoga, utanSpridning: fit.utanSpridning };
 }

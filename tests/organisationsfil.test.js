@@ -8,8 +8,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { bakaIn, lasUt, kannIgenVerktyget, filnamnForslag, normaliseraFilnamn, skriptBlock, jamforVersion, flyttaOrganisationsfil, MALL_ID } from '../src/lib/organisationsfil.js';
+import { bakaIn, lasUt, kannIgenVerktyget, filnamnForslag, normaliseraFilnamn, jamforVersion, flyttaOrganisationsfil, MALL_ID } from '../src/lib/organisationsfil.js';
 import { byggPaket, tolkaPaket } from '../src/lib/organisationspaket.js';
+import { skriptBlock } from './helpers/htmlrens.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const bygge = readFileSync(join(root, 'dist', 'oppen-lonekartlaggning.html'), 'utf8');

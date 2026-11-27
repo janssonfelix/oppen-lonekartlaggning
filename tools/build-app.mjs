@@ -45,10 +45,11 @@ function toppnivanamn(text, sourceType) {
     };
 }
 
-// Egenskaper på window i Chromium som jsdom saknar (kontrollerade mot jsdom 31). jsdom ger resten vid byggtiden.
+// Egenskaper på window i Chromium som jsdom saknar (kontrollerade mot jsdom 31), och de inbäddade biblioteken, som
+// sätter sina namn på window: en del som deklarerar ett sådant namn skulle skugga biblioteket. jsdom ger resten vid byggtiden.
 const WINDOW_UTOVER_JSDOM = ['chrome', 'scheduler', 'navigation', 'origin', 'crossOriginIsolated', 'trustedTypes', 'cookieStore',
     'caches', 'isSecureContext', 'fetch', 'indexedDB', 'visualViewport', 'structuredClone', 'createImageBitmap', 'find',
-    'showOpenFilePicker', 'showSaveFilePicker'];
+    'showOpenFilePicker', 'showSaveFilePicker', 'd3', 'Papa', 'XLSX', 'JSZip'];
 /** @type {Set<string>|null} */
 let _windowNamn = null;
 /**
@@ -68,6 +69,17 @@ export function krockarMedWindow(text) {
     return toppnivanamn(text, 'script').deklarerade.filter(n => namn.has(n)).sort();
 }
 
+/** esbuild-steget: utfilens text ur src/app/index.js och de moduler den importerar, före byggets kontroller. */
+function _esbuild() {
+    const r = buildSync({
+        entryPoints: [ingang], bundle: true, format: 'esm', treeShaking: false, minify: false,
+        charset: 'utf8', write: false, metafile: true, logLevel: 'silent'
+    });
+    return { text: r.outputFiles[0].text, r };
+}
+/** Det som bygget skulle skriva till dist/app.js ur källan som den ser ut nu (jsdom-sviten jämför med filen). */
+export function byggdText() { return _esbuild().text; }
+
 /**
  * Bygger appen och returnerar texten. Kastar om utfilen inte är ett platt skript där appens namn står kvar.
  *
@@ -78,22 +90,18 @@ export function krockarMedWindow(text) {
  * @returns {string}
  */
 export function byggApp() {
-    const r = buildSync({
-        entryPoints: [ingang], bundle: true, format: 'esm', treeShaking: false, minify: false,
-        charset: 'utf8', write: false, metafile: true, logLevel: 'silent'
-    });
-    const text = r.outputFiles[0].text;
+    const { text, r } = _esbuild();
     try {
         espree.parse(text, { ecmaVersion: 'latest', sourceType: 'script' });
     } catch (e) {
         throw new Error(`build-app: dist/app.js är inget klassiskt skript (import eller export kvar?): ${e.message}`);
     }
     const moduler = Object.keys(r.metafile.inputs).map(f => ({ f, ...toppnivanamn(readFileSync(join(root, f), 'utf8'), 'module') }));
-    // Delarna deklarerar bara; det som körs vid laddning står i uppstartsfunktionerna, som index.js anropar i
+    // Delarna har bara deklarationer på toppnivån; det som körs vid laddning står i uppstartsfunktionerna, som index.js anropar i
     // sifferordning (ES-moduler körs i importgrafens ordning). 00 importerar inget och körs därför först.
     const delar = moduler.filter(m => /^src\/app\/\d\d-/.test(m.f));
     const laddning = delar.filter(m => !m.f.startsWith('src/app/00-') && m.ovriga.length).map(m => m.f);
-    if (laddning.length) throw new Error(`build-app: kod utanför en deklaration (flytta den till delens uppstartsfunktion): ${laddning.join(', ')}`);
+    if (laddning.length) throw new Error(`build-app: en sats på toppnivån som inte är en deklaration (flytta den till delens uppstartsfunktion): ${laddning.join(', ')}`);
     if (delar.some(m => m.f.startsWith('src/app/00-') && m.harImport)) throw new Error('build-app: 00-sakerhet-och-uppstart.js ska inte importera något; den körs först.');
     const app = new Set(moduler.filter(m => m.f.startsWith('src/app/')).flatMap(m => [...m.deklarerade, ...m.importerade]));
     const antal = new Map();

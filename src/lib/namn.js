@@ -8,7 +8,7 @@ import { genitiv } from './termer.js';
 
 const MAX = 100;
 
-/** Genitiv: namnet + "s", utom när det slutar på s, x eller z (regeln i termer.js). */
+/** Genitiv: namnet + "s", utom när det slutar på s, x eller z, och "ABC:s" för en förkortning (regeln i termer.js). */
 export function namnGenitiv(namn) {
     return genitiv(String(namn ?? '').trim());
 }
@@ -23,7 +23,10 @@ export function personOrd(n) {
     return Number(n) === 1 ? 'person' : 'personer';
 }
 
-/** "1 kvinna, 6 män": antalen med ordens rätta form (talen som de ges, utan formatering). */
-export function kvinnorOchMan(kv, ma) {
-    return `${kv} ${Number(kv) === 1 ? 'kvinna' : 'kvinnor'}, ${ma} ${Number(ma) === 1 ? 'man' : 'män'}`;
+/**
+ * "1 kvinna, 6 män": antalen med ordens rätta form, talen som de ges (svTal-formaterade går också) och med `mellan`
+ * mellan dem: kvinnorOchMan(11, 1, ' och ') ger "11 kvinnor och 1 man".
+ */
+export function kvinnorOchMan(kv, ma, mellan = ', ') {
+    return `${kv} ${Number(kv) === 1 ? 'kvinna' : 'kvinnor'}${mellan}${ma} ${Number(ma) === 1 ? 'man' : 'män'}`;
 }

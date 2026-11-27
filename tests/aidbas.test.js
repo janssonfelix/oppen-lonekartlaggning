@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { likaArbeteGrupper } from '../src/lib/rapportunderlag.js';
 import { bedomSkillnad } from '../src/lib/status.js';
 import { grupperaAidBas, dominans, likaArbeteTabell, likvardigtTabell, hierarkiskaPar, individnivaTabell, arJamforelseKlass, KV_DEFINITIONER, kvDefinitionText, kvDefinitionNamn, klassNamn, ingaParText } from '../src/lib/aidbas.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const rad = (bas, aid, kon, lon, yrkeLabel = `Yrke ${aid}`) => ({ bas, aid, yrke: `${aid} ${yrkeLabel}`, yrkeLabel, kon, lon, alder: 40 });
 const grupp = (bas, aid, kon, n, lon0, steg = 100) => Array.from({ length: n }, (_, i) => rad(bas, aid, kon, lon0 + i * steg));
@@ -50,7 +51,7 @@ describe('aidbas: gruppering och dominans', () => {
     });
     it('vakt: definitionerna heter efter lydelsen, inte efter en avsändare (ADR-72)', () => {
         // Varken förarbetena eller SCB säger "X % eller mer"; propositionen är källa för båda lydelserna (lagrum.md).
-        for (const def of Object.keys(KV_DEFINITIONER)) {
+        for (const def of ickeTom(Object.keys(KV_DEFINITIONER))) {
             for (const t of [kvDefinitionNamn(def), kvDefinitionNamn(def, 65), kvDefinitionText(def), KV_DEFINITIONER[def].namn, KV_DEFINITIONER[def].text]) {
                 expect(t, def).not.toMatch(/SCB|Statistiska centralbyrån|förarbete|\bDO\b/i);
             }

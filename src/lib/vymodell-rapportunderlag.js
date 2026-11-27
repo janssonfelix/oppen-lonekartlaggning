@@ -12,6 +12,7 @@ import { aidAvRad } from './aid.js';
 import { talformat } from './figur.js';
 import { gapUppdelning } from './gapuppdelning.js';
 import { arKvinna, arMan } from './kon.js';
+import { periodOrd } from './kostnad.js';
 import { parForRedovisning, parNarK } from './ktroskel.js';
 import { medianKvotKIGiltiga } from './osakerhet.js';
 import { arsbeloppMening } from './prioritering.js';
@@ -104,7 +105,7 @@ export function vymodellRapportunderlag(rader, val) {
         avsnittBlock('lagreKrav', { par: lagreKrav.filter(p => parNarK(p, k)), exkluderade: lagreKrav.filter(p => !parNarK(p, k)).length, kravProxy, topN }, opt),
         avsnittBlock('struktur', { representation, kvartiler, nKv: kvLon.length, nMa: maLon.length }, opt),
         avsnittBlock('sektorer', { sektorer: sektorsTabell(rader, { k, skrDel: val.skrDel }), andel: sektorernasAndel(rader, { k }) }, opt),
-        avsnittBlock('handlingsplan', { rader: hpRader, summa: summa(hpRader),
+        avsnittBlock('handlingsplan', { rader: hpRader, summa: summa(hpRader), period: periodOrd(kostnad),
             summaReferens: summa(hpRader.filter(r => r.underlag === hp.prio)),
             summaJamforelse: summa(hpRader.filter(r => r.underlag === hp.par)),
             ...(hpSkalBlock ? { skal: hpSkalBlock } : {}) }, opt),

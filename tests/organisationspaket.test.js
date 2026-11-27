@@ -61,9 +61,8 @@ describe('organisationspaket: avvisning', () => {
         expect(fel(JSON.stringify(byggPaket({ ...underlag(), referens: null, statistik: null })))).toMatch(/ställningstagande|statistik/);
     });
     it('för stor fil', () => expect(fel(' '.repeat(FIL_MAX.paket + 1))).toMatch(/stor/));
-    it('personnummer eller e-post i ett textfält', () => {
+    it('personnummer i ett textfält', () => {
         fel(JSON.stringify(byggPaket({ ...underlag(), utgivare: '19850101-1234' })));
-        fel(JSON.stringify(byggPaket({ ...underlag(), organisation: 'a@b.se' })));
     });
 });
 
@@ -110,7 +109,20 @@ describe('organisationspaket: vitlista och gränser', () => {
         expect(r.ok).toBe(true);
         expect(r.paket.organisation).toBe('Kommunen scriptalert(1)/script');
         expect(r.paket.utgivare).toBe('Lön HR');
-        expect(`${r.paket.organisation}${r.paket.utgivare}`).not.toMatch(/[<>"'&]/);
+        expect(`${r.paket.organisation}${r.paket.utgivare}`).not.toMatch(/[<>"']/);
+    });
+    it('ett namn med & läses som det skrevs, och blankstegen slås ihop', () => {
+        const r = tolka(byggPaket({ ...underlag(), organisation: 'Exempelbolaget & Co', utgivare: 'Lön " HR' }));
+        expect(r.paket.organisation).toBe('Exempelbolaget & Co');
+        expect(r.paket.utgivare).toBe('Lön HR');
+    });
+    it('ett djupt nästlat paket läses utan att anropsstacken tar slut', () => {
+        const djup = 20000;
+        const text = JSON.stringify(byggPaket(underlag())).replace(/\}$/, `,"extra":${'{"a":'.repeat(djup)}"x"${'}'.repeat(djup)}}`);
+        const r = tolkaPaket(text);
+        expect(r.ok).toBe(true);
+        expect(JSON.stringify(r.delar.profil)).not.toMatch(/extra/);
+        expect(tolkaPaket(text.replace('"x"', '"19850101-1234"')).ok).toBe(false);   // också djupast prövas texten
     });
     it('strängar kortas till 200 tecken', () => {
         const r = tolka(byggPaket({ ...underlag(), utgivare: 'x'.repeat(500) }));
@@ -178,10 +190,10 @@ describe('organisationspaket: organisationstyp (kommun eller region)', () => {
 });
 
 describe('organisationspaket: liknarPersonuppgift', () => {
-    it('personnummer och e-post, men inte vanliga namn', async () => {
+    it('personnummer, men inte e-post eller vanliga namn (ADR-110)', async () => {
         const { liknarPersonuppgift } = await import('../src/lib/organisationspaket.js');
         expect(liknarPersonuppgift('Anna 19800101-1234')).toBe(true);
-        expect(liknarPersonuppgift('hr@kommun.se')).toBe(true);
+        expect(liknarPersonuppgift('hr@exempel.se')).toBe(false);
         expect(liknarPersonuppgift('Exempelkommunen 2026')).toBe(false);
     });
 });

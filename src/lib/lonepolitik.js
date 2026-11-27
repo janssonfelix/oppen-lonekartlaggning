@@ -137,27 +137,8 @@ export function konsskillnadIBand(rader, pol, minPerKon = 10) {
 }
 
 /**
- * Kostnad för att lyfta alla under golvet upp till policyns P10.
- * Returnerar månadsbelopp (exkl. PO) — anroparen lägger på PO-påslag och
- * beräkningsperiod från state.costSettings, som i Löneöversyn.
- * @returns {null|{nAffected:number, totalMonth:number}}
- */
-export function kostnadTillGolv(rader, pol) {
-    if (!Array.isArray(rader) || !pol || !(pol.p10 > 0)) return null;
-    // Golvet ensamt är meningsfullt även utan tak, men ett ANGIVET tak under
-    // golvet betyder att bandet är felvänt — räkna då inte på det.
-    if (pol.p90 > 0 && pol.p90 <= pol.p10) return null;
-    let nAffected = 0, totalMonth = 0;
-    for (const r of rader) {
-        if (!(r.lon > 0)) continue;
-        if (r.lon < pol.p10) { nAffected++; totalMonth += pol.p10 - r.lon; }
-    }
-    return { nAffected, totalMonth };
-}
-
-/**
  * Täckningsgrad: hur stor del av personalen omfattas över huvud taget av en
- * policyrad? En ofullständig policyfil får inte se ut som ett gott resultat —
+ * policyrad med ett spann (P10 och P90)? En ofullständig policyfil får inte se ut som ett gott resultat —
  * "inga avvikelser" kan betyda "ingen referens".
  *
  * @param {Array<{n:number, hasPolicy:boolean}>} grupper
@@ -194,11 +175,18 @@ export function maskeringsniva(n, k) {
     return 'masked';
 }
 
+/** Tredjedelarnas gränser i procent av spannet P10–P90 (sparbarhet.md B6.6): en gräns hör till den övre delen.
+ * Samma gränser för lägesklasserna här och för läget i ord i Löneläget (lageISpann i referenser.js). */
+export const TREDJEDEL_GRANSER = Object.freeze([33, 67]);
+
 /**
- * Lägesklassen för ett läge i spannet (0 = P10, 1 = P90): 0 under spannet, 1–3 nedre, mellersta och övre tredjedelen,
- * 4 över spannet.
+ * Lägesklassen för ett läge i spannet (0 = P10, 1 = P90): 0 under spannet, 1–3 nedre, mellersta och övre tredjedelen
+ * (gränserna TREDJEDEL_GRANSER), 4 över spannet.
  */
-export function lagesklass(pos) { return pos < 0 ? 0 : pos < 1 / 3 ? 1 : pos <= 2 / 3 ? 2 : pos <= 1 ? 3 : 4; }
+export function lagesklass(pos) {
+    const p = pos * 100;
+    return pos < 0 ? 0 : p < TREDJEDEL_GRANSER[0] ? 1 : p < TREDJEDEL_GRANSER[1] ? 2 : pos <= 1 ? 3 : 4;
+}
 
 /**
  * Antalet kvinnor och män i varje lägesklass mot bandet (personer utan användbart läge räknas inte).
@@ -246,7 +234,8 @@ export function lonepolitikModell(rader, { policyFor, nivaEtikett, k, harPolicy 
     const basMap = new Map();
     for (const g of groups.values()) {
         const pol = policyFor(g.aid, g.bas);
-        coverageInput.push({ n: g.rows.length, hasPolicy: !!pol });
+        // Täckt är en grupp vars referens har ett spann att pröva mot (P10 och P90 över 0).
+        coverageInput.push({ n: g.rows.length, hasPolicy: !!pol && pol.p10 > 0 && pol.p90 > 0 });
         if (!basMap.has(g.bas)) basMap.set(g.bas, { bas: g.bas, rows: [], groups: [] });
         const b = basMap.get(g.bas);
         b.rows.push(...g.rows);
@@ -267,11 +256,9 @@ export function lonepolitikModell(rader, { policyFor, nivaEtikett, k, harPolicy 
             pol,
             level: nivaEtikett(pol),
             n: b.rows.length,
-            stats: pol ? gruppMotBand(b.rows, pol) : null,
             compliance: pol ? antalMotBand(b.rows, pol) : null,
             genderGap: pol ? konsskillnadIBand(b.rows, pol, k) : null,
             konLagen: pol ? konLagen(b.rows, pol) : null,
-            cost: pol ? kostnadTillGolv(b.rows, pol) : null,
             orgBand: organisationsBand(b.rows, k),   // organisationens eget P10–P90 (null under k)
             groups: b.groups.sort((x, y) => y.n - x.n)
         };

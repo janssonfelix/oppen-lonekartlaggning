@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { etikettlistaInfo } from '../lib/aid.js';
+import { genereraDemodata } from '../lib/demodata.js';
 import { K_STANDARD } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
 import { skrReferensInfo } from '../lib/skrreferens.js';
@@ -55,7 +56,7 @@ const OM_AVSNITT = {
             <li>Ger en checklista för att granska regler och praxis, där du skriver in bedömningen och resonemanget</li>
             <li>Låter dig dokumentera sakliga skäl per grupp i Handlingsplan, med kategori och belopp, räknar ihop hur stor del av löneskillnaden de förklarar och tar med skälen i rapporten, i Excel och i årsbokslutet</li>
             <li>Skriver ett redigerbart Word-utkast av dokumentationen med verktygets fynd ifyllda och dina bedömningar markerade som fält att fylla i, samt Excel, PDF, protokoll för gemensam lönebedömning och underlag till handlingsplanen</li>
-            <li>Skyddar små grupper: lönemått för grupper under minsta gruppstorlek lämnar aldrig verktyget</li>
+            <li>Skyddar små grupper: lönemått för grupper under minsta gruppstorlek lämnar inte verktyget, med de undantag som står under Minsta gruppstorlek</li>
         </ul>
         <p><strong>Du gör själv:</strong></p>
         <ul>
@@ -68,7 +69,7 @@ const OM_AVSNITT = {
 
         <h3>Så går en kartläggning till</h3>
         <ol>
-            <li>Läs in <strong>organisationspaketet</strong> i <strong>Filer och kvalitet</strong>, om organisationen har ett, och sedan <strong>lönefilen</strong> (${T.niva.en}, ${T.enhet.en}, lön, ålder och kön; ansvarskod och arbetsvärderingspoäng är valfria)</li>
+            <li>Läs in <strong>organisationspaketet</strong> i <strong>Filer och kvalitet</strong>, om organisationen har ett, och sedan <strong>lönefilen</strong> (${T.niva.en}, ${T.enhet.en}, lön och kön, och ålder (valfri, rekommenderad); ansvarskod och arbetsvärderingspoäng är valfria)</li>
             <li>Titta på <strong>Underlagets kvalitet</strong> i samma flik och på <strong>Att göra</strong> på Översikt: går underlaget att lita på, och var ska du börja?</li>
             <li>Gå igenom <strong>Regler &amp; praxis</strong> och skriv in bedömningen per område</li>
             <li>Gå igenom <strong>Lika arbete</strong>, <strong>Likvärdigt arbete</strong> och <strong>Lönestruktur</strong> under Kartläggning: där står skillnaderna och vad som förklarar dem. <strong>Löneläget</strong> och <strong>Ålder &amp; karriär</strong> är fördjupning, inget lagkrav</li>
@@ -84,12 +85,12 @@ const OM_AVSNITT = {
         <p>Verktyget är utformat så att dataskydd är en arkitekturell egenskap, inte en process. Tre lager skyddar personuppgifter:</p>
 
         <h4>Lager 1 — Filen läses in en rad i taget</h4>
-        <p>Filen läses in i webbläsarens minne och avkodas. Under inläsningen finns alltså hela filens text där. Sedan läses en CSV-fil rad för rad (med biblioteket PapaParse, <code>step:</code>). Varje rad minimeras direkt: bara fälten som analysen behöver behålls, och den råa raden släpps. Undantaget är 50 rader spridda jämnt över filen, som hålls kvar för kontrollen mot personnummer, namn och e-post; kontrollen görs när filen är läst, och fälls filen släpps allt. Excel-filer (.xlsx) läses som ett helt blad och kontrolleras och minimeras på samma sätt. När inläsningen är klar finns bara de minimerade posterna kvar.</p>
+        <p>Filen läses in i webbläsarens minne och avkodas. Under inläsningen finns alltså hela filens text där. Sedan läses en CSV-fil rad för rad (med biblioteket PapaParse, <code>step:</code>). Varje rad minimeras direkt: bara fälten som analysen behöver behålls, och den råa raden släpps. Undantaget är 50 rader spridda jämnt över filen, som hålls kvar för kontrollen mot personnummer; kontrollen görs när filen är läst, och fälls filen släpps allt. Excel-filer (.xlsx) läses som ett helt blad och kontrolleras och minimeras på samma sätt. När inläsningen är klar finns bara de minimerade posterna kvar.</p>
 
         <h4>Lager 2 — Bara det analysen behöver släpps in</h4>
         <ul>
-            <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med personnummer, namn eller e-post: kolumnrubrikerna prövas, och värdena i 50 rader spridda jämnt över filen. Rubriker som antyder en särskild kategori av personuppgifter (fackmedlemskap, hälsa med mera) avvisas också. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
-            <li><code>minimeraLonerad()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, ålder, kön — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
+            <li><code>hittaKansligaKolumner()</code> avvisar lönefiler med en kolumn för personnummer (rubriken, eller värdena i 50 rader spridda jämnt över filen) eller namn (rubriken). Det är en signal om att uttaget inte är gallrat, ingen fullständig genomsökning efter personuppgifter; övriga kolumner ignoreras. Från filerna med lönepolitik och jämförelsestatistik läses bara godkända kolumner med gruppvärden in.</li>
+            <li><code>minimeraLonerad()</code> accepterar <strong>endast 5 fält</strong>: BAS, ${T.enhet.en}, lön, kön och ålder (valfri) — plus valfri arbetsvärderingspoäng och valfri ansvarskod enligt AID. Radens nummer i filen sparas också.</li>
             <li><code>_stadaYrkesfalt()</code> kortar fältet för ${T.enhet.en} till ${T.kod.en} + 40 tecken ${T.namn.en} och tar bort tecknen &lt; &gt; " ' &amp;. Namn som står i fältet maskeras inte: de visas i tabellerna och följer med i exporterna. Inläsningen varnar när fältet ser ut att innehålla personnamn på enstaka rader, men hittar inte alla namn (namn i gemener, ett ensamt namn, ett namn på tre eller fler rader).</li>
         </ul>
 
@@ -131,7 +132,7 @@ const OM_AVSNITT = {
         <ul>
             <li><strong>Löneöversyn.</strong> Du får lägga en egen riktad rad på en grupp under ${kInstalld()} ${personOrd(kInstalld())}. Beloppet visas på raden och ingår i summorna, även i Excel-exporten. Raden bygger då på enskildas löner, och det står på raden. I exportens blad Fördelning står en liten grupps kostnad inte på gruppens rad utan på raden Kostnad för grupper under tröskeln, så att den inte går att räkna fram ur summorna. Verktygets egna förslag ur likvärdigt arbete riktar däremot aldrig mot ett par där en grupp har färre än ${kInstalld()} ${personOrd(kInstalld())}, inte heller på skärmen. Varje ${T.enhet.en} får en rad, mot ${T.jamforelse.bf} med störst skillnad. Ett förslag tas bort om du höjer tröskeln över en av parets grupper, och ett förslag ur en konfigurationsfil tas bort när verktyget inte kan avgöra att paret når tröskeln. Det står vid förslagen när det händer.</li>
             <li><strong>Tabeller och egna vyer.</strong> Exporten av tabellen och diagrammen utelämnar grupper under ${kInstalld()} ${personOrd(kInstalld())}. Vill du ta med dem kryssar du i rutan <em>Ta med grupper under ${kInstalld()} i exporten</em>. Organisationspaketet kan stänga av rutan.</li>
-            <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade arbeten prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats. Det gäller Rapportunderlaget, Word-utkastet, PDF-rapporten, protokollet för gemensam lönebedömning, Att göra och dess CSV, handlingsplanens förifyllda rader och gruppdossiern.</li>
+            <li><strong>Likvärdigt arbete.</strong> Lagen kräver att även små kvinnodominerade arbeten prövas. Fliken och dess egen export visar därför kandidatpar även när en grupp är under tröskeln, och exporten anger det i filen. Alla andra utdata tar bara med par där båda grupperna når tröskeln, och anger hur många par som utelämnats.</li>
             <li><strong>Enskilda personer i verktyget.</strong> Personer att granska (Lika arbete) och extremvärdena i Underlagets kvalitet visar enskilda löner med filens radnummer. Personer att granska kan inte exporteras eller skrivas ut.</li>
             <li><strong>Diagramdata.</strong> Alla diagram kan exporteras som bild eller som diagramdata (CSV eller urklipp). Vissa diagram visar enskilda personer, till exempel lön mot ålder och individpunkter. Då har diagramdatan en rad per person, och text ur fältet för ${T.enhet.en} kan följa med som den står i lönefilen. Hantera sådana filer som personuppgifter. PDF-rapportens mall <em>Komplett rapport</em> och ZIP-exporten innehåller bilder av sådana diagram. I CSV och urklipp får celler som börjar med = + - @ ett inledande apostrof-tecken, så att Excel inte kör dem som formler.</li>
         </ul>
@@ -179,7 +180,7 @@ const OM_AVSNITT = {
 
         <h3>Andra metoder</h3>
         <ul>
-            <li><strong>Underlagets kvalitet:</strong> fem kriterier — jämförbarhet, statistisk styrka, fullständighet, rimlighet och modell — som var och ett får OK, Varning eller Kritisk. Underlaget får samma status som det svagaste kriteriet.</li>
+            <li><strong>Underlagets kvalitet:</strong> kriterierna jämförbarhet, statistisk styrka, fullständighet, rimlighet och modell, och när lönefilen har ${T.kod.fl} också AID-kodningens kriterier. Vart och ett får OK, Varning eller Kritisk. Underlaget får samma status som det svagaste kriteriet.</li>
             <li><strong>Extremvärden:</strong> Z-score per ${T.niva.en} på log-lön, alltså hur många standardavvikelser lönen ligger från medelvärdet. Löner med |Z| ≥ 3 flaggas för manuell granskning. De visas med lön och filens radnummer, bara i verktyget</li>
             <li><strong>Löneöversyn (prognos):</strong> budgeten först. Du lägger in en pott (kr eller %) och fördelar den generellt och riktat per BAS och AID. En rad kan begränsas till ett kön eller till löner under en gräns, och lyfta till en nivå. Du ser de nya lönerna, hur mycket av budgeten som används och löneskillnaden före och efter. Verktyget föreslår också hur potten kan riktas mot skillnaderna i likvärdigt arbete. Kostnaden räknas med PO-påslag och beräkningsperiod från Inställningar</li>
             <li><strong>Oförklarad skillnad per ${T.niva.en}:</strong> separat regression inom varje ${T.niva.en}, som visar var i organisationen den oförklarade skillnaden finns</li>
@@ -244,7 +245,7 @@ const OM_AVSNITT = {
             <li><strong>Sök:</strong> fältet i sidhuvudet (snedstreck eller Ctrl+K) hittar ${T.enhet.fl} och ${T.niva.fl} och markerar dem i alla diagram och tabeller. Det hittar också flikarnas avsnitt, exporterna och fälten i Inställningar, även utan lönefil. Ett avsnitt i en låst flik säger <em>kräver lönefil</em></li>
             <li><strong>Dossierer:</strong> gruppdossiern samlar ${artikel(T.enhet)} ${T.enhet.en} i ${artikel(T.niva)} ${T.niva.en} på en sida. BAS-dossiern samlar ${artikel(T.niva)} ${T.niva.en} i rapportens ordning: nyckeltal och läget mot ställningstagandet, ${T.enhet.bfl}, likvärdigt arbete, ålder och förra året. Den kopieras som text utan lönemått för grupper under tröskeln. BAS-dossiern öppnas från Löneöversikten, Lönestrukturs tabell per ${T.niva.en}, gruppdossiern, markeringen och sökrutan</li>
             <li><strong>På den här sidan:</strong> flikens synliga avsnitt i en lista som följer med när sidan rullas; ett klick fäller ut avsnittet och flyttar fokus dit</li>
-            <li><strong>Självdiagnostik:</strong> ladda 200 syntetiska poster med kända egenskaper och kör sju kontroller</li>
+            <li><strong>Självdiagnostik:</strong> ladda ${genereraDemodata().length} syntetiska poster med kända egenskaper och kör sju kontroller</li>
             <li><strong>Tangentbordsnavigation:</strong> Tab/Shift+Tab mellan kontroller, piltangenter och Home/End i menyn och i flikraderna, Esc stänger modaler och menyer</li>
         </ul>
 
@@ -286,7 +287,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         <h3>Bygg- och utvecklarverktyg</h3>
         <ul>
             <li><strong><code>npm run bundle</code></strong> — bygger single-file-HTML:en: inlinerar CSS/JS, minifierar, hårdar CSP med per-script-hashar och beräknar SHA-256</li>
-            <li><strong><code>npm test</code></strong> — Vitest: de rena kärnorna i <code>src/lib/</code> (bl.a. statistik, prognos, struktur, likvärdigt arbete, egna vyer, urval), CSV-parsning, boot-/render-röktest i jsdom, a11y (axe-core), golden-lås på Excel-/Word-/PDF-utdata och drift-vakt mot <code>src/lib/</code></li>
+            <li><strong><code>npm run test:full</code></strong> — Vitest: de rena kärnorna i <code>src/lib/</code> (bl.a. statistik, prognos, struktur, likvärdigt arbete, egna vyer, urval), CSV-parsning, boot-/render-röktest i jsdom, a11y (axe-core), golden-lås på Excel-/Word-/PDF-utdata och drift-vakt mot <code>src/lib/</code></li>
             <li><strong><code>npm run test:browser</code></strong> — röktest av den byggda single-file-filen i riktig Chromium (Playwright): att biblioteken laddas under den hårdade CSP:n, att diagrammen faktiskt ritas, att modalen fungerar och att inget skrivs till localStorage</li>
             <li><strong><code>npm run lint</code></strong> — ESLint (flat config)</li>
         </ul>
@@ -337,6 +338,7 @@ SHA-256:    Se <code>RELEASE.txt</code> i utvecklingsmappen för verifiering
         <details class="bakgrund-panel"><summary>Licenstexter</summary><pre id="om-licenstexter" class="fs-xs max-hojd-420 rulla bevara-radbrytning"></pre></details>
 
         <h3>Övrig dokumentation</h3>
+        <p>Dokumenten ligger i projektets repo; <code>RELEASE.txt</code> följer med releasen.</p>
         <ul>
             <li><code>korguide.md</code> — steg för steg från datauttag till färdig dokumentation</li>
             <li><code>datauttag.md</code> — hur lönefilen tas ut ur lönesystemet, med lönedefinitionen</li>
@@ -357,6 +359,7 @@ export function ritaOmVerktyget(section = 'overview') {
         const isActive = /** @type {HTMLElement} */ (btn).dataset.section === section;
         btn.classList.toggle('active', isActive);
         btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        if (isActive) wrap.setAttribute('aria-labelledby', btn.id);
     });
     // Licenstexterna ligger i den byggda filens mall med id licenstexter (tools/bundle.mjs).
     const lic = document.getElementById('om-licenstexter');

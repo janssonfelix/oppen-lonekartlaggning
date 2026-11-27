@@ -2,8 +2,10 @@
 // Copyright 2026 Felix Jansson
 // Högst så många gruppnamn räknas upp i noten innan resten summeras.
 import { personOrd } from '../lib/namn.js';
+import { artikel, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { kTroskel } from './06-k-troskel.js';
+import { T } from './09-termer.js';
 export const K_NOT_MAX_NAMN = 12;
 
 // "grupp|grupper" -> rätt form efter antal. Anropare skickar båda formerna
@@ -17,6 +19,14 @@ export function _kNotForm(sammanhang, antal) {
 // (table_to_sheet) trimmar varje elements text var för sig och slår ihop dem
 // utan avskiljare, så ett <strong> mitt i meningen gav "4 yrkesgruppervisas"
 // i Excel-exporten. Noten är ändå visuellt avskild via .k-mask-note.
+// Pronomenet följer begreppets genus: «Det har» för ett BAS-intervall, «Den har» för en AID-etikett eller en grupp.
+function _kNotPronomen(sammanhang, n) {
+    if (n !== 1) return 'De';
+    const en = _kNotForm(sammanhang, 1);
+    const b = /** @type {import('../lib/termer.js').Begrepp|undefined} */ (Object.values(T).find(x => typeof x === 'object' && x.en === en));
+    return stor(artikel(b || { genus: 'utrum' }, { bestamd: true }));   // «grupp»
+}
+
 export function _kNotNamn(lista) {
     const visade = lista.slice(0, K_NOT_MAX_NAMN).map(esc).join(', ');
     return visade + (lista.length > K_NOT_MAX_NAMN ? ` och ${lista.length - K_NOT_MAX_NAMN} till` : '');
@@ -41,7 +51,7 @@ export function kMaskNot(namn, sammanhang, trosk) {
     if (!lista.length) return '';
     const n = lista.length;
     const t = trosk || kTroskel();
-    const den = n === 1 ? 'Den har' : 'De har';
+    const den = `${_kNotPronomen(sammanhang, n)} har`;
     const dess = n === 1 ? 'dess' : 'deras';
     return `<p class="k-mask-note">${n} ${esc(_kNotForm(sammanhang, n))} visas inte här: `
         + `${_kNotNamn(lista)}. ${den} färre än ${t} ${personOrd(t)}, och ${dess} lönemått skulle kunna `
@@ -64,7 +74,7 @@ export function _kMaskNotText(namn, sammanhang, t, vad, dar) {
     const n = lista.length;
     const visade = lista.slice(0, K_NOT_MAX_NAMN).join(', ') + (n > K_NOT_MAX_NAMN ? ` och ${n - K_NOT_MAX_NAMN} till` : '');
     const text = n === 1 ? vad.replace(/\bderas\b/g, 'dess') : vad;
-    return `${n} ${_kNotForm(sammanhang, n)} visas inte här: ${visade}. ${n === 1 ? 'Det har' : 'De har'} färre än ${t} ${personOrd(t)}, `
+    return `${n} ${_kNotForm(sammanhang, n)} visas inte här: ${visade}. ${_kNotPronomen(sammanhang, n)} har färre än ${t} ${personOrd(t)}, `
         + `och ${text}. Personerna ingår fortfarande i ${dar}; det är redovisningen per ${_kNotForm(sammanhang, 1)} som utgår.`;
 }
 

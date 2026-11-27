@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText,
+import { bortvaltNotering, likaArbeteGrupper, justeratGapInomYrke, gruppBlock, parBlock, avsnittBlock, tillWordHtml, tillText,
     FRAGOR_YRKE, FRAGOR_PAR, stabilitetKort, referenserBlock } from '../src/lib/rapportunderlag.js';
 import { svTal as formatTal } from '../src/lib/talformat.js';
 import { mulberry32 } from '../src/lib/rng.js';
@@ -174,7 +174,7 @@ describe('avsnittBlock', () => {
         const b = avsnittBlock('lika', { grupper, utelamnade: ['Tandläkare'] }, { k: 10 });
         const t = norm(b.stycken.join(' '));
         expect(t).toContain('4 AID-etiketter');
-        expect(t).toContain('1 är värda att granska');
+        expect(t).toContain('1 är värd att granska');
         expect(t).toContain('1 redovisas med samlad median');
         expect(t).toContain('1 utelämnas');
         expect(b.tabell.rader.length).toBe(1);
@@ -305,8 +305,12 @@ describe('rapportunderlag: struktur, likvärdighet och singular', () => {
     it('singular i texterna', () => {
         const lika = avsnittBlock('lika', { grupper: [], utelamnade: ['X'] }, { k: 10 });
         expect(lika.stycken.join(' ')).toContain('1 AID-etikett jämfördes');
-        const hp = avsnittBlock('handlingsplan', { rader: [{ atgard: 'a', grupp: 'g', underlag: 'u', kostnad: 1000 }], summa: 1000 }, { k: 10 });
+        const hp = avsnittBlock('handlingsplan', { rader: [{ atgard: 'a', grupp: 'g', underlag: 'u', kostnad: 1000 }], summa: 1000, period: 'år' }, { k: 10 });
         expect(hp.stycken.join(' ')).toContain('1 förifylld åtgärd');
+        // Kostnaden gäller beräkningsperioden (periodOrd), som i Word och PDF.
+        const hp3 = avsnittBlock('handlingsplan', { rader: [{ atgard: 'a', grupp: 'g', underlag: 'u', kostnad: 1000 }], summa: 1000, period: '3 mån' }, { k: 10 });
+        expect(hp3.stycken.join(' ')).toContain('per 3 mån.');
+        expect(hp3.tabell.rubriker).toContain('Uppskattad kostnad per 3 mån');
         const s = avsnittBlock('sammanfattning', { n: 20, nKv: 10, nMa: 10, medKv: 1, medMa: 1 }, { k: 10 });
         expect(s.stycken.join(' ')).toContain('20 anställda');
     });
@@ -651,7 +655,7 @@ describe('rapportunderlag: sakliga skäl i handlingsplanens block', () => {
     };
     const rad = [{ atgard: 'a', grupp: 'G · BAS C', underlag: 'u', kostnad: 1000 }];
     it('två tabeller med egen rubrik och en mening om att andelarna är organisationens bedömning', () => {
-        const b = avsnittBlock('handlingsplan', { rader: rad, summa: 1000, skal }, { k: 10 });
+        const b = avsnittBlock('handlingsplan', { rader: rad, summa: 1000, period: 'år', skal }, { k: 10 });
         expect(b.tabeller.map(t => t.rubrik)).toEqual(['Sakliga skäl per grupp', 'Sammanställning per kategori']);
         const [g, kat] = b.tabeller;
         expect(g.rubriker).toEqual(['Grupp', 'Antal berörda', 'Medianskillnad (kr/mån)', 'Kategori', 'Belopp (kr/mån)', 'Andel av skillnaden', 'Kommentar']);
@@ -668,5 +672,12 @@ describe('rapportunderlag: sakliga skäl i handlingsplanens block', () => {
     it('utan skäl: blocket har inga tabeller', () => {
         expect(avsnittBlock('handlingsplan', { rader: rad, summa: 1000 }, { k: 10 }).tabeller).toBeUndefined();
         expect(avsnittBlock('handlingsplan', { rader: rad, summa: 1000, skal: { grupper: [], perKategori: null } }, { k: 10 }).tabeller).toBeUndefined();
+    });
+});
+
+describe('bortvaltNotering: pronomenet följer begreppets genus', () => {
+    it('«det ingår» för BAS-intervall, «den ingår» för ålder', () => {
+        expect(bortvaltNotering({ variabel: 'bas', etikett: 'BAS-intervall', deltaR2pp: 1 })).toContain('; det ingår inte');
+        expect(bortvaltNotering({ variabel: 'alder', etikett: 'Ålder', deltaR2pp: 1 })).toContain('; den ingår inte');
     });
 });

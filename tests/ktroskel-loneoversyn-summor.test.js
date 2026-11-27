@@ -8,7 +8,7 @@
  * den minsta visade gruppens kostnad in, och den gruppens medianer maskeras också (antalet gånger skillnaden mellan
  * medianerna ligger nära kostnaden). Har alla grupper tillsammans färre än tröskeln står ingen kostnad per grupp.
  * Andelen till kvinnodominerade grupper står bara när den inte ger en del av den samlade kostnaden som differens.
- * Skärmen (tröskeln 1) visar varje grupp som förut.
+ * Skärmen (tröskeln 1) visar varje grupp.
  */
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
@@ -76,7 +76,7 @@ describe('[B7.3] [S4] Löneöversyns blad Fördelning: de små grupperna har sin
         const sma = alla.filter(g => g.n < 10);
         expect(sma.map(g => [g.bas, g.aid]).sort()).toEqual([...SMA_GRUPPER].sort());
         for (const g of sma) expect(r.rad(g.bas, g.aid), `${g.bas} ${g.aid}`).toBe(maskeradRad(g.bas, g.aid, g.n, Math.round(g.andelKv)));
-        // En grupp över tröskeln har sin rad som förut, med medianer och kostnad.
+        // En grupp över tröskeln har sin rad, med medianer och kostnad.
         expect(r.rad('S2', '6001')).toMatch(/^S2 \| 6001 \| 150 \| 50 \| \d+ \| \d+ \| [\d.]+ \| \d+$/);
         // De små gruppernas 19 personer når tröskeln: ingen visad grupp viks in.
         expect(r.samlad).toBe(`${SAMLAD} | 5 grupper, 19 personer |  |  |  |  |  | ${Math.round(sma.reduce((s, g) => s + g.kostnad, 0))}`);

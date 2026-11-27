@@ -4,7 +4,7 @@
  * Vaktar det som inte får hända: att en flik som användaren redan lämnat ritas, att ett block ritar ett resultat ur
  * en tröskel som inte längre gäller, och att exportläget och direkta anrop av ritaFlik slutar rita synkront.
  *
- * Ett klick från koden (el.click()) är inte användarens eget och ritar synkront som förut, så testerna byter flik
+ * Ett klick från koden (el.click()) är inte användarens eget och ritar synkront, så testerna byter flik
  * med klickaFlik(nav, { uppskjut: true }), samma väg som ett klick i menyn tar.
  */
 import { describe, it, expect } from 'vitest';

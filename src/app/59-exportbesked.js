@@ -75,8 +75,7 @@ function _ebRitaUrval(alla) {
     if (!hamtaData().length) { host.innerHTML = ''; _laNyckel('nyckel-ex-urval', ''); return; }
     const u = rapportUrval();
     let rubriker = {};
-    try { // Lagrummet i rubriken hör till dokumentet; i gränssnittet står avsnittets namn utan paragrafhänvisning.
-        rubriker = Object.fromEntries((alla || rapportModell({ alla: true })).avsnitt.map(a => [a.id, a.grundrubrik.replace(/\s*\((?:§|EU)[^)]*\)\s*$/, '')])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
+    try { rubriker = Object.fromEntries((alla || rapportModell({ alla: true })).avsnitt.map(a => [a.id, a.grundrubrik])); } catch (e) { rapporteraFel('Urval: avsnitten', e); }
     const finns = u.ordning.filter(id => rubriker[id]);
     host.innerHTML = `<div class="urval-fasta" role="group" aria-label="Färdiga urval">`
         + Object.entries(RM_URVAL).map(([nyckel, f]) => `<button type="button" class="btn btn-secondary btn-sm" data-urval-fast="${nyckel}" aria-pressed="${u.namn === f.namn}">${esc(f.namn)}</button>`).join('')

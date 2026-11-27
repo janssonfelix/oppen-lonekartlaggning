@@ -4,7 +4,7 @@
  * Vakten för visningsminnet (ADR-81, 31-navigering.js): en färdigritad flik visas igen utan omritning bara när
  * ingenting har ändrats sedan den ritades, och visar då exakt det den skulle ha visat om den ritats om från början.
  * Här: fram och tillbaka utan ändring, det som görs efter en ritning, att vakten fäller en ökning av
- * visningsversionen som saknas, och att direkta anrop, exportläget och exportgrinden fungerar som förut. Ändringarna
+ * visningsversionen som saknas, och att direkta anrop, exportläget och exportgrinden fungerar. Ändringarna
  * prövas i tests/visningsminne-val.test.js och tests/visningsminne-andringar.test.js (riggen i
  * tests/helpers/visningsminne-rigg.js).
  */

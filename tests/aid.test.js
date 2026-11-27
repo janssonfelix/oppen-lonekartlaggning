@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { HUVUDOMRADEN, OKANT_HUVUDOMRADE, normaliseraAid, huvudomrade, sektorsnamn, mellanniva,
-    mellannivaEtikett, etikett, arRestkod, arLedningsetikett, jamforSektor, etikettlistaInfo } from '../src/lib/aid.js';
+    mellannivaEtikett, etikett, arRestkod, arLedningsetikett, jamforSektor, etikettlistaInfo, sifferprefixAvYrke, aidAvYrke } from '../src/lib/aid.js';
 import { aidEtikettlista } from '../src/lib/aid-etiketter.js';
 import { tolkaMojligaAnsvarskoder, etiketterFranRader } from '../tools/gen-aid-etiketter.mjs';
 
@@ -26,6 +26,14 @@ describe('aid: hierarkin', () => {
         expect(sektorsnamn('5301')).toBe(OKANT_HUVUDOMRADE);
         expect(etikett('751010')).toBeNull();
     });
+    it('koden i yrkesfältet: siffrorna följs av slutet, blanksteg eller en separator, och ordningstal är ingen kod', () => {
+        for (const [yrke, kod] of [['207011 Sjuksköterska', '207011'], ['207011—Sjuksköterska', '207011'], ['207011', '207011'],
+            ['207011:Sjuksköterska', '207011'], ['207011, Sjuksköterska', '207011'], ['5301', '5301'],
+            ['1:e Lärare', null], ['2:a linjen', null], ['3D-designer', null], ['Kock', null]]) {
+            expect(sifferprefixAvYrke(yrke), yrke).toBe(kod);
+        }
+        expect(aidAvYrke('1:e Lärare')).toBe('1:e Lärare');
+    });
     it('mellannivå och restkoder', () => {
         expect(mellanniva('207011')).toBe('2070');
         expect(mellannivaEtikett('207011')).toBe('AID 2070xx');
@@ -33,6 +41,12 @@ describe('aid: hierarkin', () => {
         expect(arRestkod('403090')).toBe(true);
         expect(arRestkod('207090')).toBe(true);
         expect(arRestkod('207011')).toBe(false);
+        expect(arRestkod('206090')).toBe(false);   // Sjuksköterska, allmän: slutar på 090 men är ingen restkod
+        expect(arRestkod('799090')).toBe(true);    // utanför etikettlistan gäller 090
+    });
+    it('restkoderna i etikettlistan är etiketterna som heter "annan" eller "annat"', () => {
+        const fel = aidEtikettlista().etiketter.filter(([kod, namn]) => arRestkod(kod) !== /, ann(an|at)$/.test(namn));
+        expect(fel).toEqual([]);
         expect(arLedningsetikett('103511')).toBe(true);
         expect(arLedningsetikett('207011')).toBe(false);
     });

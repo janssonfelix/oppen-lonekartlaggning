@@ -15,7 +15,7 @@ import { hamtaData, state } from './12-tillstand.js';
 import { ritGenerationNy } from './23-exportgrind.js';
 
 // Stegens nycklar i den sekventiella dekomponeringen (ADR-74): kortet, rapporten och exporten slår upp stegen på dem.
-// Det som visas för ett steg kommer ur _rgStegEtikett.
+// Det som visas för ett steg kommer ur stegEtikett (src/lib/regression.js).
 export const _RG_STEG_BAS = stegNamn('bas');
 export const _RG_STEG_YRKE = stegNamn('yrkesgrupp');
 
@@ -28,6 +28,8 @@ export function _raknaPerBasGap(rows, basList) {
 // Ålderskolumnen är valfri. Utan den läser inläsningen ålder 0 på varje rad: modellerna räknas då utan ålder,
 // fliken Ålder & karriär låses och exporterna hoppar åldersavsnitten. Svaret sparas per inläst underlag.
 let _harAlderFor = /** @type {{data: any[]|null, n: number, varde: boolean}} */ ({ data: null, n: -1, varde: false });
+/** Rensa all data: minnet håller en referens till dataraderna. */
+export function harAlderSlapp() { _harAlderFor = { data: null, n: -1, varde: false }; }
 /** Har den inlästa lönefilen ålder (minst en rad med ålder över 0)? */
 export function harAlder() {
     const d = hamtaData();

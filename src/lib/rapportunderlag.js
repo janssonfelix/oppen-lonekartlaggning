@@ -9,33 +9,35 @@
  * Word-mall. Bedömningen (sakliga skäl) skrivs inte här — den kräver kunskap som
  * bara verksamheten har.
  */
-import { median, kvantil, anpassaOLS } from './stat.js';
+import { median, medianUtanPositioner, kvantil, anpassaOLS } from './stat.js';
 import { skrDelText } from './skrreferens.js';
 import { matchningEtikett } from './jamforelse.js';
 import { bedomSkillnad, statusKonstanter } from './status.js';
 import { lonebegreppReservation, konsMedianerUrLoner } from './struktur.js';
 import { personOrd } from './namn.js';
-import { sektorJusteradText, sektorAndelNot } from './sektor.js';
+import { sektorAndelMening, sektorJusteradText, sektorAndelNot } from './sektor.js';
 import { kvDefinitionText } from './aidbas.js';
 import { basRangordning } from './likvardighet.js';
 import { gapDelar, gapVariablerIText, gapVariablerArStandard, gapStandardVariabler } from './gapuppdelning.js';
 import { STANDARDTERMER as T, genitiv, stor, artikel, adjektiv, termFras } from './termer.js';
 import { arKvinna, arMan } from './kon.js';
-import { svTal as formatTal } from './talformat.js';
+import { svTal as formatTal, svTecken } from './talformat.js';
 import { aidAvRad, namnrader } from './aid.js';
 import { esc } from './htmltext.js';
+import { K_STANDARD } from './ktroskel.js';
 
 
 const { STORLEKSGRANS, DIREKTIV_KOLUMN, DIREKTIV_ETIKETT, DIREKTIV_TIPS } = statusKonstanter();
 
 /**
  * Noteringen om en variabel som valts bort ur förklaringsmodellen (ADR-56), som den står i rapporten och i panelen.
- * @param {{etikett:string, deltaR2pp?:number|null, skal?:string}} b
+ * @param {{variabel?:string, etikett:string, deltaR2pp?:number|null, skal?:string}} b
  */
 export function bortvaltNotering(b) {
     const tal = typeof b.deltaR2pp === 'number' && isFinite(b.deltaR2pp)
-        ? `tillför ${Math.abs(b.deltaR2pp).toFixed(1).replace('.', ',')} procentenheter i förklaringsgrad` : 'gick inte att pröva';
-    return `${b.etikett} har kontrollerats och ${tal}; den ingår inte i siffrorna.${b.skal ? ` Skäl: ${b.skal}` : ''}`;
+        ? `tillför ${formatTal(Math.abs(b.deltaR2pp), 1)} procentenheter i förklaringsgrad` : 'gick inte att pröva';
+    // Pronomenet följer genus: BAS-intervall är ett ett-ord, ålder ett en-ord.
+    return `${b.etikett} har kontrollerats och ${tal}; ${b.variabel === 'bas' ? artikel(T.niva, { bestamd: true }) : 'den'} ingår inte i siffrorna.${b.skal ? ` Skäl: ${b.skal}` : ''}`;
 }
 
 /** Gruppens namn med BAS-intervallet, som noterna och listorna skriver det: "207011 Handläggare (BAS C)". */
@@ -153,8 +155,7 @@ export const FRAGOR_PAR = Object.freeze([
     'Finns skillnader i arbetstid, arbetsmiljö eller ansvar som inte syns i BAS?',
 ]);
 
-// Talen avrundas som i appens tabeller (formatTal är svTal ur talformat.js). Före enheten står här ett vanligt
-// mellanslag, som i blockens text förut.
+// Talen avrundas som i appens tabeller (formatTal är svTal ur talformat.js). Före enheten står ett vanligt mellanslag.
 const _st = (n, en, flera) => `${formatTal(n)} ${n === 1 ? en : flera}`;
 const _kr = v => (v == null || !isFinite(v)) ? '–' : `${formatTal(v, 0)} kr`;
 const _pct = (v, dec = 1) => (v == null || !isFinite(v)) ? '–' : `${formatTal(v, dec)} %`;
@@ -169,12 +170,6 @@ const _inled = ({ demo, urval, troskelNot }) => ({
 });
 
 // ---- Stabilitet för flaggor (ADR-24) ----
-// Median av en sorterad lista utan positionerna i `bort` (stigande, unika).
-function _medianUtanPos(s, bort) {
-    const n = s.length - bort.length;
-    const vid = p => { let q = p; for (const b of bort) { if (b <= q) q++; else break; } return s[q]; };
-    return n % 2 ? vid((n - 1) / 2) : (vid(n / 2 - 1) + vid(n / 2)) / 2;
-}
 // Ytterlägen och positioner inom 2 från medianen — övriga borttagningar ger samma median
 // som något av ytterlägena.
 function _kandidater(n) {
@@ -185,7 +180,7 @@ function _kandidater(n) {
 function _stabilitet(kv, ma, { k, troskel }) {
     const sKv = [...kv].sort((a, b) => a - b), sMa = [...ma].sort((a, b) => a - b);
     const cKv = _kandidater(sKv.length), cMa = _kandidater(sMa.length);
-    const gap = (bKv, bMa) => Math.abs(_medianUtanPos(sKv, bKv) / _medianUtanPos(sMa, bMa) * 100 - 100);
+    const gap = (bKv, bMa) => Math.abs(medianUtanPositioner(sKv, bKv) / medianUtanPositioner(sMa, bMa) * 100 - 100);
     const par = c => c.flatMap((a, i) => c.slice(i + 1).map(b => [a, b]));
     const kanKv = m => sKv.length - m >= k, kanMa = m => sMa.length - m >= k;
     let min1 = Infinity, min2 = Infinity;
@@ -227,7 +222,7 @@ function _kanslighet(st, k) {
  * @param {any} g
  * @param {{id?:string, justerat?:any, ki?:any, urval?:any, demo?:boolean, k?:number, troskelNot?:string|null, arsbelopp?:string|null}} [opts]
  */
-export function gruppBlock(g, { id, justerat, ki, urval, demo, k = 10, troskelNot, arsbelopp } = {}) {
+export function gruppBlock(g, { id, justerat, ki, urval, demo, k = K_STANDARD, troskelNot, arsbelopp } = {}) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     // Gruppen är AID-koden i BAS-intervallet (ADR-89): justeringen inom gruppen gäller då bara ålder. En grupp utan
     // intervall (koden över flera intervall) justeras för ålder och BAS.
@@ -303,8 +298,9 @@ function _konsandel(p) {
     return _pct(v, 0) + (p.maKlass === 'mansdominerad' || p.maKlass === 'blandad' ? ` (${p.maKlass})` : '');
 }
 
-/** Avsnittsblock per lagsteg: 'sammanfattning' | 'uppdelning' | 'lika' | 'likvardigt' | 'lagreKrav' | 'struktur' | 'handlingsplan'. */
 /**
+ * Avsnittsblock per lagsteg: 'sammanfattning' | 'uppdelning' | 'lika' | 'likvardigt' | 'lagreKrav' | 'struktur' |
+ * 'sektorer' | 'handlingsplan'.
  * @param {string} typ
  * @param {any} u
  * @param {{k:number, urval?:any, demo?:boolean, troskelNot?:string|null}} opts
@@ -370,7 +366,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const g = u.grupper || [];
         const flagg = g.filter(x => x.flaggad), samlade = g.filter(x => x.samladMedian);
         const jamforda = g.length + (u.utelamnade || []).length;
-        const st = [`${_st(jamforda, T.enhet.en, T.enhet.fl)} jämfördes, var och en i sitt ${T.niva.en}. ${flagg.length} är värda att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
+        const st = [`${_st(jamforda, T.enhet.en, T.enhet.fl)} jämfördes, var och en i sitt ${T.niva.en}. ${flagg.length} ${flagg.length === 1 ? 'är värd' : 'är värda'} att granska: skillnaden mellan kvinnors och mäns medianlön är statistiskt säkerställd och minst 3 % (verktygets storleksgräns). `
             + `${samlade.length} redovisas med samlad median eftersom ett kön har färre än ${k} ${personOrd(k)}, och ${(u.utelamnade || []).length} utelämnas helt.`];
         if (!flagg.length) return blk('Lika arbete', [...st, `${stor(adjektiv({ utrum: 'ingen', neutrum: 'inget', plural: 'inga' }, T.enhet))} ${T.enhet.en} är ${adjektiv({ utrum: 'värd', neutrum: 'värt', plural: 'värda' }, T.enhet)} att granska.`], null);
         return blk('Lika arbete', [...st, `Kolumnen ${DIREKTIV_KOLUMN} visar var den ojusterade skillnaden når 5 %. ${DIREKTIV_TIPS}`],
@@ -432,7 +428,7 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
         const andelNot = sektorAndelNot(a, k);   // sammanräknade huvudområden (ADR-87)
         if (a && a.andel != null) st.push(Math.abs(a.andel) < 0.01
             ? `Skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror nästan inte alls på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).`
-            : `Av skillnaden i medellön för hela organisationen, kvinnor mot män (${_kr(a.gapKr)} per månad), beror ${_kr(a.sektorKr)} (${_pct(a.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.`);
+            : sektorAndelMening(a, _kr, _pct));
         if (andelNot) st.push(andelNot);
         const dolda = alla.length - visas.length;
         if (dolda) st.push(`${_st(dolda, T.huvudomrade.en, T.huvudomrade.fl)} med färre än ${k} ${personOrd(k)} redovisas inte.`);
@@ -455,12 +451,12 @@ export function avsnittBlock(typ, u, { k, urval, demo, troskelNot }) {
             u.summaReferens ? `${_kr(u.summaReferens)} kostnad att nå referensens median för grupperna under referensen (löneläget mot er referens, inte lönekartläggningens könsskillnader)` : '',
             u.summaJamforelse ? `${_kr(u.summaJamforelse)} kostnad att nå ${genitiv(T.jamforelse.bf)} median för kandidatparen i likvärdigt arbete` : '',
         ].filter(Boolean);
-        const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per år.` : '.')
+        const st = [`${_st(rader.length, 'förifylld åtgärd', 'förifyllda åtgärder')}` + (u.summa ? ` med en uppskattad kostnad på ${_kr(u.summa)} per ${u.period}.` : '.')
             + (u.summa && delar.length ? ` Av den är ${delar.join(' och ')}.` : '')];
         if (!rader.length) return blk('Handlingsplan', st, null);
         // Antal berörda: gruppens antal (för ett kandidatpar det kvinnodominerade yrkets); tomt för en egen rad.
         // Kostnaden avser: vilken kostnad raden har (_hpKostnadAvser i appen); tomt för en egen rad.
-        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', 'Uppskattad kostnad per år', 'Kostnaden avser'],
+        const b = blk('Handlingsplan', st, { rubriker: ['Åtgärd', 'Grupp', 'Antal berörda', 'Underlag', `Uppskattad kostnad per ${u.period}`, 'Kostnaden avser'],
             rader: rader.map(r => [r.atgard, r.grupp, r.antal == null ? '' : formatTal(r.antal), r.underlag, _kr(r.kostnad), r.kostnadAvser || '']) });
         // Sakliga skäl (u.skal, ur handlingsplanen): en rad per skäl med gruppen på första raden, och summan per kategori.
         const sk = u.skal;
@@ -597,7 +593,7 @@ export function basintervallBlock(b, { id = `bas:${b.bas}`, urval, demo, troskel
 export function referenserBlock(overblick, { id = 'referenser', urval, demo, troskelNot, harStatistik = false }) {
     const { fore, efter } = _inled({ demo, urval, troskelNot });
     const { grupper, tal } = overblick, pm = tal.perMonster;
-    const tecken = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${_pct(Math.abs(v), 1)}`);
+    const tecken = v => (v == null ? '–' : `${svTecken(v, 1)}${_pct(v, 1)}`);
     const skillnad = (g, ref) => (g.org.median != null && ref?.median != null ? tecken((g.org.median / ref.median - 1) * 100) : '–');
     const mening = (m, text) => `${_st(m.grupper, T.enhet.en + ' i ' + T.niva.en, T.enhet.fl + ' i ' + T.niva.en)} (${_pct(m.andel, 0)} av personalen): ${text}.`;
     const motPolicy = tal.vagdMedianMotStallningstagandePct != null, motStatistik = tal.vagdMedianMotStatistikPct != null;

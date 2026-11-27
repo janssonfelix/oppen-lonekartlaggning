@@ -2,7 +2,7 @@
  * Sektorsöversikten: src/lib/sektor.js.
  */
 import { describe, it, expect } from 'vitest';
-import { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot } from '../src/lib/sektor.js';
+import { sektorsTabell, sektorernasAndel, sektorJusteradText, sektorAndelNot, sektorAndelMening } from '../src/lib/sektor.js';
 import { stegvisGap } from '../src/lib/regression.js';
 import { anpassaOLS, tKvantil } from '../src/lib/stat.js';
 import { gapUppdelning } from '../src/lib/gapuppdelning.js';
@@ -218,6 +218,16 @@ describe('[B3.9] sektor: sektorernas andel av gapet', () => {
             expect(a.gapKr).toBeLessThan(0);
         }
         expect(sektorernasAndel(fall[1], { k: 10 }).sektorKr).toBeGreaterThan(0);
+    });
+    it('meningen följer beloppets riktning: en del av skillnaden, åt andra hållet, eller mer än hela', () => {
+        const kr = v => `${v} kr`, pct = v => `${v} %`;
+        expect(sektorAndelMening({ gapKr: -2000, sektorKr: -800, andel: 0.4 }, kr, pct)).toMatch(/beror -800 kr \(40 %\) på att/);
+        const motsatt = sektorAndelMening({ gapKr: -2000, sektorKr: 1000, andel: -0.5 }, kr, pct);
+        expect(motsatt).toMatch(/beror ingen del på att .* går åt andra hållet än hela skillnaden\.$/);
+        expect(motsatt).not.toMatch(/%/);
+        const merAn = sektorAndelMening({ gapKr: -2000, sektorKr: -5000, andel: 2.5 }, kr, pct);
+        expect(merAn).toMatch(/beror -5000 kr på att .*, mer än hela skillnaden/);
+        expect(merAn).not.toMatch(/250/);
     });
     it('null när ett kön har färre än k i hela underlaget (annars röjs medellönen via gapet i procent)', () => {
         const rader = [...flera(40, () => rad('207011', 'kvinna', 30000)), rad('502010', 'man', 47123)];

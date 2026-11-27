@@ -3,6 +3,7 @@
 // ---- Inställningar ----
 import { importprofilerTillJson, INBYGGDA_PROFILER } from '../lib/importprofiler.js';
 import { svTal } from '../lib/talformat.js';
+import { LV_STANDARD } from '../lib/vymodell-likvardigt-arbete.js';
 import { meddelaSkarmlasare, esc, slappFokus, fangaFokus } from './01-html-och-tillganglighet.js';
 import { _importprofilKalla, laddaNer } from './03-hjalpfunktioner.js';
 import { kInstalld } from './06-k-troskel.js';
@@ -64,18 +65,19 @@ function _instRita() {
     const last = flik => { const n = document.querySelector(`.nav-item[data-tab="${flik}"]`); return !n || /** @type {HTMLInputElement} */ (n).disabled; };
     const anpassad = a => (a ? 'Anpassade värden' : 'Standardvärden');
     const lv = state.likvardighet || {};
-    const lvAnpassad = lv.kvinnoTrosholdPct !== 60 || lv.minGapPct !== 0 || lv.topN !== 20 || aidbasDefinition() !== 'do' || lvJamforelse() !== 'alla';
+    const S = LV_STANDARD;
+    const lvAnpassad = lv.kvinnoTrosholdPct !== S.kvinnoTrosholdPct || lv.minGapPct !== S.minGapPct || lv.topN !== S.topN || aidbasDefinition() !== S.kvDomDefinition || lvJamforelse() !== S.jamforelse;
     const band = document.getElementById('arbvard-band'), extrem = document.getElementById('outliers-threshold');
     const rader = [
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-installningar', namn: 'Likvärdigt arbete', vad: `Kvinnotröskel, definition av kvinnodominerat (mer än tröskeln eller tröskeln eller mer), vilka ${T.enhet.fl} som jämförs, minsta skillnad och antal par`,
           lage: anpassad(lvAnpassad), andrad: lvAnpassad },
         { flik: 'likvardighet', avsnitt: 'avsnitt-lv-poang', namn: 'Likvärdigt arbete', vad: 'Ekvivalensband för arbetsvärdering med poäng',
-          lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && String(/** @type {HTMLInputElement} */ (band).value) !== '5' },
+          lage: `± ${band ? /** @type {HTMLInputElement} */ (band).value : 5} %`, andrad: !!band && /** @type {HTMLInputElement} */ (band).value !== /** @type {HTMLInputElement} */ (band).defaultValue },
         { flik: 'matrix', avsnitt: 'avsnitt-la-personer', namn: 'Lika arbete', vad: 'Gräns för personer att granska',
           lage: `${_pagGrans()} % under förväntad lön`, andrad: _pagGrans() !== 10 },
         // Fliken Filer och kvalitet är öppen utan lönefil, men avsnittet med tröskeln är dolt tills en fil är inläst.
         { flik: 'filer', avsnitt: 'avsnitt-ov-kvalitet', kraverData: true, namn: 'Filer och kvalitet', vad: 'Tröskel för extremvärden',
-          lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== 3 },
+          lage: `${extrem ? svTal(parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3, 1) : '3,0'} standardavvikelser`, andrad: !!extrem && (parseFloat(/** @type {HTMLInputElement} */ (extrem).value) || 3) !== parseFloat(/** @type {HTMLInputElement} */ (extrem).defaultValue) },
     ];
     const utanData = !hamtaData().length;
     flikar.innerHTML = rader.map(r => `<li class="inst-flik${r.andrad ? ' ar-andrad' : ''}">

@@ -104,7 +104,7 @@ describe('Excel: bladet Sakliga skäl och handlingsplanens kolumner', () => {
         const w = demo();
         await laddaXlsx(w);
         const bok = Object.values(fangaBocker(w, () => w.eval('exportHandlingsplan()')))[0];
-        const [rubrik] = bok.split('\n').slice(1);
+        const [rubrik] = bok.split(/\n(?=\[)/)[1].split('\n').slice(1);   // bladet efter demots första blad DEMODATA
         expect(rubrik).toMatch(/Sakliga skäl \(kategori och belopp\).*Förklarad andel av skillnaden \(%\)/);
         const [n, v] = medSkal(w)[0];
         const namn = w.eval('skalKategorier()').find(k => k.id === v.skal[0].kategori).namn;

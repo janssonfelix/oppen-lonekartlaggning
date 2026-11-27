@@ -10,12 +10,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createAppWindow } from './helpers/app-harness.js';
 import { papa, vanta, csvFil, rot } from './helpers/granssnitt-rigg.js';
-import { yrkeLiknarNamn } from '../src/lib/inlasning.js';
+import { yrkeNamnNyckel } from '../src/lib/inlasning.js';
 import { namnIYrkesfaltetText, namnIYrkesfaltetRadnr } from '../src/lib/forhandskontroll.js';
 
 const status = w => w.document.getElementById('data-status').textContent;
 // Klart först när underlaget finns: statusraden kan bära en äldre text (till exempel efter Rensa all data) innan
-// inläsningen har hunnit börja, och då var väntan förut över för tidigt när maskinen var belastad.
+// inläsningen har hunnit börja, och då vore väntan över för tidigt när maskinen är belastad.
 const vantaPaInlasning = w => vanta(() => status(w) && !/läser|Läser/.test(status(w)) && w.__state.dataAudit && w.__state.data.length > 0);
 const lasIn = async (w, rader, namn = 'lonefil.csv') => {
     papa(w);
@@ -54,7 +54,7 @@ describe('namn i fältet för AID-etikett: demona', () => {
             ...w.eval('genereraStortDemo()').map(r => r.yrke),
         ]);
         expect(yrken.size).toBeGreaterThan(10);
-        expect([...yrken].filter(y => yrkeLiknarNamn(y))).toEqual([]);
+        expect([...yrken].filter(y => yrkeNamnNyckel(y))).toEqual([]);
     });
     it('ett inläst demo ger ingen varning', () => {
         const w = createAppWindow();
@@ -94,7 +94,7 @@ describe('[B9.5] namn i fältet för AID-etikett: inläsningen', () => {
         await lasIn(w, csv());
         expect(punkt(w)).toBeTruthy();
         w.eval('_rensaAllData()');
-        expect(w.__state.dataAudit).toBeNull();
+        expect(w.__state.dataAudit).toBeUndefined();   // som i ett nytt fönster
         expect(w.__state.forhandskontroll).toBeNull();
         expect(rapport(w).textContent).not.toContain('personnamn');
         await lasIn(w, csv().map((r, i) => (i ? r.replace(/207011 (Anna Andersson|Berg, Lisa)/, '207011 Handläggare') : r)), 'ren.csv');

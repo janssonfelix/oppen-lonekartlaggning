@@ -12,6 +12,7 @@ import { state } from './12-tillstand.js';
 import { ritaKartlaggningensSteg } from './13-oversikt.js';
 import { lasInDemodata } from './20-demodata-diagnostik.js';
 import { lasInStortDemo } from './21-stort-demo.js';
+import { sparaRensatLage, sparaStartlage } from './26-rensning.js';
 import { _paketStatus, lasInInbakatPaket } from './29-organisationspaket.js';
 import { ritaReferensKort } from './38-referensfiler.js';
 import { kopplaFlikarnasTillganglighet } from './63-tangentbordsnavigering.js';
@@ -23,6 +24,8 @@ export function uppstartSist() {
     tillampaProfiletiketter();  // Tillämpa default-profil vid uppstart
     _synkaKTroskel();      // ADR-38: fyll texter som nämner minsta gruppstorlek
     ritaReferensKort();  // ADR-28: visa vilken referens som används redan före uppladdning
+    sparaStartlage();    // sidan före all data: Rensa all data ställer tillbaka den (26-rensning.js)
+    sparaRensatLage();   // och state: det som skiljer sig från det är något att rensa
     // Demosidan: adressen ?demo=1 startar demoläget direkt, och ?demo=stor det stora demot (5 000 personer), så att
     // en länk från webbplatsen öppnar verktyget med påhittad data. Ingen annan parameter och
     // inget annat värde läses — adressen kan aldrig föra in data eller inställningar.
@@ -35,7 +38,7 @@ export function uppstartSist() {
         // Blocket ligger sist i filen, efter skriptet: när skriptet körs medan sidan ännu laddas finns det inte i
         // DOM:en förrän dokumentet är klart (i jsdom-riggen körs skriptet efter hela dokumentet).
         const inbakat = () => {
-            if (!demo) lasInInbakatPaket();
+            if (!demo) { lasInInbakatPaket(); sparaRensatLage(); }
             else if (demo && document.getElementById('inbakat-organisationspaket')) _paketStatus('Det inbakade paketet används inte i demoläget.', false);
         };
         // Finns blocket redan (dokumentet färdigtolkat, t.ex. i testriggen) läses det direkt; annars när dokumentet är klart.

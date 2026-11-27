@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAppWindow } from './helpers/app-harness.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -111,7 +112,7 @@ describe('Rapporttext, Exportera och Spara och jämför år', () => {
         const d = createAppWindow().document, i = (vy, id) => d.getElementById(vy).contains(d.getElementById(id));
         expect(i('view-rapporttext', 'struktur-narrative') && i('view-rapporttext', 'rapportunderlag')).toBe(true);
         // Auto-utkastets avsnitt bär Rapporttextens prefix (rt-), inte Lönestrukturens.
-        expect(i('view-rapporttext', 'avsnitt-rt-utkast') && i('view-rapporttext', 'nyckel-rt-utkast')).toBe(true);
+        expect(i('view-rapporttext', 'avsnitt-rt-utkast')).toBe(true);
         expect(d.querySelector('[id$="st-utkast"]')).toBeNull();
         expect(i('view-dokumentera', 'export-hub') && i('view-dokumentera', 'robusthet-body') && i('view-dokumentera', 'rapport-urval')).toBe(true);
         expect(i('view-arbetet', 'btn-config-save') && i('view-arbetet', 'btn-snapshot-save') && i('view-arbetet', 'arsjamforelse') && i('view-arbetet', 'btn-test-load')).toBe(true);
@@ -214,6 +215,50 @@ describe('Prioriteringens trösklar och viktning i Inställningar', () => {
         expect(w.__state.prioConfig.atgardThreshold).toBe(-8);
         expect(rad.textContent).toMatch(/^Trösklar och viktning: anpassade värden/);
     });
+    it('prioriteringslista.xlsx säger urvalet: hur många grupper filen har av hur många, och filtren', () => {
+        const w = createAppWindow(), d = w.document;
+        w.eval(readFileSync(join(__dirname, '../vendor/xlsx.mini.min.js'), 'utf8'));
+        w.__lasInDemodata();
+        w.__ritaFlik('prioritering');
+        d.getElementById('prio-filter-quickwin').checked = true;
+        d.getElementById('prio-filter-quickwin').dispatchEvent(new w.Event('change'));
+        let blad = null;
+        w.XLSX.writeFile = wb => { blad = wb; };
+        d.getElementById('btn-export-prio-excel').click();
+        const rader = w.XLSX.utils.sheet_to_json(blad.Sheets[blad.SheetNames[0]], { header: 1 }).length - 1;
+        const metod = w.XLSX.utils.sheet_to_json(blad.Sheets['Metod & parametrar'], { header: 1 });
+        const urval = metod.find(r => r[0] === 'Urval i filen');
+        const alla = w.eval("medExportLage(() => raknaPrioritering(_valdPrioReferens())).length");
+        expect(urval?.[1]).toBe(`${rader} av ${alla} grupper, de högst prioriterade, med filtret Snabb vinst`);
+        expect(rader).toBeLessThan(alla);
+    });
+    it('konsekvenspanelen följer PO-påslaget medan den är öppen', () => {
+        const w = createAppWindow(), d = w.document;
+        w.__lasInDemodata();
+        w.__ritaFlik('prioritering');
+        d.getElementById('btn-prio-consequence').click();
+        const sista = () => [...d.querySelectorAll('#prio-consequence-panel tbody tr')].at(-1).children[2].textContent;
+        const fore = sista();
+        const po = d.getElementById('prio-po-pct');
+        po.value = String(Number(po.value) + 20);
+        po.dispatchEvent(new w.Event('input', { bubbles: true }));
+        po.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(sista()).not.toBe(fore);
+        expect(sista()).toBe(d.getElementById('prio-stat-cost').textContent);   // samma total som nyckeltalet
+    });
+    it('ändrade vikter är anpassade värden, och metodrutan skriver vikterna som indexet räknar med dem', () => {
+        const w = createAppWindow(), d = w.document;
+        w.__lasInDemodata();
+        for (const id of ['prio-w-avvikelse', 'prio-w-volym', 'prio-w-jamstalldhet']) {
+            const falt = d.getElementById(id);
+            falt.value = '100';
+            falt.dispatchEvent(new w.Event('input', { bubbles: true }));
+        }
+        w.__ritaFlik('prioritering');
+        expect(d.getElementById('pr-installningar-rad').textContent).toMatch(/^Trösklar och viktning: anpassade värden/);
+        const formel = w.eval('metodikregister').prioritering.formler.find(f => f[0] === 'Prioriteringsindex')[1];
+        expect(formel.replace(/\s/g, ' ')).toContain('avvikelse·33 % + volym·33 % + jämställdhet·33 %');
+    });
     it('en konfigurationsfil som läses in före lönefilen sätter trösklarna i dialogen', () => {
         const w = createAppWindow(), d = w.document;
         w.eval(`tillampaKonfiguration(${JSON.stringify({ version: 2, prioConfig: { akutMinN: 7 } })})`);
@@ -233,7 +278,7 @@ describe('menyn i rapportens ordning', () => {
         // 63-tangentbordsnavigering.js sätter attributet vid start; markeringen i index.html ska säga samma sak.
         const kalla = new w.DOMParser().parseFromString(readFileSync(join(__dirname, '..', 'src', 'index.html'), 'utf8'), 'text/html');
         for (const dok of [d, kalla]) {
-            for (const b of dok.querySelectorAll('.nav-menu .nav-item')) {
+            for (const b of ickeTom(dok.querySelectorAll('.nav-menu .nav-item'))) {
                 const flik = b.dataset.tab, forvantat = (grupper[flik] || [flik]).map(p => 'view-' + p);
                 expect(b.getAttribute('aria-controls').split(/\s+/), `${dok === d ? 'appen' : 'index.html'}: ${flik}`).toEqual(forvantat);
                 for (const id of forvantat) expect(d.getElementById(id), id).toBeTruthy();
@@ -274,7 +319,7 @@ describe('menyn i rapportens ordning', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
         const d = w.document;
-        for (const b of d.querySelectorAll('.nav-menu .nav-item')) {
+        for (const b of ickeTom(d.querySelectorAll('.nav-menu .nav-item'))) {
             if (b.hidden || b.disabled) continue;
             /** @type {HTMLElement} */ (b).click();
             expect(d.getElementById('page-title').textContent, b.dataset.tab).toBe(b.querySelector('.nav-etikett').textContent.trim());

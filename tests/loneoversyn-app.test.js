@@ -53,7 +53,7 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till', ()
     const rad = (w, over) => {
         w.__state.forecast.targets = [{ bas: 'A', aid: '6000', kon: 'alla', lonCap: null, mode: 'kr', value: 1000, dist: 'flat', targetLevel: 'median', pool: 'övrigt', ...over }];
         w.__ritaFlik('loneoversyn');
-        return w.__state.forecast.result.alloc.perPerson;
+        return w.__state.forecast.result?.alloc.perPerson;
     };
     const iA = p => p.bas === 'A';
     it('bara kvinnor: männen i gruppen får inget', () => {
@@ -71,6 +71,17 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till', ()
         expect(w.document.getElementById('forecast-targets').textContent).toMatch(/Ingen i gruppen matchar/);
         expect(w.document.getElementById('forecast-meter').textContent).toMatch(/matchar ingen person/);
     });
+    it('etiketten «≈ kr» följer beloppet när det ändras', () => {
+        const w = fonster();
+        rad(w, { value: null });
+        const host = w.document.getElementById('forecast-targets');
+        const etikett = () => host.querySelector('[title="Vad raden förbrukar av potten"]').textContent.replace(/\s/g, ' ');
+        expect(etikett()).toBe('≈ 0 kr');
+        const falt = host.querySelector('[data-f="value"]');
+        falt.value = '5000';
+        falt.dispatchEvent(new w.Event('change'));
+        expect(etikett()).toBe('≈ 5 000 kr');
+    });
     it('Excel-exporten beskriver raden med kön, lönegräns och belopp', async () => {
         const { readFileSync } = await import('node:fs');
         const w = fonster();
@@ -80,7 +91,38 @@ describe('löneöversyn: riktade potter med kön, lönegräns och höj till', ()
         w.XLSX.writeFile = wb => { rader = w.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 }); };
         w.eval('exportPrognos()');
         const r = rader.find(x => String(x[0]).startsWith('Riktad pott 1'));
-        expect(r[1]).toBe('BAS A, AID 6000, bara kvinnor, löner under 26000 kr: höj till 26000 kr/mån');
+        expect(r[1]).toBe('BAS A, AID 6000, bara kvinnor, löner under 26\u00a0000\u00a0kr: höj till 26\u00a0000\u00a0kr/mån');
+    });
+    it('Excel-exporten skriver tal med decimalkomma och inget «null»', async () => {
+        const { readFileSync } = await import('node:fs');
+        const w = fonster();
+        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
+        w.__state.forecast.generell = { mode: 'pct', value: 5.85 };
+        w.__state.forecast.targets = [
+            { bas: 'C', aid: '5300', kon: 'alla', lonCap: null, mode: 'pct', value: 2.5, dist: 'flat', targetLevel: 'median', pool: 'övrigt' },
+            { bas: 'A', aid: '6000', kon: 'alla', lonCap: null, mode: 'kr', value: null, dist: 'flat', targetLevel: 'median', pool: 'övrigt' }];
+        w.__ritaFlik('loneoversyn');
+        let blad = null;
+        w.XLSX.writeFile = wb => { blad = wb.SheetNames.map(n => w.XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1 })); };
+        w.eval('exportPrognos()');
+        const [sammanfattning] = blad;
+        const cell = namn => sammanfattning.find(x => String(x[0]).startsWith(namn))[1];
+        expect(cell('Generellt påslag')).toBe('5,85\u00a0%');
+        expect(cell('Riktad pott 1')).toMatch(/: 2,5\u00a0% av grupplön/);
+        expect(cell('Riktad pott 2')).toMatch(/: saknar belopp$/);
+    });
+    it('konfigurationsfilen bär en riktad rad av varje slag oförändrad', () => {
+        const a = fonster();
+        const rader = [
+            { bas: 'A', aid: '6000', kon: 'kvinna', lonCap: 39000, mode: 'till', value: 41000, dist: 'lowest', targetLevel: 'median', pool: 'equity' },
+            { bas: 'A', aid: '6000', kon: 'man', lonCap: null, mode: 'kr', value: 1000, dist: 'flat', targetLevel: 'p25', pool: 'marknad' },
+            { bas: 'C', aid: '5300', kon: 'alla', lonCap: 40000, mode: 'pct', value: 2.5, dist: 'target', targetLevel: 'median', pool: 'befordran' },
+        ];
+        a.__state.forecast.targets = JSON.parse(JSON.stringify(rader));
+        const b = fonster();
+        b.__cfg = JSON.parse(JSON.stringify(a.__byggKonfiguration()));
+        b.eval('tillampaKonfiguration(window.__cfg)');
+        expect(JSON.parse(JSON.stringify(b.__state.forecast.targets))).toEqual(rader);
     });
 });
 
@@ -197,7 +239,7 @@ describe('formulären i Löneöversyn', () => {
 });
 
 // Ingen budget angiven är ett eget läge (pottAngiven ur prognosutfall): ett påslag utan pott överskrider ingen pott.
-// En angiven pott på 0 kr flaggas som förut.
+// En angiven pott på 0 kr flaggas.
 describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
     const rita = budget => {
         const w = createAppWindow();
@@ -227,10 +269,29 @@ describe('Löneöversyn: utan pott och med en pott på 0 kr', () => {
         expect(kvar.querySelector('.slutsats-under').textContent).toBe('fördelningen överskrider potten');
         expect(ruta('Pott').querySelector('.slutsats-varde').textContent).toBe('0\u00a0kr');
     });
+    it('ett påslag som överskrider potten med några ören: Kvar och varningen säger samma sak', () => {
+        const { w } = rita({ mode: 'kr', value: null });
+        const anvant = w.__state.forecast.result.använt;
+        for (const [over, sager] of [[0.03, false], [2, true]]) {
+            const { ruta, meter } = rita({ mode: 'kr', value: anvant - over });
+            expect(/överskrider potten/.test(meter), String(over)).toBe(sager);
+            expect(ruta('Kvar att fördela').querySelector('.slutsats-under').textContent, String(over)).toBe(sager ? 'fördelningen överskrider potten' : 'av potten');
+        }
+    });
+    it('utan pott och utan påslag går inget scenario att spara', () => {
+        const { w } = rita({ mode: 'kr', value: null });
+        w.__state.forecast.generell = { mode: 'pct', value: 0 };
+        w.__ritaFlik('loneoversyn');
+        let sagt = '';
+        w.alert = t => { sagt = t; };
+        w.eval("_fcSparaScenario('A')");
+        expect(w.__state.forecast.scenarios.A).toBeNull();
+        expect(sagt).toMatch(/Ange en pott först/);
+    });
     it('scenariot utan pott säger att ingen pott är angiven, inte 0 kr', () => {
         const { w, d } = rita({ mode: 'kr', value: null });
         w.eval("_fcSparaScenario('A')");
-        expect(d.getElementById('forecast-scenarios').textContent).toContain('(ingen pott angiven, 0 riktade)');
+        expect(d.getElementById('forecast-scenarios').textContent).toContain('(ingen pott angiven, inga riktade)');
     });
 });
 

@@ -31,12 +31,12 @@ jämförelseetiketter i likvärdigt arbete (`jamforelse`) är det enda analysval
 
 **Paketet innehåller inga personuppgifter** — bara organisationens ställningstagande och
 aggregerad statistik. Verktyget avvisar ett paket som innehåller något som liknar
-personnummer eller e-postadresser.
+ett personnummer.
 
 ## 2. Skapa paketet
 
-1. Öppna verktyget och gå till **För systemförvaltaren**, sist i menyn. Fliken nås också från *Om verktyget* och
-   från en rad i steg 1 i Filer och kvalitet.
+1. Öppna verktyget och gå till **För systemförvaltaren**, sist i menyn. Fliken nås också från en rad i steg 1 i Filer och
+   kvalitet, och i en organisationsfil från *Om verktyget*.
 2. I **Steg 1, Paketet**: läs in ställningstagandet och jämförelsestatistiken med knapparna **Läs in
    ställningstagande** och **Läs in jämförelsestatistik**, eller ett befintligt paket med **Läs in
    organisationspaket**. Är filen du har öppen redan en organisationsfil, är dess paket förvalt.
@@ -163,10 +163,11 @@ förvald; ett paket utan fälten låser ingenting.
 
 Låsningarna gäller så länge paketet är inläst. *Rensa all data* tar bort dem tillsammans med
 paketet, och konfigurationsfilen bär dem inte — en konfigurationsfil kan alltså varken sätta
-eller häva en låsning. Läser handläggaren in ett **annat paket** som har ett lägre golv, eller
-inget golv alls, frågar verktyget om bekräftelse (samma fråga som vid en sänkt tröskel). Nekar
-handläggaren står det gamla golvet kvar, och resten av det nya paketet läses in. Ett högre golv kräver
-ingen bekräftelse.
+eller häva en låsning. Läser handläggaren in ett **annat paket** som släpper eller lättar någon av
+det förra paketets låsningar (ett lägre golv eller inget golv, en längre eller olåst rensningstid,
+små grupper tillåtna i exporten), frågar verktyget om bekräftelse i en fråga som räknar upp vilka
+låsningar som släpps. Nekar handläggaren står de låsningarna kvar, och resten av det nya paketet läses
+in. En strängare låsning kräver ingen bekräftelse.
 
 Ett ogiltigt värde i formuläret stoppar sparandet. Ett ogiltigt värde i en fil som skapats på
 annat sätt används inte, och handläggaren får en varning när paketet läses in.
@@ -186,7 +187,7 @@ Importprofilerna ligger under `importprofiler` (valfritt): en lista med högst 5
 `{ "id", "namn", "rubriker": { "bas": […], "yrke": […], "lon": […], "alder": […], "kon": […], "poang": […],
 "ansvar": […] }, "kannetecken": […] }`. `rubriker` är rubriknamnen per fält (högst 20 per fält; versaler och
 tecken spelar ingen roll). `kannetecken` är de rubriker som måste finnas i filen för att profilen ska gälla
-(utelämnat: de obligatoriska fältens första rubriker). Varje text är högst 80 tecken. En profil som inte går
+(utelämnat: den första rubriken för varje fält som profilen har, utom poäng och ansvarskod). Varje text är högst 80 tecken. En profil som inte går
 att läsa hoppas över med en varning.
 
 Profilerna skapas enklast i verktyget. Läs in paketet och ett uttag, peka ut kolumnerna i

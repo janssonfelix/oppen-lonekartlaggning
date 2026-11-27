@@ -1,29 +1,25 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
-// Den visade texten i varje flik, med demodatan: tal och ord som användaren läser. Fångar också text som byggs med tal
-// («1 personer»), som ordproven i dokumentation-sprak inte ser.
+// Den visade texten i varje flik: tal och ord som användaren läser. Fångar också text som byggs med tal
+// («1 personer»), som ordproven i dokumentation-sprak inte ser. Flikarna läses två gånger: med demodatan och med ett
+// underlag där antalen blir 1 (en grupp med en kvinna, ett intervall med en man, en person ensam i sin grupp, ett
+// ställningstagande och en statistik med en rad), för det är där fel antal syns.
 import { describe, it, expect } from 'vitest';
 import { delatFlikfonster } from './helpers/app-harness.js';
+import { lasInEttor, textfel } from './helpers/visad-text.js';
 
-const { flikfonster, ritade } = delatFlikfonster();
+const ALLA_FLIKAR = ['dashboard', 'filer', 'bestammelser', 'matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
+    'handlingsplan', 'dokumentera', 'rapporttext', 'arbetet', 'kon', 'benchmark', 'utforska', 'forvaltare', 'info'];
 
-// Ett mönster per fel, med ett namn som säger vad som är fel.
-export const VISAD_TEXT_FEL = [
-    ['plural efter 1', /(?<![\d,.  −-])1[  ](personer|grupper|kvinnor|män|slutsatser|yrken|rader|intervall(?:en)|par|anställda|etiketter|kriterier|punkter)\b/],
-    ['decimalpunkt', /(?<![\w.])\d+\.\d+(?![\w.])\s*(?:%|kr|år|procent|\b)/],
-    ['%-enheter', /%-enhet/],
-    ['engelska', /\b(Diff|[Ss]napshot|Spillover|Ring-fenced|Timeout|Sheet|Lifecycle|[Aa]uto-match\w*|[Bb]enchmark|[Oo]utlier\w*|[Gg]ap(?![\wåäö-])|[Ss]core|[Dd]ashboard|[Ss]ummary|[Rr]eport|N\/A|[Pp]ending|[Ww]arning)\b/],
-    ['slangord', /\b(obs|pers|datan|datat)\b/],
-];
+const demo = delatFlikfonster();
+const ettor = delatFlikfonster(lasInEttor, ALLA_FLIKAR);
 
 describe('den visade texten i flikarna', () => {
-    it('flikarna har ritats', () => { expect(flikfonster()).toBeTruthy(); expect(ritade.size).toBeGreaterThan(10); });
-    it('ingen flik visar «1 personer», en decimalpunkt eller «%-enheter»', () => {
+    it('flikarna har ritats', () => { expect(demo.flikfonster()).toBeTruthy(); expect(demo.ritade.size).toBeGreaterThan(10); });
+    it.each([['demodatan', demo], ['underlaget med antal 1', ettor]])('ingen flik visar «1 personer», en decimalpunkt eller «%-enheter» (%s)', (_namn, { flikfonster, ritade }) => {
+        expect(flikfonster()).toBeTruthy();
         const fel = [];
-        for (const [flik, { paneler }] of ritade) for (const p of paneler) {
-            const text = p.textContent.replace(/\s+/g, ' ');
-            for (const [namn, re] of VISAD_TEXT_FEL) for (const m of text.matchAll(new RegExp(re.source, 'g'))) fel.push(`${flik}: ${namn}: …${text.slice(Math.max(0, m.index - 40), m.index + 40)}…`);
-        }
+        for (const [flik, { paneler }] of ritade) for (const p of paneler) fel.push(...textfel(flik, p.textContent));
         expect(fel).toEqual([]);
     });
 });

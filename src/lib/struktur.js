@@ -104,6 +104,10 @@ export function representationPerBas(rader, { k = 1 } = {}) {
  * lägsta i den högre kvartilen. Kvartilernas yttre löner redovisas inte: Q1:s lägsta
  * och Q4:s högsta är organisationens lägsta och högsta enskilda lön. Q1 har ingen undre gräns, Q4 ingen övre.
  *
+ * Personer med samma lön fördelas proportionellt mellan kvartilerna de spänner över: varje plats i den sorterade
+ * listan hör till en kvartil, och de som delar en lön delar platserna, så att kvinnornas andel är densamma i varje
+ * kvartil de delar (nKv och nMa kan då vara bråktal). Resultatet beror inte på radordningen (ADR-86).
+ *
  * `k`: har ett kön färre än k personer i hela urvalet lämnas könsfördelningen per kvartil
  * inte ut (nKv, nMa och andelKv blir null, `konDolt` sant) — tre män i Q4 säger var just de
  * tjänar. Antal per kvartil och gränserna står kvar.
@@ -117,18 +121,25 @@ export function kvartilfordelning(rader, { k = 1 } = {}) {
     const out = [1, 2, 3, 4].map(q => ({ q, n: 0, nKv: 0, nMa: 0, undre: null, ovre: null }));
     /** @type {Array<number|null>} */ const lo = [null, null, null, null];
     /** @type {Array<number|null>} */ const hi = [null, null, null, null];
-    all.forEach((r, i) => {
-        const q = Math.min(3, Math.floor(i * 4 / n));
-        const o = out[q];
-        o.n++; if (arKvinna(r)) o.nKv++; else if (arMan(r)) o.nMa++;
-        if (lo[q] == null) lo[q] = r.lon;
-        hi[q] = r.lon;
-    });
+    const kvartil = i => Math.min(3, Math.floor(i * 4 / n));
+    // Personer med samma lön är ett block: varje plats i blocket räknas till sin kvartil, och kvinnorna och männen i
+    // blocket fördelas proportionellt på platserna, så att resultatet inte beror på radordningen.
+    for (let i = 0; i < n;) {
+        let j = i; while (j < n && all[j].lon === all[i].lon) j++;
+        const block = all.slice(i, j), andelKv = block.filter(arKvinna).length / block.length, andelMa = block.filter(arMan).length / block.length;
+        for (let p = i; p < j; p++) {
+            const q = kvartil(p), o = out[q];
+            o.n++; o.nKv += andelKv; o.nMa += andelMa;
+            if (lo[q] == null) lo[q] = all[p].lon;
+            hi[q] = all[p].lon;
+        }
+        i = j;
+    }
     for (let q = 0; q < 3; q++) {
         const grans = ((hi[q] ?? 0) + (lo[q + 1] ?? 0)) / 2;   // n ≥ 4: varje kvartil har minst en person
         out[q].ovre = grans; out[q + 1].undre = grans;
     }
-    const totKv = out.reduce((s, o) => s + o.nKv, 0), totMa = out.reduce((s, o) => s + o.nMa, 0);
+    const totKv = all.filter(arKvinna).length, totMa = all.filter(arMan).length;
     const konDolt = k > 1 && (totKv < k || totMa < k);
     return out.map(o => ({
         q: o.q, n: o.n,
@@ -182,9 +193,10 @@ const LONEBEGREPP_RESERVATION = 'Måtten är räknade på fast heltidsmånadslö
 /** @returns {string} reservationen om lönebegreppet vid EU-rapportmåtten */
 export function lonebegreppReservation() { return LONEBEGREPP_RESERVATION; }
 
-// ---- Lönefördelningen i Ålder & karriär: klasserna för histogrammet (flyttade från src/app/40-alder-karriar.js) ----
+// ---- Lönefördelningen i Ålder & karriär: klasserna för histogrammet ----
 
 // Minsta och största värdet i en lista: en slinga, eftersom Math.min(...v) slår i taket för antal argument vid stora filer.
+/** @param {Iterable<number>} v @returns {[number, number]} */
 export function omfang(v) {
     let min = Infinity, max = -Infinity;
     for (const x of v) { if (x < min) min = x; if (x > max) max = x; }

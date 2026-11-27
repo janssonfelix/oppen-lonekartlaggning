@@ -29,13 +29,57 @@ describe('jämförelsestatistik: AID och BAS saneras vid inläsning', () => {
         const fil = new w.File([csv], 'statistik.csv', { type: 'text/csv' });
         Object.defineProperty(input, 'files', { configurable: true, value: [fil] });
         input.dispatchEvent(new w.Event('change'));
-        for (let i = 0; i < 50 && !/inlästa|Fel/.test(w.document.getElementById('stat-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
-        expect(w.document.getElementById('stat-status').textContent).toMatch(/1 poster inlästa/);
+        for (let i = 0; i < 50 && !/inläst|Fel/.test(w.document.getElementById('stat-status').textContent); i++) await new Promise(r => setTimeout(r, 20));
+        expect(w.document.getElementById('stat-status').textContent).toMatch(/1 post inläst/);
         const rad = w.__state.statistik.find(r => r.aid === '5301');
         expect(rad).toBeTruthy();
         expect(rad.aidFull).toBe('5301 bUndersköterska/b');
         expect(rad.bas).toBe('C');
         for (const r of w.__state.statistik) expect(`${r.aid}${r.aidFull}${r.bas}`).not.toMatch(/[<>"'&]/);
+    });
+});
+
+describe('referensfilerna: ogiltiga rader, dubbletter och en fil utan giltiga rader', () => {
+    const valj = async (w, id, statusId, csv) => {
+        const input = w.document.getElementById(id);
+        Object.defineProperty(input, 'files', { configurable: true, value: [new w.File([csv], 'fil.csv', { type: 'text/csv' })] });
+        w.document.getElementById(statusId).textContent = '';
+        input.dispatchEvent(new w.Event('change'));
+        for (let i = 0; i < 50 && !w.document.getElementById(statusId).textContent; i++) await new Promise(r => setTimeout(r, 20));
+        return { status: w.document.getElementById(statusId).textContent, input };
+    };
+    const fonster = () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.eval(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'vendor', 'papaparse.min.js'), 'utf8'));
+        return w;
+    };
+    it('statistiken: ogiltiga rader och dubbletter står i beskedet, och valet töms så att samma fil kan väljas igen', async () => {
+        const w = fonster();
+        const { status, input } = await valj(w, 'file-input-stat', 'stat-status',
+            'AID;BAS;Median\n207011;C;30000\n207011;C;31000\n207012;C;\n207013;C;-5\n');
+        expect(status).toMatch(/^2 poster inlästa/);
+        expect(status).toMatch(/2 rader utan AID-kod eller median över noll lästes inte/);
+        expect(status).toMatch(/1 rad har samma AID och BAS som en tidigare rad/);
+        expect(input.value).toBe('');
+    });
+    it('statistiken: en fil utan giltiga rader avvisas och den inlästa statistiken står kvar', async () => {
+        const w = fonster();
+        await valj(w, 'file-input-stat', 'stat-status', 'AID;BAS;Median\n207011;C;30000\n');
+        const fore = w.__state.statistik, namn = w.__state.statistikNamn;
+        expect(fore.length).toBe(1);
+        const { status } = await valj(w, 'file-input-stat', 'stat-status', 'AID;BAS;Median\n207011;C;0\n207012;C;\n');
+        expect(status).toMatch(/^Fel: Inga giltiga rader/);
+        expect(w.__state.statistik).toBe(fore);
+        expect(w.__state.statistikNamn).toBe(namn);
+    });
+    it('ställningstagandet: en rad med negativ median läses inte och räknas i beskedet', async () => {
+        const w = fonster();
+        const { status } = await valj(w, 'file-input-policy', 'policy-status',
+            'BAS;P10;Median;P90\nC;28000;30000;33000\nD;28000;-30000;33000\n');
+        expect(status).toMatch(/^1 rad inläst/);
+        expect(status).toMatch(/1 rad utan BAS och AID eller med ett negativt värde lästes inte/);
+        expect(w.__state.policy.every(p => p.med >= 0)).toBe(true);
     });
 });
 

@@ -228,8 +228,8 @@ function _beraknaPoster(rader, k, variabler) {
     return { kv, ma, medel, poster };
 }
 
-/** Samtliga poster, även de som inte namnges — bara för tester av skyddet; redovisas aldrig. */
 /**
+ * Samtliga poster, även de som inte namnges — bara för tester av skyddet; redovisas aldrig.
  * @param {any[]} rader
  * @param {{k?:number, variabler?:any}} [opts]
  */

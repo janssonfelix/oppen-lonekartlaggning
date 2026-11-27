@@ -5,7 +5,7 @@
  * jämförelseyrkets median. Verktyget föreslår därför ingen rad ur ett par där det kvinnodominerade yrket eller
  * jämförelseyrket har färre personer än den inställda tröskeln (kInstalld()), oavsett läge. En föreslagen rad tas bort
  * när tröskeln höjs över någon av parets grupper, och en föreslagen rad i en konfigurationsfil prövas mot tröskeln när
- * den läses in. Användarens egna rader står kvar som förut (regel R2 i docs/utveckling/k-troskeln.md §8).
+ * den läses in. Användarens egna rader står kvar (regel R2 i docs/utveckling/k-troskeln.md §8).
  *
  * Underlaget som fonsterParLikvardigt i tests/helpers/ktroskel-rigg.js: ett kvinnodominerat yrke (5300) och ett jämförelseyrke (6100)
  * i BAS C, och ett stort yrke (6000) i BAS A för egna rader. Varje grupp i paret har en enda lön, ett sentinelvärde, så
@@ -118,6 +118,21 @@ describe('Löneöversyn: förslagen följer den inställda tröskeln, också på
         expect(parRader(w).map(t => t.value)).toEqual([GAP * 6]);
         w.eval('_fcKanslighet()');
         expect(w.document.querySelectorAll('#forecast-sensitivity tbody tr').length).toBe(11);
+    });
+    it('Föreslå fördelning och Minska skillnaderna behåller egna rader och ersätter bara föreslagna; förslaget ur potten räknar bort de egna', () => {
+        const w = fonsterPar({ kvN: 12, jmfN: 24 });
+        const egen = { bas: 'A', aid: '6000', mode: 'kr', value: 1000, dist: 'lowest', targetLevel: 'median', pool: 'övrigt' };
+        w.__state.forecast.targets.push(egen);
+        w.document.getElementById('forecast-budget-value').value = String(GAP * 12 + 500);   // förslaget läser fälten
+        w.eval('_fcOptimera()');
+        w.eval('_fcOptimera()');
+        expect(w.__state.forecast.targets[0]).toBe(egen);
+        expect(parRader(w).map(t => t.value)).toEqual([GAP * 12 - 500]);   // potten minus den egna raden
+        w.document.getElementById('forecast-closure-pct').value = '50';
+        w.eval('_fcStangGap()');
+        expect(w.__state.forecast.targets[0]).toBe(egen);
+        expect(parRader(w).map(t => t.value)).toEqual([GAP * 6]);
+        expect(aids(w)).toEqual(['5300', '6000']);
     });
     it('vid tröskeln 5 föreslås raden på den lilla gruppen (6), och den följer med i exporten', async () => {
         const w = fonsterPar({ kvN: 6, jmfN: 24, k: 5 });
@@ -417,9 +432,8 @@ function parFonsterMedRader() {
     return w;
 }
 
-// Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Ett förslag ur ett par med en
-// grupp under den tas bort när tröskeln höjs och läses inte in ur en konfigurationsfil; förr stod det kvar på skärmen
-// (ADR-51). Egna rader står kvar som förut (regel R2).
+// ADR-69: förslagen följer den inställda tröskeln också på skärmen. Ett förslag ur ett par med en grupp under den tas
+// bort när tröskeln höjs och läses inte in ur en konfigurationsfil. Egna rader står kvar (regel R2).
 describe('Konfigurationsfilen: riktade rader bär fältet kalla; ett förslag under den inställda tröskeln rensas, också på skärmen (ADR-69)', () => {
     const aids = w => w.__state.forecast.targets.map(t => t.aid).sort();
     it('filen bär kalla på förslaget men inte på den egna raden, och versionen är oförändrad', () => {

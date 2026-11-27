@@ -46,7 +46,8 @@ describe('konAv och gruppnyckel', () => {
     it('normaliserar kön', () => {
         expect(konAv({ kon: 'kvinna' })).toBe('Kvinna');
         expect(konAv({ kon: 'man' })).toBe('Man');
-        expect(konAv({ kon: 'män' })).toBe('Man');
+        expect(konAv({ kon: 'män' })).toBe('Övrig/okänd');   // inläsningen sätter 'man'; andra värden är okänt kön
+        expect(konAv({ kon: 'kvinnaf' })).toBe('Övrig/okänd');
         expect(konAv({ kon: '' })).toBe('Övrig/okänd');
     });
     it('bygger nycklar per dimension', () => {

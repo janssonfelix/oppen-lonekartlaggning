@@ -46,7 +46,7 @@ const appLVSrc = (() => {
 })();
 // kTroskel() läses ur state, som i appen (adaptern skickar värdet vidare till lib).
 // Vymodellens felresultat och flikens diagnostik (src/lib/vymodell-likvardigt-arbete.js) ges som i appen.
-const _makeAppLV = new Function('state', 'nationellAidKlass', 'likvardighetsparUr', 'kompletteraDiagnostik', 'likvardighetFelresultat', `
+const _makeAppLV = new Function('state', 'nationellAidKlass', 'likvardighetsparUr', 'kompletteraDiagnostik', 'likvardighetFelresultat', 'KVINNO_TROSKEL_STANDARD', `
     const kTroskel = () => state.kTroskel ?? 10;
     const kInstalld = kTroskel;
     // Definitionen och jämförelsemängden ur 45-aid-bas-tabeller.js (ADR-60), lästa ur state som i appen.
@@ -55,7 +55,7 @@ const _makeAppLV = new Function('state', 'nationellAidKlass', 'likvardighetsparU
     ${appLVSrc}
     return likvardighetspar;
 `);
-const makeAppLV = (state, nationellAidKlass, ur) => _makeAppLV(state, nationellAidKlass, ur, kompletteraDiagnostik, likvardighetFelresultat);
+const makeAppLV = (state, nationellAidKlass, ur) => _makeAppLV(state, nationellAidKlass, ur, kompletteraDiagnostik, likvardighetFelresultat, libLv.KVINNO_TROSKEL_STANDARD);
 
 const tomtResultat = () => ({
     orgKvDom: [{ aid: '5301', bas: 'B', label: 'Undersköterska', n: 12, kvAndel: 80 }],

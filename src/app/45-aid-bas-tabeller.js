@@ -18,17 +18,17 @@
 //     i en not under tabellen, med namn och antal men utan löner (ADR-12, ADR-57). På skärmen visas alla grupper (ADR-51).
 //   - Kvinnodominerat vid *Mer än X %* (nyckeln 'do') eller *X % eller mer* (nyckeln 'scb'; ADR-72): valet i
 //     Likvärdigt arbetes inställningar, standard *Mer än*; X är kvinnotröskeln där (standard 60 %). Samma definition gäller i hela
-//     verktyget (ADR-60): kvDomNu() och konsklassNu() nedan, som anropar _arKvinnodominerad/_konsklass ur
+//     verktyget (ADR-60): konsklassNu() nedan, som anropar konsklass ur
 //     src/lib/likvardighet.js.
 //   - Jämförelseyrken är alla grupper som inte är kvinnodominerade, eller bara de mansdominerade med filtret
 //     state.likvardighet.jamforelse = 'mansdominerade' (ADR-60) — samma mängd som kandidatparen.
 //   - Lönemånaden står ovanför varje tabell; den anges i Inställningar, och tomt skrivs ut som "inte angiven".
 import { hierarkiskaPar, individnivaTabell, ingaParText, klassNamn, kvDefinitionText, likaArbeteTabell, likvardigtTabell } from '../lib/aidbas.js';
-import { arKvinnodominerad, konsklass } from '../lib/likvardighet.js';
-import { personOrd } from '../lib/namn.js';
+import { konsklass, KVINNO_TROSKEL_STANDARD } from '../lib/likvardighet.js';
+import { kvinnorOchMan, personOrd } from '../lib/namn.js';
 import { skrKvinnoandel } from '../lib/skrreferens.js';
 import { direktivMarkering } from '../lib/status.js';
-import { svKr, svPct, svTal } from '../lib/talformat.js';
+import { svKr, svPct, svTal, svTecken } from '../lib/talformat.js';
 import { adjektiv, artikel, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { aktiveraSortering, flerKolumner } from './05-tabeller-och-lankar.js';
@@ -47,11 +47,9 @@ function aidbasGolv() { return kTroskel() > K_SKARM ? LITET_UNDERLAG : 1; }
  *  står kvar för sparade konfigurationsfiler (ADR-72). */
 export function aidbasDefinition() { return state.likvardighet && state.likvardighet.kvDomDefinition === 'scb' ? 'scb' : 'do'; }
 /** Gränsen i procent kvinnor: kvinnotröskeln i Likvärdigt arbete. */
-export function aidbasGrans() { return (state.likvardighet && state.likvardighet.kvinnoTrosholdPct) || 60; }
+export function aidbasGrans() { return (state.likvardighet && state.likvardighet.kvinnoTrosholdPct) || KVINNO_TROSKEL_STANDARD; }
 /** Jämförelsemängden: 'alla' som inte är kvinnodominerade (standard) eller bara 'mansdominerade' (ADR-60). */
 export function lvJamforelse() { return state.likvardighet && state.likvardighet.jamforelse === 'mansdominerade' ? 'mansdominerade' : 'alla'; }
-/** Om en andel kvinnor (procent) är kvinnodominerad enligt verktygets valda definition — den enda i verktyget (ADR-60). */
-export function kvDomNu(pct) { return arKvinnodominerad(pct, aidbasDefinition(), aidbasGrans()); }
 /** Klassen för en andel kvinnor: 'kvinnodominerad', 'mansdominerad', 'blandad' eller '' (ADR-60). */
 export function konsklassNu(pct) { return konsklass(pct, aidbasDefinition(), aidbasGrans()); }
 /** Gränsen för kvinnodominerat i ord, med valets lydelse (ADR-72): "mer än 60 % kvinnor" ('do') eller
@@ -128,6 +126,8 @@ const AIDBAS_KOL = {
 // arbete, de nationella kolumnerna och spridningen i Likvärdigt arbete. Statusen och klassningen står kvar.
 const AIDBAS_LIKA_DOLDA_KOLUMNER = ['nedre', 'ovre', 'direktiv'];
 const AIDBAS_LV_DOLDA_KOLUMNER = ['nationellt', 'brukar', 'spridning'];
+/** Arbetslistan utan rader: grupperna i noten under tabellen räknas inte in. */
+const _aidbasIndividTom = t => `Alla grupper${t.individ.sma.length ? ' som har en egen rad' : ''} har minst ${kvinnorOchMan(t.k, t.k, ' och ')}.`;
 /** Noten om grupperna under golvet: namn och antal, inga löner. '' när alla grupper har en rad. */
 function _aidbasSmaNot(sma, golv) {
     if (!sma.length) return '';
@@ -156,7 +156,7 @@ function _aidbasIngetIntervall() { return `${adjektiv({ utrum: 'Ingen', neutrum:
 /** Sammanfattningen per BAS-intervall som en mening per intervall, för skärmen. */
 function _aidbasSammanfattningText(s) {
     return `BAS ${s.bas}: kvinnodominerade grupper (${s.antalKvDom}) har medianlön ${svTal(s.kvDom.lagst, 0)}–${svTal(s.kvDom.hogst, 0)} kr, övriga (${s.antalOvriga}) ${svTal(s.ovriga.lagst, 0)}–${svTal(s.ovriga.hogst, 0)} kr; `
-        + `högsta median övriga mot högsta kvinnodominerad: ${s.skillnadKr >= 0 ? '+' : '−'}${svTal(Math.abs(s.skillnadKr), 0)} kr (${s.skillnadPct == null ? '–' : (s.skillnadPct >= 0 ? '+' : '−') + svPct(Math.abs(s.skillnadPct), 1)}).`;
+        + `högsta median övriga mot högsta kvinnodominerad: ${svTecken(s.skillnadKr)}${svTal(s.skillnadKr, 0)} kr (${s.skillnadPct == null ? '–' : svTecken(s.skillnadPct, 1) + svPct(s.skillnadPct, 1)}).`;
 }
 
 // ---- Skärmen ----
@@ -209,7 +209,7 @@ export function ritaAidBasLika() {
     const jamforda = t.lika.rader.filter(r => !r.samladMedian);
     const granska = jamforda.filter(r => r.niva === 'granska').length, folj = jamforda.filter(r => r.niva === 'folj').length;
     _aidbasNyckel('nyckel-la-aidbas', jamforda.length ? `${granska} att granska${folj ? ` · ${folj} att följa upp` : ''}` : '');
-    individ.innerHTML = _aidbasTabellHtml('aidbas-individ-tabell', AIDBAS_KOL.individ, t.individ.rader, { not: _aidbasSmaNot(t.individ.sma, t.golv), tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.`, fil: 'analys_pa_individniva' });
+    individ.innerHTML = _aidbasTabellHtml('aidbas-individ-tabell', AIDBAS_KOL.individ, t.individ.rader, { not: _aidbasSmaNot(t.individ.sma, t.golv), tom: _aidbasIndividTom(t), fil: 'analys_pa_individniva' });
     _aidbasEfter('aidbas-individ-tabell');
     _aidbasNyckel('nyckel-la-individ', t.individ.rader.length ? `${t.individ.rader.length} grupper` : '');
 }
@@ -271,7 +271,7 @@ function _aidbasBlad(rubrik, kolumner, rader, { fore = [], efter = [], tom = '' 
 export const AIDBAS_BLADNAMN = ['Lika arbete AID x BAS', 'Likvärdigt arbete', 'Hierarkisk jämförelse', 'Analys på individnivå'];
 /**
  * Bladet Lika arbete AID x BAS, som Excel (alla flikar) och protokollet för gemensam lönebedömning delar.
- * @param {any} lika tabellen ur `_aidbasLika` (`aidbasTabeller(d).lika`)
+ * @param {any} lika tabellen `aidbasTabeller(d).lika`
  */
 export function _aidbasLikaBlad(lika) {
     return _aidbasBlad(termText('Lika arbete: kvinnors medianlön i procent av mäns per {kod.en} och {niva.en}'), AIDBAS_KOL.lika, lika.rader,
@@ -299,7 +299,7 @@ export function _aidbasExcelBlad() {
     const par = _aidbasBlad('Hierarkisk jämförelse: arbete med lägre krav, som inte är kvinnodominerat, med högre lön än kvinnodominerat arbete med högre krav', AIDBAS_KOL.par, t.par,
         { fore: [`${def} Båda grupperna har minst ${t.k} ${personOrd(t.k)}. BAS-ordningen är bokstavsordningen.`], tom: ingaParText() });
     const individ = _aidbasBlad('Analys på individnivå: grupper där något kön har färre än ' + t.k + ' ' + personOrd(t.k), AIDBAS_KOL.individ, t.individ.rader,
-        { fore: ['Arbetslista utan löner. Fyll i kolumnerna Analys genomförd och Resultat.'], efter: [_aidbasSmaNot(t.individ.sma, t.golv)], tom: `Alla grupper har minst ${t.k} kvinnor och ${t.k} män.` });
+        { fore: ['Arbetslista utan löner. Fyll i kolumnerna Analys genomförd och Resultat.'], efter: [_aidbasSmaNot(t.individ.sma, t.golv)], tom: _aidbasIndividTom(t) });
     return [[AIDBAS_BLADNAMN[0], lika], [AIDBAS_BLADNAMN[1], lv], [AIDBAS_BLADNAMN[2], par], [AIDBAS_BLADNAMN[3], individ]];
 }
 /** Raderna om tabellerna för bladen Metodik och Metod & parametrar: [rubrik, text]. */

@@ -18,8 +18,8 @@
 // Efter flikarna mäts också navigeringen: sidindexets byggtid per flik, sökfältets första sökning (registret och
 // grupperna byggs då) och tiden att öppna BAS-dossiern och gruppdossiern. Ett steg över 2 s flaggas.
 //
-// VAKT: tiden tills gränssnittet är klart, med en snäv budget (5 s), och förhandsbeskedet efter ett ändrat kryss
-// under Rapportens innehåll (1 s).
+// VAKT: tiden tills gränssnittet är klart, med en snäv budget (5 s), varje flik (5 s; en flik som kastar fäller
+// också), och förhandsbeskedet efter ett ändrat kryss under Rapportens innehåll (1 s). Alla rader ska ha lästs in.
 //
 // Budgeten är snäv för att en O(n²)-loop ska synas: en sådan loop kan stå för
 // ~8 s av inläsningen på 55 000 rader och ändå rymmas i en total budget på 60 s.
@@ -37,6 +37,7 @@ import { chromium } from 'playwright';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { byggTestCsv as byggCsv } from './lib/testdata.mjs';
+import { nyareAnBygget } from './release.mjs';
 
 const ROOT = process.cwd();
 const arg = n => (process.argv.find(a => a.startsWith(`--${n}=`)) || '').split('=')[1];
@@ -45,16 +46,21 @@ const FIL = arg('fil') || join(ROOT, 'dist', 'oppen-lonekartlaggning.html');
 const RADER = Number(arg('rader') || 55000);
 const BUDGET_MS = Number(arg('budget') || 60000);        // backstopp för hela svepet
 const UI_BUDGET_MS = Number(arg('ui-budget') || 5000);   // uppladdning → gränssnitt klart
+const FLIK_BUDGET_MS = 5000;                               // en fliks rendering
 
 if (!existsSync(FIL)) {
     console.error('✗ oppen-lonekartlaggning.html saknas — kör `npm run bundle` först.');
     process.exit(1);
 }
-
-// Menyns flikar. kon = Ålder & karriär (inkl. demografi), utforska inkl.
-// Löneöversikten, dokumentera = färdigcheck + rapportunderlag.
-const FLIKAR = ['matrix', 'likvardighet', 'struktur', 'prioritering', 'loneoversyn',
-                'handlingsplan', 'dokumentera', 'kon', 'benchmark', 'utforska', 'lonepolitik'];
+// Samma spärr som röktestet (tools/browser-smoke/rigg.mjs): ett bygge som är äldre än källan mäter gammal kod.
+// Ett annat bygge (--fil) mäts som det är.
+if (!arg('fil')) {
+    const nyare = nyareAnBygget(FIL);
+    if (nyare.length) {
+        console.error(`✗ Bygget är äldre än källan (${nyare.length} fil(er), t.ex. ${nyare[0]}). Kör \`npm run bundle\` först.`);
+        process.exit(1);
+    }
+}
 
 const browser = await chromium.launch();
 const sidfel = [];
@@ -91,6 +97,10 @@ console.log(`\nPrestandasvep — ${RADER.toLocaleString('sv-SE')} rader\n`);
 
 const stor = await mätInläsning(RADER);
 const page = stor.page;
+// Menyns flikar som sidan har dem.
+const FLIKAR = await page.$$eval('.nav-item[data-tab]', k => k.map(e => /** @type {HTMLElement} */ (e).dataset.tab));
+/* global state -- funktionerna nedan körs i sidan, där state finns */
+const inlasta = await page.evaluate(() => state.data.length);
 
 const kolumn = (t, v) => `  ${t.padEnd(26)} ${String(v).padStart(7)} ms`;
 const uiOk = stor.tSynlig <= UI_BUDGET_MS;
@@ -99,9 +109,9 @@ console.log(kolumn('gränssnittet klart', stor.tSynlig)
     + (uiOk ? `   ✓ (budget ${UI_BUDGET_MS} ms)` : `   ✗ över budget ${UI_BUDGET_MS} ms`));
 console.log(kolumn('bakgrundsanalyser klara', stor.tKlar));
 console.log('');
+console.log(`  inlästa rader: ${inlasta} av ${RADER}` + (inlasta === RADER ? '' : '   ✗'));
 const tParse = stor.tKlar;
 // Fliken Jämförelse ritar bara med jämförelsestatistik: lägg in en syntetisk per AID och BAS.
-/* global state -- funktionen nedan körs i sidan, där state finns */
 await page.evaluate(() => {
     const par = [...new Set(state.data.map(r => `${r.aid}|${r.bas}`))];
     state.statistik = par.map(k => { const [aid, bas] = k.split('|'); return { aid, bas, median: 34000, p10: 30000, p90: 39000 }; });
@@ -119,9 +129,9 @@ for (const flik of FLIKAR) {
     }, flik);
     if (t.fel) { console.log(`  ${flik.padEnd(26)}   KASTADE: ${t.fel}`); långsamma.push(flik); continue; }
     summa += t.ms;
-    const flagga = t.ms > 5000 ? '  ← långsam' : '';
+    const flagga = t.ms > FLIK_BUDGET_MS ? `  ✗ över ${FLIK_BUDGET_MS} ms` : '';
     console.log(`  ${flik.padEnd(26)} ${String(t.ms).padStart(7)} ms${flagga}`);
-    if (t.ms > 5000) långsamma.push(flik);
+    if (t.ms > FLIK_BUDGET_MS) långsamma.push(flik);
 }
 
 // Utforska med två dimensioner — den tyngsta kombinationen (yrke inom BAS × lönespann).
@@ -138,7 +148,6 @@ console.log(kolumn('Utforska, yrke inom BAS × lönespann', tUtforska2d));
 // tyngsta delarna i Ålder & karriär var för sig — där ligger flest diagram.
 /* global sattKTroskel, hamtaData, ritaKonMultiplar, individLitenFor, ritaAldersstruktur -- funktionerna nedan körs i sidan, där de finns */
 const tTroskel = await page.evaluate(async () => {
-    if (typeof sattKTroskel !== 'function') return null;
     const t0 = performance.now();
     const r = sattKTroskel(11, { fraga: false, stegvis: true });
     if (r && r.klar) await r.klar;
@@ -147,13 +156,13 @@ const tTroskel = await page.evaluate(async () => {
     if (r2 && r2.klar) await r2.klar;
     return ms;
 });
-if (tTroskel != null) console.log(kolumn('Ändrad tröskel: det som syns ritas om', tTroskel));
+console.log(kolumn('Ändrad tröskel: det som syns ritas om', tTroskel));
 const tKonDelar = await page.evaluate(() => {
-    const ut = {}, d = typeof hamtaData === 'function' ? hamtaData() : [];
-    const mat = (namn, fn) => { if (typeof fn !== 'function') return; const t0 = performance.now(); try { fn(); } catch (_e) { /* mäts ändå */ } ut[namn] = Math.round(performance.now() - t0); };
-    mat('  små multiplar', typeof ritaKonMultiplar === 'function' ? () => ritaKonMultiplar() : null);
-    mat('  individLitenFor', typeof individLitenFor === 'function' ? () => { const f = individLitenFor(d); d.filter(f); } : null);
-    mat('  demografi', typeof ritaAldersstruktur === 'function' ? () => ritaAldersstruktur('__ALLA__') : null);
+    const ut = {}, d = hamtaData();
+    const mat = (namn, fn) => { const t0 = performance.now(); fn(); ut[namn] = Math.round(performance.now() - t0); };
+    mat('  små multiplar', () => ritaKonMultiplar());
+    mat('  individLitenFor', () => { const f = individLitenFor(d); d.filter(f); });
+    mat('  demografi', () => ritaAldersstruktur('__ALLA__'));
     return ut;
 });
 for (const [namn, ms] of Object.entries(tKonDelar)) console.log(kolumn(namn, ms));
@@ -170,7 +179,6 @@ const tSidindex = await page.evaluate(async flikar => {
     const ut = {};
     for (const f of flikar) {
         const nav = /** @type {HTMLElement|null} */ (document.querySelector(`.nav-item[data-tab="${f}"]`));
-        if (!nav) continue;
         nav.click();
         await new Promise(r => requestAnimationFrame(() => r()));
         const t0 = performance.now();
@@ -247,10 +255,12 @@ if (sidfel.length) console.log(`\n  ✗ ${sidfel.length} sidfel: ${sidfel[0]}`);
 await browser.close();
 
 const brutenBudget = summa > BUDGET_MS;
-if (sidfel.length || brutenBudget || !uiOk || !kryssOk) {
+if (sidfel.length || brutenBudget || !uiOk || !kryssOk || långsamma.length || inlasta !== RADER) {
     if (brutenBudget) console.log(`\n✗ Över budget: ${summa} ms > ${BUDGET_MS} ms.`);
+    if (långsamma.length) console.log(`\n✗ Flikar som kastade eller tog mer än ${FLIK_BUDGET_MS} ms: ${långsamma.join(', ')}.`);
+    if (inlasta !== RADER) console.log(`\n✗ ${inlasta} av ${RADER} rader lästes in.`);
     if (!kryssOk) console.log(`\n✗ Förhandsbeskedet efter ett ändrat kryss tog ${tKryss} ms (gräns ${KRYSS_GRANS_MS} ms).`);
     if (!uiOk) console.log(`\n✗ Gränssnittet blev klart först efter ${stor.tSynlig} ms (budget ${UI_BUDGET_MS} ms).`);
     process.exit(1);
 }
-console.log(`\n✓ Inom budget (${BUDGET_MS} ms)${långsamma.length ? ` — men se: ${långsamma.join(', ')}` : ''}`);
+console.log(`\n✓ Inom budget (${BUDGET_MS} ms)`);

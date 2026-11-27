@@ -338,6 +338,7 @@ describe('ansvarskod i Lika arbete', () => {
         for (const klick of [0, 0, 1]) {
             th[klick].click();
             const rader = [...w.document.querySelectorAll('#matrix-table tbody tr')];
+            expect(rader.some(tr => tr.classList.contains('la-underrad'))).toBe(true);
             rader.forEach((tr, i) => {
                 if (tr.classList.contains('la-underrad')) expect(rader[i - 1].classList.contains('la-underrad') || /402010/.test(rader[i - 1].textContent)).toBe(true);
             });

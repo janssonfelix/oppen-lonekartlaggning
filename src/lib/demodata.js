@@ -16,6 +16,14 @@ import { median, kvantil } from './stat.js';
 import { basRangordning } from './likvardighet.js';
 import { konsMedianer } from './struktur.js';
 import { svPct } from './talformat.js';
+import { K_STANDARD } from './ktroskel.js';
+
+// Generatorernas slump: en LCG med fast frö, så att samma frö ger samma tal i samma ordning.
+function _lcg(seed) { return () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; }
+// Normalfördelad slump ur en likformig (Box–Muller).
+function _normal(rnd) {
+    return () => { let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+}
 
 // ---- Det lilla demot ----
 export function genereraTestdata() {
@@ -26,9 +34,8 @@ export function genereraTestdata() {
     const data = [];
     const basList = ['A','B','C','D','E'];
     const aidList = ['402010 Förskollärare', '207024 Vårdbiträde', '502010 Systemutvecklare', '401011 Lärare grundskola', '206017 Sjuksköterska'];
-    let seed = 42;
-    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-    const rndNorm = () => { let u = 0, v = 0; while(u === 0) u = rnd(); while(v === 0) v = rnd(); return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v); };
+    const rnd = _lcg(42);
+    const rndNorm = _normal(rnd);
     for (let i = 0; i < 200; i++) {
         const isKvinna = i < 100; // 50/50
         // Kvinnor är i snitt något yngre + tenderar att hamna i lägre BAS
@@ -231,9 +238,8 @@ export const _SD_LIKVARDIGT = Object.freeze({ hog: '503090', lag: '207011', bas:
 
 export function genereraStortDemo() {
     // Samma slags seedade slump som genereraTestdata, med ett eget frö: samma underlag vid varje anrop.
-    let seed = 5000;
-    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-    const rndNorm = () => { let u = 0, v = 0; while (u === 0) u = rnd(); while (v === 0) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const rnd = _lcg(5000);
+    const rndNorm = _normal(rnd);
     const data = [];
     for (const [aid, namn, n, andelKv, basLista, andelHog, nivaL, nivaH, spridning, medelalder] of _SD_YRKEN) {
         const kvinnor = Math.round(n * andelKv);
@@ -290,8 +296,7 @@ const _sdAvrunda = (x, steg) => Math.round(x / steg) * steg;
 
 export function genereraStortDemoStatistik() {
     // Eget frö: samma statistik vid varje anrop, oberoende av lönerna.
-    let seed = 126;
-    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const rnd = _lcg(126);
     const rader = [];
     for (const [aid, namn, , andelKv, basLista, , nivaL, nivaH, spridning, , paslag] of _SD_YRKEN) {
         basLista.forEach((bas, i) => {
@@ -315,7 +320,7 @@ export function genereraStortDemoStatistik() {
 /** @type {Readonly<Record<string, number>>} */
 const _SD_POLICYLYFT = Object.freeze({ C: 1.04, F: 1.05, H: 1.04 });
 // k är den inställda tröskeln (appen skickar kInstalld()): raderna står i exporterna.
-export function _sdStallningstagande(data, k = 10) {
+export function _sdStallningstagande(data, k = K_STANDARD) {
     /** @type {{aid: null, bas: string, p10: number, med: number, p90: number}|null} */
     let senast = null;   // närmaste lägre intervall som räknats ur sina egna löner
     return _SD_BAS.flatMap(bas => {

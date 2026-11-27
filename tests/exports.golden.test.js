@@ -17,6 +17,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
+import { ETTOR, textfel } from './helpers/visad-text.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -68,7 +70,8 @@ beforeAll(() => {
         __docxDocumentXml: () => docxDelar(_utkastTillBlock(_byggWordUtkastHtml()), { titel: 'T', sidfot: 'S', skapad: '2026-01-01T00:00:00Z' })['word/document.xml'],
         __byggUtskriftsrapport: byggUtskriftsrapport,
         __excelBlad: () => ({ besked: excelAlltBlad(), bok: _excelAlltBok().SheetNames }),
-        __loadFixture: function(utanAlder) {
+        // egna: { rows, policy, statistik } i stället för det fasta underlaget.
+        __loadFixture: function(utanAlder, egna) {
             window.__resetSeed();
             // FAST dataset: 2 BAS × 2 yrken — kvinnodominerat + icke-kvinnodominerat
             // i varje BAS (ger par för likvärdigt arbete i BAS-läge), formelbaserade löner (ingen
@@ -89,6 +92,7 @@ beforeAll(() => {
             add(2,  'C', '5500', 'Sjuksköterska',  'man',    32000, 150);
             add(2,  'C', '2000', 'Ingenjör',       'kvinna', 35500, 150);
             add(12, 'C', '2000', 'Ingenjör',       'man',    36000, 150);
+            if (egna) rows.splice(0, rows.length, ...egna.rows);
             state.data = rows;
             state.dataAudit = { totalRaw: rows.length, excludedNoBas: 0, excludedZeroLon: 0 };
             state.policy = [
@@ -100,6 +104,7 @@ beforeAll(() => {
                 { aid: '4100', bas: 'B', median: 33800, andelKv: 18, aidFull: '4100 Tekniker' },
                 { aid: '2000', bas: 'C', median: 36500, andelKv: 15, aidFull: '2000 Ingenjör' }
             ];
+            if (egna) { state.policy = egna.policy; state.statistik = egna.statistik; }
             if (state.likvardighet) state.likvardighet.result = null;
             _harledArbetsvarderingUrData();
             // Rendera vyerna som exporterna plockar tabeller ur
@@ -217,8 +222,8 @@ describe('golden: Excel-exporterna på fast dataset', () => {
 });
 
 /**
- * Bladen som byggs ur flikarnas HTML-tabeller, cell för cell med typ och talformat. Tabellstädningen bestämde
- * tidigare inte celltypen själv utan lät kalkylbladsläsaren gissa, och skrev data-sort-value rakt över texten:
+ * Bladen som byggs ur flikarnas HTML-tabeller, cell för cell med typ och talformat. Tabellstädningen bestämmer
+ * celltypen själv; låter den kalkylbladsläsaren gissa, eller skriver data-sort-value rakt över texten, blir det fel:
  *   - "86 %" tolkades som andelen 0.86 under en rubrik som säger procent (Löneskillnad, Könsskevhet, Prioritering);
  *   - "17/17", "14/3" och "15/8" i antalskolumnerna tolkades som datum (15 aug 2001 = 37117.9);
  *   - data-sort-value togs i stället för celltexten: gapet (6,4) under rubriken "kvinnors median i % av männens",
@@ -436,6 +441,15 @@ describe('golden: Word-utkastet (§§ 8–14) på fast dataset', () => {
         expect(besked.length).toBeGreaterThanOrEqual(7);
         expect(besked).toEqual(bok);
     });
+    it('förhandsbeskedet för Excel listar exakt de blad arbetsboken får, också när inget BAS-intervall når tröskeln', () => {
+        win.__loadFixture();
+        win.eval('sattKTroskel(1000, { fraga: false })');
+        try {
+            const { besked, bok } = win.__excelBlad();
+            expect(bok).not.toContain('Per BAS');
+            expect(besked.join('|')).toBe(bok.join('|'));
+        } finally { win.eval('sattKTroskel(10, { fraga: false })'); }
+    });
     it('talen bakom översiktstabellen och diagrammen följer med som egna blad', () => {
         win.__loadFixture();
         const { bok } = win.__excelBlad();
@@ -621,7 +635,7 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
     });
     it('Metod & parametrar: kolumn A är så bred som den längsta etiketten, med ett tak', () => {
         const X = win.__XLSX;
-        for (const [fil, wb] of Object.entries(bocker)) {
+        for (const [fil, wb] of ickeTom(Object.entries(bocker))) {
             const ws = wb.Sheets['Metod & parametrar'];
             if (!ws) continue;
             const etiketter = X.utils.sheet_to_json(ws, { header: 1, defval: '' }).slice(1).map(r => String(r[0] || ''));
@@ -629,5 +643,27 @@ describe('Excel: bladnamnen och metodbladets etikettkolumn', () => {
             expect(ws['!cols'][0].wch, fil).toBe(Math.min(70, langst + 2));
             expect(ws['!cols'][0].wch, fil).toBeGreaterThan(langst);
         }
+    });
+});
+
+// Exporternas text på ett underlag där antalen blir 1 (tests/helpers/visad-text.js): samma fel som i flikarna
+// («1 personer», «11 kvinnor och 1 män», decimalpunkt), i varje cell, i Word-utkastet och i utskriften.
+describe('exporternas text med antal 1', () => {
+    const egna = () => ({ rows: ETTOR.map(r => ({ ...r })), policy: [{ bas: 'A', p10: 27000, med: 31000, p90: 36000 }],
+        statistik: [{ aid: '5000', bas: 'A', median: 31500, andelKv: 20, aidFull: '5000 Yrke ett' }] });
+    it('ingen cell, inget utkast och ingen utskrift har ett tal med fel form', async () => {
+        win.__loadFixture(false, egna());
+        const filer = win.__runExports();
+        expect(win.__exportErrors).toEqual([]);
+        const fel = [];
+        for (const f of filer) for (const [blad, rader] of Object.entries(snapshotWorkbook(f)))
+            for (const c of rader.flat()) if (typeof c === 'string') fel.push(...textfel(`${f} ${blad}`, c));
+        const ord = html => { const d = win.document.createElement('div'); d.innerHTML = html; return d.textContent; };
+        fel.push(...textfel('Word', ord(win.__docDraftHtml())));
+        win.__loadFixture(false, egna());
+        win.eval("sattRapportUrval('hela')");
+        await win.__byggUtskriftsrapport();
+        fel.push(...textfel('utskrift', win.document.getElementById('print-report').textContent));
+        expect(fel).toEqual([]);
     });
 });

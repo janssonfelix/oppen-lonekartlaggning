@@ -16,6 +16,8 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { IMPORTPROFIL_ROLLER, OBLIGATORISKA_ROLLER } from '../src/lib/importprofiler.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -348,16 +350,21 @@ const radFor = (t, i) => t.slice(0, i).split('\n').length;
 const kallfiler = (...kataloger) => kataloger.flatMap(gå).filter(f => /\.(js|mjs)$/.test(f) && !f.startsWith('tools/data/'));
 
 describe('kommentarerna följer koden', () => {
-    it('ett funktionsnamn som en kommentar i src nämner finns i koden', () => {
+    // Ett kodnamn i en kommentar är ett namn med understreck först (`_fooBar`, med eller utan parentes) eller ett
+    // camelCase-namn följt av en parentes (`fooBar()`); ett camelCase-ord utan parentes kan vara ett webbläsar-API,
+    // ett SVG-element eller ett fält och prövas inte.
+    it('ett kodnamn som en kommentar i src nämner finns i koden', () => {
         const filer = kallfiler('src');
         const namn = new Set(filer.flatMap(f => [...läs(f).replace(KOMMENTAR, ' ').matchAll(/[A-Za-z_$][\w$]*/g)].map(m => m[0])));
         expect(filer.flatMap(f => { const t = läs(f);
-            return [...t.matchAll(KOMMENTAR)].flatMap(k => [...k[0].matchAll(/\b(_[a-zA-Z]\w{3,}|[a-z]+[A-Z]\w+)(?=\()/g)]
+            return [...t.matchAll(KOMMENTAR)].flatMap(k => [...k[0].matchAll(/(?<![\w$])(_[a-zA-Z]\w{3,}|[a-z]+[A-Z]\w+(?=\())/g)]
                 .filter(m => !namn.has(m[1])).map(m => `${f}:${radFor(t, k.index)} ${m[1]}`)); })).toEqual([]);
     });
-    it('kommentarerna säger vad som gäller, inte att det är som förut', () => {
-        const HISTORIK = /som förut|som i dag|BAKGRUND|[Bb]ug-?fix|tidigare hette/;
-        expect(kallfiler('src', 'tools').flatMap(f => { const t = läs(f);
+    // «tidigare» och «räknades» står oftast utan historik («tidigare år», «raderna som räknades») och prövas bara i
+    // de historiska formerna («tidigare hette», «räknades förut»).
+    it('kommentarerna i koden, verktygen och testerna säger vad som gäller, inte att det är som förut', () => {
+        const HISTORIK = /som förut|som i dag|BAKGRUND|[Bb]ug-?fix|tidigare hette|[Ff]lyttade? från|[Bb]röts ut|[Ff]örr(?![a-zåäö])|[Ff]örut(?![a-zåäö])|\bhette\b|\b[Nn]umera\b|[Ää]ndrat med ADR/;
+        expect(kallfiler('src', 'tools', 'tests').filter(f => f !== 'tests/dokumentation-struktur.test.js').flatMap(f => { const t = läs(f);
             return [...t.matchAll(KOMMENTAR)].filter(k => HISTORIK.test(k[0]))
                 .map(k => `${f}:${radFor(t, k.index)} ${k[0].match(HISTORIK)[0]}`); })).toEqual([]);
     });
@@ -385,16 +392,17 @@ describe('en källa: inga egna kopior av esc, median eller kvantil', () => {
 });
 
 describe('appens moduler: inga vakter på funktioner och bibliotek som alltid finns', () => {
-    // En importerad eller i filen deklarerad funktion finns alltid när modulen körs; en typeof-vakt på den döljer
-    // bara ett stavfel. Vakter på webbläsarens API, variabler och egenskaper står kvar.
-    it('ingen typeof X === \'function\' på en importerad eller deklarerad funktion i src/app', () => {
+    // Ett importerat eller i filen deklarerat namn finns alltid när modulen körs; en typeof-vakt på det döljer bara
+    // ett stavfel. Vakter på webbläsarens API, lokala variabler och egenskaper står kvar, och typeof i JSDoc-typer
+    // (ReturnType<typeof X>) är ingen vakt.
+    it('ingen typeof på ett importerat namn eller en i filen deklarerad funktion i src/app', () => {
         expect(kallfiler('src/app').flatMap(f => {
             const t = läs(f);
             const egna = new Set([
                 ...[...t.matchAll(/import\s*\{([^}]*)\}\s*from/g)].flatMap(m => m[1].split(',').map(n => n.trim().split(/\s+as\s+/).pop()).filter(Boolean)),
                 ...[...t.matchAll(/function\s*\*?\s*([A-Za-z_$][\w$]*)\s*\(/g)].map(m => m[1]),
             ]);
-            return [...t.matchAll(/typeof ([A-Za-z_$][\w$]*) [!=]== 'function'/g)].filter(m => egna.has(m[1]))
+            return [...t.matchAll(/typeof ([A-Za-z_$][\w$]*) [!=]==/g)].filter(m => egna.has(m[1]))
                 .map(m => `${f}:${radFor(t, m.index)} ${m[1]}`);
         })).toEqual([]);
     });
@@ -455,7 +463,7 @@ describe('dokumentation: skripten som nämns finns', () => {
     });
     it('varje "npm run …" i README och CONTRIBUTING finns i package.json', () => {
         for (const f of ['README.md', '.github/CONTRIBUTING.md']) {
-            for (const [, namn] of läs(f).matchAll(/npm run ([\w:-]+)/g)) expect(pkg.scripts, `${f}: npm run ${namn}`).toHaveProperty([namn]);
+            for (const [, namn] of ickeTom(läs(f).matchAll(/npm run ([\w:-]+)/g))) expect(pkg.scripts, `${f}: npm run ${namn}`).toHaveProperty([namn]);
         }
     });
 });
@@ -479,27 +487,34 @@ describe('dokumentation: en Definition of Done, och npm run kontroll kör CI:s s
         const slut = resten.search(/^ {2}\w[\w-]*:/m);
         return slut < 0 ? resten : resten.slice(0, slut);
     };
-    // Jobben som samlas i kontrollen quality: grindarna och den delade sviten.
-    const qualitySteg = () => ['grindar', 'tester']
+    // Jobben som samlas i kontrollen quality: grindarna, den delade sviten och röktestet i webbläsarna.
+    const qualitySteg = () => ['grindar', 'tester', 'browser']
         .flatMap(namn => [...jobb(namn).matchAll(/npm run ([\w:-]+)/g)].map(m => m[1]));
     const kontroll = () => import('../tools/kontroll.mjs');
 
-    it('varje "npm run …" i CI-jobben grindar och tester ingår i STEG i tools/kontroll.mjs', async () => {
+    it('varje "npm run …" i CI-jobben grindar, tester och browser ingår i STEG i tools/kontroll.mjs', async () => {
         const ci = qualitySteg();
         expect(ci.length).toBeGreaterThan(0);
         expect(ci).toContain('test:full');
         const { STEG } = await kontroll();
         expect(ci.filter(n => !STEG.includes(n))).toEqual([]);
     });
-    it('sviten är delad så att varje del körs, och quality väntar på grindarna och alla delar', () => {
+    it('ci.yml och release.yml kör artefaktgrinden genom tools/kontroll.mjs, som har regeln för vilka filer som jämförs', () => {
+        for (const fil of ['ci.yml', 'release.yml']) {
+            const wf = läs(`.github/workflows/${fil}`);
+            const steg = /- name: Artefakten motsvarar källan[^\n]*\n\s+run: (.*)/.exec(wf);
+            expect(steg?.[1], fil).toBe('node tools/kontroll.mjs --artefakt');
+        }
+    });
+    it('sviten är delad så att varje del körs, och quality väntar på grindarna, alla delar och röktestet', () => {
         const tester = jobb('tester');
         const delar = /del: \[([\d, ]+)\]/.exec(tester)[1].split(',').map(s => Number(s.trim()));
         const antal = Number(/--shard=\$\{\{ matrix\.del \}\}\/(\d+)/.exec(tester)[1]);
         expect(delar).toEqual(Array.from({ length: antal }, (_, i) => i + 1));
         const quality = jobb('quality');
         expect(quality).toMatch(/if: always\(\)/);
-        expect(quality).toMatch(/needs: \[grindar, tester\]/);
-        for (const n of ['grindar', 'tester']) expect(quality).toContain(`needs.${n}.result`);
+        expect(quality).toMatch(/needs: \[grindar, tester, browser\]/);
+        for (const n of ['grindar', 'tester', 'browser']) expect(quality).toContain(`needs.${n}.result`);
     });
     it('STEG har också bygget och webbläsarjobbets röktest, och varje steg finns i package.json', async () => {
         const { STEG, SNABBA_STEG } = await kontroll();
@@ -534,10 +549,11 @@ describe('dokumentation: kodbasen är redo att publiceras', () => {
         expect(läs('SECURITY.md')).not.toMatch(/gmail/i);
     });
     it('README och dokumenten räknar fälten som kolumnmappningen: fyra obligatoriska, tre valfria (ADR-64)', () => {
-        const app = läs('src/app/32-filinlasning.js');
-        const roller = [...app.matchAll(/\{ role: '(\w+)'[^}]*required: (true|false)/g)].map(m => [m[1], m[2] === 'true']);
-        expect(roller.find(([r]) => r === 'alder')).toEqual(['alder', false]);
-        expect(roller.filter(([, k]) => k).map(([r]) => r).sort()).toEqual(['bas', 'kon', 'lon', 'yrke']);
+        // Kolumnmappningen, förhandskontrollen och importprofilerna läser rollerna ur src/lib/importprofiler.js.
+        expect(IMPORTPROFIL_ROLLER).toContain('alder');
+        expect(OBLIGATORISKA_ROLLER).not.toContain('alder');
+        expect([...OBLIGATORISKA_ROLLER].sort()).toEqual(['bas', 'kon', 'lon', 'yrke']);
+        expect(IMPORTPROFIL_ROLLER.length - OBLIGATORISKA_ROLLER.length).toBe(3);
         expect(läs('README.md').replace(/\s+/g, ' ')).toMatch(/fyra obligatoriska, tre valfria/);
         expect(läs('README.md')).not.toMatch(/fem obligatoriska/);
     });

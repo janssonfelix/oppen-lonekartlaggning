@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { JSDOM } from 'jsdom';
 import { docxDelar, xmlText } from '../src/lib/docx.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const tolka = xml => new new JSDOM('').window.DOMParser().parseFromString(xml, 'application/xml');
 const valformad = xml => tolka(xml).getElementsByTagName('parsererror').length === 0;
@@ -83,9 +84,9 @@ describe('docx: blocken blir Word-XML', () => {
     });
     it('relationerna pekar på filer som finns', () => {
         const mal = xml => [...xml.matchAll(/Target="([^"]+)"/g)].map(m => m[1]);
-        for (const m of mal(d['_rels/.rels'])) expect(d[m], m).toBeTruthy();
-        for (const m of mal(d['word/_rels/document.xml.rels'])) expect(d[`word/${m}`], m).toBeTruthy();
-        for (const m of [...d['[Content_Types].xml'].matchAll(/PartName="\/([^"]+)"/g)].map(x => x[1])) expect(d[m], m).toBeTruthy();
+        for (const m of ickeTom(mal(d['_rels/.rels']))) expect(d[m], m).toBeTruthy();
+        for (const m of ickeTom(mal(d['word/_rels/document.xml.rels']))) expect(d[`word/${m}`], m).toBeTruthy();
+        for (const m of ickeTom([...d['[Content_Types].xml'].matchAll(/PartName="\/([^"]+)"/g)].map(x => x[1]))) expect(d[m], m).toBeTruthy();
     });
     it('metadatan: titel, skapare och tid — inga andra namn', () => {
         const core = d['docProps/core.xml'];
@@ -160,7 +161,7 @@ describe('docx: tabellerna som Word läser dem', () => {
         expect(barn).toEqual(['w:tbl', 'w:p', 'w:tbl', 'w:p', 'w:sectPr']);
     });
     it('tabellens bredd står i samma enhet som kolumnerna och cellerna, och tblLook finns i schemats ordning', () => {
-        for (const tbl of kropp([tva, fem]).filter(n => n.nodeName === 'w:tbl')) {
+        for (const tbl of ickeTom(kropp([tva, fem]).filter(n => n.nodeName === 'w:tbl'))) {
             const pr = tbl.getElementsByTagName('w:tblPr')[0];
             const tblW = pr.getElementsByTagName('w:tblW')[0];
             const grid = [...tbl.getElementsByTagName('w:gridCol')].map(g => Number(g.getAttribute('w:w')));
@@ -270,7 +271,7 @@ describe('docx: rutor och rubriker hålls ihop över sidbrytningar', () => {
     });
     it('styckeegenskaperna står i schemats ordning', () => {
         const ORDNING = ['pStyle', 'keepNext', 'keepLines', 'pageBreakBefore', 'widowControl', 'pBdr', 'shd', 'tabs', 'spacing', 'ind', 'jc', 'outlineLvl', 'rPr'];
-        for (const pPr of stilar.getElementsByTagName('w:pPr')) {
+        for (const pPr of ickeTom(stilar.getElementsByTagName('w:pPr'))) {
             const index = [...pPr.children].map(n => ORDNING.indexOf(n.localName));
             expect(index).not.toContain(-1);
             expect(index).toEqual([...index].sort((a, b) => a - b));

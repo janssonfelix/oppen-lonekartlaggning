@@ -7,7 +7,8 @@ implementationer och skriver tests/fixtures/stat-referens-varden.json.
     python3 -I tests/fixtures/ref-stat-referens.py
 
 Kördes 2026-10-16 med statsmodels 0.15.0, scipy 1.18.1, numpy 2.x (Python 3.14); Oaxaca-delen om 2026-10-29
-med BAS som indikatorer och 2026-11-05 med de valbara modellerna (ADR-56; versioner nedan i utskriften).
+med BAS som indikatorer och 2026-11-05 med de valbara modellerna (ADR-56). Versionerna står i fixturens fält
+versioner; en ny körning skriver dem.
 Behöver INTE köras i CI — resultatet är incheckat som fixtur.
 
   - OLS: statsmodels.OLS; klassisk vcov = cov_params(), HC3 = cov_HC3
@@ -19,8 +20,10 @@ Behöver INTE köras i CI — resultatet är incheckat som fixtur.
   - Blinder-Oaxaca: två OLS (kvinnor, män) på [1, ålderC, en indikator per BAS utom referensen] (ADR-53) och
     komponenterna endowment/coefficient/interaction enligt formeln i korBlinderOaxaca.
 """
-import json, os
+import json, os, sys
 import numpy as np
+import scipy
+import statsmodels
 import statsmodels.api as sm
 from scipy import stats
 from scipy.optimize import linprog
@@ -133,6 +136,8 @@ tcdf = {str(df): {str(t): float(stats.t.cdf(t, df)) for t in tgrid} for df in (5
 
 out = {
     '_kommentar': 'Genererad av tests/fixtures/ref-stat-referens.py (statsmodels/scipy). Se docstring för metod.',
+    'versioner': {'statsmodels': statsmodels.__version__, 'scipy': scipy.__version__, 'numpy': np.__version__,
+                  'python': sys.version.split()[0]},
     'ols': full, 'quantreg': quant, 'sekventiell': seq, 'blinderOaxaca': bo, 'tcdf': tcdf,
     'blinderOaxacaBas': bo_bas, 'blinderOaxacaAlder': bo_alder, 'blinderOaxacaYrke': bo_yrke,
 }

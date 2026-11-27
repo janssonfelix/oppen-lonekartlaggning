@@ -25,3 +25,8 @@ export function utanStil(html) {
     do { forra = s; s = s.replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, ''); } while (s !== forra);
     return s;
 }
+
+/** Skriptblocken i en HTML-text, för testerna som hävdar att inbakningen av organisationspaketet inte rör något skript. */
+export function skriptBlock(html) {
+    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi)].map(m => m[0]);
+}

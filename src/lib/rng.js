@@ -6,8 +6,7 @@
  * Med `Math.random()` skulle SAMMA fil ge OLIKA bootstrap-intervall vid varje
  * körning. Intervallen hamnar i utskrifter som går till ledning och fack, så två
  * personer med samma underlag ska få samma siffror — och projektet i övrigt är
- * byggt på reproducerbarhet (golden-lås, determinismtester, mulberry32 i
- * testdatageneratorn).
+ * byggt på reproducerbarhet (golden-lås, determinismtester).
  *
  * Därför seedas generatorn från datat självt. Samma indata → samma seed →
  * samma intervall, varje gång, i varje webbläsare. Statistiskt likvärdigt —
@@ -37,8 +36,7 @@ export function froAvText(text) {
 }
 
 /**
- * mulberry32 — samma generator som testdatageneratorn använder. Liten, snabb
- * och tillräckligt bra för bootstrap-återsampling.
+ * mulberry32: liten, snabb och tillräckligt bra för bootstrap-återsampling.
  * @param {number} seed
  * @returns {() => number} funktion som ger tal i [0, 1)
  */
@@ -54,8 +52,8 @@ export function mulberry32(seed) {
 
 /**
  * Härleder en stabil seed ur själva talserierna. Använder längd + summa per
- * serie, vilket är billigt och ändras så fort underlaget ändras (ny fil, annat
- * urval → nytt men reproducerbart intervall). Summan tas över talen sorterade
+ * serie, vilket är billigt och ger ett nytt men reproducerbart intervall när antalet eller summan ändras (ny fil,
+ * annat urval); två serier med samma antal och summa får samma seed. Summan tas över talen sorterade
  * stigande: med decimaler (öre) kan en flyttalssumma annars skilja i sista
  * siffran mellan två ordningar och, när den slutar på ,50, avrundas olika.
  * @param {...Array<number>} serier

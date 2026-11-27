@@ -15,6 +15,11 @@ import { hittaExtremvarden } from './15-extremvarden-basrang.js';
 import { _fkRapportrad } from './17-forhandskontroll.js';
 import { harAlder } from './50-regressionsmodeller.js';
 
+/** Ställningstagandets BAS-intervall, en gång vart: rader per AID-kod utan BAS räknas inte. */
+function _referensensBas() {
+    return [...new Set(state.policy.map(p => p.bas).filter(Boolean))];
+}
+
 // ---- Datavalideringsrapport (efter CSV-parse) ----
 export function ritaValideringsrapport() {
     const wrap = document.getElementById('data-validation-report');
@@ -48,7 +53,7 @@ export function ritaValideringsrapport() {
     /** @type {any} */ let polStatus = null;
     /** @type {any} */ let statStatus = null;
     if (state.policy.length) {
-        const polBas = state.policy.map(p => p.bas);
+        const polBas = _referensensBas();
         const missing = dataBas.filter(b => !polBas.includes(b));
         polStatus = { ok: missing.length === 0, missing };
     }
@@ -58,15 +63,11 @@ export function ritaValideringsrapport() {
         statStatus = { ok: missing.length === 0, missing };
     }
 
-    const warnings = outliers.length + singleSexBas + (polStatus && !polStatus.ok ? 1 : 0) + (statStatus && !statStatus.ok ? 1 : 0);
-    const hasWarnings = warnings > 0;
-
     const fmt = n => n.toLocaleString('sv-SE');
 
-    wrap.className = 'data-validation-report' + (hasWarnings ? ' has-warnings' : '');
     wrap.style.display = 'block';
     wrap.innerHTML = `
-        <h4 class="text-dampad-xs versal marg-14-0-8">Inläsning & varningar${hasWarnings ? ' — ' + warnings + ' att granska' : ''}</h4>
+        <h4 class="text-dampad-xs versal marg-14-0-8">Inläsning & varningar</h4>
         <div class="dvr-grid">
             <div class="dvr-section">
                 <h4>Från fil till analys</h4>
@@ -114,6 +115,11 @@ export function ritaValideringsrapport() {
             </div>
         </div>
     `;
+    // Rapporten är gul och räknar det som ska granskas när den har varningsrader: talet är raderna, så att inget
+    // som visas som varning glöms i rubriken.
+    const warnings = wrap.querySelectorAll('.dvr-row.warn').length;
+    wrap.className = 'data-validation-report' + (warnings ? ' has-warnings' : '');
+    if (warnings) /** @type {HTMLElement} */ (wrap.querySelector('h4')).textContent += ` — ${warnings} att granska`;
 }
 
 // Underlagets kvalitet (ADR-19): inläsningsrapporten är underlag i panelen;
@@ -136,7 +142,7 @@ export function ritaKonsistenskontroll() {
 
     // Ställningstagande
     if (state.policy.length) {
-        const polBas = state.policy.map(p => p.bas);
+        const polBas = _referensensBas();
         const dataNotInPol = dataBas.filter(b => !polBas.includes(b));
         const polNotInData = polBas.filter(b => !dataBas.includes(b));
         if (dataNotInPol.length) issues.push(`<strong>${esc(referensKortnamn())}:</strong> ${dataNotInPol.length} ${ordForAntal(dataNotInPol.length, T.niva)} saknas (<code>${dataNotInPol.map(esc).join(', ')}</code>) — analyserna kan inte jämföra dessa mot policy.`);

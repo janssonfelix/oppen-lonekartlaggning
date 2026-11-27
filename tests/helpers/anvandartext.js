@@ -8,11 +8,15 @@ export const utanKommentarer = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/
 
 /**
  * Strängliteralerna som ser ut som text: med blanksteg eller med versal först. Identifierare som 'lonegapPct' och
- * id:n som 'gap-uppdelning' faller bort; uttryck i mallsträngar (${…}) blir blanksteg.
+ * id:n som 'gap-uppdelning' faller bort. Ett uttryck i en mallsträng (${…}) blir blanksteg i mallens text, och
+ * strängarna i uttrycket prövas för sig (en ternär med en handskriven term).
  */
 export const textLiteraler = src => {
     const ut = []; const re = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g; let m;
-    while ((m = re.exec(src))) ut.push(m[0].slice(1, -1).replace(/\$\{[^}]*\}/g, ' '));
+    while ((m = re.exec(src))) {
+        const uttryck = m[0].startsWith('`') ? [...m[0].matchAll(/\$\{([^}]*)\}/g)].map(u => u[1]) : [];
+        ut.push(m[0].slice(1, -1).replace(/\$\{[^}]*\}/g, ' '), ...uttryck.flatMap(textLiteraler));
+    }
     return ut.filter(l => /\s/.test(l) || /^[A-ZÅÄÖ]/.test(l));
 };
 

@@ -7,7 +7,7 @@
  *   - median / kvantil (kanttillstånd, jämn/udda längd, P10/P50/P90)
  *   - linjarRegression (perfekt linje, brusig data)
  *   - normalCdf (Φ vid kända punkter ±1σ ±2σ)
- *   - matrisprodukt / transponera / invertera (identitet, singulär)
+ *   - matrisprodukt / invertera (identitet, singulär)
  *   - anpassaOLS (kända koefficienter, HC3 vs klassisk vcov, n<k+2, exakt samma tal som fulla matrisprodukter)
  *   - bhJustera (Benjamini–Hochberg: ordning, m = 1, tom lista, lika p-värden, tak 1, monotonicitet)
  *   - avrundaSymmetriskt (visningens avrundning: halvorna bort från noll, ingen −0)
@@ -24,11 +24,11 @@ import {
     pVardeTvasidigt,
     avrundaSymmetriskt,
     matrisprodukt,
-    transponera,
     invertera,
     anpassaOLS,
     bhJustera
 } from '../src/lib/stat.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const close = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
 
@@ -127,7 +127,7 @@ describe('[B1.5] normalCdf', () => {
     });
 });
 
-describe('matrisprodukt / transponera / invertera', () => {
+describe('matrisprodukt / invertera', () => {
     it('matrisprodukt: 2×3 · 3×2', () => {
         const A = [
             [1, 2, 3],
@@ -141,18 +141,6 @@ describe('matrisprodukt / transponera / invertera', () => {
         expect(matrisprodukt(A, B)).toEqual([
             [58, 64],
             [139, 154]
-        ]);
-    });
-    it('transponera 2×3 → 3×2', () => {
-        expect(
-            transponera([
-                [1, 2, 3],
-                [4, 5, 6]
-            ])
-        ).toEqual([
-            [1, 4],
-            [2, 5],
-            [3, 6]
         ]);
     });
     it('invertera(I) = I', () => {
@@ -294,7 +282,7 @@ describe('[B1.3] anpassaOLS', () => {
 function fitOLSFull(X, y, hTillagg = null) {
     const n = X.length, k = X[0].length;
     if (n < k + 2) return null;
-    const Xt = transponera(X);
+    const Xt = X[0].map((_, i) => X.map(r => r[i]));
     const XtX = matrisprodukt(Xt, X);
     const XtXinv = invertera(XtX);
     if (!XtXinv) return null;
@@ -462,7 +450,7 @@ describe('[B1.6] bhJustera', () => {
     it('ger inget q över 1 och inget q under p', () => {
         const p = [0.9, 0.95, 0.99, 0.2, 0.6, 0.8, 1];
         const q = bhJustera(p);
-        q.forEach((v, i) => { expect(v).toBeLessThanOrEqual(1); expect(v).toBeGreaterThanOrEqual(p[i]); });
+        ickeTom(q).forEach((v, i) => { expect(v).toBeLessThanOrEqual(1); expect(v).toBeGreaterThanOrEqual(p[i]); });
         // q ordnat som p
         const ord = p.map((v, i) => i).sort((a, b) => p[a] - p[b]);
         for (let i = 1; i < ord.length; i++) expect(q[ord[i]]).toBeGreaterThanOrEqual(q[ord[i - 1]]);

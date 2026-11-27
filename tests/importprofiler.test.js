@@ -32,10 +32,6 @@ describe('valideraImportprofil', () => {
         expect(valideraImportprofil(profil({ kannetecken: ['850101-1234'] }))).toBeNull();
         expect(valideraImportprofil(profil({ namn: 'Lista 198501011234' }))).toBeNull();
     });
-    it('avvisar e-postadresser', () => {
-        expect(valideraImportprofil(profil({ namn: 'anna@exempel.se' }))).toBeNull();
-        expect(valideraImportprofil(profil({ rubriker: { ...profil().rubriker, kon: ['k@exempel.se'] } }))).toBeNull();
-    });
     it('avvisar en rubrik eller ett namn över 80 tecken', () => {
         expect(valideraImportprofil(profil({ rubriker: { ...profil().rubriker, lon: ['L'.repeat(81)] } }))).toBeNull();
         expect(valideraImportprofil(profil({ namn: 'N'.repeat(81) }))).toBeNull();

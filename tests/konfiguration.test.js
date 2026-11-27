@@ -73,6 +73,12 @@ describe('konfigurationMedNyaNamn: de gamla namnen byts mot de nya', () => {
         expect(konfigurationMedNyaNamn({ likvardighet: { kvinnoTrosholdPct: 90 } })).toEqual({ likvardighet: { kvinnoTroskelPct: 90 } });
         expect(konfigurationMedNyaNamn({ forecast: 'x', ui: null })).toEqual({ loneoversyn: 'x', visning: null });
     });
+    it('ett djupt nästlat värde utanför tabellens vägar lämnas som det är, utan att anropsstacken tar slut', () => {
+        const djup = JSON.parse(`${'{"a":'.repeat(20000)}1${'}'.repeat(20000)}`);
+        const ut = konfigurationMedNyaNamn({ ...GAMMAL, rapportUrval: djup });
+        expect(ut.rapportUrval).toBe(djup);
+        expect(ut.prioTrosklar.atgardTroskel).toBe(-6);
+    });
     it('ett fält som heter __proto__ blir ett vanligt fält och ändrar inte objektets prototyp', () => {
         const ut = konfigurationMedNyaNamn(JSON.parse('{"__proto__": {"x": 1}, "orgName": "A"}'));
         expect(Object.getPrototypeOf(ut)).toBe(Object.prototype);

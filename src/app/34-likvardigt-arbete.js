@@ -16,19 +16,18 @@
 import { sektorsnamn } from '../lib/aid.js';
 import { kvDefinitionNamn } from '../lib/aidbas.js';
 import { talformat } from '../lib/figur.js';
-import { ALDERS_GOLV_STANDARD as ALDERS_GOLV, ALDERS_SPRIDNING_MIN as ALDERS_SPRIDNING, likvardighetsparUr } from '../lib/likvardighet.js';
+import { ALDERS_GOLV_STANDARD as ALDERS_GOLV, ALDERS_SPRIDNING_MIN as ALDERS_SPRIDNING, KVINNO_TROSKEL_STANDARD, likvardighetsparUr } from '../lib/likvardighet.js';
 import { skrDelText, skrKvinnoandel } from '../lib/skrreferens.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, artikel, stor, termFras } from '../lib/termer.js';
 import { justeradSaknas, kandidatparRader, kompletteraDiagnostik, kvDomUnderK, likvardighetFelresultat, lvPoang, parSakerhet, vymodellKravMotLon, vymodellLikvardigtArbete } from '../lib/vymodell-likvardigt-arbete.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { idagDatum } from './03-hjalpfunktioner.js';
+import { demoFilnamn, idagDatum } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { aktiveraSortering, flerKolumner } from './05-tabeller-och-lankar.js';
 import { kInstalld, kTroskel } from './06-k-troskel.js';
 import { _skrDel, nationellAidKlass, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { orgNamn } from './07-standardinstallningar.js';
-import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { _rfKorta } from './10-diagramlayout.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
@@ -36,18 +35,12 @@ import { _STS_DIR_KOLUMN, _STS_DIR_TIPS, PALETT, URVAL } from './10-diagramtema.
 import { markeringFor } from './11-markering.js';
 import { laggTillTabellverktyg, hamtaData, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
-import { _laggTillMetodblad, _laddaNedCSV, _visaExportvarning } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, _laddaNedCSV, _visaExportvarning, verktygMedVersion } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { _bevisForLikvardighetspar, _oppnaBevisruta } from './27-berakningsbevis.js';
 import { _laSlutsats } from './41-lika-arbete.js';
 import { aidbasDefinition, aidbasDefinitionText, aidbasGrans, jamforelseGransText, konsklassOrd, kvDomGransText, lvJamforelse, ritaAidBasLikvardigt } from './45-aid-bas-tabeller.js';
 import { kTroskelLank } from './86-installningar.js';
-/**
- * Likvärdighetsparen för nuvarande data och inställningar: det sparade resultatet om det
- * finns, annars räknas de och sparas. Allt som bara LÄSER paren går via denna, så att
- * de räknas en gång (varje ändring av data eller inställningar nollställer resultatet).
- * @returns {any}
- */
 // SKR:s kvinnoandel för AID-etiketten (efter organisationstypen) — referens bredvid organisationens egen.
 function _lvSkrPct(aid) {
     const ref = skrKvinnoandel(aid, { del: _skrDel() });
@@ -70,6 +63,12 @@ function _lvExternReservText() {
     return termText('{Enhet.fl:kvinnodominerad} (i {niva.en}) jämförda med jämförelsestatistiken');
 }
 
+/**
+ * Likvärdighetsparen för nuvarande data och inställningar: det sparade resultatet om det
+ * finns, annars räknas de och sparas. Allt som bara LÄSER paren går via denna, så att
+ * de räknas en gång (varje ändring av data eller inställningar nollställer resultatet).
+ * @returns {any}
+ */
 export function likvardighetResultat() {
     let lv = state.likvardighet && state.likvardighet.result;
     if (!lv) {
@@ -89,7 +88,7 @@ export function likvardighetResultat() {
  *
  * Algoritmen finns bara i lib, som appen importerar som alla andra kärnmoduler (ADR-98);
  * den här funktionen gör bara tre saker:
- * läser `state`, anropar `_lvLikvardighetspar`, och fyller på med den UI-diagnostik
+ * läser `state`, anropar `likvardighetsparUr`, och fyller på med den UI-diagnostik
  * som lib inte känner till (exempelrader, lokal könsdata, felsträngar).
  *
  * KÄRNPRINCIP: transparens. Funktionen returnerar ALLTID ett strukturerat
@@ -106,7 +105,7 @@ export function likvardighetResultat() {
  */
 export function likvardighetspar(over) {
     const cfg = state.likvardighet || {};
-    const kvinnoThr = over?.kvinnoTrosholdPct ?? cfg.kvinnoTrosholdPct ?? 60;
+    const kvinnoThr = over?.kvinnoTrosholdPct ?? cfg.kvinnoTrosholdPct ?? KVINNO_TROSKEL_STANDARD;
     const av = state.arbetsvardering;
     const usePoang = !!(av && av.byKey && av.byKey.size > 0);
 
@@ -185,8 +184,6 @@ const LV_KOL_KVDOM = 'yrke', LV_KOL_JAMF = 'jamfyrke';
  *   3. Jämförelseyrken: organisationens egna yrken som inte är kvinnodominerade (primärt) +
  *      jämförelsestatistiken (fallback per BAS)
  *   4. Jämförelse (huvudtabellen) med bootstrap-CI på medianskillnaden
- *
- * Felsökningsvy gömd bakom dev-flagga (window.__LV_DEBUG__).
  */
 export function ritaLikvardigtArbete() {
     const wrap = document.getElementById('likvardighet-content');
@@ -274,7 +271,7 @@ export function ritaLikvardigtArbete() {
                     — en jämförelse inom organisationen. Saknas ${artikel(T.jamforelse)} ${T.jamforelse.en} i organisationen i
                     ${artikel(T.niva)} ${T.niva.en} används <em>jämförelsestatistiken</em> i stället
                     ${d.statistik.harLokalKonsdata
-                        ? `<span class="farg-ok">(lokal könsfördelning).</span>`
+                        ? `<span class="farg-ok">(könsfördelningen ur jämförelsestatistiken där den har andel kvinnor, annars ur den nationella statistiken).</span>`
                         : `<span class="varning-pa-yta">(könsfördelningen hämtas då ur den nationella statistiken: andel kvinnor per ${T.kod.en} i ${skrDelText(_skrDel())}, ${esc(skrKallaKort())}).</span>`}</li>`}
                 <li><strong>Steg 3</strong>: Flagga par där ${termText('{jamforelse.bf.s}')} median är högre
                     än ${termText('{enhet.bf.s:kvinnodominerad}')}. Varje par får ett
@@ -505,31 +502,6 @@ export function ritaLikvardigtArbete() {
             </div>`;
     }
 
-    // ====== Felsökningsvy (B4: endast bakom dev-flagga window.__LV_DEBUG__) ======
-    let debugHtml = '';
-    if (typeof window !== 'undefined' && window.__LV_DEBUG__) {
-        const debugStat = state.statistik.slice(0, 3).map(s => JSON.stringify({
-            aid: s.aid, bas: s.bas, median: s.median,
-            nKv: s.nKv, nMa: s.nMa, andelKv: s.andelKv,
-            aidFull: (s.aidFull || '').slice(0, 40)
-        }));
-        const debugData = state.data.slice(0, 3).map(r => JSON.stringify({
-            aid: r.aid, bas: r.bas, kon: r.kon, lon: r.lon, yrkeLabel: (r.yrkeLabel||'').slice(0,30)
-        }));
-        debugHtml = `
-            <details class="marg-t-16" open>
-                <summary class="text-dampad-sm pekare">Felsökningsdata (dev-läge)</summary>
-                <div class="bak-yta ram-1-kant rund-4 typsnitt-mono-ui fs-xs lh-1_5 marg-t-8 rulla-x pad-10">
-                    <strong>state.statistikHasKon:</strong> ${state.statistikHasKon}<br>
-                    <strong>state.statistik (3 första):</strong><br>
-                    ${debugStat.length ? debugStat.map(s => '  ' + esc(s)).join('<br>') : '  (tom)'}
-                    <br><br>
-                    <strong>state.data (3 första):</strong><br>
-                    ${debugData.length ? debugData.map(s => '  ' + esc(s)).join('<br>') : '  (tom)'}
-                </div>
-            </details>`;
-    }
-
     // ====== Kontroller ======
     // Definitionens värden 'do' och 'scb' är historiska nycklar; valen heter efter lydelsen och nycklarna står kvar,
     // så att sparade konfigurationsfiler fortsätter att läsas (ADR-72).
@@ -622,8 +594,7 @@ export function ritaLikvardigtArbete() {
             orgTblHtml + internTblHtml + statTblHtml) +
         avsnitt('installningar', 'Inställningar', termText('Kvinnotröskel, definition av kvinnodominerat, vilka {enhet.fl} som jämförs, minsta skillnad och antal par. Standardvärdena räcker för de flesta.'),
             vm.anpassat ? 'Anpassade värden' : 'Standardvärden', controlsHtml) +
-        avsnitt('analys', 'Så fungerar analysen', 'Metoden, och vad verktyget ser i underlaget', '', introHtml + diagnostikHtml) +
-        debugHtml;
+        avsnitt('analys', 'Så fungerar analysen', 'Metoden, och vad verktyget ser i underlaget', '', introHtml + diagnostikHtml);
 
     // ====== Event-hooks ======
     const onNumChange = (id, key, min, max) => {
@@ -636,7 +607,7 @@ export function ritaLikvardigtArbete() {
             if (max != null && v > max) v = max;
             state.likvardighet[key] = v;
             state.likvardighet.result = null;   // paren räknas med det nya värdet
-            ritaLikvardigtArbete();
+            ritaLikvardigtArbete(); ritaAidBasLikvardigt();   // tabellerna per BAS-intervall läser kvinnotröskeln
         });
     };
     onNumChange('lv-kvinno-thr', 'kvinnoTrosholdPct', 50, 70);
@@ -685,11 +656,6 @@ export function ritaLikvardigtArbete() {
     ritaKravMotLon();
 }
 
-// ---- Likvärdigt arbete: kandidatparen som bild (visualiserings-Steg 2) -----------------
-// Rena par-listan (kvinnodominerat yrke × jämförelseyrke, z = lönegap %) blir en
-// äkta 2D-matris. Tabellen finns kvar som tillgänglighetsalternativ (role="img"
-// + aria pekar dit). Färgen är enkelriktad (PALETT.sekventiell): rödare cell =
-// större gap = jämförelseyrket tjänar mer än det kvinnodominerade yrket.
 /** Flikens topp: urvalsraden och slutsatserna ur vymodellen. Talen är de som tabellerna i fliken visar. */
 function _lvRitaTopp(result, vm) {
     const urval = document.getElementById('lv-urval'), host = document.getElementById('lv-slutsatser');
@@ -775,7 +741,7 @@ function ritaKandidatparen(pairs) {
 // kvinnodominerade yrket (n i tabellen). Ett par samlar två yrken, men varje fält har ett enda värde per par.
 const LV_PAR_ANTAL = Object.freeze({ typ: 'intervall', falt: 'n', namn: termText('Antal med {enhet.bf:kvinnodominerad}'), format: 'antal', etikett: termText('{v} med {enhet.bf:kvinnodominerad}') });
 function _lvParFigur(pairs, max = 14) {
-    // Raderna (de allvarligaste paren, ett per namn) väljs i vymodellen (kandidatparRader).
+    // Raderna (de allvarligaste paren, ett per namn och BAS-intervall) väljs i vymodellen (kandidatparRader).
     const rader = kandidatparRader(pairs, p => `${_rfKorta(String(p.kvLabel), 22)} mot ${_rfKorta(String(p.maLabel), 22)}`, max);
     const kr = v => talformat(v, 'kr');
     const parFalt = p => ({ ...(p.kvBas != null && p.kvBas !== '' ? { bas: String(p.kvBas) } : {}), ...(isFinite(p.gapPct) ? { gap: +p.gapPct.toFixed(1) } : {}), ...(p.kvN > 0 ? { n: p.kvN } : {}) });
@@ -791,18 +757,17 @@ function _lvParFigur(pairs, max = 14) {
                 punkt(termText('{Enhet.en:kvinnodominerad}'), PALETT.kon.kvinna, 'kvMedian'), punkt(termText('{Jamforelse.en}'), PALETT.kon.man, 'maMedian', { etikettLage: 'hoger' })] };
 }
 
-/**
- * Robust CSV-export för Likvärdigt arbete. Använder _laddaNedCSV-helpern direkt —
- * INGA beroenden på XLSX-biblioteket. Detta är PRIMÄR exportväg (Excel-versionen
- * är sekundär).
- */
 // Metodraden om åldersjusteringen (CSV:ns metadata och Excel-arbetsbokens metadatablad).
 const LV_JUSTERAD_METOD = termText('{Jamforelse.bf.s} lön omräknad till {enhet.bf.s:kvinnodominerad} åldersfördelning: log(lön) = a + b·ålder skattas i {jamforelse.bf} (minst ') + ALDERS_GOLV + ' personer, minst ' + ALDERS_SPRIDNING + termText(' års åldersspridning), lönen prediceras vid varje person med {enhet.bf:kvinnodominerad} och medianen av prediktionerna jämförs med dess median. Den råa skillnaden är det lagen prövar; den justerade visar hur mycket som kan bero på åldersstruktur. Bara interna par; tomt när den inte kan räknas.');
 
+/** Kolumnen Jämförelsekälla i parens exporter (CSV, Excel): var jämförelsen och andelen kvinnor kommer ifrån. */
+export function lvKallNamn(p) {
+    return p.jamforKalla === 'intern' ? 'Intern (organisation)'
+        : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
+}
+
 // Kandidatparens rubrik och rader, gemensamma för CSV- och Excel-exporten; `num` formaterar talen för respektive format.
 function _lvParRader(pairs, num) {
-    const källNamn = p => p.jamforKalla === 'intern' ? 'Intern (organisation)'
-        : (p.maKlassKort === 'lokal' ? 'jämförelsestatistiken' : 'SKR:s personalstatistik');
     const rows = [[
         'Nr',
         'Org. AID', `Org. ${T.namn.en}`, 'BAS', 'Org. n', 'Org. % kvinnor', 'Median Org. (kr)',
@@ -816,7 +781,7 @@ function _lvParRader(pairs, num) {
             i + 1,
             p.kvAid || '', p.kvLabel || '', p.kvBas || '', num(p.kvN), num(p.kvKvinnoPct, 1), num(p.kvMedian),
             p.maAid || '', p.maLabel || '', num(p.maKvAndel, 1), konsklassOrd(p.maKlass), num(p.maN),
-            källNamn(p),
+            lvKallNamn(p),
             num(p.maMedian),
             num(p.gapKr), num(p.gapPct, 2),
             p.aldersJusterad ? num(p.aldersJusterad.gapPct, 2) : '',
@@ -829,11 +794,16 @@ function _lvParRader(pairs, num) {
     return rows;
 }
 
+/**
+ * Robust CSV-export för Likvärdigt arbete. Använder _laddaNedCSV-helpern direkt —
+ * INGA beroenden på XLSX-biblioteket. Detta är PRIMÄR exportväg (Excel-versionen
+ * är sekundär).
+ */
 // Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
 function exportLikvardighetCSV(...a) { return medExportLage(() => _exportLikvardighetCSVExport.apply(null, /** @type {any} */ (a))); }
 function _exportLikvardighetCSVExport() {
     const result = likvardighetResultat();
-    if (!result || !Array.isArray(result.pairs) || !result.pairs.length) {
+    if (!result.pairs.length) {
         alert(termText('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade {enhet.fl}.'));
         return;
     }
@@ -848,7 +818,7 @@ function _exportLikvardighetCSVExport() {
     rows.push([]);
     rows.push(['# METADATA']);
     rows.push(['Genererad', new Date().toLocaleString('sv-SE')]);
-    rows.push(['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')]);
+    rows.push(['Verktyg', verktygMedVersion()]);
     rows.push(['Kvinnotröskel (%)', result.opts.kvinnoTrosholdPct]);
     rows.push(['Kvinnodominerat vid', aidbasDefinitionText()]);
     rows.push([stor(T.jamforelse.fl), jamforelseGransText()]);
@@ -880,17 +850,12 @@ function _exportLikvardighetExport() {
     try {
         stegnamn = 'hämta result från state';
         const result = likvardighetResultat();
-        if (!result) {
-            alert('Något gick fel i verktyget. Öppna fliken igen; hjälper det inte, rapportera felet.');
-            return;
-        }
-        if (!Array.isArray(result.pairs) || result.pairs.length === 0) {
+        if (result.pairs.length === 0) {
             alert(termText('Det finns inga kandidatpar att exportera. Sänk minsta skillnad i fliken, eller kontrollera att lönefilen har kvinnodominerade {enhet.fl}.'));
             return;
         }
         const { pairs } = result;
-        const diagnostik = result.diagnostik || {};
-        const opts = result.opts || {};
+        const { diagnostik, opts } = result;
         const poang = lvPoang(result);   // i poängläget används jämförelsestatistiken inte (ADR-76)
 
         // Helper: säker numerisk-konvertering. Returnerar number om giltigt,
@@ -915,64 +880,54 @@ function _exportLikvardighetExport() {
             { wch: 11 }, { wch: 8 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 14 },
             { wch: 46 }, { wch: 32 }
         ];
-        // Hoppar över !freeze (icke-standard i mini-versionen) och num-format
-        // (icke-kritisk kosmetik). Datat står sig utan.
+        // Bladet får varken låst rubrikrad (!freeze stöds inte av SheetJS-bygget xlsx.mini) eller talformat; datat står sig utan.
         XLSX.utils.book_append_sheet(wb, sheet, 'Likvärdigt arbete');
 
         stegnamn = 'bygg metadatablad';
-        // Säker getter — diagnostik-objektet kan ha varit ofullständigt om
-        // likvardighetspar avbröts mitt i ett steg.
-        /** @param {() => any} path @param {any} [fallback] */
-        const safe = (path, fallback = '') => {
-            try {
-                const v = path();
-                return v == null ? fallback : v;
-            } catch (_e) { return fallback; }
-        };
         const meta = [
             [`Likvärdigt arbete — kvinnodominerade ${T.enhet.fl}`, ''],
             ['', ''],
             ['Genererad', new Date().toLocaleString('sv-SE')],
-            ['Verktyg', 'Öppen lönekartläggning (v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–') + ')'],
-            ['Aktiv profil', safe(() => state.profile.name)],
+            ['Verktyg', verktygMedVersion()],
+            ['Aktiv profil', state.profile.name ?? ''],
             ['Modell', poang
                 ? termText('Organisationens kvinnodominerade {enhet.fl} jämförs med organisationens egna {enhet.fl} som inte är kvinnodominerade (mansdominerade och blandade; könsandelen i {jamforelse.bf} står i tabellen) och har lika eller lägre arbetsvärderingspoäng, också i andra {niva.fl}')
                 : termText('Organisationens kvinnodominerade {enhet.fl} jämförs inom samma {niva.en} med {enhet.fl} som inte är kvinnodominerade (mansdominerade och blandade; könsandelen i {jamforelse.bf} står i tabellen), i första hand organisationens egna (intern), annars jämförelsestatistiken (extern)')],
             ['', ''],
             ['— PARAMETRAR —', ''],
-            ['Kvinnotröskel (%)', safe(() => opts.kvinnoTrosholdPct, '')],
+            ['Kvinnotröskel (%)', opts.kvinnoTrosholdPct ?? ''],
             ['Kvinnodominerat vid', aidbasDefinitionText()],
             [stor(T.jamforelse.fl), jamforelseGransText()],
-            ['Minsta skillnad (%)', safe(() => opts.minGapPct, '')],
-            ['Visa max antal par', safe(() => opts.topN, '')],
+            ['Minsta skillnad (%)', opts.minGapPct ?? ''],
+            ['Visa max antal par', opts.topN ?? ''],
             ['Minsta gruppstorlek', 'Tillämpas EJ i denna analys'],
             ['', ''],
             ['— DIAGNOSTIK —', ''],
-            [`Organisationens ${T.enhet.fl} i ${T.niva.fl} totalt`, safe(() => diagnostik.organisation.antalAidxBas, 0)],
-            ['Kvinnodominerade i organisationen', safe(() => diagnostik.organisation.kvDomFunna, 0)],
-            ['•varav med n < k-tröskel (inkluderade ändå)', safe(() => diagnostik.organisation.kvDomMedNLessThanK, 0)],
-            ['Rader i jämförelsestatistiken', safe(() => diagnostik.statistik.totalRader, 0)],
-            ['Jämförelsestatistiken har könsfördelning', safe(() => diagnostik.statistik.harLokalKonsdata, false) ? 'Ja' : 'Nej'],
-            ['Inte kvinnodominerade i jämförelsestatistiken', safe(() => diagnostik.statistik.klass.ickeKv, 0)],
-            ['•varav blandade', safe(() => diagnostik.statistik.klass.blandat, 0)],
-            ['Kvinnodominerade i jämförelsestatistiken', safe(() => diagnostik.statistik.klass.kvDom, 0)],
-            ['Oklassificerade i jämförelsestatistiken', safe(() => diagnostik.statistik.klass.oklassificerad, 0)],
-            ['Klassificering från jämförelsestatistikens könsfördelning', safe(() => diagnostik.statistik.klassKalla.lokal, 0)],
-            ['Klassificering från SKR:s personalstatistik', safe(() => diagnostik.statistik.klassKalla.nationell, 0)],
-            [`Interna ${T.jamforelse.fl} i organisationen`, safe(() => diagnostik.organisation.ickeKvFunna, 0)],
-            ...(poang ? [] : [['Gemensamma BAS', safe(() => diagnostik.jämförelse.gemensammaBas, 0)]]),
-            ['Möjliga par', safe(() => diagnostik.jämförelse.möjligaPar, 0)],
-            [`•varav ${T.jamforelse.en} > organisation`, safe(() => diagnostik.jämförelse.statHögre, 0)],
-            ['Flaggade interna par', safe(() => diagnostik.jämförelse.internaPar, 0)],
+            [`Organisationens ${T.enhet.fl} i ${T.niva.fl} totalt`, diagnostik.organisation.antalAidxBas ?? 0],
+            ['Kvinnodominerade i organisationen', diagnostik.organisation.kvDomFunna ?? 0],
+            ['•varav med n < k-tröskel (inkluderade ändå)', diagnostik.organisation.kvDomMedNLessThanK ?? 0],
+            ['Rader i jämförelsestatistiken', diagnostik.statistik.totalRader ?? 0],
+            ['Jämförelsestatistiken har könsfördelning', diagnostik.statistik.harLokalKonsdata ? 'Ja' : 'Nej'],
+            ['Inte kvinnodominerade i jämförelsestatistiken', diagnostik.statistik.klass.ickeKv ?? 0],
+            ['•varav blandade', diagnostik.statistik.klass.blandat ?? 0],
+            ['Kvinnodominerade i jämförelsestatistiken', diagnostik.statistik.klass.kvDom ?? 0],
+            ['Oklassificerade i jämförelsestatistiken', diagnostik.statistik.klass.oklassificerad ?? 0],
+            ['Klassificering från jämförelsestatistikens könsfördelning', diagnostik.statistik.klassKalla.lokal ?? 0],
+            ['Klassificering från SKR:s personalstatistik', diagnostik.statistik.klassKalla.nationell ?? 0],
+            [`Interna ${T.jamforelse.fl} i organisationen`, diagnostik.organisation.ickeKvFunna ?? 0],
+            ...(poang ? [] : [['Gemensamma BAS', diagnostik.jämförelse.gemensammaBas ?? 0]]),
+            ['Möjliga par', diagnostik.jämförelse.möjligaPar ?? 0],
+            [`•varav ${T.jamforelse.en} > organisation`, diagnostik.jämförelse.statHögre ?? 0],
+            ['Flaggade interna par', diagnostik.jämförelse.internaPar ?? 0],
             ...(poang ? [] : [   // i poängläget används jämförelsestatistiken inte (ADR-76)
-                ['Flaggade externa par (jämförelsestatistiken)', safe(() => diagnostik.jämförelse.externaPar, 0)],
-                [_lvExternReservText(), safe(() => diagnostik.jämförelse.basMedExternFallback, 0)]]),
+                ['Flaggade externa par (jämförelsestatistiken)', diagnostik.jämförelse.externaPar ?? 0],
+                [_lvExternReservText(), diagnostik.jämförelse.basMedExternFallback ?? 0]]),
             ['Par i utdata', pairs.length],
             ['', ''],
             ['— RÄTTSLIG GRUND —', ''],
             ['Diskrimineringslagen', 'Arbetsgivaren ska analysera om kvinnodominerat arbete har lägre lön än arbete som inte är kvinnodominerat och har likvärdiga eller lägre krav.'],
             ['Mått på kraven', poang
-                ? `Organisationens arbetsvärderingspoäng: lika krav inom ±${safe(() => opts.poangBandPct, 5)} %, över BAS-gränserna.`
+                ? `Organisationens arbetsvärderingspoäng: lika krav inom ±${opts.poangBandPct ?? 5} %, över BAS-gränserna.`
                 : `Jämförelsen sker inom samma ${T.niva.en}; verktyget utgår från att kraven där är likvärdiga.`],
             ['Jämförelsekälla', poang
                 ? termText('Organisationens egna {enhet.fl} som inte är kvinnodominerade. Jämförelsestatistiken har inga poäng och används inte.')
@@ -990,7 +945,7 @@ function _exportLikvardighetExport() {
         stegnamn = 'skriv fil';
         const filename = 'lonekartlaggning_likvardighet_' + idagDatum() + '.xlsx';
         _laggTillMetodblad(wb, { undantag: 'Likvärdigt arbete' });
-        XLSX.writeFile(wb, filename);
+        XLSX.writeFile(wb, demoFilnamn(filename));
 
         stegnamn = 'efter-steg';
         _visaExportvarning();

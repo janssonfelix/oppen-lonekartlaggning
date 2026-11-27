@@ -6,7 +6,7 @@
  * kostnaden för grupperna under tröskeln (varavKvDom i src/lib/vymodell-loneoversyn.js). Scenariotabellen följer samma regel med samma funktion:
  * annars ett streck. Underlaget är det i ktroskel-loneoversyn-summor.test.js där Varav visas som streck: en grupp med
  * 30 personer, en med 12 och en ensam kvinna i en egen grupp; den ensamma kvinnans grupp är den enda kvinnodominerade,
- * så kostnaden till kvinnodominerade grupper är hennes påslag, 2 procent av hennes lön. Skärmen visar talet som förut.
+ * så kostnaden till kvinnodominerade grupper är hennes påslag, 2 procent av hennes lön. Skärmen visar talet.
  * Scenarierna lämnar inte verktyget (de finns bara i minnet och i fliken).
  */
 import { describe, it, expect } from 'vitest';
@@ -41,7 +41,7 @@ function scenario(w) {
 // Utfallstabellen: kostnaden för de visade kvinnodominerade grupperna och Varav-raden.
 function utfall(w) {
     const rader = [...w.document.querySelectorAll('#forecast-outcome .table-wrap tbody tr')].map(celler);
-    const kvDom = rader.filter(c => /^\d+ %$/.test(c[3]) && w.eval(`kvDomNu(${parseInt(c[3], 10)})`));
+    const kvDom = rader.filter(c => /^\d+ %$/.test(c[3]) && w.eval(`konsklassNu(${parseInt(c[3], 10)})`) === 'kvinnodominerad');
     const synlig = kvDom.reduce((s, c) => s + (krTal(c[7]) || 0), 0);
     const varav = /Varav till kvinnodominerade grupper \([^)]*\): (–|[\d]+ kr)/.exec(normalisera(w.document.getElementById('forecast-outcome').textContent))[1];
     return { synlig, varav };

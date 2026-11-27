@@ -6,8 +6,8 @@
 // byggAtgardslista är UTTÖMMANDE — den samlar varje grupp/par/flagga
 //   som HR behöver agera på, grupperad efter källa: Lika arbete, Lika arbete, fördjupning, Likvärdigt
 //   arbete, Löneläge mot referens och underlagets kvalitet. HR kan klicka av punkterna när de hanterat dem.
-//   State sparas på state._actionChecklist (i minnet — försvinner vid reload).
-import { borjaHar } from '../lib/attgora.js';
+//   State sparas på state._actionChecklistDone (i minnet — försvinner vid reload).
+import { ATTGORA_PAR_MAX, borjaHar, parKortadNot } from '../lib/attgora.js';
 import { jamforbaraBas } from '../lib/datakvalitet.js';
 import { periodOrd } from '../lib/kostnad.js';
 import { direktivMarkering } from '../lib/status.js';
@@ -15,17 +15,17 @@ import { svPct, svTal } from '../lib/talformat.js';
 import { livscykelMonster } from '../lib/vymodell-livscykel.js';
 import { perBasRegression } from '../lib/vymodell-regressionskort.js';
 import { artikel, genitiv, termFras } from '../lib/termer.js';
-import { esc } from './01-html-och-tillganglighet.js';
+import { behallFokus, esc } from './01-html-och-tillganglighet.js';
 import { andelAvMan, idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _parForRedovisning, kInstalld } from './06-k-troskel.js';
-import { APP_VERSION } from './08-version.js';
+import { menynamn } from './31-navigering.js';
 import { T } from './09-termer.js';
 import { _STS_STORLEK } from './10-diagramtema.js';
 import { hamtaData, state } from './12-tillstand.js';
-import { bedomningUnderlag } from './13-oversikt.js';
+import { bedomningUnderlag, ritaKartlaggningensSteg } from './13-oversikt.js';
 import { _fkAttGora } from './17-forhandskontroll.js';
-import { _laddaNedCSV } from './22-exporthjalpare.js';
+import { _laddaNedCSV, verktygMedVersion } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _laOversiktRader, _laOversiktStatus } from './41-lika-arbete.js';
@@ -36,8 +36,8 @@ import { _valdPrioReferens, raknaPrioritering } from './55-prioritering.js';
 import { _handlingsplanForifyllning, _hpArEgen } from './56-handlingsplan.js';
 
 // Tal i punkternas texter: decimalkomma och belopp utan tecken — riktningen skrivs med ord.
-const _agPct = v => Math.abs(v).toFixed(1).replace('.', ',');
-const _agTal = (v, dec) => v.toFixed(dec).replace('.', ',');
+const _agPct = v => svTal(Math.abs(v), 1);
+const _agTal = (v, dec) => svTal(v, dec);
 const _agRiktning = v => (v < 0 ? 'lägre' : 'högre');
 
 /**
@@ -173,9 +173,9 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
     // bara en reserv. Därför krävs ingen inläst statistik för att paren ska komma med.
     try {
         const lv = likvardighetResultat();
-        // Minsta gruppstorlek: par med en grupp under tröskeln tas bort FÖRE begränsningen till 20
-        // (undantaget gäller bara fliken Likvärdigt arbete); meningen om dem: _attGoraParNot().
-        _parForRedovisning(lv?.pairs).par.slice(0, 20).forEach(p => {
+        // Minsta gruppstorlek: par med en grupp under tröskeln tas bort FÖRE begränsningen till ATTGORA_PAR_MAX
+        // (undantaget gäller bara fliken Likvärdigt arbete); meningen om dem och om en kortad lista: _attGoraParNot().
+        _parForRedovisning(lv?.pairs).par.slice(0, ATTGORA_PAR_MAX).forEach(p => {
             items.push({
                 id: `lv-${p.kvAid}-${p.maAid}-${p.kvBas}`, aid: p.kvAid || null,
                 kategori: 'Likvärdigt arbete',
@@ -204,7 +204,7 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
                             kategori: 'Lika arbete, fördjupning',
                             prioritet: 'hög',
                             titel: `BAS ${p.bas}: kvinnor ${_agPct(p.gapPct)} % ${_agRiktning(p.gapPct)} lön efter ålderskontroll — titta närmare`,
-                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p=${p.pValue < 0.001 ? '< 0,001' : _agTal(p.pValue, 3)}, q=${q != null && q < 0.001 ? '< 0,001' : (q != null ? _agTal(q, 3) : '—')}). Minst 3 % (verktygets storleksgräns) — pröva skillnaden mot sakliga skäl.`,
+                            detalj: `Statistiskt säkerställt också efter korrigering för många samtidiga tester (p ${p.pValue < 0.001 ? '< 0,001' : `= ${_agTal(p.pValue, 3)}`}, q ${q != null && q < 0.001 ? '< 0,001' : `= ${q != null ? _agTal(q, 3) : '—'}`}). Minst 3 % (verktygets storleksgräns) — pröva skillnaden mot sakliga skäl.`,
                             tab: 'matrix',
                             källa: `Regressionen per ${T.niva.en} i Lika arbete`
                         });
@@ -234,7 +234,7 @@ export function byggAtgardslista({ endastGrupper = false, reg: given } = {}) {
                     id: 'livscykel-vaxer',
                     kategori: 'Livscykel',
                     prioritet: 'medel',
-                    titel: `Löneskillnaden växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan 25 och 65 år)`,
+                    titel: `Löneskillnaden växer med åldern (kvinnors lön mot mäns sjunker ${_agTal(Math.abs(life.gapDelta), 1)} procentenheter mellan ${life.alderFran} och ${life.alderTill} år)`,
                     detalj: 'Kan indikera långsammare karriärväg för kvinnor, föräldraledighetseffekter eller könsbias i lönerevisioner. Granska lönerevisionshistorik och befordringsstatistik per kön.',
                     tab: 'kon',
                     källa: 'Livscykelanalys'
@@ -262,16 +262,16 @@ function _attGoraLank(it, text, klass = '') {
 function _attGoraParNot() {
     try {
         if (!state.data.length) return '';
-        return _parForRedovisning(likvardighetResultat()?.pairs).not;
+        const { par, not } = _parForRedovisning(likvardighetResultat()?.pairs);
+        return [not, parKortadNot(par.length)].filter(Boolean).join(' ');
     } catch (_e) { return ''; }
 }
 
 /**
- * Renderar åtgärdslistan på Översikt. Visar grupperade kategorier, klickbara
- * checkboxar (state i minnet via state._actionChecklistDone-Set), CSV-export.
+ * Ritar Att göra på Översikt och svarar med punkterna (processöversikten läser dem). Avbockningarna ligger i minnet
+ * (state._actionChecklistDone).
+ * @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17)
  */
-/** Ritar Att göra och svarar med punkterna (processöversikten läser dem). */
-/** @param {{reg?: any}} [val] reg: regressionen när anroparen just kört den i samma varv (ADR-17) */
 export function ritaAtgardslista({ reg } = {}) {
     const wrap = document.getElementById('action-checklist-container');
     const kort = document.getElementById('att-gora');
@@ -295,7 +295,7 @@ export function ritaAtgardslista({ reg } = {}) {
             ${parNotHtml}
         </div>`);
         if (borja) borja.innerHTML = '<h3 class="att-gora-borja-rubrik">Börja här</h3><p>Inga punkter att hantera.</p>';
-        return;
+        return items;
     }
 
     // Initiera klar-set om saknas
@@ -316,7 +316,8 @@ export function ritaAtgardslista({ reg } = {}) {
     const totalDone = items.filter(it => done.has(it.id)).length;
     const totalCount = items.length;
 
-    wrap.innerHTML = somAvsnitt(`${totalDone} av ${totalCount} hanterade`, `
+    // Varje avbockning ritar om listan: fokus står kvar på rutan (behallFokus).
+    behallFokus(wrap, () => { wrap.innerHTML = somAvsnitt(`${totalDone} av ${totalCount} hanterade`, `
         <div class="insight-feed">
             <div class="insight-feed-header rad-bryt-mitt mellan">
                 <span class="avsnitt-verktyg-rubrik">Verktyg för listan</span>
@@ -357,7 +358,7 @@ export function ritaAtgardslista({ reg } = {}) {
                     </ul>
                 </details>`).join('')}
         </div>
-    `);
+    `); });
 
     const oppna = borjaHar(items, done);   // ordningen: src/lib/attgora.js (ADR-29)
     if (borja) borja.innerHTML = `<h3 class="att-gora-borja-rubrik">Börja här</h3>` + (oppna.length
@@ -370,7 +371,8 @@ export function ritaAtgardslista({ reg } = {}) {
             const id = /** @type {HTMLElement} */ (cb).dataset.id || '';
             if (/** @type {HTMLInputElement} */ (cb).checked) done.add(id);
             else done.delete(id);
-            ritaAtgardslista();  // omrendrera för uppdaterad räknare + bakgrundsfärg
+            // Räknaren och bakgrundsfärgen, och processöversikten, vars steg 3 och 4 läser avbockningarna.
+            ritaKartlaggningensSteg({ punkter: ritaAtgardslista() });
         });
     });
 
@@ -379,9 +381,9 @@ export function ritaAtgardslista({ reg } = {}) {
 
     // Rensa markeringar
     document.getElementById('btn-checklist-clear-done')?.addEventListener('click', () => {
-        if (!confirm('Avmarkera alla ' + done.size + ' hanterade punkter?')) return;
+        if (!confirm(done.size === 1 ? 'Avmarkera den hanterade punkten?' : 'Avmarkera alla ' + done.size + ' hanterade punkter?')) return;
         state._actionChecklistDone = new Set();
-        ritaAtgardslista();
+        ritaKartlaggningensSteg({ punkter: ritaAtgardslista() });
     });
     return items;
 }
@@ -404,13 +406,13 @@ function _exportAtgardslistaCSVExport(items, done) {
             it.titel,
             it.detalj,
             it.källa,
-            it.tab
+            menynamn(it.tab)
         ]);
     });
     rows.push([]);
     rows.push(['# METADATA']);
     rows.push(['Genererad', new Date().toLocaleString('sv-SE')]);
-    rows.push(['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')]);
+    rows.push(['Verktyg', verktygMedVersion()]);
     rows.push(['Totalt punkter', items.length]);
     rows.push(['Hanterade', items.filter(it => done.has(it.id)).length]);
     const parNot = _attGoraParNot();

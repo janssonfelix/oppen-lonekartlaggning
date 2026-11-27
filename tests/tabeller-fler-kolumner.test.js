@@ -145,7 +145,7 @@ describe('Fler kolumner: de gömda talen finns i beviset', () => {
     it('Prioritering: beviset har Kv/Mä, median, referens, avvikelsen i kronor, kostnaden per person och bristyrket', () => {
         const w = rita('prioritering');
         const it0 = w.document.querySelector('#prio-table tbody tr')._prioItem;
-        const b = w.eval('_bevisForPrioPost')(it0, 'stallningstagande');
+        const b = w.eval('_bevisForPrioPost')(it0);
         const etiketter = b.rows.map(r => r.label);
         for (const e of ['Antal anställda i gruppen', 'Median månadslön', 'Avvikelse', 'Kostnad per person', 'Bristyrke-multiplikator']) expect(etiketter).toContain(e);
         expect(etiketter.some(e => /^Referens/.test(e))).toBe(true);
@@ -155,7 +155,7 @@ describe('Fler kolumner: de gömda talen finns i beviset', () => {
         const w = rita('prioritering');
         const it0 = w.document.querySelector('#prio-table tbody tr')._prioItem;
         expect(typeof it0.sevScore).toBe('number');
-        const b = w.eval('_bevisForPrioPost')({ ...it0, sevScore: 12.5 }, 'stallningstagande');
+        const b = w.eval('_bevisForPrioPost')({ ...it0, sevScore: 12.5 });
         const rad = namn => b.rows.find(r => r.label === namn);
         expect(rad('Avvikelse-poäng (sev)').value).toBe('12,5');
         expect(rad('Avvikelse-poäng (sev)').note).toMatch(/^min\(30, \|.+\|\) \/ 30 × 100 · vikt /);

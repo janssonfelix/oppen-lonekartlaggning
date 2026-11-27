@@ -28,6 +28,7 @@ describe('namn: ordformen för ett antal personer', () => {
         expect(kvinnorOchMan(1, 6)).toBe('1 kvinna, 6 män');
         expect(kvinnorOchMan(3, 1)).toBe('3 kvinnor, 1 man');
         expect(kvinnorOchMan(0, 0)).toBe('0 kvinnor, 0 män');
+        expect(kvinnorOchMan('11', '1', ' och ')).toBe('11 kvinnor och 1 man');
     });
     it('texter med tröskeln böjs efter den (minst 1 person, minst 5 personer)', () => {
         expect(skalSammanstallningNot(1)).toContain('färre än 1 person ingår inte');

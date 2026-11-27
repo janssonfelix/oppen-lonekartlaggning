@@ -7,7 +7,7 @@
  * yrke, lön, ålder, kön och de valfria poäng och ansvarskod), och vilka rubriker som måste finnas för att profilen
  * ska gälla (kännetecken). En profil bär BARA rubriknamn — aldrig värden ur filen. Valideringen här ser till att det
  * gäller också för en fil som någon har skrivit för hand: bara vitlistade fält följer med, varje text är högst 80
- * tecken och får inte likna ett personnummer eller en e-postadress, högst 20 rubriker per roll och högst 50
+ * tecken och får inte likna ett personnummer, högst 20 rubriker per roll och högst 50
  * profiler.
  *
  * Verktyget levererar inga påhittade profiler för namngivna lönesystem. De inbyggda profilerna gäller bara format
@@ -17,7 +17,8 @@
 
 export const IMPORTPROFIL_FORMAT = 'lonekartlaggning-importprofiler';
 export const IMPORTPROFIL_VERSION = 1;
-/** Rollerna i kolumnmappningens ordning. BAS, yrke, lön och kön är obligatoriska; ålder är valfri men rekommenderad (ADR-64). */
+/** Rollerna i kolumnmappningens ordning (också förhandskontrollens). BAS, yrke, lön och kön är obligatoriska, i
+ * importprofilen, förhandskontrollen och kolumnmappningen; ålder är valfri men rekommenderad (ADR-64). */
 export const IMPORTPROFIL_ROLLER = ['bas', 'yrke', 'lon', 'alder', 'kon', 'poang', 'ansvar'];
 export const OBLIGATORISKA_ROLLER = ['bas', 'yrke', 'lon', 'kon'];
 /** Rollerna vars rubriker blir kännetecken när profilen inte anger egna: de obligatoriska och ålder, när den finns. */
@@ -28,8 +29,8 @@ export const MAX_PROFILER = 50;
 export const MAX_RUBRIKER_PER_ROLL = 20;
 export const MAX_TEXT = 80;
 
-const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
-const EPOST = /\S+@\S+\.\S+/;
+/** Text som liknar ett personnummer; delas med organisationspaketet. */
+export const PNR = /\b(19|20)?\d{6}[-+]?\d{4}\b/;
 // Styrtecken och HTML-metatecken tas bort. Rubrikerna jämförs ändå utan andra tecken än a–z och 0–9 (se nedan),
 // så det ändrar aldrig vilken kolumn en profil pekar på.
 const BORT = /[\u0000-\u001f\u007f<>"'&]/g;
@@ -44,7 +45,7 @@ function _text(v) {
     if (typeof v !== 'string') return null;
     const t = v.replace(BORT, '').trim();
     if (!t || t.length > MAX_TEXT) return null;
-    if (PNR.test(t) || EPOST.test(t)) return null;
+    if (PNR.test(t)) return null;
     return t;
 }
 /** En rubrik: en tillåten text som inte blir tom när den normaliseras. */
@@ -77,8 +78,8 @@ function _id(namn, kannetecken) {
     return `${slug || 'profil'}-${_hash(namn + '|' + kannetecken.map(normaliseraRubrik).join('|'))}`;
 }
 /**
- * Validerar en profil. Bara vitlistade fält följer med; en profil med en ogiltig text (för lång, personnummer- eller
- * e-postliknande) avvisas helt. Id:t härleds alltid ur namnet och kännetecknen: ett id i filen läses aldrig, så det
+ * Validerar en profil. Bara vitlistade fält följer med; en profil med en ogiltig text (för lång eller
+ * personnummerliknande) avvisas helt. Id:t härleds alltid ur namnet och kännetecknen: ett id i filen läses aldrig, så det
  * kan inte bli en okontrollerad textkanal (till exempel ett personnummer) i exporter och paket.
  * @param {any} o
  * @param {{kalla?: string}} [val] Källan sätts av den som läser in (en fil kan inte göra sin profil inbyggd).

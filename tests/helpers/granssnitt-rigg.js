@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { egenText } from './attributtext.js';
 
 export const rot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const las = fil => readFileSync(join(rot, fil), 'utf8');
@@ -21,12 +22,13 @@ export const okandaRader = () => {
     return rader;
 };
 
-// Text i element utan barn som innehåller ett tal med decimalpunkt. Kod, formelrutor och fält räknas inte.
+// Elementens egen text som innehåller ett tal med decimalpunkt. Kod, formelrutor och fält räknas inte.
 export const medDecimalpunkt = rot0 => {
     const ut = new Set();
     for (const el of rot0.querySelectorAll('*')) {
-        if (el.children.length || el.closest('script, style, svg, code, pre, textarea, select, input')) continue;
-        if (/\d\.\d/.test(el.textContent)) ut.add(el.textContent.trim().slice(0, 70));
+        if (el.closest('script, style, svg, code, pre, textarea, select, input')) continue;
+        const t = egenText(el);
+        if (/\d\.\d/.test(t)) ut.add(t.trim().slice(0, 70));
     }
     return [...ut];
 };

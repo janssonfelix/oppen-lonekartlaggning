@@ -234,13 +234,12 @@ describe('minnet', () => {
         expect(xEt(el)).toEqual(['BAS A', 'BAS B', 'BAS C', 'BAS D']);
         rensa(el);
     });
-    it('lönefilens inläsning anropar _rfUrvalGlom', async () => {
-        const { readFileSync } = await import('node:fs');
-        const kalla = readFileSync('src/app/32-filinlasning.js', 'utf8');
-        const lasIn = kalla.slice(kalla.indexOf('const lasIn = () => {'), kalla.indexOf('_efterInlastData();', kalla.indexOf('const lasIn = () => {')));
-        expect(lasIn).toContain('_rfUrvalGlom()');
+    it('lönefilens inläsning glömmer urvalet (glomForraUnderlaget anropar _rfUrvalGlom)', () => {
+        const w2 = createAppWindow();
+        expect(w2.eval('_efterInlastData.toString()')).toContain('glomForraUnderlaget()');
+        expect(w2.eval('glomForraUnderlaget.toString()')).toContain('_rfUrvalGlom()');
     });
-    it('demot (litet och stort) glömmer urvalet: den gemensamma inläsningen anropar _rfUrvalGlom', () => {
+    it('demot (litet och stort) glömmer urvalet: den gemensamma inläsningen anropar glomForraUnderlaget', () => {
         const w2 = createAppWindow();
         const el = w2.document.createElement('div'); el.id = 't-urval-demo';
         Object.defineProperty(el, 'clientWidth', { value: 600, configurable: true });
@@ -254,8 +253,8 @@ describe('minnet', () => {
         expect(el._figurFilter.kategori.get('bas').size).toBe(0);
         // Det stora demot går samma väg (_lasInDemounderlag), före underlaget byts.
         const kalla = w2.eval('_lasInDemounderlag.toString()');
-        expect(kalla.indexOf('_rfUrvalGlom()')).toBeGreaterThan(-1);
-        expect(kalla.indexOf('_rfUrvalGlom()')).toBeLessThan(kalla.indexOf('state.data = skapa()'));
+        expect(kalla.indexOf('glomForraUnderlaget()')).toBeGreaterThan(-1);
+        expect(kalla.indexOf('glomForraUnderlaget()')).toBeLessThan(kalla.indexOf('state.data = skapa()'));
         expect(w2.eval('lasInStortDemo.toString()')).toContain('_lasInDemounderlag(');
     });
 });
@@ -469,7 +468,7 @@ describe('intervall och flera dimensioner', () => {
         expect(ritadeIndex(el)).toEqual([0, 1, 2, 3]);
         rensa(el);
     });
-    it('ett intervall som döljer allt är tillåtet: diagrammet säger Inga grupper i urvalet, raderna och noten står kvar', () => {
+    it('ett intervall som döljer allt är tillåtet: diagrammet säger Inga grupper i urvalet, raderna och noten står kvar, och exportmenyns bild har inget att exportera', async () => {
         w.eval('_rfUrvalGlom()');
         const el = behallare();
         const f = gruppFigur();
@@ -480,6 +479,10 @@ describe('intervall och flera dimensioner', () => {
         expect(el.querySelector('[data-rf="tom"]').textContent).toBe('Inga grupper i urvalet');
         expect(rader(el)).toHaveLength(2);
         expect(not(el).textContent).toContain('minst 5 000 personer i gruppen');
+        // Exportmenyns bild ritas med filtret och blir tom: inget att exportera. Diagramdatan har alla rader (ingen bild).
+        w.__el = el;
+        for (const val of ['svg', 'png-presentation']) await expect(w.eval(`exporteraDiagram(window.__el, "${val}")`), val).rejects.toThrow(/inget att exportera/);
+        expect(w.eval('diagramexportRader(window.__el)').length).toBeGreaterThan(2);
         satt(el, 'min', '');
         expect(ritadeIndex(el)).toEqual([0, 1, 2, 3, 4, 5]);
         rensa(el);

@@ -52,11 +52,7 @@ export const PALETT = {
         [0.0, '#a5371a'], [0.25, '#e59a7b'], [0.5, '#eeeeec'],
         [0.75, '#86b6ef'], [1.0, '#1c5cab']
     ],
-    // Sekventiell (enkelriktad) skala: ljus → varm/röd. Används där måttet bara
-    // går åt ett håll, t.ex. skillnaden i likvärdigt arbete (jämförelseyrket tjänar mer → rödare).
-    // En kulör från ljus till mörk.
-    sekventiell: [[0.0, '#fbe3d6'], [0.5, '#e8703c'], [1.0, '#8a2f10']],
-    // Neutral sekventiell skala för mått där högt varken är bra eller dåligt (lön, antal).
+    // Sekventiell skala (förvalet för `typ: 'sekventiell'`), för mått där högt varken är bra eller dåligt (lön, antal).
     sekventiellNeutral: [[0, '#dce9fb'], [0.5, '#5598e7'], [1, '#0d366b']],
     // Prioriteringsmatrisens statusar (samma nyanser som statusbrickorna i fliken).
     // Prioriteringens statusar. «Börja här» och «Värt att granska» är lila — samma färg som statusen «Värt att granska»

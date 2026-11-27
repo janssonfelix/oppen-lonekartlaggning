@@ -12,7 +12,7 @@ import { diagramMarkering, sattDiagramMarkering } from './11-markering.js';
 import { hamtaData } from './12-tillstand.js';
 import { visningNy } from './23-exportgrind.js';
 import { oppnaVadLagras } from './28-vad-lagras-inaktivitet.js';
-import { visaAlderskravet, visaLonefilskortet, visaReferenskortet } from './31-navigering.js';
+import { menynamn, visaAlderskravet, visaLonefilskortet, visaReferenskortet } from './31-navigering.js';
 import { utVisaUnderflikFor } from './74-alla-diagram.js';
 import { gruppdossierKandidater } from './80-gruppdossier.js';
 import { basdossierKandidater, oppnaBasdossier } from './81-basdossier.js';
@@ -99,12 +99,11 @@ function _sokKraver(p) {
 }
 const SOK_KRAVER_TEXT = { lonefil: 'kräver lönefil', referens: 'kräver referens eller jämförelsestatistik', alder: 'kräver ålder i lönefilen' };
 const SOK_DIALOGNAMN = { installningar: 'Inställningar', ordlista: 'Ordlista', symboler: 'Förklaring', lagras: 'Vad lagras?', basdossier: 'BAS-dossiern' };
-function _sokFlikNamn(flik) { return (document.querySelector(`.nav-item[data-tab="${flik}"]`)?.textContent || flik).trim(); }
 function _sokFunktionUnder(p) {
     if (p.falt) return 'Fält i Inställningar';
     if (p.dialog) { const kraver = _sokKraver(p); return kraver ? `Öppnar ${SOK_DIALOGNAMN[p.dialog]} · ${SOK_KRAVER_TEXT[kraver]}` : `Öppnar ${SOK_DIALOGNAMN[p.dialog]}`; }
     const kraver = _sokKraver(p);
-    return `I fliken ${_sokFlikNamn(p.flik)}${kraver ? ' · ' + SOK_KRAVER_TEXT[kraver] : ''}`;
+    return `I fliken ${menynamn(p.flik)}${kraver ? ' · ' + SOK_KRAVER_TEXT[kraver] : ''}`;
 }
 
 function _sokRita() {
@@ -190,7 +189,7 @@ function _sokValjFunktion(p, { uppskjut = false } = {}) {
             if (!_sokMalDolt(p)) { sidindexGaTill(p.avsnitt); return; }
             window.scrollTo(0, 0);
             /** @type {HTMLElement|null} */ (document.getElementById('main-content'))?.focus({ preventScroll: true });
-            meddelaSkarmlasare(`${p.namn} visas inte i fliken ${_sokFlikNamn(p.flik)} med det här underlaget.`);
+            meddelaSkarmlasare(`${p.namn} visas inte i fliken ${menynamn(p.flik)} med det här underlaget.`);
         };
         if (!navigeraTill(p.flik, { uppskjut, efter: tillAvsnitt })) tillAvsnitt();
     }

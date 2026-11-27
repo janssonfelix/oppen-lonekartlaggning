@@ -10,12 +10,13 @@
 // både Excel-exporten och skärm-mallen (ritaHandlingsplan) använder samma logik.
 // Varifrån en förifylld rad kommer, som kolumnen Underlag och exporterna säger det.
 import { periodkostnad, periodOrd } from '../lib/kostnad.js';
+import { parMinstaGrupp } from '../lib/ktroskel.js';
 import { liknarPersonuppgift } from '../lib/organisationspaket.js';
 import { gruppSkillnadKr, SKAL_UTAN_BELOPP, skalForRad, skalSammanstallning, skalUnderlag, skalUtanBelopp, valideraSkal } from '../lib/sakligaskal.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { genitiv, termFras } from '../lib/termer.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
+import { demoFilnamn, idagDatum, rapporteraFel } from './03-hjalpfunktioner.js';
 import { navigeraTill } from './05-tabeller-och-lankar.js';
 import { _parForRedovisning, _parUtelamnadeNot, kInstalld } from './06-k-troskel.js';
 import { T } from './09-termer.js';
@@ -72,7 +73,7 @@ export function _hpSatt(nyckel, falt, varde) {
 }
 
 /**
- * Sätter radens sakliga skäl. Listan prövas som i konfigurationsfilen (_sakValidera): ett ogiltigt skäl lagras inte.
+ * Sätter radens sakliga skäl. Listan prövas som i konfigurationsfilen (valideraSkal): ett ogiltigt skäl lagras inte.
  * Svarar med antalet som inte lagrades.
  * @param {string} nyckel
  * @param {any[]} lista
@@ -115,7 +116,8 @@ export function _handlingsplanForifyllning({ baraEgna = false } = {}) {
     // fyllts i på fliken. Antal berörda är gruppens antal (för ett kandidatpar det kvinnodominerade yrkets), null för en egen rad.
     // skillnader: gruppens medianskillnad i kr/mån per rad (de sakliga skälens andelar räknas mot den), null för en egen rad.
     // minsta: den minsta gruppen bakom skillnaden (för prioriteringen det mindre könet, för ett kandidatpar den mindre av
-    // yrkesgrupperna), som årsbokslutet prövar mot minsta gruppstorlek; null för en egen rad.
+    // yrkesgrupperna, parMinstaGrupp: mot en rad ur statistiken kvinnogruppen), som årsbokslutet prövar mot minsta
+    // gruppstorlek; null för en egen rad.
     const lagg = (nyckel, atgard, grupp, underlag, kostnad, antal, skillnad, nMin) => {
         const v = _hpVarden(nyckel);
         rows.push([atgard, grupp, underlag, v.sakligt, kostnad, v.ansvarig, v.tidsplan, v.status, antal == null ? null : antal]);
@@ -142,7 +144,7 @@ export function _handlingsplanForifyllning({ baraEgna = false } = {}) {
             parUtelamnade = utelamnade;
             par.forEach(p => {
                 const arsKostnad = Math.round(periodkostnad(Math.abs(p.gapKr) * (p.kvN || 1), state.costSettings));
-                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerad)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, Math.min(p.kvN, p.maN));
+                lagg(_hpNyckel('par', p.kvAid, p.kvBas, p.maAid, p.maBas), 'Granska likvärdigt arbete (kvinnodominerad)', _hpGrupp(p.kvAid, p.kvLabel, p.kvBas), HP_UNDERLAG_PAR, arsKostnad, p.kvN, isFinite(p.gapKr) ? Math.round(p.gapKr) : null, parMinstaGrupp(p));
                 lvCount++;
             });
         }
@@ -160,13 +162,6 @@ export function _handlingsplanForifyllning({ baraEgna = false } = {}) {
     return { rows, nycklar, skillnader, minsta, prioCount, lvCount, egenCount, parUtelamnade, parNot: _parUtelamnadeNot(parUtelamnade) };
 }
 
-// Kolumnen Underlag: raderna bär redan sin källa. Äldre texter (sparade utdrag) översätts till samma ord.
-export function _handlingsplanUnderlag(underlag) {
-    if (/^Lika arbete\b/.test(underlag)) return HP_UNDERLAG_PRIO;
-    if (/^Likvärdigt arbete$/.test(underlag)) return HP_UNDERLAG_PAR;
-    return underlag;
-}
-
 /**
  * Kolumnen Kostnaden avser: vilken kostnad raden har, härledd ur dess underlag (inget eget fält, och inget i
  * konfigurationsfilen). Rader ur Prioritering har kostnaden att lyfta gruppen till referensens median, kandidatpar
@@ -175,11 +170,10 @@ export function _handlingsplanUnderlag(underlag) {
  * @param {string} underlag
  */
 export function _hpKostnadAvser(underlag) {
-    const u = _handlingsplanUnderlag(String(underlag ?? ''));
-    return u === HP_UNDERLAG_PRIO ? 'Nå referensens median' : u === HP_UNDERLAG_PAR ? `Nå ${genitiv(T.jamforelse.bf)} median` : '';
+    return underlag === HP_UNDERLAG_PRIO ? 'Nå referensens median' : underlag === HP_UNDERLAG_PAR ? `Nå ${genitiv(T.jamforelse.bf)} median` : '';
 }
 
-// Ett fritextfält som liknar ett personnummer eller en e-postadress får en varning; texten står kvar.
+// Ett fritextfält som liknar ett personnummer får en varning; texten står kvar.
 export function _hpLiknarPersonuppgift(t) { return !!t && liknarPersonuppgift(t); }
 function _hpUppdateraVarning() {
     const tbody = document.getElementById('handlingsplan-tbody');
@@ -393,12 +387,15 @@ function _hpSpegla(nyckel, varde) {
 
 /** Det ifyllda i konfigurationsfilen: en post per rad med något ifyllt (också bara sakliga skäl). */
 export function _hpForKonfiguration() {
-    return Object.keys(state.handlingsplan || {}).map(nyckel => ({ nyckel, ..._hpVarden(nyckel) }))
-        .filter(r => r.egen || _hpHarIfyllt(r));
+    return Object.keys(state.handlingsplan || {}).map(nyckel => {
+        const r = { nyckel, ..._hpVarden(nyckel) };
+        if (_hpDemoNycklar.has(nyckel)) delete r.skal;   // demots exempelskäl är inte användarens och skrivs aldrig till filen
+        return r;
+    }).filter(r => r.egen || _hpHarIfyllt(r));
 }
 /**
  * Prövar konfigurationsfilens poster; kastar vid fel form. Okända val i rullistorna läses som tomma. Sakliga skäl som
- * inte går att läsa (_sakValidera) faller bort, och antalet läggs som en varning i `varningar` när listan ges.
+ * inte går att läsa (valideraSkal) faller bort, och antalet läggs som en varning i `varningar` när listan ges.
  * @param {any} lista
  * @param {string[]} [varningar]
  */
@@ -458,7 +455,7 @@ function _exportHandlingsplanExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows]), 'Handlingsplan');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(guide), 'Vägledning');
     _laggTillMetodblad(wb);
-    XLSX.writeFile(wb, `handlingsplan_underlag_${idagDatum()}.xlsx`);
+    XLSX.writeFile(wb, demoFilnamn(`handlingsplan_underlag_${idagDatum()}.xlsx`));
     meddelaSkarmlasare('Handlingsplansunderlag exporterat.');
 }
 

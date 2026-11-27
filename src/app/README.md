@@ -24,13 +24,15 @@ och `.github/workflows/ci.yml`) bygger om och kräver samma fil. `npm run bundle
 ## Delarna
 
 Delarna är namngivna efter den flik eller funktion de hör till, i samma ordning som
-menyn där det går. Delarnas funktioner och konstanter har svenska namn, som lib (ADR-97, ADR-104):
+menyn där det går. Numren är inga lager: en del får importera från en del med högre nummer, och det som håller
+ordningen är att delarna bara har deklarationer på toppnivån (se nedan). Delarnas funktioner och konstanter har svenska namn, som lib (ADR-97, ADR-104):
 prefixen (`_fc`, `_rf` …) och förkortningar som CSV och OLS står kvar, liksom tillståndets fält
 (`state.data` …) och sidans id:n och klasser. ES-moduler körs i importgrafens ordning, inte i sifferordning, så en del
-**deklarerar bara**: funktioner, konstanter och tillstånd. Det som ska köras vid laddning
+har **bara deklarationer på toppnivån**: funktioner, konstanter och tillstånd. Det som ska köras vid laddning
 (händelsekopplingar, anrop) står i delens uppstartsfunktion (`uppstartFilinlasning` och så vidare),
-och `index.js` anropar dem i sifferordning när alla delar är lästa; bygget fäller en del med kod
-utanför en deklaration. `00-sakerhet-och-uppstart.js` är undantaget: den importerar inget, körs
+och `index.js` anropar dem i sifferordning när alla delar är lästa. Bygget fäller en del med en sats på toppnivån som
+inte är en deklaration (ett anrop, en tilldelning, ett block); en initierare får köra kod (`const x = f()`, ett
+statiskt klassfält), och den körs i importgrafens ordning. `00-sakerhet-och-uppstart.js` är undantaget: den importerar inget, körs
 först i utfilen och sätter lagringsspärren innan något annat körs.
 
 | Del | Innehåll |
@@ -65,17 +67,18 @@ först i utfilen och sätter lagringsspärren innan något annat körs.
 | `19-konfiguration.js` | Spara/ladda konfiguration, jämförelse med ögonblicksbild (fliken Spara och jämför år) |
 | `20-demodata-diagnostik.js` | Inläsningen av det lilla demot (`lasInDemodata`), självdiagnostik, demobanner, demoreferensen; inläsningen som det lilla och det stora demot delar (`_lasInDemounderlag`). Generatorerna (demodata och testdata) står i `src/lib/demodata.js` |
 | `21-stort-demo.js` | Stort demo: `lasInStortDemo` (som det lilla demot, utan självdiagnostik) och ingångarna i Kom igång, lönefilskortet och `?demo=stor`. Generatorn står i `src/lib/demodata.js`: `genereraStortDemo` (5 000 påhittade personer med 100 AID-etiketter i BAS A–K, med inlagda gap, ett par för likvärdigt arbete och små grupper), påhittad jämförelsestatistik och ett ställningstagande ur demots löner |
-| `22-exporthjalpare.js` | Exportnavets knappar, metodbilagans data, Excel-/CSV-hjälpare, formelskydd |
+| `22-exporthjalpare.js` | Exportnavets knappar, verktygets namn med version till exporternas rad Verktyg (`verktygMedVersion`), metodbilagans data, Excel-/CSV-hjälpare, formelskydd |
+| `22-lonedatabehallare.js` | Behållarna som kan bära lönedata (`RENSA_BEHALLARE`, `RENSA_TABELLER`, `RENSA_OVRIGT`), som "Rensa all data" och exportgrinden tömmer |
 | `23-exportgrind.js` | Exportgrinden: ingen export läser en tabell eller ett diagram ur en flik som inte är ritad med gällande tröskel; regeln (`skaRitasForeExport`) står i `src/lib/exportgrind.js` |
 | `24-excelexport.js` | Excel (alla flikar) och JPA-protokollet; urvalet i blad 2 och 3 och lönenivåerna per kön i `src/lib/jpaprotokoll.js` |
 | `25-dataskyddsinfo.js` | Dataskyddsrutan och GDPR-bannern |
-| `26-rensning.js` | "Rensa all data" (`_rensaAllData`) |
+| `26-rensning.js` | "Rensa all data" (`_rensaAllData`): tömmer behållarna i `22-lonedatabehallare.js` och låser flikarna som kräver lönefilen (`lonefilsflikar` i `31-navigering.js`) |
 | `27-berakningsbevis.js` | Bevisrutan: uträkningen bakom ett fynd. Prioriteringens delpoäng läses ur posten och taken ur `prioKonstanter()` i `src/lib/prioritering.js`, så beviset och rangordningen visar samma tal |
 | `28-vad-lagras-inaktivitet.js` | "Vad lagras?" och automatisk rensning vid inaktivitet |
 | `29-organisationspaket.js` | Organisationspaket: läs in och skapa (profil, grundinställningar, ställningstagande, jämförelsestatistik; logiken i `src/lib/organisationspaket.js`, ADR-28) |
 | `30-statistikcacher.js` | Tömmer och räknar om statistiska cacher när datasetet ändras (`tomStatistikcacher`), bland dem Lika arbetes minne (`laMinneSlapp`) |
-| `31-navigering.js` | Menyn: flikbyte, låsta flikar (`aria-disabled`; ett klick leder till lönefilskortet i Filer och kvalitet), flikgrupper och alias (`PANELGRUPPER`, `FLIKALIAS`), "Nästa steg" i menyns ordning (`NASTA_STEG`; Löneläget och Ålder & karriär hoppas över när de är låsta), sidrubrik, länkar till flikar; `ritaFlik` ritar fliken och bygger dess sidindex |
-| `32-filinlasning.js` | Filinläsning (CSV/XLSX), filrutorna (status, *Byt fil*, ADR-36), PII-spärr, räkningen av personnamn i fältet för AID-etikett (en tillfällig räknare per text som töms när filen är läst; i `parseStats` bara antal och radnummer, ADR-85), kolumnmappning med importprofilerna (*Känd uppsättning*, *Spara som importprofil*, *Lägg till i organisationspaketet*; logiken i `src/lib/importprofiler.js`) |
+| `31-navigering.js` | Menyn: flikbyte, låsta flikar (`aria-disabled`; ett klick leder till lönefilskortet i Filer och kvalitet; flikarna som kräver lönefilen är knapparna med `data-lonefil` i `index.html`, `lonefilsflikar`), flikgrupper och alias (`PANELGRUPPER`, `FLIKALIAS`), "Nästa steg" i menyns ordning (`NASTA_STEG`; Löneläget och Ålder & karriär hoppas över när de är låsta), sidrubrik, länkar till flikar; `ritaFlik` ritar fliken och bygger dess sidindex |
+| `32-filinlasning.js` | Filinläsning (CSV/XLSX), filrutorna (status, *Byt fil*, ADR-36), inläsningskontrollen (personnummer och namnkolumner), räkningen av personnamn i fältet för AID-etikett (en tillfällig räknare per text som töms när filen är läst; i `parseStats` bara antal och radnummer, ADR-85), kolumnmappning med importprofilerna (*Känd uppsättning*, *Spara som importprofil*, *Lägg till i organisationspaketet*; logiken i `src/lib/importprofiler.js`) |
 | `33-sidans-innehall.js` | Hopplänkar inom sidan (`data-hoppa-till`), som rapportunderlagets förteckning använder |
 | `34-likvardigt-arbete.js` | Likvärdigt arbete: adaptern och det som ritar fliken, diagrammen *Krav mot lön* och *Kandidatparen i kronor* (parvis hantel) och exporten; vymodellen i `src/lib/vymodell-likvardigt-arbete.js` (ADR-99) |
 | `36-loneoversyn.js` | Löneöversyn: det som ritar fliken (`ritaLoneoversyn`, `ritaPrognos`, `ritaRiktadeRader`, `_ritaScenariojamforelse`), fälten, knapparna, minnet av förslagens par och scenarierna och exporten; utfallet, maskeringen under k, grupperna före och efter, förslagens kandidatpar och prövning, scenarierna, tröskelmålets k-spärr, känsligheten och kostnaden på individnivå räknas i vymodellen i `src/lib/vymodell-loneoversyn.js` (ADR-99; kärnan i `src/lib/loneoversyn.js`), också huvudregressionen före och efter (med `regressionsval`, ADR-17); `foreEfterFigur` — ett värde före och efter per grupp, som också ögonblicksbilden använder |

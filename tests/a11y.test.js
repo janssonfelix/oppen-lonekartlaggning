@@ -2,7 +2,8 @@
  * Tillgänglighets-röktest (axe-core i jsdom).
  *
  * Bootar verktyget i den delade riggen (helpers/app-harness.js, med d3 så att diagramkärnan ritar), laddar demodata,
- * renderar varje flik och kör axe-core mot DOM:en. Detta automatiserar den strukturella WCAG-granskningen (etiketter,
+ * renderar varje flik, visar alla paneler, öppnar varje dialog och kör axe-core mot DOM:en (axe prövar bara det som
+ * syns). Detta automatiserar den strukturella WCAG-granskningen (etiketter,
  * roller, ARIA-giltighet, namn på knappar/länkar, dubbletter av id, tabellrelationer, diagrammens svg) i CI.
  *
  * BEGRÄNSNING: jsdom saknar layout-motor, så geometriberoende regler — främst `color-contrast` — kan inte utvärderas
@@ -45,6 +46,22 @@ beforeAll(async () => {
     d.querySelector('#explore-urval-villkor .explore-urval-val').open = true;
     const radAntal = d.querySelectorAll('#explore-urval .explore-urval-rad').length;
     if (radAntal !== 3) throw new Error(`urvalspanelen fick ${radAntal} rader, väntade 3`);
+
+    // axe prövar bara det som syns: varje dialog öppnas, med sitt innehåll, och varningen vid inaktivitet visas.
+    win.__state.paketInbakat = { text: '{}', organisation: 'Organisationen' };
+    win.__state.inactivityTimeoutMin = 30;
+    const grupp = win.__gruppdossierKandidater()[0].key;
+    const hp = d.querySelector('[data-hp-skal]');
+    for (const oppna of ['oppnaOrdlista()', 'oppnaVadLagras()', 'visaInbakatPaket()', `oppnaGruppdossier(${JSON.stringify(grupp)})`,
+        'oppnaBasdossier()', 'oppnaInstallningar()', '_visaInaktivitetsvarning()']) win.eval(oppna);
+    hp.click();
+    for (const id of ['btn-open-symbols', 'gdpr-info-readmore']) d.getElementById(id).click();
+    d.querySelector('[data-la-bevis]').click();
+    // Flikarnas paneler visas alla, så att axe prövar varje ritad flik och dialogerna som står i en panel.
+    d.querySelectorAll('.view-panel').forEach(p => { p.style.display = 'block'; });
+    const dold = el => { for (let n = el; n; n = n.parentElement) if (win.getComputedStyle(n).display === 'none') return true; return false; };
+    const stangda = [...d.querySelectorAll('[role="dialog"]')].filter(dold).map(m => m.id);
+    if (stangda.length) throw new Error(`dialoger som inte öppnades: ${stangda.join(', ')}`);
 
     axeResults = await win.axe.run(win.document, {
         rules: DISABLED_RULES,

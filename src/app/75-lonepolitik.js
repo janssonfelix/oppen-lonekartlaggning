@@ -32,7 +32,7 @@ import { T } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { laggTillTabellverktyg, hamtaData, harReferens, policyFor, policyNivaEtikett, referensKortnamn, referensNamn, state } from './12-tillstand.js';
+import { laggTillTabellverktyg, hamtaData, policyFor, policyNivaEtikett, referensKortnamn, referensNamn, state } from './12-tillstand.js';
 import { statusMarke } from './13-oversikt.js';
 import { _laSlutsats } from './41-lika-arbete.js';
 import { konsklassNu } from './45-aid-bas-tabeller.js';
@@ -65,17 +65,9 @@ export function ritaLonepolitik() {
         _lpRitaTopp(null);
         empty.style.display = 'block';
         wrap.style.display = 'none';
-        // Två lägen: ingen referens alls, eller en referens som inte matchar underlaget.
-        const h = empty.querySelector('h2'), p = empty.querySelector('p');
-        if (h && p) {
-            if (!harReferens()) {
-                h.textContent = 'Ingen referens inläst';
-                p.textContent = 'Det finns inget ställningstagande att jämföra med. Läs in organisationens lönepolitiska ställningstagande eller organisationspaketet i Filer och kvalitet, så jämförs lönerna mot det.';
-            } else {
-                h.textContent = 'Referensen matchar inte underlaget';
-                p.innerHTML = `Referensen har inga rader för underlagets ${T.niva.fl} eller ${T.kod.fl}. Läs in en fil med P10/Median/P90 där varje rad har en <strong>BAS</strong>-kolumn, en <strong>AID</strong>-kolumn, eller båda.`;
-            }
-        }
+        // Tabellen och diagrammen från förra ritningen står inte kvar dolda i sidan, där en export kunde läsa dem.
+        wrap.querySelectorAll('[id^="chart-"]').forEach(el => rensaFigur(el));
+        wrap.innerHTML = '';
         return;
     }
     empty.style.display = 'none';
@@ -119,13 +111,12 @@ function _lpTackningHtml(vm) {
             </div>
         </div>
         ${pct < 100 ? `<p class="reg-caveat-inline marg-t-10"><strong>Läs resultatet mot detta:</strong>
-            grupper utan policyrad kan inte avvika. "Inga avvikelser" kan alltså betyda
+            grupper utan policyrad eller utan spann kan inte avvika. "Inga avvikelser" kan alltså betyda
             <em>ingen referens</em> snarare än ett gott resultat.</p>` : ''}
     </div>`;
 }
 
 // Bandkartans kort i avsnittet Överblick (src/index.html, #lp-bandkarta-kort): synligt när ett ställningstagande finns.
-// Matchar ställningstagandet inte underlaget står ett meddelande i kortet, så att överblicken aldrig blir en tom rubrik.
 function _lpBandkartaKort(vm) {
     const kort = document.getElementById('lp-bandkarta-kort'), el = document.getElementById('chart-lp-bandmap');
     if (!kort || !el) return;
@@ -133,7 +124,6 @@ function _lpBandkartaKort(vm) {
     kort.hidden = false;
     const forklaring = document.getElementById('lp-bandkarta-forklaring');
     if (forklaring) forklaring.textContent = `Grå stapel = P10–P90 i ${referensKortnamn()}. Streck i den = referensens median. Blå stapel = organisationens faktiska P10–P90 (bara BAS med minst ${kTroskel()} ${personOrd(kTroskel())}). Punkt = ${genitiv(T.enhet.bf)} median: ${adjektiv('kvinnodominerad', T.enhet)}, ${adjektiv('mansdominerad', T.enhet)} eller ${adjektiv('blandad', T.enhet)}.`;
-    if (!vm.modell.byBas.length) { _lpIngetDiagram(el, `Ställningstagandet har inga rader för underlagets ${T.niva.fl} eller ${T.kod.fl}.`); return; }
     _lpRitaBandkarta(vm.bandkarta);
 }
 
@@ -403,7 +393,7 @@ function _lpTabellHtml(vm) {
             rows.push(`<tr><td>${name}</td>`
                 + `<td class="t-hoger">${g.n}</td>`
                 + `<td class="tabelltal ta-hoger" data-sort-value="${s.median}">${kr(s.median)}</td>`
-                + `<td class="t-tal">${kr(g.pol.p10)}–${kr(g.pol.p90)}</td>`
+                + `<td class="t-tal">${g.pol.p10 > 0 && g.pol.p90 > 0 ? `${kr(g.pol.p10)}–${kr(g.pol.p90)}` : '–'}</td>`
                 + `<td class="t-tal${posKlass}" data-sort-value="${posPct == null ? '' : posPct}">${posPct == null ? 'Spann för smalt' : svPct(posPct, 0)}</td>`
                 + `<td class="t-mitt" data-sort-value="${c ? c.under : 0}">${c ? `${c.under} av ${c.n}` : '–'}</td>`
                 + `<td class="t-mitt">${esc(g.level || '–')}</td></tr>`);
@@ -470,7 +460,7 @@ export function _lpExcelBlad() {
             const c = g.compliance;
             if (typ === 'ingenPolicy') ut.push([b.bas, g.aid, _lpBenamning(g), g.n, '', '', '', '', '', 'Ingen referens']);
             else if (typ === 'antal') ut.push([b.bas, g.aid, _lpBenamning(g), g.n, '', '', '', '', c ? c.under : '', g.level || '']);
-            else ut.push([b.bas, g.aid, _lpBenamning(g), g.n, g.stats ? kr(g.stats.median) : '', kr(g.pol.p10), kr(g.pol.p90),
+            else ut.push([b.bas, g.aid, _lpBenamning(g), g.n, g.stats ? kr(g.stats.median) : '', g.pol.p10 > 0 ? kr(g.pol.p10) : '', g.pol.p90 > 0 ? kr(g.pol.p90) : '',
                 position != null ? r1(position) : '', c ? c.under : '', g.level || '']);
         }
         utelamnade.push(...ute.map(_lpGruppnamn));

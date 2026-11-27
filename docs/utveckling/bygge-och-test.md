@@ -54,11 +54,13 @@ som ingång (ADR-98): `src/app/NN-*.js` och de `src/lib/`-moduler de importerar 
 `export` (format `esm`, ingen tree shaking, ingen minifiering), som körs som ett klassiskt skript. Appens
 toppnivånamn blir globala, som sidan, testerna och röktestet läser dem. Bygget fäller om utfilen har `import` eller
 `export` kvar, om ett av appens namn (deklarerat i en del eller importerat ur lib under lib-namnet) deklareras i mer än
-en modul eller inte står oförändrat i utfilen (esbuild döper om vid en krock), om en del har kod utanför en
-deklaration (det som körs vid laddning står i delens uppstartsfunktion, som `index.js` anropar i sifferordning), och
+en modul eller inte står oförändrat i utfilen (esbuild döper om vid en krock), om en del har en sats på
+toppnivån som inte är en deklaration (en initierare får köra kod; det som körs vid laddning står i delens
+uppstartsfunktion, som `index.js` anropar i sifferordning), och
 om ett toppnivånamn i utfilen heter som en egenskap på `window` eller dess prototyper: listan tas ur jsdom vid
 byggtiden, med en kort fast lista över det Chromium har men jsdom saknar (`chrome`, `scheduler`, `navigation` med
-flera; `krockarMedWindow`, prövad i `tests/build-app.test.js`).
+flera) och de inbäddade bibliotekens namn (`d3`, `Papa`, `XLSX`, `JSZip`), som en del annars skulle skugga
+(`krockarMedWindow`, prövad i `tests/build-app.test.js`).
 Lib-modulernas privata namn får döpas om. Bygget är deterministiskt, och artefaktgrinden (§8 och §9) vaktar att de
 genererade filerna motsvarar källan.
 
@@ -239,8 +241,9 @@ Ett flöde får läsa ett värde för att veta att det kom fram, men upprepar in
 - **Kontrollerna** ligger per område i `tools/browser-smoke/` med en gemensam rigg (`tools/browser-smoke/rigg.mjs`:
   webbläsaren, sidan, `ok()` och hjälparna); `tools/browser-smoke.mjs` kör dem i en fast ordning och skriver
   sammanfattningen. Med `--bilder=<katalog>` sparas diagramkärnans exporterade PNG och SVG för granskning med ögat.
-- **Färskhetsspärren** (ADR-7): riggen avbryter innan något prövas om `src/index.html`, `src/style.css`,
-  `dist/app.js` eller någon fil i `src/app/` är nyare än bygget. Kör `npm run bundle` först.
+- **Färskhetsspärren** (ADR-7): riggen avbryter innan något prövas om någon fil som bygget läser är nyare än bygget:
+  sökvägarna i `KODVAGAR` i `tools/release.mjs` (`src/`, `vendor/` och byggskripten) och `VERSION`, utom dokumenten
+  (`.md`). Prestandasvepet har samma spärr (`nyareAnBygget`). Kör `npm run bundle` först.
 - **Tre webbläsare:** Chromium, Firefox och WebKit (`--browser=…`, `npm run test:browser:firefox`/`:webkit`;
   `npm run test:browser:webkit:behallare` kör WebKit i en behållare med podman). När CI kör vilken motor står i
   jobbet `browser` i `.github/workflows/ci.yml` (avsnitt 9).
@@ -253,7 +256,8 @@ annat antal)
 genom den riktiga filuppladdningen i Chromium, mäter tiden tills gränssnittet är klart och tills bakgrundsanalyserna
 är klara, tar tid på varje fliks rendering och mäter därefter navigeringen (sidindexet, första sökningen,
 BAS-dossiern och gruppdossiern). Vakten är en snäv budget på tiden till klart gränssnitt (5 s), snäv för att en
-kvadratisk loop ska synas, och 1 s för förhandsbeskedet efter ett ändrat kryss under *Rapportens innehåll*. Budgeten
+kvadratisk loop ska synas, 5 s för varje flik i menyn (en flik som kastar fäller också), 1 s för förhandsbeskedet
+efter ett ändrat kryss under *Rapportens innehåll*, och att alla rader lästes in. Budgeten
 är maskinberoende, så skriptet körs inför en release på en utvecklarmaskin, inte i CI. Mätvärdena står i punkt 5 i
 [`oppna-punkter.md`](oppna-punkter.md). Översiktens bootstrap och trattdiagrammets omkastning räknas en gång per underlag.
 
@@ -296,23 +300,25 @@ förbjuds därför inte.
 `npm run kontroll` (`tools/kontroll.mjs`) kör kedjan i *Definition of Done* i
 [`CONTRIBUTING.md`](../../.github/CONTRIBUTING.md), punkt 3: `build:app`, `lint`, `typecheck`, `test:full`,
 `bundle` och `test:browser`, i den ordningen, och stannar på första fel med stegets slutkod. Efter `bundle` prövas
-samma grind som CI-jobbet `grindar` kör utöver npm-skripten: **artefaktgrinden** (bygget ändrade ingen genererad
+**artefaktgrinden** (bygget ändrade ingen genererad
 fil: ingen spårad fil under `dist/`, alltså inte heller `RELEASE.txt`, och inte `src/app/08-version.js`; kedjan jämför filerna som de låg när den började, CI jämför med det incheckade. En
 ändring betyder att de inte motsvarade källan, och de ombyggda filerna ska checkas in). Teckenkodningen prövar bygget
 självt (*Byggets skyddsnät* ovan). Sist skrivs
 stegens tider. `npm run kontroll -- --snabb` är körningen under arbetet: `test` i stället för `test:full`, och inget
-röktest i webbläsaren. `tests/dokumentation-struktur.test.js` kräver att kedjan har varje steg som CI-jobben
-`grindar` och `tester` kör.
+röktest i webbläsaren. `node tools/kontroll.mjs --artefakt` kör bara `bundle` och artefaktgrinden; det är
+artefaktgrinden i CI och i releasen, så att regeln för vilka filer som jämförs står på ett ställe.
+`tests/dokumentation-struktur.test.js` kräver att kedjan har varje steg som CI-jobben `grindar` och `tester` kör, och
+att båda arbetsflödena kör artefaktgrinden genom `tools/kontroll.mjs`.
 
 ## 9. CI
 
 CI är `.github/workflows/ci.yml`, och dess kommentarer är källan till stegen, när de körs och varför. I korthet har
-arbetsflödet fyra jobb: **`grindar`** kör lint, typkontroll, teckenkodningsgrinden och artefaktgrinden, **`tester`**
+arbetsflödet fyra jobb: **`grindar`** kör lint, typkontroll och artefaktgrinden (teckenkodningen prövar bygget självt, `tools/bundle.mjs`), **`tester`**
 kör hela testsviten (`npm run test:full`) delad på fyra parallella jobb med Vitests `--shard`, så att varje testfil
-körs i exakt ett av dem, **`quality`** är grön först när `grindar` och alla delar av `tester` är gröna (det är den
-kontroll som regeln för `main` kräver), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
-byggs i jobbet. **Artefaktgrinden** bygger om och kräver att hela `dist/`, också `RELEASE.txt`, och den genererade
-`src/app/08-version.js` blir byte-identiska med det incheckade. Den är den enda
+körs i exakt ett av dem, **`quality`** är grön först när `grindar`, alla delar av `tester` och `browser` i alla motorer
+är gröna (det är den kontroll som regeln för `main` kräver), och **`browser`** kör röktestet i Chromium, Firefox och WebKit mot en artefakt som
+byggs i jobbet. **Artefaktgrinden** (`node tools/kontroll.mjs --artefakt`, §8) bygger om och kräver att hela
+`dist/`, också `RELEASE.txt`, och den genererade `src/app/08-version.js` blir byte-identiska med det incheckade. Den är den enda
 kontrollen av de genererade filerna. Efter den bygger `grindar` samma commit en gång till i en ny katalog
 (`git worktree`), med annan tidszon och annat språk, och kräver samma kontrollsumma (ADR-101).
 
@@ -362,12 +368,12 @@ kontrollsummorna i `vendor/SHA256SUMS`). Utvecklingsberoendena bevakas av Depend
 prövar bara det som gäller vid en release; vad, står i huvudet i `tools/release.mjs`. Det som ska gälla i varje
 commit prövar den inte, utan testsviten och artefaktgrinden (princip 4 i [`principer.md`](principer.md)).
 
-**Arbetsflödet** `.github/workflows/release.yml` körs på en tagg `v*`: det kör grinden igen, bygger om, tar fram
+**Arbetsflödet** `.github/workflows/release.yml` körs på en tagg `v*`: det kör grinden igen, bygger om med artefaktgrinden (§8), tar fram
 programvaruförteckningen (`npm run sbom`, `tools/sbom.mjs`: `dist/sbom.cdx.json` i CycloneDX), bygger
 valideringsrapporten, bygger om verktyget ur taggen i en ren katalog och kräver att det blir filen som signeras,
 signerar med Sigstore cosign utan nyckel, låter GitHub attestera ursprunget (`actions/attest-build-provenance`, SLSA
-build provenance, ADR-101) och publicerar en GitHub Release. Det som kör npm och testsviten ligger i ett jobb utan
-behörigheter; signeringen och publiceringen ligger i ett eget jobb, som får filerna som en artefakt och inte kör npm.
+build provenance, ADR-101) och publicerar en GitHub Release. Det som kör npm och testsviten ligger i ett jobb som bara
+får läsa repot (`contents: read`); signeringen och publiceringen ligger i ett eget jobb, som får filerna som en artefakt och inte kör npm.
 Stegen, deras ordning och behörigheterna står i arbetsflödet och dess kommentarer; `tests/sakerhet.test.js` prövar
 ordningen, den fullständiga klonen, att signeringen är utan nyckel, att varje fil attesteras, ombygget och
 behörigheterna i de två jobben.

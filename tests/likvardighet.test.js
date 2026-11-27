@@ -272,6 +272,32 @@ describe('byggPar — Steg 3 parbygge (v4 intern/extern)', () => {
         expect(jämförelse.gemensammaBas).toBe(0);
     });
 
+    // 8 av 10 kvinnor hos organisationen (kvinnodominerad), 50 % i statistiken (blandad): samma kod får inte bli par.
+    const egenKod = () => aggregeraOrgKvDom(orgRows({ aid: '111111', bas: 'C', label: 'Yrke A',
+        kvLons: Array(8).fill(30000), maLons: Array(2).fill(30000) }), KVINNO_TROSKEL_STANDARD).orgKvDom;
+
+    it('statistikens rad för samma AID-kod blir inte jämförelseyrke; en annan kod i intervallet blir det', () => {
+        const { statByBas } = klassificeraStatistik([
+            statRow({ aid: '111111', bas: 'C', median: 36000, andelKv: 50 }),
+            statRow({ aid: '222222', bas: 'C', median: 38000, andelKv: 30 })
+        ], nationellStub);
+        expect(statByBas.get('C').map(r => r.aid).sort()).toEqual(['111111', '222222']);   // båda är kandidater i statistiken
+        const { pairs, jämförelse } = byggPar(egenKod(), tomMap(), statByBas, { minGap: 0, topN: 100, rng: makeRng() });
+        expect(pairs.map(p => p.maAid)).toEqual(['222222']);
+        expect(pairs.some(p => p.maAid === p.kvAid)).toBe(false);
+        expect(jämförelse.möjligaPar).toBe(1);
+        expect(jämförelse.basMedExternFallback).toBe(1);
+    });
+
+    it('är samma AID-kod den enda raden i statistikens intervall bildas inget par och ingen reserv räknas', () => {
+        const { statByBas } = klassificeraStatistik([statRow({ aid: '111111', bas: 'C', median: 36000, andelKv: 50 })], nationellStub);
+        const { pairs, jämförelse } = byggPar(egenKod(), tomMap(), statByBas, { minGap: 0, topN: 100, rng: makeRng() });
+        expect(pairs).toHaveLength(0);
+        expect(jämförelse.möjligaPar).toBe(0);
+        expect(jämförelse.externaPar).toBe(0);
+        expect(jämförelse.basMedExternFallback).toBe(0);
+    });
+
     it('filtrerar bort par under min-gap-tröskeln', () => {
         const ext = statMap([{ aid: '2051', bas: 'B', median: 30600, kvAndel: 25, källa: 'lokal' }]); // 2% gap
         const { pairs } = byggPar(orgKvDom, tomMap(), ext, { minGap: 5, topN: 100, rng: makeRng() });
@@ -569,8 +595,8 @@ describe('byggParPoang — arbetsvärdering som krav-proxy', () => {
     });
 
     // ADR-76: poängläget jämför bara med organisationens egna jämförelseetiketter. Statistikens rader har inga egna
-    // poäng; en rad fick förut poäng ur lönefilens tabell när organisationen hade samma AID|BAS, och jämförde då
-    // oftast etiketten med sig själv i statistiken.
+    // poäng: en rad får inte poäng ur lönefilens tabell när organisationen har samma AID|BAS, eftersom etiketten då
+    // oftast jämförs med sig själv i statistiken.
     it('jämförelsestatistiken ger inga par i poängläget, inte heller en rad med poäng ur lönefilens tabell', () => {
         const data = orgRows({ aid: '5301', bas: 'B', label: 'Undersköterska',
             kvLons: [29000, 30000, 31000, 30000, 30000, 30000, 30000, 30000], maLons: [30000, 30000] });

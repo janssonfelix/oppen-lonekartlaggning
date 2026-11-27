@@ -31,7 +31,6 @@ export const STANDARDPROFIL = Object.freeze({
     // (ADR-74). T finns först efter 09-termer.js, så värdena läses när profilen kopieras (12-tillstand.js och framåt).
     get basSystem()          { return T.niva.en; },
     get aidSystem()          { return `${T.kod.en} (SKR)`; },
-    poPctDefault:            40,
     poPctNote:               '',       // ingen not till standardantagandet; tom not följer inte med i ett paket
     orgTyp:                  'alla',   // 'kommun' | 'region' | 'alla' — SKR-referensens del (ADR-34)
     locale:                  'sv-SE',
@@ -62,17 +61,11 @@ export function tillampaProfiletiketter() {
         const tmpl = el.getAttribute('data-profile-template') || '';
         el.textContent = tmpl.replace(/\{(\w+)\}/g, (m, k) => p[k] != null ? p[k] : m);
     });
-    // Default PO-påslag uppdateras om användaren inte har överridat
-    if (state.costSettings.poPct === COST_DEFAULTS.poPct && p.poPctDefault !== COST_DEFAULTS.poPct) {
-        state.costSettings.poPct = p.poPctDefault;
-        const inp = document.getElementById('prio-po-pct');
-        if (inp) /** @type {HTMLInputElement} */ (inp).value = p.poPctDefault;
-    }
 }
 
 // ---- Namn på organisationen och jämförelsestatistiken (ADR-36) ----
 // Etiketterna läser namnen härifrån. Utan namn skickas dagens text som standard.
-const _PERSONUPPGIFT_FEL = 'Namnet liknar ett personnummer eller en e-postadress och sparades inte.';
+const _PERSONUPPGIFT_FEL = 'Namnet liknar ett personnummer och sparades inte.';
 export function orgNamn(standard = ORG_STANDARDNAMN) {
     const n = state.profile && state.profile.name;
     return n && n !== STANDARDPROFIL.name ? normaliseraNamn(n) : standard;   // även paketnamn högst 100 tecken

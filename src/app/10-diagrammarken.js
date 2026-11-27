@@ -41,39 +41,6 @@ function _rfLitenYta(g, rect, c) {
     }
 }
 
-// Mönster på en yta (lagervalet `monster`, förbättring 7): en status får inte bäras av färgen ensam. Verklig geometri
-// i en nästlad <svg>, som ränderna: vågräta linjer eller prickar i rutnät — aldrig diagonalt, det betyder liten grupp.
-// Används både för stapeln (klippt till panelen av anroparen) och för förklaringens ruta.
-export function _rfMonster(g, x0, y0, w, h, monster) {
-    if (!(w >= _RF_RANDER.minst && h >= _RF_RANDER.minst)) return;
-    const yta = g.append('svg').attr('data-marke', 'monster').attr('pointer-events', 'none').attr('overflow', 'hidden')
-        .attr('x', x0).attr('y', y0).attr('width', w).attr('height', h);
-    // Mönstret ska synas utan att ta över: tunna vågräta streck eller små glesa prickar i ytans färg.
-    const steg = 7;
-    if (monster === 'linjer') {
-        const antal = Math.min(_RF_RANDER.max, Math.ceil(h / steg));
-        for (let r = 0; r < antal; r++) {
-            const y = r * steg + steg / 2;
-            yta.append('line').attr('x1', 0).attr('x2', w).attr('y1', y).attr('y2', y)
-                .attr('stroke', FARG.vit).attr('stroke-opacity', 0.6).attr('stroke-width', 1.2);
-        }
-        return;
-    }
-    const rader = Math.min(_RF_RANDER.max, Math.ceil(h / steg)), kol = Math.ceil(w / steg);
-    let n = 0;
-    for (let r = 0; r < rader && n < _RF_RANDER.max; r++) {
-        for (let k = 0; k < kol && n < _RF_RANDER.max; k++, n++) {
-            yta.append('circle').attr('cx', k * steg + 3.5 + (r % 2 ? steg / 2 : 0)).attr('cy', r * steg + 3.5).attr('r', 1)
-                .attr('fill', FARG.vit).attr('fill-opacity', 0.7);
-        }
-    }
-}
-function _rfMonsterIPanel(g, rect, c, monster) {
-    const x0 = Math.max(0, +rect.attr('x')), y0 = Math.max(0, +rect.attr('y'));
-    const x1 = Math.min(c.panelB, +rect.attr('x') + +rect.attr('width')), y1 = Math.min(c.inreH, +rect.attr('y') + +rect.attr('height'));
-    _rfMonster(g, x0, y0, x1 - x0, y1 - y0, monster);
-}
-
 // En liten ruta i en värmekarta: streckad kant och ett hörnmärke (mer än färg, WCAG 1.4.1) — inga ränder över hela
 // rutan, som i en karta med många små celler skulle dölja färgerna.
 function _rfLitenRuta(g, rect) {
@@ -108,13 +75,12 @@ function _rfTextPa(farg, opacitet = 1) {
 
 function _rfStapel(g, l, li, c) {
     const ligg = l.riktning === 'liggande';
-    const kat = ligg ? c.y : c.x, vard = ligg ? c.x : c.yFor(l);
+    const kat = ligg ? c.y : c.x, vard = ligg ? c.x : c.y;
     if (!kat.bandwidth || vard.bandwidth) return;
     const lage = l.lage || 'bredvid';
     const { tjock, flytt, plats } = _rfStapelPlats(kat, l, li, c.bredvid);
     const bas = _rfBas(vard);
     const [dLag, dHog] = _rfDomanSorterad(vard);
-    const axelNamn = ligg ? 'x' : (l.axel === 'y2' ? 'y2' : 'y');
     // Vilka punkters etiketter som ritas är redan avgjort, en gång per lager (_rfEtikettBeslut) — samma beslut som
     // etikettrummet räknades med. Här avgörs inget om plats, utom för staplade segment (ryms texten i segmentet?).
     const etiketter = c.etiketter.get(li);
@@ -126,8 +92,8 @@ function _rfStapel(g, l, li, c) {
         let fran = bas, till = v;
         if (lage === 'staplad') {
             // Positiva värden staplas uppåt och negativa nedåt, var för sig (som _staplatSpann i figur.js),
-            // per värdeaxel och kategori.
-            const sk = `${axelNamn}|${v < 0 ? '-' : '+'}|${nyckel}`;
+            // per kategori.
+            const sk = `${v < 0 ? '-' : '+'}|${nyckel}`;
             fran = c.stapel.get(sk) || 0; till = fran + v;
             c.stapel.set(sk, till);
         }
@@ -142,9 +108,6 @@ function _rfStapel(g, l, li, c) {
         if (lage === 'staplad') r.attr('stroke', FARG.vit).attr('stroke-width', 1.5);
         else r.attr('rx', Math.min(_RF.stapelHorn, tjock / 2, Math.abs(b - a) / 2));
         if (l.opacitet != null) r.attr('fill-opacity', l.opacitet);
-        // Mönstret är lagrets, eller den enskilda stapelns (`monster` på datapunkten: t.ex. en stapel med en annan status).
-        const monster = d.monster === 'linjer' || d.monster === 'prickar' ? d.monster : l.monster;
-        if (monster) _rfMonsterIPanel(g, r, c, monster);
         if (d.liten) _rfLitenYta(g, r, c);
         const mitt = k + flytt + tjock / 2;
         if (d.fel && _rfTal(d.fel.lag) && _rfTal(d.fel.hog)) {
@@ -184,7 +147,7 @@ function _rfStapel(g, l, li, c) {
                 ? _rfText(c.texter, b + bort * 4, mitt + px * 0.35, text, { px, ankare: bort > 0 ? 'start' : 'end', title: hel })
                 : _rfText(c.texter, bredvid ? mitt + 5 : mitt, bort > 0 ? b - 4 : b + 4 + px * 0.8, text, { px, ankare: bredvid ? 'start' : 'middle', title: hel });
             t.attr('data-marke', 'etikett').attr('pointer-events', 'none');
-            if ((medFel && !bredvid) || l.etikettKant) t.attr('stroke', FARG.vit).attr('stroke-width', 3).attr('stroke-linejoin', 'round').attr('paint-order', 'stroke');
+            if (medFel && !bredvid) t.attr('stroke', FARG.vit).attr('stroke-width', 3).attr('stroke-linejoin', 'round').attr('paint-order', 'stroke');
         }
     });
 }
@@ -204,7 +167,7 @@ export function _rfOfylld(m, farg) {
 }
 
 function _rfPunkt(g, l, li, c) {
-    const ys = c.yFor(l);
+    const ys = c.y;
     const vagrat = !!c.y.bandwidth && !c.x.bandwidth;   // värdet löper vågrätt (liggande diagram)
     // Små punkter tas bort FÖRE urvalet; sedan ritas var k:te återstående (jämnt urval).
     // Bara ritningen — alla mått räknas på hela underlaget innan figuren byggs.
@@ -239,9 +202,8 @@ function _rfPunkt(g, l, li, c) {
             m = g.append('path').attr('d', vagrat ? `M${x},${y - h}V${y + h}` : `M${x - h},${y}H${x + h}`)
                 .attr('fill', 'none').attr('stroke', farg).attr('stroke-width', 2.5);
         } else {
-            const vinkel = l.symbol === 'triangelVanster' ? -90 : 90;
             m = g.append('path').attr('d', d3.symbol(d3.symbolTriangle, r * r * 3)())
-                .attr('transform', `translate(${x},${y}) rotate(${vinkel})`).attr('fill', farg);
+                .attr('transform', `translate(${x},${y}) rotate(90)`).attr('fill', farg);
         }
         m.attr('data-marke', 'punkt').attr('data-l', li).attr('data-i', i);
         // Den ritade punkten är ett hinder för etiketterna som undviker (_rfUndvikEtiketter). Punktens yttre radie:
@@ -251,13 +213,12 @@ function _rfPunkt(g, l, li, c) {
         // ritas därför aldrig för en punkt som inte ritas.
         if (d.etikett != null && String(d.etikett) !== '' && l.etikettLage === 'undvik' && c.undvik) {
             // Läget räknas när panelens alla punkter är ritade (_rfUndvikEtiketter): de är hinder.
-            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, _RF.punktEtikett);
             c.undvik.push({ x, y, r: (l.symbol === 'romb' || l.symbol === 'kvadrat' ? 1.3 * r : r) + 0.5, text, hel, fpx });
         } else if (d.etikett != null && String(d.etikett) !== '') {
-            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, 28), tb = _rfBredd(text, fpx);
+            const fpx = _rfLitenPx(c.px), hel = String(d.etikett), text = _rfKorta(hel, _RF.punktEtikett), tb = _rfBredd(text, fpx);
             // Lagrets etikettLage ställer texten till vänster eller höger om punkten (värdet bredvid en punkt i ett liggande diagram);
             // annars mitt över punkten — eller under, om den inte ryms ovanför (panelens överkant).
-            // 'auto' är till höger om punkten, och till vänster när texten annars skulle gå utanför panelens högerkant.
             // Datapunktens etikettLage 'under' eller 'over' ställer etiketten på den sidan av punkten (värdet vid änden av
             // en stapel i en trappa: utanför stapeln). Ryms den inte där (panelens kant) står den bredvid, förbi den
             // bredaste stapel bandet rymmer, till höger eller vid högerkanten till vänster — aldrig på andra sidan, där
@@ -265,7 +226,7 @@ function _rfPunkt(g, l, li, c) {
             const fast = !l.etikettLage && (d.etikettLage === 'under' || d.etikettLage === 'over') ? d.etikettLage : null;
             const fastRyms = fast === 'under' ? y + r + fpx * 1.25 <= c.inreH : y - r - 3 >= fpx;
             const ut = Math.max(l.symbol === 'streck' && !vagrat ? 2 * r : r, c.x.bandwidth ? Math.min(c.x.bandwidth(), _RF.stapelMax) / 2 : 0);
-            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1 : l.etikettLage === 'auto' ? (x + r + 5 + tb > c.panelB ? -1 : 1)
+            const sida = l.etikettLage === 'vanster' ? -1 : l.etikettLage === 'hoger' ? 1
                 : fast && !fastRyms ? (x + ut + 5 + tb > c.panelB ? -1 : 1) : 0;
             const tx = x + sida * ((fast ? ut : r) + 5);
             const ty = sida ? y + fpx * 0.35
@@ -358,7 +319,7 @@ function _rfLitenPunkt(g, li, i, x, y) {
 }
 
 function _rfLinje(g, l, li, c) {
-    const ys = c.yFor(l);
+    const ys = c.y;
     // Linjen byggs av de punkter som återstår, i ordning: en borttagen liten punkt får inte bryta den.
     const kvar = [];
     l.data.forEach((d, i) => { if (d && !c.dold(d)) kvar.push({ d, i }); });
@@ -389,7 +350,7 @@ function _rfLinje(g, l, li, c) {
 // kategoriaxel (annars sicksackar bandet när x.ordning skiljer sig från datans ordning). Små punkter (bara med visaSma) får ihåliga streckade märken
 // vid sin övre och undre gräns, som på linjer.
 function _rfBand(g, l, li, c) {
-    const ys = c.yFor(l);
+    const ys = c.y;
     if (ys.bandwidth) return;
     const kvar = [];
     l.data.forEach((d, i) => { if (d && !c.dold(d)) kvar.push({ d, i }); });
@@ -412,7 +373,7 @@ function _rfBand(g, l, li, c) {
 // streckat och svagare.
 function _rfIntervall(g, l, li, c) {
     const ligg = l.riktning === 'liggande';
-    const kat = ligg ? c.y : c.x, vard = ligg ? c.x : c.yFor(l);
+    const kat = ligg ? c.y : c.x, vard = ligg ? c.x : c.y;
     if (vard.bandwidth) return;
     const opacitet = l.opacitet != null ? l.opacitet : 1;
     l.data.forEach((d, i) => {
@@ -469,7 +430,7 @@ function _rfSvarm(ys, fasta, r, halv) {
     return ut;
 }
 
-// Täthetskurva för en lådas individer (form: 'fiol'): [{ v, t }] med värdet v och tätheten t i 0–1 (kurvans högsta
+// Täthetskurva för en lådas individer (form: 'regnmoln'): [{ v, t }] med värdet v och tätheten t i 0–1 (kurvans högsta
 // punkt = 1), i `steg` jämnt fördelade steg mellan lag och hog. Skattas med normalkärna och Silvermans bandbredd ur
 // de värden som ligger inom [lag, hog] — morrhårens ändar. Avvikarna utanför ingår alltså varken i kurvan eller i
 // dess utsträckning: kurvan visar formen hos huvuddelen och röjer mindre om enskilda än lådans avvikarpunkter gör.
@@ -500,8 +461,7 @@ function _rfTathetKurva(varden, lag, hog, steg = 40) {
 // på en logaritmisk axel har bara värden över noll ett läge. För en validerad figur är de två proven samma sak.
 // Ger [{ d, i }] i dataordning, med punktens index i lagrets data.
 export function _rfLadIndivider(figur, l, dold, skala) {
-    const axel = l.axel === 'y2' && figur.y2 ? figur.y2 : figur.y;
-    const log = !!axel && axel.skala === 'log';
+    const log = !!figur.y && figur.y.skala === 'log';
     const ut = [];
     l.data.forEach((d, i) => {
         if (!d || dold(d) || !_rfTal(d.y)) return;
@@ -543,7 +503,7 @@ function _rfKvantilRadie(grupper, l, ys, plats) {
 // urvalet eller spridningen i sidled. Lådan bär data-l och den första kvarvarande individens data-i (så att ett
 // uppslag hittar kategorin); morrhår, median och avvikare bär inga index; individer bär sina egna.
 function _rfLada(g, l, li, c) {
-    const ys = c.yFor(l);
+    const ys = c.y;
     if (!c.x.bandwidth || ys.bandwidth) return;
     // Lådlagren i panelen står bredvid varandra inom kategorin (bara lager som har något att rita räknas).
     const lador = c.lador.includes(li) ? c.lador : [li];
@@ -641,23 +601,6 @@ function _rfLada(g, l, li, c) {
         if (!s) continue;
         const linje = (marke, y1, y2, x1, x2, tjock) => g.append('line').attr('data-marke', marke).attr('pointer-events', 'none')
             .attr('x1', x1).attr('x2', x2).attr('y1', y1).attr('y2', y2).attr('stroke', farg).attr('stroke-width', tjock);
-        if (l.form === 'fiol') {
-            // Fiol: en täthetskurva speglad kring kategorins mitt, mellan morrhårens ändar, med median och kvartiler
-            // som streck. Den bär lådans data-marke och index: tips, klick och tangentbord behandlar den som lådan
-            // (ett aggregat), och diagramdatan är lådans. Inga morrhår och inga avvikarpunkter.
-            const halv = Math.min(plats, 96) / 2;
-            const kurva = _rfTathetKurva(punkter.map(p => p.d.y), s.lag, s.hog);
-            const bredd = v => { let b = kurva[0]; for (const p of kurva) if (Math.abs(p.v - v) < Math.abs(b.v - v)) b = p; return Math.max(2, b.t * halv); };
-            const fiol = g.append('path').attr('data-marke', 'lada').attr('data-form', 'fiol').attr('data-l', li).attr('data-i', punkter[0].i)
-                .attr('d', d3.area().y(p => ys(p.v)).x0(p => mitt - p.t * halv).x1(p => mitt + p.t * halv).curve(d3.curveMonotoneY)(kurva) || '')
-                .attr('fill', farg).attr('fill-opacity', 0.3).attr('stroke', farg).attr('stroke-width', 1.5);
-            // En kurva som bygger på någon liten individ (bara med visaSma): streckad kant, mer än färg.
-            if (punkter.some(p => p.d.liten)) fiol.attr('stroke', PALETT.semantic.neutral).attr('stroke-dasharray', '3 2');
-            linje('kvartil', ys(s.q1), ys(s.q1), mitt - bredd(s.q1), mitt + bredd(s.q1), 1);
-            linje('kvartil', ys(s.q3), ys(s.q3), mitt - bredd(s.q3), mitt + bredd(s.q3), 1);
-            linje('median', ys(s.median), ys(s.median), mitt - bredd(s.median), mitt + bredd(s.median), 2.5);
-            continue;
-        }
         linje('morrhar', ys(s.q1), ys(s.lag), mitt, mitt, 1.5);
         linje('morrhar', ys(s.q3), ys(s.hog), mitt, mitt, 1.5);
         const lada = g.append('rect').attr('data-marke', 'lada').attr('data-l', li).attr('data-i', punkter[0].i)
@@ -698,12 +641,8 @@ export function _rfFargskala(fs) {
     const dom = _rfFargDoman(fs);
     if (!dom) return null;
     const [a, b] = dom;
-    const std = {
-        sekventiell: PALETT.sekventiell,
-        divergerande: PALETT.divergerande,
-        tvafarg: [[0, PALETT.kon.man], [1, PALETT.kon.kvinna]],
-    };
-    const stopp = (Array.isArray(fs.farger) && fs.farger.length > 1 ? fs.farger : null) || std[fs.typ] || std.sekventiell;
+    const stopp = (Array.isArray(fs.farger) && fs.farger.length > 1 ? fs.farger : null)
+        || (fs.typ === 'divergerande' ? PALETT.divergerande : PALETT.sekventiellNeutral);
     const mitt = _rfFargMitt(fs, dom);
     const varde = t => (mitt == null ? a + t * (b - a) : (t <= 0.5 ? a + (t / 0.5) * (mitt - a) : mitt + ((t - 0.5) / 0.5) * (b - mitt)));
     return d3.scaleLinear().domain(stopp.map(s => varde(s[0]))).range(stopp.map(s => s[1])).clamp(true);
@@ -798,7 +737,7 @@ function _rfZoner(figur, c, bredd, hojd) {
         const lodrat = r.x0 != null || r.x1 != null;
         const [n0, n1] = lodrat ? ['x0', 'x1'] : ['y0', 'y1'];
         if (r[n0] == null && r[n1] == null) continue;
-        const s = lodrat ? c.x : (r.axel === 'y2' && c.y2 ? c.y2 : c.y);
+        const s = lodrat ? c.x : c.y;
         const max = lodrat ? bredd : hojd;
         if (s.bandwidth) {
             // Bandaxel: gränserna är kategorier, och zonen täcker dem inklusive (med halva mellanrummet till
@@ -936,7 +875,7 @@ function _rfReferensLinjer(figur, c, bredd, hojd) {
         if (!r || (r.typ || 'linje') !== 'linje') continue;
         const lodrat = r.x != null;
         if (!lodrat && r.y == null) continue;
-        const s = lodrat ? c.x : (r.axel === 'y2' && c.y2 ? c.y2 : c.y);
+        const s = lodrat ? c.x : c.y;
         const p = _rfPos(s, lodrat ? r.x : r.y);
         if (p == null || p < -0.5 || p > (lodrat ? bredd : hojd) + 0.5) continue;
         // Linjens etikett (t.ex. "80 %"): vid linjens högra ände, strax ovanför — eller överst, till höger om en lodrät linje.
@@ -957,7 +896,7 @@ function _rfReferensLinjer(figur, c, bredd, hojd) {
 // 'topp'` bara där, annars också en rad under); en yta som är för liten får ingen text — namnet står i tipset.
 // En liten yta (bara med visaSma) får streckad kant och ränder.
 function _rfYta(g, l, li, c) {
-    const ys = c.yFor(l);
+    const ys = c.y;
     if (c.x.bandwidth || ys.bandwidth) return;
     const fpx = c.px - 1;
     l.data.forEach((d, i) => {

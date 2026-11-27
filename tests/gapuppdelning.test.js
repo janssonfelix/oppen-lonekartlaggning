@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { gapUppdelning, gapPoster, gapOvrigaText, normaliseraGapVariabler, gapVariablerArStandard, gapDelar, GAP_VARIABLER_STANDARD } from '../src/lib/gapuppdelning.js';
 import { mulberry32 } from '../src/lib/rng.js';
 import { gruppnyckel, konAv } from '../src/lib/falt.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 const K = 10;
 const flera = (n, kon, lon, bas, aid) => Array.from({ length: n }, () => ({ kon, lon, bas, aid, alder: 40 }));
@@ -122,7 +123,7 @@ describe('[B3.7] gapUppdelning', () => {
             expect(u.delar.A, variabler.join()).toBeCloseTo(0, 6);
             expect(Object.values(u.topp).flat().some(p => /BAS B|B1/.test(p.namn)), variabler.join()).toBe(false);
             expect(Math.abs(delsumma(u) - u.gap), variabler.join()).toBeLessThan(1e-6);
-            expect(u.gap).toBeCloseTo(u.medel.kv - u.medel.ma, 9);   // hela skillnaden redovisas som förut
+            expect(u.gap).toBeCloseTo(u.medel.kv - u.medel.ma, 9);   // hela skillnaden redovisas
         }
     });
     // Egenskapen som skyddet vilar på, på slumpade underlag med många små grupper och flera val av variabler: varje
@@ -176,7 +177,7 @@ describe('[B3.7] gapUppdelning', () => {
         const u = gapUppdelning(r, { k: K });
         const v = gapUppdelning(r.map(x => ({ ...x, lon: x.lon + 10000 })), { k: K });
         for (const d of ['A', 'B', 'C']) {
-            u.topp[d].forEach((p, i) => { expect(v.topp[d][i].namn).toBe(p.namn); expect(v.topp[d][i].kr).toBeCloseTo(p.kr, 6); });
+            ickeTom(u.topp[d]).forEach((p, i) => { expect(v.topp[d][i].namn).toBe(p.namn); expect(v.topp[d][i].kr).toBeCloseTo(p.kr, 6); });
         }
     });
     it('namn: "BAS X" för A och "<AID>, BAS X" för B och C; yrke när aid saknas', () => {

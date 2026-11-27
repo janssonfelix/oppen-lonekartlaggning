@@ -356,6 +356,33 @@ describe('Utforska: tröskel, klick och diagramdata', () => {
         expect(m[1][kol('200')]).not.toBe('');
     });
 
+    it('en cell som blir tom i exporten bär inte sitt värde i något attribut, och sorteringen ordnar inte efter det', () => {
+        const w = createAppWindow();
+        // Fyra AID-etiketter med 12 män var; kvinnorna i 300 är tre (under tröskeln 10) och deras median ligger mellan de andras.
+        const r = (kon, lon, aid) => ({ bas: 'A', kon, lon, alder: 40, yrke: `${aid} X`, aid, yrkeLabel: 'X' });
+        const rader = [];
+        for (const [aid, kv] of [['100', 30000], ['200', 31000], ['300', 30500], ['400', 32000]]) {
+            for (let i = 0; i < 12; i++) rader.push(r('man', 35000, aid));
+            for (let i = 0; i < (aid === '300' ? 3 : 12); i++) rader.push(r('kvinna', kv, aid));
+        }
+        w.__state.data = rader;
+        w.eval('fyllValjare(); lasUppFlikar();');
+        w.__state.kLage = 'export';   // som i förhandsvisningen: tabellen ritad med tröskeln 10
+        const d = w.document;
+        d.getElementById('explore-rad').value = 'aid';
+        d.getElementById('explore-measure').value = 'median';
+        d.getElementById('explore-visa').value = 'kon';
+        w.__ritaUtforska();
+        const tomma = [...d.querySelectorAll('#explore-table td[data-export-tom]')];
+        expect(tomma.length).toBe(1);
+        for (const td of tomma) for (const a of td.attributes) expect(a.value, a.name).not.toMatch(/30\s?500/);
+        d.querySelector('#explore-table thead th:nth-child(2)').click();   // sortera efter kolumnen Kvinnor
+        const ordning = w.__tabellTillMatris('explore-table').slice(1).map(rad => rad[0]);
+        // Den tomma cellen sorteras som tom, först eller sist, inte mellan de andra efter sitt dolda värde.
+        expect([0, 3]).toContain(ordning.indexOf('300 X'));
+        expect([['100 X', '200 X', '400 X'], ['400 X', '200 X', '100 X']]).toContainEqual(ordning.filter(e => e !== '300 X'));
+    });
+
     it('klickhanteraren kopplas på nytt efter varje omritning', async () => {
         grund();
         // Diagramkärnan (ADR-39): klicket hör till behållaren och överlever omritningar — ett klick, ett anrop.
@@ -492,7 +519,8 @@ describe('Utforska: urval med villkor', () => {
         change(q('[data-gv-op="0"]'), 'minst');
         change(q('[data-gv-tal="0"]'), '100000');
         expect(kolumn0()).toEqual([]);
-        expect($('chart-explore').textContent).toContain('Inga grupper att visa');
+        expect($('chart-explore').textContent).toContain('Gruppvillkoren döljer alla grupper.');
+        expect($('explore-table').textContent).toContain('Gruppvillkoren döljer alla grupper.');
         expect($('explore-note').textContent).toContain(`${alla} grupper döljs av gruppvillkoren`);
     });
 
@@ -802,7 +830,7 @@ describe('Utforska: tomläge, exportmeny och talfält', () => {
         expect(meny().hidden).toBe(true);
         expect(verktyg().classList.contains('table-tools')).toBe(true);
         expect(verktyg().hidden).toBe(true);
-        expect($('explore-table').textContent).toContain('Inga grupper att visa');
+        expect($('explore-table').textContent).toContain('Ingen person i urvalet.');
         grund(); rita();
         expect(meny().hidden).toBe(false);
         expect(verktyg().hidden).toBe(false);
@@ -949,7 +977,7 @@ describe('Löneöversikten i Utforska', () => {
             expect(td.getAttribute('data-sort-value')).toBe(td.textContent.replace(',', '.'));
         }
     });
-    it('BAS-grupperna är hopfällda utom den första; valet står kvar när tabellen ritas om, och en sökning visar träffar i alla', async () => {
+    it('BAS-grupperna är hopfällda utom den första; valet står kvar när tabellen ritas om, och en sökning visar bara grupperna med träff', async () => {
         const w = rita();
         const d = w.document;
         const rubriker = () => [...d.querySelectorAll('#rapport-table tbody tr.group-header')];
@@ -963,11 +991,25 @@ describe('Löneöversikten i Utforska', () => {
         w.__ritaFlik('utforska');
         expect(rubriker()[1].classList.contains('collapsed')).toBe(false);
         expect(synliga(rubriker()[1]).every(Boolean)).toBe(true);
+        // En AID-kod som bara finns i ett BAS-intervall. Synlig = varken dold av sökningen (hidden) eller hopfälld.
+        const visas = tr => !tr.hidden && tr.style.display !== 'none';
+        const synligaRader = () => [...d.querySelectorAll('#rapport-table tbody tr')].filter(visas).map(tr => tr.textContent);
         const sok = d.getElementById('search-rapport');
-        sok.value = 'kvinna'; sok.dispatchEvent(new w.Event('input', { bubbles: true }));
-        expect(rubriker().some(tr => tr.classList.contains('collapsed'))).toBe(false);
-        expect(rubriker().every(tr => synliga(tr).some(Boolean))).toBe(true);
-        sok.value = ''; sok.dispatchEvent(new w.Event('input', { bubbles: true }));
+        const sokEfter = q => { sok.value = q; sok.dispatchEvent(new w.Event('input', { bubbles: true })); };
+        sokEfter('206017');
+        const traff = rubriker().filter(visas);
+        expect(traff.map(tr => tr.dataset.bas)).toEqual(['E']);
+        const efterSok = synligaRader();
+        expect(efterSok.slice(1).every(t => t.includes('206017'))).toBe(true);
+        // Fäll in och ut gruppen: samma rader som sökningen gav.
+        traff[0].firstElementChild.click(); traff[0].firstElementChild.click();
+        await new Promise(r => setTimeout(r, 10));
+        expect(synligaRader()).toEqual(efterSok);
+        // Omritning med söktexten kvar: tabellen stämmer med sökfältet.
+        w.__ritaFlik('utforska');
+        expect(synligaRader()).toEqual(efterSok);
+        sokEfter('');
+        expect(rubriker().every(visas)).toBe(true);
         expect(rubriker()[2].classList.contains('collapsed')).toBe(true);
     });
     it('PDF-rapportens kopia av en tabell har alla rader synliga, också hopfällda grupper och ansvarsrader', () => {

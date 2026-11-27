@@ -117,13 +117,13 @@ function _utAllaFlikar() {
 }
 /** Källdiagrammen i fliken som får en kopia, i sidans ordning. */
 function _utKallor(flik) {
-    const alla = typeof _rfBehallare !== 'undefined' ? [..._rfBehallare] : [];
+    const alla = [..._rfBehallare];
     return diagramUrval(alla.filter(el => _egFlikFor(el) === flik), el => !!el._figur && !_utDoltIFliken(el))
         .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
 }
 /** Raden under gruppens namn: antalet diagram när det är känt (gruppen har ritats, eller fliken är ritad och aktuell). */
 function _utAllaAntalText(flik, antal) {
-    if (antal == null && typeof _ritadVid !== 'undefined' && _ritadVid.has(flik) && !flikInaktuell(flik)) antal = _utKallor(flik).length;
+    if (antal == null && _ritadVid.has(flik) && !flikInaktuell(flik)) antal = _utKallor(flik).length;
     if (antal == null) return 'Diagrammen ritas när du öppnar gruppen';
     return antal ? `${antal} diagram` : 'Inga diagram med det här underlaget';
 }
@@ -152,7 +152,7 @@ function _utAllaNyGrupp(flik, namn) {
  * (öppen eller stängd); en flik som har låsts eller dolts tar sin grupp med sig. Gör ingenting under en export.
  */
 function utAllaDiagramRita() {
-    if (typeof _exportDjup !== 'undefined' && _exportDjup > 0) return;
+    if (_exportDjup > 0) return;
     const behallare = document.getElementById('ut-alla-grupper');
     if (!behallare) return;
     const tom = document.getElementById('ut-alla-tom');
@@ -192,7 +192,7 @@ function _utAllaRensa(el) {
 function utAllaGruppRita(grupp) {
     const flik = grupp.getAttribute('data-ut-flik') || '';
     const yta = /** @type {HTMLElement} */ (grupp.querySelector('.ut-alla-innehall'));
-    if (!flik || !yta || (typeof _exportDjup !== 'undefined' && _exportDjup > 0)) return 0;
+    if (!flik || !yta || _exportDjup > 0) return 0;
     if (!_ritadVid.has(flik) || flikInaktuell(flik)) {
         const fokus = /** @type {HTMLElement|null} */ (document.activeElement), x = window.scrollX, y = window.scrollY;
         try { ritaFlik(flik); } catch (e) { rapporteraFel(`Alla diagram: ${flik}`, e); }

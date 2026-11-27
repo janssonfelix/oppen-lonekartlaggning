@@ -123,7 +123,7 @@ regressionens resultat, med tillskottet, gapet utan och med, och skälet. Mening
 i rapportunderlaget och i rapportens sammanfattning och bilaga.
 
 **Skälet** är valfri fritext, högst 300 tecken, med samma personuppgiftsvakt som handlingsplanens fritext
-(`liknarPersonuppgift`): ett skäl som ser ut att innehålla ett personnummer eller en e-postadress sparas inte, och
+(`liknarPersonuppgift`): ett skäl som ser ut att innehålla ett personnummer sparas inte, och
 panelen säger varför. Ett ändrat skäl ändrar inga tal.
 
 **Frasen.** Texterna som förut sade en fast modell byggs ur valet. `modellFras(m)` ger frasen i löptext, "när …
@@ -145,7 +145,12 @@ igenom i:
   per huvudområde (avsnitt 3);
 - **regressionerna per BAS-intervall** (`gapPerBas`), som skattar kön och, när lönefilen har ålder, ålder inom
   varje BAS-intervall;
-- **livscykelmodellen** (`src/lib/livscykel.js`), som har sin egen modell i Ålder & karriär;
+- **livscykelmodellen** (`src/lib/livscykel.js`), som har sin egen modell i Ålder & karriär. Kurvorna räknas bara för
+  de hela åldrar mellan 25 och 65 år där underlaget har personer, varje köns kurva över det egna könets åldrar, och
+  skillnaden och nyckeltalen över de åldrar båda könen har (`alderFran`–`alderTill`; nyckeltalen vid spannets ändar).
+  Utan någon gemensam ålder blir resultatet felet `inget_gemensamt_spann`. Kvadraten i ålder gör att en kurva utanför
+  underlaget kan ge vilka tal som helst. Trendlinjerna och banden i *Lön och ålder* ritas på samma sätt över varje
+  köns egna åldrar (`spannKv`, `spannMa` i `vymodellAlderOchLon`);
 - **Var uppstår löneskillnaden?**, som har ett eget val av variabler (avsnitt 10).
 
 **Lagras och nollställs.** `sattForklaringsmodell(v)` lagrar valet (standard som null) och ritar om allt på samma väg
@@ -214,8 +219,8 @@ Stegen är:
    (ADR-33).
 
 Varje OLS-steg ger gapet (exp(β1) − 1) · 100, R² och antalet kolumner; ett steg med färre rader än kolumnerna + 5 är
-*för få*, och ett med singulär design *singulärt*. `korOLSRegression` kör stegen på den skattade modellen. Huvudtalet,
-den förklarade andelen och förklaringsbudgeten räknas till och med modellens sista steg; *+ AID-etikett inom BAS* ingår
+*för få*, ett med singulär design *singulärt* och ett utan spridning i residualen *ingen lönespridning* (§7).
+`korOLSRegression` kör stegen på den skattade modellen. Huvudtalet, den förklarade andelen och förklaringsbudgeten räknas till och med modellens sista steg; *+ AID-etikett inom BAS* ingår
 bara när den är vald.
 
 **Trappan och förklaringsbudgeten** visar stegen. Trappan läses som den i *Var uppstår löneskillnaden?*
@@ -290,9 +295,11 @@ inom BAS vald heter raden *AID-etikett inom BAS (alla indikatorer; BAS ingår)* 
 Resultatet bär `basRef` och `basIndikatorer` med BAS-indikatorer, `gruppRef` och `gruppIndikatorer` med AID-etikett
 inom BAS.
 
-**Tecknet.** Funktionen räknar män mot kvinnor i log-rummet. Kortet visar talen kvinnor mot män, som resten av verktyget:
-varje komponent c blir (exp(−c) − 1) · 100, och den förklarade och oförklarade andelen visas som positiva andelar av
-gapet. En bortvald variabel nämns med noteringen ur avsnitt 2.
+**Tecknet.** Metoden räknar män mot kvinnor i log-rummet (`components`, `_raw`). Procenttalen som funktionen ger har
+verktygets tecken, kvinnor mot män: varje komponent c blir (exp(−c) − 1) · 100 (`rawGapPct`, `explainedPct`,
+`unexplainedPct`, `componentsPct`). Den förklarade och oförklarade andelen av gapet (`andelForklarad`,
+`andelOforklarad`) räknas i log-rummet och behåller tecknet, så att de summerar till 100 %; verkar delarna åt olika
+håll är den ena negativ, och kortet säger det. En bortvald variabel nämns med noteringen ur avsnitt 2.
 
 ## 6. Kvantilregressionen
 
@@ -313,7 +320,7 @@ approximation av kvantillösningen, inte den exakta minimeringen, och kortet sä
 falskt när varvtaket (`KVANTIL_MAX_VARV`) tog slut innan ändringen i β föll under toleransen, och `andring`, ändringen
 per koefficient i sista varvet. Vid taket är det oftast intercept och BAS-indikatorer som fortfarande rör sig (så på
 demodatan och referensfixturen) medan könskoefficienten står still, så `kvantilregressionAllaTau` räknar en kvantil som
-konvergerad när könskoefficientens egen ändring är under 1e-5. När den inte är det säger kortet vid vilken kvantil
+konvergerad när könskoefficientens egen ändring är under 1e-5 (`konKonvergerat`). När den inte är det säger kortet vid vilken kvantil
 (`ejKonvergerat` i `kvantilVymodell`).
 
 **Intervallen.** `kvantilBootstrap` i `src/lib/osakerhet.js` (i appen adaptern `_regKvantilBootstrap`, anropad av
@@ -324,9 +331,10 @@ omsamplingarna beror på raderna och inte på deras ordning i filen (ADR-86); tv
 utbytbara i designen. Varje
 omsampling bygger designen på nytt ur de dragna raderna, så att referensintervallet är det första som finns i
 omsamplingen och ett intervall som inte kom med inte ger en nollkolumn; åldern centreras på hela urvalets medel, och
-IRLS startar i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare. Gränserna är
-percentilintervallet av de lyckade omsamplingarna (`percentilintervall`, avsnitt 7); lyckas färre än hälften ges inget
-intervall.
+IRLS startar i hela urvalets lösning (samma kolumn efter namn), vilket bara gör det snabbare. En omsampling vars
+könskoefficient inte konvergerade (samma regel som punktskattningen, `konKonvergerat`) räknas bort, som en som inte gick
+att skatta. Gränserna är percentilintervallet av de lyckade omsamplingarna (`percentilintervall`, avsnitt 7); lyckas
+färre än hälften ges inget intervall.
 
 **Gränsen.** Med fler än **2 000 personer** (`KVANTIL_KI_MAX_N`, i appen `REG_KVANTIL_KI_MAX_N`) räknas inget intervall, på grund av tiden, och
 kortet säger det.
@@ -355,7 +363,18 @@ skattningarna som avstånd från nollinjen med intervallet. Kortet visas när mi
 **t-kvantilen.** Konfidensintervallen i huvudregressionen (huvudtalet och `basEffekter`), regressionerna per
 BAS-intervall, översikten per huvudområde och livscykelmodellen är exp(β ± t(0,975; n − k) · SE) − 1, i procent, med `tKvantil(p, df)` i
 `src/lib/stat.js`. Funktionen inverterar `tFordelningCdf` med bisektion, vid alla frihetsgrader (ADR-105): df 5: 2,571;
-df 10: 2,228; df 26: 2,056; df 60: 2,000; df 100: 1,984; df 1 000: 1,962.
+df 10: 2,228; df 26: 2,056; df 60: 2,000; df 100: 1,984; df 1 000: 1,962. **Konfidensbandet kring regressionslinjen**
+i Ålder & karriär (`regressionslinjensBand` i `src/lib/osakerhet.js`) är y ± t(0,975; n − 2) · SE, där SE är
+medelprediktionens medelfel σ · √(1/n + (x − x̄)²/Σ(xᵢ − x̄)²) och σ² = RSS / (n − 2) (ADR-108). Bandet ritas från tre
+punkter, så n − 2 är minst 1; vid n = 10 är kvantilen 2,306 och bandet 18 % bredare än med 1,96.
+
+**Utan spridning i residualen.** När residualerna saknar spridning (kvadratiskt medel högst 1e-9 av utfallets nivå,
+`SPRIDNING_TOL` i `anpassaOLS`) är anpassningen exakt: alla har samma lön, eller lönen bestäms helt av modellens
+variabler (kvinnorna på en lön och männen på en annan). Standardfel, p-värde och intervall vore då flyttalsbrus och
+redovisas inte. Koefficienter under toleransen sätts till 0, så samma lön för alla ger gapet 0. Ett BAS-intervall eller
+ett steg får statusen `ingen_spridning` (gapet står kvar, men inget R², p-värde eller intervall), räknas inte som ett
+test i Benjamini–Hochberg och visas med noten *ingen lönespridning*; huvudregressionen och livscykelmodellen ger felet
+`ingen_spridning`, och översikten per huvudområde ger skillnaden utan intervall.
 
 **p-värdet.** `pVardeTvasidigt(t, n, k)` är det tvåsidiga p-värdet ur t-fördelningen med df = n − k, vid alla
 frihetsgrader (ADR-105). Signifikansnivån är 0,05.
@@ -367,7 +386,7 @@ normalfördelningen. Normalfördelningens fördelningsfunktion (`normalCdf`) är
 
 **Utanför t-kvantilen** ligger bootstrap-intervallen (percentilmetoden; mediankvoten med B = 2 000 för hela
 organisationen, 1 000 per BAS-intervall och 2 000 i gruppdossiern, kvantilregressionen med 200, avsnitt 6),
-konfidensbandet kring regressionslinjen i Ålder & karriär (fast 1,96) och trattens fält i Lika arbete (fast 1,96).
+och trattens fält i Lika arbete (fast 1,96).
 Trattens ritade fält är en normalapproximation med korrektion för små grupper; bedömningen av varje grupp görs med
 omkastning, utom för grupper över 300 personer, där normalformeln används. De
 räknas i `src/lib/osakerhet.js` (`organisationensKvotKI`, `medianKvotKI`, `medianKvotKIGiltiga`, `kvantilBootstrap`,

@@ -9,7 +9,7 @@
  * överblickens tal. Grupper under minsta gruppstorlek är redan borta ur raderna; modulen vet inget om tröskeln.
  * Förslaget är ett förslag, ingen regel som verktyget tillämpar någon annanstans.
  */
-import { bandlage } from './lonepolitik.js';
+import { bandlage, TREDJEDEL_GRANSER } from './lonepolitik.js';
 
 const _NAMN = { stallningstagande: 'ställningstagandet', statistik: 'statistiken' };
 const _inom = pos => pos >= 0 && pos <= 100;
@@ -28,7 +28,8 @@ const _skillnad = (varde, ref) => (varde != null && ref != null ? (varde / ref -
 export function lageISpann(median, ref) {
     const pos = _pos(median, ref);
     if (pos == null) return { pos: null, ord: '' };
-    const ord = pos < 0 ? 'nedanför' : pos < 33 ? 'i nedre delen' : pos < 67 ? 'mitt i' : pos <= 100 ? 'i övre delen' : 'ovanför';
+    const [nedre, ovre] = TREDJEDEL_GRANSER;
+    const ord = pos < 0 ? 'nedanför' : pos < nedre ? 'i nedre delen' : pos < ovre ? 'mitt i' : pos <= 100 ? 'i övre delen' : 'ovanför';
     return { pos, ord };
 }
 

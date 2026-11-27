@@ -17,7 +17,8 @@ import { kvantil, median } from './stat.js';
 import { konsMedianer } from './struktur.js';
 import { gruppdossierGrupper } from './vymodell-gruppdossier.js';
 
-/** Åldersgrupperna: –34, 35–49, 50– (samma som rapportens tabell Löneskillnader i åldersgrupper). */
+/** Åldersgrupperna: –34, 35–49, 50– (standardgränserna i bladen per BAS-intervall, perBasStandard i perbas.js; ett
+ * recept med andra gränser ändrar inte dossiern). */
 export const BASDOSSIER_ALDERSGRANSER = [35, 50];
 
 /**

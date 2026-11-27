@@ -7,9 +7,9 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
 
 ## Hur verktyget är prövat
 
-- **Automatiskt i varje testkörning:** axe-core granskar markeringen i alla flikar med demodata och kräver
-  noll överträdelser (`tests/a11y.test.js`). Den prövar roller, etiketter, namn på knappar och länkar, ARIA
-  och tabellrelationer. Testmiljön saknar layout, så färgkontrasten prövas inte där.
+- **Automatiskt i varje testkörning:** axe-core granskar markeringen i alla flikar med demodata, med varje dialog
+  öppen, och kräver noll överträdelser (`tests/a11y.test.js`). Den prövar roller, etiketter, namn på knappar och
+  länkar, ARIA och tabellrelationer. Testmiljön saknar layout, så färgkontrasten prövas inte där.
 - **Färgerna:** statusfärgerna har minst 4,5:1 mot sin bakgrund som text, och diagrammens statusfärger minst
   3:1 mot vit bakgrund. Varning och ok skiljer sig i ljushet, så att rött och grönt inte behöver skiljas på
   färgtonen (`tests/farger.test.js`, ADR-43).
@@ -21,14 +21,20 @@ varje bygge, också efter de flikar och paneler som tillkommit sedan dess.
   brister, som är rättade: en text på en fyllning i en mellanton (trädkartan, staplade staplar) nådde 4,0–4,4:1 och
   har nu en kant i motsatt färg, och ett kortat namn i diagrammens förklaring stod inte i knappens namn (WCAG 2.5.3)
   och kortas nu vid ett ordslut.
-- **Tangentbordet:** jsdom-testerna prövar pilarna och Home mellan flikarna (`tests/start-och-meny-app.test.js`). Röktestet
-  i Chromium, Firefox och WebKit prövar tre saker. Avsnittens rubriker nås med Tab och fälls ut med Enter.
-  Menyn i smalt fönster öppnas, fokus flyttas dit, och Escape stänger den och lämnar tillbaka fokus. Ingen
-  flik är bredare än fönstret vid 390 punkter.
+- **Tangentbordet:** jsdom-testerna prövar pilarna, Home och End i menyn (`tests/start-och-meny-app.test.js`), och
+  fokus, dialogerna, de sorterbara tabellerna, de hopfällbara grupperna och förklaringarna (ⓘ) med tangentbordet
+  (`tests/a11y-tangentbord.test.js`). Röktestet
+  i Chromium, Firefox och WebKit prövar två saker. Avsnittens rubriker nås med Tab och fälls ut med Enter. Vid
+  900 punkter är menyn ihopfälld till ikoner som behåller sina namn, och ingen flik är bredare än fönstret.
 
 ## Det som stöds
 
 - Flikarna nås med Tab, och pilarna, Home och End byter flik; stilmallen har fokusmarkering (`:focus-visible`).
+- Fokus stannar kvar när en yta ritas om, och ett val i menyn lämnar fokus på menyknappen. Dialogerna håller kvar
+  fokus medan de är öppna, stängs med Escape och lämnar tillbaka fokus till det som öppnade dem.
+- Sorterbara kolumner sorteras och hopfällbara grupper fälls ut med Enter eller blanksteg; skärmläsaren får
+  sorteringen och om gruppen är utfälld. Förklaringarna (ⓘ) nås med Tab och läses upp.
+- Resultatet av en åtgärd (inläsning, export, analys) läses upp av skärmläsaren.
 - Varje diagram har en textbeskrivning (`aria-label` på diagrammet), och i diagramytan går piltangenterna mellan
   datapunkterna. Talen finns också i tabeller.
 - Två lägen: *vägledande* med förklaringar och *kompakt*.

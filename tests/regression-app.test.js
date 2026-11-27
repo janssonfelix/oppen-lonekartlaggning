@@ -38,7 +38,7 @@ describe('steget + Yrkesgrupp: fasta effekter för AID×BAS med inomtransformati
         expect(kort.querySelector('.reg-budget-legend').textContent).toMatch(/Förklaras av AID-etikett inom BAS/);
         expect(kort.querySelector('.step-final .step-name').textContent).toMatch(/BAS-intervall och ålder \(full modell\)/);
         expect(kort.querySelector('.step-yrke')).not.toBeNull();
-        expect(kort.querySelector('.reg-number, .reg-headline, .step-final .step-value').textContent).toContain(Math.abs(r.konPct).toFixed(2).replace('.', ','));
+        expect(kort.querySelector('.reg-number, .reg-headline, .step-final .step-value').textContent).toContain(w.eval('svTal')(Math.abs(r.konPct), 1));   // en decimal, som alla procenttal i flikarna
     });
     it('utan AID och yrke faller steget bort som för få', () => {
         const w = createAppWindow(); w.__state.data = underlag().map(x => ({ ...x, aid: undefined, yrke: undefined }));
@@ -84,7 +84,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         await w.eval('_regKvantilKlar()');
         const tabell = [...w.document.querySelectorAll('#regression-card table')].find(t => t.textContent.includes('Klibbigt golv'));
         expect(tabell.querySelector('thead').textContent).toContain('95 % KI (bootstrap)');
-        expect(tabell.querySelectorAll('tbody tr')[0].children[2].textContent).toMatch(/^[+−]\d+,\d\s% till [+−]\d+,\d\s%$/);
+        expect(tabell.querySelectorAll('tbody tr')[0].children[2].textContent).toMatch(/^[+−]?\d+,\d\s% till [+−]?\d+,\d\s%$/);
         expect(w.document.getElementById('regression-card').textContent).toMatch(/approximation av kvantillösningen/);
         expect(w.document.getElementById('regression-card').textContent).toMatch(/percentil-bootstrap med 200 omsamplingar/);
         const f = w.document.getElementById('chart-reg-kvantil')._figur;
@@ -93,6 +93,15 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         expect(f.x.doman[1]).toBeGreaterThanOrEqual(Math.max(...a.results.map(q => q.ki.hog)));
         expect(f.y.skala).toBe('band');
         expect(f.x.doman[0] < 0 && f.x.doman[1] > 0).toBe(true);   // axeln når noll
+    });
+    it('kvantilregressionen: Rensa all data medan intervallet räknas i bakgrunden lämnar inget minne efter sig', async () => {
+        const w = med(0.01);
+        w.eval('ritaRegressionskort()');
+        expect(w.document.getElementById('regression-card').textContent).toMatch(/räknas i bakgrunden/);
+        w.eval('_rensaAllData()');
+        await w.eval('_regKvantilKlar()');
+        await new Promise(r => setTimeout(r, 0));
+        expect(w.eval('[_regKvantilMinne, _regKvantilSenast]')).toEqual([null, null]);
     });
     it('kvantilregressionen: över 2 000 personer räknas inget KI, och noten säger det', () => {
         const w = createAppWindow();
@@ -138,7 +147,7 @@ describe('BAS-steg räknas i bokstäver överallt (se §3 i regressionsmodellen.
         expect(text).not.toMatch(/väger tyngre än/);
     });
     it('regressionskortet visar referensintervallet och en rad per BAS-indikator', () => {
-        const w = med();
+        const w = med(0.01);   // med brus: utan det bestäms lönen helt av modellen och inget skattas (regressionsmodellen.md §7)
         w.eval('ritaRegressionskort()');
         const html = w.document.body.innerHTML;
         expect(html).toContain('<code>A</code>, är referens');
@@ -263,15 +272,17 @@ describe('modellpanelen (ADR-56)', () => {
         andra(w, p2.querySelector('#fm-skal'), 'organisationen sätter inte lön efter ålder');
         expect(w.__state.forklaringsmodell.skal).toBe('organisationen sätter inte lön efter ålder');
         expect(w.document.getElementById('forklaringsmodell-panel').querySelector('[data-fm-notering]').textContent).toMatch(/Skäl: organisationen sätter inte lön efter ålder/);
+        // Oaxaca-kortet i samma flik bär samma notering.
+        expect(w.document.getElementById('blinder-oaxaca-card').textContent).toContain('organisationen sätter inte lön efter ålder');
     });
-    it('ett skäl som ser ut som en personuppgift sparas inte och får en not', () => {
+    it('ett skäl som ser ut att innehålla ett personnummer sparas inte och får en not', () => {
         const w = demo();
         const p = oppna(w);
         andra(w, p.querySelector('input[data-fm="alder"]'), false);
         const p2 = w.document.getElementById('forklaringsmodell-panel');
         andra(w, p2.querySelector('#fm-skal'), 'lönen sätts av 19800101-1234');
         expect(w.__state.forklaringsmodell.skal).toBe('');
-        expect(w.document.getElementById('forklaringsmodell-panel').querySelector('.k-mask-note').textContent).toMatch(/personuppgift/);
+        expect(w.document.getElementById('forklaringsmodell-panel').querySelector('.k-mask-note').textContent).toMatch(/personnummer/);
     });
     it('förslaget: knappen följer förslaget och kryssrutan för yrkesgrupp kräver BAS', () => {
         const w = demo();
@@ -601,5 +612,31 @@ describe('regressionen körs en gång per varv vid inläsning och tröskelbyte',
         raknaRegressioner(w);
         w.eval('ritaOversiktDelar()');
         expect(w.__regKorningar).toBe(1);
+    });
+});
+
+describe('regressionskortets meningar följer talens riktning', () => {
+    // Lönen är nivån × faktorn för könet; åldern ger en liten lutning så att modellen går att skatta.
+    const kort = grupper => {
+        const w = createAppWindow(), rader = [];
+        for (const [bas, niva, kon, n, faktor] of grupper) for (let i = 0; i < n; i++) {
+            const alder = 26 + ((i * 7) % 34);
+            rader.push({ aid: bas === 'C' ? '101' : '201', yrke: 'Yrke ' + bas, bas, kon, alder, lon: Math.round(niva * faktor * (1 + 0.003 * (alder - 40)) + (i % 5) * 40) });
+        }
+        w.__state.data = rader;
+        w.eval('ritaRegressionskort()');
+        return w.document.getElementById('regression-card').textContent.replace(/\s+/g, ' ');
+    };
+    it('kvinnor som tjänar mer: «mer», inte «mindre»; kvinnor som tjänar mindre: «mindre»', () => {
+        const mer = kort([['C', 30000, 'kvinna', 25, 1.1], ['C', 30000, 'man', 25, 1], ['E', 40000, 'kvinna', 25, 1.1], ['E', 40000, 'man', 25, 1]]);
+        expect(mer).toMatch(/tjänar kvinnor [\d,]+\s%\smer än män/);
+        const mindre = kort([['C', 30000, 'kvinna', 25, 0.9], ['C', 30000, 'man', 25, 1], ['E', 40000, 'kvinna', 25, 0.9], ['E', 40000, 'man', 25, 1]]);
+        expect(mindre).toMatch(/tjänar kvinnor [\d,]+\s%\smindre än män/);
+    });
+    it('när variablerna gör skillnaden större sägs ingen negativ förklarad andel och ingen rest över 100 %', () => {
+        // Kvinnorna finns mest i det högre avlönade intervallet men tjänar mindre inom båda: den råa skillnaden är liten.
+        const t = kort([['C', 30000, 'kvinna', 15, 0.9], ['C', 30000, 'man', 25, 1], ['E', 45000, 'kvinna', 25, 0.9], ['E', 45000, 'man', 15, 1]]);
+        expect(t).toMatch(/Slutsats: .* förklarar inget av den råa löneskillnaden: när /);
+        expect(t).not.toMatch(/förklarar\s−/);
     });
 });

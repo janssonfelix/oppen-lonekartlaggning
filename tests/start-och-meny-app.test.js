@@ -5,6 +5,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow, delatFonster, delatFlikfonster, MENYFLIKAR, tillstandsavtryck, utgangslage } from './helpers/app-harness.js';
 import { las, papa, vanta, csvFil, braRader } from './helpers/granssnitt-rigg.js';
+import { ARBETSBOCKER, fangaBocker, laddaXlsx, noteraUtvag, utskriftsfonster, utvagarIKallan } from './helpers/ktroskel-rigg.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 // Ett delat fönster med demodatan där varje flik i menyn har klickats fram en gång (det dyra är att rita flikarna), för
 // testerna som söker igenom alla flikar. Vakten i delatFonster fäller det test som ändrar fönstret.
@@ -55,7 +57,7 @@ describe('röktest: boot', () => {
     });
 
     it('storage-tripwire är aktiv (kastar vid icke-tillåten skrivning)', () => {
-        expect(() => win.eval("localStorage.setItem('x','y')")).toThrow();
+        expect(() => win.eval("localStorage.setItem('x','y')")).toThrow(/Persistent storage forbidden/);
     });
 
     it('process-tracker renderas redan vid boot (utan data) med steg 1 ej klart', () => {
@@ -67,7 +69,7 @@ describe('röktest: boot', () => {
         const rows = host.querySelectorAll('.ptrack-row');
         expect(rows.length).toBe(9);                       // nio steg (Rapporttext är steg 7)
         expect(rows[0].querySelector('.ptrack-status').dataset.status).toBe('ej'); // steg 1 ej klart utan data
-        expect(host.innerHTML).toContain('data-goto-tab');  // klickbara länkar (CSP-säkra)
+        expect(host.innerHTML).toContain('data-go-to-tab');  // klickbara länkar (CSP-säkra)
         expect(host.innerHTML).not.toContain('onclick');    // inga inline-handlers (hash-CSP)
     });
 });
@@ -280,6 +282,44 @@ describe('a11y: ARIA APG-tangentbord i den in-page-tablisten', () => {
         });
     }
 
+    it('info-sektionerna: varje flik styr panelen, och panelen bär namnet på den valda fliken', () => {
+        const d = win.document;
+        d.querySelector('.nav-item[data-tab="info"]').click();
+        const panel = d.getElementById('info-tab-content');
+        expect(panel.getAttribute('role')).toBe('tabpanel');
+        const btns = [...d.querySelectorAll('#view-info .info-section-btn')];
+        for (const b of btns) expect(b.getAttribute('aria-controls')).toBe('info-tab-content');
+        btns[2].click();
+        expect(d.getElementById(panel.getAttribute('aria-labelledby'))).toBe(btns[2]);
+        btns[0].click();
+        expect(d.getElementById(panel.getAttribute('aria-labelledby'))).toBe(btns[0]);
+    });
+
+    it('menyn: pilarna, Home och End går mellan de upplåsta flikarna och byter flik, och en låst hoppas över', () => {
+        const w = createAppWindow(), d = w.document;
+        const upplasta = () => [...d.querySelectorAll('.nav-item')].filter(b => !b.disabled && !b.hidden);
+        const tryck = key => d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+        const u = upplasta();
+        expect(u.length).toBeLessThan(d.querySelectorAll('.nav-item').length);   // utan lönefil är flikar låsta
+        u[0].focus();
+        tryck('ArrowDown');
+        expect(d.activeElement).toBe(u[1]);
+        expect(d.querySelector('.nav-item.active')).toBe(u[1]);
+        tryck('ArrowUp');
+        expect(d.activeElement).toBe(u[0]);
+        tryck('End');
+        expect(d.activeElement).toBe(u.at(-1));
+        expect(d.querySelector('.nav-item.active')).toBe(u.at(-1));
+        tryck('Home');
+        expect(d.activeElement).toBe(u[0]);
+        // Från en låst knapp går pilen till närmaste upplåsta åt det hållet.
+        const last = d.querySelector('.nav-item[aria-disabled="true"]');
+        last.focus();
+        tryck('ArrowDown');
+        const alla = [...d.querySelectorAll('.nav-item')];
+        expect(d.activeElement).toBe(alla.slice(alla.indexOf(last) + 1).find(b => u.includes(b)) || u[0]);
+    });
+
     it('sidopanelens navigationsknappar är kvar i Tab-ordningen (ADR-10)', () => {
         // Regressionsskydd: roving tabindex togs BORT ur sidopanelen med flit.
         const nav = [...win.document.querySelectorAll('.nav-item')];
@@ -288,7 +328,7 @@ describe('a11y: ARIA APG-tangentbord i den in-page-tablisten', () => {
     });
 });
 
-describe('demoläget märker även tabellernas CSV', () => {
+describe('demoläget märks i allt som lämnar verktyget', () => {
     it('filnamnet får DEMO_ i demoläget, men bara en gång', () => {
         const w = createAppWindow();
         expect(w.__csvFilnamn('utforska')).toBe('utforska');
@@ -296,6 +336,105 @@ describe('demoläget märker även tabellernas CSV', () => {
         expect(w.__csvFilnamn('utforska')).toBe('DEMO_utforska');
         expect(w.__csvFilnamn('DEMO_Utforska_Median_2026-09-25')).toBe('DEMO_Utforska_Median_2026-09-25');
     });
+    // Varje väg ut i demoläget: filerna (filnamn och början), urklippet och utskriften av mallflikarna. Arbetsböckerna
+    // tas ur k-riggens förteckning (ARBETSBOCKER) och Likvärdigt arbetes; tabellerna och diagrammen ur sidan och
+    // diagramkärnans register.
+    it('varje fil har DEMO i namnet och märket först; urklippet och utskriften börjar med märket', async () => {
+        const w = createAppWindow();
+        await laddaXlsx(w);
+        w.__lasInDemodata();
+        const d = w.document, marke = w.eval('DEMO_MARKE');
+        expect(marke).toMatch(/^DEMODATA/);
+        Object.assign(w.__state.forecast, { generell: { mode: 'pct', value: 2 } });   // en prognos, så att Löneöversyn har en fil
+        for (const f of MENYFLIKAR) w.__ritaFlik(f);
+        // Filerna: varje nedladdning (laddaNer och diagrammens bildlänk) med blobben eller data-URL:en.
+        const filer = [], urklipp = [];
+        let blob = null;
+        w.URL.createObjectURL = b => { blob = b; return 'blob:x'; };
+        w.HTMLAnchorElement.prototype.click = function () { noteraUtvag(w); filer.push({ namn: this.download, blob: this.href === 'blob:x' ? blob : null, href: this.href }); };
+        // Urklippet: ren text (writeText) och HTML med ren text eller en bild (write med ClipboardItem); den rena texten prövas.
+        const urklippText = [];
+        w.ClipboardItem = class { constructor(delar) { this.delar = delar; } };
+        Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: {
+            writeText: t => { noteraUtvag(w); urklipp.push(t); return Promise.resolve(); },
+            write: async ([item]) => { noteraUtvag(w); if (item.delar['text/plain']) urklippText.push(item.delar['text/plain']); } } });
+
+        const text = f => f.blob ? new Promise(r => { const l = new w.FileReader(); l.onload = () => r(String(l.result)); l.readAsText(f.blob); })
+            : Promise.resolve(decodeURIComponent(f.href.replace(/^data:[^,]*,/, '')));
+        // Arbetsböckerna: namnet och första bladet.
+        for (const [namn, kor] of [...ARBETSBOCKER, ['Likvärdigt arbete', x => x.eval('exportLikvardighet()')]]) {
+            const bocker = fangaBocker(w, () => kor(w));
+            expect(Object.keys(bocker).length, namn).toBeGreaterThan(0);
+            for (const [fil, innehall] of Object.entries(bocker)) {
+                expect(fil, namn).toMatch(/DEMO/);
+                expect(innehall.split(/\n\[/)[0], `${namn}: första bladet`).toContain('DEMODATA');
+            }
+        }
+        // Tabellerna: CSV och kopiera.
+        const tabeller = [...d.querySelectorAll('[data-csv-table]')];
+        expect(tabeller.length).toBeGreaterThan(5);
+        for (const k of tabeller) k.click();
+        for (const k of d.querySelectorAll('[data-copy-table]')) k.click();
+        // Diagrammen: diagramdata som CSV och på urklipp, och bilden som SVG.
+        let diagram = 0;
+        // Varje export kan rita om fliken (exportgrinden): behållaren hämtas med sitt id före varje.
+        const exportera = (id, val) => { w.__el = d.getElementById(id); return w.eval(`exporteraDiagram(window.__el, "${val}")`); };
+        for (const id of new Set(w.__rfBehallare().filter(e => e.isConnected && e.id).map(e => e.id))) {
+            try { await exportera(id, 'data-csv'); } catch (_e) { continue; }   // inget att exportera (t.ex. ritas inte i exportläget)
+            diagram++;
+            await exportera(id, 'data-kopiera');
+            await exportera(id, 'svg');
+        }
+        expect(diagram).toBeGreaterThan(5);
+        // ZIP-filen (diagrammens bilder: fotraden; Word-utkastet prövas i rapport-app.test.js) och konfigurationsfilen.
+        const fotter = [];
+        w.figurTillBild = (_f, _fmt, _b, _h, val) => { fotter.push(String(val && val.fot)); return Promise.resolve('data:image/png;base64,AAAA'); };
+        w.eval("byggWordUtkast = () => Promise.resolve({ namn: 'x.docx', blob: new Blob(['x']) })");
+        w.JSZip = class { file() {} generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };
+        d.getElementById('btn-export-zip').click();
+        for (let i = 0; i < 100 && !filer.some(f => /\.zip$/.test(f.namn)); i++) await new Promise(r => setTimeout(r, 20));
+        expect(fotter.length).toBeGreaterThan(5);
+        for (const f of fotter) expect(f).toMatch(/^DEMODATA/);
+        // Word-utkastet (innehållet prövas i rapport-app.test.js), PDF-rapporten och Rapporttextens utkast.
+        d.getElementById('btn-export-docdraft').click();
+        for (let i = 0; i < 100 && !filer.some(f => /\.docx$/.test(f.namn)); i++) await new Promise(r => setTimeout(r, 20));
+        w.print = () => { noteraUtvag(w); };
+        await w.eval('byggUtskriftsrapport()');
+        expect(d.getElementById('print-report').textContent.trim()).toMatch(/^DEMODATA/);   // rapportens egen mening om demodatan
+        const fore = urklipp.length;
+        d.getElementById('struktur-narrative-copy').click();
+        expect(urklipp.slice(fore)).toEqual([`${marke}\n${d.getElementById('struktur-narrative').value}`]);
+        // Rapportunderlaget: alla avsnitt, ett block och ett diagram.
+        for (const sel of ['#btn-ru-kopiera-avsnitt', '[data-rapport-kopiera]', '[data-rapport-diagram]']) {
+            d.querySelector(sel).click();
+            await new Promise(r => setTimeout(r, 50));
+        }
+        expect(urklippText.length).toBeGreaterThanOrEqual(2);
+        // Rapportunderlagets block bär märket som första stycke, under blockets rubrik.
+        for (const b of urklippText) { const t = await b.text(); expect(t.split('\n\n')[1], t.slice(0, 80)).toMatch(/^DEMODATA/); }
+        d.getElementById('btn-config-save').click();
+        expect(filer.map(f => f.namn).filter(n => /\.(zip|json)$/.test(n))).toEqual([expect.stringMatching(/\.zip$/), expect.stringMatching(/config.*\.json$/)]);
+        for (const f of filer) {
+            expect(f.namn).toMatch(/DEMO/);
+            if (/\.csv$/.test(f.namn)) expect((await text(f)).replace(/^\ufeff/, '').split('\n')[0], f.namn).toContain('DEMODATA');
+            if (/\.svg$/.test(f.namn)) expect(await text(f), f.namn).toMatch(/data-del="fot"[^>]*>DEMODATA/);   // fotradens första rad
+        }
+        expect(urklipp.length).toBeGreaterThan(5);
+        for (const t of urklipp) expect(t.startsWith(marke), t.slice(0, 80)).toBe(true);
+        // Utskriften av handlingsplanen och checklistan.
+        for (const knapp of ickeTom(d.querySelectorAll('[data-print-view]'))) expect(utskriftsfonster(w, () => knapp.click()), knapp.getAttribute('data-print-view')).toContain(marke);
+        // Förteckningen ovan är härledd: varje väg ut i källan (utvagarIKallan) ska ha gått genom svepet, så att en ny
+        // export som svepet inte når fäller provet. Undantagen bär inget ur underlaget och inga lönemått.
+        const UNDANTAG = {
+            '29-organisationspaket.js': 'organisationspaketet och verktygsfilen: inställningar och referens, inget ur lönefilen',
+            '32-filinlasning.js': 'CSV-mallen och paketet ur organisationsfilen: rubriker och inställningar, inget ur lönefilen',
+            '86-installningar.js': 'importprofilen: rubriknamn, inga lönemått (k-riggen prövar innehållet)',
+            '12-tillstand.js reserv': 'reserven när webbläsaren saknar urklippets API: samma text som svepet kopierar',
+        };
+        const kalla = utvagarIKallan(), undantagen = u => UNDANTAG[u.fil] || UNDANTAG[`${u.fil} ${u.funktion}`];
+        expect(Object.keys(UNDANTAG).filter(n => !kalla.some(u => [u.fil, `${u.fil} ${u.funktion}`].includes(n))), 'undantag utan väg ut').toEqual([]);
+        expect(kalla.filter(u => !undantagen(u) && !w.__utvagar.has(u.fran)).map(u => `${u.fil} ${u.funktion}`)).toEqual([]);
+    }, 120000);
 });
 
 // Paragrafhänvisningar ("§ 9", "DiskrL 3:8", "3 kap.", "art. 9") hör till hjälptexten
@@ -357,16 +496,16 @@ describe('menystruktur', () => {
         w.eval("navigeraTill('rapport')");     expect(synlig('view-rapport') && synlig('view-utforska')).toBe(true);
         w.eval("navigeraTill('demografi')");   expect(synlig('view-demografi')).toBe(true);
         w.eval("navigeraTill('kvalitet')");    expect(synlig('view-dokumentera')).toBe(true);
-        const a = w.document.createElement('button'); a.setAttribute('data-goto-tab', 'kvalitet');
+        const a = w.document.createElement('button'); a.setAttribute('data-go-to-tab', 'kvalitet');
         w.document.body.appendChild(a); a.click(); a.remove();
         expect(synlig('view-dokumentera')).toBe(true);
     });
     it('alla länkmål i processkarta, åtgärdslista och iakttagelser pekar på en flik som finns', () => {
         klicka('dashboard');
-        const mal = [...w.document.querySelectorAll('[data-goto-tab],[data-go-to-tab],[data-flow-tab]')]
-            .map(e => e.getAttribute('data-goto-tab') || e.getAttribute('data-go-to-tab') || e.getAttribute('data-flow-tab'));
+        const mal = [...w.document.querySelectorAll('[data-go-to-tab],[data-flow-tab]')]
+            .map(e => e.getAttribute('data-go-to-tab') || e.getAttribute('data-flow-tab'));
         const finns = new Set(flikar().concat(['benchmark']));
-        mal.forEach(m => expect(finns.has(w.eval(`flikMal(${JSON.stringify(m)})`)), m).toBe(true));
+        ickeTom(mal).forEach(m => expect(finns.has(w.eval(`flikMal(${JSON.stringify(m)})`)), m).toBe(true));
     });
     it('processkartan har 9 steg under menyns faser: Samverkan under Åtgärder, Rapporttext först under Rapport', () => {
         w.__ritaKartlaggningensSteg();
@@ -383,10 +522,10 @@ describe('menystruktur', () => {
             '3 · Åtgärder': ['5. Handlingsplan', '6. Samverkan med facket'],
             '4 · Rapport': ['7. Rapporttext', '8. Dokumentation', '9. Uppföljning av handlingsplanen'],
         });
-        const rows = [...host.querySelectorAll('.ptrack-row')], mal = r => r.querySelector('[data-goto-tab]').getAttribute('data-goto-tab');
+        const rows = [...host.querySelectorAll('.ptrack-row')], mal = r => r.querySelector('[data-go-to-tab]').getAttribute('data-go-to-tab');
         expect(rows.map(mal)).toEqual(['dashboard', 'bestammelser', 'matrix', 'likvardighet', 'handlingsplan', 'handlingsplan', 'rapporttext', 'dokumentera', 'dokumentera']);
         // Samverkan leder till kortet Samverkan och uppföljning i Handlingsplan.
-        expect(rows[5].querySelector('[data-goto-tab]').getAttribute('data-goto-avsnitt')).toBe('hp-samverkan');
+        expect(rows[5].querySelector('[data-go-to-tab]').getAttribute('data-go-to-avsnitt')).toBe('hp-samverkan');
         const kort = w.document.getElementById('hp-samverkan');
         expect(kort.closest('#view-handlingsplan')).not.toBeNull();
         expect(kort.querySelector('h2').textContent).toBe('Samverkan och uppföljning');
@@ -394,7 +533,7 @@ describe('menystruktur', () => {
     });
     it('"Gå till steget" för Samverkan öppnar Handlingsplan och går till kortet', () => {
         w.__ritaKartlaggningensSteg();
-        const knapp = [...w.document.querySelectorAll('#process-tracker [data-goto-avsnitt]')][0];
+        const knapp = [...w.document.querySelectorAll('#process-tracker [data-go-to-avsnitt]')][0];
         const kort = w.document.getElementById('hp-samverkan');
         let rullad = false; kort.scrollIntoView = () => { rullad = true; };
         knapp.click();
@@ -514,7 +653,7 @@ describe('interna fel syns i stället för att sväljas', () => {
         expect(varningar.join('\n')).not.toMatch(/\d/);                          // inga siffror (kan vara data) i konsolen
         w.__rensaAllData();
         expect(banner.hidden).toBe(true);
-        expect(w.__state._interntFel).toEqual([]);
+        expect(w.__state._interntFel).toBeUndefined();   // som i ett nytt fönster
     });
     it('vid normal körning av demot med alla flikar uppstår inga interna fel', async () => {
         const w = createAppWindow();
@@ -962,6 +1101,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         d.querySelector('.nav-item[data-tab="info"]').click();
         expect(d.body.classList.contains('meny-oppen')).toBe(false);
         expect(skugga.hidden).toBe(true);
+        expect(d.activeElement).toBe(knapp);   // ett val i menyn lämnar också fokus på knappen
         expect(d.getElementById('view-info').style.display).toBe('block');
         // Escape utan öppen meny rör inte fokus.
         d.querySelector('.nav-item[data-tab="info"]').focus();
@@ -1243,7 +1383,7 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(kvartiler.isConnected).toBe(false);
         expect(w.eval('_diagramexportUnderlag(window.__tomt)')).toBeNull();
         expect(w.eval('exportSakra(window.__tomt)')).toBe(false);
-        // ZIP-exporten tar "allt som är ritat": den ritar först om varje flik som ritats förut men inte är aktuell.
+        // ZIP-exporten tar "allt som är ritat": den ritar först om varje flik som ritats men inte är aktuell.
         const zip = w.eval('zipDiagram().map(el => el.id)');   // i exportläget: varje flik som ritats ritas om före uppräkningen
         expect(zip).toContain('chart-struktur-kvartiler');
         expect(w.eval('diagramRitat(document.getElementById("chart-struktur-kvartiler"))')).toBe(true);
@@ -1266,7 +1406,72 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         expect(w.eval('exportSakra(document.getElementById("chart-skevhet-overview"))')).toBe(false);
         expect(w.eval("flikInaktuell('struktur')")).toBe(true);
     });
-    it('"Rensa all data" lämnar exportmenyerna och BAS-väljaren i Ålder & karriär orörda', () => {
+    it('grinden stänger vid fel också för en flik som bara ritats direkt av vyn, aldrig genom menyn', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        w.eval('ritaPrioritering()');                                    // skärmens ritning (k = 1), utanför ritaFlik
+        expect(w.document.querySelectorAll('#prio-table tbody tr').length).toBeGreaterThan(0);
+        w.eval("const __r = _ritaFlik; _ritaFlik = function (f) { if (f === 'prioritering') throw new Error('prov'); return __r(f); };");
+        expect(w.eval("_tabellkopiaForExport('prio-table')")).toBeNull();
+        expect(w.eval('medExportLage(() => exportSakra(document.getElementById("chart-prio-matrix")))')).toBe(false);
+    });
+    it('exportläget går tillbaka när den sista av två överlappande exporter är klar, vilken som än startade först', async () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        for (const forstaKlarForst of [true, false]) {
+            w.eval(`window.__a = {}; window.__b = {};
+                for (const x of [window.__a, window.__b]) x.lofte = new Promise(r => { x.klar = r; });
+                window.__a.export = medExportLage(() => window.__a.lofte);
+                window.__b.export = medExportLage(() => window.__b.lofte);`);
+            const [forst, sist] = forstaKlarForst ? [w.__a, w.__b] : [w.__b, w.__a];
+            expect(w.__state.kLage).toBe('export');
+            forst.klar(); await forst.export;
+            expect(w.__state.kLage).toBe('export');                    // den andra pågår
+            sist.klar(); await sist.export;
+            expect(w.__state.kLage).toBe('skarm');
+        }
+    });
+    it('en vy som inte har något att rita tömmer fliken: exporten (k = 10) får inga rader och inga punkter ur skärmens ritning', () => {
+        const w = createAppWindow();
+        w.__lasInDemodata();
+        const d = w.document;
+        const rader = id => w.__tabellkopia(id)?.querySelectorAll('tbody tr').length ?? 0;
+        const punkter = id => w.__diagramexportRader(d.getElementById(id)).length;
+        // Prioritering: ritad på skärmen, sedan en referens som saknas.
+        w.__ritaFlik('prioritering');
+        expect(d.querySelectorAll('#prio-table tbody tr').length).toBeGreaterThan(0);
+        const statistikRef = d.querySelector('input[name="prio-ref"][value="statistik"]');
+        statistikRef.checked = true; statistikRef.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(d.querySelectorAll('#prio-table tbody tr').length).toBe(0);
+        expect(rader('prio-table')).toBe(0);
+        expect(punkter('chart-prio-matrix')).toBe(0);
+        // En referens utan en enda träff ger tomläget, och fliken går att rita igen efteråt.
+        w.__state.statistik = [{ aid: '9999', bas: 'Ö', median: 30000, aidFull: '9999 Påhittat yrke' }];
+        w.eval('ritaPrioritering()');
+        expect(d.getElementById('prio-empty').style.display).toBe('block');
+        expect(d.getElementById('prio-empty-text').textContent).toMatch(/matchande referens/);
+        const policyRef = d.querySelector('input[name="prio-ref"][value="stallningstagande"]');
+        policyRef.checked = true; policyRef.dispatchEvent(new w.Event('change', { bubbles: true }));
+        expect(d.getElementById('prio-stat-akut')).not.toBeNull();
+        expect(d.querySelectorAll('#prio-table tbody tr').length).toBeGreaterThan(0);
+        // Löneläget: ritat på skärmen, sedan tas ställningstagandet bort.
+        w.__ritaFlik('benchmark');
+        expect(d.querySelectorAll('#lonepolitik-content [id^="chart-lp-"] svg').length).toBeGreaterThan(0);
+        w.eval('aterstallReferens(); ritaLonepolitik()');
+        expect(d.querySelectorAll('#lonepolitik-content [id^="chart-"]').length).toBe(0);
+        expect(rader('lonepolitik-table')).toBe(0);
+        // Ålder & karriär: ett BAS-intervall med en enda person med ålder väljs efter en ritning.
+        w.__state.data = [...w.__state.data, { ...w.__state.data[0], bas: 'Ö' }];
+        w.eval('tomStatistikcacher(); fyllValjare();');
+        w.__ritaFlik('kon');
+        expect(punkter('chart-kon-scatter')).toBeGreaterThan(0);
+        const val = d.getElementById('bas-select-kon');
+        val.value = 'Ö'; val.dispatchEvent(new w.Event('change', { bubbles: true }));
+        for (const id of ['chart-kon-scatter', 'chart-kon-boxplot', 'chart-demo-hist']) expect(d.querySelectorAll(`#${id} svg`).length, id).toBe(0);
+        expect(punkter('chart-kon-scatter')).toBe(0);
+        expect(punkter('chart-demo-hist')).toBe(0);
+    });
+    it('"Rensa all data" tar bort exportmenyerna som i ett nytt fönster, de kommer tillbaka med diagrammen, och BAS-väljaren står kvar', () => {
         const w = createAppWindow();
         w.__lasInDemodata();
         const d = w.document;
@@ -1277,13 +1482,14 @@ describe('gränssnittet: flikarnas form, inställningar, sök och tomlägen', ()
         const val = () => menyer().map(m => m.querySelectorAll('button[data-chart-export]').length);
         expect(val().every(n => n >= 3)).toBe(true);
         w.eval('_rensaAllData()');
-        // Menyer som låg i en behållare som fylls av koden försvinner med den; de som står kvar har sina val kvar.
-        expect(menyer().length).toBeGreaterThan(2);
-        expect(val().every(n => n >= 3)).toBe(true);
+        expect(menyer()).toHaveLength(0);                                    // som i ett nytt fönster
         expect(d.getElementById('bas-select-kon')).not.toBeNull();          // väljaren hör till sidan, inte till det ritade
         expect(d.getElementById('ak-urval-text').textContent).toBe('');
         w.__lasInDemodata();
+        d.querySelector('.nav-item[data-tab="struktur"]').click();
         d.querySelector('.nav-item[data-tab="kon"]').click();
+        expect(menyer().length).toBeGreaterThan(2);
+        expect(val().every(n => n >= 3)).toBe(true);
         expect(d.getElementById('bas-select-kon').options.length).toBeGreaterThan(1);
     });
     it('två lägen — väljaren står i Inställningar, läget ändrar bara vad som visas och lagras inte', () => {

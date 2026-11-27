@@ -53,6 +53,25 @@ describe('k-tröskeln: bilder av diagram bär meningen under 10', () => {
         expect(zipBilder.length).toBeGreaterThan(3);                 // diagram ur flera flikar, utan att någon flik öppnats
         for (const bild of zipBilder) kontrollera(bild, k);
     });
+    it('ett diagram som inte går att göra till bild i ZIP-filen rapporteras, som ett fel i de andra delarna', async () => {
+        const { readFileSync } = await import('node:fs');
+        const w = fonsterLitet(10);
+        w.eval(readFileSync(new URL('../vendor/xlsx.mini.min.js', import.meta.url), 'utf8'));
+        w.figurTillBild = () => Promise.reject(new Error('prov'));
+        w.JSZip = class { file() {} generateAsync() { return Promise.resolve(new w.Blob(['x'])); } };
+        w.URL.createObjectURL = () => 'blob:x';
+        w.HTMLAnchorElement.prototype.click = () => {};
+        w.__state._interntFel = [];
+        expect(await w.eval('exportZip()')).toBe(true);
+        expect(JSON.stringify(w.__state._interntFel)).toMatch(/ZIP: diagrammet chart-/);
+    });
+    it('ett diagram som inte går att göra till bild i rapporten rapporteras, som i ZIP-filen', async () => {
+        const w = fonsterLitet(10);
+        w.figurTillBild = () => Promise.reject(new Error('prov'));
+        w.__state._interntFel = [];
+        expect(await w.eval("rmDiagramBild({ id: 'chart-kon-scatter', flik: 'kon', rubrik: 'R' })")).toBeNull();
+        expect(JSON.stringify(w.__state._interntFel)).toMatch(/rapportens diagram \(chart-kon-scatter\)/);
+    });
     it.each([[6], [10]])('rapportunderlagets diagramkopia vid %i', async k => {
         const w = fonsterLitet(k);
         // Diagrammet ritas av diagramkärnan (ADR-39): bilden görs ur figuren, och meningen läggs i SVG:n.

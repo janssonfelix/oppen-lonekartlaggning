@@ -19,6 +19,7 @@
 // ====================================================================
 import { konAv } from '../lib/falt.js';
 import { talformat } from '../lib/figur.js';
+import { MATT_ETIKETT } from '../lib/tabellrecept.js';
 import { iUrvalet } from '../lib/urval.js';
 import { FARG } from './01-farger.js';
 import { _kvantilTipsRader } from './03-hjalpfunktioner.js';
@@ -26,7 +27,7 @@ import { kTroskel } from './06-k-troskel.js';
 import { GAP_STATUS, gapStatus, PALETT } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { aidbasGrans } from './45-aid-bas-tabeller.js';
-import { _utforskaFormatera, _utforskaAidBas, _utNycklar, UTFORSKA_MATT_ETIKETT } from './70-utforska.js';
+import { _utforskaFormatera, _utforskaAidBas, _utNycklar } from './70-utforska.js';
 
 function _utforskaAxelrubrik(matt) {
     if (matt === 'gap') return 'Kvinnors median (% av männens)';
@@ -61,7 +62,7 @@ function _utforskaMarkering(model, rad) {
     if (dim === 'aidbas') { const u = _utforskaAidBas(rad); return u ? { markering: markeringFor(u.bas, u.aid) } : {}; }
     return {};
 }
-const _utforskaBeskrivning = (model, form) => `${form}: ${UTFORSKA_MATT_ETIKETT[model.spec.matt] || 'valt mått'} per vald grupp. Samma värden finns i tabellen nedan.`;
+const _utforskaBeskrivning = (model, form) => `${form}: ${MATT_ETIKETT[model.spec.matt] || 'valt mått'} per vald grupp. Samma värden finns i tabellen nedan.`;
 
 export function utforskaFigur(model, typ, rows) {
     switch (typ) {
@@ -101,10 +102,10 @@ function _figStaplar(model, liggande) {
     if (!delaKon && matt === 'gap') {
         const vy = vyer[0], status = c => gapStatus(Math.abs(100 - vy.v(c)), false);
         lager = _UTFORSKA_GAPSTATUS.map(s => ({ marke: 'punkt', symbol: s.symbol, storlek: 6, serie: s.serie, farg: PALETT.semantic[s.farg], ...riktning,
-            data: celler.filter(c => _utforskaHar(vy.v(c)) && status(c) === s).map(c => punkt(vy, c)), tips: tips(UTFORSKA_MATT_ETIKETT[matt]) }));
+            data: celler.filter(c => _utforskaHar(vy.v(c)) && status(c) === s).map(c => punkt(vy, c)), tips: tips(MATT_ETIKETT[matt]) }));
     } else {
         lager = vyer.map(vy => {
-            const serie = vy.kort || UTFORSKA_MATT_ETIKETT[matt];
+            const serie = vy.kort || MATT_ETIKETT[matt];
             return { marke: 'stapel', serie, farg: vy.farg, ...riktning, data: celler.filter(c => _utforskaHar(vy.v(c))).map(c => punkt(vy, c)), tips: tips(serie) };
         });
     }
@@ -136,9 +137,9 @@ function _figVarmekarta(model) {
         hojd: Math.max(260, 120 + 26 * rader.length),
         ...(delaKon ? { paneler: vyer.map(vy => vy.namn) } : {}),
         fargskala: diverg ? { typ: 'divergerande', doman: [mitt - spann, mitt + spann], mitt, titel: _utforskaAxelrubrik(matt) }
-                          : { typ: 'sekventiell', farger: PALETT.sekventiellNeutral, doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...(format ? { format } : {}) },
+                          : { typ: 'sekventiell', doman: [zmin, zmax], titel: _utforskaAxelrubrik(matt), ...(format ? { format } : {}) },
         lager: vyer.map(vy => {
-            const serie = vy.namn ? `${UTFORSKA_MATT_ETIKETT[matt]} · ${vy.namn}` : UTFORSKA_MATT_ETIKETT[matt];
+            const serie = vy.namn ? `${MATT_ETIKETT[matt]} · ${vy.namn}` : MATT_ETIKETT[matt];
             return { marke: 'ruta', serie, visaText, ...(vy.namn ? { panel: vy.namn } : {}),
                 data: celler.filter(c => _utforskaHar(vy.v(c))).map(c => {
                     const liten = vy.liten(c);
@@ -158,7 +159,7 @@ function _figGrupperade(model) {
     const rader = model.radEtiketter.filter(r => model.kolumnEtiketter.some(kl => byKey.has(r + '\u0000' + kl)));
     if (model.kolumnEtiketter.length * vyer.length > 8 && rader.length >= 2 && rader.length <= 8) {
         const lagerM = rader.flatMap(r => vyer.map(vy => {
-            const serie = vy.kort || UTFORSKA_MATT_ETIKETT[matt];
+            const serie = vy.kort || MATT_ETIKETT[matt];
             return { marke: 'stapel', serie, farg: vy.farg, panel: r,
                 data: model.kolumnEtiketter.map(kl => byKey.get(r + '\u0000' + kl)).filter(c => c && _utforskaHar(vy.v(c)))
                     .map(c => ({ x: c.kol, y: vy.v(c), rad: c.rad, kol: c.kol, n: vy.n(c), ...(vy.liten(c) ? { liten: true } : {}) })),
@@ -176,7 +177,7 @@ function _figGrupperade(model) {
             ...(vy.kort === 'Man' ? { opacitet: 0.55, legend: false } : {}),
             data: model.radEtiketter.map(r => byKey.get(r + '\u0000' + kl)).filter(c => c && _utforskaHar(vy.v(c)))
                 .map(c => ({ x: c.rad, y: vy.v(c), rad: c.rad, kol: kl, n: vy.n(c), ...(vy.liten(c) ? { liten: true } : {}) })),
-            tips: d => [[`${d.rad} · ${serie}`], [UTFORSKA_MATT_ETIKETT[matt], _utforskaFormatera(d.y, matt)], ['Antal', String(d.n)]] };
+            tips: d => [[`${d.rad} · ${serie}`], [MATT_ETIKETT[matt], _utforskaFormatera(d.y, matt)], ['Antal', String(d.n)]] };
     })).filter(l => l.data.length);
     return { beskrivning: _utforskaBeskrivning(model, 'Grupperade staplar') + (delaKon ? ' Mörk stapel = kvinnor, ljus = män.' : ''),
         x: { skala: 'band', ordning: model.radEtiketter, ...(delaKon ? { titel: 'Mörk stapel = kvinnor, ljus = män' } : {}) },
@@ -269,7 +270,7 @@ function _figFordelning(model, rows, allaPunkter) {
                                ['Kvartiler', `${talformat(s.q1, 'kr', { enhet: false })}–${talformat(s.q3, 'kr')}`], ['Antal', String(s.n)]]
                             : [[d.x], [kon === 'Alla' ? 'Lön' : kon, talformat(d.y, 'kr')]])
     }));
-    return { beskrivning: allaPunkter === 'kvantiler' ? 'Kvantilpunkter: tjugo prickar per vald grupp. Varje prick står för en tjugondel av gruppen och ligger vid den lönen. I små grupper står en prick för en större andel, men aldrig för färre än två personer. Inga enskilda löner visas. Samma grupper finns i tabellen nedan.'
+    return { beskrivning: allaPunkter === 'kvantiler' ? 'Kvantilpunkter: tjugo prickar per vald grupp. Varje prick står för en tjugondel av gruppen och ligger vid den lönen. I små grupper står en prick för en större andel, men aldrig för färre än två personer. Samma grupper finns i tabellen nedan.'
         : allaPunkter === 'regnmoln' ? 'Regnmoln: per vald grupp en täthetskurva över lönerna, median och kvartiler som streck, och varje persons lön som en punkt bredvid. Samma grupper finns i tabellen nedan.'
         : allaPunkter === 'svarm' ? 'Punktsvärm: varje persons lön som en punkt, lagda intill varandra så att fördelningens form syns, per vald grupp. Samma grupper finns i tabellen nedan.'
         : allaPunkter ? 'Varje persons lön som en punkt, per vald grupp. Samma grupper finns i tabellen nedan.'

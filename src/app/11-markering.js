@@ -18,7 +18,7 @@
 // inte med i någon export (exporten ritas på nytt ur figuren) och sparas inte — den ligger i minnet och
 // försvinner med "Rensa all data". Det går bara att markera det som går att klicka på, alltså det som visas.
 // ====================================================================
-import { aidAvYrke } from '../lib/aid.js';
+import { aidAvRad, aidAvYrke, namnrader } from '../lib/aid.js';
 import { personOrd } from '../lib/namn.js';
 import { artikel } from '../lib/termer.js';
 import { kInstalld } from './06-k-troskel.js';
@@ -62,8 +62,9 @@ function _mkTraffEn(nycklar, vald) {
 function _mkEtikett(nyckel) {
     if (nyckel.startsWith('bas:')) return `BAS ${nyckel.slice(4)}`;
     const [aid, bas] = nyckel.slice(6).split('|');
-    const rad = hamtaData().find(r => r.bas === bas && String(r.yrke || '').startsWith(aid));
-    return `${rad ? rad.yrke : aid} · BAS ${bas}`;
+    // Gruppens namn efter samma regel som i tabellerna (namnrader, ADR-89): koden i BAS-intervallet, inte textens början.
+    const rad = namnrader(hamtaData().filter(r => r.bas === bas), aidAvRad).get(aid);
+    return `${rad?.yrke || aid} · BAS ${bas}`;
 }
 
 /**

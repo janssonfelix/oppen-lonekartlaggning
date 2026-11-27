@@ -55,14 +55,14 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `status` | `rng`, `stat`, `struktur` |
 | Regression | `regression` | `kon`, `namn`, `stat`, `struktur`, `termer` |
 |  | `gapuppdelning` | `falt`, `namn`, `termer`, `undertryckning` |
-|  | `livscykel` | `kon`, `stat`, `status`, `termer` |
-| Lika och likvärdigt arbete | `likvardighet` | `aid`, `kon`, `rng`, `stat`, `status` |
-|  | `aidbas` | `aid`, `kon`, `likvardighet`, `stat` |
-|  | `perbas` | `aid`, `jamforelse`, `kon`, `stat`, `termer`, `undertryckning` |
+|  | `livscykel` | `kon`, `namn`, `stat`, `status`, `termer` |
+| Lika och likvärdigt arbete | `likvardighet` | `aid`, `kon`, `ktroskel`, `rng`, `stat`, `status` |
+|  | `aidbas` | `aid`, `kon`, `ktroskel`, `likvardighet`, `stat` |
+|  | `perbas` | `aid`, `jamforelse`, `kon`, `ktroskel`, `stat`, `termer`, `undertryckning` |
 |  | `jpaprotokoll` | `stat`, `status`, `undertryckning` |
-|  | `individflaggor` | `aid`, `falt` |
+|  | `individflaggor` | `aid`, `falt`, `stat` |
 | Struktur och rapportmått | `struktur` | `kon`, `ktroskel`, `stat` |
-|  | `sektor` | `aid`, `falt`, `namn`, `regression`, `skrreferens`, `stat`, `struktur`, `termer`, `undertryckning` |
+|  | `sektor` | `aid`, `falt`, `ktroskel`, `namn`, `regression`, `skrreferens`, `stat`, `struktur`, `termer`, `undertryckning` |
 | Referenser och jämförelse | `referens` | – |
 |  | `referenser` | `lonepolitik` |
 |  | `lonepolitik` | `aid`, `kon`, `stat` |
@@ -74,15 +74,15 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `loneoversyn` | `kon`, `kostnad`, `likvardighet`, `stat`, `struktur` |
 | Klassificering | `aid` | `aid-etiketter`, `termer` |
 |  | `aid-etiketter` | – |
-|  | `aidkontroll` | `aid`, `stat`, `termer` |
+|  | `aidkontroll` | `aid`, `stat`, `talformat`, `termer` |
 |  | `ansvar` | `stat`, `struktur` |
-| Indata och format | `inlasning` | `ansvar`, `importprofiler` |
+| Indata och format | `inlasning` | `aid`, `ansvar`, `importprofiler` |
 |  | `falt` | `aid`, `kon`, `termer` |
 |  | `kon` | – |
 |  | `importprofiler` | – |
 |  | `csv` | – |
 |  | `talformat` | `stat` |
-|  | `forhandskontroll` | `stat`, `termer` |
+|  | `forhandskontroll` | `importprofiler`, `stat`, `termer` |
 |  | `datakvalitet` | `falt`, `forhandskontroll`, `kon`, `namn`, `stat`, `termer` |
 |  | `organisationsfil` | `organisationspaket` |
 |  | `organisationspaket` | `importprofiler`, `installningsgranser`, `ktroskel`, `perbas`, `tabellrecept`, `termer` |
@@ -96,14 +96,14 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `htmltext` | – |
 | Diagram, rapport och utforskning | `figur` | `kon`, `stat`, `talformat` |
 |  | `docx` | `htmltext` |
-|  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `htmltext`, `jamforelse`, `kon`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `talformat`, `termer` |
+|  | `rapportunderlag` | `aid`, `aidbas`, `gapuppdelning`, `htmltext`, `jamforelse`, `kon`, `ktroskel`, `likvardighet`, `namn`, `sektor`, `skrreferens`, `stat`, `status`, `struktur`, `talformat`, `termer` |
 |  | `arsbokslut` | `aid`, `kon`, `ktroskel`, `sakligaskal`, `stat`, `termer` |
-|  | `tabellrecept` | `namn`, `termer`, `utforska` |
-|  | `utforska` | `aid`, `falt`, `stat`, `termer`, `urval` |
+|  | `tabellrecept` | `ktroskel`, `namn`, `termer`, `utforska` |
+|  | `utforska` | `aid`, `falt`, `ktroskel`, `stat`, `termer`, `urval` |
 |  | `urval` | `falt`, `termer` |
 |  | `sakligaskal` | – |
 |  | `attgora` | `namn`, `termer` |
-| Demoläget | `demodata` | `ansvar`, `inlasning`, `kon`, `likvardighet`, `stat`, `struktur`, `talformat` |
+| Demoläget | `demodata` | `ansvar`, `inlasning`, `kon`, `ktroskel`, `likvardighet`, `stat`, `struktur`, `talformat` |
 | Vymodeller (ADR-99) | `vymodell-lika-arbete` | `aid`, `aidbas`, `ansvar`, `namn`, `osakerhet`, `rapportunderlag`, `skrreferens`, `struktur` |
 |  | `vymodell-likvardigt-arbete` | `likvardighet`, `stat`, `talformat` |
 |  | `vymodell-alder-karriar` | `aid`, `jamforelse`, `kon`, `ktroskel`, `osakerhet`, `stat`, `struktur`, `talformat`, `termer` |
@@ -112,13 +112,13 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `vymodell-loneoversikt` | `aid`, `jamforelse`, `kon`, `stat` |
 |  | `vymodell-lonestruktur` | `figur`, `kon`, `osakerhet`, `stat`, `status`, `struktur` |
 |  | `vymodell-oversikt` | `aid`, `datakvalitet`, `jamforelse`, `kon`, `stat`, `struktur`, `vymodell-lonestruktur` |
-|  | `vymodell-rapport` | `kon`, `ktroskel`, `rapportunderlag`, `status`, `struktur`, `tabellrecept`, `vymodell-basdossier`, `vymodell-lonestruktur` |
-|  | `vymodell-rapportunderlag` | `aid`, `figur`, `gapuppdelning`, `kon`, `ktroskel`, `osakerhet`, `prioritering`, `rapportunderlag`, `sektor`, `struktur`, `tabellrecept` |
+|  | `vymodell-rapport` | `kon`, `ktroskel`, `rapportunderlag`, `status`, `struktur`, `tabellrecept`, `vymodell-basdossier`, `vymodell-lonestruktur`, `vymodell-regressionskort` |
+|  | `vymodell-rapportunderlag` | `aid`, `figur`, `gapuppdelning`, `kon`, `kostnad`, `ktroskel`, `osakerhet`, `prioritering`, `rapportunderlag`, `sektor`, `struktur`, `tabellrecept` |
 |  | `vymodell-var-uppstar-gapet` | `gapuppdelning`, `struktur` |
 |  | `vymodell-regressionskort` | `kon`, `ktroskel`, `regression`, `stat`, `status` |
 |  | `vymodell-livscykel` | `livscykel` |
 |  | `vymodell-loneoversyn` | `aid`, `kon`, `ktroskel`, `likvardighet`, `loneoversyn`, `osakerhet`, `regression`, `stat` |
-|  | `vymodell-lonepolitik` | `kon`, `ktroskel`, `lonepolitik` |
+|  | `vymodell-lonepolitik` | `kon`, `ktroskel`, `lonepolitik`, `stat` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna
 för vad som får redovisas vid k (könen, § 3:10-paren, regressionens steg och BAS-effekter, punkterna per person,

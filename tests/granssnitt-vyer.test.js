@@ -8,6 +8,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createAppWindow, delatFonster, MENYFLIKAR } from './helpers/app-harness.js';
 import { rot, las, papa, vanta, csvFil, okandaRader } from './helpers/granssnitt-rigg.js';
+import { egenText } from './helpers/attributtext.js';
 
 // Testerna som söker igenom alla flikar läser två delade fönster med demodatan, där flikarna har ritats en gång: att
 // rita dem är det dyra, inte att läsa. Ordningen spelar ingen roll (prövat: samma dokument, bortsett från
@@ -211,6 +212,24 @@ describe('en låst flik svarar', () => {
         w.eval('rensaAllData()');
         expect(flik.getAttribute('aria-disabled')).toBe('true');
     });
+    it('inläsningen låser upp de flikar som är låsta från start, och Rensa all data låser exakt dem igen', () => {
+        const w = createAppWindow();
+        const d = w.document;
+        const lasta = () => [...d.querySelectorAll('.nav-item')].filter(b => b.disabled).map(b => [b.id, b.title]);
+        const vidStart = lasta();
+        expect(vidStart.length).toBeGreaterThan(0);
+        w.__lasInDemodata();   // demot har ett ställningstagande: också Löneläget öppnas
+        expect(lasta()).toEqual([]);
+        // Utan referens eller statistik är Löneläget låst och dolt (synkaJamforelseFlik); de andra är öppna.
+        w.__state.policy = []; w.__state.statistik = [];
+        w.eval('lasUppFlikar()');
+        expect(lasta().map(([id]) => id)).toEqual(['tab-benchmark']);
+        expect(d.getElementById('tab-benchmark').hidden).toBe(true);
+        w.confirm = () => true;
+        w.eval('rensaAllData()');
+        expect(lasta()).toEqual(vidStart);
+        expect(d.getElementById('tab-benchmark').hidden).toBe(false);
+    });
 });
 
 describe('typografisk skala', () => {
@@ -369,17 +388,19 @@ describe('procenttal i flikarna har en decimal', () => {
         const w = medPott();
         const fynd = new Set();
         for (const el of w.document.querySelectorAll('[id^="view-"] *')) {
-            if (el.children.length || el.closest('script, style, svg, code, pre, .info-tip, .bara-export, [data-export-text], #diagnostic-results')) continue;
-            if (/PO\b/.test(el.textContent)) continue;
-            if (/[+\u2212-]?\d+,\d\d\s%/.test(el.textContent)) fynd.add(el.textContent.trim().slice(0, 50));
+            if (el.closest('script, style, svg, code, pre, .info-tip, .bara-export, [data-export-text], #diagnostic-results')) continue;
+            const t = egenText(el);
+            if (/PO\b/.test(t)) continue;
+            if (/[+\u2212-]?\d+,\d\d\s%/.test(t)) fynd.add(t.trim().slice(0, 50));
         }
         expect([...fynd]).toEqual([]);
     });
     it('ingen flik visar ett procenttal med decimalpunkt', () => {
         const fynd = new Set();
         for (const el of medPott().document.querySelectorAll('[id^="view-"] *')) {
-            if (el.children.length || el.closest('script, style, svg, code, pre, textarea, select')) continue;
-            if (/\d\.\d+\s?%/.test(el.textContent)) fynd.add(el.textContent.trim().slice(0, 60));
+            if (el.closest('script, style, svg, code, pre, textarea, select')) continue;
+            const t = egenText(el);
+            if (/\d\.\d+\s?%/.test(t)) fynd.add(t.trim().slice(0, 60));
         }
         expect([...fynd]).toEqual([]);
     });

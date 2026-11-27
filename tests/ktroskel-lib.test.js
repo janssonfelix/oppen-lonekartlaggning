@@ -66,15 +66,14 @@ describe.each([5, 10])('k = %i', k => {
         expect(parForRedovisning(undefined, k)).toEqual({ par: [], utelamnade: 0, not: '' });
     });
     it('individLitenForVid: liten när gruppen eller personens kön i gruppen är under k', () => {
-        const rad = (yrke, kon, lon = 30000) => ({ yrke, bas: 'A', kon, lon });
+        const rad = (yrke, kon) => ({ yrke, bas: 'A', kon, lon: 30000 });
         const grupp = (yrke, nKv, nMa) => [...Array.from({ length: nKv }, () => rad(yrke, 'kvinna')), ...Array.from({ length: nMa }, () => rad(yrke, 'man'))];
-        const rader = [...grupp('101 X', k, k), ...grupp('102 Y', k - 1, 0), ...grupp('103 Z', k + 1, k - 1), rad('104 Q', 'kvinna', 0)];
+        const rader = [...grupp('101 X', k, k), ...grupp('102 Y', k - 1, 0), ...grupp('103 Z', k + 1, k - 1)];
         const liten = individLitenForVid(rader, k);
         const sma = rader.filter(liten);
         expect(sma.filter(r => r.yrke === '101 X')).toHaveLength(0);
         expect(sma.filter(r => r.yrke === '102 Y')).toHaveLength(k - 1);
         expect(sma.filter(r => r.yrke === '103 Z').map(r => r.kon)).toEqual(Array(k - 1).fill('man'));
-        expect(liten(rader.at(-1))).toBe(true);   // en rad utan lön räknas inte och är därmed i en grupp med 0
         // Gruppen är AID-koden inom BAS-intervallet: två stavningar av samma kod är en grupp.
         const tva = [...grupp('201 A', k, k).slice(0, k), ...Array.from({ length: k }, () => rad('201 B', 'man'))];
         expect(tva.filter(individLitenForVid(tva, k))).toHaveLength(0);

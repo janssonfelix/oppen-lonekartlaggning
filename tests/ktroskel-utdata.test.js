@@ -252,8 +252,8 @@ describe('k-tröskeln: par i likvärdigt arbete utanför fliken (protokoll, Att 
         expect(t5).toContain('5300');
         expect(t5).toContain(arskostnad(w5));
     });
-    // Ändrat med ADR-69 (2026-11-13): förslagen följer den inställda tröskeln också på skärmen. Förr riktade förslaget på
-    // skärmen också mot den lilla gruppen (ADR-51), och raden följde med i Excel-exporten och konfigurationsfilen.
+    // ADR-69: förslagen följer den inställda tröskeln också på skärmen, så ingen rad riktad mot den lilla gruppen följer
+    // med i Excel-exporten eller konfigurationsfilen.
     it('Löneöversynens förslag riktar inte mot den lilla gruppen vid 10, också på skärmen (ADR-69); vid 5 gör det', () => {
         const forslag = k => {
             const w = fonsterPar(k);
@@ -929,9 +929,8 @@ describe('protokollet för gemensam lönebedömning: median och medelvärde, och
 });
 
 describe('[B5.5] k-tröskeln: Lika arbete AID x BAS har samma grupper som tabellen per AID-etikett (ADR-90)', () => {
-    // Förut hade tabellen ett eget golv (fem personer) och visade grupper under tröskeln med antal per kön, som tabellen
-    // per AID-etikett utelämnar. Nu är raderna Lika arbetes grupper: ingen grupp under tröskeln står i den ena men inte
-    // i den andra, i exportläget vid 10 och 25.
+    // Raderna är Lika arbetes grupper, utan eget golv: ingen grupp under tröskeln står i den ena tabellen men inte i den
+    // andra, i exportläget vid 10 och 25.
     const rader = (w, id, cell) => [...w.document.querySelectorAll(`#${id} tbody tr`)].filter(tr => tr.cells.length > 4).map(cell).sort();
     for (const k of [10, 25]) {
         it(`tröskeln ${k}`, () => {
@@ -960,7 +959,7 @@ describe('k-tröskeln: processöversiktens steg 4 är inget att hantera när all
         expect(rad10.querySelector('.ptrack-status').dataset.status).toBe('inget');
         expect(elementText(rad10)).toMatch(/Inget att hantera i Att göra: 1 par har en grupp under 10 personer och redovisas bara i fliken Likvärdigt arbete/);
         expect(elementText(rad10)).not.toMatch(/redovisas inte här/);
-        expect(rad10.querySelector('.ptrack-goto').dataset.gotoTab).toBe('likvardighet');
+        expect(rad10.querySelector('.ptrack-goto').dataset.goToTab).toBe('likvardighet');
         const rad5 = steg4(iExport(fonsterParLikvardigt(5)));
         expect(rad5.querySelector('.ptrack-status').dataset.status).toBe('delvis');
         expect(elementText(rad5)).toMatch(/1 kandidatpar/);

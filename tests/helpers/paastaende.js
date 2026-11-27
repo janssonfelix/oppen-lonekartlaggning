@@ -5,3 +5,16 @@
 import { beforeEach, expect } from 'vitest';
 
 beforeEach(() => { expect.hasAssertions(); });
+
+/**
+ * Listan som ett prov går igenom med sina påståenden, som en lista som inte får vara tom: en slinga över en tom lista
+ * påstår ingenting, och hasAssertions ser det bara när provet inte har något annat påstående.
+ * @template T
+ * @param {Iterable<T>|ArrayLike<T>} lista
+ * @returns {T[]}
+ */
+export function ickeTom(lista) {
+    const ut = Array.from(lista);
+    expect(ut.length, 'listan som provet går igenom är tom').toBeGreaterThan(0);
+    return ut;
+}

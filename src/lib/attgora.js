@@ -48,9 +48,16 @@ export function stegLikaArbete({ regressionOk, t, d }) {
     if (!regressionOk) return { status: 'delvis', detail: 'Underlaget räcker ännu inte för en tillförlitlig regression.' };
     return {
         status: d >= t ? 'klar' : 'delvis',
-        detail: t ? `Oförklarad löneskillnad beräknad · ${d} av ${t} punkter hanterade i Att göra.`
+        detail: t ? `Oförklarad löneskillnad beräknad · ${d} av ${t} ${t === 1 ? 'punkt' : 'punkter'} hanterade i Att göra.`
                   : 'Oförklarad löneskillnad beräknad — inga punkter att förklara eller åtgärda.',
     };
+}
+
+/** Att göra tar med högst så många kandidatpar, de med störst skillnad; steg 4 räknar samma par. */
+export const ATTGORA_PAR_MAX = 20;
+/** Meningen när Att göra inte tar med alla `antal` kandidatpar; tom annars. */
+export function parKortadNot(antal) {
+    return antal > ATTGORA_PAR_MAX ? `Att göra tar med de ${ATTGORA_PAR_MAX} kandidatpar som har störst skillnad, av ${antal}; övriga granskas i fliken Likvärdigt arbete.` : '';
 }
 
 /**
@@ -67,6 +74,6 @@ export function stegLikvardigt({ analys, antalPar, utelamnade = 0, k, t, d }) {
     if (antalPar === 0) return { status: 'klar', detail: 'Analysen körd — inga kandidatpar utifrån nuvarande trösklar.' };
     return {
         status: t > 0 && d >= t ? 'klar' : 'delvis',
-        detail: `${antalPar} kandidatpar (${termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })} mot ${T.jamforelse.fl} med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.`,
+        detail: `${antalPar} kandidatpar (${termFras(T.enhet, 'fl', { adjektiv: 'kvinnodominerad' })} mot ${T.jamforelse.fl} med likvärdiga krav) · ${d} av ${t} kandidatpar hanterade i Att göra.${antalPar > ATTGORA_PAR_MAX ? ' ' + parKortadNot(antalPar) : ''}`,
     };
 }

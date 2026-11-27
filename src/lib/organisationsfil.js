@@ -131,8 +131,3 @@ export function flyttaOrganisationsfil(gammalHtml, nyHtml, meta) {
     return { ok: true, html: r.html, franVersion: k.version, tillVersion: r.version, organisation,
         paketSkapat: t.paket.skapat, aldreVersion: jamforVersion(k.version, r.version) === 1 };
 }
-
-/** Skriptblocken i en HTML-text, för tester som hävdar att inbakningen inte rör något skript. */
-export function skriptBlock(html) {
-    return [...String(html ?? '').matchAll(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi)].map(m => m[0]);
-}

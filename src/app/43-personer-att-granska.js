@@ -8,12 +8,15 @@ import { svKr } from '../lib/talformat.js';
 import { stor } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { esc } from './01-html-och-tillganglighet.js';
+import { DEMO_MARKE } from './03-hjalpfunktioner.js';
 import { kTroskel, LITET_UNDERLAG, provaEnskiltText, statGolv } from './06-k-troskel.js';
 import { T } from './09-termer.js';
 import { PALETT } from './10-diagramtema.js';
 import { markeraUtanExport } from './11-diagramexport.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, state } from './12-tillstand.js';
+import { ritaLikaArbeteTopp } from './41-lika-arbete.js';
+import { harAlder } from './50-regressionsmodeller.js';
 /**
  * Panel sist i Lika arbete: personer minst X % under förväntad lön bland kollegor i samma
  * AID och BAS (logiken i src/lib/individflaggor.js). Listan lämnar aldrig verktyget:
@@ -46,7 +49,7 @@ export function ritaPersonerAttGranska(visaAlla = false) {
     _pagRitaAvvikelse(d, grans);
     const tal = (v, dec = 0) => new Intl.NumberFormat('sv-SE', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v);
     const g = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1 }).format(grans);
-    const demo = state.isDemo ? '<p class="pag-demo"><strong>DEMODATA — inte verkliga löner.</strong></p>' : '';
+    const demo = state.isDemo ? `<p class="pag-demo"><strong>${DEMO_MARKE}</strong></p>` : '';
     const ejProvade = r.ejProvade
         ? `<p class="pag-not">${tal(r.ejProvade)} ${r.ejProvade === 1 ? 'person' : 'personer'} i grupper med färre än ${statGolv()} ${personOrd(statGolv())} prövades inte.${provaEnskiltText()}</p>` : '';
     // Inget lämnar verktyget härifrån (ADR-23): antalet är skärmens.
@@ -68,13 +71,16 @@ export function ritaPersonerAttGranska(visaAlla = false) {
     const medAnsvar = !!state.ansvarKolumn;
     const visade = visaAlla ? r.flaggade : r.flaggade.slice(0, _PAG_MAX_RADER);
     const rader = visade.map(f => `<tr>
-        <td>${f.radnr ?? '—'}</td><td>${esc(f.kon)}</td><td class="num">${tal(f.alder)}</td>
+        <td>${f.radnr ?? '—'}</td><td>${esc(f.kon)}</td><td class="num">${f.alder > 0 ? tal(f.alder) : '–'}</td>
         <td>${esc(f.aid)}</td><td>${esc(f.bas)}</td>
         <td class="num">${svKr(f.lon)}</td><td class="num">${svKr(f.forvantad)}${f.metod === 'alder' ? '' : '<span class="pag-median" title="Förväntad lön är gruppens median">*</span>'}</td>
         <td class="num">${tal(f.avvikelsePct, 1).replace('-', '−')}\u00a0%</td><td class="num">${tal(f.kollegor)}</td>${medAnsvar ? `<td class="pag-ansvar"${_pagAnsvarKort(f.ansvarsgrupp) !== ansvarsgruppNamn(f.ansvarsgrupp) ? ` title="${esc(ansvarsgruppNamn(f.ansvarsgrupp))}"` : ''}>${esc(_pagAnsvarKort(f.ansvarsgrupp))}</td>` : ''}</tr>`).join('');
     // Hur den förväntade lönen räknats står i en not under tabellen, inte i en kolumn: nästan alltid ur åldern.
     const medMedian = visade.some(f => f.metod !== 'alder');
-    const metodNot = `<p class="pag-not pag-metod">Förväntad lön är räknad ur åldern bland kollegorna i samma AID och BAS.`
+    // Utan ålder i filen är förväntad lön alltid kollegornas median.
+    const metodNot = !harAlder()
+        ? '<p class="pag-not pag-metod">Förväntad lön är medianen bland kollegorna i samma AID och BAS; lönefilen saknar ålder.</p>'
+        : `<p class="pag-not pag-metod">Förväntad lön är räknad ur åldern bland kollegorna i samma AID och BAS.`
         + (medMedian ? ' <span class="pag-median">*</span> Gruppens median: åldrarna i gruppen ligger för nära varandra för att räkna med åldern.' : '') + '</p>';
     body.innerHTML = demo + sammanfattning + ejProvade + utanAlder
         + `<div class="pag-tabell-wrap" tabindex="0" role="region" aria-label="Personer att granska, rullar i sidled"><table id="pag-tabell" class="data-table"><thead><tr>
@@ -144,8 +150,10 @@ export function uppstartPersonerAttGranska() {
     // ingen person och bär ingen lön. Som resten av panelen går det inte att exportera (markeraUtanExport på rutan,
     // skälet `individer` i 11-diagramexport.js): inget ur Personer att granska lämnar verktyget.
     markeraUtanExport(document.getElementById('pag-diagram-ruta'), 'individer');
-    document.getElementById('pag-grans')?.addEventListener('input', () => ritaPersonerAttGranska());
+    // Gränsen läses också av panelens nyckeltal och av rutan Personer att granska överst i fliken (ritaLikaArbeteTopp).
+    const ritaOm = () => { ritaPersonerAttGranska(); ritaLikaArbeteTopp(); };
+    document.getElementById('pag-grans')?.addEventListener('input', ritaOm);
     // När fältet lämnas visas värdet som faktiskt används (klämt till 5–30).
-    document.getElementById('pag-grans')?.addEventListener('change', e => { /** @type {HTMLInputElement} */ (e.target).value = String(_pagGrans()); ritaPersonerAttGranska(); });
+    document.getElementById('pag-grans')?.addEventListener('change', e => { /** @type {HTMLInputElement} */ (e.target).value = String(_pagGrans()); ritaOm(); });
     document.addEventListener('click', e => { if (/** @type {HTMLElement} */ (e.target).closest('#pag-visa-alla')) ritaPersonerAttGranska(true); });
 }

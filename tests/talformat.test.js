@@ -15,7 +15,10 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { laddaXlsx } from './helpers/ktroskel-rigg.js';
-import { svTal, svPct, svKr, svPoPct } from '../src/lib/talformat.js';
+import { svTal, svPct, svKr, svPoPct, svTecken } from '../src/lib/talformat.js';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { utanKommentarer } from './helpers/anvandartext.js';
 import { talformat } from '../src/lib/figur.js';
 
 const NBSP = ' ', NNBSP = ' ', MINUS = '−';
@@ -248,7 +251,7 @@ describe('talformatet: svTal, svPct, svKr och svPoPct', () => {
         for (const v of [0.5, 1600.5, 2.25, 4.25, 0.125]) {
             for (const namn of ['kr', 'pct', 'antal', 'tal2']) expect(utanTecken(talformat(-v, namn)), `${v} ${namn}`).toBe(talformat(v, namn));
         }
-        // 1,005 lagras som 1,00499…: alla format visar 1,00, också rapportunderlaget, som förut avrundade med Intl till 1,01.
+        // 1,005 lagras som 1,00499…: alla format visar 1,00, också rapportunderlaget (Intl avrundar till 1,01).
         expect(talformat(1.005, 'tal2')).toBe(svTal(1.005, 2));
         expect(svTal(1.005, 2)).toBe('1,00');
     });
@@ -259,6 +262,24 @@ describe('talformatet: svTal, svPct, svKr och svPoPct', () => {
         expect(svPct(-0.04, 1)).toBe(`0,0${NBSP}%`);
         expect(svTal(-0.004, 2)).toBe('0,00');
         expect(talformat(-0.04, 'pct')).toMatch(/^0,0\s%$/);
+    });
+    it('svTecken: plus för ett tal som avrundat är över noll, inget tecken vid noll, minus skriver svTal', () => {
+        const med = (v, dec) => `${svTecken(v, dec)}${svPct(v, dec)}`;
+        expect([med(1.46, 1), med(-1.46, 1), med(0, 1), med(0.04, 1), med(-0.04, 1)])
+            .toEqual([`+1,5${NBSP}%`, `${MINUS}1,5${NBSP}%`, `0,0${NBSP}%`, `0,0${NBSP}%`, `0,0${NBSP}%`]);
+        expect(`${svTecken(-0.4)}${svKr(-0.4)}`).toBe(`0${NBSP}kr`);
+        expect(svTecken(null)).toBe('');
+    });
+    // Ett tecken valt på det orundade talet, före siffror ur Math.abs, ger «−0,0 %» och «+0,0 %»: tecknet går genom
+    // svTecken (och minus genom svTal), aldrig för hand i källan.
+    it('ingen del av appen eller lib bygger tecknet för hand före ett belopp ur Math.abs', () => {
+        const rot = join(import.meta.dirname, '..');
+        const filer = [...readdirSync(join(rot, 'src/app')).filter(f => f.endsWith('.js')).map(f => `src/app/${f}`),
+            ...readdirSync(join(rot, 'src/lib')).filter(f => f.endsWith('.js')).map(f => `src/lib/${f}`)];
+        const handbyggt = /\? '\+' : '[−-]'\s*\}?\)?\s*\$?\{?[^`\n]{0,40}Math\.abs\(/;
+        const fel = filer.flatMap(f => utanKommentarer(readFileSync(join(rot, f), 'utf8')).split('\n')
+            .filter(r => handbyggt.test(r)).map(r => `${f}: ${r.trim().slice(0, 120)}`));
+        expect(fel).toEqual([]);
     });
     it('tal som inte ligger på en halva avrundas till närmaste', () => {
         expect(svKr(1600.49)).toBe(`1${NBSP}600${NBSP}kr`);

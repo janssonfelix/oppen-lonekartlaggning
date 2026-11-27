@@ -37,7 +37,8 @@ sha256sum dist/oppen-lonekartlaggning.html
 
 Stämmer den, har du själv styrkt att den publicerade filen är byggd ur den publicerade källan. Det är
 den kontroll en IT-säkerhetsgranskning brukar vilja se, och den kräver ingen tillit till projektet.
-Biblioteken i `vendor/` kontrolleras mot `vendor/SHA256SUMS` av testerna och vid bygget.
+Biblioteken i `vendor/` kontrolleras mot `vendor/SHA256SUMS` av testsviten (`npm run test:full`), inte av
+`npm run bundle`; för hand: `cd vendor && sha256sum -c SHA256SUMS`.
 
 ## 3. Gör verktyget till ditt: organisationsfilen
 
@@ -70,8 +71,9 @@ Vill du ändra något — en text, en tröskel, ett diagram, ett nytt arbetsvär
    jsdom-testerna, sekunder i stället för minuter; `test:full` är hela sviten och ska vara grön innan du lämnar
    ifrån dig en ändring.) Testsviten innehåller invarianter som
    vaktar dataskyddet (ingen utgående trafik, ingen lagring, små grupper i exporter) — låt dem stå.
-3. Ge din version ett eget versionsnamn i `VERSION` (till exempel `2026.11.03-kommunen`) och en rad i
-   `CHANGELOG.md`. Då syns det i *Om verktyget* och i `RELEASE.txt` vilken fil som är din.
+3. Ge din version ett eget datum i `VERSION`, i formen ÅÅÅÅ.MM.DD (till exempel `2026.11.03`); bygget stoppar vid
+   något annat. Versionen syns i *Om verktyget* och i `RELEASE.txt`. Skriv din organisations namn i raden i
+   `CHANGELOG.md`; att filen är din styrks av signaturen (steg 5).
 4. Byt det som pekar på projektet: säkerhetskontakten i [`SECURITY.md`](../../SECURITY.md) och
    verifieringskommandots identitet (steg 5). Licens- och upphovsnotiserna (`LICENSE`,
    SPDX-raderna och licenstexterna i `src/licenser.txt`) ska följa med enligt MIT-licensen; lägg din
@@ -96,7 +98,7 @@ verifieringskommandot får din identitet:
 cosign verify-blob oppen-lonekartlaggning.html --bundle oppen-lonekartlaggning.html.sigstore.json --certificate-identity-regexp "^https://github\.com/<er-organisation>/<ert-repo>/\.github/workflows/release\.yml@refs/tags/v" --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-Byt `<din-organisation>/<ditt-repo>` och skriv in kommandot i din `SECURITY.md` och körguide. Ingen
+Byt `<er-organisation>/<ert-repo>` och skriv in kommandot i din `SECURITY.md` och körguide. Ingen
 nyckel behöver förvaras; signeringen står i den publika transparensloggen Rekor.
 
 **B. Egen nyckel (utan GitHub).** Skapa ett nyckelpar med `cosign generate-key-pair`, förvara den privata

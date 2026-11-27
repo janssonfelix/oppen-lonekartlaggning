@@ -92,7 +92,7 @@ fyller i (ADR-79).
 | Panelen *Vad lagras?* | inbyggt dataskydd art. 25 (art. 12–14 gäller information till registrerade, inte till användaren) | *inbyggt dataskydd* | Förslag |
 | Rensa all data | lagringsminimering art. 5.1 e och dataskydd som standard art. 25.2; rätten till radering (art. 17) utövas mot källsystemet | *rensning*, inte *rätt till radering* | Förslag |
 | Rättslig grund | art. 6.1 c med 6.3: rättslig förpliktelse enligt 3 kap. 8, 13 och 14 §§ diskrimineringslagen | *rättslig förpliktelse* | Förslag |
-| Särskilda kategorier | art. 9 inte tillämplig: kön är ingen särskild kategori och underlaget innehåller inga sådana uppgifter; inläsningen avvisar kolumner vars rubrik antyder fackmedlemskap, hälsa, etnicitet m.m. (C23b, infört 2026-10-30) | *inga särskilda kategorier* | Förslag |
+| Särskilda kategorier | art. 9 inte tillämplig: kön är ingen särskild kategori och underlaget innehåller inga sådana uppgifter: bara de godkända fälten läses in, och den som tar ut filen ansvarar för vilka kolumner som följer med (ADR-110) | *inga särskilda kategorier* | Förslag |
 | Automatiserade beslut | art. 22 inte tillämplig; verktyget fattar inga beslut om enskilda | sägs utan artikel | Förslag |
 | Personuppgiftsbiträde | art. 28 inte tillämplig när verktyget körs lokalt; biträdesavtal krävs om drift eller support med tillgång till data tillkommer | *inget biträde* | Förslag |
 | Säkerhet | art. 32 | *säkerhet* | Förslag |

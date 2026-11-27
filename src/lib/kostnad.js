@@ -7,10 +7,10 @@
  * löneöversynen, handlingsplanen och beräkningsbeviset räknar med den.
  *
  * Kostnadsinställningarna tolkas likadant överallt: månader som saknas eller är 0 blir 12, PO som saknas blir 0 %.
- * Fältet i Inställningar tillåter 1–60 månader, så 0 nås inte därifrån.
+ * Fältet i Inställningar väljer 3, 6, 9 eller 12 månader, så 0 nås inte därifrån.
  *
- * Multiplikationen görs i samma ordning som innan formeln samlades här (belopp × månader × PO-faktor), så att inget
- * tal ändras i sista decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
+ * Multiplikationen görs i ordningen belopp × månader × PO-faktor, så att alla som räknar får samma tal ända ut i sista
+ * decimalen. Därför ges PO-faktorn och månaderna var för sig och inte som en färdig produkt.
  *
  * Bygger på: verktygets egen modell; PO-påslagets standardvärde i ADR-84.
  * Beräkningarna står i spårbarhetsmatrisen, docs/utveckling/sparbarhet.md (B7.1).

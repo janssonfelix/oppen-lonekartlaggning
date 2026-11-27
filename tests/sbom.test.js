@@ -14,6 +14,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { byggSbom, BIBLIOTEK } from '../tools/sbom.mjs';
+import { ickeTom } from './helpers/paastaende.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const läs = f => readFileSync(join(root, f), 'utf8');
@@ -27,7 +28,7 @@ describe('sbom: innehållet speglar vendor/', () => {
         expect(sbom.components.map(c => c.properties[0].value).sort()).toEqual(iVendor.map(f => `vendor/${f}`));
     });
     it('kontrollsummorna är filernas faktiska och de i SHA256SUMS', () => {
-        for (const c of sbom.components) {
+        for (const c of ickeTom(sbom.components)) {
             const fil = c.properties[0].value;
             const sha = createHash('sha256').update(readFileSync(join(root, fil))).digest('hex');
             expect(c.hashes[0].content, fil).toBe(sha);
@@ -35,7 +36,7 @@ describe('sbom: innehållet speglar vendor/', () => {
     });
     // Att versionerna står rätt i TREDJEPARTSLICENSER.md prövas i tests/sakerhet.test.js, mot biblioteksfilerna.
     it('licenserna är SPDX-id och paketadressen bär versionen', () => {
-        for (const c of sbom.components) {
+        for (const c of ickeTom(sbom.components)) {
             expect(c.licenses[0].license.id).toMatch(/^(MIT|ISC|Apache-2\.0)$/);
             expect(c.purl).toBe(`pkg:npm/${c.purl.split('/')[1].split('@')[0]}@${c.version}`);
         }

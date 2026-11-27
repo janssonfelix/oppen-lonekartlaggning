@@ -1,9 +1,7 @@
-
-
+// SPDX-License-Identifier: MIT
+// Copyright 2026 Felix Jansson
 /** Det som körs vid laddning, i filens ordning; src/app/index.js anropar delarnas uppstart i sifferordning. */
 export function uppstartSidansInnehall() {
-    // SPDX-License-Identifier: MIT
-    // Copyright 2026 Felix Jansson
     // ---- Hopplänkar inom sidan ----
     // Varje lång flik har avsnitt som fälls ut, och deras rubriker är innehållsförteckningen. Här finns hopplänkarna
     // (data-hoppa-till), som rapportunderlagets förteckning använder.

@@ -232,7 +232,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         expect(f.lager.map(l => [l.serie, l.farg, l.symbol])).toEqual(
             [['Värt att granska', '#4338ca', 'romb'], ['Följ upp', '#d97706', 'kvadrat'], ['Går ej att bedöma', '#64748b', 'cirkel']]);
         expect(f.lager[2].data.map(d => d.y)).toEqual(['BAS 7', 'BAS 8']);   // utan KI, eller ett kön under golvet
-        expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande' && !l.monster)).toBe(true);   // ingen stapel från en avkortad axel
+        expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande')).toBe(true);   // ingen stapel från en avkortad axel
         expect(f.lager[0].data).toEqual([{ y: 'BAS 3', x: 93.4, etikett: '93,4 %', n: 40, bas: '3', markering: ['bas:3'], fel: { lag: 90.1, hog: 96.9 } }]);
         expect(f.lager[2].data[0].fel).toBeUndefined();
         expect(f.y.ordning).toEqual(['BAS 3', 'BAS 5', 'BAS 7', 'BAS 8']);        // BAS-ordningen, inte statusordningen
@@ -249,7 +249,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
         const f = w.eval(`_perBasFigur([{ bas: '3', gapPct: -6.214, ciLow: -9, ciHigh: -3.4, pValue: 0.001, n: 40, kvN: 22, maN: 18 },
                                         { bas: '4', gapPct: -2.5, ciLow: -4.5, ciHigh: -0.5, pValue: 0.01, n: 44, kvN: 20, maN: 24 },
                                         { bas: '5', gapPct: 0.8, ciLow: -1, ciHigh: 2.6, pValue: 0.4, n: 50, kvN: 25, maN: 25 }], { 4: 0.2 })`);
-        expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande' && !l.monster)).toBe(true);
+        expect(f.lager.every(l => l.marke === 'punkt' && l.riktning === 'liggande')).toBe(true);
         expect(f.y.ordning).toEqual(['BAS 3', 'BAS 4', 'BAS 5']);
         expect(f.x.nollinje).toBe(true);
         expect(f.x.doman).toEqual([-10, 3.5]);                                    // noll inom axeln, luft på båda sidor
@@ -270,7 +270,7 @@ describe('Lika arbete: chart-skevhet-overview och chart-perbas-gap', () => {
             expect([...el.querySelectorAll('[data-del="forklaring"] [data-serie]')].map(g => g.getAttribute('data-serie')), id).toEqual(serier);
             const punkter = el._figur.lager.reduce((n, l) => n + l.data.length, 0);
             expect(el.querySelectorAll('[data-marke="punkt"]').length, id).toBe(punkter);
-            expect(el.querySelectorAll('[data-marke="stapel"], svg[data-marke="monster"]').length, id).toBe(0);
+            expect(el.querySelectorAll('[data-marke="stapel"]').length, id).toBe(0);
             expect(el.querySelectorAll('[data-marke="fel"]').length, id).toBe(el._figur.lager.reduce((n, l) => n + l.data.filter(d => d.fel).length, 0));
             expect(el.querySelectorAll('[data-del="forklaring"] [data-prov="punkt"]').length, id).toBe(serier.length);   // förklaringen visar symbolen
         }
@@ -422,12 +422,11 @@ describe('diagram i Lika arbete, Struktur och de övriga flikarna', () => {
         for (const t of ['matrix', 'likvardighet', 'prioritering', 'kon', 'benchmark', 'loneoversyn']) w2.__ritaFlik(t);
         const d = w2.document, f = id => (d.getElementById(id) || {})._figur;
         const kostnad = f('chart-prio-pareto');
-        expect(kostnad.y2).toBeUndefined();                                       // en axel
         expect(kostnad.lager.every(l => l.marke === 'stapel' && l.riktning === 'liggande')).toBe(true);
         const band = f('chart-demo-spread');
         expect(band.lager.slice(0, 3).map(l => l.marke)).toEqual(['band', 'band', 'linje']);
         expect(band.lager[2].data.every(p => p.r.n >= w2.__K)).toBe(true);        // ingen åldersgrupp under tröskeln
-        expect(f('chart-kon-histogram').lager.every(l => l.lage === 'overlagrad' && l.opacitet < 1 && !l.data.some(p => p.monster))).toBe(true);
+        expect(f('chart-kon-histogram').lager.every(l => l.lage === 'overlagrad' && l.opacitet < 1)).toBe(true);
         expect(f('chart-lp-gender').lager.map(l => l.marke)).toEqual(['intervall', 'intervall', 'punkt', 'punkt']);
         for (const id of ['chart-prio-pareto', 'chart-demo-spread', 'chart-kon-histogram', 'chart-lp-gender']) expect(() => valideraFigur(f(id), id), id).not.toThrow();
     });
@@ -543,7 +542,8 @@ describe('gap per åldersgrupp, trattdiagram och läget i spannet per kön', () 
         w.__pol = pol;
         w.__rows = [p('kvinna', 40, 29000), p('kvinna', 40, 30500), p('kvinna', 40, 31000), p('kvinna', 40, 33000), p('man', 40, 35500), p('man', 40, 37000), p('man', 40, 33000)];
         expect(w.eval('konLagen(window.__rows, window.__pol)')).toEqual({ kv: [1, 2, 1, 0, 0], ma: [0, 0, 1, 1, 1] });
-        expect([-0.1, 0, 0.33, 0.34, 0.66, 0.67, 1, 1.01].map(v => w.eval(`lagesklass(${v})`))).toEqual([0, 1, 1, 2, 2, 3, 3, 4]);
+        // Gränserna 33 och 67 (TREDJEDEL_GRANSER) hör till den övre delen, som läget i ord i Löneläget.
+        expect([-0.1, 0, 0.32, 0.33, 0.66, 0.67, 1, 1.01].map(v => w.eval(`lagesklass(${v})`))).toEqual([0, 1, 1, 2, 2, 3, 3, 4]);
         const f = w.eval('_lpFigurKonLagen({ kv: [1, 2, 1, 0, 0], ma: [0, 0, 1, 1, 2], nKv: 4, nMa: 4 })');
         expect(f.lager.map(l => l.serie)).toEqual(['Under spannet', 'Nedre tredjedelen', 'Mellersta tredjedelen', 'Övre tredjedelen', 'Över spannet']);
         for (const i of [0, 1]) expect(f.lager.reduce((s, l) => s + l.data[i].x, 0)).toBeCloseTo(100, 6);
@@ -613,7 +613,7 @@ describe('etiketter, långa namn, nollinje', () => {
 
 describe('Ålder & karriär: chart-demo-hist', () => {
     it('staplat per kön, referensen som prickad linje med punkter, ingen zon', () => {
-        const AB = ['20–24', '25–29', '30–34', '35–39', '40–44', '45–49', '50–54', '55–59', '60–64', '65+'];
+        const AB = ['Under 25', '25–29', '30–34', '35–39', '40–44', '45–49', '50–54', '55–59', '60–64', '65+'];
         w.__in = { pctKv: AB.map((_, i) => 6 + i), pctMa: AB.map(() => 4), refPct: AB.map(() => 10), isAll: true };
         const f = w.eval('_demoHistFigur(window.__in)');
         expect(f.lager.map(l => [l.marke, l.serie, l.lage, l.farg])).toEqual(
@@ -770,7 +770,7 @@ describe('Ålder & karriär: chart-demo-agecurve, chart-demo-spread', () => {
 describe('Livscykel: lifecycle-chart', () => {
     it('två band (95 % KI) och två kurvor; bandens gränser finns i diagramdatan', () => {
         const pred = lon => [25, 45, 65].map((age, i) => ({ age, lon: lon + i * 4000, lo: lon + i * 4000 - 900, hi: lon + i * 4000 + 900 }));
-        w.__r = { predKvinna: pred(28000), predMan: pred(29000), fixBas: '5', gapAt25: -3.4, gapAt65: -6.1 };
+        w.__r = { predKvinna: pred(28000), predMan: pred(29000), fixBas: '5', alderFran: 25, alderTill: 65, gapFran: -3.4, gapTill: -6.1 };
         const f = w.eval('_livscykelFigur(window.__r)');
         expect(f.lager.map(l => [l.marke, l.serie, l.streck])).toEqual([['band', 'Kvinna 95 % KI', undefined], ['band', 'Man 95 % KI', undefined],
             ['linje', 'Kvinna (predikterad lön)', 'hel'], ['linje', 'Man (predikterad lön)', 'streckad']]);
@@ -891,10 +891,9 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
     it('kostnadsfördelningen: sorterade liggande staplar på en axel, kumulativ andel som text, de som når 80 % som egen serie', () => {
         w.__v = [grupp(1, 'akut'), grupp(2, 'atgard'), grupp(3, 'bevaka')];
         const f = w.eval('_prioKostnadFigur(window.__v, [54.5, 81.8, 100])');
-        expect(f.y2).toBeUndefined();
         expect(f.lager.map(l => [l.marke, l.riktning, l.serie, l.opacitet, l.data.length])).toEqual([['stapel', 'liggande', 'Når tillsammans 80 % av kostnaden', 1, 2], ['stapel', 'liggande', 'Övriga', 0.4, 1]]);
         // BAS-delen läses som filterknappen ovanför diagrammet (BAS C), inte bara bokstaven.
-        expect(f.y.ordning[0]).toBe('#1 207011 Ett ganska långt y… · BAS C');
+        expect(f.y.ordning[0]).toBe('207011 Ett ganska långt y… · BAS C');
         expect(f.lager[0].data[0].y).toBe(f.y.ordning[0]);
         // Etiketterna skriver kostnaden som nyckeltalen och rutan Total (_formateraKostnad): tkr och Mkr, inte "mnkr".
         expect(vanliga([f.lager[0].data.map(d => d.etikett)])[0]).toEqual(['400 tkr · 55 %', '200 tkr · 82 %']);
@@ -912,6 +911,10 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         expect(f2.lager.reduce((n, l) => n + l.data.length, 0)).toBe(15);
         expect(vanliga([[w.eval('_prioKostnadNot(kostnadskurva(window.__m, { max: 40, visas: PRIO_KOSTNAD_MAX }))')]])[0][0]).toMatch(/^Diagrammet visar de 15 grupper som kostar mest\. Övriga 7 grupper står tillsammans för [\d ]+ kr per år \(\d+ % av kostnaden\)/);
         expect(w.eval('_prioKostnadNot(kostnadskurva(window.__m.slice(0, 15), { max: 40, visas: PRIO_KOSTNAD_MAX }))')).toBe('');
+        // Når de ritade grupperna inte 80 % står ingen stapel i 80 %-serien.
+        w.__lika = Array.from({ length: 40 }, (_, i) => grupp(i + 1, 'akut', { annualGapTotal: 100000 }));
+        w.__likaKum = w.__lika.map((_, i) => 100 * (i + 1) / 40);
+        expect(w.eval('_prioKostnadFigur(window.__lika, window.__likaKum)').lager.map(l => [l.serie, l.data.length])).toEqual([['Kostnad', 15]]);
         // Kostnaden gäller beräkningsperioden: med sex månader står den inte som en kostnad per år.
         const manader = w.state.costSettings.months;
         w.state.costSettings.months = 6;
@@ -1211,6 +1214,14 @@ describe('länkade vyer: markering', () => {
         expect([...lage(a), ...lage(b)].every(([m, o]) => !m && o === null)).toBe(true);
         expect(w.document.getElementById('markering-rad')).toBeNull();
         stada(a, b, c);
+    });
+    it('raden namnger en yrkesgrupp efter dess egen AID-kod, inte efter en längre kod med samma början', () => {
+        const sparat = w.__state.data;
+        w.__state.data = [{ bas: 'C', yrke: '207011 Längre kod', aid: '207011', lon: 30000 }, { bas: 'C', yrke: '2070 Kort kod', aid: '2070', lon: 30000 }];
+        w.eval("sattDiagramMarkering('grupp:2070|C')");
+        expect(w.document.getElementById('markering-rad').textContent).toContain('2070 Kort kod · BAS C');
+        w.eval('sattDiagramMarkering(null)');
+        w.__state.data = sparat;
     });
     it('ett diagram utan något märke för den markerade gruppen lämnas orört', () => {
         const a = rita('chart-mk-a', fig('A', [{ x: 'BAS B', y: 1, markering: ['bas:B'] }]));
@@ -1710,20 +1721,6 @@ describe('metodförbehåll under diagram', () => {
     });
 });
 
-describe('Lönefördelningen per BAS-intervall som kvantilpunkter (figuren)', () => {
-    const p = (kon, lon, bas) => ({ kon, alder: 40, lon, yrke: 'Y', aid: 'Y', bas });
-    it('formen kvantiler med 20 prickar; små kön-och-BAS-celler är märkta och lämnar inget i exporten', () => {
-        w.__rader = [...Array.from({ length: 30 }, (_, i) => p('kvinna', 30000 + i * 50, 'A')), ...Array.from({ length: 30 }, (_, i) => p('man', 31000 + i * 50, 'A')),
-                     ...Array.from({ length: 3 }, (_, i) => p('man', 77777 + i, 'B')), ...Array.from({ length: 12 }, (_, i) => p('kvinna', 35000 + i, 'B'))];
-        const { figur, utelamnade } = w.eval('_konTathetFigur(window.__rader, true, 10, "kvantiler")');
-        expect(figur.lager.map(l => [l.serie, l.form, l.antal])).toEqual([['Kvinna', 'kvantiler', 20], ['Man', 'kvantiler', 20]]);
-        expect(utelamnade).toEqual(['BAS B (män)']);
-        expect(figur.beskrivning).toMatch(/tjugondel/);
-        expect(() => valideraFigur(figur, 't')).not.toThrow();
-        expect(JSON.stringify(figurTillTabell(w.eval('utanSmaGrupper')(figur)))).not.toMatch(/7777/);
-    });
-
-});
 
 describe('radpaneler i vyerna', () => {
     it('Utforskas hantel och jämförelseflikens två figurer delas vid fler än femton kategorier', () => {
@@ -2089,7 +2086,7 @@ describe('Diagramfilter v3: filtren i vyerna', () => {
         rad(el, 'bas').querySelector('[data-urval]').click();
         expect(sum()).toBe('Filter: 1 aktivt');
         expect(filter.hasAttribute('data-aktivt')).toBe(true);
-        expect(not(el)).toMatch(/^Diagrammet visar ett urval: /);   // noten under diagrammet som förut
+        expect(not(el)).toMatch(/^Diagrammet visar ett urval: /);   // noten under diagrammet
         // Fliken ritas om: urvalet och summeringen står kvar.
         w2.__ritaFlik('matrix');
         const el2 = w2.document.getElementById('chart-la-tratt');

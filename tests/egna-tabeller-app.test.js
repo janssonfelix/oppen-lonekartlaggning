@@ -35,6 +35,20 @@ describe('egna tabeller: från Utforska till rapporten', () => {
         expect(laggTill(w, 'Fel', true)).toMatch(/går inte när raderna/);
         expect(w.__state.rapportTabeller).toHaveLength(2);
     });
+    it('receptet är det vyn visar: ett låst mått och en låst könsuppdelning följer vyn, inte väljarna', () => {
+        const w = fonster();
+        const d = w.document;
+        d.getElementById('explore-rad').value = 'bas'; d.getElementById('explore-measure').value = 'p90';
+        d.getElementById('explore-typ').value = 'lada'; w.__ritaUtforska();
+        laggTill(w, '');
+        expect(w.__state.rapportTabeller[0].spec).toMatchObject({ rad: 'bas', matt: 'median' });
+        d.getElementById('explore-typ').value = 'auto'; d.getElementById('explore-measure').value = 'median';
+        d.getElementById('explore-visa').value = 'kon'; w.__ritaUtforska();
+        d.getElementById('explore-kolumn').value = 'kon'; w.__ritaUtforska();
+        laggTill(w, '');
+        expect(w.__state.rapportTabeller[1].spec).toMatchObject({ rad: 'bas', kolumn: 'kon', delaKon: false });
+        expect(w.eval('receptTillTabeller(hamtaData(), state.rapportTabeller[1], { k: 10 })').length).toBe(1);
+    });
     it('rapportmodellen får avsnittet Egna tabeller efter avsnittet per BAS, med tröskeln tillämpad; ett tomt recept utelämnas och anges', () => {
         const w = fonster();
         const d = w.document;

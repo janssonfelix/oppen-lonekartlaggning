@@ -2,7 +2,8 @@
  * AID:s ansvarskod: src/lib/ansvar.js.
  */
 import { describe, it, expect } from 'vitest';
-import { tolkaAnsvarskod, ansvarsgrupp, andelGiltiga, arAnsvarskodRubrik } from '../src/lib/ansvar.js';
+import { tolkaAnsvarskod, ansvarsgrupp, andelGiltiga } from '../src/lib/ansvar.js';
+import { hittaAnsvarKolumn } from '../src/lib/inlasning.js';
 
 describe('ansvar: tolkning (AID-handboken s. 9–13)', () => {
     it('giltiga koder, med och utan lokal position', () => {
@@ -32,8 +33,8 @@ describe('ansvar: tolkning (AID-handboken s. 9–13)', () => {
         expect(andelGiltiga(['', ''])).toBeNull();
     });
     it('rubriker: Ansvarskod, AID-ansvar, Ansvarsnivå — aldrig bara Ansvar', () => {
-        for (const r of ['Ansvarskod', 'AID-ansvar', 'AID ansvar', 'Ansvarsnivå', 'ANSVARSKOD AID']) expect(arAnsvarskodRubrik(r), r).toBe(true);
-        for (const r of ['Ansvar', 'Ansvarsnummer', 'AID', 'Kostnadsställe']) expect(arAnsvarskodRubrik(r), r).toBe(false);
+        for (const r of ['Ansvarskod', 'AID-ansvar', 'AID ansvar', 'Ansvarsnivå', 'ANSVARSKOD AID']) expect(hittaAnsvarKolumn([r]), r).toBe(r);
+        for (const r of ['Ansvar', 'Ansvarsnummer', 'AID', 'Kostnadsställe']) expect(hittaAnsvarKolumn([r]), r).toBeNull();
     });
 });
 

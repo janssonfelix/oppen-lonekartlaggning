@@ -15,12 +15,13 @@ import { gruppnycklar, konAv, jamforAldersgrupp, jamforLonespann } from './falt.
 import { jamforSektor, mellannivaEtikett, huvudomrade } from './aid.js';
 import { iUrvalet, uppfyllerGrupp, gruppVillkorAktivt } from './urval.js';
 import { STANDARDTERMER as T, ordForAntal } from './termer.js';
+import { K_STANDARD } from './ktroskel.js';
 
 
 export const DIMENSIONER = ['bas', 'aid', 'alder', 'kon', 'alla', 'aidbas', 'lonespann', 'sektor', 'aidniva'];
 export const MATT = ['median', 'medel', 'n', 'p10', 'p25', 'p75', 'p90', 'spridning', 'andelKv', 'gap'];
 // Mått som inte går att dela upp per kön (de ÄR en jämförelse mellan könen).
-const UTAN_KONSUPPDELNING = new Set(['andelKv', 'gap']);
+export const UTAN_KONSUPPDELNING = new Set(['andelKv', 'gap']);
 
 function _hink() { return { lons: [], kv: [], ma: [] }; }
 function _lagg(h, r) {
@@ -113,7 +114,7 @@ export function slaIhopSmaAid(rader, k, nyckel = gruppnycklar(rader)) {
  * @param {{rad:string, kolumn?:string|null, matt?:string, delaKon?:boolean, urval?:any, gruppVillkor?:any[], slaIhop?:boolean}} spec
  * @param {{k?:number}} [opts]
  */
-export function pivottabell(rader, spec, { k = 10 } = {}) {
+export function pivottabell(rader, spec, { k = K_STANDARD } = {}) {
     const rad = spec.rad;
     const kol = spec.kolumn && spec.kolumn !== rad ? spec.kolumn : null;
     const matt = spec.matt && MATT.includes(spec.matt) ? spec.matt : 'median';
@@ -130,6 +131,7 @@ export function pivottabell(rader, spec, { k = 10 } = {}) {
     // Hopslagning av små AID-grupper, bara när raderna är AID (ADR-33).
     const ersatt = spec.slaIhop && rad === 'aid' ? slaIhopSmaAid(urvalRader, k, gruppnyckel) : null;
     const urval = { n: urvalRader.length, nKv: 0, nMa: 0 };
+    let utanVarde = 0;   // personer i urvalet utan värde i tabellens dimensioner (till exempel utan ålder)
     const cellHinkar = new Map(), radHinkar = new Map(), kolHinkar = new Map();
     for (const r of urvalRader) {
         const ko = konAv(r);
@@ -137,11 +139,11 @@ export function pivottabell(rader, spec, { k = 10 } = {}) {
         else if (ko === 'Man') urval.nMa++;
         const rk0 = gruppnyckel(r, rad);
         const rk = rk0 != null && ersatt && ersatt.has(rk0) ? /** @type {string} */ (ersatt.get(rk0)) : rk0;
-        if (rk == null) continue;
+        if (rk == null) { utanVarde++; continue; }
         /** @type {string|null} */ let kk = null;
         if (kol) {
             kk = gruppnyckel(r, kol);
-            if (kk == null) continue;
+            if (kk == null) { utanVarde++; continue; }
         }
         const nyckel = kol ? rk + '\u0000' + kk : rk;
         if (!cellHinkar.has(nyckel)) cellHinkar.set(nyckel, { rad: rk, kol: kk, h: _hink() });
@@ -191,5 +193,5 @@ export function pivottabell(rader, spec, { k = 10 } = {}) {
     celler.sort((a, b) => ((ri.get(a.rad) ?? 0) - (ri.get(b.rad) ?? 0)) || (ki ? (ki.get(a.kol) ?? 0) - (ki.get(b.kol) ?? 0) : 0));
 
     return { spec: { rad, kolumn: kol, matt, delaKon, urval: urvalSpec, gruppVillkor, slaIhop: !!ersatt },
-             radEtiketter, kolumnEtiketter, celler, urval, dolda };
+             radEtiketter, kolumnEtiketter, celler, urval, dolda, utanVarde };
 }

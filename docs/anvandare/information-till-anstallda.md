@@ -28,7 +28,9 @@ grupper; för grupper med färre än [10] personer redovisas inga lönemått.
 
 **Vem tar del av resultatet?**
 [HR-funktionen], [lönebildningsansvariga chefer] och de fackliga organisationerna i samverkan. Den skriftliga
-dokumentationen innehåller gruppresultat, bedömningar och åtgärder, inte uppgifter om enskilda.
+dokumentationen innehåller gruppresultat, bedömningar och åtgärder. Diagram med en punkt per person (lön mot
+ålder) kan följa med som bild i rapporten och i ZIP-exporten, men
+bara för grupper som når den minsta gruppstorleken.
 [Allmänna handlingar: dokumentationen kan vara allmän handling; uppgifter om enskildas förhållanden prövas
 mot sekretess.]
 

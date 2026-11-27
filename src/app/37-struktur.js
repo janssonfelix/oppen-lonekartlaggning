@@ -4,26 +4,25 @@ import { namnrader, sektorsnamn } from '../lib/aid.js';
 import { kronorSkillnad, kronorTipsRad, talformat } from '../lib/figur.js';
 import { arKvinna } from '../lib/kon.js';
 import { personOrd } from '../lib/namn.js';
-import { sektorAndelNot, sektorernasAndel, sektorJusteradText, sektorsTabell } from '../lib/sektor.js';
+import { sektorAndelMening, sektorAndelNot, sektorernasAndel, sektorJusteradText, sektorsTabell } from '../lib/sektor.js';
 import { skrDelText } from '../lib/skrreferens.js';
 import { fordelningsgap, kvartilfordelning, strukturMatt, tillDirektivtecken } from '../lib/struktur.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { artikel, ordForAntal, stor, termFras } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { meddelaSkarmlasare, esc } from './01-html-och-tillganglighet.js';
-import { _kronorFalt, andelAvMan, antalRubrik, direktivGap, idagDatum, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
+import { _kronorFalt, andelAvMan, antalRubrik, demoFilnamn, direktivGap, idagDatum, rapporteraFel, tillampaDataStil } from './03-hjalpfunktioner.js';
 import { ikon } from './03-ikoner.js';
 import { _konUtelamnatNot, _kSanktNot, _parForRedovisning, kTroskel } from './06-k-troskel.js';
 import { _skrDel, skrKallaKort } from './06-kvinnoandel-referens.js';
 import { kMaskNot, kSamladNot } from './06-maskeringsnoter.js';
-import { APP_VERSION } from './08-version.js';
 import { T, termText } from './09-termer.js';
 import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETT, UNDERLAG, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
-import { hamtaBasIntervall, hamtaData, state } from './12-tillstand.js';
+import { hamtaBasIntervall, hamtaData, kopieraTextTillUrklipp, state } from './12-tillstand.js';
 import { byggAtgardslista } from './18-atgardslista.js';
-import { _laggTillMetodblad, EU_LONEBEGREPP_RESERVATION } from './22-exporthjalpare.js';
+import { _laggTillMetodblad, EU_LONEBEGREPP_RESERVATION, verktygMedVersion } from './22-exporthjalpare.js';
 import { medExportLage } from './23-exportgrind.js';
 import { likvardighetResultat } from './34-likvardigt-arbete.js';
 import { _direktivITalcell, _laNyckel, _laSlutsats } from './41-lika-arbete.js';
@@ -101,7 +100,8 @@ export function ritaStruktur() {
     { const pEl = document.getElementById('chart-struktur-percentiler'); if (pEl && dist.length && dist.every(x => x.gapPct != null)) ritaFigur(pEl, { ..._strukturPercentilFigur(dist), underlag: underlag(_strukturPercentilFor) }); }
 
     // (2) EU 2023/970-rapportpaket
-    const antal = n => (n == null ? '–' : n);
+    // Antalen per kön kan vara bråktal när personer med samma lön delas mellan två kvartiler (kvartilfordelning).
+    const antal = n => (n == null ? '–' : svTal(n, Number.isInteger(n) ? 0 : 1));
     // Diagrammet över kvartilerna ligger i kortets HTML, som byggs om här: den gamla behållaren släpps först.
     const kvGammal = document.getElementById('chart-struktur-kvartiler');
     if (kvGammal) rensaFigur(kvGammal);
@@ -143,6 +143,23 @@ export function ritaStrukturUtkast() {
     const { konOk, repVisade, totAndel, dist, q, medGap, meanGap } = strukturMatt(d, k);
     const perBas = state.utkastPerBas !== false ? _stUtkastPerBas(k) : null;
     /** @type {HTMLInputElement} */ (nb).value = _byggSammanfattning(d, { repVisade, dist, q, medGap, meanGap, totAndel, konOk, perBas });
+    nb.dataset.k = String(k);   // tröskeln utkastet byggdes med (utkastVidHogreTroskel)
+}
+
+/**
+ * Ett redigerat utkast som byggdes med en lägre tröskel än k kan bära tal för grupper under k, och texten följer med
+ * Kopiera och konfigurationsfilen. Användaren väljer: bygga om utkastet med k eller behålla sin text. Frågan ställs en
+ * gång per tröskel (ADR-112). Anropas när tröskeln höjs (sattKTroskel) och när en konfigurationsfil med ett utkast läses in.
+ * @param {number} k
+ */
+export function utkastVidHogreTroskel(k) {
+    const nb = document.getElementById('struktur-narrative');
+    if (!nb || !nb.dataset.dirty || !(Number(nb.dataset.k) < k)) return;
+    const bygg = confirm(`Bygga om rapportutkastet med minsta gruppstorlek ${k}?\n\nUtkastet är redigerat och byggdes med minsta gruppstorlek `
+        + `${nb.dataset.k}. Det kan bära tal för grupper med färre än ${k} ${personOrd(k)}, och texten följer med Kopiera och `
+        + 'konfigurationsfilen. OK bygger om utkastet och ersätter din text; Avbryt behåller texten som den är.');
+    nb.dataset.k = String(k);
+    if (bygg) { delete nb.dataset.dirty; medExportLage(ritaStrukturUtkast); }
 }
 
 /** Väljaren ovanför utkastet visar valet i state (Hela organisationen, eller med ett stycke per BAS-intervall). */
@@ -264,7 +281,7 @@ function _strukturTradkartaFigur(rader, k = kTroskel()) {
     }).filter(b => b.length);
     if (!barn.length) return null;
     // Yrkesgruppernas ytor utan läge; lägena sätts av _tradkartaLagen, för alla grupper eller för dem som syns.
-    const blad = barn.flat().map(o => ({ namn: `${o.namn} · BAS ${o.bas}`, varde: o.n, etikett: o.namn, undertext: `${o.n} personer`, bas: o.bas, n: o.n,
+    const blad = barn.flat().map(o => ({ namn: `${o.namn} · BAS ${o.bas}`, varde: o.n, etikett: o.namn, undertext: `${o.n} ${personOrd(o.n)}`, bas: o.bas, n: o.n,
         ...(o.ovriga ? { farg: FARG.kantStark, ovriga: true }
             : { sektor: sektorsnamn(o.aid), fargvarde: +(100 * o.nKv / o.n).toFixed(1), andelKv: 100 * o.nKv / o.n, markering: markeringFor(o.bas, o.aid) }) }));
     const { basYtor, grupper } = _tradkartaLagen(blad);
@@ -356,7 +373,7 @@ export function ritaSektorer(d) {
         andel = sektorernasAndel(d, { k: kTroskel() });
     } catch (e) { rapporteraFel(stor(T.huvudomrade.fl), e); host.innerHTML = ''; return; }
     const kr = n => svKr(n);
-    const pc = n => (n == null ? '–' : `${n.toFixed(1).replace('.', ',')}\u00a0%`);
+    const pc = n => (n == null ? '–' : svPct(n, 1));
     const harLedning = tabell.some(r => r.ledningKv != null || r.ledningMa != null);
     // Justerat för ålder bara när lönefilen har ålder (ADR-64, ADR-78); rubriken säger vad som justeras för.
     const justText = sektorJusteradText(tabell);
@@ -368,7 +385,7 @@ export function ritaSektorer(d) {
                 : `<td class="num" data-sort-value="${Math.round(r.medKv)}">${kr(r.medKv)}</td><td class="num" data-sort-value="${Math.round(r.medMa)}">${kr(r.medMa)}</td>`
                   + `<td class="num" data-sort-value="${r.kvot.toFixed(1)}">${pc(r.kvot)}</td>`;
         const just = r.justerat
-            ? `${pc(100 + r.justerat.pct)} <small class="muted">(${pc(100 + r.justerat.low)}–${pc(100 + r.justerat.high)})</small>`
+            ? `${pc(100 + r.justerat.pct)}${r.justerat.low == null ? '' : ` <small class="muted">(${pc(100 + r.justerat.low)}–${pc(100 + r.justerat.high)})</small>`}`
             : r.justeratSkal === 'fa' ? '<span class="muted">För få</span>'
             : r.justeratSkal === 'ejBas' ? `<span class="muted" title="${esc(_sektorEjBasTitel())}">Kan inte justeras för BAS</span>`
             : '–';
@@ -385,8 +402,7 @@ export function ritaSektorer(d) {
         : Math.abs(andel.andel) < 0.01
             ? `<p class="sektor-andel">Skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror nästan inte alls
                på att kvinnor och män arbetar i olika ${T.huvudomrade.fl} (under 1 %).</p>`
-            : `<p class="sektor-andel">Av skillnaden i medellön för hela organisationen, kvinnor mot män (${kr(andel.gapKr)} per månad), beror
-               ${kr(andel.sektorKr)} (${pc(andel.andel * 100)}) på att kvinnor och män arbetar i olika ${T.huvudomrade.fl}.</p>`)
+            : `<p class="sektor-andel">${sektorAndelMening(andel, kr, pc)}</p>`)
         + (andelNot ? `<p class="sektor-andel">${esc(andelNot)}</p>` : '');
     host.innerHTML = `<table class="data-table" id="sektor-table"><thead><tr><th>${stor(T.huvudomrade.en)}</th><th>Antal</th><th>Andel kvinnor</th><th title="Andel kvinnor i samma ${T.huvudomrade.en} nationellt, i ${skrDelText(_skrDel())} enligt ${esc(skrKallaKort())} — ett referensvärde">Kvinnor nationellt</th>
         <th>Median kvinnor</th><th>Median män</th><th>Kvinnors lön i % av mäns</th><th>${justText.rubrik}</th>
@@ -495,7 +511,7 @@ function _exportEuRapportExport() {
     const k = kTroskel();
     const { konOk, q, repVisade, repUtelamnade: repUtelamnadeX, repKonLitet, dist, kv, ma, meanGap, medGap } = strukturMatt(d, k);
     // Måtten står med direktivets tecken (art. 9): (män − kvinnor) / män i procent, positivt när kvinnor ligger
-    // lägre. Verktyget räknar (kvinnor − män) / män; _stTillDirektivtecken vänder tecknet, bara i den här exporten
+    // lägre. Verktyget räknar (kvinnor − män) / män; tillDirektivtecken vänder tecknet, bara i den här exporten
     // och rapportens avsnitt om lönetransparens — övriga blad och flikar visar kvinnors lön i procent av mäns.
     const DIREKTIV_RUBRIK = 'Löneskillnad enligt direktivet (%), positivt tal = kvinnor lägre';
     const DIREKTIV_METOD = 'Löneskillnaden är (män − kvinnor) / män i procent, enligt direktivet: positivt tal = kvinnor lägre. Verktygets flikar och övriga blad visar i stället kvinnors lön i procent av mäns; talet är lika stort.';
@@ -504,7 +520,7 @@ function _exportEuRapportExport() {
         ['Lönetransparensdirektivets mått', ''],
         ['Lönebegrepp', EU_LONEBEGREPP_RESERVATION],
         ['Genererad', new Date().toLocaleString('sv-SE')],
-        ['Verktyg', 'Öppen lönekartläggning v' + (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–')],
+        ['Verktyg', verktygMedVersion()],
         ['Antal anställda', d.length],
         ['Löneskillnad i medellön enligt direktivet (%), positivt tal = kvinnor lägre', direktivRound(meanGap)],
         ['Löneskillnad i medianlön enligt direktivet (%), positivt tal = kvinnor lägre', direktivRound(medGap)],
@@ -541,7 +557,7 @@ function _exportEuRapportExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(repArr), 'Representation');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(distArr), 'Skillnad i lönefördelningen');
     _laggTillMetodblad(wb, { extra: [['Löneskillnadens tecken i den här filen', DIREKTIV_METOD]] });
-    XLSX.writeFile(wb, `eu_lonerapport_${idagDatum()}.xlsx`);
+    XLSX.writeFile(wb, demoFilnamn(`eu_lonerapport_${idagDatum()}.xlsx`));
     meddelaSkarmlasare('EU-lönerapport exporterad.');
 }
 
@@ -572,9 +588,10 @@ export function uppstartStruktur() {
             if (nb && nb.dataset.dirty) { meddelaSkarmlasare('Utkastet är redigerat och skrivs inte över. Återskapa ritar om det med valet.'); return; }
             medExportLage(ritaStrukturUtkast);
         });
+        // Som varje kopia: genom kopieraTextTillUrklipp, som sätter demomärket först i demoläget.
         document.getElementById('struktur-narrative-copy')?.addEventListener('click', () => {
-            const nb = document.getElementById('struktur-narrative');
-            if (nb) { /** @type {HTMLInputElement} */ (nb).select(); try { document.execCommand('copy'); } catch (_e) { /* ignore */ } }
+            const nb = /** @type {HTMLTextAreaElement|null} */ (document.getElementById('struktur-narrative'));
+            if (nb) kopieraTextTillUrklipp(nb.value, () => meddelaSkarmlasare('Utkastet kopierat.'));
         });
         const nb = document.getElementById('struktur-narrative');
         if (nb) nb.addEventListener('input', () => { nb.dataset.dirty = '1'; });

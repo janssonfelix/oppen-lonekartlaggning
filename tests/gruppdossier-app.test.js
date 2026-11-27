@@ -55,6 +55,17 @@ describe('handläggarstöd: gruppdossier, robusthet, färdigcheck', () => {
         });
     });
 
+    it('färdigcheckens punkt om jämförelsestatistik matchar grupperna som verktyget gör (AID och BAS)', () => {
+        const w = createAppWindow(); w.__lasInDemodata();
+        const grupper = new Set(w.eval('hamtaData()').map(r => `${w.eval(`aidAvRad(${JSON.stringify(r)})`)}|${r.bas}`));
+        const punkt = () => w.eval('byggFardigcheck()').find(p => p.id === 'utan-benchmark');
+        // Statistik med varje AID-kod, men bara för ett BAS-intervall som inte finns i underlaget.
+        w.__state.statistik = [...new Set([...grupper].map(g => g.split('|')[0]))].map(aid => ({ aid, bas: 'ZZ', median: 30000 }));
+        expect(punkt().title).toMatch(new RegExp(`^${grupper.size} `));
+        // Statistik utan BAS för varje kod: alla grupper har en motsvarighet.
+        w.__state.statistik = w.__state.statistik.map(s => ({ ...s, bas: '' }));
+        expect(punkt()).toBeUndefined();
+    });
 });
 
 describe('förbättringar: modal-dossier och manuell robusthetsanalys', () => {
@@ -194,7 +205,7 @@ describe('gruppdossiern', () => {
         await new Promise(r => setTimeout(r, 0));
         expect(kopior).toHaveLength(1);
         expect(kopior[0][0]).toBe('copy');
-        expect(kopior[0][1]).toMatch(/^Gruppdossier: /);
+        expect(kopior[0][1]).toMatch(/^DEMODATA[^\n]*\nGruppdossier: /);   // demoläget: märket först (kopieraTextTillUrklipp)
     });
 
     it('gruppNamn skriver koden en gång', () => {

@@ -13,6 +13,7 @@ import { bootstrapMedianer } from '../src/lib/likvardighet.js';
 import { slumpFor } from '../src/lib/rng.js';
 import { medianKvotKIGiltiga } from '../src/lib/osakerhet.js';
 import { createAppWindow } from './helpers/app-harness.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 function refMedian(arr) {
     const s = arr.slice().sort((a, b) => a - b), m = s.length >> 1;
@@ -64,7 +65,7 @@ describe('bootstrapMedianer: samma medianer som en sortering per dragning', () =
         it(namn, () => {
             const m = bootstrapMedianer(kv, ma, 300, slumpFor(kv, ma));
             const ref = refDragningar(kv, ma, 300, slumpFor(kv, ma));
-            ref.forEach(([mKv, mMa], b) => {
+            ickeTom(ref).forEach(([mKv, mMa], b) => {
                 expect(m.kv[b], `kv, dragning ${b}`).toBe(mKv);
                 expect(m.ma[b], `ma, dragning ${b}`).toBe(mMa);
             });

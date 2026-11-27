@@ -3,12 +3,15 @@
 // Kör hela kedjan i Definition of Done (.github/CONTRIBUTING.md, punkt 3): `npm run kontroll`.
 //
 // Stegen körs i ordning som `npm run <steg>` och kedjan stannar på första fel, med stegets slutkod. Efter `bundle`
-// prövas samma grind som CI-jobbet grindar kör utöver npm-skripten (.github/workflows/ci.yml): bygget ändrade inga
-// genererade filer, de spårade filerna under dist/ och GENERERADE. CI bygger om och kräver att de, artefakten och
-// RELEASE.txt inräknade, blir byte-identiska med det incheckade; här jämförs filerna som de låg när kedjan började
-// med filerna efter bygget. En ändring betyder att de inte motsvarade källan: de ombyggda filerna ska checkas in.
+// prövas artefaktgrinden: bygget ändrade inga genererade filer, de spårade filerna under dist/ (artefakten och
+// RELEASE.txt inräknade) och GENERERADE. Filerna jämförs som de låg när kedjan började och efter bygget; i CI, som
+// börjar i en ren utcheckning, är det en jämförelse med det incheckade. En ändring betyder att de inte motsvarade
+// källan: de ombyggda filerna ska checkas in.
 // Grinden är den enda kontrollen av de genererade filerna; testsviten prövar dem inte en gång till. Teckenkodningen
 // (ingen U+FFFD) prövar bygget självt (tools/bundle.mjs), som stoppar.
+//
+// `--artefakt` kör bara `bundle` och grinden. Det är artefaktgrinden i .github/workflows/ci.yml och release.yml, så
+// att regeln för vilka filer som jämförs står här och ingen annanstans.
 //
 // `--snabb` är körningen under arbetet: `test` (enhetsprojektet) i stället för `test:full`, och inget röktest i
 // webbläsaren. Utan flagga körs allt, som före en pull request.
@@ -69,7 +72,7 @@ function grindar(fore) {
     if (byggda.length) {
         fel.push('Bygget ändrade genererade filer; de motsvarade inte källan:\n'
             + byggda.map(f => `    ${f}`).join('\n')
-            + '\n  Checka in de ombyggda filerna (som CI:s artefaktgrind kräver) och kör kontrollen igen.');
+            + '\n  Checka in de ombyggda filerna och kör kontrollen igen.');
     }
     return fel;
 }
@@ -123,11 +126,12 @@ function kor(steg) {
 
 // Kör bara när skriptet startas direkt (inte när ett test importerar STEG).
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-    const okanda = process.argv.slice(2).filter(a => a !== '--snabb');
+    const okanda = process.argv.slice(2).filter(a => a !== '--snabb' && a !== '--artefakt');
     if (okanda.length) {
-        console.error(`[kontroll] Okänt argument: ${okanda.join(' ')}. Enda flaggan är --snabb.`);
+        console.error(`[kontroll] Okänt argument: ${okanda.join(' ')}. Flaggorna är --snabb och --artefakt.`);
         process.exitCode = 2;
     } else {
-        process.exitCode = kor(process.argv.includes('--snabb') ? SNABBA_STEG : STEG);
+        process.exitCode = kor(process.argv.includes('--artefakt') ? [BYGGSTEG]
+            : process.argv.includes('--snabb') ? SNABBA_STEG : STEG);
     }
 }

@@ -32,6 +32,13 @@ export function svTal(v, dec = 0) {
     return _svNf.get(dec).format(avrundaSymmetriskt(v, dec));
 }
 
+/**
+ * Plustecknet framför ett positivt tal: '+' när talet avrundat till `dec` decimaler är över noll, annars ''. Minus skriver
+ * svTal själv, och noll står utan tecken: `${svTecken(v, 1)}${svPct(v, 1)}` ger "+1,5 %", "−1,5 %" och "0,0 %" (för −0,04).
+ * @param {unknown} v @param {number} [dec] @returns {string}
+ */
+export function svTecken(v, dec = 0) { return typeof v === 'number' && avrundaSymmetriskt(v, dec) > 0 ? '+' : ''; }
+
 /** Som svTal, med " %" efter (hårt mellanslag). @param {unknown} v @param {number} [dec] @returns {string} */
 export function svPct(v, dec = 1) { return typeof v === 'number' && isFinite(v) ? `${svTal(v, dec)} %` : '–'; }
 

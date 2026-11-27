@@ -17,14 +17,13 @@
 
 import { gruppnyckel, konAv } from './falt.js';
 import { aidAvRad } from './aid.js';
+import { medianUtanPositioner } from './stat.js';
 
 // Median av en sorterad lista där ett exemplar av värdet v tas bort.
 function _medianUtan(sorterad, v) {
     let lo = 0, hi = sorterad.length;
     while (lo < hi) { const m = (lo + hi) >> 1; if (sorterad[m] < v) lo = m + 1; else hi = m; }
-    const bort = lo, n = sorterad.length - 1;
-    const vid = p => sorterad[p < bort ? p : p + 1];
-    return n % 2 ? vid((n - 1) / 2) : (vid(n / 2 - 1) + vid(n / 2)) / 2;
+    return medianUtanPositioner(sorterad, [lo]);
 }
 
 function _grupp(g, grans) {
@@ -49,7 +48,8 @@ function _grupp(g, grans) {
         } else {
             forvantad = _medianUtan(loner, r.lon); metod = 'median';
         }
-        const avvikelsePct = (r.lon - forvantad) / forvantad * 100;
+        // Gånger 100 före divisionen, som i resten av paketet: en lön exakt på gränsen hamnar på rätt sida (710 mot 1 000 ger −29).
+        const avvikelsePct = (r.lon - forvantad) * 100 / forvantad;
         if (avvikelsePct <= -grans) {
             ut.push({ radnr: r.radnr ?? null, kon: konAv(r), alder: r.alder, aid: gruppnyckel(r, 'aid'), bas: r.bas,
                       lon: r.lon, forvantad, avvikelsePct, kollegor: m, metod, ansvarsgrupp: r.ansvarsgrupp ?? null });

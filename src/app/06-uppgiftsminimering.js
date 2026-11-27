@@ -4,14 +4,14 @@
 // Vitlistan över tillåtna datafält (TILLATNA_FALT), uppslaget av rubrikerna, bedömningen av ansvarskolumnen och
 // tolkningen av en rad bor i src/lib/inlasning.js. Här står de tunna adaptrarna som läser tillståndet: kolumnmappningen
 // och importprofilen (_kolumnvalITillstandet i 03-hjalpfunktioner.js), den godkända ansvarskolumnen och innevarande år.
-// _faltIRad och _bedomAnsvarKolumn importeras under samma namn ur lib.
+// 32-filinlasning.js importerar _faltIRad och _bedomAnsvarKolumn direkt ur lib.
 import { hittaAnsvarKolumn, lonefilensRubriker, minimeraRad } from '../lib/inlasning.js';
 import { _kolumnvalITillstandet } from './03-hjalpfunktioner.js';
 import { state } from './12-tillstand.js';
 
 /**
  * Kolumnen med AID:s ansvarskod: manuell mappning först, annars importprofilen och sist första rubrik som
- * _anArRubrik känner igen. Aldrig kolumnen "Ansvar".
+ * lib:s regel för ansvarskodens rubrik känner igen. Aldrig kolumnen "Ansvar".
  * @param {string[]} rubriker
  * @returns {string|null}
  */

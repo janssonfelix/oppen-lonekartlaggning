@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
-import { STORA, MELLAN, SMA, normalisera, oppnaFlik, KON_BAS, KON_KV, KON_MA, KON_GAP, KON_DOLDA, byggKonDataset, fonsterKon, harNagon, harNagonTal, laddaXlsx, fangaBocker, utskriftAv, SENT_MELLAN, SENT_SMA, iExport } from './helpers/ktroskel-rigg.js';
+import { STORA, MELLAN, SMA, normalisera, oppnaFlik, KON_BAS, KON_KV, KON_MA, KON_GAP, KON_DOLDA, byggKonDataset, fonsterKon, harNagon, harNagonTal, laddaXlsx, fangaBocker, utskriftAv, SENT_MELLAN, SENT_SMA, iExport, synliga, skarmtext } from './helpers/ktroskel-rigg.js';
 
 describe('fixturen för kön under tröskeln', () => {
     it('inget dolt värde kan uppstå ur organisationens egna percentiler eller ytterkanter', () => {
@@ -25,7 +25,14 @@ describe('fixturen för kön under tröskeln', () => {
         expect(new Set(KON_DOLDA).size).toBe(KON_DOLDA.length);
         const forekomster = v => data.filter(r => r.lon === v).length;
         for (const v of KON_DOLDA) expect(forekomster(v), String(v)).toBeLessThanOrEqual(3);   // bara i sin egen lilla grupp
-    });    it('könsgapet söks som ett eget tal: inte inuti ett större belopp, men med tecken, mellanrum och cellgräns (I4)', () => {
+    });
+    it('sökningen läser text som står bredvid ett barnelement, och attributen', () => {
+        const w = createAppWindow();
+        w.document.getElementById('view-dashboard').insertAdjacentHTML('beforeend', `<p>Median <b>(grupp)</b> 44 519 kr</p><span title="${KON_MA[1]}"></span>`);
+        expect(synliga(w, KON_MA)).toEqual([KON_MA[0], KON_MA[1]]);
+        expect(harNagon(skarmtext(w), KON_MA)).toEqual([KON_MA[0], KON_MA[1]]);
+    });
+    it('könsgapet söks som ett eget tal: inte inuti ett större belopp, men med tecken, mellanrum och cellgräns (I4)', () => {
         const gap = KON_GAP.find(v => v.includes(','));
         for (const t of [`−${gap} %`, `| ${gap} |`, `gap ${gap}`, gap]) expect(harNagonTal(t, [gap]), t).toEqual([gap]);
         for (const t of [`26 0${gap} kr`, `260${gap}`, `1${gap}`, `${gap}1`]) expect(harNagonTal(t, [gap]), t).toEqual([]);

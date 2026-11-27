@@ -16,20 +16,23 @@ står i riskanalysen (`docs/dataskydd/riskanalys.md` §6.6). Jämförelsestatist
 | Del | Fil |
 |---|---|
 | Formelskyddet, CSV-texten och urklippets text | `src/lib/csv.js` (`neutraliseraCell`, `tillCsv`, `tillTsv`) |
-| Nedladdningen av en fil (alla exporter) | `src/app/03-hjalpfunktioner.js` (`laddaNer`) |
+| Nedladdningen av en fil | `src/app/03-hjalpfunktioner.js` (`laddaNer`); arbetsböckerna sparas med `XLSX.writeFile`, och diagrambilden med en egen länk (`src/app/11-diagramexport.js`) |
 | CSV-filen och exportnotisen | `src/app/22-exporthjalpare.js` (`_laddaNedCSV`, `_visaExportvarning`) |
 | Urklippet | `src/app/12-tillstand.js` (`_kopieraMatrisTillUrklipp`) |
 | Rapportmodellen, som Word-utkastet och PDF-rapporten ritas ur | `src/app/58-rapportmodell.js` (`rapportModell`, `rmTillHtml`) |
 | Word-utkastet som Office Open XML | `src/lib/docx.js` (`docxDelar`, `xmlText`); `src/app/62-word-utkast.js` (`byggWordUtkast`) |
 | PDF-rapporten och utskriften av checklistan och handlingsplanen | `src/app/60-utskrift.js` (`skrivUtMallflik`) |
-| Excel-filen med alla flikar och protokollet | `src/app/24-excelexport.js` (`_excelAlltBok`, `exportJPAProtokoll`) |
+| Excel-filen med alla flikar och protokollet | `src/app/24-excelexport.js` (`_excelAlltBok`, `exportJPAProtokoll`); protokollets tal i `src/lib/jpaprotokoll.js` |
+| Rapportens innehåll | `src/lib/vymodell-rapport.js` |
+| Rapportunderlaget (rapporttexten på urklipp) | `src/app/67-rapportunderlag.js`; `src/lib/rapportunderlag.js`, `src/lib/vymodell-rapportunderlag.js` |
 | ZIP-filen | `src/app/66-zip-export.js` |
 | Förhandsbeskedet vid knapparna | `src/app/59-exportbesked.js` (`ritaExportBesked`) |
 | Vakterna | `tests/csv.test.js`, `tests/docx.test.js`, `tests/exports.golden.test.js` |
 
 ## 1. De samlade exporterna
 
-Alla exporter körs i exportläget (`medExportLage`, `k-troskeln.md` §3).
+Alla exporter körs i exportläget (`medExportLage`, `k-troskeln.md` §3). Webbläsarens egen utskrift (Ctrl+P) av en
+flik är ingen export: den visar skärmen, utan tröskel och stämpel (ADR-109).
 
 - **Word-utkastet och PDF-rapporten** ritas ur samma rapportmodell (`rapportModell`) med det urval av avsnitt som
   gäller, så att de inte kan säga olika saker. Word-utkastet görs av modellens HTML (`rmTillHtml`) som blocklista
@@ -40,10 +43,19 @@ Alla exporter körs i exportläget (`medExportLage`, `k-troskeln.md` §3).
   exporteras (`diagram/<id>.png`). Varje upplåst flik ritas först, utom Exportera, Rapporttext, Spara och jämför år,
   Om verktyget och För systemförvaltaren; Spara och jämför år ritas när ett årsbokslut är inläst. Ett fel i en del
   stoppar inte de andra: det rapporteras (`granssnittet.md` §6), och filen får det som gick att bygga.
-- **Exportnotisen** (`_visaExportvarning`) visas efter en sparad fil och säger att filen innehåller lönedata och ska
-  hanteras som personuppgifter.
-- **Demodata** märks: Word-utkastets sidfot och filnamn säger DEMODATA, och CSV-filer, diagrambilder och diagramdata får
-  prefixet `DEMO_` i filnamnet.
+- **Exportnotisen** (`_visaExportvarning`) säger att filen innehåller lönedata och ska hanteras som personuppgifter.
+  Den visas efter CSV-filerna, Excel-filen med alla flikar, protokollet, löneöversikten, prioriteringslistan,
+  likvärdigt arbetes och jämförelsestatistikens Excel-filer, diagrambilderna och konfigurationsfilen. Den visas inte
+  efter ZIP-filen, Word-utkastet, Löneöversyns prognos, handlingsplanens Excel-fil och EU-rapporten.
+- **Demodata** märks i allt som lämnar verktyget, på ett ställe per slags väg (`DEMO_MARKE` och `demoFilnamn` i
+  `03-hjalpfunktioner.js`): varje fil får `DEMO_` först i filnamnet när namnet inte redan säger DEMO (`laddaNer`,
+  arbetsböckernas `XLSX.writeFile` och diagrambildens länk); varje Excel-fil får ett första blad DEMODATA
+  (`_laggTillMetodblad`), varje CSV-fil märket på första raden (`_laddaNedCSV`), allt på urklipp märket först
+  (`kopieraTextTillUrklipp`), diagrambilderna märket först i fotraden (`_diagramexportRubrikFot`), också i ZIP-filen, och utskriften av
+  handlingsplanen och checklistan märket under rubriken. Word-utkastets sidfot och filnamn säger DEMODATA, rapporten
+  och rapportunderlaget har märket först. Konfigurationsfilen bär också fältet `demo`, och demots exempelskäl i
+  handlingsplanen skrivs inte till den. Provet: `tests/start-och-meny-app.test.js` (*demoläget märks i allt som
+  lämnar verktyget*).
 
 ## 2. CSV och urklipp: formelskyddet
 
@@ -78,7 +90,8 @@ tabeller, bilder) och appen packar med JSZip.
 
 ## 4. Protokollet för gemensam lönebedömning
 
-Protokollet (`exportJPAProtokoll`) är en Excel-fil med åtta blad. Vilka led i direktivets art. 10.2 bladen täcker står
+Protokollet (`exportJPAProtokoll`) är en Excel-fil med de nio bladen nedan, och i demoläget ett första blad
+DEMODATA. Vilka led i direktivets art. 10.2 bladen täcker står
 i [`lagrum.md`](lagrum.md); vad som utelämnas och döljs under tröskeln i `k-troskeln.md` §2 och §4.
 
 | Blad | Innehåll |
@@ -91,6 +104,7 @@ i [`lagrum.md`](lagrum.md); vad som utelämnas och döljs under tröskeln i `k-t
 | 4. Exkluderat (små grupper) | Det som utelämnats under tröskeln |
 | 5. Metodik & rättslig grund | Metoden |
 | 6. Signaturer | Underskrifterna |
+| Metod & parametrar | Metoden och parametrarna som gällde (`_laggTillMetodblad`), sist |
 
 - **Urvalet och statusen** följer i blad 2 Lika arbetes grupper och status (`laLikaGrupper`, ur medianerna) och i
   blad 3 regressionen per BAS-intervall; medelvärdet ändrar inget urval.

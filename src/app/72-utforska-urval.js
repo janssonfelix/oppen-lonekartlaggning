@@ -5,7 +5,7 @@
 //
 // Håller urvalet (personvillkor, alla/något) och gruppvillkoren, ritar
 // panelen "Urval" och etiketterna under kontrollerna. Logiken bor i
-// src/lib/urval.js (speglad som _ur*); här finns bara state och gränssnitt.
+// src/lib/urval.js; här finns bara state och gränssnitt.
 //
 // Raderna byggs om bara när villkorens STRUKTUR ändras (antal, fält,
 // jämförelse) eller datan byts — inte när ett värde ändras. Annars tappar
@@ -13,7 +13,7 @@
 // ====================================================================
 import { jamforAldersgrupp } from '../lib/falt.js';
 import { beskrivUrval, faltInfo, gruppMattInfo, gruppVillkorAktivt, villkorAktivt } from '../lib/urval.js';
-import { esc } from './01-html-och-tillganglighet.js';
+import { behallFokus, esc } from './01-html-och-tillganglighet.js';
 import { ikon } from './03-ikoner.js';
 import { state } from './12-tillstand.js';
 import { _utNycklar, ritaUtforska } from './70-utforska.js';
@@ -56,10 +56,12 @@ export function utforskaSattUrval(urval, gruppVillkor) {
 }
 export function utforskaNollstallUrval() { utforskaSattUrval({ lage: 'alla', villkor: [] }, []); }
 
-/** Släpper referensen till datan som värdelistorna byggdes för ("Rensa all data"). */
+/** Rensa all data: värdelistorna och villkoren namnger värden ur det rensade underlaget. */
 export function utforskaUrvalSlappMinne() {
     _urvalData = null;
     _urvalSignatur = null;
+    _urvalTillstand = { lage: 'alla', villkor: [] };
+    _gruppTillstand = [];
 }
 
 // Kategorivärden i aktuell data, sorterade som Utforska sorterar dimensionen. AID-etiketten är koden (_utNycklar).
@@ -148,19 +150,6 @@ function _gruppRadHtml(g, i) {
         + '</div>';
 }
 
-// Raderna byggs om när fält eller jämförelse byts. Den som stod i en lista eller
-// ett sifferfält ska stå kvar där efteråt, annars kan man bara stega ett steg
-// i taget med tangentbordet.
-const _URVAL_FOKUS_ATTR = ['data-urval-falt', 'data-urval-op', 'data-urval-tal', 'data-gv-matt', 'data-gv-op', 'data-gv-tal'];
-function _urvalFokusNyckel() {
-    const a = document.activeElement;
-    if (!a || !a.closest || !a.closest('#explore-urval')) return null;
-    const namn = _URVAL_FOKUS_ATTR.find(n => a.hasAttribute(n));
-    if (!namn) return null;
-    const pos = a.hasAttribute('data-pos') ? `[data-pos="${a.getAttribute('data-pos')}"]` : '';
-    return `[${namn}="${a.getAttribute(namn)}"]${pos}`;
-}
-
 // Uppdaterar det som ändras med värdena, utan att bygga om raderna.
 function _urvalUppdateraMarkorer() {
     document.querySelectorAll('#explore-urval-villkor .explore-urval-rad').forEach((rad, i) => {
@@ -188,10 +177,12 @@ export function ritaUtforskaUrval(rows) {
     if (sig !== _urvalSignatur || _urvalData !== state.data) {
         _urvalSignatur = sig;
         _urvalData = state.data;
-        const fokus = _urvalFokusNyckel();
-        lista.innerHTML = _urvalTillstand.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join('');
-        grupp.innerHTML = _gruppTillstand.map((g, i) => _gruppRadHtml(g, i)).join('');
-        if (fokus) /** @type {HTMLInputElement} */ (document.querySelector(`#explore-urval ${fokus}`))?.focus();
+        // Raderna byggs om när fält eller jämförelse byts och när ett villkor tas bort: fokus står kvar på samma
+        // kontroll, annars kan man bara stega ett steg i taget med tangentbordet (behallFokus).
+        behallFokus(document.getElementById('explore-urval'), () => {
+            lista.innerHTML = _urvalTillstand.villkor.map((v, i) => _urvalRadHtml(v, i, rows)).join('');
+            grupp.innerHTML = _gruppTillstand.map((g, i) => _gruppRadHtml(g, i)).join('');
+        });
     }
     _urvalUppdateraMarkorer();
     if (chips) {

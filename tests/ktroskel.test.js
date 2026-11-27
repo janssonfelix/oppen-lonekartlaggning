@@ -4,9 +4,13 @@
  * Riggen (fixturer, fönster och sökfunktioner) ligger i tests/helpers/ktroskel-rigg.js; sviten är delad i
  * flera filer så att Vitest fördelar den över flera arbetare.
  */
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createAppWindow } from './helpers/app-harness.js';
 import { normalisera, synliga, fonster, fonsterLitet, ritaAlla, SENT_MELLAN, SENT_SMA } from './helpers/ktroskel-rigg.js';
+import { ickeTom } from './helpers/paastaende.js';
 
 describe('k-tröskeln: standardvärde och validering', () => {
     let w;
@@ -55,6 +59,19 @@ describe('k-tröskeln i texterna: "1 person", inte "1 personer"', () => {
         const [mask5, individ5] = texter();
         expect(mask5).toContain('färre än 5 personer,');
         expect(individ5).toContain('färre än 5 personer.');
+    });
+});
+
+describe('maskeringsnoten: pronomenet följer begreppets genus', () => {
+    it('«Det har» för ett ett-ord, «Den har» för ett en-ord, «De har» i plural, på skärmen och i texten', () => {
+        const w = createAppWindow();
+        const not = (sammanhang, namn = ['C']) => [
+            w.eval(`kMaskNot(${JSON.stringify(namn)}, ${JSON.stringify(sammanhang)}, 10)`),
+            w.eval(`_kMaskNotText(${JSON.stringify(namn)}, ${JSON.stringify(sammanhang)}, 10, 'deras lönemått visas inte', 'underlaget')`)];
+        const niva = w.eval('`${T.niva.en}|${T.niva.fl}`'), enhet = w.eval('`${T.enhet.en}|${T.enhet.fl}`');
+        for (const t of ickeTom(not(niva))) expect(t).toContain('C. Det har färre');
+        for (const t of ickeTom(not(enhet))) expect(t).toContain('C. Den har färre');
+        for (const t of ickeTom(not(niva, ['C', 'D']))) expect(t).toContain('D. De har färre');
     });
 });
 
@@ -116,4 +133,13 @@ describe('k-tröskeln styr varje flik', () => {
         expect(basNot(vid10)).toMatch(/\bE\b/);
         expect(normalisera(vid10.textContent)).not.toContain('35291');
     }, 60000);
+});
+
+describe('k-tröskeln: behållarna som töms när tröskeln ändras', () => {
+    it('varje id i listorna (22-lonedatabehallare.js) finns i sidan', () => {
+        const w = createAppWindow();
+        const sida = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'index.html'), 'utf8');
+        const ids = w.eval('[...RENSA_BEHALLARE, ...RENSA_OVRIGT, ...RENSA_TABELLER]');
+        expect(ids.filter(id => !sida.includes(`id="${id}"`))).toEqual([]);
+    });
 });

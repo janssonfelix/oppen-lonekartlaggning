@@ -25,6 +25,3 @@ interface Element {
     _prioItem?: any;
     _exportBeskrivning?: string;
 }
-interface Window {
-    __LV_DEBUG__?: boolean;
-}

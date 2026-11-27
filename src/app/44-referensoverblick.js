@@ -4,7 +4,7 @@ import { sektorsnamn } from '../lib/aid.js';
 import { talformat } from '../lib/figur.js';
 import { matchningEtikett } from '../lib/jamforelse.js';
 import { hantelRader as _rrHantelRader, referensOverblickUr } from '../lib/referenser.js';
-import { svPct, svTal } from '../lib/talformat.js';
+import { svPct, svTal, svTecken } from '../lib/talformat.js';
 import { ordForAntal, stor } from '../lib/termer.js';
 import { esc } from './01-html-och-tillganglighet.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
@@ -32,7 +32,7 @@ export function referensOverblick() {
 // Läget i spannet är ett index: rubriken säger skalan, verktygstipset vad talet betyder.
 const _RR_LAGE_TIPS = 'Var gruppens medianlön ligger i referensens spann: 0 är referensens P10 och 100 dess P90. Under 0 ligger medianen nedanför spannet, över 100 ovanför. Orden före talet säger samma sak.';
 const _RR_MATCHNING_TIPS = `Hur ${T.enhet.bf} matchades mot jämförelsestatistiken. AID + BAS: en rad med samma AID och samma BAS. Endast AID: det finns ingen sådan rad, så en rad med samma AID som saknar BAS används. Rader för andra ${T.niva.fl} används aldrig. – betyder att statistik saknas för gruppen.`;
-const _rrPct = v => (v == null ? '–' : `${v >= 0 ? '+' : '−'}${svTal(Math.abs(v), 1)}\u00a0%`);
+const _rrPct = v => (v == null ? '–' : `${svTecken(v, 1)}${svPct(v, 1)}`);
 const _rrSkillnad = (org, ref) => (org != null && ref != null ? (org / ref - 1) * 100 : null);
 const _rrLageText = l => (l.pos == null ? '–' : `${l.ord} (${svTal(l.pos, 0)})`);
 
@@ -72,7 +72,7 @@ function _rrTabellHtml(kolumner, grupper) {
 
 function _rrTalHtml(tal, { harStatistik, harStallningstagande }) {
     const ruta = (etikett, varde) => `<div class="stat-box"><div class="stat-etikett">${esc(etikett)}</div><div class="stat-val">${esc(varde)}</div></div>`;
-    const monsterRuta = (etikett, m) => ruta(etikett, `${m.grupper} · ${svPct(m.andel, 0)}`);
+    const monsterRuta = (etikett, m) => ruta(etikett, `${m.grupper} ${m.grupper === 1 ? 'grupp' : 'grupper'} · ${svPct(m.andel, 0)} av personerna`);
     const pm = tal.perMonster;
     return '<div class="summary-stats">' + [
         ruta(`${stor(T.enhet.fl)} i ${T.niva.en}`, String(tal.antalGrupper)),
@@ -179,7 +179,7 @@ export function ritaReferensOverblick() {
         ${_rrTabellHtml(_rrKolumner(har), o.grupper)}
         <h3 class="jmf-diagram-rubrik">Lönerna mot ${[har.harStallningstagande && 'ställningstagandet', har.harStatistik && 'statistiken'].filter(Boolean).join(' och ')}</h3>
         <div class="jmf-diagram-yta"><div id="chart-ref-hantel"></div></div>
-        <p class="muted">${flera ? `Visar de ${_RR_MAX} första ${T.enhet.bfl} av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? 'P10 och P90 saknas i jämförelsestatistiken: den visas bara med sin median.' : ''}</p>
+        <p class="muted">${flera ? `Visar de ${_RR_MAX} första ${T.enhet.bfl} av ${o.grupper.length} — tabellen har alla. ` : ''}${utanSpann ? `${!state.statistikHasP10 && !state.statistikHasP90 ? 'P10 och P90 saknas' : `${state.statistikHasP10 ? 'P90' : 'P10'} saknas`} i jämförelsestatistiken: den visas bara med sin median.` : ''}</p>
         ${har.harStatistik && har.harStallningstagande ? _rrStatTabellHtml(o.statistikMotStallningstagande) : ''}`;
     try { ritaFigur('chart-ref-hantel', _rrHantelFigur(_rrHantelRader(o.grupper.slice(0, _RR_MAX)), har)); } catch (e) { rapporteraFel('Löneläget: överblickens bild', e); }
     laggTillTabellverktyg('ref-tabell', 'referenser');

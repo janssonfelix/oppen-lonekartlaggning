@@ -117,17 +117,17 @@ Det generella och det riktade påslaget redovisas före avrundning (`generellCos
 | Använt | summan av påslagen efter avrundning |
 | Angiven pott | `pottAngiven`: budgeten har ett tal (avsnitt 2) |
 | Kvar | potten − använt; null utan angiven pott |
-| Över potten | använt > potten + 0,000001 när en pott är angiven, annars falskt; fliken säger *Fördelningen överskrider potten* |
+| Över potten | använt > potten + 0,5 kr när en pott är angiven (beloppen visas i hela kronor), annars falskt; fliken säger *Fördelningen överskrider potten* vid mätaren och under *Kvar att fördela* |
 | Lönesumman före och efter | före + använt |
 | Den råa skillnaden före och efter | kvinnornas median i procent av männens, minus 100 (`raLonegap`) |
 | Varav till kvinnodominerade grupper | kostnaden i grupper (BAS och AID) som är kvinnodominerade enligt inställningen i Likvärdigt arbete; skickas ingen gräns gäller `KVINNO_TROSKEL_STANDARD` (60 %) |
-| Grupper som går om varandra | en grupp vars median låg under en annans och efter påslaget ligger över den (`hittaOmkorningar`) |
+| Grupper som går om varandra | en grupp vars median låg under en annans och efter påslaget ligger över den (`hittaOmkorningar`), bland grupperna som når k och inte viks in (`utfallsvy`); ett sparat scenario räknar med samma urval |
 | Total kostnad | se avsnitt 10 |
 
 **Utan angiven pott** visar fliken påslagen som vanligt, men *Pott* och *Kvar att fördela* står som ett streck med
 *ingen pott angiven*, och ingen varning om överskriden pott. Excel-exporten skriver *ingen pott angiven* på raden
 *Pott* och ett streck på raden *Kvar att fördela*, och ett sparat scenario heter *ingen pott angiven* i stället för
-*0 kr*. Utan pott och utan påslag visas inget utfall (fliken säger att en pott behövs).
+*0 kr*. Utan pott och utan påslag visas inget utfall (fliken säger att en pott behövs), och inget scenario går att spara.
 
 **Den oförklarade skillnaden före och efter** räknas i vymodellen (`oforklaratForeEfter`): huvudregressionen körs en
 gång på lönerna före och en gång på de nya lönerna, med samma förklaringsmodell och samma val som i appen
@@ -145,7 +145,8 @@ med en decimal (`riktning`): lika visade tal är oförändrat.
 
 ## 7. Förslagen
 
-Förslagen bygger riktade rader; användaren kan ändra eller ta bort dem.
+Förslagen bygger riktade rader; användaren kan ändra eller ta bort dem. Ett nytt förslag ur potten eller *minska
+skillnaderna* ersätter de föreslagna raderna; användarens egna rader står kvar.
 
 **Kandidatparen** kommer ur Likvärdigt arbete ([`likvardighetsmodellen.md`](likvardighetsmodellen.md) §5): en
 kvinnodominerad grupp (BAS och AID) med en skillnad i kronor mot en jämförelsegrupp (`gapKr`, jämförelsegruppens
@@ -155,7 +156,7 @@ personer i gruppen* (standard 10) tas med.
 
 | Förslag | Funktion | Belopp per grupp |
 |---|---|---|
-| Förslag ur potten | `foreslaRiktning` (`forslagUrPotten` i vymodellen) | potten efter det generella påslaget, fördelad i proportion till gapKr × n, men aldrig mer än gapKr × n; avrundat till hela kronor |
+| Förslag ur potten | `foreslaRiktning` (`forslagUrPotten` i vymodellen) | potten efter det generella påslaget och användarens egna riktade rader, fördelad i proportion till gapKr × n, men aldrig mer än gapKr × n; avrundat till hela kronor |
 | Minska skillnaderna med en andel | `stangningsriktning` | andelen × gapKr × n, avrundat |
 | Lyft mot marknaden | `marknadsriktning` | (marknadens median × faktorn − gruppens median) × n, för grupper under; faktorn är standard 95 % |
 | Grupper som uppfyller ett villkor | `villkorsgrupper` (vymodellen) | samma belopp och fördelning för alla grupper som är kvinnodominerade, under BAS-medianen, under BAS-intervallets P25 eller alla |
@@ -172,7 +173,7 @@ jämförelsevärdet; kostnaden är jämförelsevärdet minus lönen.
 
 ## 8. Den stegvisa planen
 
-`stegvisPlan` sprider fördelningen över 1–5 år. År k av N ger varje person påslaget × k / N. För varje år redovisas
+`stegvisPlan` sprider fördelningen över 1–3 år (fliken har de tre valen). År k av N ger varje person påslaget × k / N. För varje år redovisas
 det samlade påslaget, kostnaden över perioden och den råa skillnaden. Påslagen per år avrundas inte på nytt.
 
 ## 9. Tröskelmålet
@@ -215,7 +216,7 @@ känsligheten, tröskelmålet och den individuella rättelsen räknar med samma 
 | Riktade rader | inga | fliken, förslagen |
 | Minsta antal personer i gruppen för förslag | 10 | fliken |
 | Lönesteg för avrundning | 0 (ingen) | fliken |
-| Antal år i planen | 1 | fliken (1–5) |
+| Antal år i planen | 1 | fliken (1–3) |
 | Andel att minska skillnaderna med, marknadsfaktor, gräns för individuell rättelse, tröskelmål | –, 95 %, 5 %, 5 % | fliken |
 | Kvinnodominerat | *Mer än 60 %* | Likvärdigt arbete |
 | Beräkningsperiod, PO-påslag | 12 månader, 40 % | Inställningar, konfigurationsfilen, organisationspaketet |

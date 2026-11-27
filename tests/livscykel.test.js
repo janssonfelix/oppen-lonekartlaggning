@@ -9,6 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { livscykelRegression, livscykelNiva, samspelSakerstallt, SAMSPEL_GRANS } from '../src/lib/livscykel.js';
 import { anpassaOLS } from '../src/lib/stat.js';
 import { readFileSync } from 'node:fs';
+import { ickeTom } from './helpers/paastaende.js';
 
 function lcg(seed) {
     return () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
@@ -100,14 +101,14 @@ describe('[B3.10] livscykelRegression: skattning', () => {
     it('gapet vid 25 år följer prediktionerna, kvinnor mot män: kvinna/man − 1', () => {
         const kvinna = res.predKvinna[0].lon;
         const man = res.predMan[0].lon;
-        expect(res.gapAt25).toBeCloseTo((kvinna / man - 1) * 100, 6);
-        expect(res.gapAt25).toBeLessThan(0);                                       // kvinnorna ligger lägre i fixturen
-        expect(res.gapAt65).toBeCloseTo((res.predKvinna[40].lon / res.predMan[40].lon - 1) * 100, 6);
-        expect(res.gapDelta).toBeCloseTo(res.gapAt65 - res.gapAt25, 10);
+        expect(res.gapFran).toBeCloseTo((kvinna / man - 1) * 100, 6);
+        expect(res.gapFran).toBeLessThan(0);                                       // kvinnorna ligger lägre i fixturen
+        expect(res.gapTill).toBeCloseTo((res.predKvinna[40].lon / res.predMan[40].lon - 1) * 100, 6);
+        expect(res.gapDelta).toBeCloseTo(res.gapTill - res.gapFran, 10);
     });
 
     it('prediktionerna har ett KI som ligger runt punktskattningen', () => {
-        for (const p of res.predKvinna) {
+        for (const p of ickeTom(res.predKvinna)) {
             expect(p.lo).toBeLessThanOrEqual(p.lon);
             expect(p.hi).toBeGreaterThanOrEqual(p.lon);
         }
@@ -157,7 +158,7 @@ describe('livscykelRegression: fixBas', () => {
         const a = livscykelRegression(rader, { fixBas: 'A', golv: 10 });
         const c = livscykelRegression(rader, { fixBas: 'C', golv: 10 });
         expect(c.predMan[0].lon).toBeGreaterThan(a.predMan[0].lon);
-        expect(c.gapAt25).toBeCloseTo(a.gapAt25, 10);
+        expect(c.gapFran).toBeCloseTo(a.gapFran, 10);
     });
 });
 
@@ -176,35 +177,64 @@ function trappFixtur(skillnadPct, brus) {
     return rader;
 }
 
-describe('livscykelRegression: nyckeltalen vid 25 och 65 år följer trappan (ADR-71)', () => {
+describe('livscykelRegression: kurvan och nyckeltalen stannar inom underlagets åldrar', () => {
+    // Åldrarna 40–45 och ingen könsskillnad: utanför spannet skulle kvadraten i ålder ge vilka tal som helst.
+    const smal = () => fixtur(240).map((d, i) => ({ ...d, alder: 40 + ((i >> 1) % 6), lon: Math.exp(10 + 0.01 * ((i >> 1) % 6) + 0.02 * ((i * 7) % 5)) }));
+    it('nyckeltalen räknas vid underlagets lägsta och högsta ålder, inte vid 25 och 65', () => {
+        const res = livscykelRegression(smal(), { golv: 10 });
+        expect([res.alderFran, res.alderTill]).toEqual([40, 45]);
+        expect(res.gapPerAge.map(g => g.age)).toEqual([40, 41, 42, 43, 44, 45]);
+        expect(res.gapFran).toBe(res.gapPerAge[0].gapPct);
+        expect(res.gapTill).toBe(res.gapPerAge[5].gapPct);
+        expect(Math.abs(res.gapTill)).toBeLessThan(5);
+    });
+    it('varje köns kurva går över det egna könets åldrar', () => {
+        // Kvinnorna 30–40, männen 35–50: kurvorna följer var sitt spann, skillnaden det gemensamma 35–40.
+        const rader = fixtur(240).map((d, i) => ({ ...d, alder: d.kon === 'kvinna' ? 30 + ((i >> 1) % 11) : 35 + ((i >> 1) % 16) }));
+        const res = livscykelRegression(rader, { golv: 10 });
+        const spann = p => [p[0].age, p[p.length - 1].age];
+        expect(spann(res.predKvinna)).toEqual([30, 40]);
+        expect(spann(res.predMan)).toEqual([35, 50]);
+        expect(spann(res.gapPerAge)).toEqual([35, 40]);
+        expect([res.alderFran, res.alderTill]).toEqual([35, 40]);
+    });
+    it('utan någon gemensam ålder bedöms ingen skillnad, och felet säger varför', () => {
+        const rader = fixtur(240).map((d, i) => ({ ...d, alder: d.kon === 'kvinna' ? 25 + ((i >> 1) % 10) : 40 + ((i >> 1) % 10) }));
+        const res = livscykelRegression(rader, { golv: 10 });
+        expect(res.errorCode).toBe('inget_gemensamt_spann');
+        expect(res.error).toMatch(/samma ålder/);
+    });
+});
+
+describe('livscykelRegression: nyckeltalen vid spannets ändar följer trappan (ADR-71)', () => {
     it('en tydlig skillnad (−8 %) med ett intervall som utesluter lika lön är värd att granska', () => {
         const res = livscykelRegression(trappFixtur(-8, 0.01), { golv: 10 });
-        expect(res.gapAt25).toBeCloseTo(-8, 6);
+        expect(res.gapFran).toBeCloseTo(-8, 6);
         expect(res.gapPerAge[0].gapHiPct).toBeLessThan(0);
-        expect(res.niva25).toBe('granska');
-        expect(res.niva65).toBe('granska');
+        expect(res.nivaFran).toBe('granska');
+        expect(res.nivaTill).toBe('granska');
     });
 
     it('en skillnad på −4 % med ett intervall som täcker lika lön är följ upp, inte granska', () => {
         const res = livscykelRegression(trappFixtur(-4, 0.4), { golv: 10 });
-        expect(res.gapAt25).toBeCloseTo(-4, 6);
+        expect(res.gapFran).toBeCloseTo(-4, 6);
         expect(res.gapPerAge[0].gapLoPct).toBeLessThan(0);
         expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
-        expect(res.niva25).toBe('folj');
+        expect(res.nivaFran).toBe('folj');
     });
 
     it('under 3 % med ett intervall som täcker lika lön är balanserat', () => {
         const res = livscykelRegression(trappFixtur(-2, 0.4), { golv: 10 });
-        expect(res.gapAt25).toBeCloseTo(-2, 6);
+        expect(res.gapFran).toBeCloseTo(-2, 6);
         expect(res.gapPerAge[0].gapLoPct).toBeLessThan(0);
         expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
-        expect(res.niva25).toBe('balanserat');
+        expect(res.nivaFran).toBe('balanserat');
     });
 
     it('storleken ensam ger ingen status: −6 % med ett intervall som täcker lika lön är följ upp', () => {
         const res = livscykelRegression(trappFixtur(-6, 0.6), { golv: 10 });
         expect(res.gapPerAge[0].gapHiPct).toBeGreaterThan(0);
-        expect(res.niva25).toBe('folj');
+        expect(res.nivaFran).toBe('folj');
     });
 
     it('ett intervall som saknas eller inte är ändligt går ej att bedöma, inte balanserat', () => {

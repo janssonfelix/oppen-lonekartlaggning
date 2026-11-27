@@ -5,8 +5,8 @@ name: CI
 #             faktiskt motsvarar källan och att ett andra bygge i en annan katalog blir samma fil.
 #   tester  — hela testsviten, delad på fyra parallella jobb (Vitests --shard). Varje testfil körs
 #             i exakt ett av dem; tillsammans är de `npm run test:full`.
-#   quality — grön först när grindar och alla fyra delar av tester är gröna. Det är den kontroll
-#             som regeln för main kräver, så namnet står kvar.
+#   quality — grön först när grindar, alla fyra delar av tester och browser i alla motorer är gröna.
+#             Det är den kontroll som regeln för main kräver, så namnet står kvar.
 #   browser — röktest av den byggda single-file-filen i riktig Chromium, Firefox och WebKit.
 #             Diagrammen (diagramkärnan på D3, ADR-39) ritas med äkta D3 också i
 #             jsdom-testerna; här prövas PNG-exporten, som kräver en riktig canvas,
@@ -63,21 +63,10 @@ jobs:
       # Bygget är reproducerbart (ingen tidsstämpel i bannern), så en färsk build måste bli byte-identisk
       # med den incheckade artefakten och RELEASE.txt. Grinden är den enda kontrollen av det som bygget skriver i
       # dist/ och av den genererade src/app/08-version.js: version, kontrollsumma och esbuild-bygget prövas inte en
-      # gång till i testsviten.
+      # gång till i testsviten. Vilka filer som jämförs står i tools/kontroll.mjs, som också kör grinden i
+      # release.yml och i den lokala kedjan.
       - name: Artefakten motsvarar källan (byte-identisk)
-        run: |
-          fore=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
-          npm run bundle
-          efter=$(sha256sum dist/oppen-lonekartlaggning.html | cut -d' ' -f1)
-          if [ "$fore" != "$efter" ] || ! git diff --quiet -- dist src/app/08-version.js; then
-            echo "::error::Den incheckade artefakten, RELEASE.txt eller src/app/08-version.js motsvarar inte källan."
-            echo "  incheckad: $fore"
-            echo "  ombyggd:   $efter"
-            git diff --stat -- dist src/app/08-version.js
-            echo "Kör 'npm run bundle' och committa resultatet."
-            exit 1
-          fi
-          echo "Artefakten och RELEASE.txt är byte-identiska med en färsk build ($fore)."
+        run: node tools/kontroll.mjs --artefakt
 
       # Reproducerbart bygge (ADR-101): samma commit byggd i en annan katalog, med annan tidszon och annat språk,
       # ska ge samma fil. Fångar det som artefaktgrinden ovan inte ser, eftersom den bygger i samma katalog.
@@ -123,16 +112,17 @@ jobs:
   # kontroll räknas som godkänd av regeln för main.
   quality:
     if: always()
-    needs: [grindar, tester]
+    needs: [grindar, tester, browser]
     runs-on: ubuntu-latest
     steps:
-      - name: Grindarna och alla delar av sviten är gröna
+      - name: Grindarna, alla delar av sviten och röktestet är gröna
         env:
           GRINDAR: ${{ needs.grindar.result }}
           TESTER: ${{ needs.tester.result }}
+          BROWSER: ${{ needs.browser.result }}
         run: |
-          echo "grindar: $GRINDAR, tester: $TESTER"
-          [ "$GRINDAR" = "success" ] && [ "$TESTER" = "success" ]
+          echo "grindar: $GRINDAR, tester: $TESTER, browser: $BROWSER"
+          [ "$GRINDAR" = "success" ] && [ "$TESTER" = "success" ] && [ "$BROWSER" = "success" ]
 
   # Samma röktest i de tre webbläsarmotorer som verktyget stöder (Chrome/Edge, Firefox,
   # Safari). WebKit kräver systembibliotek som bara finns färdiga på Ubuntu, så det körs här.

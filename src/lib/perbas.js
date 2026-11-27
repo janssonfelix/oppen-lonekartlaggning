@@ -25,6 +25,7 @@ import { statistikFor } from './jamforelse.js';
 import { STANDARDTERMER as T, stor, adjektiv } from './termer.js';
 import { kompletterandeUndertryckning } from './undertryckning.js';
 import { arKvinna, arMan } from './kon.js';
+import { K_STANDARD } from './ktroskel.js';
 
 
 // ---- Receptet (ADR-52): vad avsnittet ska innehålla. Standardvärdet är tabellerna som de står i arbetsgivarnas utkast. ----
@@ -80,13 +81,13 @@ const _aldersgrupp = (alder, granser) => { let i = 0; while (i < granser.length 
  * @param {Array<{bas:string, aid?:string, yrke?:string, yrkeLabel?:string, kon:string, lon:number, alder?:number}>} rader
  * @param {{k?: number, referens?: ((aid: string|null, bas: string) => ({p10?:number, med?:number, p90?:number}|null))|null,
  *          statistik?: Array<{aid:string, bas?:string, median:number, p10?:number, p90?:number}>|null,
- *          referensNamn?: string, statistikNamn?: string, aldersgranser?: number[], recept?: any}} [opt]
+ *          referensNamn?: string, statistikNamn?: string, recept?: any}} [opt]
  *   `recept` (ADR-52): dimensionen som upprepas ('bas' eller 'sektor'), vilka rader och mått, och om summeringstabellerna
  *   ska med; utelämnat ger standardreceptet. Med sektor som dimension finns ingen referensrad (ställningstagandet
  *   gäller BAS-intervall).
  */
 export function perBasTabeller(rader, opt = {}) {
-    const k = opt.k ?? 10;
+    const k = opt.k ?? K_STANDARD;
     const recept = valideraPerBasRecept(opt.recept);
     const visa = new Set(recept.rader);
     const dimAv = recept.dim === 'sektor' ? (r => sektorsnamn(r.aid) || '') : (r => String(r.bas ?? ''));
@@ -94,7 +95,7 @@ export function perBasTabeller(rader, opt = {}) {
     const statistik = Array.isArray(opt.statistik) ? opt.statistik : [];
     const referensNamn = opt.referensNamn || 'Referens';
     const statistikNamn = opt.statistikNamn || 'Jämförelsestatistik';
-    const granser = (opt.aldersgranser && opt.aldersgranser.length ? opt.aldersgranser : recept.aldersgranser).slice().sort((a, b) => a - b);
+    const granser = recept.aldersgranser;   // valideraPerBasRecept har sorterat dem
     const d = (rader || []).filter(r => r && r.bas && dimAv(r));
     // Ålderskolumnen är valfri (ADR-64): utan ålder utelämnas åldersgrupperna och medelåldern.
     const harAlder = d.some(r => typeof r.alder === 'number' && r.alder > 0);

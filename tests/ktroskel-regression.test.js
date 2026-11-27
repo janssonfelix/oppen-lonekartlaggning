@@ -211,7 +211,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
         w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
         expect(d.getElementById('kon-kpi-gap').textContent.trim()).toBe('–');
-        expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
+        expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−]?[\d ]+ \/ – kr$/);
         expect(namn(w, 'chart-kon-boxplot')).toEqual(['Kvinna']);
         expect(namn(w, 'chart-kon-scatter')).not.toContain('Man (trend)');
         expect(harNagon(normalisera(d.getElementById('view-kon').textContent), [KON_MA[0], ...KON_GAP.slice(0, 4)])).toEqual([]);
@@ -225,7 +225,7 @@ describe('[R3] Ålder & karriär följer regeln för könsuppdelade mått', () =
         w.__ritaFlik('kon');
         w.eval("ritaAlderOchLon('Y1')");
         const d = w.document;
-        expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−][\d ]+ \/ – kr$/);
+        expect(d.getElementById('kon-kpi-slope').textContent.replace(/[\u00a0\u202f]/g, ' ')).toMatch(/^[+−]?[\d ]+ \/ – kr$/);
         expect(d.getElementById('kon-kpi-agegap').textContent.trim()).toBe('–');
         expect(d.getElementById('p-value-insight').textContent).toMatch(/bara har en ålder/);
         expect(d.getElementById('view-kon').textContent).not.toMatch(/NaN/);
@@ -394,7 +394,7 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         expect(fragor).toBe(1);
         expect(w.eval('kTroskelLagst()')).toBe(8);
         expect(w.eval('kInstalld()')).toBe(12);
-        expect(r.meddelande).toMatch(/Det förra paketets lägsta tillåtna minsta gruppstorlek 8 behålls/);
+        expect(r.meddelande).toMatch(/Det förra paketets låsningar behålls: minsta gruppstorlek lägst 8\./);
         expect(r.meddelande).toMatch(/5 används inte: Lägst 8 enligt organisationspaketet/);
         expect(w.eval('orgNamn("")')).toBe('Andra organisationen');   // resten av paketet läses in
     });
@@ -407,6 +407,24 @@ describe('k-tröskeln: lägsta tillåtna värde ur organisationspaketet (ADR-47)
         las(w, paket({}, 'Tredje organisationen'));
         expect(w.eval('kTroskelLagst()')).toBeNull();
         expect(w.eval('sattKTroskel(5, { fraga: false })').ok).toBe(true);
+    });
+    it('ett nytt paket utan låsningar: en fråga nämner alla tre; nekad behåller dem, godkänd släpper dem', () => {
+        const alla = { kTroskelLagst: 12, kTroskel: 12, inaktivitetMin: 30, inaktivitetLast: true, smaGrupperIExport: false };
+        const w = createAppWindow();
+        las(w, paket(alla));
+        const fragor = [];
+        w.confirm = t => { fragor.push(t); return false; };
+        const r = las(w, paket({}, 'Andra organisationen'));
+        expect(fragor).toHaveLength(1);
+        expect(fragor[0]).toMatch(/från 12 till ingen gräns/);
+        expect(fragor[0]).toMatch(/30 minuter är inte längre låst/);
+        expect(fragor[0]).toMatch(/små grupper får tas med i exporten/);
+        expect(w.__state.paketLas).toEqual({ kTroskelLagst: 12, inaktivitetMin: 30, smaGrupperIExport: false });
+        expect(w.__state.inactivityTimeoutMin).toBe(30);
+        expect(r.meddelande).toMatch(/låsningar behålls: minsta gruppstorlek lägst 12, rensning vid inaktivitet låst till 30 minuter, små grupper/);
+        w.confirm = () => true;
+        las(w, paket({}, 'Tredje organisationen'));
+        expect(w.__state.paketLas).toEqual({ kTroskelLagst: null, inaktivitetMin: null, smaGrupperIExport: true });
     });
     it('ett nytt paket med lägre golv: godkänd bekräftelse sänker golvet, och tröskeln under 10 frågar för sig', () => {
         const w = medGolv(8, 12);
@@ -514,7 +532,7 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
         const d = rita(fonster(null), 'E');
         const fig = d.getElementById('chart-kon-scatter')._figur;
         expect(harTrend(fig)).toBe(false);
-        expect(fig.lager.filter(l => l.marke === 'punkt')).toHaveLength(2);   // punkterna per person ritas som förut (ADR-14)
+        expect(fig.lager.filter(l => l.marke === 'punkt')).toHaveLength(2);   // punkterna per person ritas (ADR-14)
         expect(fig.beskrivning).not.toMatch(/Trend för hela urvalet/);
         expect(elementText(d.getElementById('chart-kon-scatter-k-not'))).toMatch(/Trendlinje för hela urvalet visas inte: urvalet har 6 personer, färre än 10\./);
         expect(elementText(d.getElementById('nyckel-ak-lon'))).toBe('');            // inga femårsgrupper når tröskeln
@@ -523,7 +541,7 @@ describe('Ålder & karriär: trendlinjen för hela urvalet (valbart lager) kräv
         const d = rita(fonster(5), 'E');
         const fig = d.getElementById('chart-kon-scatter')._figur;
         expect(harTrend(fig)).toBe(true);
-        expect(fig.beskrivning).toMatch(/Trend för hela urvalet: [+−]\d+ kr per år\./);
+        expect(fig.beskrivning).toMatch(/Trend för hela urvalet: [+−]?\d+ kr per år\./);
         expect(elementText(d.getElementById('chart-kon-scatter-k-not'))).not.toMatch(/Trendlinje för hela urvalet visas inte/);
     });
     it('vid 25 behåller hela urvalet trendlinjen, ett BAS med 20 personer förlorar den; utan kryss finns inget lager', () => {

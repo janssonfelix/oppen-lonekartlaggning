@@ -27,7 +27,7 @@ import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _omritningForsok, _omritningssteg, _ritaOmAllaFlikar, _ritaOmAllaFlikarStegvis } from './06-k-troskel.js';
 import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
-import { RENSA_BEHALLARE, RENSA_OVRIGT, RENSA_TABELLER } from './26-rensning.js';
+import { RENSA_BEHALLARE, RENSA_OVRIGT, RENSA_TABELLER } from './22-lonedatabehallare.js';
 import { PANELGRUPPER, ritaFlik } from './31-navigering.js';
 import { _exportSakraKopia, arDiagramKopia, utAllaDiagramEfterExport } from './74-alla-diagram.js';
 export function iExportLage() { return state.kLage === 'export'; }
@@ -70,13 +70,17 @@ function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ri
  * @returns {T}
  */
 export let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i tid): skärmen ritas tillbaka när den sista är klar
+let _exportBytteLage = false; // läget byttes av den export som började när ingen pågick, inte utifrån
 export function medExportLage(fn) {
-    // Den yttersta exporten byter läge och ritar tillbaka; ett läge som satts utifrån (state.kLage = 'export') rörs inte.
-    const yttre = _exportDjup === 0 && !iExportLage();
-    if (yttre) _bytKLage('export', { tur: true });
+    // Den export som börjar när ingen pågår byter läge; när den sista pågående är klar, vilken som än började först, går
+    // läget tillbaka och skärmen ritas tillbaka. Ett läge som satts utifrån (state.kLage = 'export') rörs inte.
+    if (_exportDjup === 0 && !iExportLage()) { _bytKLage('export', { tur: true }); _exportBytteLage = true; }
     _exportDjup++;
     let synk = true;
-    const tillbaka = () => { _exportDjup = Math.max(0, _exportDjup - 1); if (_exportDjup === 0 && yttre) { const ritade = _ritadeNu(); _bytKLage('skarm', { tur: true }); _ritaOmEfterExport(ritade); } };
+    const tillbaka = () => {
+        _exportDjup = Math.max(0, _exportDjup - 1);
+        if (_exportDjup === 0 && _exportBytteLage) { _exportBytteLage = false; const ritade = _ritadeNu(); _bytKLage('skarm', { tur: true }); _ritaOmEfterExport(ritade); }
+    };
     try {
         const r = fn();
         if (r && typeof /** @type {any} */ (r).then === 'function') { synk = false; return /** @type {any} */ (r).finally(tillbaka); }
@@ -155,7 +159,8 @@ export function exportSakra(el) {
     // exportläget också en flik som ritats direkt av en vy, så att skärmens tal aldrig läses som export (ADR-51).
     if (skaRitasForeExport(_ritadVid.get(flik), _ritGeneration, { ritasNu: _ritasNu.has(flik), exportLage: iExportLage() })) {
         try { ritaFlik(flik); } catch (e) { rapporteraFel(`exportgrinden (${flik})`, e); }
-        if (flikInaktuell(flik)) return false;                      // fliken gick inte att rita om: ingenting exporteras ur den
+        // Fliken gick inte att rita om (också en som aldrig ritats genom navigeringen): ingenting exporteras ur den.
+        if (_ritadVid.get(flik) !== _ritGeneration) return false;
     }
     return el.isConnected !== false;
 }
@@ -180,14 +185,14 @@ export function exportSakraAlla() {
  * Tömmer det ritade innehållet i varje flik utom dem i `utom` (den öppna fliken och Översikt, som ritas om direkt).
  * Anropas när tröskeln ändras: en flik som inte syns ska inte bära tal från en tröskel som inte längre gäller —
  * varken i tabeller, i diagrammens figurer eller i flikens topp. Fliken ritas på nytt när den öppnas eller när en
- * export behöver den. Samma behållare som "Rensa all data" tömmer (26-rensning.js); sidans fasta texter rörs inte.
+ * export behöver den. Behållarna står i 22-lonedatabehallare.js; sidans fasta texter rörs inte.
  */
 export function tomFlikarUtom(utom = new Set()) {
     visningNy();   // det som töms visas inte igen som det var (31-navigering.js)
     const ska = el => { const flik = _egFlikFor(el); return !!flik && !utom.has(flik); };
     for (const id of [...RENSA_BEHALLARE, ...RENSA_OVRIGT]) { const el = document.getElementById(id); if (el && ska(el)) el.innerHTML = ''; }
     for (const id of RENSA_TABELLER) { const tb = document.querySelector(`#${id} tbody`); if (tb && ska(tb)) tb.innerHTML = ''; }
-    if (typeof _rfBehallare !== 'undefined') for (const el of [..._rfBehallare]) if (!el.isConnected || ska(el)) { rensaFigur(el); el.innerHTML = ''; }
+    for (const el of [..._rfBehallare]) if (!el.isConnected || ska(el)) { rensaFigur(el); el.innerHTML = ''; }
     document.querySelectorAll('.view-panel [id^="chart-"]:not(.chart-export-meny)').forEach(el => { if (ska(el)) el.innerHTML = ''; });
     document.querySelectorAll('.view-panel .slutsatser, .view-panel .urvalsrad:not(#ak-urval)').forEach(el => { if (ska(el)) el.innerHTML = ''; });
     { const t = document.getElementById('ak-urval-text'); if (t && ska(t)) t.textContent = ''; }   // väljaren i samma rad hör till sidan

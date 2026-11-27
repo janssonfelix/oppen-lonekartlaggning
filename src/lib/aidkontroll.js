@@ -7,6 +7,7 @@
  */
 import { etikett, huvudomrade, arRestkod, arLedningsetikett, normaliseraAid } from './aid.js';
 import { kvantil } from './stat.js';
+import { svPct } from './talformat.js';
 import { STANDARDTERMER as T, stor, adjektiv, ordForAntal } from './termer.js';
 
 
@@ -40,16 +41,21 @@ export function aidKriterier(rader, { k, harAnsvar = false }) {
     const rest = d.filter(r => arRestkod(r.aid)).length;
     const restPct = d.length ? rest / d.length * 100 : 0;
     ut.push({ id: 'aid-restkoder', namn: 'Restkoder (annan/annat)', status: restPct > RESTKOD_GRANS ? 'varning' : 'ok', varde: restPct,
-        text: !rest ? 'Ingen har en restkod (…090).'
-            : `${pers(rest)} (${restPct.toFixed(1).replace('.', ',')} %) har en restkod (…090).`
+        text: !rest ? 'Ingen har en restkod («…, annan» eller «…, annat»).'
+            : `${pers(rest)} (${svPct(restPct, 1)}) har en restkod («…, annan» eller «…, annat»).`
             + (restPct > RESTKOD_GRANS ? ' Jämförelserna inom dessa grupper blir grövre — granska om en annan etikett passar bättre.' : '') });
 
+    // Spridningen räknas inom AID-kod och BAS-intervall: skillnader mellan intervallen är värderingen, inte kodningen.
     const per = new Map();
-    d.forEach(r => { const key = normaliseraAid(r.aid); if (!per.has(key)) per.set(key, []); per.get(key).push(r.lon); });
-    const breda = [...per].filter(([, l]) => l.length >= k).map(([aid, l]) => {
+    d.forEach(r => {
+        const key = `${normaliseraAid(r.aid)}\u0000${r.bas ?? ''}`;
+        if (!per.has(key)) per.set(key, { aid: normaliseraAid(r.aid), l: [] });
+        per.get(key).l.push(r.lon);
+    });
+    const breda = [...new Set([...per.values()].filter(({ l }) => l.length >= k).filter(({ l }) => {
         const p10 = kvantil(l, 0.1), p90 = kvantil(l, 0.9);
-        return { aid, kvot: p10 > 0 ? p90 / p10 : null };
-    }).filter(x => x.kvot != null && x.kvot > SPRIDNING_GRANS);
+        return p10 > 0 && p90 / p10 > SPRIDNING_GRANS;
+    }).map(x => x.aid))].map(aid => ({ aid }));
     ut.push({ id: 'aid-spridning', namn: 'Lönespridning inom AID', status: breda.length ? 'varning' : 'ok', varde: breda.length,
         text: breda.length
             ? `${breda.length} ${ordForAntal(breda.length, T.kod)} har ovanligt stor lönespridning (P90/P10 över ${String(SPRIDNING_GRANS).replace('.', ',')}): ${breda.slice(0, 5).map(x => x.aid).join(', ')}. Värt att granska — det kan tyda på att olika arbeten har samma kod.`

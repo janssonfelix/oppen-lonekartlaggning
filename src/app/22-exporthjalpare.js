@@ -2,14 +2,14 @@
 // Copyright 2026 Felix Jansson
 import { tillCsv } from '../lib/csv.js';
 import { gapVariablerArStandard, gapVariablerIText } from '../lib/gapuppdelning.js';
-import { K_STANDARD, kUndantagNot } from '../lib/ktroskel.js';
+import { kSanktMening, kUndantagNot } from '../lib/ktroskel.js';
 import { personOrd } from '../lib/namn.js';
 import { modellBeskrivning, stegEtikett } from '../lib/regression.js';
 import { lonebegreppReservation } from '../lib/struktur.js';
 import { adjektiv } from '../lib/termer.js';
 import { FARG } from './01-farger.js';
 import { meddelaSkarmlasare } from './01-html-och-tillganglighet.js';
-import { ANSVARSFORBEHALL, laddaNer } from './03-hjalpfunktioner.js';
+import { ANSVARSFORBEHALL, DEMO_MARKE, demoFilnamn, laddaNer } from './03-hjalpfunktioner.js';
 import { _flerKolumnerAlla } from './05-tabeller-och-lankar.js';
 import { _csvMedStampel, kInstalld } from './06-k-troskel.js';
 import { skrForklaring } from './06-kvinnoandel-referens.js';
@@ -25,6 +25,13 @@ import { gapVariabler } from './68-var-uppstar-gapet.js';
 // Reservationen om lönebegreppet vid EU-rapportmåtten (ADR-107; src/lib/struktur.js): Lönestruktur, EU-lönerapporten,
 // bladet EU-lönekartläggning, rapportens avsnitt om lönetransparens och Om verktyget.
 export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
+/** Lagarna under Rättslig ram, i metodbilagan och i rapportens metodtabell. */
+export const RATTSLIG_RAM = 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970';
+
+// Verktygets namn med version, som exporternas rad Verktyg skriver det.
+export function verktygMedVersion() {
+    return `Öppen lönekartläggning v${APP_VERSION}`;
+}
 
 // ============================================================
 // Reproducerbarhets-appendix — identiska metod- och parameteruppgifter i
@@ -34,7 +41,6 @@ export const EU_LONEBEGREPP_RESERVATION = lonebegreppReservation();
 export function _metodbilaga() {
     const total = (state.data && state.data.length) || 0;
     const used  = hamtaData().length;
-    const ver   = (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '–');
     const medAlder = harAlder();
     // Förklaringsmodellen (ADR-56): raderna säger den modell huvudtalet räknas med. Med ålder i lönefilen och BAS som
     // indikatorer säger modellen referensen ("indikatorvariabler, första BAS som referens"); med yrkesgrupp
@@ -51,7 +57,7 @@ export function _metodbilaga() {
         : `Löneskillnad mellan könen med fasta effekter för ${T.enhet.en} inom BAS (AID×BAS)${stegAlder}, skattat med inomtransformation; `
             + (modell.yrkesgrupp ? `${T.enhet.en} inom BAS är vald i förklaringsmodellen, så steget är huvudtalet` : 'visas som sista steg, ingår inte i huvudtalet');
     return [
-        ['Verktyg', `Öppen lönekartläggning (v${ver})`],
+        ['Verktyg', verktygMedVersion()],
         ['Exporttidpunkt', new Date().toLocaleString('sv-SE')],
         ['Artefakt-SHA-256', 'Se RELEASE.txt / filens banner (single-file-bygget är källans sanning)'],
         ['Datakälla', state.isDemo
@@ -76,13 +82,13 @@ export function _metodbilaga() {
         ['Konfidensintervall', 'Bootstrap-percentil (B ≥ 1000 sampel) på mediankvot kvinna/man'],
         ['Signifikansnivå', 'α = 0,05'],
         ['Minsta gruppstorlek för redovisning', `${kInstalld()} ${personOrd(kInstalld())}. Grupper med färre redovisas inte i det som lämnar verktyget (gäller inte likvärdighetsanalysen); på skärmen visas alla grupper.`
-            + (kInstalld() < K_STANDARD ? ` Tröskeln är sänkt från standardvärdet ${K_STANDARD}.` : '')],
+            + kSanktMening(kInstalld())],
         ['Referens för lönenivåer', referensNamn() + referensKalla()],
         ['Jämförelsestatistik', statistikBeskrivning()],
         ['Mått på kraven (likvärdigt arbete)', state.arbetsvardering ? 'Arbetsvärderingspoäng (ur lönefilens Poäng-kolumn)' : `${T.niva.en} (rangordning)`],
         ['Löneskillnadens tecken', 'Verktyget räknar skillnaden som (kvinnor − män) / män och visar den som kvinnors lön i procent av mäns (under 100 = kvinnor lägre). EU-lönerapporten och rapportens avsnitt om lönetransparens redovisar i stället direktivets löneskillnad, (män − kvinnor) / män i procent: positivt tal = kvinnor lägre. Talet är lika stort.'],
         ['Tolkningsregel', 'En oförklarad skillnad är en statistisk signal om var man bör titta närmare, inte ett bevis för en osaklig löneskillnad. Den bedömningen görs av organisationen.'],
-        ['Rättslig ram', 'Diskrimineringslagen 3 kap. (lönekartläggning); direktiv (EU) 2023/970 om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.']
+        ['Rättslig ram', `${RATTSLIG_RAM} om lönetransparens. De enskilda lagrummen står i docs/utveckling/lagrum.md.`]
     ];
 }
 /**
@@ -114,8 +120,29 @@ export function _laggTillMetodblad(wb, { undantag = '', extra = [] } = {}) {
     const etikett = Math.max(0, ...rows.slice(1).map(r => String(r[0] ?? '').length));
     ws['!cols'] = [{ wch: Math.min(70, etikett + 2) }, { wch: 88 }];
     try { XLSX.utils.book_append_sheet(wb, ws, 'Metod & parametrar'); } catch (_e) { /* dubblettnamn: hoppa */ }
+    // Demoläget: ett första blad med märket, så att den som öppnar filen ser det först (filnamnet: demoFilnamn).
+    if (state.isDemo) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[DEMO_MARKE], ['Arbetsboken bygger på syntetisk exempeldata och är inte en verklig lönekartläggning.']]), 'DEMODATA');
+        wb.SheetNames.unshift(wb.SheetNames.pop());
+    }
+}
+/**
+ * En hopfälld grupp, en rad som en sökning gömt eller en hopfälld underrad är fortfarande en del av tabellen: i en
+ * export (arbetsboken, PDF-rapportens bilaga) är alla rader synliga. Görs på en kopia, aldrig på skärmens tabell.
+ */
+export function _exportVisaAllaRader(klon) {
+    klon.querySelectorAll('tbody tr').forEach(tr => {
+        tr.style.removeProperty('display');
+        if (!tr.getAttribute('style')) tr.removeAttribute('style');   // ett tomt style="" i markeringen räknas som överträdelse av CSP:n (style-src-attr 'none') när raden sätts in i PDF-rapporten
+        tr.hidden = false;
+        tr.classList.remove('collapsed');
+    });
+    klon.querySelectorAll('[data-open-basdossier]').forEach(b => b.remove());   // knapparna till BAS-dossiern gör inget i en export
+    return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
 }
 // ---- Excel-export-hjälpare: rensar HTML-tabell för läsbara Excel-celler ----
+// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
+function _tabellkopiaForExport(...a) { return medExportLage(() => __tabellkopiaForExportExport.apply(null, /** @type {any} */ (a))); }
 /**
  * Klonar en HTML-tabell och rensar bort UI-element som inte hör hemma i Excel:
  *   - informationsikonerna (.info-tip)
@@ -131,22 +158,6 @@ export function _laggTillMetodblad(wb, { undantag = '', extra = [] } = {}) {
  * @param {string} tableId
  * @returns {HTMLTableElement | null} Klonad tabell redo för XLSX-konvertering
  */
-/**
- * En hopfälld grupp, en rad som en sökning gömt eller en hopfälld underrad är fortfarande en del av tabellen: i en
- * export (arbetsboken, PDF-rapportens bilaga) är alla rader synliga. Görs på en kopia, aldrig på skärmens tabell.
- */
-export function _exportVisaAllaRader(klon) {
-    klon.querySelectorAll('tbody tr').forEach(tr => {
-        tr.style.removeProperty('display');
-        if (!tr.getAttribute('style')) tr.removeAttribute('style');   // ett tomt style="" i markeringen räknas som överträdelse av CSP:n (style-src-attr 'none') när raden sätts in i PDF-rapporten
-        tr.hidden = false;
-        tr.classList.remove('collapsed');
-    });
-    klon.querySelectorAll('[data-open-basdossier]').forEach(b => b.remove());   // knapparna till BAS-dossiern gör inget i en export
-    return _flerKolumnerAlla(klon);   // kolumnerna som växeln Fler kolumner gömmer på skärmen följer med
-}
-// Går alltid genom exportläget (ADR-51): djupräknaren håller skärmen i exportläget tills den sista pågående exporten är klar.
-function _tabellkopiaForExport(...a) { return medExportLage(() => __tabellkopiaForExportExport.apply(null, /** @type {any} */ (a))); }
 function __tabellkopiaForExportExport(tableId) {
     // Exportläget (ADR-51): tabellen läses med den inställda tröskeln, också när anroparen inte gått in i läget.
     const t = exportElement(tableId);   // exportgrinden: tabellens flik är ritad med det som gäller nu
@@ -252,11 +263,8 @@ function _exportTalMedEnhet(text) {
  *    −0,0445 bakom "−4,45 %", prioriteringsindexet bakom statustexten).
  *  - Annars texten som text — "17/17" skulle läsaren annars göra till ett datum, "46 (28/18)" och "–" till ingenting.
  *
- * @returns {{t:'n', v:number, z?:string}|{t:'s', v:string}|null} null för en tom cell.
- */
-/**
  * @param {HTMLTableCellElement} td
- * @returns {{t: 'n'|'s', v: any, z?: string}|null}
+ * @returns {{t: 'n'|'s', v: any, z?: string}|null} null för en tom cell.
  */
 function _exportCellVarde(td) {
     const text = td.textContent.replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -454,25 +462,17 @@ export function tabellTillBok(tableId, sheetName) {
     return wb;
 }
 
-// ---- Excel export-varning (GDPR-affordans) ----
-/**
- * Visar en kort, icke-blockerande "post-export"-notis så HR påminns om att
- * aggregerade lönefiler är känsliga och inte ska mailas okrypterat.
- * Vi blockerar inte exporten — vi gör organisatorisk-känsligheten synlig.
- */
-
 // ---- CSV-export --------------------------------------------------------------
 // Robust CSV-helper som INTE är beroende av XLSX-biblioteket. Producerar
 // semikolon-separerade filer med UTF-8 BOM (svenska Excel-default), CRLF-
 // radslut och korrekta citerade fält. Garanterat fungerande i alla webbläsare:
 // nedladdning med laddaNer (03-hjalpfunktioner.js).
 // Formelskyddet (neutraliseraCell) och CSV-texten (tillCsv) ligger i src/lib/csv.js (ADR-15).
-// Demoläget märks i filnamnet, som diagram- och Word-exporterna (bara en gång).
+// Demoläget märks i filnamnet (demoFilnamn) och på första raden.
 function _csvFilnamn(namn) {
-    const n = namn || 'export';
-    return state.isDemo && !n.startsWith('DEMO_') ? 'DEMO_' + n : n;
+    return demoFilnamn(namn || 'export');
 }
-// `undantag`: se _kUndantagNot (06) — exporten kan innehålla grupper under tröskeln och säger det.
+// `undantag`: se _kUndantagFor (06) och kUndantagNot (src/lib/ktroskel.js) — exporten kan innehålla grupper under tröskeln och säger det.
 export function _laddaNedCSV(rows, filename, { undantag = '' } = {}) {
     if (!Array.isArray(rows) || !rows.length) {
         alert('Ingen data att exportera.');
@@ -480,11 +480,11 @@ export function _laddaNedCSV(rows, filename, { undantag = '' } = {}) {
     }
     try {
         const BOM = '﻿';  // UTF-8 BOM så Excel öppnar med korrekt teckenkodning
-        const csv = BOM + tillCsv(_csvMedStampel(rows, undantag));
+        const csv = BOM + tillCsv(_csvMedStampel(state.isDemo ? [[DEMO_MARKE], ...rows] : rows, undantag));
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         laddaNer(blob, _csvFilnamn(filename) + '.csv');
         _visaExportvarning();
-        meddelaSkarmlasare('CSV exporterad: ' + (rows.length - 1) + ' rader.');
+        meddelaSkarmlasare('CSV-filen är exporterad.');
     } catch (err) {
         alert('CSV-export misslyckades: ' + (err.message || String(err)));
     }
