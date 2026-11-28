@@ -18,7 +18,6 @@
 // ====================================================================
 import { talformat } from '../lib/figur.js';
 import { personOrd } from '../lib/namn.js';
-import { froAvText } from '../lib/rng.js';
 import { svKr, svPct, svTal } from '../lib/talformat.js';
 import { adjektiv, genitiv, ordForAntal, stor } from '../lib/termer.js';
 import { vymodellLonepolitik } from '../lib/vymodell-lonepolitik.js';
@@ -186,8 +185,6 @@ function _lpRitaBandkarta(karta) {
 export function _lpKonsdominans() {
     return [['Kvinnodominerad', PALETT.kon.kvinna, a => konsklassNu(a) === 'kvinnodominerad'], ['Mansdominerad', PALETT.kon.man, a => konsklassNu(a) === 'mansdominerad'], ['Blandad', PALETT.semantic.neutral, a => konsklassNu(a) === 'blandad']];
 }
-// Punktens förskjutning i sidled ur gruppens identitet, inte slump: punkterna ska ligga still mellan omritningar.
-export function _lpForskjutning(aid, bas) { return ((froAvText(aid + '|' + bas) % 1000) / 1000 - 0.5) * 0.36; }
 
 // Bandkartans figur (diagramkärnan, ADR-39): referensens spann och organisationens faktiska spann per BAS som märket
 // `intervall`, med varje yrkesgrupps median som punkt.
@@ -198,7 +195,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
     const refNamn = referensKortnamn(), org = diagramNamn(orgNamn());
     const refMed = b => (b.pol.med > 0 ? b.pol.med : (b.pol.p10 + b.pol.p90) / 2);
     const medOrgBand = bas.filter(b => b.orgBand);
-    const pts = punkter.map(p => ({ x: 'BAS ' + p.bas, y: p.median, forskjutning: _lpForskjutning(p.aid, p.bas),
+    const pts = punkter.map(p => ({ x: 'BAS ' + p.bas, y: p.median, forskjutning: p.forskjutning,
         storlek: Math.max(3.5, Math.min(9, Math.sqrt(p.n) * 1.1)), kvAndel: p.kvAndel, n: p.n, yrke: p.yrke, bas: p.bas, niva: p.niva, markering: markeringFor(p.bas, p.aid) }));
     return { beskrivning: `Referensens lönespann och organisationens faktiska lönespann per ${T.niva.en}, med varje ${genitiv(T.enhet.en)} median inlagd som punkt. Samma värden finns i tabellen nedan.`,
         urval: [URVAL.bas, URVAL.yrkesgrupp, URVAL.konsdominans, URVAL.antal], x: { skala: 'band', ordning: bas.map(x) }, y: { skala: 'linjar', titel: 'Månadslön', format: 'kr' },

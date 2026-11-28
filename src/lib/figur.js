@@ -172,6 +172,33 @@ export function panelerMedLager(paneler, lager) {
 }
 
 /**
+ * Punkternas `forskjutning` på en bandaxel, så att grupper med nästan samma värde i samma band inte täcker varandra.
+ * Fil 0 i mitten, sedan omväxlande åt höger och vänster, högst fem åt vardera hållet så att punkten stannar i sitt band;
+ * inom bandet läggs grupperna efter värde och namn, och en grupp tar första fil där ingen redan lagd grupp ligger närmare
+ * än en tjugondel av spannet mellan alla värden (är alla upptagna: fil 0). Placeringen
+ * beror bara på värdena och namnen, inte på ordningen i listan, och ligger därför still mellan omritningar.
+ * @template T
+ * @param {T[]} punkter
+ * @param {{band: (p: T) => any, varde: (p: T) => number, namn: (p: T) => any}} val
+ * @returns {Map<T, number>} förskjutningen i andelar av bandets bredd, 0 i mitten
+ */
+export function forskjutningISidled(punkter, { band, varde, namn }) {
+    const ut = new Map();
+    if (!punkter.length) return ut;
+    const alla = punkter.map(varde), nara = Math.max(1, (Math.max(...alla) - Math.min(...alla)) / 20);
+    const filer = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5];
+    for (const b of new Set(punkter.map(band))) {
+        const lagda = [];
+        for (const p of punkter.filter(q => band(q) === b).sort((p, q) => (varde(p) - varde(q)) || String(namn(p)).localeCompare(String(namn(q)), 'sv'))) {
+            const fil = filer.find(f => !lagda.some(o => o.fil === f && Math.abs(o.varde - varde(p)) < nara)) ?? 0;
+            lagda.push({ fil, varde: varde(p) });
+            ut.set(p, fil * 0.085);
+        }
+    }
+    return ut;
+}
+
+/**
  * Figuren utan datapunkter märkta `liten`, utan lager som blev tomma och utan null-poster i data.
  * Originalet rörs inte. Bandaxlarna får originalets kategoriordning som `ordning`, begränsad till
  * kategorier som finns kvar, och `paneler` bara de paneler som har något lager kvar — figuren bär

@@ -11,6 +11,7 @@
  * ritar bara det de får och skriver orden. Fliken redovisar grupper under tröskeln (undantaget, k-troskeln.md §4);
  * tröskeln gäller bara diagrammet Krav mot lön och räkningen av små grupper i diagnostiken.
  */
+import { forskjutningISidled } from './figur.js';
 import { basRangordning, KVINNO_TROSKEL_STANDARD, kravGrupper, parAntal } from './likvardighet.js';
 import { linjarRegression, median } from './stat.js';
 import { svPct } from './talformat.js';
@@ -155,24 +156,11 @@ export function vymodellKravMotLon(rader, { k, definition, grans, poangByKey }) 
         niva = g => median(perBas.get(g.bas));
         linje = basOrdning.map(bas => ({ bas, y: median(perBas.get(bas)) }));   // en hörnpunkt per intervall: följer urvalet
     }
-    // Utan poäng står alla grupper i ett BAS-intervall på samma plats i sidled. Fil 0 i mitten, sedan omväxlande åt
-    // höger och vänster; en grupp tar första fil där ingen redan lagd grupp ligger närmare än en tjugondel av lönespannet.
-    const sidled = new Map();
-    if (!medPoang) {
-        const alla = grupper.map(g => g.median), nara = Math.max(1, (Math.max(...alla) - Math.min(...alla)) / 20);
-        const filer = [0, 1, -1, 2, -2, 3, -3, 4, -4];
-        for (const bas of new Set(grupper.map(g => g.bas))) {
-            const lagda = [];
-            for (const g of grupper.filter(q => q.bas === bas).sort((p, q) => (p.median - q.median) || String(p.namn).localeCompare(String(q.namn), 'sv'))) {
-                const fil = filer.find(f => !lagda.some(o => o.fil === f && Math.abs(o.median - g.median) < nara)) ?? 0;
-                lagda.push({ fil, median: g.median });
-                if (fil) sidled.set(g, fil * 0.085);
-            }
-        }
-    }
+    // Utan poäng står alla grupper i ett BAS-intervall på samma plats i sidled: grupper med nästan samma median flyttas isär.
+    const sidled = medPoang ? new Map() : forskjutningISidled(grupper, { band: g => g.bas, varde: g => g.median, namn: g => g.namn });
     const under = grupper.filter(g => g.dominans === 'kvinnodominerad' && g.median < niva(g)).sort((p, q) => (p.median - niva(p)) - (q.median - niva(q))).slice(0, 10);
     const punkter = grupper.map(g => ({ ...g, avstand: Math.round(g.median - niva(g)),
-        ...(sidled.has(g) ? { forskjutning: sidled.get(g) } : {}), etikett: under.includes(g) }));
+        ...(sidled.get(g) ? { forskjutning: sidled.get(g) } : {}), etikett: under.includes(g) }));
     return { forFa: /** @type {const} */ (false), medPoang, basOrdning, linje, punkter, utanPlats,
         antalUnder: punkter.filter(p => p.dominans === 'kvinnodominerad' && p.avstand < 0).length,
         uppskattade: punkter.filter(p => p.uppskattad).length };

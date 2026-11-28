@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Felix Jansson
 import { jamforSektor, sektorsnamn } from '../lib/aid.js';
-import { talformat } from '../lib/figur.js';
+import { forskjutningISidled, talformat } from '../lib/figur.js';
 import { avvikelseRangordning, jamforelseRader, matchningAntal, matchningEtikett, matchningSammanfattning } from '../lib/jamforelse.js';
 import { lageISpann } from '../lib/referenser.js';
 import { svKr, svPct, svTal, svTecken } from '../lib/talformat.js';
@@ -18,7 +18,7 @@ import { rensaFigur, ritaFigur } from './10-diagramritare.js';
 import { PALETT, URVAL } from './10-diagramtema.js';
 import { markeringFor } from './11-markering.js';
 import { hamtaData, policyFor, referensKortnamn, state } from './12-tillstand.js';
-import { _lpForskjutning, _lpIngetDiagram, _lpKonsdominans } from './75-lonepolitik.js';
+import { _lpIngetDiagram, _lpKonsdominans } from './75-lonepolitik.js';
 
 // ---- Jämförelsestatistik (ADR-35) ----
 // Raderna räknas i src/lib/jamforelse.js; här finns filter, tabell och diagram. Avsnittet Mot jämförelsestatistiken i
@@ -301,12 +301,15 @@ export function ritaStatistikLage() {
 
 // Statistikspannets figur (diagramkärnan, ADR-39), byggd som bandkartan: x är BAS-intervallet, y läget för yrkesgruppens
 // median i statistikens spann (0 = P10, 100 = P90, linjärt; utanför spannet under 0 och över 100). Statistikens spann
-// är ett grått band 0–100 per BAS. Punkterna har bandkartans färger för könsdominans och dess förskjutning; matchningen
-// syns i punkten: fylld = AID + BAS, ofylld = Endast AID (lagrets `ofylld`). Raderna når tröskeln (jamforelseUnderlag).
+// är ett grått band 0–100 per BAS. Punkterna har bandkartans färger för könsdominans och flyttas isär i sidled som där
+// (forskjutningISidled, på läget i spannet); matchningen syns i punkten: fylld = AID + BAS, ofylld = Endast AID
+// (lagrets `ofylld`). Raderna når tröskeln (jamforelseUnderlag).
 function _jmfStatlageFigur(rader) {
     const x = r => 'BAS ' + r.bas, kr = v => talformat(v, 'kr'), utanKr = v => (v == null ? '–' : talformat(v, 'kr', { enhet: false }));
     const ordning = [...new Set(rader.map(x))];
-    const pts = rader.map(r => ({ x: x(r), y: lageISpann(r.org.median, r.statistik).pos, forskjutning: _lpForskjutning(r.aid, r.bas),
+    const lage = r => /** @type {number} */ (lageISpann(r.org.median, r.statistik).pos);   // raderna har ett läge (ritaStatistikLage)
+    const sidled = forskjutningISidled(rader, { band: r => r.bas, varde: lage, namn: r => r.aid });
+    const pts = rader.map(r => ({ x: x(r), y: lage(r), forskjutning: sidled.get(r),
         storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)), aid: r.aid, bas: r.bas, yrke: r.yrke, sektor: r.sektor, n: r.n, kvAndel: r.kvAndel,
         median: r.org.median, stat: r.statistik, matchning: matchningEtikett(r.statistikMatchning), markering: markeringFor(r.bas, r.aid) }));
     const tips = d => [[d.yrke], ['BAS', d.bas], ['Läget i spannet', `${svTal(d.y, 0)} %`], ['Organisationens median', kr(d.median)],

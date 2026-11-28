@@ -650,6 +650,21 @@ function skalDoman(figur, axel) {
 function panelerMedLager(paneler, lager) {
   return paneler.filter((p) => lager.some((l) => l.panel == null || l.panel === p));
 }
+function forskjutningISidled(punkter, { band, varde, namn }) {
+  const ut = /* @__PURE__ */ new Map();
+  if (!punkter.length) return ut;
+  const alla = punkter.map(varde), nara = Math.max(1, (Math.max(...alla) - Math.min(...alla)) / 20);
+  const filer = [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5];
+  for (const b of new Set(punkter.map(band))) {
+    const lagda = [];
+    for (const p of punkter.filter((q) => band(q) === b).sort((p2, q) => varde(p2) - varde(q) || String(namn(p2)).localeCompare(String(namn(q)), "sv"))) {
+      const fil = filer.find((f) => !lagda.some((o) => o.fil === f && Math.abs(o.varde - varde(p)) < nara)) ?? 0;
+      lagda.push({ fil, varde: varde(p) });
+      ut.set(p, fil * 0.085);
+    }
+  }
+  return ut;
+}
 function utanSmaGrupper(figur) {
   const rent = (l) => ({ ...l, data: l.data.filter((d) => d && typeof d === "object") });
   const lager = figur.lager.map((l) => ({ ...rent(l), data: rent(l).data.filter((d) => !d.liten) })).filter((l) => l.data.length);
@@ -10501,8 +10516,10 @@ function _ritadeNu() {
 }
 var _exportDjup = 0;
 var _exportBytteLage = false;
+var _exportZoom = /* @__PURE__ */ new Map();
 function medExportLage(fn) {
   if (_exportDjup === 0 && !iExportLage()) {
+    _exportZoom = _rfZoomSpara();
     _bytKLage("export", { tur: true });
     _exportBytteLage = true;
   }
@@ -10512,9 +10529,11 @@ function medExportLage(fn) {
     _exportDjup = Math.max(0, _exportDjup - 1);
     if (_exportDjup === 0 && _exportBytteLage) {
       _exportBytteLage = false;
-      const ritade = _ritadeNu();
+      const ritade = _ritadeNu(), zoom = _exportZoom;
+      _exportZoom = /* @__PURE__ */ new Map();
       _bytKLage("skarm", { tur: true });
       _ritaOmEfterExport(ritade);
+      _rfZoomAterge(zoom);
     }
   };
   try {
@@ -11603,24 +11622,12 @@ function vymodellKravMotLon(rader, { k, definition, grans, poangByKey }) {
     niva = (g) => median(perBas.get(g.bas));
     linje = basOrdning.map((bas) => ({ bas, y: median(perBas.get(bas)) }));
   }
-  const sidled = /* @__PURE__ */ new Map();
-  if (!medPoang) {
-    const alla = grupper.map((g) => g.median), nara = Math.max(1, (Math.max(...alla) - Math.min(...alla)) / 20);
-    const filer = [0, 1, -1, 2, -2, 3, -3, 4, -4];
-    for (const bas of new Set(grupper.map((g) => g.bas))) {
-      const lagda = [];
-      for (const g of grupper.filter((q) => q.bas === bas).sort((p, q) => p.median - q.median || String(p.namn).localeCompare(String(q.namn), "sv"))) {
-        const fil = filer.find((f) => !lagda.some((o) => o.fil === f && Math.abs(o.median - g.median) < nara)) ?? 0;
-        lagda.push({ fil, median: g.median });
-        if (fil) sidled.set(g, fil * 0.085);
-      }
-    }
-  }
+  const sidled = medPoang ? /* @__PURE__ */ new Map() : forskjutningISidled(grupper, { band: (g) => g.bas, varde: (g) => g.median, namn: (g) => g.namn });
   const under = grupper.filter((g) => g.dominans === "kvinnodominerad" && g.median < niva(g)).sort((p, q) => p.median - niva(p) - (q.median - niva(q))).slice(0, 10);
   const punkter = grupper.map((g) => ({
     ...g,
     avstand: Math.round(g.median - niva(g)),
-    ...sidled.has(g) ? { forskjutning: sidled.get(g) } : {},
+    ...sidled.get(g) ? { forskjutning: sidled.get(g) } : {},
     etikett: under.includes(g)
   }));
   return {
@@ -19368,7 +19375,8 @@ function bandkarta(modell) {
       kvAndel: g.rows.filter((r) => arKvinna(r)).length / g.n * 100
     });
   }));
-  return { bas, punkter };
+  const sidled = forskjutningISidled(punkter, { band: (p) => p.bas, varde: (p) => p.median, namn: (p) => p.aid });
+  return { bas, punkter: punkter.map((p) => ({ ...p, forskjutning: sidled.get(p) })) };
 }
 function tabellblock(modell) {
   return modell.byBas.map((b) => {
@@ -19546,9 +19554,6 @@ function _lpRitaBandkarta(karta) {
 function _lpKonsdominans() {
   return [["Kvinnodominerad", PALETT.kon.kvinna, (a) => konsklassNu(a) === "kvinnodominerad"], ["Mansdominerad", PALETT.kon.man, (a) => konsklassNu(a) === "mansdominerad"], ["Blandad", PALETT.semantic.neutral, (a) => konsklassNu(a) === "blandad"]];
 }
-function _lpForskjutning(aid, bas) {
-  return (froAvText(aid + "|" + bas) % 1e3 / 1e3 - 0.5) * 0.36;
-}
 function _lpBandkartaFigur({ bas, punkter }) {
   const x = (b) => "BAS " + b.bas, kr2 = (v) => talformat(v, "kr"), utanKr = (v) => talformat(v, "kr", { enhet: false });
   const refNamn = referensKortnamn(), org = diagramNamn(orgNamn());
@@ -19557,7 +19562,7 @@ function _lpBandkartaFigur({ bas, punkter }) {
   const pts = punkter.map((p) => ({
     x: "BAS " + p.bas,
     y: p.median,
-    forskjutning: _lpForskjutning(p.aid, p.bas),
+    forskjutning: p.forskjutning,
     storlek: Math.max(3.5, Math.min(9, Math.sqrt(p.n) * 1.1)),
     kvAndel: p.kvAndel,
     n: p.n,
@@ -20255,10 +20260,15 @@ function ritaStatistikLage() {
 function _jmfStatlageFigur(rader) {
   const x = (r) => "BAS " + r.bas, kr2 = (v) => talformat(v, "kr"), utanKr = (v) => v == null ? "–" : talformat(v, "kr", { enhet: false });
   const ordning = [...new Set(rader.map(x))];
+  const lage2 = (r) => (
+    /** @type {number} */
+    lageISpann(r.org.median, r.statistik).pos
+  );
+  const sidled = forskjutningISidled(rader, { band: (r) => r.bas, varde: lage2, namn: (r) => r.aid });
   const pts = rader.map((r) => ({
     x: x(r),
-    y: lageISpann(r.org.median, r.statistik).pos,
-    forskjutning: _lpForskjutning(r.aid, r.bas),
+    y: lage2(r),
+    forskjutning: sidled.get(r),
     storlek: Math.max(3.5, Math.min(9, Math.sqrt(r.n) * 1.1)),
     aid: r.aid,
     bas: r.bas,
@@ -35053,6 +35063,24 @@ function _rfZoomNot(el, visa) {
 function _rfZoomGlom(el) {
   delete el._rfZoom;
   _rfZoomNot(el, false);
+}
+function _rfZoomSpara() {
+  return new Map([..._rfBehallare].filter((el) => el._rfZoom && el.id).map((el) => [el.id, el._rfZoom]));
+}
+function _rfZoomAterge(sparade) {
+  for (const [id, z] of sparade) {
+    const el = document.getElementById(id);
+    if (!el || !_rfBehallare.has(el) || !el._figur || el._rfZoom) continue;
+    el._rfZoom = z;
+    try {
+      _rfRitaOm(el);
+    } catch (e) {
+      delete el._rfZoom;
+      _rfVisaFel(el, e);
+      continue;
+    }
+    _rfZoomNot(el, true);
+  }
 }
 var _rfUrvalMinne = /* @__PURE__ */ new Map();
 function _rfUrvalGlom() {

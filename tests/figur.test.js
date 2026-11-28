@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { talformat, valideraFigur, utanSmaGrupper, axelVarden, skalDoman, ladstatistik, antalPunkter, figurTillTabell, panelerMedLager, MARKEN, kronorSkillnad, kronorTipsRad, kvantilpunkter, urvalVarden, urvalEtikett, arBortvald, urvalLista, urvalSpann, urvalBeskrivning, urvalIntervallText, TALFORMAT,
     URVAL_LISTA_MAX, urvalSomLista, urvalAktivt, harleddaLager, harlettNamn, harlettNot,
-    underlagKonAntal, underlagSkyddat, underlagVarde, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening, exportSkal, EXPORT_SKAL } from '../src/lib/figur.js';
+    underlagKonAntal, underlagSkyddat, underlagVarde, underlagVarden, underlagValet, underlagProva, underlagBeskrivning, namnIMening, exportSkal, EXPORT_SKAL, forskjutningISidled } from '../src/lib/figur.js';
 import { kvantil } from '../src/lib/stat.js';
 
 const blank = s => s.replace(/\s/g, ' ').replace('−', '-');
@@ -540,6 +540,26 @@ describe('kvantilpunkter', () => {
     });
 });
 
+
+describe('forskjutningISidled', () => {
+    const val = { band: p => p.bas, varde: p => p.median, namn: p => p.namn };
+    const grupp = (namn, bas, median) => ({ namn, bas, median });
+    // Spannet är 30 000–50 000, så tröskeln är 1 000 kr.
+    const grupper = () => [grupp('a', 'B', 30000), grupp('b', 'B', 30400), grupp('c', 'B', 30800), grupp('d', 'B', 36000),
+        grupp('e', 'C', 30200), grupp('f', 'D', 50000)];
+    it('grupper i samma band som ligger närmare än tröskeln får olika fil; grupper långt ifrån varandra står i mitten', () => {
+        const g = grupper(), f = forskjutningISidled(g, val);
+        const tre = g.slice(0, 3).map(p => f.get(p));
+        expect(new Set(tre).size).toBe(3);
+        expect(tre.every(v => Math.abs(v) < 0.5)).toBe(true);              // inom bandet
+        for (const p of g.slice(3)) expect(f.get(p), p.namn).toBe(0);       // d långt från de andra i B; e och f ensamma i sitt band
+    });
+    it('beror inte på ordningen i listan', () => {
+        const g = grupper(), fore = forskjutningISidled(g, val);
+        const omvand = forskjutningISidled([...g].reverse(), val), blandad = forskjutningISidled([g[4], g[1], g[5], g[0], g[3], g[2]], val);
+        for (const p of g) { expect(omvand.get(p), p.namn).toBe(fore.get(p)); expect(blandad.get(p), p.namn).toBe(fore.get(p)); }
+    });
+});
 
 describe('urval', () => {
     const URVAL = { falt: 'bas', namn: 'BAS-intervall', etikett: 'BAS {v}' };
