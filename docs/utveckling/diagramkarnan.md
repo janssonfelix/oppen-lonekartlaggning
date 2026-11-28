@@ -192,6 +192,7 @@ Domänerna räknas aldrig ur referenserna.
 | `harleddaLager(figur, filter, { visaSma })`, `harlettNamn(lager)`, `harlettNot(resultat)` | Härledda lager (`harleddAv`). `harleddaLager` ger `{ figur, omraknade, utelamnade }`: utan aktivt filter (eller utan härledda lager) är `figur` samma objekt; annars en ny figur där varje härlett lager har `berakna(synliga punkter som uppfyller villkor)` som data (och dess `serie` när `berakna` ger `{ data, serie }`), eller tom data när källorna har färre än `minN` punkter (`utelamnade: [{ index, namn, minN, antal }]`). Den nya figuren prövas med `valideraFigur`. `harlettNot` ger meningarna "Trendlinjen för kvinnor gäller urvalet." och "Trendlinjen för kvinnor visas inte: färre än 10 synliga punkter.", en per namn. |
 | `underlagKonAntal(underlag, rader)`, `underlagSkyddat(antal, k)`, `underlagVarde(dim, rad)`, `underlagVarden(underlag, dim)`, `underlagValet(underlag, filter)`, `underlagProva(underlag, filter)`, `underlagBeskrivning(underlag, filter)`, `namnIMening(namn)` | Figurens `underlag`. `underlagKonAntal`: `{ kv, ma }`. `underlagSkyddat`: sant när vartdera talet är 0 eller minst `k`. `underlagVarden`: `{ varden, utelamnade }`, där `varden` är de värden vars egen grupp klarar regeln (i `ordning`, annars svensk sorteringsordning med tal) och `utelamnade` antalet andra. `underlagValet`: den första dimensionen med ett bortvalt valbart värde, `{ dim, varden, valda }`, eller null. `underlagProva`: `{ ok, valet, valda, antal: { urval, rest } }`, där `ok` är att både urvalet och resten klarar regeln. `underlagBeskrivning`: "huvudområde Teknikarbete", "huvudområde Teknikarbete, Ledningsarbete", "huvudområde 4 av 6" eller "huvudområde: inga". `filter` är `Map<falt, Set>` med de bortvalda värdena. |
 | `skalDoman`, `axelVarden`, `panelerMedLager`, `antalPunkter`, `ladstatistik`, `talformat` | Hjälpare som ritaren och testerna delar. |
+| `forskjutningISidled(punkter, { band, varde, namn })` | Punkternas `forskjutning` på en bandaxel: fil 0 i mitten, sedan omväxlande åt höger och vänster (högst fem filer åt vardera hållet, 0,085 av bandets bredd isär); inom bandet läggs grupperna efter värde och namn, och en grupp tar första fil där ingen redan lagd grupp ligger närmare än en tjugondel av spannet mellan alla värden. Beror inte på ordningen i listan. *Krav mot lön*, bandkartan och statistikens spann i Löneläget använder den. |
 
 ## 3. `ritaFigur(id, figur, val)`
 
@@ -420,9 +421,12 @@ diagrammet säger att det är ett utsnitt, med knappen "Visa hela diagrammet". F
 kopia med andra domäner och samma lager (`_rfZoomad`), så tips, klick och markering fungerar som vanligt. Det som
 hamnar utanför klipps av panelen. En ny figur från vyn (`ritaFigur`) och `rensaFigur` tar bort utsnittet; en
 storleksändring behåller det. En export från skärmen går genom exportläget (`medExportLage`, ADR-51): fliken ritas
-om, `ritaFigur` glömmer utsnittet, och bilden och diagramdatan visar hela diagrammet utan utsnittstexten. Bara när
-Förhandsvisa är på (skärmen är redan i exportläget och ritas inte om) följer utsnittet med i bilden, och fotraden
-slutar med "Utsnitt av diagrammet". Inget behövs av vyn.
+om, `ritaFigur` glömmer utsnittet, och bilden och diagramdatan visar hela diagrammet utan utsnittstexten. Skärmen
+får tillbaka sitt utsnitt när exporten är klar: grinden sparar utsnitten per behållar-id när läget byts och lägger
+tillbaka dem när skärmen är ritad igen (`_rfZoomSpara`, `_rfZoomAterge`), också när exporten kastar eller är
+asynkron; skärmens data är densamma före och efter. Förhandsvisa av och på glömmer utsnittet (andra värden). Bara
+när Förhandsvisa är på (skärmen är redan i exportläget och ritas inte om) följer utsnittet med i bilden, och
+fotraden slutar med "Utsnitt av diagrammet". Inget behövs av vyn.
 
 **Närmaste punkt.** När pekaren är över ritytan men inte på ett märke får den närmaste ritade punkten (märkena
 `punkt`, `individ` och linjernas träffpunkter) verktygstipset inom 24 bildpunkter och klicket inom 12, och en
@@ -631,8 +635,9 @@ ett trasigt diagram.
   Ofylld finns bara per lager (`ofylld`), inte per punkt: en vy som blandar fyllda och ofyllda punkter i en serie
   delar den i två lager (statistikens spann i Löneläget har sex: tre klasser för könsdominans, fylld och ofylld).
 - Kärnan flyttar inte isär punkter som ligger på varandra (bara deras etiketter); en vy kan göra det med
-  `forskjutning`. *Krav mot lön* gör det (`vymodellKravMotLon`), bandkartan inte: där täcker många grupper med nästan
-  samma värde i samma kategori varandra (`oppna-punkter.md` punkt 3).
+  `forskjutning`. *Krav mot lön*, bandkartan och statistikens spann i Löneläget gör det med `forskjutningISidled`;
+  fler än elva grupper inom en tjugondel av spannet i samma kategori täcker fortfarande varandra
+  (`oppna-punkter.md` punkt 3).
 - WebKit körs inte direkt på utvecklingsdatorn (systembibliotek saknas) utan i en behållare: `npm run test:browser:webkit:behallare` (Podman och Playwrights avbild, utan nätverk, projektet monterat skrivskyddat). Avbildens version ska följa Playwrights version i `package.json`.
 
 ## 10. Form och färg efter uppgift

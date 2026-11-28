@@ -25,7 +25,7 @@
 import { flikInaktuellVid, skaRitasForeExport } from '../lib/exportgrind.js';
 import { rapporteraFel } from './03-hjalpfunktioner.js';
 import { _omritningForsok, _omritningssteg, _ritaOmAllaFlikar, _ritaOmAllaFlikarStegvis } from './06-k-troskel.js';
-import { _rfBehallare, rensaFigur } from './10-diagramritare.js';
+import { _rfBehallare, _rfZoomAterge, _rfZoomSpara, rensaFigur } from './10-diagramritare.js';
 import { state } from './12-tillstand.js';
 import { RENSA_BEHALLARE, RENSA_OVRIGT, RENSA_TABELLER } from './22-lonedatabehallare.js';
 import { PANELGRUPPER, ritaFlik } from './31-navigering.js';
@@ -71,15 +71,24 @@ function _ritadeNu() { return new Set([..._ritadVid].filter(([, g]) => g === _ri
  */
 export let _exportDjup = 0;   // pågående exporter (nästlade eller överlappande i tid): skärmen ritas tillbaka när den sista är klar
 let _exportBytteLage = false; // läget byttes av den export som började när ingen pågick, inte utifrån
+let _exportZoom = new Map();  // skärmens utsnitt per behållar-id, bara medan en export pågår
 export function medExportLage(fn) {
     // Den export som börjar när ingen pågår byter läge; när den sista pågående är klar, vilken som än började först, går
     // läget tillbaka och skärmen ritas tillbaka. Ett läge som satts utifrån (state.kLage = 'export') rörs inte.
-    if (_exportDjup === 0 && !iExportLage()) { _bytKLage('export', { tur: true }); _exportBytteLage = true; }
+    // Skärmens utsnitt (zoom) sparas när läget byts och läggs tillbaka när skärmen är ritad igen; i exportläget ritas allt utan dem.
+    if (_exportDjup === 0 && !iExportLage()) { _exportZoom = _rfZoomSpara(); _bytKLage('export', { tur: true }); _exportBytteLage = true; }
     _exportDjup++;
     let synk = true;
     const tillbaka = () => {
         _exportDjup = Math.max(0, _exportDjup - 1);
-        if (_exportDjup === 0 && _exportBytteLage) { _exportBytteLage = false; const ritade = _ritadeNu(); _bytKLage('skarm', { tur: true }); _ritaOmEfterExport(ritade); }
+        if (_exportDjup === 0 && _exportBytteLage) {
+            _exportBytteLage = false;
+            const ritade = _ritadeNu(), zoom = _exportZoom;
+            _exportZoom = new Map();
+            _bytKLage('skarm', { tur: true });
+            _ritaOmEfterExport(ritade);
+            _rfZoomAterge(zoom);
+        }
     };
     try {
         const r = fn();

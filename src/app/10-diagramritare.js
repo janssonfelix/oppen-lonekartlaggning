@@ -1124,8 +1124,9 @@ function _rfNotKnapp(text, fn) {
 // ---- Zoom: diagrammet ritas om med det penslade områdets omfång som axlarnas domäner ----
 // Domänerna kommer ur punkterna i området (som alla är ritade), med lite luft. Lagren är desamma, så träffar, tips
 // och markering fungerar som vanligt; det som hamnar utanför klipps av panelen. En ny figur från vyn tar bort
-// utsnittet. En export ritar om fliken i exportläget och visar då hela diagrammet; bara med Förhandsvisa på (ingen
-// omritning) ritas bilden som den visas, och fotraden säger att den är ett utsnitt.
+// utsnittet. En export ritar om fliken i exportläget och visar då hela diagrammet; efteråt får skärmen tillbaka sitt
+// utsnitt (_rfZoomSpara, _rfZoomAterge). Bara med Förhandsvisa på (ingen omritning) ritas bilden som den visas, och
+// fotraden säger att den är ett utsnitt.
 function _rfZoomad(el, figur) {
     const z = el && el._rfZoom, f = figur || _rfGrundfigur(el);
     return z && f ? { ...f, x: { ...f.x, doman: z.x }, y: { ...f.y, doman: z.y } } : f;
@@ -1164,6 +1165,21 @@ function _rfZoomNot(el, visa) {
     }
 }
 function _rfZoomGlom(el) { delete el._rfZoom; _rfZoomNot(el, false); }
+// En exports tur och retur ritar om med samma skärmdata, så utsnitten gäller efteråt: exportgrinden sparar dem per id när
+// exporten börjar och lägger tillbaka dem när skärmen är tillbaka ritad, på behållare som är ritade och saknar eget utsnitt.
+export function _rfZoomSpara() {
+    return new Map([..._rfBehallare].filter(el => el._rfZoom && el.id).map(el => [el.id, el._rfZoom]));
+}
+/** @param {Map<string, any>} sparade */
+export function _rfZoomAterge(sparade) {
+    for (const [id, z] of sparade) {
+        const el = document.getElementById(id);
+        if (!el || !_rfBehallare.has(el) || !el._figur || el._rfZoom) continue;
+        el._rfZoom = z;
+        try { _rfRitaOm(el); } catch (e) { delete el._rfZoom; _rfVisaFel(el, e); continue; }
+        _rfZoomNot(el, true);
+    }
+}
 
 // ---- Urval: filtren ovanför diagrammet, en rad per dimension i figurens urval (figur.urval) ----
 // En kategori (t.ex. BAS-intervall) får en knapprad med en knapp per värde (aria-pressed: värdet visas); den sista

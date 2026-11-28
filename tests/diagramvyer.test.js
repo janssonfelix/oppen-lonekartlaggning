@@ -874,7 +874,7 @@ describe('Lönepolitik: chart-lp-bandmap', () => {
         expect(klasser.length).toBeGreaterThan(0);
         for (const l of klasser) expect(l.data.every(p => (/^Kvinno/.test(l.serie) ? p.kvAndel >= 60 : /^Mans/.test(l.serie) ? p.kvAndel <= 40 : p.kvAndel > 40 && p.kvAndel < 60))).toBe(true);
         const grupper = { data: klasser.flatMap(l => l.data) };
-        expect(grupper.data.every(p => p.n >= w2.__K && p.kvAndel >= 0 && p.kvAndel <= 100 && Math.abs(p.forskjutning) <= 0.18)).toBe(true);
+        expect(grupper.data.every(p => p.n >= w2.__K && p.kvAndel >= 0 && p.kvAndel <= 100 && Math.abs(p.forskjutning) < 0.5)).toBe(true);
         expect(el.querySelector('[data-marke="fargstapel"]')).toBeNull();
         expect(el.querySelectorAll('[data-marke="intervall"]').length).toBe(f.lager.filter(l => l.marke === 'intervall').reduce((n, l) => n + l.data.length, 0));
         expect(() => valideraFigur(f, 't')).not.toThrow();
@@ -882,6 +882,18 @@ describe('Lönepolitik: chart-lp-bandmap', () => {
         const fore = JSON.stringify(grupper.data.map(p => p.forskjutning));
         w2.__ritaFlik('lonepolitik');
         expect(JSON.stringify(w2.document.getElementById('chart-lp-bandmap')._figur.lager.filter(l => /AID-etikett$/.test(l.serie)).flatMap(l => l.data).map(p => p.forskjutning))).toBe(fore);
+    });
+    it('med det stora demot täcker inga två punkter varandra: i samma BAS-intervall ligger de isär i sidled eller minst en tjugondel av lönespannet isär i höjdled', () => {
+        const w2 = createAppWindow();
+        w2.eval('lasInStortDemo()');
+        w2.__ritaFlik('lonepolitik');
+        const pts = w2.document.getElementById('chart-lp-bandmap')._figur.lager.filter(l => /AID-etikett$/.test(l.serie)).flatMap(l => l.data);
+        expect(pts.length).toBeGreaterThan(50);
+        const y = pts.map(p => p.y), nara = Math.max(1, (Math.max(...y) - Math.min(...y)) / 20);
+        // Isär i sidled: minst 0,08 av bandets bredd, omkring en punkts bredd.
+        const krock = pts.filter((p, i) => pts.some((q, j) => j > i && q.bas === p.bas && Math.abs(q.forskjutning - p.forskjutning) < 0.08 && Math.abs(q.y - p.y) < nara));
+        expect(krock.map(p => `${p.bas} ${p.yrke}`)).toEqual([]);
+        expect(pts.every(p => Math.abs(p.forskjutning) < 0.5)).toBe(true);   // inom sitt band
     });
 });
 
@@ -965,6 +977,28 @@ describe('Prioritering: chart-prio-pareto och chart-prio-matrix', () => {
         await new Promise(r => setTimeout(r, 400));
         expect(svg).toHaveLength(1);
         expect((svg[0].match(/data-marke="punktetikett"/g) || []).length).toBe(el2._figur.lager.reduce((n, l) => n + l.data.length, 0));
+    });
+    it('ett utsnitt står kvar på skärmen efter en export ur menyn, och bilden visar hela diagrammet utan utsnittstexten', async () => {
+        const w2 = createAppWindow();
+        w2.__lasInDemodata();
+        w2.__ritaFlik('prioritering');
+        const bilder = [];
+        w2.figurTillBild = (figur, format, b, h, val) => { bilder.push({ figur, fot: val.fot }); return Promise.resolve('data:image/png;base64,AAAA'); };
+        w2.HTMLAnchorElement.prototype.click = () => {};
+        w2.__el = w2.document.getElementById('chart-prio-matrix');
+        w2.eval('_rfPensla(window.__el, 0, 0, 0, 9999, 9999)');
+        w2.__el.nextElementSibling.querySelector('button').click();   // Zooma hit
+        const z = w2.__el._rfZoom;
+        expect(z).toBeDefined();
+        w2.__el.parentElement.querySelector('.chart-export [data-chart-export="svg"]').click();
+        await new Promise(r => setTimeout(r, 400));
+        expect(bilder).toHaveLength(1);
+        expect(bilder[0].figur.x.doman).not.toEqual(z.x);
+        expect(bilder[0].fot).not.toMatch(/Utsnitt/);
+        const el = w2.document.getElementById('chart-prio-matrix');
+        expect(el._rfZoom).toEqual(z);
+        expect(el.nextElementSibling.getAttribute('data-rf')).toBe('zoom');
+        expect(el.nextElementSibling.textContent).toContain('Visa hela diagrammet');
     });
 });
 

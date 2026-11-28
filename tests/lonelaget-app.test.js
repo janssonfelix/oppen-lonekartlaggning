@@ -312,7 +312,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
         const p = pts[0], tips = p.lager.tips(p).map(r => r.join(' ')).join('\n');
         for (const ord of [p.yrke, `BAS ${p.bas}`, 'Läget i spannet', 'Organisationens median', 'P10', 'P90', 'Matchning', 'Antal']) expect(tips).toContain(ord);
     });
-    it('samma färger för könsdominans och samma förskjutning som bandkartan', () => {
+    it('samma färger för könsdominans som bandkartan, och punkterna inom sitt band', () => {
         const w = medBlandad();
         const band = el(w, 'chart-lp-bandmap')._figur, stat = el(w, 'chart-jmf-statlage')._figur;
         for (const l of stat.lager.filter(x => x.marke === 'punkt')) {
@@ -322,14 +322,7 @@ describe('Löneläget: överblicken med bandkartan och statistikens spann', () =
             expect(l.farg, l.serie).toBe(motsv.farg);
             for (const p of l.data) expect(/^Kvinno/.test(klass) ? p.kvAndel >= 60 : /^Mans/.test(klass) ? p.kvAndel <= 40 : p.kvAndel > 40 && p.kvAndel < 60).toBe(true);
         }
-        const bandPts = band.lager.filter(l => l.marke === 'punkt' && /^(Kvinnodominerad|Mansdominerad|Blandad) /.test(l.serie)).flatMap(l => l.data);
-        let jamforda = 0;
-        for (const p of punkter(stat)) {
-            const b = bandPts.find(q => q.yrke === p.yrke && q.bas === p.bas);
-            if (b) { jamforda++; expect(p.forskjutning).toBe(b.forskjutning); }   // en punkt matchad på endast AID har ingen motsvarighet
-            expect(Math.abs(p.forskjutning)).toBeLessThanOrEqual(0.18);
-        }
-        expect(jamforda).toBeGreaterThan(0);
+        for (const p of punkter(stat)) expect(Math.abs(p.forskjutning)).toBeLessThan(0.5);
     });
     it('filtren i Mot jämförelsestatistiken påverkar inte överblicken', () => {
         const w = medBlandad();

@@ -9,8 +9,10 @@ beslutades står i referensen för området eller i beslutsloggen. Syfte och avg
    det stora demot (100 AID-etiketter). Checklistan för skarp data (`pilotchecklista.md`) har punkter för det
    som inte går att pröva utan verklig data.
 3. **Punkter som täcker varandra i bandkartan** när många AID-etiketter i samma BAS-intervall har nästan samma
-   median. *Krav mot lön* flyttar isär sådana grupper i sidled, och prioriteringsmatrisens etiketter flyttas isär
-   uppåt; bandkartan är inte prövad med många AID-etiketter. Bör bedömas med verklig data.
+   median. Bandkartan, statistikens spann i Löneläget och *Krav mot lön* flyttar isär sådana grupper i sidled
+   (`forskjutningISidled`, elva filer), och med det stora demot (100 AID-etiketter) täcker inga två punkter
+   varandra. Fler än elva grupper inom en tjugondel av lönespannet i samma BAS-intervall täcker fortfarande varandra,
+   och om filerna går att läsa när ett intervall har många grupper bör bedömas med verklig data.
 
 **Prestanda:**
 5. **Regressionen räknas om vid varje omritning** och får inte sparas mellan flikarna (ADR-17), omkring 0,3 s per

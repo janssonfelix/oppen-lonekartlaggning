@@ -105,7 +105,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `attgora` | `namn`, `termer` |
 | Demoläget | `demodata` | `ansvar`, `inlasning`, `kon`, `ktroskel`, `likvardighet`, `stat`, `struktur`, `talformat` |
 | Vymodeller (ADR-99) | `vymodell-lika-arbete` | `aid`, `aidbas`, `ansvar`, `namn`, `osakerhet`, `rapportunderlag`, `skrreferens`, `struktur` |
-|  | `vymodell-likvardigt-arbete` | `likvardighet`, `stat`, `talformat` |
+|  | `vymodell-likvardigt-arbete` | `figur`, `likvardighet`, `stat`, `talformat` |
 |  | `vymodell-alder-karriar` | `aid`, `jamforelse`, `kon`, `ktroskel`, `osakerhet`, `stat`, `struktur`, `talformat`, `termer` |
 |  | `vymodell-basdossier` | `aid`, `arsbokslut`, `kon`, `ktroskel`, `perbas`, `rapportunderlag`, `stat`, `struktur`, `vymodell-gruppdossier` |
 |  | `vymodell-gruppdossier` | `aid`, `figur`, `jamforelse`, `kon`, `ktroskel`, `lonepolitik`, `osakerhet`, `prioritering`, `skrreferens`, `stat`, `struktur` |
@@ -118,7 +118,7 @@ importerna: varje modul står i tabellen med just de moduler den importerar.
 |  | `vymodell-regressionskort` | `kon`, `ktroskel`, `regression`, `stat`, `status` |
 |  | `vymodell-livscykel` | `livscykel` |
 |  | `vymodell-loneoversyn` | `aid`, `kon`, `ktroskel`, `likvardighet`, `loneoversyn`, `osakerhet`, `regression`, `stat` |
-|  | `vymodell-lonepolitik` | `kon`, `ktroskel`, `lonepolitik`, `stat` |
+|  | `vymodell-lonepolitik` | `figur`, `kon`, `ktroskel`, `lonepolitik`, `stat` |
 
 Tröskeln för små grupper bor i appen (`src/app/06-k-troskel.js`), och modulerna tar emot den som en parameter. Reglerna
 för vad som får redovisas vid k (könen, § 3:10-paren, regressionens steg och BAS-effekter, punkterna per person,

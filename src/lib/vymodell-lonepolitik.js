@@ -9,6 +9,7 @@
  * policyuppslaget är argument; ritfunktionerna i src/app/75-lonepolitik.js ritar bara det de får och skriver orden,
  * också bladet Lönepolitik i Excel (alla flikar).
  */
+import { forskjutningISidled } from './figur.js';
 import { arKvinna } from './kon.js';
 import { konFarRedovisas } from './ktroskel.js';
 import { lonepolitikKonstanter, lonepolitikModell } from './lonepolitik.js';
@@ -54,7 +55,8 @@ export function konLagenSumma(modell, k) {
 
 /**
  * Bandkartans underlag: BAS-intervallen med ett användbart spann (P10 och P90 över 0) och en punkt per yrkesgrupp med
- * full analys (minst k) och spann, med medianen, andelen kvinnor i procent, antalet och referensnivån.
+ * full analys (minst k) och spann, med medianen, andelen kvinnor i procent, antalet, referensnivån och förskjutningen
+ * i sidled (forskjutningISidled: grupper i samma BAS-intervall med nästan samma median flyttas isär).
  * @param {any} modell
  */
 export function bandkarta(modell) {
@@ -65,7 +67,8 @@ export function bandkarta(modell) {
         punkter.push({ bas: b.bas, aid: g.aid, yrke: g.yrke, n: g.n, median: g.stats.median, niva: g.level || '—',
             kvAndel: g.rows.filter(r => arKvinna(r)).length / g.n * 100 });
     }));
-    return { bas, punkter };
+    const sidled = forskjutningISidled(punkter, { band: p => p.bas, varde: p => p.median, namn: p => p.aid });
+    return { bas, punkter: punkter.map(p => ({ ...p, forskjutning: sidled.get(p) })) };
 }
 
 /**
